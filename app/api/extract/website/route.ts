@@ -1,13 +1,20 @@
 import { NextRequest } from "next/server";
 import { z } from "zod/v4";
 import { extractFromWebsite } from "@/lib/website/extractor";
+import { validateExtractionUrl, SsrfError } from "@/lib/website/validate-url";
 
 const RequestSchema = z.object({
   url: z.url(),
 });
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
   const parsed = RequestSchema.safeParse(body);
 
   if (!parsed.success) {
@@ -18,6 +25,16 @@ export async function POST(request: NextRequest) {
   }
 
   const { url } = parsed.data;
+
+  try {
+    await validateExtractionUrl(url);
+  } catch (err) {
+    if (err instanceof SsrfError) {
+      return Response.json({ error: err.message }, { status: 400 });
+    }
+    return Response.json({ error: "URL validation failed" }, { status: 400 });
+  }
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Figma, Globe, Copy, Check, X, ExternalLink } from "lucide-react";
 import type {
@@ -61,7 +61,13 @@ export function SourcePanel({
           </Badge>
           {sourceUrl && (
             <span className="truncate text-xs text-[--text-muted]">
-              {new URL(sourceUrl).hostname}
+              {(() => {
+                try {
+                  return new URL(sourceUrl).hostname;
+                } catch {
+                  return sourceUrl;
+                }
+              })()}
             </span>
           )}
         </div>
@@ -237,6 +243,15 @@ function ComponentsTab({
 function ScreenshotsTab({ screenshots }: { screenshots: string[] }) {
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxIdx(null);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightboxIdx]);
+
   if (screenshots.length === 0) {
     return (
       <div className="p-4 text-xs text-[--text-muted]">
@@ -267,9 +282,6 @@ function ScreenshotsTab({ screenshots }: { screenshots: string[] }) {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
           onClick={() => setLightboxIdx(null)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") setLightboxIdx(null);
-          }}
         >
           <button
             onClick={() => setLightboxIdx(null)}

@@ -77,7 +77,7 @@ export class FigmaClient {
     fileKey: string,
     nodeIds: string[]
   ): Promise<FigmaNodesResponse> {
-    const ids = nodeIds.join(",");
+    const ids = encodeURIComponent(nodeIds.join(","));
     return this.fetchWithRetry<FigmaNodesResponse>(
       `/files/${fileKey}/nodes?ids=${ids}`
     );

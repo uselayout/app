@@ -93,6 +93,15 @@ export const useProjectStore = create<ProjectState>()(
     }),
     {
       name: "superduper-projects",
+      partialize: (state) => ({
+        ...state,
+        projects: state.projects.map((p) => ({
+          ...p,
+          extractionData: p.extractionData
+            ? { ...p.extractionData, screenshots: [] }
+            : undefined,
+        })),
+      }),
     }
   )
 );

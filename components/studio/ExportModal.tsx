@@ -101,10 +101,14 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
 
   return (
     <div
+      role="presentation"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="export-modal-title"
         className="w-full max-w-md rounded-xl border border-[--studio-border] bg-[--bg-panel] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -112,7 +116,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
         <div className="flex items-center justify-between border-b border-[--studio-border] px-5 py-4">
           <div className="flex items-center gap-2">
             <Download className="h-4 w-4 text-[--studio-accent]" />
-            <h2 className="text-sm font-semibold text-[--text-primary]">
+            <h2 id="export-modal-title" className="text-sm font-semibold text-[--text-primary]">
               Export AI Kit
             </h2>
           </div>

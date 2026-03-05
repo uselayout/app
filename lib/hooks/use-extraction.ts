@@ -84,10 +84,13 @@ export function useExtraction() {
         // Step 2: Generate DESIGN.md
         updateStep("generate", { status: "running" });
 
+        // Strip screenshots to avoid sending large base64 data
+        const extractionDataForSynthesis = { ...extractionData, screenshots: [] };
+
         const genRes = await fetch("/api/generate/design-md", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ extractionData }),
+          body: JSON.stringify({ extractionData: extractionDataForSynthesis }),
           signal: controller.signal,
         });
 
@@ -109,7 +112,7 @@ export function useExtraction() {
           if (done) break;
           designMd += decoder.decode(value, { stream: true });
           updateDesignMd(project.id, designMd);
-          setProgress(70 + Math.round((designMd.length / 8000) * 30));
+          setProgress(Math.min(100, 70 + Math.round((designMd.length / 8000) * 30)));
         }
 
         updateStep("generate", { status: "complete" });

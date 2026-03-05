@@ -15,7 +15,11 @@ const RequestSchema = z.object({
     sourceType: z.enum(["figma", "website", "manual"]),
     sourceUrl: z.string().optional(),
     designMd: z.string(),
-    extractionData: z.record(z.string(), z.unknown()).optional(),
+    extractionData: z.unknown().optional(),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+    tokenCount: z.number().optional(),
+    healthScore: z.number().optional(),
   }),
   formats: z.array(
     z.enum([
@@ -29,7 +33,13 @@ const RequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
   const parsed = RequestSchema.safeParse(body);
 
   if (!parsed.success) {
@@ -45,7 +55,7 @@ export async function POST(request: NextRequest) {
   // Always include DESIGN.md
   zip.file("DESIGN.md", project.designMd);
 
-  const proj = project as unknown as Project;
+  const proj = project as Project;
 
   for (const format of formats) {
     addFormatToZip(zip, format, proj);

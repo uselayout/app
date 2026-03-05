@@ -71,7 +71,8 @@ export function calculateHealthScore(
   return {
     total,
     tokenFaithfulness: usesVars ? 80 : 20,
-    componentAccuracy: 50,
+    // componentAccuracy: placeholder until component-level checking is implemented
+    componentAccuracy: issues.length === 0 ? 80 : 40,
     antiPatternViolations: uniqueHex.length,
     issues,
   };

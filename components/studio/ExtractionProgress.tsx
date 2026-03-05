@@ -105,17 +105,22 @@ export function ExtractionProgress({
 
         {error && (
           <div className="space-y-3">
-            <div className="flex items-start gap-2 rounded-md border border-[--status-error]/20 bg-[--status-error]/5 p-3">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[--status-error]" />
-              <div className="space-y-1">
-                <p className="text-sm text-[--text-primary]">{error}</p>
-                {getErrorHelp(error) && (
-                  <p className="text-xs text-[--text-muted]">
-                    {getErrorHelp(error)}
-                  </p>
-                )}
-              </div>
-            </div>
+            {(() => {
+              const errorHelp = getErrorHelp(error);
+              return (
+                <div className="flex items-start gap-2 rounded-md border border-[--status-error]/20 bg-[--status-error]/5 p-3">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[--status-error]" />
+                  <div className="space-y-1">
+                    <p className="text-sm text-[--text-primary]">{error}</p>
+                    {errorHelp && (
+                      <p className="text-xs text-[--text-muted]">
+                        {errorHelp}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
             {onRetry && (
               <button
                 onClick={onRetry}

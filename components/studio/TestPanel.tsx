@@ -113,7 +113,7 @@ export function TestPanel({ designMd, components = [], extractedFonts = [] }: Te
     } finally {
       setIsStreaming(false);
     }
-  }, [prompt, isStreaming, includeContext, designMd]);
+  }, [prompt, isStreaming, includeContext, designMd, extractedFonts]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
