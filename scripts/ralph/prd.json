@@ -299,7 +299,7 @@
       "id": "US-016",
       "title": "Token autocomplete in Monaco",
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "description": "Register a Monaco CompletionItemProvider for markdown that suggests CSS custom property names from the extracted token set when the user types '--'.",
       "acceptanceCriteria": [
         "CompletionItemProvider registered for 'markdown' language",
@@ -472,7 +472,7 @@
       "id": "US-025",
       "title": "Section navigator in Monaco",
       "priority": 25,
-      "passes": false,
+      "passes": true,
       "description": "Add a section navigator to the EditorPanel that detects ## headings in the DESIGN.md and renders clickable navigation markers.",
       "acceptanceCriteria": [
         "EditorPanel detects ## heading patterns in the document on content change",
@@ -510,7 +510,7 @@
       "id": "US-027",
       "title": "Error states and empty states",
       "priority": 27,
-      "passes": false,
+      "passes": true,
       "description": "Implement proper error handling and empty states throughout the app: extraction failures, invalid PAT, rate limit errors, and the no-project Studio state.",
       "acceptanceCriteria": [
         "Figma extraction: invalid/expired PAT shows clear error with link to figma.com/settings/tokens",
@@ -529,7 +529,7 @@
       "id": "US-028",
       "title": "Polish and visual verification",
       "priority": 28,
-      "passes": false,
+      "passes": true,
       "description": "Final visual pass to ensure the Studio exactly matches the PRD design spec. Fix any spacing, colour, or layout issues. Verify the full end-to-end flow works.",
       "acceptanceCriteria": [
         "All backgrounds use correct Studio design tokens (no hardcoded colours in components)",
