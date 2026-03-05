@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useProjectStore } from "@/lib/store/project";
-import { useExtractionStore } from "@/lib/store/extraction";
 import type { SourceType } from "@/lib/types";
 
 const AI_KITS = [
@@ -34,7 +33,6 @@ export default function LandingPage() {
   const [pat, setPat] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
   const createProject = useProjectStore((s) => s.createProject);
-  const startExtraction = useExtractionStore((s) => s.startExtraction);
 
   const sourceType = url ? detectSourceType(url) : null;
   const isFigma = sourceType === "figma";
@@ -60,11 +58,12 @@ export default function LandingPage() {
       updatedAt: new Date().toISOString(),
     });
 
-    startExtraction([
-      { id: "connect", label: "Connecting to source", status: "pending" },
-      { id: "extract", label: "Extracting design data", status: "pending" },
-      { id: "generate", label: "Generating DESIGN.md", status: "pending" },
-    ]);
+    // Store PAT in sessionStorage for the extraction hook to pick up
+    if (isFigma && pat) {
+      sessionStorage.setItem(`pat-${projectId}`, pat);
+    }
+    // Mark that extraction should start
+    sessionStorage.setItem(`extract-${projectId}`, "true");
 
     router.push(`/studio/${projectId}`);
   };

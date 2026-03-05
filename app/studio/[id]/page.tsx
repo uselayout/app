@@ -1,43 +1,17 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useProjectStore } from "@/lib/store/project";
 import { useExtractionStore } from "@/lib/store/extraction";
+import { useExtraction } from "@/lib/hooks/use-extraction";
+import { useKeyboardShortcuts } from "@/lib/hooks/use-keyboard-shortcuts";
 import { TopBar } from "@/components/shared/TopBar";
 import { StudioLayout } from "@/components/studio/StudioLayout";
 import { ExtractionProgress } from "@/components/studio/ExtractionProgress";
-
-function SourcePanelPlaceholder() {
-  return (
-    <div className="flex h-full flex-col bg-[--bg-panel] p-4">
-      <h3 className="text-sm font-medium text-[--text-primary]">Source & Tokens</h3>
-      <p className="mt-2 text-xs text-[--text-muted]">
-        Extraction data will appear here.
-      </p>
-    </div>
-  );
-}
-
-function EditorPanelPlaceholder() {
-  return (
-    <div className="flex h-full items-center justify-center bg-[--bg-surface]">
-      <p className="text-sm text-[--text-muted]">
-        DESIGN.md editor will load here.
-      </p>
-    </div>
-  );
-}
-
-function TestPanelPlaceholder() {
-  return (
-    <div className="flex h-full flex-col bg-[--bg-panel] p-4">
-      <h3 className="text-sm font-medium text-[--text-primary]">AI Preview</h3>
-      <p className="mt-2 text-xs text-[--text-muted]">
-        Test your DESIGN.md against Claude here.
-      </p>
-    </div>
-  );
-}
+import { EditorPanel } from "@/components/studio/EditorPanel";
+import { SourcePanel } from "@/components/studio/SourcePanel";
+import { TestPanel } from "@/components/studio/TestPanel";
+import { ExportModal } from "@/components/studio/ExportModal";
 
 export default function StudioPage({
   params,
@@ -47,12 +21,51 @@ export default function StudioPage({
   const { id } = use(params);
   const projects = useProjectStore((s) => s.projects);
   const updateProjectName = useProjectStore((s) => s.updateProjectName);
+  const updateDesignMd = useProjectStore((s) => s.updateDesignMd);
   const project = projects.find((p) => p.id === id);
 
   const extractionStatus = useExtractionStore((s) => s.status);
   const extractionProgress = useExtractionStore((s) => s.progress);
   const extractionSteps = useExtractionStore((s) => s.steps);
   const extractionError = useExtractionStore((s) => s.error);
+
+  const { runExtraction } = useExtraction();
+  const extractionStarted = useRef(false);
+  const [showExport, setShowExport] = useState(false);
+
+  useEffect(() => {
+    if (extractionStarted.current || !project) return;
+
+    const shouldExtract = sessionStorage.getItem(`extract-${id}`);
+    if (!shouldExtract) return;
+
+    extractionStarted.current = true;
+    sessionStorage.removeItem(`extract-${id}`);
+
+    const pat = sessionStorage.getItem(`pat-${id}`);
+    if (pat) sessionStorage.removeItem(`pat-${id}`);
+
+    runExtraction(project, pat ?? undefined);
+  }, [id, project, runExtraction]);
+
+  const handleDesignMdChange = useCallback(
+    (value: string) => {
+      updateDesignMd(id, value);
+    },
+    [id, updateDesignMd]
+  );
+
+  const shortcutHandlers = useMemo(
+    () => ({
+      onSave: () => {
+        if (project) updateDesignMd(id, project.designMd);
+      },
+      onExport: () => setShowExport(true),
+    }),
+    [id, project, updateDesignMd]
+  );
+
+  useKeyboardShortcuts(shortcutHandlers);
 
   if (!project) {
     return (
@@ -81,21 +94,51 @@ export default function StudioPage({
     );
   }
 
+  const componentNames =
+    project.extractionData?.components.map((c) => c.name) ?? [];
+  const extractedFonts =
+    project.extractionData?.fonts.map((f) => f.family) ?? [];
+
   return (
     <div className="flex h-screen flex-col">
       <TopBar
         projectName={project.name}
         sourceType={project.sourceType}
-        sourceName={project.sourceUrl ? new URL(project.sourceUrl).hostname : undefined}
+        sourceName={
+          project.sourceUrl
+            ? new URL(project.sourceUrl).hostname
+            : undefined
+        }
         onNameChange={(name) => updateProjectName(id, name)}
+        onExport={() => setShowExport(true)}
       />
       <div className="flex-1 overflow-hidden">
         <StudioLayout
-          sourcePanel={<SourcePanelPlaceholder />}
-          editorPanel={<EditorPanelPlaceholder />}
-          testPanel={<TestPanelPlaceholder />}
+          sourcePanel={
+            <SourcePanel
+              extractionData={project.extractionData}
+              sourceType={project.sourceType}
+              sourceUrl={project.sourceUrl}
+            />
+          }
+          editorPanel={
+            <EditorPanel
+              value={project.designMd}
+              onChange={handleDesignMdChange}
+            />
+          }
+          testPanel={
+            <TestPanel
+              designMd={project.designMd}
+              components={componentNames}
+              extractedFonts={extractedFonts}
+            />
+          }
         />
       </div>
+      {showExport && (
+        <ExportModal project={project} onClose={() => setShowExport(false)} />
+      )}
     </div>
   );
 }
