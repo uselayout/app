@@ -11,6 +11,7 @@ interface ExtractionProgressProps {
   steps: ExtractionStep[];
   error?: string | null;
   errorStep?: string | null;
+  onRetry?: () => void;
 }
 
 function StepIcon({ status }: { status: ExtractionStepStatus }) {
@@ -26,12 +27,29 @@ function StepIcon({ status }: { status: ExtractionStepStatus }) {
   }
 }
 
+function getErrorHelp(error: string): string | null {
+  if (error.includes("403") || error.includes("Forbidden")) {
+    return "The access token may be invalid or expired. Generate a new one at figma.com/settings → Personal Access Tokens.";
+  }
+  if (error.includes("404") || error.includes("Not Found")) {
+    return "The file was not found. Check the URL and ensure the file is shared with your account.";
+  }
+  if (error.includes("429") || error.includes("rate limit")) {
+    return "Rate limited by the API. Wait a moment and try again.";
+  }
+  if (error.includes("timeout") || error.includes("ETIMEDOUT")) {
+    return "The request timed out. Check your connection and try again.";
+  }
+  return null;
+}
+
 export function ExtractionProgress({
   sourceName,
   sourceType,
   progress,
   steps,
   error,
+  onRetry,
 }: ExtractionProgressProps) {
   const estimatedSeconds = Math.max(0, Math.round(((100 - progress) / 100) * 60));
 
@@ -86,9 +104,26 @@ export function ExtractionProgress({
         </div>
 
         {error && (
-          <div className="flex items-start gap-2 rounded-md border border-[--status-warning]/20 bg-[--status-warning]/5 p-3">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[--status-warning]" />
-            <p className="text-sm text-[--text-secondary]">{error}</p>
+          <div className="space-y-3">
+            <div className="flex items-start gap-2 rounded-md border border-[--status-error]/20 bg-[--status-error]/5 p-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[--status-error]" />
+              <div className="space-y-1">
+                <p className="text-sm text-[--text-primary]">{error}</p>
+                {getErrorHelp(error) && (
+                  <p className="text-xs text-[--text-muted]">
+                    {getErrorHelp(error)}
+                  </p>
+                )}
+              </div>
+            </div>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="w-full rounded-md bg-[--studio-accent] px-4 py-2 text-sm text-[--text-on-accent] transition-colors hover:bg-[--studio-accent-hover]"
+              >
+                Retry
+              </button>
+            )}
           </div>
         )}
       </div>

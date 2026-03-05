@@ -14,9 +14,15 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ),
 });
 
+interface TokenSuggestion {
+  name: string;
+  value: string;
+}
+
 interface EditorPanelProps {
   value: string;
   onChange: (value: string) => void;
+  tokenSuggestions?: TokenSuggestion[];
 }
 
 const STUDIO_THEME: monacoType.editor.IStandaloneThemeData = {
@@ -48,7 +54,7 @@ const STUDIO_THEME: monacoType.editor.IStandaloneThemeData = {
   },
 };
 
-export function EditorPanel({ value, onChange }: EditorPanelProps) {
+export function EditorPanel({ value, onChange, tokenSuggestions = [] }: EditorPanelProps) {
   const editorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "idle">("idle");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -77,10 +83,69 @@ export function EditorPanel({ value, onChange }: EditorPanelProps) {
     [onChange]
   );
 
+  // Section navigator: extract ## headings
+  const sections = useMemo(() => {
+    const headings: { label: string; line: number }[] = [];
+    const lines = value.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const match = lines[i].match(/^##\s+(.+)/);
+      if (match) {
+        headings.push({ label: match[1].trim(), line: i + 1 });
+      }
+    }
+    return headings;
+  }, [value]);
+
+  const scrollToLine = useCallback((line: number) => {
+    editorRef.current?.revealLineInCenter(line);
+    editorRef.current?.setPosition({ lineNumber: line, column: 1 });
+    editorRef.current?.focus();
+  }, []);
+
+  const suggestionsRef = useRef(tokenSuggestions);
+  suggestionsRef.current = tokenSuggestions;
+
   const handleMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
     monaco.editor.defineTheme("studio-dark", STUDIO_THEME);
     monaco.editor.setTheme("studio-dark");
+
+    // Register token autocomplete
+    monaco.languages.registerCompletionItemProvider("markdown", {
+      triggerCharacters: ["-"],
+      provideCompletionItems: (model: monacoType.editor.ITextModel, position: monacoType.Position) => {
+        const textUntilPosition = model.getValueInRange({
+          startLineNumber: position.lineNumber,
+          startColumn: 1,
+          endLineNumber: position.lineNumber,
+          endColumn: position.column,
+        });
+
+        if (!textUntilPosition.includes("--")) {
+          return { suggestions: [] };
+        }
+
+        const word = model.getWordUntilPosition(position);
+        const range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn,
+        };
+
+        const suggestions: monacoType.languages.CompletionItem[] =
+          suggestionsRef.current.map((token) => ({
+            label: token.name,
+            kind: monaco.languages.CompletionItemKind.Variable,
+            insertText: token.name,
+            detail: token.value,
+            documentation: `CSS variable: ${token.name}\nValue: ${token.value}`,
+            range,
+          }));
+
+        return { suggestions };
+      },
+    });
   }, []);
 
   useEffect(() => {
@@ -108,6 +173,21 @@ export function EditorPanel({ value, onChange }: EditorPanelProps) {
           </span>
         </div>
       </div>
+
+      {/* Section navigator */}
+      {sections.length > 0 && (
+        <div className="flex gap-1 overflow-x-auto border-b border-[--studio-border] px-4 py-1.5">
+          {sections.map((section) => (
+            <button
+              key={section.line}
+              onClick={() => scrollToLine(section.line)}
+              className="shrink-0 rounded px-2 py-0.5 text-[10px] text-[--text-muted] transition-colors hover:bg-[--bg-hover] hover:text-[--text-secondary]"
+            >
+              {section.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Editor */}
       <div className="flex-1">

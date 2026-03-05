@@ -77,6 +77,12 @@ export default function StudioPage({
           <p className="text-sm text-[--text-secondary]">
             This project may have been deleted or the URL is incorrect.
           </p>
+          <a
+            href="/"
+            className="inline-block rounded-md bg-[--studio-accent] px-4 py-2 text-sm text-[--text-on-accent] transition-colors hover:bg-[--studio-accent-hover]"
+          >
+            Start a new extraction
+          </a>
         </div>
       </div>
     );
@@ -98,6 +104,21 @@ export default function StudioPage({
     project.extractionData?.components.map((c) => c.name) ?? [];
   const extractedFonts =
     project.extractionData?.fonts.map((f) => f.family) ?? [];
+
+  // Build token suggestions for Monaco autocomplete
+  const tokenSuggestions = useMemo(() => {
+    if (!project.extractionData?.tokens) return [];
+    const allTokens = [
+      ...project.extractionData.tokens.colors,
+      ...project.extractionData.tokens.typography,
+      ...project.extractionData.tokens.spacing,
+      ...project.extractionData.tokens.radius,
+      ...project.extractionData.tokens.effects,
+    ];
+    return allTokens
+      .filter((t) => t.cssVariable)
+      .map((t) => ({ name: t.cssVariable!, value: t.value }));
+  }, [project.extractionData?.tokens]);
 
   return (
     <div className="flex h-screen flex-col">
@@ -125,6 +146,7 @@ export default function StudioPage({
             <EditorPanel
               value={project.designMd}
               onChange={handleDesignMdChange}
+              tokenSuggestions={tokenSuggestions}
             />
           }
           testPanel={

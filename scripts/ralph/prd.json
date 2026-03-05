@@ -16,7 +16,7 @@
       "id": "US-001",
       "title": "Project scaffold and design system foundation",
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "description": "Create the Next.js 15 project with all dependencies, configure TypeScript strict mode, set up the Studio design system CSS tokens in globals.css, and configure Tailwind with custom theme values.",
       "acceptanceCriteria": [
         "Next.js 15 app created with TypeScript strict mode and App Router",
@@ -34,7 +34,7 @@
       "id": "US-002",
       "title": "TypeScript types and Zustand stores",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "description": "Define all shared TypeScript types in lib/types/index.ts and create Zustand stores for project state and extraction state with localStorage persistence.",
       "acceptanceCriteria": [
         "lib/types/index.ts defines: Project, ExtractionResult, ExtractedToken, ExtractedComponent, FontDeclaration, AnimationDefinition, ComputedStyleMap, ExportFormat",
@@ -50,7 +50,7 @@
       "id": "US-003",
       "title": "Landing page with URL input",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "description": "Build the landing page at app/page.tsx with the Studio design system, a URL input field that auto-detects Figma vs website URLs, and a row of 6 AI Kit template cards.",
       "acceptanceCriteria": [
         "Landing page renders at / with dark theme using Studio design tokens",
@@ -68,7 +68,7 @@
       "id": "US-004",
       "title": "Three-panel Studio layout with resize handles",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "description": "Build the core three-panel resizable layout at app/studio/[id]/page.tsx using CSS with drag handles between panels.",
       "acceptanceCriteria": [
         "app/studio/[id]/page.tsx renders the three-panel layout",
@@ -87,7 +87,7 @@
       "id": "US-005",
       "title": "Top bar component",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "description": "Build the TopBar component with project name (inline editable), save status indicator, source badge, and action buttons.",
       "acceptanceCriteria": [
         "components/shared/TopBar.tsx renders with bg-[--bg-panel] and border-b border-[--border]",
@@ -106,7 +106,7 @@
       "id": "US-006",
       "title": "Extraction progress UI component",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "description": "Build the full-screen ExtractionProgress component that displays step-by-step extraction status with a progress bar and estimated time.",
       "acceptanceCriteria": [
         "components/studio/ExtractionProgress.tsx renders as a full-screen overlay",
@@ -126,7 +126,7 @@
       "id": "US-007",
       "title": "Figma API client with rate limiting",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "description": "Build lib/figma/client.ts - an authenticated fetch wrapper with rate limiting, exponential backoff, and request queuing.",
       "acceptanceCriteria": [
         "lib/figma/client.ts exports a FigmaClient class or factory function",
@@ -143,7 +143,7 @@
       "id": "US-008",
       "title": "Figma styles parser",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "description": "Build lib/figma/parsers/styles.ts to extract and resolve colour, text, and effect styles from the Figma API.",
       "acceptanceCriteria": [
         "lib/figma/parsers/styles.ts exports parseStyles(fileKey, client) function",
@@ -161,7 +161,7 @@
       "id": "US-009",
       "title": "Figma components parser",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "description": "Build lib/figma/parsers/components.ts to extract component inventory from the Figma API.",
       "acceptanceCriteria": [
         "lib/figma/parsers/components.ts exports parseComponents(fileKey, client) function",
@@ -179,7 +179,7 @@
       "id": "US-010",
       "title": "Figma extraction orchestrator and API route",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "description": "Build lib/figma/extractor.ts to orchestrate the full Figma extraction pipeline, and wire it to the POST /api/extract/figma route with SSE progress streaming.",
       "acceptanceCriteria": [
         "lib/figma/extractor.ts orchestrates: file metadata → styles → components → layout sampling",
@@ -199,7 +199,7 @@
       "id": "US-011",
       "title": "Website CSS extraction scripts",
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "description": "Build lib/website/css-extract.ts containing all page.evaluate() functions for CSS extraction, font detection, computed styles, animations, breakpoints, and library detection.",
       "acceptanceCriteria": [
         "lib/website/css-extract.ts exports self-contained browser-executable functions",
@@ -219,7 +219,7 @@
       "id": "US-012",
       "title": "Website Playwright orchestrator and API route",
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "description": "Build lib/website/extractor.ts using Playwright to navigate to a URL, run CSS extraction scripts, capture screenshots, and wire it to POST /api/extract/website.",
       "acceptanceCriteria": [
         "lib/website/extractor.ts launches Playwright Chromium (headless: true)",
@@ -240,7 +240,7 @@
       "id": "US-013",
       "title": "Claude DESIGN.md synthesis",
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "description": "Build lib/claude/synthesise.ts and the POST /api/generate/design-md route to generate a structured DESIGN.md from extraction data using Claude Sonnet with streaming.",
       "acceptanceCriteria": [
         "lib/claude/synthesise.ts builds the synthesis prompt from ExtractionResult data",
@@ -258,7 +258,7 @@
       "id": "US-014",
       "title": "Studio routing and extraction flow",
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "description": "Wire the landing page form submission to start extraction, show the progress UI, then redirect to /studio/[id] once complete. Generate a project ID and save to Zustand + localStorage.",
       "acceptanceCriteria": [
         "Submitting the landing page form starts the extraction (POST to appropriate /api/extract/* route)",
@@ -278,7 +278,7 @@
       "id": "US-015",
       "title": "Monaco editor panel",
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "description": "Build the EditorPanel component with Monaco editor configured for DESIGN.md editing: custom dark theme, markdown mode, word wrap, Geist Mono font, auto-save to Zustand.",
       "acceptanceCriteria": [
         "components/studio/EditorPanel.tsx uses dynamic import with ssr: false",
@@ -316,7 +316,7 @@
       "id": "US-017",
       "title": "Source panel - Tokens tab",
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "description": "Build the SourcePanel's Tokens tab showing a categorised tree of extracted tokens with colour swatches, values, and clipboard copy on click.",
       "acceptanceCriteria": [
         "components/studio/SourcePanel.tsx with three tabs: Tokens | Components | Screenshots",
@@ -336,7 +336,7 @@
       "id": "US-018",
       "title": "Source panel - Components and Screenshots tabs",
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "description": "Build the Components tab (inventory list with variant counts) and Screenshots tab (grid with lightbox) in the SourcePanel.",
       "acceptanceCriteria": [
         "Components tab shows list of extracted components with: name, variant count badge, description (if available)",
@@ -354,7 +354,7 @@
       "id": "US-019",
       "title": "AI test panel",
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "description": "Build the TestPanel component with context toggle, prompt input, streaming Claude output with syntax highlighting, and quick prompts dropdown.",
       "acceptanceCriteria": [
         "components/studio/TestPanel.tsx renders in the right panel",
@@ -376,7 +376,7 @@
       "id": "US-020",
       "title": "Test API route with Claude streaming",
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "description": "Build the POST /api/generate/test route that calls Claude with optional DESIGN.md context and streams the response.",
       "acceptanceCriteria": [
         "app/api/generate/test/route.ts accepts POST { prompt, designMd, includeContext, model? }",
@@ -393,7 +393,7 @@
       "id": "US-021",
       "title": "Basic context health score",
       "priority": 21,
-      "passes": false,
+      "passes": true,
       "description": "After each test response, calculate and display a simple 0-100 health score based on regex checks of the generated code.",
       "acceptanceCriteria": [
         "After test response completes, health score is calculated client-side",
@@ -415,7 +415,7 @@
       "id": "US-022",
       "title": "Export: CLAUDE.md and Cursor rules generators",
       "priority": 22,
-      "passes": false,
+      "passes": true,
       "description": "Build lib/export/claude-md.ts and lib/export/cursor-rules.ts to generate CLAUDE.md section and .cursor/rules/*.mdc files from project data.",
       "acceptanceCriteria": [
         "lib/export/claude-md.ts exports generateClaudeMd(project) function",
@@ -433,7 +433,7 @@
       "id": "US-023",
       "title": "Export: token format generators",
       "priority": 23,
-      "passes": false,
+      "passes": true,
       "description": "Build lib/export/tokens-css.ts, lib/export/tokens-json.ts, and lib/export/tailwind-config.ts to generate the three token export formats.",
       "acceptanceCriteria": [
         "lib/export/tokens-css.ts exports generateTokensCss(tokens) function",
@@ -451,7 +451,7 @@
       "id": "US-024",
       "title": "Export modal and ZIP bundle download",
       "priority": 24,
-      "passes": false,
+      "passes": true,
       "description": "Build the ExportModal component with format checkboxes and the POST /api/export/bundle route that generates and returns a ZIP file.",
       "acceptanceCriteria": [
         "components/studio/ExportModal.tsx opens when Export button clicked (or Cmd+Shift+E)",
@@ -489,7 +489,7 @@
       "id": "US-026",
       "title": "Keyboard shortcuts",
       "priority": 26,
-      "passes": false,
+      "passes": true,
       "description": "Implement the global keyboard shortcuts specified in the PRD: Cmd+S (save), Cmd+T (focus test panel), Cmd+Shift+E (open export modal), Cmd+1/2/3 (focus panels).",
       "acceptanceCriteria": [
         "useKeyboardShortcuts hook or global event listener in StudioLayout",
