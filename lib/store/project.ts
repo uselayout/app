@@ -5,12 +5,13 @@ import type { Project, ExtractionResult } from "@/lib/types";
 interface ProjectState {
   projects: Project[];
   currentProjectId: string | null;
+  userId: string | null;
 
   // Computed
   currentProject: () => Project | undefined;
 
   // Actions
-  loadProjects: (projects: Project[]) => void;
+  loadProjects: (projects: Project[], userId: string) => void;
   createProject: (project: Project) => void;
   setCurrentProject: (id: string) => void;
   updateDesignMd: (id: string, designMd: string) => void;
@@ -19,25 +20,28 @@ interface ProjectState {
   updateTokenCount: (id: string, count: number) => void;
   updateHealthScore: (id: string, score: number) => void;
   deleteProject: (id: string) => void;
+  clearProjects: () => void;
 }
 
 export const useProjectStore = create<ProjectState>()((set, get) => ({
   projects: [],
   currentProjectId: null,
+  userId: null,
 
   currentProject: () => {
     const { projects, currentProjectId } = get();
     return projects.find((p) => p.id === currentProjectId);
   },
 
-  loadProjects: (projects) => set({ projects }),
+  loadProjects: (projects, userId) => set({ projects, userId }),
 
   createProject: (project) => {
     set((state) => ({
       projects: [...state.projects, project],
       currentProjectId: project.id,
     }));
-    void upsertProject(project);
+    const { userId } = get();
+    if (userId) void upsertProject(project, userId);
   },
 
   setCurrentProject: (id) => set({ currentProjectId: id }),
@@ -50,24 +54,22 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           : p
       ),
     }));
-    const project = get().projects.find((p) => p.id === id);
-    if (project) void upsertProject(project);
+    const { projects, userId } = get();
+    const project = projects.find((p) => p.id === id);
+    if (project && userId) void upsertProject(project, userId);
   },
 
   updateExtractionData: (id, data) => {
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === id
-          ? {
-              ...p,
-              extractionData: data,
-              updatedAt: new Date().toISOString(),
-            }
+          ? { ...p, extractionData: data, updatedAt: new Date().toISOString() }
           : p
       ),
     }));
-    const project = get().projects.find((p) => p.id === id);
-    if (project) void upsertProject(project);
+    const { projects, userId } = get();
+    const project = projects.find((p) => p.id === id);
+    if (project && userId) void upsertProject(project, userId);
   },
 
   updateProjectName: (id, name) => {
@@ -78,8 +80,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           : p
       ),
     }));
-    const project = get().projects.find((p) => p.id === id);
-    if (project) void upsertProject(project);
+    const { projects, userId } = get();
+    const project = projects.find((p) => p.id === id);
+    if (project && userId) void upsertProject(project, userId);
   },
 
   updateTokenCount: (id, count) => {
@@ -88,8 +91,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
         p.id === id ? { ...p, tokenCount: count } : p
       ),
     }));
-    const project = get().projects.find((p) => p.id === id);
-    if (project) void upsertProject(project);
+    const { projects, userId } = get();
+    const project = projects.find((p) => p.id === id);
+    if (project && userId) void upsertProject(project, userId);
   },
 
   updateHealthScore: (id, score) => {
@@ -98,8 +102,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
         p.id === id ? { ...p, healthScore: score } : p
       ),
     }));
-    const project = get().projects.find((p) => p.id === id);
-    if (project) void upsertProject(project);
+    const { projects, userId } = get();
+    const project = projects.find((p) => p.id === id);
+    if (project && userId) void upsertProject(project, userId);
   },
 
   deleteProject: (id) => {
@@ -110,4 +115,6 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }));
     void removeProject(id);
   },
+
+  clearProjects: () => set({ projects: [], currentProjectId: null, userId: null }),
 }));

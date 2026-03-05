@@ -10,6 +10,7 @@ interface ProjectRow {
   extraction_data: unknown | null;
   token_count: number | null;
   health_score: number | null;
+  user_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -31,7 +32,10 @@ function rowToProject(row: ProjectRow): Project {
   };
 }
 
-function projectToRow(project: Project): Omit<ProjectRow, "created_at" | "updated_at"> & { updated_at: string } {
+function projectToRow(
+  project: Project,
+  userId: string
+): Omit<ProjectRow, "created_at"> & { updated_at: string } {
   // Strip screenshots before persisting — they can be several MB of base64
   const extractionData = project.extractionData
     ? { ...project.extractionData, screenshots: [] }
@@ -46,14 +50,16 @@ function projectToRow(project: Project): Omit<ProjectRow, "created_at" | "update
     extraction_data: extractionData,
     token_count: project.tokenCount ?? null,
     health_score: project.healthScore ?? null,
+    user_id: userId,
     updated_at: new Date().toISOString(),
   };
 }
 
-export async function fetchAllProjects(): Promise<Project[]> {
+export async function fetchAllProjects(userId: string): Promise<Project[]> {
   const { data, error } = await supabase
-    .from("projects")
+    .from("sd_aistudio_projects")
     .select("*")
+    .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -64,9 +70,12 @@ export async function fetchAllProjects(): Promise<Project[]> {
   return (data as ProjectRow[]).map(rowToProject);
 }
 
-export async function upsertProject(project: Project): Promise<void> {
-  const row = projectToRow(project);
-  const { error } = await supabase.from("projects").upsert(row, {
+export async function upsertProject(
+  project: Project,
+  userId: string
+): Promise<void> {
+  const row = projectToRow(project, userId);
+  const { error } = await supabase.from("sd_aistudio_projects").upsert(row, {
     onConflict: "id",
   });
 
@@ -76,7 +85,10 @@ export async function upsertProject(project: Project): Promise<void> {
 }
 
 export async function removeProject(id: string): Promise<void> {
-  const { error } = await supabase.from("projects").delete().eq("id", id);
+  const { error } = await supabase
+    .from("sd_aistudio_projects")
+    .delete()
+    .eq("id", id);
 
   if (error) {
     console.error("Failed to delete project:", error.message);
