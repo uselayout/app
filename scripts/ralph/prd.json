@@ -1,0 +1,549 @@
+{
+  "project": "superduper-ai-studio",
+  "description": "Browser-based tool that extracts design systems from Figma/websites and generates AI-ready DESIGN.md context bundles",
+  "stack": {
+    "frontend": "Next.js 15, React 19, TypeScript (strict), Tailwind CSS",
+    "ui": "shadcn/ui (lyra preset)",
+    "state": "Zustand",
+    "editor": "@monaco-editor/react",
+    "ai": "@anthropic-ai/sdk (Claude Sonnet)",
+    "extraction": "Playwright + Figma REST API",
+    "export": "JSZip",
+    "persistence": "localStorage (Phase 1)"
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Project scaffold and design system foundation",
+      "priority": 1,
+      "passes": false,
+      "description": "Create the Next.js 15 project with all dependencies, configure TypeScript strict mode, set up the Studio design system CSS tokens in globals.css, and configure Tailwind with custom theme values.",
+      "acceptanceCriteria": [
+        "Next.js 15 app created with TypeScript strict mode and App Router",
+        "All dependencies installed: @anthropic-ai/sdk @monaco-editor/react zustand zod jszip playwright @monaco-editor/react",
+        "shadcn/ui initialised with lyra preset",
+        "globals.css has all Studio design tokens (--bg-app, --bg-panel, --bg-surface, --bg-elevated, --bg-hover, --border, --border-strong, --accent, --accent-hover, --accent-subtle, --text-primary, --text-secondary, --text-muted, --radius-sm, --radius-md, --radius-lg, --radius-xl, --font, --font-mono, --ease-out, --ease-in-out, --duration-fast, --duration-base, --duration-slow)",
+        "tailwind.config.ts extends theme with CSS variable references for all tokens",
+        "Geist font loaded (via next/font/google)",
+        "npm run typecheck passes",
+        "npm run lint passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "TypeScript types and Zustand stores",
+      "priority": 2,
+      "passes": false,
+      "description": "Define all shared TypeScript types in lib/types/index.ts and create Zustand stores for project state and extraction state with localStorage persistence.",
+      "acceptanceCriteria": [
+        "lib/types/index.ts defines: Project, ExtractionResult, ExtractedToken, ExtractedComponent, FontDeclaration, AnimationDefinition, ComputedStyleMap, ExportFormat",
+        "lib/store/project.ts creates Zustand store with: projects[], currentProjectId, setCurrentProject, updateDesignMd, updateExtractionData actions",
+        "lib/store/extraction.ts creates Zustand store with: status, progress, steps[], currentStep, error fields",
+        "localStorage persistence implemented via zustand/middleware persist",
+        "No TypeScript errors (strict mode)",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Landing page with URL input",
+      "priority": 3,
+      "passes": false,
+      "description": "Build the landing page at app/page.tsx with the Studio design system, a URL input field that auto-detects Figma vs website URLs, and a row of 6 AI Kit template cards.",
+      "acceptanceCriteria": [
+        "Landing page renders at / with dark theme using Studio design tokens",
+        "Tagline: 'Give your AI agent perfect taste.' visible",
+        "URL input field accepts Figma URLs (figma.com/file/ or figma.com/design/) and website URLs",
+        "When Figma URL detected: shows a PAT input field below the URL field",
+        "Extract Design System button is present and enabled when URL is valid",
+        "Row of 6 AI Kit cards: Linear, Revolut, Stripe, Notion, Vercel, iOS (with prices)",
+        "Verify in browser: page matches the ASCII layout from PRD section 12",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Three-panel Studio layout with resize handles",
+      "priority": 4,
+      "passes": false,
+      "description": "Build the core three-panel resizable layout at app/studio/[id]/page.tsx using CSS with drag handles between panels.",
+      "acceptanceCriteria": [
+        "app/studio/[id]/page.tsx renders the three-panel layout",
+        "Left panel default width 280px, right panel 340px, centre fills remaining space",
+        "Drag handle between left and centre panels allows resizing",
+        "Drag handle between centre and right panels allows resizing",
+        "Minimum panel width enforced at 200px",
+        "Layout uses bg-[--bg-app] and the Studio design tokens throughout",
+        "Panel heights fill the viewport minus the top bar",
+        "Verify in browser: three panels visible with correct proportions",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Top bar component",
+      "priority": 5,
+      "passes": false,
+      "description": "Build the TopBar component with project name (inline editable), save status indicator, source badge, and action buttons.",
+      "acceptanceCriteria": [
+        "components/shared/TopBar.tsx renders with bg-[--bg-panel] and border-b border-[--border]",
+        "Left side: SuperDuper AI Studio logo/wordmark",
+        "Centre: project name as inline-editable text (click to edit, blur to save)",
+        "Centre: 'Saved Xs ago' or 'Saving...' status indicator",
+        "Centre: source badge (Figma icon or Globe icon with source name)",
+        "Right side: Re-extract button, Test button (Cmd+T), Export button (Cmd+Shift+E)",
+        "Buttons use Studio accent colour styling",
+        "Verify in browser: top bar renders correctly at the top of the Studio",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Extraction progress UI component",
+      "priority": 6,
+      "passes": false,
+      "description": "Build the full-screen ExtractionProgress component that displays step-by-step extraction status with a progress bar and estimated time.",
+      "acceptanceCriteria": [
+        "components/studio/ExtractionProgress.tsx renders as a full-screen overlay",
+        "Shows extraction source name and type",
+        "Progress bar (0-100%) with percentage text",
+        "Checklist of extraction steps with status icons (pending/running/complete/failed)",
+        "Each step shows granular detail text when running ('Extracting colour styles 12/34...')",
+        "Estimated time remaining displayed",
+        "Warning notes shown for non-fatal issues (e.g. 'Variables API requires Enterprise plan')",
+        "Uses Studio design tokens throughout",
+        "Verify in browser: progress UI looks polished and matches PRD ASCII diagram",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Figma API client with rate limiting",
+      "priority": 7,
+      "passes": false,
+      "description": "Build lib/figma/client.ts - an authenticated fetch wrapper with rate limiting, exponential backoff, and request queuing.",
+      "acceptanceCriteria": [
+        "lib/figma/client.ts exports a FigmaClient class or factory function",
+        "Accepts PAT in Authorization: Bearer header",
+        "Minimum 100ms delay between API requests (leaky bucket style)",
+        "Exponential backoff with jitter on 429 responses (retry up to 3 times)",
+        "Accepts an onProgress callback for streaming status updates",
+        "All Figma API responses typed with TypeScript interfaces",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Figma styles parser",
+      "priority": 8,
+      "passes": false,
+      "description": "Build lib/figma/parsers/styles.ts to extract and resolve colour, text, and effect styles from the Figma API.",
+      "acceptanceCriteria": [
+        "lib/figma/parsers/styles.ts exports parseStyles(fileKey, client) function",
+        "Calls GET /v1/files/{key}/styles to get style metadata (name, type, node_id)",
+        "Batches node IDs into groups of max 50 for GET /v1/files/{key}/nodes?ids=",
+        "Parses colour styles: fills[0] RGBA to hex conversion",
+        "Parses text styles: fontFamily, fontSize, fontWeight, lineHeight, letterSpacing from TypeStyle",
+        "Parses effect styles: shadow/blur with color, offset, radius, spread",
+        "Returns normalised ExtractedToken[] array",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Figma components parser",
+      "priority": 9,
+      "passes": false,
+      "description": "Build lib/figma/parsers/components.ts to extract component inventory from the Figma API.",
+      "acceptanceCriteria": [
+        "lib/figma/parsers/components.ts exports parseComponents(fileKey, client) function",
+        "Calls GET /v1/files/{key}/components for component list",
+        "Calls GET /v1/files/{key}/component_sets for variant sets",
+        "Top 50 components by usage enriched with full node data via GET /v1/files/{key}/nodes?ids=",
+        "Parses componentPropertyDefinitions (BOOLEAN/TEXT/VARIANT/INSTANCE_SWAP types)",
+        "Variant names extracted from component sets",
+        "Returns normalised ExtractedComponent[] array",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Figma extraction orchestrator and API route",
+      "priority": 10,
+      "passes": false,
+      "description": "Build lib/figma/extractor.ts to orchestrate the full Figma extraction pipeline, and wire it to the POST /api/extract/figma route with SSE progress streaming.",
+      "acceptanceCriteria": [
+        "lib/figma/extractor.ts orchestrates: file metadata → styles → components → layout sampling",
+        "Returns complete ExtractionResult",
+        "app/api/extract/figma/route.ts accepts POST { figmaUrl, accessToken }",
+        "Validates input with Zod (figmaUrl must match figma.com/file/ or figma.com/design/ pattern)",
+        "Streams SSE progress events: { type: 'step', step, percent, detail? }",
+        "Streams { type: 'complete', data: ExtractionResult } on success",
+        "Streams { type: 'error', step, message } on failure",
+        "Variables API 403 treated as non-fatal: continues with styles-only",
+        "Tested against a real Figma file (or mock) - extraction completes without error",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Website CSS extraction scripts",
+      "priority": 11,
+      "passes": false,
+      "description": "Build lib/website/css-extract.ts containing all page.evaluate() functions for CSS extraction, font detection, computed styles, animations, breakpoints, and library detection.",
+      "acceptanceCriteria": [
+        "lib/website/css-extract.ts exports self-contained browser-executable functions",
+        "extractCSSVariables(): scans :root, [data-theme], html, [class*='dark'] selectors for -- custom properties",
+        "extractFonts(): scans @font-face rules for family, src, weight, style, display",
+        "extractComputedStyles(): getComputedStyle on h1, h2, h3, p, button (primary/secondary), input, label, a, card",
+        "extractAnimations(): scans @keyframes rules",
+        "extractBreakpoints(): scans @media rules for pixel breakpoints",
+        "detectLibraries(): detects Tailwind, Bootstrap, Material UI, shadcn, Radix, Framer Motion, Lucide, Heroicons, Next.js",
+        "All functions are self-contained (no external imports - runs in browser context)",
+        "Returns typed data matching ExtractionResult interfaces",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Website Playwright orchestrator and API route",
+      "priority": 12,
+      "passes": false,
+      "description": "Build lib/website/extractor.ts using Playwright to navigate to a URL, run CSS extraction scripts, capture screenshots, and wire it to POST /api/extract/website.",
+      "acceptanceCriteria": [
+        "lib/website/extractor.ts launches Playwright Chromium (headless: true)",
+        "Navigates to URL with waitUntil: 'networkidle'",
+        "Runs all page.evaluate() extraction scripts from css-extract.ts",
+        "Captures full-page screenshot and viewport screenshot",
+        "Screenshots stored as base64 strings in ExtractionResult",
+        "Browser closes properly in finally block",
+        "app/api/extract/website/route.ts accepts POST { url }",
+        "Validates URL with Zod",
+        "Streams SSE progress events matching the Figma format",
+        "Tested against linear.app - returns Inter font, dark colour values",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Claude DESIGN.md synthesis",
+      "priority": 13,
+      "passes": false,
+      "description": "Build lib/claude/synthesise.ts and the POST /api/generate/design-md route to generate a structured DESIGN.md from extraction data using Claude Sonnet with streaming.",
+      "acceptanceCriteria": [
+        "lib/claude/synthesise.ts builds the synthesis prompt from ExtractionResult data",
+        "Prompt follows the system prompt from PRD Section 14 (extraction synthesis prompt)",
+        "User prompt includes: CSS variables, font declarations, computed styles, component inventory, library detection",
+        "Uses anthropic.messages.stream with claude-sonnet-4-6 model, max_tokens: 8192",
+        "app/api/generate/design-md/route.ts accepts POST { extractionData }",
+        "Returns text/plain streaming response with X-Accel-Buffering: no header",
+        "Tested: generates a DESIGN.md with all 8 sections populated",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Studio routing and extraction flow",
+      "priority": 14,
+      "passes": false,
+      "description": "Wire the landing page form submission to start extraction, show the progress UI, then redirect to /studio/[id] once complete. Generate a project ID and save to Zustand + localStorage.",
+      "acceptanceCriteria": [
+        "Submitting the landing page form starts the extraction (POST to appropriate /api/extract/* route)",
+        "ExtractionProgress component renders during extraction with live SSE updates",
+        "On extraction complete: project is created in Zustand store with ExtractionResult",
+        "Claude synthesis is automatically triggered after extraction",
+        "DESIGN.md streams into the Zustand store as it generates",
+        "Router redirects to /studio/[id] once synthesis begins streaming",
+        "Project persists to localStorage",
+        "app/studio/[id]/page.tsx loads the correct project from the store",
+        "Verify in browser: full flow from URL input to Studio page works",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Monaco editor panel",
+      "priority": 15,
+      "passes": false,
+      "description": "Build the EditorPanel component with Monaco editor configured for DESIGN.md editing: custom dark theme, markdown mode, word wrap, Geist Mono font, auto-save to Zustand.",
+      "acceptanceCriteria": [
+        "components/studio/EditorPanel.tsx uses dynamic import with ssr: false",
+        "Monaco loaded with language: 'markdown', wordWrap: 'on', fontSize: 14, lineHeight: 22",
+        "fontFamily: '\"Geist Mono\", \"JetBrains Mono\", monospace'",
+        "minimap disabled, lineNumbers: 'off', padding: { top: 20, bottom: 80 }",
+        "Custom dark theme defined matching Studio palette (--bg-surface as background)",
+        "Editor content initialised from Zustand store designMd",
+        "Content changes debounced 5 seconds then saved to Zustand store",
+        "'Saved' indicator appears and fades after save",
+        "Token count estimate displayed: count tokens (chars/4), colour code green/yellow/red",
+        "Verify in browser: Monaco loads, is editable, shows DESIGN.md content",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Token autocomplete in Monaco",
+      "priority": 16,
+      "passes": false,
+      "description": "Register a Monaco CompletionItemProvider for markdown that suggests CSS custom property names from the extracted token set when the user types '--'.",
+      "acceptanceCriteria": [
+        "CompletionItemProvider registered for 'markdown' language",
+        "Triggered when cursor is in a code block and user types '--'",
+        "Suggestions list all CSS custom property names from extraction data",
+        "Each suggestion shows the token value as documentation",
+        "Selecting a suggestion inserts the full --variable-name",
+        "Verify in browser: typing -- inside a ```css block shows suggestions",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Source panel - Tokens tab",
+      "priority": 17,
+      "passes": false,
+      "description": "Build the SourcePanel's Tokens tab showing a categorised tree of extracted tokens with colour swatches, values, and clipboard copy on click.",
+      "acceptanceCriteria": [
+        "components/studio/SourcePanel.tsx with three tabs: Tokens | Components | Screenshots",
+        "Tokens tab renders categorised sections: Colors, Typography, Spacing, Radius",
+        "Color tokens show: round colour swatch, CSS variable name, hex value",
+        "Typography tokens show: font name/size/weight details",
+        "Spacing/Radius tokens show: name and pixel value",
+        "Clicking a token name copies the CSS variable name to clipboard (navigator.clipboard)",
+        "Toast or brief visual feedback on copy",
+        "Source info section above tabs: source type badge, URL/file name, last extracted time, Re-extract button",
+        "Verify in browser: token tree renders with correct colours and values",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Source panel - Components and Screenshots tabs",
+      "priority": 18,
+      "passes": false,
+      "description": "Build the Components tab (inventory list with variant counts) and Screenshots tab (grid with lightbox) in the SourcePanel.",
+      "acceptanceCriteria": [
+        "Components tab shows list of extracted components with: name, variant count badge, description (if available)",
+        "Each component has a 'Go to in DESIGN.md' link that scrolls the editor to the component section",
+        "Screenshots tab shows grid of captured screenshots (only for website extractions)",
+        "Clicking a screenshot opens a fullscreen lightbox overlay",
+        "Lightbox has close button and keyboard Escape to dismiss",
+        "Empty state shown when no components or screenshots available",
+        "Verify in browser: components list renders, screenshots grid shows for website extractions",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-019",
+      "title": "AI test panel",
+      "priority": 19,
+      "passes": false,
+      "description": "Build the TestPanel component with context toggle, prompt input, streaming Claude output with syntax highlighting, and quick prompts dropdown.",
+      "acceptanceCriteria": [
+        "components/studio/TestPanel.tsx renders in the right panel",
+        "Header shows 'Test Panel' with a context toggle switch labeled 'DESIGN.md context: ON'",
+        "When context OFF: header shows 'Bare Claude' with an orange indicator",
+        "Prompt textarea with placeholder text and Enter-to-submit (Shift+Enter for newline)",
+        "Submit button visible and active when prompt is non-empty",
+        "Quick prompts dropdown with prompts auto-generated from component inventory",
+        "At minimum includes: 'Build me a primary button', 'Build me a card component', 'Build me a form input'",
+        "Output area renders streaming text with syntax-highlighted code blocks",
+        "Thumbs up / thumbs down / Re-run buttons below each response",
+        "[Copy] button on each code block",
+        "Verify in browser: typing a prompt and submitting returns a streaming response",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-020",
+      "title": "Test API route with Claude streaming",
+      "priority": 20,
+      "passes": false,
+      "description": "Build the POST /api/generate/test route that calls Claude with optional DESIGN.md context and streams the response.",
+      "acceptanceCriteria": [
+        "app/api/generate/test/route.ts accepts POST { prompt, designMd, includeContext, model? }",
+        "When includeContext true: system prompt is the test panel system prompt from PRD Section 14 + full designMd content",
+        "When includeContext false: system prompt is the 'Bare Claude' version",
+        "Uses claude-sonnet-4-6 model by default",
+        "Streams response as text/plain with X-Accel-Buffering: no header",
+        "TestPanel reads the stream and appends tokens to output in real-time",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-021",
+      "title": "Basic context health score",
+      "priority": 21,
+      "passes": false,
+      "description": "After each test response, calculate and display a simple 0-100 health score based on regex checks of the generated code.",
+      "acceptanceCriteria": [
+        "After test response completes, health score is calculated client-side",
+        "Checks performed on the output text:",
+        "  - No hardcoded hex values (#[0-9a-fA-F]{3,6}): -20 per occurrence, max -40",
+        "  - Uses CSS variables (var(--): +20 if found",
+        "  - Uses correct font family from extraction: +20 if font name found in output",
+        "  - No inline style with hardcoded colours: +10",
+        "  - Score normalised to 0-100",
+        "Health score displayed below output with label: 'Context Health: X/100'",
+        "Individual check results shown as green ticks or orange warnings",
+        "Violations listed with specific examples from the generated code",
+        "Verify in browser: submitting a test prompt shows the health score panel",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-022",
+      "title": "Export: CLAUDE.md and Cursor rules generators",
+      "priority": 22,
+      "passes": false,
+      "description": "Build lib/export/claude-md.ts and lib/export/cursor-rules.ts to generate CLAUDE.md section and .cursor/rules/*.mdc files from project data.",
+      "acceptanceCriteria": [
+        "lib/export/claude-md.ts exports generateClaudeMd(project) function",
+        "Generated CLAUDE.md section follows the format from PRD Section 7.5 exactly",
+        "Includes: ## Design System heading, critical rules (from Quick Reference section), file reference paths",
+        "lib/export/cursor-rules.ts exports generateCursorRules(project) function",
+        "Returns { designSystem: string, components: string } - two .mdc file contents",
+        "design-system.mdc has alwaysApply: true frontmatter",
+        "components.mdc has globs: ['**/*.tsx', '**/*.jsx'] frontmatter",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-023",
+      "title": "Export: token format generators",
+      "priority": 23,
+      "passes": false,
+      "description": "Build lib/export/tokens-css.ts, lib/export/tokens-json.ts, and lib/export/tailwind-config.ts to generate the three token export formats.",
+      "acceptanceCriteria": [
+        "lib/export/tokens-css.ts exports generateTokensCss(tokens) function",
+        "Generates valid CSS :root block with all tokens as custom properties",
+        "lib/export/tokens-json.ts exports generateTokensJson(tokens) function",
+        "Generates W3C DTCG compliant JSON with $type, $value, $description fields",
+        "lib/export/tailwind-config.ts exports generateTailwindConfig(tokens) function",
+        "Generates valid tailwind.config.js with theme.extend mapping CSS vars to Tailwind keys",
+        "All generators return string (file contents)",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-024",
+      "title": "Export modal and ZIP bundle download",
+      "priority": 24,
+      "passes": false,
+      "description": "Build the ExportModal component with format checkboxes and the POST /api/export/bundle route that generates and returns a ZIP file.",
+      "acceptanceCriteria": [
+        "components/studio/ExportModal.tsx opens when Export button clicked (or Cmd+Shift+E)",
+        "Shows checkboxes for: CLAUDE.md, .cursor/rules, tokens.css, tokens.json, tailwind.config.js",
+        "All checkboxes selected by default",
+        "Preview pane shows content of first selected format",
+        "Download Bundle button triggers POST to /api/export/bundle",
+        "app/api/export/bundle/route.ts generates each selected format using lib/export/ functions",
+        "Bundles all into ZIP using JSZip",
+        "Returns ZIP as application/zip download response",
+        "File downloads in browser with name [project-name]-ai-kit.zip",
+        "Verify in browser: export modal opens, selecting formats and clicking download delivers a ZIP",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-025",
+      "title": "Section navigator in Monaco",
+      "priority": 25,
+      "passes": false,
+      "description": "Add a section navigator to the EditorPanel that detects ## headings in the DESIGN.md and renders clickable navigation markers.",
+      "acceptanceCriteria": [
+        "EditorPanel detects ## heading patterns in the document on content change",
+        "Detected headings shown as a small navigation list below or beside the editor",
+        "Alternatively: rendered as an overlay/sidebar navigator with clickable labels",
+        "Clicking a heading scrolls the Monaco editor to that line",
+        "Updates in real-time as content changes",
+        "Verify in browser: section nav shows DESIGN.md headings, clicking scrolls editor",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-026",
+      "title": "Keyboard shortcuts",
+      "priority": 26,
+      "passes": false,
+      "description": "Implement the global keyboard shortcuts specified in the PRD: Cmd+S (save), Cmd+T (focus test panel), Cmd+Shift+E (open export modal), Cmd+1/2/3 (focus panels).",
+      "acceptanceCriteria": [
+        "useKeyboardShortcuts hook or global event listener in StudioLayout",
+        "Cmd+S: triggers save of DESIGN.md to store",
+        "Cmd+T: focuses the test panel prompt textarea",
+        "Cmd+Shift+E: opens the export modal",
+        "Cmd+1: focuses/scrolls to source panel",
+        "Cmd+2: focuses Monaco editor",
+        "Cmd+3: focuses test panel",
+        "Cmd+B: toggles left panel visibility",
+        "Shortcuts work on Mac (Cmd) - Windows/Linux use Ctrl equivalents",
+        "Verify in browser: keyboard shortcuts function correctly",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-027",
+      "title": "Error states and empty states",
+      "priority": 27,
+      "passes": false,
+      "description": "Implement proper error handling and empty states throughout the app: extraction failures, invalid PAT, rate limit errors, and the no-project Studio state.",
+      "acceptanceCriteria": [
+        "Figma extraction: invalid/expired PAT shows clear error with link to figma.com/settings/tokens",
+        "Figma extraction: file not accessible shows error about shared link permissions",
+        "Figma extraction: Variables API 403 shows non-fatal warning, continues with styles",
+        "Website extraction: network timeout shows error with retry option",
+        "All extraction errors shown in the ExtractionProgress UI",
+        "Studio with no project (direct /studio/new URL): shows empty state with URL input",
+        "Test panel empty state: prompt area has helpful placeholder text",
+        "Source panel empty state when no extraction data: placeholder with instructions",
+        "npm run typecheck passes"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "US-028",
+      "title": "Polish and visual verification",
+      "priority": 28,
+      "passes": false,
+      "description": "Final visual pass to ensure the Studio exactly matches the PRD design spec. Fix any spacing, colour, or layout issues. Verify the full end-to-end flow works.",
+      "acceptanceCriteria": [
+        "All backgrounds use correct Studio design tokens (no hardcoded colours in components)",
+        "All interactive elements have :hover and :focus states using transition --duration-base",
+        "All borders use border-[--border] or border-[--border-strong] not arbitrary values",
+        "All text uses --text-primary, --text-secondary, or --text-muted",
+        "Fonts render correctly (Geist for UI, Geist Mono for code/editor)",
+        "Full end-to-end flow tested: landing → extract (Figma or website) → Studio → test → export",
+        "No console errors in browser devtools",
+        "npm run build completes without errors",
+        "npm run typecheck passes",
+        "npm run lint passes"
+      ],
+      "notes": ""
+    }
+  ]
+}
