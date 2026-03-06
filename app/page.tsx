@@ -64,7 +64,7 @@ export default function LandingPage() {
 
     setIsExtracting(true);
 
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36);
     const projectName = isFigma
       ? "Figma Extraction"
       : new URL(url).hostname.replace("www.", "");

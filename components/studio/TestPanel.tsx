@@ -57,7 +57,7 @@ export function TestPanel({ projectId, designMd, components = [], extractedFonts
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const resultId = crypto.randomUUID();
+    const resultId = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36);
     const newResult: TestResult = {
       id: resultId,
       prompt: prompt.trim(),
