@@ -413,8 +413,11 @@ function ComponentPreview({
     return () => iframe.removeEventListener("load", onLoad);
   }, [html]);
 
-  if (isStreaming || !block) {
+  if (isStreaming) {
     return <p className="text-xs text-[--text-muted]">Generating...</p>;
+  }
+  if (!block) {
+    return <p className="text-xs text-[--text-muted]">No code block found in output.</p>;
   }
   if (!componentName) {
     return (
