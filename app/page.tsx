@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { getStoredApiKey } from "@/lib/hooks/use-api-key";
+import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
 import { useRouter } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { signOut, useSession } from "@/lib/auth-client";
@@ -46,6 +48,7 @@ export default function LandingPage() {
   const [pat, setPat] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const createProject = useProjectStore((s) => s.createProject);
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
@@ -60,6 +63,10 @@ export default function LandingPage() {
   const isValid = sourceType !== null && (!isFigma || pat.length > 0);
 
   const handleExtract = async () => {
+    if (!getStoredApiKey()) {
+      setShowApiKeyModal(true);
+      return;
+    }
     if (!isValid || !sourceType) return;
 
     setIsExtracting(true);
@@ -88,6 +95,7 @@ export default function LandingPage() {
   };
 
   return (
+    <>
     <div className="scroll-smooth min-h-screen bg-white text-[#0a0a0a]">
 
       {/* Announcement Banner */}
@@ -558,5 +566,9 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
+      {showApiKeyModal && (
+        <ApiKeyModal onClose={() => { setShowApiKeyModal(false); if (getStoredApiKey()) handleExtract(); }} />
+      )}
+    </>
   );
 }
