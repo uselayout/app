@@ -9,14 +9,19 @@ import {
   Copy,
   Check,
   ChevronDown,
+  Trash2,
 } from "lucide-react";
 import { calculateHealthScore } from "@/lib/health/score";
+import { getStoredApiKey } from "@/lib/hooks/use-api-key";
+import { useProjectStore } from "@/lib/store/project";
 import type { TestResult, HealthScore } from "@/lib/types";
 
 interface TestPanelProps {
+  projectId: string;
   designMd: string;
   components?: string[];
   extractedFonts?: string[];
+  initialResults?: TestResult[];
 }
 
 const QUICK_PROMPTS = [
@@ -27,15 +32,18 @@ const QUICK_PROMPTS = [
   "Build me a modal dialog",
 ];
 
-export function TestPanel({ designMd, components = [], extractedFonts = [] }: TestPanelProps) {
+export function TestPanel({ projectId, designMd, components = [], extractedFonts = [], initialResults = [] }: TestPanelProps) {
+  const updateTestResults = useProjectStore((s) => s.updateTestResults);
   const [includeContext, setIncludeContext] = useState(true);
   const [prompt, setPrompt] = useState("");
-  const [results, setResults] = useState<TestResult[]>([]);
-  const [isStreaming, setIsStreaming] = useState(false);
+  const [results, setResults] = useState<TestResult[]>(initialResults);
+  const [streamingId, setStreamingId] = useState<string | null>(null);
   const [showQuickPrompts, setShowQuickPrompts] = useState(false);
   const outputRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // Track latest results in a ref so we can persist after streaming without stale closures
+  const resultsRef = useRef<TestResult[]>(initialResults);
 
   const allPrompts = [
     ...QUICK_PROMPTS,
@@ -43,7 +51,7 @@ export function TestPanel({ designMd, components = [], extractedFonts = [] }: Te
   ];
 
   const handleSubmit = useCallback(async () => {
-    if (!prompt.trim() || isStreaming) return;
+    if (!prompt.trim() || streamingId !== null) return;
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -60,12 +68,16 @@ export function TestPanel({ designMd, components = [], extractedFonts = [] }: Te
 
     setResults((prev) => [...prev, newResult]);
     setPrompt("");
-    setIsStreaming(true);
+    setStreamingId(resultId);
 
     try {
+      const apiKey = getStoredApiKey();
       const res = await fetch("/api/generate/test", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(apiKey ? { "X-Api-Key": apiKey } : {}),
+        },
         body: JSON.stringify({
           prompt: newResult.prompt,
           designMd,
@@ -88,32 +100,36 @@ export function TestPanel({ designMd, components = [], extractedFonts = [] }: Te
         const { done, value } = await reader.read();
         if (done) break;
         output += decoder.decode(value, { stream: true });
-        setResults((prev) =>
-          prev.map((r) => (r.id === resultId ? { ...r, output } : r))
-        );
+        setResults((prev) => {
+          const next = prev.map((r) => (r.id === resultId ? { ...r, output } : r));
+          resultsRef.current = next;
+          return next;
+        });
       }
 
       // Calculate health score
-      const healthScore = calculateHealthScore(output, extractedFonts);
-      setResults((prev) =>
-        prev.map((r) =>
-          r.id === resultId ? { ...r, healthScore } : r
-        )
-      );
+      const healthScore = calculateHealthScore(output, extractedFonts, designMd);
+      setResults((prev) => {
+        const next = prev.map((r) => (r.id === resultId ? { ...r, healthScore } : r));
+        resultsRef.current = next;
+        return next;
+      });
     } catch (err) {
       if (controller.signal.aborted) return;
       const message = err instanceof Error ? err.message : "Unknown error";
-      setResults((prev) =>
-        prev.map((r) =>
-          r.id === resultId
-            ? { ...r, output: `Error: ${message}` }
-            : r
-        )
-      );
+      setResults((prev) => {
+        const next = prev.map((r) =>
+          r.id === resultId ? { ...r, output: `Error: ${message}` } : r
+        );
+        resultsRef.current = next;
+        return next;
+      });
     } finally {
-      setIsStreaming(false);
+      setStreamingId(null);
+      // Persist after streaming ends — safe to call here (not during render)
+      updateTestResults(projectId, resultsRef.current);
     }
-  }, [prompt, isStreaming, includeContext, designMd, extractedFonts]);
+  }, [prompt, streamingId, includeContext, designMd, extractedFonts, projectId, updateTestResults]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -127,11 +143,12 @@ export function TestPanel({ designMd, components = [], extractedFonts = [] }: Te
 
   const handleRate = useCallback(
     (id: string, rating: "up" | "down") => {
-      setResults((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, rating } : r))
-      );
+      const updated = resultsRef.current.map((r) => (r.id === id ? { ...r, rating } : r));
+      resultsRef.current = updated;
+      setResults(updated);
+      updateTestResults(projectId, updated);
     },
-    []
+    [projectId, updateTestResults]
   );
 
   const handleRerun = useCallback(
@@ -140,6 +157,16 @@ export function TestPanel({ designMd, components = [], extractedFonts = [] }: Te
       setTimeout(() => textareaRef.current?.focus(), 0);
     },
     []
+  );
+
+  const handleDelete = useCallback(
+    (id: string) => {
+      const updated = resultsRef.current.filter((r) => r.id !== id);
+      resultsRef.current = updated;
+      setResults(updated);
+      updateTestResults(projectId, updated);
+    },
+    [projectId, updateTestResults]
   );
 
   useEffect(() => {
@@ -185,8 +212,10 @@ export function TestPanel({ designMd, components = [], extractedFonts = [] }: Te
           <ResultBlock
             key={result.id}
             result={result}
+            isStreaming={result.id === streamingId}
             onRate={handleRate}
             onRerun={handleRerun}
+            onDelete={handleDelete}
           />
         ))}
       </div>
@@ -233,7 +262,7 @@ export function TestPanel({ designMd, components = [], extractedFonts = [] }: Te
           />
           <button
             onClick={handleSubmit}
-            disabled={!prompt.trim() || isStreaming}
+            disabled={!prompt.trim() || streamingId !== null}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[--studio-accent] text-[--text-on-accent] transition-colors hover:bg-[--studio-accent-hover] disabled:opacity-40"
           >
             <Send className="h-4 w-4" />
@@ -244,15 +273,203 @@ export function TestPanel({ designMd, components = [], extractedFonts = [] }: Te
   );
 }
 
+function extractFirstCodeBlock(text: string): { code: string; lang: string } | null {
+  // Handle both \n and \r\n line endings from streaming responses
+  const match = text.match(/```(\w*)\r?\n([\s\S]*?)```/);
+  if (!match) return null;
+  return { lang: match[1] || "tsx", code: match[2] };
+}
+
+function extractComponentName(code: string): string | null {
+  // Prefer export default
+  const exportDefault =
+    code.match(/export\s+default\s+function\s+(\w+)/) ??
+    code.match(/export\s+default\s+class\s+(\w+)/);
+  if (exportDefault) return exportDefault[1];
+
+  // Prefer a component named Demo, App, Page, Showcase, Example, Main, Preview
+  const preferred = code.match(
+    /(?:function|const|let|var)\s+((?:\w*(?:Demo|App|Page|Showcase|Example|Main|Preview))\w*)\s*[=(]/i
+  );
+  if (preferred) return preferred[1];
+
+  // Fall back to the LAST component (demo wrappers are usually at the bottom)
+  const all = [...code.matchAll(/(?:export\s+)?(?:function|const|let|var)\s+([A-Z]\w*)\s*[=(]/g)];
+  return all.length > 0 ? all[all.length - 1][1] : null;
+}
+
+function buildPreviewHtml(js: string): string {
+  // Safely embed CommonJS JS as a string literal — escape < and > to prevent HTML tag injection
+  const jsStr = JSON.stringify(js)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e");
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"><\/script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"><\/script>
+  <style>
+    body { margin: 0; padding: 32px; font-family: sans-serif; background: #f4f4f5; background-image: radial-gradient(circle, #d4d4d8 1px, transparent 1px); background-size: 20px 20px; display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; box-sizing: border-box; }
+    * { box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    function showError(msg) {
+      document.getElementById('root').innerHTML = '<pre style="color:red;font-size:11px;white-space:pre-wrap;padding:8px;margin:0">' + String(msg).replace(/</g,'&lt;') + '</pre>';
+    }
+    window.onerror = function(msg, src, line, col, err) {
+      showError(err ? err.stack : msg);
+      return true;
+    };
+    window.addEventListener('load', function() {
+      try {
+        var moduleCode = ${jsStr};
+        var s = document.createElement('script');
+        s.textContent = [
+          'var _exp={};',
+          'var require=function(id){return id==="react"?React:id==="react-dom"?ReactDOM:{};};',
+          'var exports=_exp,module={exports:_exp};',
+          moduleCode,
+          '(function(){',
+          '  var keys=Object.keys(_exp).filter(function(k){return k!=="__esModule";});',
+          '  var comp=_exp["default"]||_exp[keys[0]];',
+          '  if(!comp){showError("No component exported. Add export default to your Demo.");return;}',
+          '  ReactDOM.render(React.createElement(comp),document.getElementById("root"));',
+          '})();'
+        ].join('\\n');
+        document.body.appendChild(s);
+      } catch(e) {
+        showError(e.stack || e.message);
+      }
+    });
+  <\/script>
+</body>
+</html>`;
+}
+
+function ComponentPreview({
+  output,
+  isStreaming,
+  onFallbackToCode,
+}: {
+  output: string;
+  isStreaming: boolean;
+  onFallbackToCode?: () => void;
+}) {
+  // While streaming, show a stable placeholder — don't attempt transpilation
+  const block = isStreaming ? null : extractFirstCodeBlock(output);
+  const code = block
+    ? block.code.replace(/^```\w*\r?\n?/gm, "").replace(/^```\s*$/gm, "").trim()
+    : null;
+  const componentName = code ? extractComponentName(code) : null;
+
+  const [transpiledJs, setTranspiledJs] = useState<string | null>(null);
+  const [transpileError, setTranspileError] = useState<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    if (!code || !componentName) return;
+    let cancelled = false;
+    setTranspiledJs(null);
+    setTranspileError(null);
+
+    fetch("/api/transpile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data.error) setTranspileError(data.error as string);
+        else setTranspiledJs(data.js as string);
+      })
+      .catch((err) => {
+        if (!cancelled) setTranspileError(String(err));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [code, componentName]);
+
+  const html = transpiledJs ? buildPreviewHtml(transpiledJs) : null;
+
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe || !html) return;
+    const onLoad = () => {
+      try {
+        const body = iframe.contentDocument?.body;
+        if (body) iframe.style.height = body.scrollHeight + "px";
+      } catch {}
+    };
+    iframe.addEventListener("load", onLoad);
+    return () => iframe.removeEventListener("load", onLoad);
+  }, [html]);
+
+  if (isStreaming || !block) {
+    return <p className="text-xs text-[--text-muted]">Generating...</p>;
+  }
+  if (!componentName) {
+    return (
+      <p className="text-xs text-[--text-muted]">
+        Could not detect component name.
+      </p>
+    );
+  }
+  if (transpileError) {
+    return (
+      <div className="space-y-2">
+        <p className="text-xs text-[--text-muted]">
+          Preview unavailable — the code could not be rendered.{" "}
+          {onFallbackToCode && (
+            <button
+              onClick={onFallbackToCode}
+              className="text-[--studio-accent] hover:underline"
+            >
+              View code instead
+            </button>
+          )}
+        </p>
+      </div>
+    );
+  }
+  if (!html) {
+    return <p className="text-xs text-[--text-muted]">Transpiling...</p>;
+  }
+
+  return (
+    <iframe
+      ref={iframeRef}
+      srcDoc={html}
+      className="w-full rounded-md border border-[--studio-border] bg-white"
+      style={{ minHeight: 280 }}
+      title="Component preview"
+    />
+  );
+}
+
 function ResultBlock({
   result,
+  isStreaming,
   onRate,
   onRerun,
+  onDelete,
 }: {
   result: TestResult;
+  isStreaming: boolean;
   onRate: (id: string, rating: "up" | "down") => void;
   onRerun: (result: TestResult) => void;
+  onDelete: (id: string) => void;
 }) {
+  const [tab, setTab] = useState<"preview" | "code">("preview");
+
   return (
     <div className="space-y-2">
       {/* Prompt */}
@@ -262,45 +479,87 @@ function ResultBlock({
         </div>
       </div>
 
+      {/* Tab bar */}
+      {result.output && (
+        <div className="flex gap-1 border-b border-[--studio-border]">
+          <button
+            onClick={() => setTab("preview")}
+            className={`px-3 py-1 text-xs transition-colors ${
+              tab === "preview"
+                ? "border-b-2 border-[--studio-accent] text-[--text-primary]"
+                : "text-[--text-muted] hover:text-[--text-secondary]"
+            }`}
+          >
+            Preview
+          </button>
+          <button
+            onClick={() => setTab("code")}
+            className={`px-3 py-1 text-xs transition-colors ${
+              tab === "code"
+                ? "border-b-2 border-[--studio-accent] text-[--text-primary]"
+                : "text-[--text-muted] hover:text-[--text-secondary]"
+            }`}
+          >
+            Code
+          </button>
+        </div>
+      )}
+
       {/* Output */}
       <div className="rounded-md border border-[--studio-border] bg-[--bg-surface] p-3">
-        <OutputRenderer text={result.output} />
+        {result.output && tab === "preview" ? (
+          <ComponentPreview
+            output={result.output}
+            isStreaming={isStreaming}
+            onFallbackToCode={() => setTab("code")}
+          />
+        ) : (
+          <OutputRenderer text={result.output} />
+        )}
       </div>
 
       {/* Health score */}
       {result.healthScore && <HealthScoreDisplay score={result.healthScore} />}
 
       {/* Actions */}
-      {result.output && (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onRate(result.id, "up")}
-            className={`rounded p-1 transition-colors ${
-              result.rating === "up"
-                ? "text-emerald-400"
-                : "text-[--text-muted] hover:text-[--text-secondary]"
-            }`}
-          >
-            <ThumbsUp className="h-3 w-3" />
-          </button>
-          <button
-            onClick={() => onRate(result.id, "down")}
-            className={`rounded p-1 transition-colors ${
-              result.rating === "down"
-                ? "text-red-400"
-                : "text-[--text-muted] hover:text-[--text-secondary]"
-            }`}
-          >
-            <ThumbsDown className="h-3 w-3" />
-          </button>
-          <button
-            onClick={() => onRerun(result)}
-            className="rounded p-1 text-[--text-muted] transition-colors hover:text-[--text-secondary]"
-          >
-            <RotateCcw className="h-3 w-3" />
-          </button>
-        </div>
-      )}
+      <div className="flex items-center gap-2">
+        {result.output && (
+          <>
+            <button
+              onClick={() => onRate(result.id, "up")}
+              className={`rounded p-1 transition-colors ${
+                result.rating === "up"
+                  ? "text-emerald-400"
+                  : "text-[--text-muted] hover:text-[--text-secondary]"
+              }`}
+            >
+              <ThumbsUp className="h-3 w-3" />
+            </button>
+            <button
+              onClick={() => onRate(result.id, "down")}
+              className={`rounded p-1 transition-colors ${
+                result.rating === "down"
+                  ? "text-red-400"
+                  : "text-[--text-muted] hover:text-[--text-secondary]"
+              }`}
+            >
+              <ThumbsDown className="h-3 w-3" />
+            </button>
+            <button
+              onClick={() => onRerun(result)}
+              className="rounded p-1 text-[--text-muted] transition-colors hover:text-[--text-secondary]"
+            >
+              <RotateCcw className="h-3 w-3" />
+            </button>
+          </>
+        )}
+        <button
+          onClick={() => onDelete(result.id)}
+          className="rounded p-1 text-[--text-muted] transition-colors hover:text-red-400"
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
+      </div>
     </div>
   );
 }

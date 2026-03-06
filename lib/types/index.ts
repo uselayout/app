@@ -111,6 +111,7 @@ export interface Project {
   extractionData?: ExtractionResult;
   tokenCount?: number;
   healthScore?: number;
+  testResults?: TestResult[];
   createdAt: string;
   updatedAt: string;
 }

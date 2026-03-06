@@ -50,25 +50,25 @@ export async function extractFromWebsite({
 
     // Extract CSS variables
     onProgress?.("css", 25, "Extracting CSS custom properties...");
-    const cssVariables: Record<string, string> = await page.evaluate(extractCSSVariablesScript);
+    const cssVariables: Record<string, string> = await page.evaluate(`(${extractCSSVariablesScript})()`);
 
     // Extract fonts
     onProgress?.("fonts", 35, "Extracting font declarations...");
-    const fonts: FontDeclaration[] = await page.evaluate(extractFontsScript);
+    const fonts: FontDeclaration[] = await page.evaluate(`(${extractFontsScript})()`);
 
     // Extract computed styles
     onProgress?.("computed", 45, "Extracting computed styles...");
     const computedStyles: Record<string, ComputedStyleMap> = await page.evaluate(
-      extractComputedStylesScript
+      `(${extractComputedStylesScript})()`
     );
 
     // Extract animations
     onProgress?.("animations", 55, "Extracting animations...");
-    const animations: AnimationDefinition[] = await page.evaluate(extractAnimationsScript);
+    const animations: AnimationDefinition[] = await page.evaluate(`(${extractAnimationsScript})()`);
 
     // Detect libraries
     onProgress?.("libraries", 60, "Detecting libraries...");
-    const librariesDetected: Record<string, boolean> = await page.evaluate(detectLibrariesScript);
+    const librariesDetected: Record<string, boolean> = await page.evaluate(`(${detectLibrariesScript})()`);
 
     // Take screenshots
     onProgress?.("screenshots", 70, "Capturing screenshots...");

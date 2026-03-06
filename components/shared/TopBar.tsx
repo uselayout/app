@@ -3,7 +3,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Layers, Globe, RefreshCw, FlaskConical, Download } from "lucide-react";
+import { Layers, Globe, RefreshCw, FlaskConical, Download, LogOut, KeyRound } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { signOut } from "@/lib/auth-client";
+import { useApiKey } from "@/lib/hooks/use-api-key";
+import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
 import type { SourceType } from "@/lib/types";
 
 interface TopBarProps {
@@ -27,9 +31,17 @@ export function TopBar({
   onTest,
   onExport,
 }: TopBarProps) {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(projectName);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const { key: apiKey } = useApiKey();
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/login");
+  };
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -134,7 +146,33 @@ export function TopBar({
           <Download className="h-3.5 w-3.5" />
           Export
         </Button>
+        <div className="ml-1 h-4 w-px bg-[--studio-border]" />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowApiKeyModal(true)}
+          className="relative h-8 gap-1.5 text-xs text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary]"
+          title="API Key settings"
+        >
+          <KeyRound className="h-3.5 w-3.5" />
+          {apiKey && (
+            <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSignOut}
+          className="h-8 gap-1.5 text-xs text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary]"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          Sign out
+        </Button>
       </div>
+
+      {showApiKeyModal && (
+        <ApiKeyModal onClose={() => setShowApiKeyModal(false)} />
+      )}
     </div>
   );
 }

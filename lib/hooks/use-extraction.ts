@@ -3,6 +3,7 @@
 import { useCallback, useRef } from "react";
 import { useExtractionStore } from "@/lib/store/extraction";
 import { useProjectStore } from "@/lib/store/project";
+import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import type { ExtractionResult, Project } from "@/lib/types";
 
 export function useExtraction() {
@@ -87,9 +88,13 @@ export function useExtraction() {
         // Strip screenshots to avoid sending large base64 data
         const extractionDataForSynthesis = { ...extractionData, screenshots: [] };
 
+        const apiKey = getStoredApiKey();
         const genRes = await fetch("/api/generate/design-md", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(apiKey ? { "X-Api-Key": apiKey } : {}),
+          },
           body: JSON.stringify({ extractionData: extractionDataForSynthesis }),
           signal: controller.signal,
         });

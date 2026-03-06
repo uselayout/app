@@ -1,17 +1,19 @@
 import { create } from "zustand";
 import { upsertProject, removeProject } from "@/lib/supabase/db";
-import type { Project, ExtractionResult } from "@/lib/types";
+import type { Project, ExtractionResult, TestResult } from "@/lib/types";
 
 interface ProjectState {
   projects: Project[];
   currentProjectId: string | null;
   userId: string | null;
+  hydrationError: string | null;
 
   // Computed
   currentProject: () => Project | undefined;
 
   // Actions
   loadProjects: (projects: Project[], userId: string) => void;
+  setHydrationError: (error: string | null) => void;
   createProject: (project: Project) => void;
   setCurrentProject: (id: string) => void;
   updateDesignMd: (id: string, designMd: string) => void;
@@ -19,6 +21,7 @@ interface ProjectState {
   updateProjectName: (id: string, name: string) => void;
   updateTokenCount: (id: string, count: number) => void;
   updateHealthScore: (id: string, score: number) => void;
+  updateTestResults: (id: string, results: TestResult[]) => void;
   deleteProject: (id: string) => void;
   clearProjects: () => void;
 }
@@ -27,13 +30,16 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   projects: [],
   currentProjectId: null,
   userId: null,
+  hydrationError: null,
 
   currentProject: () => {
     const { projects, currentProjectId } = get();
     return projects.find((p) => p.id === currentProjectId);
   },
 
-  loadProjects: (projects, userId) => set({ projects, userId }),
+  loadProjects: (projects, userId) => set({ projects, userId, hydrationError: null }),
+
+  setHydrationError: (error) => set({ hydrationError: error }),
 
   createProject: (project) => {
     set((state) => ({
@@ -107,13 +113,25 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (project && userId) void upsertProject(project, userId);
   },
 
+  updateTestResults: (id, results) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id ? { ...p, testResults: results } : p
+      ),
+    }));
+    const { projects, userId } = get();
+    const project = projects.find((p) => p.id === id);
+    if (project && userId) void upsertProject(project, userId);
+  },
+
   deleteProject: (id) => {
+    const { userId } = get();
     set((state) => ({
       projects: state.projects.filter((p) => p.id !== id),
       currentProjectId:
         state.currentProjectId === id ? null : state.currentProjectId,
     }));
-    void removeProject(id);
+    if (userId) void removeProject(id, userId);
   },
 
   clearProjects: () => set({ projects: [], currentProjectId: null, userId: null }),

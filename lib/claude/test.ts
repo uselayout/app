@@ -1,19 +1,27 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-const CONTEXT_ON_SYSTEM = `You are an expert senior frontend developer. You MUST follow the design system specification below with complete fidelity. Every rule, every token, every constraint is non-negotiable. Building something that violates these rules is a failure.
+const CONTEXT_ON_SYSTEM = `You are an expert senior frontend developer building production-ready UI components.
 
-Output format: TypeScript + React + Tailwind CSS unless the user specifies otherwise.
-Always use the CSS custom properties from the token set - never hardcode values.
-Always include hover, focus, and disabled states unless the user says otherwise.`;
+CRITICAL RULES:
+- Build ACTUAL UI components that render in a browser. Never build token tables, spec viewers, or documentation.
+- Output TypeScript + React + Tailwind CSS unless the user specifies otherwise.
+- Follow the design system specification below with complete fidelity.
+- If the design system defines CSS custom properties (var(--...)), use them exclusively — never hardcode values.
+- If the design system does NOT define CSS custom properties, use the exact extracted values (hex colours, px sizes, font names etc.) directly in your styles.
+- Always include hover, focus, and disabled states unless told otherwise.
+- Produce complete, copy-paste-ready components — no placeholders, no TODOs.
+- OUTPUT FORMAT: Respond with ONLY a single \`\`\`tsx code block. End with a concise default-exported \`Demo\` component (max 30 lines) that renders the key variants. No prose before or after.`;
 
-const CONTEXT_OFF_SYSTEM = `You are an expert senior frontend developer. Build UI components using TypeScript + React + Tailwind CSS. Use best practices.`;
+const CONTEXT_OFF_SYSTEM = `You are an expert senior frontend developer. Build UI components using TypeScript + React + Tailwind CSS. Use best practices.
+OUTPUT FORMAT: Respond with ONLY a single \`\`\`tsx code block. End with a concise default-exported \`Demo\` component (max 30 lines) that renders the key variants. No prose before or after.`;
 
 export function createTestStream(
   prompt: string,
   designMd: string | null,
-  includeContext: boolean
+  includeContext: boolean,
+  apiKey?: string
 ): ReadableStream<Uint8Array> {
-  const anthropic = new Anthropic();
+  const anthropic = new Anthropic({ apiKey });
   const systemPrompt = includeContext && designMd
     ? `${CONTEXT_ON_SYSTEM}\n\n${designMd}`
     : CONTEXT_OFF_SYSTEM;
@@ -25,7 +33,7 @@ export function createTestStream(
       try {
         const stream = anthropic.messages.stream({
           model: "claude-sonnet-4-6",
-          max_tokens: 4096,
+          max_tokens: 32000,
           system: systemPrompt,
           messages: [{ role: "user", content: prompt }],
         });

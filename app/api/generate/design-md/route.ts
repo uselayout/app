@@ -41,8 +41,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const apiKey = request.headers.get("X-Api-Key") || undefined;
+  if (!apiKey) {
+    return Response.json(
+      { error: "No API key provided. Add your Anthropic API key in Settings." },
+      { status: 401 }
+    );
+  }
+
   const extractionData = parsed.data.extractionData as unknown as ExtractionResult;
-  const stream = createDesignMdStream(extractionData);
+  const stream = createDesignMdStream(extractionData, apiKey);
 
   return new Response(stream, {
     headers: {

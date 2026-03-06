@@ -6,6 +6,9 @@ const PUBLIC_PATHS = ["/login", "/api/auth"];
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Root marketing page is always public
+  if (pathname === "/") return NextResponse.next();
+
   // Allow public paths through
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();

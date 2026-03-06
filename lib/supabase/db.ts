@@ -10,6 +10,7 @@ interface ProjectRow {
   extraction_data: unknown | null;
   token_count: number | null;
   health_score: number | null;
+  test_results: unknown | null;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -27,6 +28,9 @@ function rowToProject(row: ProjectRow): Project {
       : undefined,
     tokenCount: row.token_count ?? undefined,
     healthScore: row.health_score ?? undefined,
+    testResults: row.test_results
+      ? (row.test_results as Project["testResults"])
+      : undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -50,6 +54,7 @@ function projectToRow(
     extraction_data: extractionData,
     token_count: project.tokenCount ?? null,
     health_score: project.healthScore ?? null,
+    test_results: project.testResults ?? null,
     user_id: userId,
     updated_at: new Date().toISOString(),
   };
@@ -84,11 +89,12 @@ export async function upsertProject(
   }
 }
 
-export async function removeProject(id: string): Promise<void> {
+export async function removeProject(id: string, userId: string): Promise<void> {
   const { error } = await supabase
     .from("sd_aistudio_projects")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", userId);
 
   if (error) {
     console.error("Failed to delete project:", error.message);

@@ -28,6 +28,9 @@ function StepIcon({ status }: { status: ExtractionStepStatus }) {
 }
 
 function getErrorHelp(error: string): string | null {
+  if (error.includes("401") || error.includes("Unauthorized")) {
+    return "No API key set. Click the key icon in the top bar to add your Anthropic API key, then re-extract.";
+  }
   if (error.includes("403") || error.includes("Forbidden")) {
     return "The access token may be invalid or expired. Generate a new one at figma.com/settings → Personal Access Tokens.";
   }

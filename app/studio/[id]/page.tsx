@@ -48,6 +48,14 @@ export default function StudioPage({
     runExtraction(project, pat ?? undefined);
   }, [id, project, runExtraction]);
 
+  const handleReExtract = useCallback(() => {
+    if (!project) return;
+    extractionStarted.current = false;
+    sessionStorage.setItem(`extract-${id}`, "true");
+    const pat = sessionStorage.getItem(`pat-${id}`);
+    runExtraction(project, pat ?? undefined);
+  }, [id, project, runExtraction]);
+
   const handleDesignMdChange = useCallback(
     (value: string) => {
       updateDesignMd(id, value);
@@ -66,6 +74,21 @@ export default function StudioPage({
   );
 
   useKeyboardShortcuts(shortcutHandlers);
+
+  // Must be before any early returns (Rules of Hooks)
+  const tokenSuggestions = useMemo(() => {
+    if (!project?.extractionData?.tokens) return [];
+    const allTokens = [
+      ...project.extractionData.tokens.colors,
+      ...project.extractionData.tokens.typography,
+      ...project.extractionData.tokens.spacing,
+      ...project.extractionData.tokens.radius,
+      ...project.extractionData.tokens.effects,
+    ];
+    return allTokens
+      .filter((t) => t.cssVariable)
+      .map((t) => ({ name: t.cssVariable!, value: t.value }));
+  }, [project?.extractionData?.tokens]);
 
   if (!project) {
     return (
@@ -88,7 +111,8 @@ export default function StudioPage({
     );
   }
 
-  if (extractionStatus === "running") {
+  // Show progress screen when running, or when failed with no extraction data yet
+  if (extractionStatus === "running" || (extractionStatus === "failed" && !project.extractionData)) {
     return (
       <ExtractionProgress
         sourceName={project.name}
@@ -105,21 +129,6 @@ export default function StudioPage({
   const extractedFonts =
     project.extractionData?.fonts.map((f) => f.family) ?? [];
 
-  // Build token suggestions for Monaco autocomplete
-  const tokenSuggestions = useMemo(() => {
-    if (!project.extractionData?.tokens) return [];
-    const allTokens = [
-      ...project.extractionData.tokens.colors,
-      ...project.extractionData.tokens.typography,
-      ...project.extractionData.tokens.spacing,
-      ...project.extractionData.tokens.radius,
-      ...project.extractionData.tokens.effects,
-    ];
-    return allTokens
-      .filter((t) => t.cssVariable)
-      .map((t) => ({ name: t.cssVariable!, value: t.value }));
-  }, [project.extractionData?.tokens]);
-
   return (
     <div className="flex h-screen flex-col">
       <TopBar
@@ -131,6 +140,7 @@ export default function StudioPage({
             : undefined
         }
         onNameChange={(name) => updateProjectName(id, name)}
+        onReExtract={handleReExtract}
         onExport={() => setShowExport(true)}
       />
       <div className="flex-1 overflow-hidden">
@@ -151,9 +161,11 @@ export default function StudioPage({
           }
           testPanel={
             <TestPanel
+              projectId={id}
               designMd={project.designMd}
               components={componentNames}
               extractedFonts={extractedFonts}
+              initialResults={project.testResults ?? []}
             />
           }
         />

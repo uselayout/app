@@ -36,6 +36,10 @@ function buildUserPrompt(data: ExtractionResult): string {
       .map(([k, v]) => `  ${k}: ${v}`)
       .join("\n");
     sections.push(`--- EXTRACTED CSS CUSTOM PROPERTIES ---\n${vars}`);
+  } else {
+    sections.push(
+      `--- CSS CUSTOM PROPERTIES ---\nNONE FOUND: This design system does NOT use CSS custom properties. Do NOT invent or suggest CSS variable names in the DESIGN.md. Document extracted values (hex colours, font names, pixel sizes) directly as literal values.`
+    );
   }
 
   if (data.fonts.length > 0) {
@@ -90,9 +94,10 @@ function buildUserPrompt(data: ExtractionResult): string {
 }
 
 export function createDesignMdStream(
-  extractionData: ExtractionResult
+  extractionData: ExtractionResult,
+  apiKey?: string
 ): ReadableStream<Uint8Array> {
-  const anthropic = new Anthropic();
+  const anthropic = new Anthropic({ apiKey });
   const userPrompt = buildUserPrompt(extractionData);
 
   return new ReadableStream({
