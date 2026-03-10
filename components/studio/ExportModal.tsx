@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { X, Download, FileText, Check } from "lucide-react";
+import { X, Download, FileText, Check, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CopyBlock } from "@/components/shared/CopyBlock";
 import type { ExportFormat, Project } from "@/lib/types";
 
 interface ExportModalProps {
@@ -48,6 +49,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
     new Set(FORMAT_OPTIONS.map((f) => f.id))
   );
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadComplete, setDownloadComplete] = useState(false);
 
   const toggleFormat = useCallback((format: ExportFormat) => {
     setSelectedFormats((prev) => {
@@ -96,13 +98,13 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      onClose();
+      setDownloadComplete(true);
     } catch {
       // Error is visible via network tab; could add toast later
     } finally {
       setIsDownloading(false);
     }
-  }, [selectedFormats, project, onClose]);
+  }, [selectedFormats, project]);
 
   return (
     <div
@@ -120,9 +122,13 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[--studio-border] px-5 py-4">
           <div className="flex items-center gap-2">
-            <Download className="h-4 w-4 text-[--studio-accent]" />
+            {downloadComplete ? (
+              <CheckCircle className="h-4 w-4 text-emerald-500" />
+            ) : (
+              <Download className="h-4 w-4 text-[--studio-accent]" />
+            )}
             <h2 id="export-modal-title" className="text-sm font-semibold text-[--text-primary]">
-              Export AI Kit
+              {downloadComplete ? "Bundle downloaded" : "Export AI Kit"}
             </h2>
           </div>
           <button
@@ -133,63 +139,127 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
           </button>
         </div>
 
-        {/* Format list */}
-        <div className="p-5 space-y-2">
-          <p className="mb-3 text-xs text-[--text-secondary]">
-            Select formats to include in your bundle:
-          </p>
-          {FORMAT_OPTIONS.map((format) => {
-            const selected = selectedFormats.has(format.id);
-            return (
-              <button
-                key={format.id}
-                onClick={() => toggleFormat(format.id)}
-                className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors ${
-                  selected
-                    ? "border-[--studio-accent] bg-[--studio-accent-subtle]"
-                    : "border-[--studio-border] bg-[--bg-surface] hover:border-[--studio-border-strong]"
-                }`}
+        {downloadComplete ? (
+          <>
+            {/* Next Steps */}
+            <div className="p-5 space-y-5">
+              {/* Step 1 */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-[--text-primary]">
+                  <span className="mr-2 text-[--text-muted]">1.</span>
+                  Import the bundle into SuperDuper CLI
+                </p>
+                <CopyBlock code="npx @superduperui/context import ./your-export.zip" />
+              </div>
+
+              {/* Step 2 */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-[--text-primary]">
+                  <span className="mr-2 text-[--text-muted]">2.</span>
+                  Start the MCP server in your project root
+                </p>
+                <CopyBlock code="npx @superduperui/context serve" />
+              </div>
+
+              {/* Step 3 */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-[--text-primary]">
+                  <span className="mr-2 text-[--text-muted]">3.</span>
+                  Connect your AI tool
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: "Claude Code", href: "/docs/integrations/claude-code" },
+                    { label: "Cursor", href: "/docs/integrations/cursor" },
+                    { label: "GitHub Copilot", href: "/docs/integrations/copilot" },
+                    { label: "Windsurf", href: "/docs/integrations/windsurf" },
+                    { label: "OpenAI Codex", href: "/docs/integrations/codex" },
+                  ].map(({ label, href }) => (
+                    <a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg border border-[--studio-border] px-3 py-2 text-xs text-[--text-secondary] transition-colors hover:border-[--studio-border-strong] hover:text-[--text-primary]"
+                    >
+                      {label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Done action */}
+            <div className="border-t border-[--studio-border] px-5 py-4">
+              <Button
+                onClick={onClose}
+                className="h-10 w-full bg-[--studio-accent] text-[--text-on-accent] hover:bg-[--studio-accent-hover]"
               >
-                <div
-                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
-                    selected
-                      ? "border-[--studio-accent] bg-[--studio-accent] text-white"
-                      : "border-[--studio-border]"
-                  }`}
-                >
-                  {selected && <Check className="h-3 w-3" />}
-                </div>
-                <FileText className="h-4 w-4 shrink-0 text-[--text-muted]" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-medium text-[--text-primary]">
-                    {format.label}
-                  </div>
-                  <div className="text-[10px] text-[--text-muted]">
-                    {format.description}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                Done
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Format list */}
+            <div className="p-5 space-y-2">
+              <p className="mb-3 text-xs text-[--text-secondary]">
+                Select formats to include in your bundle:
+              </p>
+              {FORMAT_OPTIONS.map((format) => {
+                const selected = selectedFormats.has(format.id);
+                return (
+                  <button
+                    key={format.id}
+                    onClick={() => toggleFormat(format.id)}
+                    className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors ${
+                      selected
+                        ? "border-[--studio-accent] bg-[--studio-accent-subtle]"
+                        : "border-[--studio-border] bg-[--bg-surface] hover:border-[--studio-border-strong]"
+                    }`}
+                  >
+                    <div
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+                        selected
+                          ? "border-[--studio-accent] bg-[--studio-accent] text-white"
+                          : "border-[--studio-border]"
+                      }`}
+                    >
+                      {selected && <Check className="h-3 w-3" />}
+                    </div>
+                    <FileText className="h-4 w-4 shrink-0 text-[--text-muted]" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium text-[--text-primary]">
+                        {format.label}
+                      </div>
+                      <div className="text-[10px] text-[--text-muted]">
+                        {format.description}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
 
-        {/* DESIGN.md always included note */}
-        <div className="border-t border-[--studio-border] px-5 py-3">
-          <p className="text-[10px] text-[--text-muted]">
-            DESIGN.md is always included in the bundle.
-          </p>
-        </div>
+            {/* DESIGN.md always included note */}
+            <div className="border-t border-[--studio-border] px-5 py-3">
+              <p className="text-[10px] text-[--text-muted]">
+                DESIGN.md is always included in the bundle.
+              </p>
+            </div>
 
-        {/* Actions */}
-        <div className="border-t border-[--studio-border] px-5 py-4">
-          <Button
-            onClick={handleDownload}
-            disabled={isDownloading || selectedFormats.size === 0}
-            className="h-10 w-full bg-[--studio-accent] text-[--text-on-accent] hover:bg-[--studio-accent-hover] disabled:opacity-40"
-          >
-            {isDownloading ? "Generating..." : "Download Bundle"}
-          </Button>
-        </div>
+            {/* Actions */}
+            <div className="border-t border-[--studio-border] px-5 py-4">
+              <Button
+                onClick={handleDownload}
+                disabled={isDownloading || selectedFormats.size === 0}
+                className="h-10 w-full bg-[--studio-accent] text-[--text-on-accent] hover:bg-[--studio-accent-hover] disabled:opacity-40"
+              >
+                {isDownloading ? "Generating..." : "Download Bundle"}
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

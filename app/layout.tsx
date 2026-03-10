@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SuperDuper AI Studio",
-  description: "Extract design systems from Figma and websites. Generate AI-ready context for Claude Code, Cursor, and GitHub Copilot.",
+  title: "SuperDuper",
+  description: "Extract design systems from Figma and websites. Serve AI-ready context to Claude Code, Cursor, and GitHub Copilot via MCP.",
 };
 
 export default function RootLayout({

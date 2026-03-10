@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.env*
+!.env.example
+.playwright-mcp
+docs/handoff
+*.md
+!README.md
+.DS_Store
+coverage
+.vercel
+tmp.json
