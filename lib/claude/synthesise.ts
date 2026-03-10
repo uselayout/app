@@ -1,4 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type {
+  TextBlockParam,
+  ImageBlockParam,
+} from "@anthropic-ai/sdk/resources/messages";
 import type { ExtractionResult } from "@/lib/types";
 
 const SYSTEM_PROMPT = `You are a design system architect synthesizing extracted design data into a DESIGN.md context file. This file will be consumed by AI coding agents (Claude Code, Cursor, Copilot) to generate pixel-accurate UI components.
@@ -53,21 +57,29 @@ Font stack with fallbacks. Weight scale. Pairing rules. Format as CSS code block
 Base unit. Complete spacing scale. Grid system and breakpoints. Container widths. Flex vs grid decision rules.
 Format as CSS code block.
 
-## 5. Component Patterns
+## 5. Page Structure & Layout Patterns
+Derived from visual analysis of the page screenshots (if provided).
+5.1 Section Map: ordered table — section name, layout type, approximate height, key elements. This is the actual structure of the extracted page that agents MUST follow when building UI for this design system.
+5.2 Layout Patterns: how each section is laid out (grid, flex, full-width vs contained, column ratios, asymmetric splits).
+5.3 Visual Hierarchy: what is visually prominent, CTA placement, image positions, whitespace rhythm between sections.
+5.4 Content Patterns: repeating text/image/CTA arrangements that agents should replicate.
+If no screenshots are provided, omit this section entirely.
+
+## 6. Component Patterns
 5-10 key components. Each MUST include:
 - Anatomy (what sub-elements exist)
 - Token-to-property mappings for ALL states: default, hover, focus, active, disabled, loading, error
 - ONE real TSX code example showing correct token usage and full state handling
 
-## 6. Elevation & Depth
+## 7. Elevation & Depth
 Shadow tokens, border tokens, z-index scale, layering principles.
 Format as CSS code block.
 
-## 7. Motion
+## 8. Motion
 Timing functions, durations, easing tokens. When to animate and when not to.
 Format as CSS code block.
 
-## 8. Anti-Patterns & Constraints
+## 9. Anti-Patterns & Constraints
 Numbered list. Each follows format: **Rule → Why it fails → What to do instead.**
 Minimum items: hardcoded colours, arbitrary spacing, font defaults (Inter/Roboto/Arial), dynamic Tailwind class construction, missing interaction states, inline styles, !important abuse, absolute positioning for layout, placeholder content, mixing styling approaches.
 
@@ -79,7 +91,9 @@ tokenSource: [extracted-css-vars | extracted-config | reconstructed-from-compute
 Confidence level. Clustering method used for any reconstructed tokens.
 If Tailwind: note v3 (no CSS vars) vs v4 (CSS vars via @theme).`;
 
-function buildUserPrompt(data: ExtractionResult): string {
+function buildUserContent(
+  data: ExtractionResult
+): Array<TextBlockParam | ImageBlockParam> {
   const sections: string[] = [];
 
   // Token source metadata — classify confidence upfront
@@ -184,6 +198,8 @@ function buildUserPrompt(data: ExtractionResult): string {
     }
   }
 
+  const hasScreenshots = data.screenshots.length > 0;
+
   sections.push(
     `Generate a complete DESIGN.md following the SuperDuper AI Studio specification:\n` +
     `0. Quick Reference (50-75 lines, standalone injectable)\n` +
@@ -191,15 +207,43 @@ function buildUserPrompt(data: ExtractionResult): string {
     `2. Colour System (three-tier: primitives → semantic → component)\n` +
     `3. Typography System (composite groups, never isolated properties)\n` +
     `4. Spacing & Layout\n` +
-    `5. Component Patterns (with code examples and full state coverage)\n` +
-    `6. Elevation & Depth\n` +
-    `7. Motion\n` +
-    `8. Anti-Patterns & Constraints (failure narratives: Rule → Why it fails → What to do instead)\n` +
+    (hasScreenshots ? `5. Page Structure & Layout Patterns (from screenshots — section map, layout patterns, visual hierarchy, content patterns)\n` : "") +
+    `6. Component Patterns (with code examples and full state coverage)\n` +
+    `7. Elevation & Depth\n` +
+    `8. Motion\n` +
+    `9. Anti-Patterns & Constraints (failure narratives: Rule → Why it fails → What to do instead)\n` +
     `Appendix A: Complete Token Reference\n` +
     `Appendix B: Token Source Metadata`
   );
 
-  return sections.join("\n\n");
+  const contentBlocks: Array<TextBlockParam | ImageBlockParam> = [];
+
+  // All text sections as one block
+  contentBlocks.push({ type: "text", text: sections.join("\n\n") });
+
+  // Add screenshots as image blocks for page structure analysis
+  if (hasScreenshots) {
+    for (const screenshot of data.screenshots) {
+      if (!screenshot) continue;
+      const base64Data = screenshot.replace(/^data:image\/\w+;base64,/, "");
+      contentBlocks.push({
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: "image/png",
+          data: base64Data,
+        },
+      });
+    }
+    contentBlocks.push({
+      type: "text",
+      text: "Analyse the screenshots above to write Section 5 (Page Structure & Layout Patterns). " +
+        "Document the actual page sections in order, their layout patterns, visual hierarchy, and content arrangements. " +
+        "This section is critical — AI agents will use it to replicate the real page structure instead of generating generic layouts.",
+    });
+  }
+
+  return contentBlocks;
 }
 
 export function createDesignMdStream(
@@ -207,7 +251,7 @@ export function createDesignMdStream(
   apiKey?: string
 ): ReadableStream<Uint8Array> {
   const anthropic = new Anthropic({ apiKey });
-  const userPrompt = buildUserPrompt(extractionData);
+  const userContent = buildUserContent(extractionData);
 
   return new ReadableStream({
     async start(controller) {
@@ -216,9 +260,9 @@ export function createDesignMdStream(
       try {
         const stream = anthropic.messages.stream({
           model: "claude-sonnet-4-6",
-          max_tokens: 8192,
+          max_tokens: 16384,
           system: SYSTEM_PROMPT,
-          messages: [{ role: "user", content: userPrompt }],
+          messages: [{ role: "user", content: userContent }],
         });
 
         for await (const event of stream) {

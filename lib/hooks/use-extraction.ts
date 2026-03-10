@@ -85,8 +85,8 @@ export function useExtraction() {
         // Step 2: Generate DESIGN.md
         updateStep("generate", { status: "running" });
 
-        // Strip screenshots to avoid sending large base64 data
-        const extractionDataForSynthesis = { ...extractionData, screenshots: [] };
+        // Pass screenshots through — they're resized server-side before sending to Claude
+        const extractionDataForSynthesis = extractionData;
 
         const apiKey = getStoredApiKey();
         const genRes = await fetch("/api/generate/design-md", {

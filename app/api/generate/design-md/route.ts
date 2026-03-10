@@ -1,7 +1,12 @@
 import { NextRequest } from "next/server";
 import { z } from "zod/v4";
 import { createDesignMdStream } from "@/lib/claude/synthesise";
+import { resizeScreenshot } from "@/lib/util/resize-screenshot";
 import type { ExtractionResult } from "@/lib/types";
+
+// Allow large request bodies for screenshot data (base64 images can be 2-5MB each)
+export const maxDuration = 120;
+export const dynamic = "force-dynamic";
 
 const RequestSchema = z.object({
   extractionData: z.object({
@@ -50,6 +55,17 @@ export async function POST(request: NextRequest) {
   }
 
   const extractionData = parsed.data.extractionData as unknown as ExtractionResult;
+
+  // Resize screenshots server-side to keep Claude token costs reasonable
+  if (extractionData.screenshots.length > 0) {
+    const resized = await Promise.all(
+      extractionData.screenshots.map((s) => resizeScreenshot(s))
+    );
+    extractionData.screenshots = resized.filter(
+      (s): s is string => s !== null
+    );
+  }
+
   const stream = createDesignMdStream(extractionData, apiKey);
 
   return new Response(stream, {
