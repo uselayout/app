@@ -1,7 +1,7 @@
 import { Check } from "lucide-react";
 
 interface ProductsSectionProps {
-  scrollTo: (id: string) => void;
+  onOpenStudio: () => void;
 }
 
 const STUDIO_BULLETS = [
@@ -26,7 +26,7 @@ const FLOW_STEPS = [
   { label: "AI Agent", accent: false },
 ];
 
-export function ProductsSection({ scrollTo }: ProductsSectionProps) {
+export function ProductsSection({ onOpenStudio }: ProductsSectionProps) {
   return (
     <section id="products" className="bg-[#fafafa] py-28 px-6">
       <div className="mx-auto max-w-6xl">
@@ -61,10 +61,7 @@ export function ProductsSection({ scrollTo }: ProductsSectionProps) {
               ))}
             </ul>
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                scrollTo("extract");
-              }}
+              onClick={onOpenStudio}
               className="rounded-full bg-[#0a0a0a] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#1a1a1a] transition-colors"
             >
               Open Studio →

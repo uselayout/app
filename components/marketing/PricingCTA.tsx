@@ -1,8 +1,8 @@
 interface PricingCTAProps {
-  scrollTo: (id: string) => void;
+  onOpenStudio: () => void;
 }
 
-export function PricingCTA({ scrollTo }: PricingCTAProps) {
+export function PricingCTA({ onOpenStudio }: PricingCTAProps) {
   return (
     <section id="pricing" className="pricing-gradient relative py-28 px-6 text-center overflow-hidden">
       <div className="mx-auto max-w-3xl relative z-10">
@@ -13,10 +13,7 @@ export function PricingCTA({ scrollTo }: PricingCTAProps) {
           Bring your Anthropic API key. Unlimited extractions, all export formats. No credit card required.
         </p>
         <button
-          onClick={(e) => {
-            e.preventDefault();
-            scrollTo("extract");
-          }}
+          onClick={onOpenStudio}
           className="rounded-full bg-white px-10 py-4 text-base font-semibold text-[#0a0a0a] hover:bg-gray-50 transition-all shadow-lg shadow-black/10"
         >
           Open Studio and extract →
