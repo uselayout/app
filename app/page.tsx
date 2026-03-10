@@ -77,9 +77,11 @@ export default function LandingPage() {
 
   const handleExtract = async () => {
     if (!getStoredApiKey()) {
+      setShowExtractModal(false);
       setShowApiKeyModal(true);
       return;
     }
+    setShowExtractModal(false);
     if (!isValid || !sourceType) return;
 
     setIsExtracting(true);
@@ -270,45 +272,6 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* URL Extraction Form */}
-          <div id="extract" className="animate-fade-up delay-400 mt-16 mx-auto max-w-2xl text-left relative z-10">
-            <div className="space-y-3">
-              <input
-                type="url"
-                placeholder="Paste a Figma file URL or website URL..."
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                className="h-14 w-full rounded-2xl border border-black/[0.08] bg-white px-5 text-base text-[#0a0a0a] placeholder:text-gray-400 shadow-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-400 transition-all"
-              />
-
-              {isFigma && (
-                <input
-                  type="password"
-                  placeholder="Figma Personal Access Token (figd_...)"
-                  value={pat}
-                  onChange={(e) => setPat(e.target.value)}
-                  className="h-14 w-full rounded-2xl border border-black/[0.08] bg-white px-5 text-base text-[#0a0a0a] placeholder:text-gray-400 shadow-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-400 transition-all"
-                />
-              )}
-
-              {sourceType && (
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">
-                    {isFigma ? "Figma" : "Website"}
-                  </span>
-                  <span>detected</span>
-                </div>
-              )}
-
-              <button
-                onClick={handleExtract}
-                disabled={!isValid || isExtracting}
-                className="h-12 w-full rounded-xl bg-[#0a0a0a] text-sm font-semibold text-white hover:bg-[#1a1a1a] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-black/10"
-              >
-                {isExtracting ? "Starting extraction..." : "Extract Design System →"}
-              </button>
-            </div>
-          </div>
         </section>
 
         {/* My Projects */}
@@ -475,7 +438,11 @@ export default function LandingPage() {
         <ApiKeyModal
           onClose={() => {
             setShowApiKeyModal(false);
-            if (getStoredApiKey()) handleExtract();
+            if (getStoredApiKey()) {
+              handleExtract();
+            } else {
+              setShowExtractModal(true);
+            }
           }}
         />
       )}
