@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
 import { useRouter } from "next/navigation";
@@ -65,6 +65,20 @@ export default function LandingPage() {
   const projects = useProjectStore((s) => s.projects);
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
+
+  // Escape + scroll lock for extract modal
+  useEffect(() => {
+    if (!showExtractModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowExtractModal(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [showExtractModal]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -377,7 +391,7 @@ export default function LandingPage() {
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setShowExtractModal(false)}
           />
-          <div className="relative w-full max-w-lg rounded-2xl bg-white p-8 shadow-2xl animate-scale-in">
+          <div role="dialog" aria-modal="true" aria-label="New extraction" className="relative w-full max-w-lg rounded-2xl bg-white p-8 shadow-2xl animate-scale-in">
             <button
               onClick={() => setShowExtractModal(false)}
               className="absolute right-4 top-4 text-gray-400 hover:text-black transition-colors"

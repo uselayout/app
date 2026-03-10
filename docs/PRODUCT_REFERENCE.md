@@ -49,12 +49,22 @@ The pain: AI generates generic-looking UI. It doesn't know your design system. Y
 6. **Export bundle** — download a ZIP with CLAUDE.md, AGENTS.md, .cursorrules, tokens.css, tokens.json, tailwind.config.js
 7. **Drop into your project** — your AI coding tool now builds on-brand
 
-### @superduperui/context (MCP server)
-1. `npx @superduperui/context init --kit linear-lite` — creates `.superduper/` directory with DESIGN.md + tokens
-2. Add one JSON block to `.claude/settings.json` or `.cursor/mcp.json`
+### @superduperui/context (CLI + MCP server)
+1. `npx @superduperui/context import ./superduper-export.zip` — unpacks Studio export into `.superduper/`
+2. `npx @superduperui/context install` — auto-configures Claude Code / Cursor / Windsurf MCP settings
 3. Your AI agent now calls `get_design_system` automatically when building UI
 4. Use `preview` to render components locally at localhost:4321
 5. Use `push_to_figma` to send generated components to Figma as editable frames
+
+Or start from a free kit without the Studio:
+1. `npx @superduperui/context init --kit linear-lite` — creates `.superduper/` with DESIGN.md + tokens
+2. `npx @superduperui/context install` — done
+
+Other CLI commands:
+- `npx @superduperui/context serve` — start MCP server manually (stdio)
+- `npx @superduperui/context install --target claude` — target a specific tool
+- `npx @superduperui/context use <kit-name>` — switch design kits
+- `npx @superduperui/context list` — show available kits
 
 ---
 
@@ -119,7 +129,7 @@ DESIGN.md is always included in every export.
 
 ---
 
-## MCP Server Tools (7)
+## MCP Server Tools (8)
 
 | Tool | What It Does |
 |---|---|
@@ -130,6 +140,7 @@ DESIGN.md is always included in every export.
 | `check_compliance` | Validate a code snippet against design rules |
 | `preview` | Render component live in local browser canvas (localhost:4321) |
 | `push_to_figma` | Send rendered component to Figma as editable frames (via Figma MCP) |
+| `url_to_figma` | Capture a public URL as editable Figma frames with auto-layout (via Figma MCP + Playwright) |
 
 ### The Full Code-to-Design Loop
 ```
@@ -208,7 +219,7 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 - Under 2 minutes from URL paste to complete AI kit
 - 6 export formats covering every major AI coding tool
 - 3 free starter kits bundled with the MCP server
-- 7 MCP tools including live preview and Figma bridge
+- 8 MCP tools including live preview and Figma bridge
 
 ---
 
@@ -265,7 +276,7 @@ COGS per extraction: ~£0.10-0.25. At Pro tier, break-even is ~75-190 extraction
 ### Technical Credibility
 - "We extract 500+ design tokens from a single URL in under 2 minutes"
 - "DESIGN.md isn't a style guide — it's a compiler target. Structured for LLM consumption."
-- "7 MCP tools, 3 free kits, MIT licensed. `npx @superduperui/context init` and your AI has taste."
+- "8 MCP tools, 3 free kits, MIT licensed. `npx @superduperui/context init` and your AI has taste."
 
 ### Use Cases
 - "Building a SaaS dashboard? Extract Linear's design system, drop it into Claude Code, ship in a day."

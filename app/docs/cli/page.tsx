@@ -61,10 +61,9 @@ export default function CliPage() {
           section below for all available kit names.
         </p>
         <Callout type="tip">
-          The <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">init</code> command also prints the exact JSON block to add to your{" "}
-          <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">.claude/settings.json</code> or{" "}
-          <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">.cursor/mcp.json</code> to
-          connect the MCP server to your AI agent.
+          After <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">init</code>, run{" "}
+          <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">npx @superduperui/context install</code> to
+          auto-configure your AI agent&apos;s MCP settings — no manual JSON editing required.
         </Callout>
       </section>
 
@@ -109,6 +108,61 @@ export default function CliPage() {
           session in that project directory automatically has access to the
           design system tools — no flags, no manual context injection.
         </Callout>
+      </section>
+
+      {/* Auto-configure AI tools */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Auto-Configure AI Tools</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">install</code> command
+          automatically writes the MCP server configuration to your AI tool&apos;s settings file:
+        </p>
+        <CopyBlock
+          code="npx @superduperui/context install"
+          language="bash"
+        />
+        <p className="text-base text-gray-600 leading-relaxed">
+          This detects Claude Code, Cursor, and Windsurf and configures whichever are present. To target a specific tool:
+        </p>
+        <CopyBlock
+          code={`npx @superduperui/context install --target claude
+npx @superduperui/context install --target cursor
+npx @superduperui/context install --target windsurf`}
+          language="bash"
+        />
+      </section>
+
+      {/* Switching kits */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Managing Design Kits</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          List all available kits (both free starter kits and any you&apos;ve imported from Studio):
+        </p>
+        <CopyBlock
+          code="npx @superduperui/context list"
+          language="bash"
+        />
+        <p className="text-base text-gray-600 leading-relaxed">
+          Switch to a different kit:
+        </p>
+        <CopyBlock
+          code="npx @superduperui/context use stripe-lite"
+          language="bash"
+        />
+      </section>
+
+      {/* Quickstart */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Quickstart (Studio Export)</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The fastest path from Studio to working AI context is three commands:
+        </p>
+        <CopyBlock
+          code={`npx @superduperui/context import ./superduper-export.zip
+npx @superduperui/context install
+# Done — your AI agent reads the design system automatically`}
+          language="bash"
+        />
       </section>
 
       {/* MCP Tools */}
