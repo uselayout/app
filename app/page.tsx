@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { signOut, useSession } from "@/lib/auth-client";
 import type { SourceType } from "@/lib/types";
-import { Layers, Globe, ArrowRight, Clock, X } from "lucide-react";
+import { Layers, Globe, ArrowRight, Clock, X, Trash2 } from "lucide-react";
 import { HowItWorksSection } from "@/components/marketing/HowItWorksSection";
 import { AIKitsSection } from "@/components/marketing/AIKitsSection";
 import { StatsStrip } from "@/components/marketing/StatsStrip";
@@ -62,7 +62,12 @@ export default function LandingPage() {
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [showExtractModal, setShowExtractModal] = useState(false);
   const createProject = useProjectStore((s) => s.createProject);
+  const deleteProject = useProjectStore((s) => s.deleteProject);
   const projects = useProjectStore((s) => s.projects);
+  const sortedProjects = [...projects].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+  const recentProjects = sortedProjects.slice(0, 3);
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
 
@@ -309,7 +314,7 @@ export default function LandingPage() {
                 </button>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {projects.map((project) => {
+                {recentProjects.map((project) => {
                   const hostname = project.sourceUrl
                     ? getHostname(project.sourceUrl)
                     : null;
@@ -323,50 +328,76 @@ export default function LandingPage() {
                           ? "bg-amber-400"
                           : "bg-red-400";
                   return (
-                    <button
+                    <div
                       key={project.id}
-                      onClick={() => router.push(`/studio/${project.id}`)}
-                      className="group text-left rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all"
+                      className="group relative text-left rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all"
                     >
-                      <div className="mb-3 flex items-start justify-between gap-2">
-                        <p className="font-semibold text-[#0a0a0a] leading-snug line-clamp-1">
-                          {project.name}
-                        </p>
-                        <ArrowRight className="h-4 w-4 shrink-0 text-gray-300 group-hover:text-indigo-500 transition-colors mt-0.5" />
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                          {project.sourceType === "figma" ? (
-                            <Layers className="h-3 w-3" />
-                          ) : (
-                            <Globe className="h-3 w-3" />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete "${project.name}"?`)) {
+                            deleteProject(project.id);
+                          }
+                        }}
+                        className="absolute right-3 top-3 rounded-md p-1.5 text-gray-300 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 transition-all"
+                        aria-label={`Delete ${project.name}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => router.push(`/studio/${project.id}`)}
+                        className="w-full text-left"
+                      >
+                        <div className="mb-3 flex items-start justify-between gap-2 pr-6">
+                          <p className="font-semibold text-[#0a0a0a] leading-snug line-clamp-1">
+                            {project.name}
+                          </p>
+                          <ArrowRight className="h-4 w-4 shrink-0 text-gray-300 group-hover:text-indigo-500 transition-colors mt-0.5" />
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                            {project.sourceType === "figma" ? (
+                              <Layers className="h-3 w-3" />
+                            ) : (
+                              <Globe className="h-3 w-3" />
+                            )}
+                            {project.sourceType === "figma" ? "Figma" : "Website"}
+                          </span>
+                          {hostname && (
+                            <span className="text-xs text-gray-400 truncate max-w-[140px]">
+                              {hostname}
+                            </span>
                           )}
-                          {project.sourceType === "figma" ? "Figma" : "Website"}
-                        </span>
-                        {hostname && (
-                          <span className="text-xs text-gray-400 truncate max-w-[140px]">
-                            {hostname}
+                        </div>
+                        <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+                          <span className="inline-flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {timeAgo(project.updatedAt)}
                           </span>
-                        )}
-                      </div>
-                      <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {timeAgo(project.updatedAt)}
-                        </span>
-                        {score != null && (
-                          <span className="inline-flex items-center gap-1.5">
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${scoreColour}`}
-                            />
-                            {score}/100
-                          </span>
-                        )}
-                      </div>
-                    </button>
+                          {score != null && (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${scoreColour}`}
+                              />
+                              {score}/100
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    </div>
                   );
                 })}
               </div>
+              {sortedProjects.length > 3 && (
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => scrollTo("all-projects")}
+                    className="text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+                  >
+                    View all {sortedProjects.length} projects →
+                  </button>
+                </div>
+              )}
             </div>
           </section>
         )}

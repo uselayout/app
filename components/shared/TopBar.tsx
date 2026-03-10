@@ -3,11 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Layers, Globe, RefreshCw, FlaskConical, Download, LogOut, KeyRound } from "lucide-react";
+import { Layers, Globe, RefreshCw, FlaskConical, Download, LogOut, KeyRound, ChevronDown, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth-client";
 import { useApiKey } from "@/lib/hooks/use-api-key";
 import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
+import { useProjectStore } from "@/lib/store/project";
 import type { SourceType } from "@/lib/types";
 
 interface TopBarProps {
@@ -35,8 +36,25 @@ export function TopBar({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(projectName);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [showProjectMenu, setShowProjectMenu] = useState(false);
   const { key: apiKey } = useApiKey();
   const inputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const projects = useProjectStore((s) => s.projects);
+  const currentProjectId = useProjectStore((s) => s.currentProjectId);
+  const deleteProject = useProjectStore((s) => s.deleteProject);
+
+  // Close project menu on outside click
+  useEffect(() => {
+    if (!showProjectMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowProjectMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showProjectMenu]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -80,29 +98,112 @@ export function TopBar({
         </div>
       </div>
 
-      {/* Centre: Project name + status */}
+      {/* Centre: Project name + switcher + status */}
       <div className="flex items-center gap-3">
-        {isEditing ? (
-          <input
-            ref={inputRef}
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            className="h-7 rounded-sm border border-[--studio-border-strong] bg-[--bg-surface] px-2 text-sm text-[--text-primary] outline-none focus:border-[--studio-border-focus]"
-          />
-        ) : (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="text-sm font-medium text-[--text-primary] transition-colors hover:text-[--studio-accent]"
-          >
-            {projectName}
-          </button>
-        )}
+        <div className="relative" ref={menuRef}>
+          <div className="flex items-center gap-1">
+            {isEditing ? (
+              <input
+                ref={inputRef}
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
+                className="h-7 rounded-sm border border-[--studio-border-strong] bg-[--bg-surface] px-2 text-sm text-[--text-primary] outline-none focus:border-[--studio-border-focus]"
+              />
+            ) : (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-sm font-medium text-[--text-primary] transition-colors hover:text-[--studio-accent]"
+              >
+                {projectName}
+              </button>
+            )}
+            {projects.length > 1 && !isEditing && (
+              <button
+                onClick={() => setShowProjectMenu((v) => !v)}
+                className="rounded p-0.5 text-[--text-muted] hover:text-[--text-primary] hover:bg-[--bg-hover] transition-colors"
+                aria-label="Switch project"
+              >
+                <ChevronDown className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
 
-        <span className="text-xs text-[--text-muted]">
-          {lastSaved ? `Saved ${lastSaved}` : ""}
-        </span>
+          {/* Project switcher dropdown */}
+          {showProjectMenu && (
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-[--studio-border-strong] bg-[--bg-elevated] shadow-xl overflow-hidden z-50">
+              <div className="px-3 py-2 border-b border-[--studio-border]">
+                <p className="text-[10px] font-medium uppercase tracking-wider text-[--text-muted]">
+                  Switch project
+                </p>
+              </div>
+              <div className="max-h-64 overflow-y-auto py-1">
+                {[...projects]
+                  .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      className={`group flex items-center gap-2 px-3 py-2 text-left transition-colors ${
+                        p.id === currentProjectId
+                          ? "bg-[--studio-accent-subtle]"
+                          : "hover:bg-[--bg-hover]"
+                      }`}
+                    >
+                      <button
+                        onClick={() => {
+                          setShowProjectMenu(false);
+                          router.push(`/studio/${p.id}`);
+                        }}
+                        className="flex-1 min-w-0"
+                      >
+                        <p className={`text-xs font-medium truncate ${
+                          p.id === currentProjectId
+                            ? "text-[--studio-accent]"
+                            : "text-[--text-primary]"
+                        }`}>
+                          {p.name}
+                        </p>
+                        <p className="text-[10px] text-[--text-muted] flex items-center gap-1.5">
+                          {p.sourceType === "figma" ? (
+                            <Layers className="h-2.5 w-2.5" />
+                          ) : (
+                            <Globe className="h-2.5 w-2.5" />
+                          )}
+                          {p.sourceUrl ? new URL(p.sourceUrl).hostname.replace("www.", "") : p.sourceType}
+                        </p>
+                      </button>
+                      {p.id !== currentProjectId && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Delete "${p.name}"?`)) {
+                              deleteProject(p.id);
+                            }
+                          }}
+                          className="rounded p-1 text-[--text-muted] opacity-0 group-hover:opacity-100 hover:bg-[--bg-surface] hover:text-red-400 transition-all"
+                          aria-label={`Delete ${p.name}`}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+              </div>
+              <div className="border-t border-[--studio-border] px-3 py-2">
+                <button
+                  onClick={() => {
+                    setShowProjectMenu(false);
+                    router.push("/");
+                  }}
+                  className="text-[10px] text-[--text-muted] hover:text-[--studio-accent] transition-colors"
+                >
+                  ← Back to homepage
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         <Badge
           variant="secondary"
