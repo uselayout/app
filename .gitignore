@@ -43,3 +43,6 @@ next-env.d.ts
 
 # ralph temp file
 tmp.json
+
+# playwright mcp
+.playwright-mcp/
