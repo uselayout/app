@@ -10,7 +10,7 @@ import { StudioLayout } from "@/components/studio/StudioLayout";
 import { ExtractionProgress } from "@/components/studio/ExtractionProgress";
 import { EditorPanel } from "@/components/studio/EditorPanel";
 import { SourcePanel } from "@/components/studio/SourcePanel";
-import { TestPanel } from "@/components/studio/TestPanel";
+import { TestPanel, type TestPanelHandle } from "@/components/studio/TestPanel";
 import { ExportModal } from "@/components/studio/ExportModal";
 
 export default function StudioPage({
@@ -32,6 +32,7 @@ export default function StudioPage({
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
+  const testPanelRef = useRef<TestPanelHandle>(null);
 
   useEffect(() => {
     if (extractionStarted.current || !project) return;
@@ -141,6 +142,7 @@ export default function StudioPage({
         }
         onNameChange={(name) => updateProjectName(id, name)}
         onReExtract={handleReExtract}
+        onTest={() => testPanelRef.current?.focusPrompt()}
         onExport={() => setShowExport(true)}
       />
       <div className="flex-1 overflow-hidden">
@@ -161,6 +163,7 @@ export default function StudioPage({
           }
           testPanel={
             <TestPanel
+              ref={testPanelRef}
               projectId={id}
               designMd={project.designMd}
               components={componentNames}

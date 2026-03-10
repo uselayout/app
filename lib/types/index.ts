@@ -7,6 +7,7 @@ export type TokenCategory = "primitive" | "semantic";
 export type ExportFormat =
   | "claude-md"
   | "cursor-rules"
+  | "agents-md"
   | "tokens-css"
   | "tokens-json"
   | "tailwind-config";

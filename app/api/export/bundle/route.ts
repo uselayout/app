@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod/v4";
 import JSZip from "jszip";
 import { generateClaudeMd } from "@/lib/export/claude-md";
+import { generateAgentsMd } from "@/lib/export/agents-md";
 import { generateCursorRules } from "@/lib/export/cursor-rules";
 import { generateTokensCss } from "@/lib/export/tokens-css";
 import { generateTokensJson } from "@/lib/export/tokens-json";
@@ -25,6 +26,7 @@ const RequestSchema = z.object({
     z.enum([
       "claude-md",
       "cursor-rules",
+      "agents-md",
       "tokens-css",
       "tokens-json",
       "tailwind-config",
@@ -79,6 +81,10 @@ function addFormatToZip(zip: JSZip, format: ExportFormat, project: Project) {
   switch (format) {
     case "claude-md": {
       zip.file("CLAUDE.md", generateClaudeMd(project));
+      break;
+    }
+    case "agents-md": {
+      zip.file("AGENTS.md", generateAgentsMd(project));
       break;
     }
     case "cursor-rules": {

@@ -1,4 +1,5 @@
 import type { Project } from "@/lib/types";
+import { extractQuickReference } from "./extract-quick-reference";
 
 export function generateClaudeMd(project: Project): string {
   const quickRefLines = extractQuickReference(project.designMd);
@@ -20,14 +21,4 @@ Full design system context is available in:
 
 When building any UI component, read DESIGN.md first.
 `;
-}
-
-function extractQuickReference(designMd: string): string {
-  const quickRefMatch = designMd.match(
-    /## 0\. Quick Reference\s*\n([\s\S]*?)(?=\n## \d|$)/
-  );
-  if (quickRefMatch) {
-    return quickRefMatch[1].trim();
-  }
-  return "- Follow the DESIGN.md specification for all design decisions\n- Never hardcode colour values - use CSS variables\n- Use the specified font family and weights only";
 }

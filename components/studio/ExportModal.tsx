@@ -22,6 +22,11 @@ const FORMAT_OPTIONS: { id: ExportFormat; label: string; description: string }[]
     description: "Design system and component rules for Cursor",
   },
   {
+    id: "agents-md",
+    label: "AGENTS.md",
+    description: "Context for OpenAI Codex, Jules, Factory, Amp, and compatible agents",
+  },
+  {
     id: "tokens-css",
     label: "tokens.css",
     description: "CSS custom properties for all tokens",

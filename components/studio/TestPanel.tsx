@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 import {
   Send,
   ThumbsUp,
@@ -15,6 +15,10 @@ import { calculateHealthScore } from "@/lib/health/score";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { useProjectStore } from "@/lib/store/project";
 import type { TestResult, HealthScore } from "@/lib/types";
+
+export interface TestPanelHandle {
+  focusPrompt: () => void;
+}
 
 interface TestPanelProps {
   projectId: string;
@@ -32,7 +36,10 @@ const QUICK_PROMPTS = [
   "Build me a modal dialog",
 ];
 
-export function TestPanel({ projectId, designMd, components = [], extractedFonts = [], initialResults = [] }: TestPanelProps) {
+export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function TestPanel(
+  { projectId, designMd, components = [], extractedFonts = [], initialResults = [] },
+  ref
+) {
   const updateTestResults = useProjectStore((s) => s.updateTestResults);
   const [includeContext, setIncludeContext] = useState(true);
   const [prompt, setPrompt] = useState("");
@@ -42,6 +49,12 @@ export function TestPanel({ projectId, designMd, components = [], extractedFonts
   const outputRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    focusPrompt: () => {
+      textareaRef.current?.focus();
+    },
+  }));
   // Track latest results in a ref so we can persist after streaming without stale closures
   const resultsRef = useRef<TestResult[]>(initialResults);
 
@@ -271,7 +284,7 @@ export function TestPanel({ projectId, designMd, components = [], extractedFonts
       </div>
     </div>
   );
-}
+});
 
 function extractFirstCodeBlock(text: string): { code: string; lang: string } | null {
   // Handle both \n and \r\n line endings from streaming responses

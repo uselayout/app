@@ -17,6 +17,7 @@ import {
   FileText,
   X,
   ArrowRight,
+  Clock,
 } from "lucide-react";
 
 const AI_KITS = [
@@ -27,6 +28,25 @@ const AI_KITS = [
   { name: "Vercel", price: 79, aesthetic: "Minimal, monochrome" },
   { name: "Apple iOS", price: 129, aesthetic: "HIG-compliant, light-first" },
 ];
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function getHostname(url: string): string {
+  try {
+    return new URL(url).hostname.replace("www.", "");
+  } catch {
+    return url;
+  }
+}
 
 function detectSourceType(url: string): SourceType | null {
   if (/figma\.com\/(file|design)\//.test(url)) return "figma";
@@ -50,6 +70,7 @@ export default function LandingPage() {
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const createProject = useProjectStore((s) => s.createProject);
+  const projects = useProjectStore((s) => s.projects);
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
 
@@ -294,6 +315,66 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* My Projects */}
+      {isLoggedIn && projects.length > 0 && (
+        <section className="px-6 py-16 border-t border-black/[0.06]">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-indigo-600">My Projects</p>
+                <h2 className="text-2xl font-bold text-[#0a0a0a]">Recent extractions</h2>
+              </div>
+              <button
+                onClick={(e) => { e.preventDefault(); scrollTo("extract"); }}
+                className="rounded-full border border-black/20 px-4 py-2 text-sm font-medium text-[#0a0a0a] hover:bg-gray-50 transition-colors"
+              >
+                + New extraction
+              </button>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {projects.map((project) => {
+                const hostname = project.sourceUrl ? getHostname(project.sourceUrl) : null;
+                const score = project.healthScore;
+                const scoreColour = score == null ? "" : score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-400" : "bg-red-400";
+                return (
+                  <button
+                    key={project.id}
+                    onClick={() => router.push(`/studio/${project.id}`)}
+                    className="group text-left rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all"
+                  >
+                    <div className="mb-3 flex items-start justify-between gap-2">
+                      <p className="font-semibold text-[#0a0a0a] leading-snug line-clamp-1">{project.name}</p>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-300 group-hover:text-indigo-500 transition-colors mt-0.5" />
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                        {project.sourceType === "figma" ? <Layers className="h-3 w-3" /> : <Globe className="h-3 w-3" />}
+                        {project.sourceType === "figma" ? "Figma" : "Website"}
+                      </span>
+                      {hostname && (
+                        <span className="text-xs text-gray-400 truncate max-w-[140px]">{hostname}</span>
+                      )}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {timeAgo(project.updatedAt)}
+                      </span>
+                      {score != null && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className={`h-1.5 w-1.5 rounded-full ${scoreColour}`} />
+                          {score}/100
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* How it Works */}
       <section id="how-it-works" className="bg-[#f9f9f9] py-24 px-6">
