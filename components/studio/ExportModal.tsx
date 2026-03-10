@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { X, Download, FileText, Check, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyBlock } from "@/components/shared/CopyBlock";
@@ -50,6 +50,18 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
   );
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadComplete, setDownloadComplete] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
 
   const toggleFormat = useCallback((format: ExportFormat) => {
     setSelectedFormats((prev) => {
@@ -109,7 +121,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -147,7 +159,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
               <div className="space-y-2">
                 <p className="text-xs font-medium text-[--text-primary]">
                   <span className="mr-2 text-[--text-muted]">1.</span>
-                  Import the bundle into SuperDuper CLI
+                  Import the bundle into your project
                 </p>
                 <CopyBlock code="npx @superduperui/context import ./your-export.zip" />
               </div>
@@ -156,36 +168,27 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
               <div className="space-y-2">
                 <p className="text-xs font-medium text-[--text-primary]">
                   <span className="mr-2 text-[--text-muted]">2.</span>
-                  Start the MCP server in your project root
+                  Auto-configure your AI tool
                 </p>
-                <CopyBlock code="npx @superduperui/context serve" />
+                <CopyBlock code="npx @superduperui/context install" />
+                <p className="text-[10px] text-[--text-muted]">
+                  Detects Claude Code, Cursor, and Windsurf automatically. Use{" "}
+                  <code className="text-[10px]">--target claude</code> to target a specific tool.
+                </p>
               </div>
 
               {/* Step 3 */}
               <div className="space-y-2">
                 <p className="text-xs font-medium text-[--text-primary]">
                   <span className="mr-2 text-[--text-muted]">3.</span>
-                  Connect your AI tool
+                  Done — your AI agent reads the design system automatically
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { label: "Claude Code", href: "/docs/integrations/claude-code" },
-                    { label: "Cursor", href: "/docs/integrations/cursor" },
-                    { label: "GitHub Copilot", href: "/docs/integrations/copilot" },
-                    { label: "Windsurf", href: "/docs/integrations/windsurf" },
-                    { label: "OpenAI Codex", href: "/docs/integrations/codex" },
-                  ].map(({ label, href }) => (
-                    <a
-                      key={label}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-lg border border-[--studio-border] px-3 py-2 text-xs text-[--text-secondary] transition-colors hover:border-[--studio-border-strong] hover:text-[--text-primary]"
-                    >
-                      {label}
-                    </a>
-                  ))}
-                </div>
+                <a
+                  href="/docs/cli"
+                  className="inline-block rounded-lg border border-[--studio-border] px-3 py-2 text-xs text-[--text-secondary] transition-colors hover:border-[--studio-border-strong] hover:text-[--text-primary]"
+                >
+                  View full CLI docs
+                </a>
               </div>
             </div>
 

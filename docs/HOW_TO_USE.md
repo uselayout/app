@@ -186,8 +186,45 @@ const config = require("./tailwind.config.js");
 3. **Generate** — Click "Generate DESIGN.md" to synthesise the context file from extracted data
 4. **Test** — Use the Test panel to generate a few components. Check the health score (aim for 80+)
 5. **Iterate** — Edit DESIGN.md in the Studio's editor to fix anything the AI misidentified. Re-test
-6. **Export** — Download the ZIP bundle and add the relevant files to your project
-7. **Build** — Your AI coding tool now has the design system as context on every prompt
+6. **Export** — Download the ZIP bundle
+7. **Import** — Run `npx @superduperui/context import ./superduper-export.zip` in your project root
+8. **Install** — Run `npx @superduperui/context install` to auto-configure your AI tool's MCP settings
+9. **Build** — Your AI coding tool now has the design system as context on every prompt
+
+### Quick Setup (CLI)
+
+After exporting from the Studio, the fastest path is three commands:
+
+```bash
+npx @superduperui/context import ./superduper-export.zip
+npx @superduperui/context install
+# Done — your AI agent reads the design system automatically
+```
+
+To target a specific tool:
+
+```bash
+npx @superduperui/context install --target claude
+npx @superduperui/context install --target cursor
+npx @superduperui/context install --target windsurf
+```
+
+### CLI Commands Reference
+
+| Command | Purpose |
+|---------|---------|
+| `npx @superduperui/context init` | Scaffold `.superduper/` directory |
+| `npx @superduperui/context init --kit <name>` | Init with a specific design kit |
+| `npx @superduperui/context import <zip-path>` | Import a Studio export ZIP |
+| `npx @superduperui/context serve` | Start MCP server (stdio) |
+| `npx @superduperui/context install` | Auto-configure Claude Code / Cursor / Windsurf MCP settings |
+| `npx @superduperui/context install --target claude` | Target a specific tool |
+| `npx @superduperui/context use <kit-name>` | Switch design kits |
+| `npx @superduperui/context list` | Show available kits |
+
+### Manual Setup (without CLI)
+
+If you prefer not to use the CLI, you can still drop the exported files into your project manually — see the per-tool sections above.
 
 ### Health Score
 

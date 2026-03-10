@@ -12,9 +12,9 @@ const STUDIO_BULLETS = [
 ];
 
 const CLI_BULLETS = [
-  "npx install — no config required",
-  "Serves your DESIGN.md to AI agents via MCP",
-  "AI calls get_design_system automatically when building UI",
+  "npx @superduperui/context import + install — two commands, zero config",
+  "Auto-configures Claude Code, Cursor, and Windsurf MCP settings",
+  "8 MCP tools including get_design_system, check_compliance, and preview",
   "Live component preview + push to Figma",
 ];
 
