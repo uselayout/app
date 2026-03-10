@@ -29,7 +29,8 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Install Playwright system deps + Chromium for website extraction
+# Install Playwright Chromium to a shared path accessible by all users
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
 RUN npx playwright install --with-deps chromium
 
 # Non-root user
