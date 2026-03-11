@@ -236,6 +236,43 @@ The health score (0–100) in the Test panel measures how closely the generated 
 
 ---
 
+## Figma-First Workflow
+
+SuperDuper supports a bidirectional design loop — push generated components to Figma for designer review, then pull feedback back into code.
+
+### Prerequisites
+
+Connect the Figma MCP server (free, OAuth — no API key needed):
+
+```bash
+claude mcp add --transport http figma https://mcp.figma.com/mcp
+```
+
+### Push from Studio
+
+In the Test panel, any result with a code block shows a **Push to Figma** button. Click it to copy a structured prompt to your clipboard, then paste it into Claude Code or Cursor. Your AI agent will call the `push_to_figma` MCP tool to send the component to Figma as an editable auto-layout frame.
+
+### Design Before Code
+
+Use the `design-in-figma` MCP tool to design UI directly in Figma using your loaded design system — before writing any code:
+
+```
+"Design a settings page with sidebar navigation"
+```
+
+The tool extracts your kit's colour palette, typography, spacing tokens, component inventory, and design rules, then returns step-by-step instructions for calling Figma MCP's `generate_figma_design`.
+
+### The Closed Loop
+
+```
+Extract design system → Generate DESIGN.md → Test components
+    → Push to Figma → Designer reviews → Update DESIGN.md → Repeat
+```
+
+No other open-source tool closes this loop.
+
+---
+
 ## Tips
 
 - **Narrow the Quick Reference** — If you have a large DESIGN.md, the Quick Reference (Section 0) is the most important part. Keep it focused on the 10–15 tokens your AI uses most.

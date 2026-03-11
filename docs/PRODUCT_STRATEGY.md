@@ -35,21 +35,18 @@ A working browser-based tool that:
 
 | Tier | Price | What You Get |
 |---|---|---|
+| **Open Source** | Free forever | CLI, MCP server, 3 starter kits, self-host Studio |
 | **Free (BYOK)** | £0 | Bring your own Anthropic API key. Unlimited extractions. All export formats. |
-| **Pro** | £19/month | Hosted Claude (no API key needed). Drift monitoring (re-extract weekly, diff changes). Priority extraction queue. |
-| **Team** | £49/month | Everything in Pro. Shared project library. Team member seats. Centralised API key management. |
+| **Pro** | £29/month | Hosted AI (50 DESIGN.md + 100 test queries). Drift monitoring. All premium kits. Version history. Priority queue. |
+| **Team** | £29/month + £15/seat | Everything in Pro. Shared project library. Team seats. Centralised billing. SSO. |
+| **Enterprise** | Custom | Self-hosted, unlimited, custom integrations, SLA. |
 
 ### COGS Per Extraction
-- Claude Sonnet call for synthesis: ~£0.05–0.15
-- Playwright execution (website): ~£0.02–0.05
-- Figma API calls: free (user's PAT)
-- **Total: ~£0.10–0.25 per extraction**
-
-At Pro tier (£19/month), break-even is ~75–190 extractions/month — most users will do 5–20.
+See [Business Model Analysis](BUSINESS_MODEL_ANALYSIS.md) for detailed unit economics. Summary: typical session costs £0.50–£1.50 in AI calls. At Pro tier (£29/month), gross margin is 89–96% at typical usage.
 
 ### Pre-built AI Kits (One-Time Revenue)
 
-Sell ready-made DESIGN.md bundles for popular design systems:
+Sell ready-made DESIGN.md bundles for popular design systems. Premium kits are also bundled in the Pro tier — subscribers get access to all kits without a separate purchase.
 
 | Kit | Price | Contents |
 |---|---|---|

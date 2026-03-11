@@ -129,7 +129,7 @@ DESIGN.md is always included in every export.
 
 ---
 
-## MCP Server Tools (8)
+## MCP Server Tools (9)
 
 | Tool | What It Does |
 |---|---|
@@ -141,6 +141,7 @@ DESIGN.md is always included in every export.
 | `preview` | Render component live in local browser canvas (localhost:4321) |
 | `push_to_figma` | Send rendered component to Figma as editable frames (via Figma MCP) |
 | `url_to_figma` | Capture a public URL as editable Figma frames with auto-layout (via Figma MCP + Playwright) |
+| `design_in_figma` | Design UI in Figma from natural language prompt using loaded design tokens |
 
 ### The Full Code-to-Design Loop
 ```
@@ -150,6 +151,7 @@ Developer prompts Claude
   -> Claude calls preview -> renders at localhost:4321
   -> Developer reviews, requests changes
   -> Claude calls push_to_figma -> editable frame in Figma
+  -> Or: Claude calls design_in_figma to create new designs from scratch
   -> Designer tweaks in Figma
   -> Developer asks Claude to read Figma changes (via Figma MCP)
   -> Claude updates the code to match
@@ -184,7 +186,7 @@ Each includes: Quick Reference, core tokens, 5 component specs.
 | Vercel | £79 | Minimal, monochrome |
 | Apple iOS | £129 | HIG-compliant, light-first |
 
-Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell many times.
+Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell many times. Premium kits are bundled in the Studio Pro tier.
 
 ---
 
@@ -219,7 +221,7 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 - Under 2 minutes from URL paste to complete AI kit
 - 6 export formats covering every major AI coding tool
 - 3 free starter kits bundled with the MCP server
-- 8 MCP tools including live preview and Figma bridge
+- 9 MCP tools including live preview and Figma bridge
 
 ---
 
@@ -254,11 +256,11 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 
 | Tier | Price | What You Get |
 |---|---|---|
-| **Free (BYOK)** | £0 | Bring your own Anthropic API key. Unlimited extractions. All export formats. |
-| **Pro** | £19/month | Hosted Claude. Drift monitoring. Priority queue. |
-| **Team** | £49/month | Shared library. Team seats. Centralised billing. |
-
-COGS per extraction: ~£0.10-0.25. At Pro tier, break-even is ~75-190 extractions/month. Most users do 5-20.
+| **Open Source** | Free forever | CLI, MCP server, 3 starter kits, self-host Studio |
+| **Studio Free** | £0 (BYOK) | Bring your own API key. Unlimited extractions. All export formats. |
+| **Studio Pro** | £29/mo | Hosted AI (50 DESIGN.md + 100 test queries), premium kits, drift monitoring, version history |
+| **Studio Team** | £29/mo + £15/seat | Shared library, team management, centralised billing, SSO |
+| **Enterprise** | Custom | Self-hosted, unlimited, custom integrations, SLA |
 
 ---
 
@@ -276,7 +278,7 @@ COGS per extraction: ~£0.10-0.25. At Pro tier, break-even is ~75-190 extraction
 ### Technical Credibility
 - "We extract 500+ design tokens from a single URL in under 2 minutes"
 - "DESIGN.md isn't a style guide — it's a compiler target. Structured for LLM consumption."
-- "8 MCP tools, 3 free kits, MIT licensed. `npx @superduperui/context init` and your AI has taste."
+- "9 MCP tools, 3 free kits, MIT licensed. `npx @superduperui/context init` and your AI has taste."
 
 ### Use Cases
 - "Building a SaaS dashboard? Extract Linear's design system, drop it into Claude Code, ship in a day."
