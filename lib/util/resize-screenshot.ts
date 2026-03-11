@@ -4,20 +4,35 @@ const MAX_WIDTH = 1200;
 const MAX_HEIGHT = 4000;
 
 /**
- * Resize a base64 PNG screenshot for Claude's vision API.
+ * Resize a screenshot for Claude's vision API.
+ * Accepts base64 data URIs or HTTP URLs (Supabase Storage).
  * Caps at 1200px wide and 4000px tall to keep token costs reasonable
  * while preserving enough detail for page structure analysis.
  *
  * Returns a base64 data URI, or null if the input is invalid.
  */
 export async function resizeScreenshot(
-  dataUri: string
+  source: string
 ): Promise<string | null> {
-  const match = dataUri.match(/^data:image\/(\w+);base64,(.+)$/);
-  if (!match) return null;
+  let buffer: Buffer;
+  let format = "png";
 
-  const [, format, base64Data] = match;
-  const buffer = Buffer.from(base64Data, "base64");
+  if (source.startsWith("data:")) {
+    const match = source.match(/^data:image\/(\w+);base64,(.+)$/);
+    if (!match) return null;
+    format = match[1];
+    buffer = Buffer.from(match[2], "base64");
+  } else if (source.startsWith("http")) {
+    try {
+      const res = await fetch(source);
+      if (!res.ok) return null;
+      buffer = Buffer.from(await res.arrayBuffer());
+    } catch {
+      return null;
+    }
+  } else {
+    return null;
+  }
 
   try {
     const metadata = await sharp(buffer).metadata();
@@ -26,7 +41,7 @@ export async function resizeScreenshot(
 
     // Skip resize if already within bounds
     if (width <= MAX_WIDTH && height <= MAX_HEIGHT) {
-      return dataUri;
+      return `data:image/${format};base64,${buffer.toString("base64")}`;
     }
 
     let pipeline = sharp(buffer);

@@ -273,7 +273,7 @@ function ScreenshotsTab({ screenshots }: { screenshots: string[] }) {
             className="overflow-hidden rounded border border-[--studio-border] transition-colors hover:border-[--studio-border-strong]"
           >
             <img
-              src={src.startsWith("data:") ? src : `data:image/png;base64,${src}`}
+              src={src.startsWith("data:") || src.startsWith("http") ? src : `data:image/png;base64,${src}`}
               alt={`Screenshot ${i + 1}`}
               className="h-auto w-full"
             />
@@ -294,7 +294,7 @@ function ScreenshotsTab({ screenshots }: { screenshots: string[] }) {
           </button>
           <img
             src={
-              screenshots[lightboxIdx].startsWith("data:")
+              screenshots[lightboxIdx].startsWith("data:") || screenshots[lightboxIdx].startsWith("http")
                 ? screenshots[lightboxIdx]
                 : `data:image/png;base64,${screenshots[lightboxIdx]}`
             }

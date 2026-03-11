@@ -1,23 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getStoredApiKey } from "@/lib/hooks/use-api-key";
-import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { signOut, useSession } from "@/lib/auth-client";
-import type { SourceType } from "@/lib/types";
 import { Layers, Globe, ArrowRight, Clock, X, Trash2 } from "lucide-react";
+import { ContextGapSection } from "@/components/marketing/ContextGapSection";
 import { HowItWorksSection } from "@/components/marketing/HowItWorksSection";
-import { AIKitsSection } from "@/components/marketing/AIKitsSection";
-import { StatsStrip } from "@/components/marketing/StatsStrip";
-import { FeaturesGrid } from "@/components/marketing/FeaturesGrid";
-import { PricingCTA } from "@/components/marketing/PricingCTA";
-import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { ProductsSection } from "@/components/marketing/ProductsSection";
 import { FigmaLoopSection } from "@/components/marketing/FigmaLoopSection";
+import { ComparisonSection } from "@/components/marketing/ComparisonSection";
 import { OpenSourceSection } from "@/components/marketing/OpenSourceSection";
-import { detectSourceType } from "@/lib/util/detect-source";
+import { AIKitsSection } from "@/components/marketing/AIKitsSection";
+import { EarlyAccessCTA } from "@/components/marketing/EarlyAccessCTA";
+import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
 
@@ -48,13 +44,7 @@ function scrollTo(id: string) {
 
 export default function LandingPage() {
   const router = useRouter();
-  const [url, setUrl] = useState("");
-  const [pat, setPat] = useState("");
-  const [isExtracting, setIsExtracting] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
-  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [showExtractModal, setShowExtractModal] = useState(false);
-  const createProject = useProjectStore((s) => s.createProject);
   const deleteProject = useProjectStore((s) => s.deleteProject);
   const projects = useProjectStore((s) => s.projects);
   const sortedProjects = [...projects].sort(
@@ -64,63 +54,9 @@ export default function LandingPage() {
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
 
-  // Escape + scroll lock for extract modal
-  useEffect(() => {
-    if (!showExtractModal) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowExtractModal(false);
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [showExtractModal]);
-
   const handleSignOut = async () => {
     await signOut();
     router.push("/login");
-  };
-
-  const sourceType = url ? detectSourceType(url) : null;
-  const isFigma = sourceType === "figma";
-  const isValid = sourceType !== null && (!isFigma || pat.length > 0);
-
-  const handleExtract = async () => {
-    if (!getStoredApiKey()) {
-      setShowExtractModal(false);
-      setShowApiKeyModal(true);
-      return;
-    }
-    setShowExtractModal(false);
-    if (!isValid || !sourceType) return;
-
-    setIsExtracting(true);
-
-    const projectId =
-      crypto.randomUUID?.() ??
-      Math.random().toString(36).slice(2) + Date.now().toString(36);
-    const projectName = isFigma
-      ? "Figma Extraction"
-      : new URL(url).hostname.replace("www.", "");
-
-    createProject({
-      id: projectId,
-      name: projectName,
-      sourceType,
-      sourceUrl: url,
-      designMd: "",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-
-    if (isFigma && pat) {
-      sessionStorage.setItem(`pat-${projectId}`, pat);
-    }
-    sessionStorage.setItem(`extract-${projectId}`, "true");
-
-    router.push(`/studio/${projectId}`);
   };
 
   return (
@@ -131,16 +67,13 @@ export default function LandingPage() {
         {!bannerDismissed && (
           <div className="relative bg-[#0a0a0a] py-2.5 text-center text-sm text-gray-300">
             <span>
-              Pre-built AI Kits now available — design systems from Linear, Stripe, Notion, and more.{" "}
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollTo("ai-kits");
-                }}
+              We&apos;re looking for 50 teams shipping UI with AI agents.{" "}
+              <a
+                href="/login"
                 className="text-white underline underline-offset-2 hover:no-underline"
               >
-                Learn More →
-              </button>
+                Join early access →
+              </a>
             </span>
             <button
               onClick={() => setBannerDismissed(true)}
@@ -182,7 +115,7 @@ export default function LandingPage() {
               {[
                 { label: "Products", id: "products" },
                 { label: "How it Works", id: "how-it-works" },
-                { label: "AI Kits", id: "ai-kits" },
+                { label: "Figma Loop", id: "figma-loop" },
               ].map(({ label, id }) => (
                 <button
                   key={id}
@@ -195,12 +128,6 @@ export default function LandingPage() {
                   {label}
                 </button>
               ))}
-              <a
-                href="/pricing"
-                className="text-sm text-gray-600 hover:text-black transition-colors"
-              >
-                Pricing
-              </a>
               <a
                 href="/docs"
                 className="text-sm text-gray-600 hover:text-black transition-colors"
@@ -219,12 +146,12 @@ export default function LandingPage() {
                   >
                     Sign out
                   </button>
-                  <button
-                    onClick={() => setShowExtractModal(true)}
+                  <a
+                    href="/studio"
                     className="rounded-full bg-[#0a0a0a] px-4 py-1.5 text-sm font-medium text-white hover:bg-[#1a1a1a] transition-colors"
                   >
-                    Extract now →
-                  </button>
+                    Open Studio →
+                  </a>
                 </>
               ) : (
                 <>
@@ -256,25 +183,26 @@ export default function LandingPage() {
 
             {/* Headline */}
             <h1 className="animate-fade-up delay-100 text-6xl font-black tracking-tight text-[#0a0a0a] sm:text-7xl md:text-8xl leading-[0.92] mb-7">
-              Your AI builds
+              Make AI build
               <br />
               on-brand.
             </h1>
 
             {/* Subheadline */}
             <p className="animate-fade-up delay-200 mx-auto max-w-xl text-lg text-gray-500 leading-relaxed mb-12 sm:text-xl">
-              Paste a Figma URL or website. Get a structured context bundle your
-              AI coding agent can read. On-brand UI, every time.
+              Your AI agent writes working code but gets the design wrong.
+              SuperDuper extracts your design system from Figma or any website
+              and serves it to Claude Code, Cursor, and Copilot automatically.
             </p>
 
             {/* CTAs */}
             <div className="animate-fade-up delay-300 flex flex-col sm:flex-row items-center justify-center gap-3 mb-5">
-              <button
-                onClick={() => setShowExtractModal(true)}
+              <a
+                href="/studio"
                 className="rounded-full bg-[#0a0a0a] px-8 py-3.5 text-sm font-semibold text-white hover:bg-[#1a1a1a] transition-all shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-black/15"
               >
                 Open Studio
-              </button>
+              </a>
               <a
                 href="/docs/cli"
                 className="rounded-full border border-black/10 bg-white px-8 py-3.5 text-sm font-semibold text-[#0a0a0a] hover:border-black/20 hover:bg-gray-50 transition-all"
@@ -304,12 +232,12 @@ export default function LandingPage() {
                     Recent extractions
                   </h2>
                 </div>
-                <button
-                  onClick={() => setShowExtractModal(true)}
+                <a
+                  href="/studio"
                   className="rounded-full border border-black/20 px-4 py-2 text-sm font-medium text-[#0a0a0a] hover:bg-gray-50 transition-colors"
                 >
-                  + New extraction
-                </button>
+                  View all →
+                </a>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {recentProjects.map((project) => {
@@ -400,14 +328,14 @@ export default function LandingPage() {
           </section>
         )}
 
-        <ProductsSection onOpenStudio={() => setShowExtractModal(true)} />
+        <ContextGapSection />
         <HowItWorksSection />
-        <AIKitsSection scrollTo={scrollTo} />
-        <StatsStrip />
-        <OpenSourceSection />
-        <FeaturesGrid />
+        <ProductsSection onOpenStudio={() => router.push("/studio")} />
         <FigmaLoopSection />
-        <PricingCTA onOpenStudio={() => setShowExtractModal(true)} />
+        <ComparisonSection />
+        <OpenSourceSection />
+        <AIKitsSection scrollTo={scrollTo} />
+        <EarlyAccessCTA />
         <MarketingFooter
           isLoggedIn={isLoggedIn}
           onSignOut={handleSignOut}
@@ -415,82 +343,6 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* Extract Modal */}
-      {showExtractModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setShowExtractModal(false)}
-          />
-          <div role="dialog" aria-modal="true" aria-label="New extraction" className="relative w-full max-w-lg rounded-2xl bg-white p-8 shadow-2xl animate-scale-in">
-            <button
-              onClick={() => setShowExtractModal(false)}
-              className="absolute right-4 top-4 text-gray-400 hover:text-black transition-colors"
-              aria-label="Close"
-            >
-              <X size={18} />
-            </button>
-
-            <h2 className="mb-1 text-xl font-bold text-[#0a0a0a]">
-              New extraction
-            </h2>
-            <p className="mb-6 text-sm text-gray-500">
-              Paste a Figma file or website URL to extract its design system.
-            </p>
-
-            <div className="space-y-3">
-              <input
-                type="url"
-                placeholder="Paste a Figma file URL or website URL..."
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                autoFocus
-                className="h-13 w-full rounded-xl border border-black/[0.08] bg-white px-4 text-base text-[#0a0a0a] placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-400 transition-all"
-              />
-
-              {isFigma && (
-                <input
-                  type="password"
-                  placeholder="Figma Personal Access Token (figd_...)"
-                  value={pat}
-                  onChange={(e) => setPat(e.target.value)}
-                  className="h-13 w-full rounded-xl border border-black/[0.08] bg-white px-4 text-base text-[#0a0a0a] placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-400 transition-all"
-                />
-              )}
-
-              {sourceType && (
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">
-                    {isFigma ? "Figma" : "Website"}
-                  </span>
-                  <span>detected</span>
-                </div>
-              )}
-
-              <button
-                onClick={handleExtract}
-                disabled={!isValid || isExtracting}
-                className="h-11 w-full rounded-xl bg-[#0a0a0a] text-sm font-semibold text-white hover:bg-[#1a1a1a] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              >
-                {isExtracting ? "Starting extraction..." : "Extract Design System →"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showApiKeyModal && (
-        <ApiKeyModal
-          onClose={() => {
-            setShowApiKeyModal(false);
-            if (getStoredApiKey()) {
-              handleExtract();
-            } else {
-              setShowExtractModal(true);
-            }
-          }}
-        />
-      )}
     </>
   );
 }
