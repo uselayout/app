@@ -498,12 +498,15 @@ function ResultBlock({
     if (!block) return;
     const code = block.code.replace(/^```\w*\r?\n?/gm, "").replace(/^```\s*$/gm, "").trim();
     const prompt = [
-      `Use the push-to-figma tool with this component code:\n`,
+      `Call the superduper MCP server's push_to_figma tool with the following inputs:`,
+      `- code: the TSX below`,
+      `- name: "${result.prompt}"`,
+      "",
       "```tsx",
       code,
       "```",
       "",
-      `Frame name: "${result.prompt}"`,
+      "Do NOT create temp HTML files or start HTTP servers. The push_to_figma tool handles everything.",
     ].join("\n");
     const ok = await copyToClipboard(prompt);
     if (ok) {

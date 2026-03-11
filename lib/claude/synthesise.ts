@@ -4,6 +4,7 @@ import type {
   ImageBlockParam,
 } from "@anthropic-ai/sdk/resources/messages";
 import type { ExtractionResult } from "@/lib/types";
+import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
 
 const SYSTEM_PROMPT = `You are a design system architect synthesizing extracted design data into a DESIGN.md context file. This file will be consumed by AI coding agents (Claude Code, Cursor, Copilot) to generate pixel-accurate UI components.
 
@@ -249,23 +250,28 @@ function buildUserContent(
 export function createDesignMdStream(
   extractionData: ExtractionResult,
   apiKey?: string
-): ReadableStream<Uint8Array> {
+): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
   const userContent = buildUserContent(extractionData);
 
-  return new ReadableStream({
+  let resolveUsage: (u: TokenUsageResult) => void;
+  const usage = new Promise<TokenUsageResult>((resolve) => {
+    resolveUsage = resolve;
+  });
+
+  const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
 
       try {
-        const stream = anthropic.messages.stream({
+        const msgStream = anthropic.messages.stream({
           model: "claude-sonnet-4-6",
           max_tokens: 16384,
           system: SYSTEM_PROMPT,
           messages: [{ role: "user", content: userContent }],
         });
 
-        for await (const event of stream) {
+        for await (const event of msgStream) {
           if (
             event.type === "content_block_delta" &&
             event.delta.type === "text_delta"
@@ -273,12 +279,21 @@ export function createDesignMdStream(
             controller.enqueue(encoder.encode(event.delta.text));
           }
         }
+
+        const finalMessage = await msgStream.finalMessage();
+        resolveUsage({
+          inputTokens: finalMessage.usage.input_tokens,
+          outputTokens: finalMessage.usage.output_tokens,
+        });
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Unknown error";
         controller.enqueue(encoder.encode(`\n\n[Error generating DESIGN.md: ${msg}]`));
+        resolveUsage({ inputTokens: 0, outputTokens: 0 });
       } finally {
         controller.close();
       }
     },
   });
+
+  return { stream, usage };
 }
