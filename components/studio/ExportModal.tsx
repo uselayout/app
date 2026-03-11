@@ -164,7 +164,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
                   <span className="mr-2 text-[--text-muted]">1.</span>
                   Import the bundle into your project
                 </p>
-                <CopyBlock code={`npx @superduperui/context import ~/Downloads/${downloadFilename}`} />
+                <CopyBlock code={`npx @layoutdesign/context import ~/Downloads/${downloadFilename}`} />
               </div>
 
               {/* Step 2 */}
@@ -173,7 +173,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
                   <span className="mr-2 text-[--text-muted]">2.</span>
                   Auto-configure your AI tool
                 </p>
-                <CopyBlock code="npx @superduperui/context install" />
+                <CopyBlock code="npx @layoutdesign/context install" />
                 <p className="text-[10px] text-[--text-muted]">
                   Detects Claude Code, Cursor, and Windsurf automatically. Use{" "}
                   <code className="text-[10px]">--target claude</code> to target a specific tool.

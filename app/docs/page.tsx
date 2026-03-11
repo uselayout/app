@@ -5,7 +5,7 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Getting Started — SuperDuper Docs",
+  title: "Getting Started — Layout Docs",
   description:
     "Learn how to extract a design system, generate DESIGN.md, and drop it into your AI coding workflow.",
 };
@@ -19,7 +19,7 @@ export default function GettingStartedPage() {
       <div className="space-y-3">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Getting Started</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          SuperDuper Studio extracts design systems from Figma files or live
+          Layout Studio extracts design systems from Figma files or live
           websites and compiles them into an LLM-optimised context bundle. Drop
           that bundle into your project and every component your AI generates
           is on-brand — without pasting context manually.
@@ -103,7 +103,7 @@ export default function GettingStartedPage() {
           {[
             {
               step: "Extract",
-              desc: "Paste a Figma URL or website URL into SuperDuper Studio and run extraction.",
+              desc: "Paste a Figma URL or website URL into Layout Studio and run extraction.",
             },
             {
               step: "Review",

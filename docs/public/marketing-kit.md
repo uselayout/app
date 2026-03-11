@@ -1,9 +1,9 @@
-# SuperDuper AI Studio — Marketing Kit
+# Layout — Marketing Kit
 
 ## Brand Messaging
 
 ### Elevator Pitch (30 seconds)
-SuperDuper AI Studio is a design system compiler that extracts tokens from Figma files and live websites, then generates structured context bundles for AI coding agents. Unlike manually maintaining design documentation, AI Studio automates the entire pipeline — paste a URL, get a DESIGN.md that makes Claude, Cursor, and Codex generate on-brand UI every time.
+Layout is a design system compiler that extracts tokens from Figma files and live websites, then generates structured context bundles for AI coding agents. Unlike manually maintaining design documentation, AI Studio automates the entire pipeline — paste a URL, get a DESIGN.md that makes Claude, Cursor, and Codex generate on-brand UI every time.
 
 ### One-Liner
 The compiler between design systems and AI coding agents.
@@ -77,6 +77,8 @@ Design system tooling for AI-assisted development.
 | Structured DESIGN.md with Quick Reference section | Raw token dumps or verbose docs |
 | 2-minute automated pipeline | Hours of manual documentation |
 | Live component preview to verify output quality | No verification before use |
+| Open-source MCP server (MIT) with 9 tools | Closed-source, paid integrations |
+| Code → Figma → Designer → Code closed loop | One-directional code generation |
 
 ### Objection Handling
 - **"Figma MCP already does this"**: Figma MCP gives your AI raw Figma data — layer names, coordinates, nested groups. AI Studio gives it *structured design tokens* — semantic colour names, typography scales, usage guidance, and anti-patterns. The output quality is significantly better.
@@ -88,7 +90,7 @@ Design system tooling for AI-assisted development.
 ## Pitch Deck Outline
 
 ### Slide 1: Title
-SuperDuper AI Studio — The compiler between design systems and AI coding agents.
+Layout — The compiler between design systems and AI coding agents.
 
 ### Slide 2: Problem
 AI coding agents generate generic UI. They don't know your colour palette, typography, spacing, or component patterns. Developers waste time hand-feeding tokens into every prompt.
@@ -114,10 +116,10 @@ Claude Code, Cursor, GitHub Copilot, Windsurf, OpenAI Codex — one export, one 
 No Figma file? Extract from any live website. No competitor does this.
 
 ### Slide 9: Revenue Model
-Free BYOK tier → Pro at £19/month → Team at £49/month. Plus one-time AI Kit sales (£79–129 each).
+Free BYOK tier → Pro at £29/month → Team at £29/month + £15/seat. Open-source CLI/MCP server for adoption. Premium AI Kits bundled in Pro tier.
 
 ### Slide 10: Traction / Next Steps
-Built in 3 days. [X] extractions completed. Live at studio.superduperui.com. Backed by superduperui.com traffic.
+Built in 3 days. [X] extractions completed. Live at layout.design. Backed by layout.design traffic.
 
 ---
 
@@ -132,12 +134,16 @@ Built in 3 days. [X] extractions completed. Live at studio.superduperui.com. Bac
 3. **Solution**: Extracted design system with AI Studio. Distributed DESIGN.md to all developers.
 4. **Result**: [X]% reduction in design review comments. [Y] hours saved per developer per week.
 
+### Slide 10.5: Open Source + Figma Loop
+@layoutdesign/context — MIT-licensed MCP server with 9 tools, 3 free starter kits, and a code-to-design closed loop. `npx @layoutdesign/context install` and your AI has design context in 60 seconds. Push generated components to Figma for designer review, then pull changes back into code.
+
 ### Stats to Highlight
 - 2-minute extraction time (URL to ZIP)
 - 7 export formats in one bundle
+- 12 API endpoints
+- 9 MCP tools + 3 free starter kits
 - Works with 5+ AI coding tools
-- 6,547 lines of TypeScript
-- Built in 3 days
+- Built in 3 days, extended with billing, Figma loop, and docs
 
 ---
 

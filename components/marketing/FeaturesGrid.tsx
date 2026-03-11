@@ -9,7 +9,7 @@ const FEATURES = [
   {
     icon: Globe,
     title: "Website extraction",
-    desc: "No Figma file? Point at any live URL. SuperDuper Studio extracts design tokens from CSS and the DOM. No other tool does this.",
+    desc: "No Figma file? Point at any live URL. Layout Studio extracts design tokens from CSS and the DOM. No other tool does this.",
   },
   {
     icon: FileText,
@@ -24,7 +24,7 @@ const FEATURES = [
   {
     icon: Terminal,
     title: "MCP server built in",
-    desc: "SuperDuper CLI exposes 10 MCP tools. Your AI agent reads tokens, gets component specs, checks compliance, and previews output — without leaving the chat.",
+    desc: "Layout CLI exposes 10 MCP tools. Your AI agent reads tokens, gets component specs, checks compliance, and previews output — without leaving the chat.",
   },
   {
     icon: Eye,

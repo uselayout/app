@@ -3,9 +3,9 @@
 ## Twitter/X
 
 ### Launch Announcement
-Introducing SuperDuper AI Studio — paste a Figma URL or any website, get a structured DESIGN.md that makes Claude, Cursor, and Codex generate on-brand UI every time. No plugins. No manual tokens. 2 minutes.
+Introducing Layout — paste a Figma URL or any website, get a structured DESIGN.md that makes Claude, Cursor, and Codex generate on-brand UI every time. No plugins. No manual tokens. 2 minutes.
 
-studio.superduperui.com
+layout.design
 
 ### Launch Thread (Build Story)
 
@@ -23,23 +23,23 @@ studio.superduperui.com
 
 7/ Plus a live test panel: ask Claude to "build a card component" using your design system, and see it rendered live in the browser. Verify the output before exporting.
 
-8/ Built in 3 days with Next.js 15, React 19, TypeScript, Tailwind v4, Monaco Editor, and Claude. 6,500 lines of code. 22 commits. Try it free: studio.superduperui.com
+8/ Built in 3 days with Next.js 15, React 19, TypeScript, Tailwind v4, Monaco Editor, and Claude. 6,500 lines of code. 22 commits. Try it free: layout.design
 
 ### Feature Highlight Posts
 
 **Website Extraction**:
-No Figma file? No problem. SuperDuper AI Studio extracts design tokens from any live website — fonts, colours, spacing, shadows — all from computed CSS. Paste stripe.com, get Stripe's design system as DESIGN.md. studio.superduperui.com
+No Figma file? No problem. Layout extracts design tokens from any live website — fonts, colours, spacing, shadows — all from computed CSS. Paste stripe.com, get Stripe's design system as DESIGN.md. layout.design
 
 **Export Bundle**:
-One extraction. Seven formats. DESIGN.md, CLAUDE.md, AGENTS.md, .cursorrules, tokens.css, tokens.json, tailwind.config.js. Works with Claude Code, Cursor, Copilot, Windsurf, and Codex. studio.superduperui.com
+One extraction. Seven formats. DESIGN.md, CLAUDE.md, AGENTS.md, .cursorrules, tokens.css, tokens.json, tailwind.config.js. Works with Claude Code, Cursor, Copilot, Windsurf, and Codex. layout.design
 
 **Live Preview**:
-AI Studio has a built-in test panel. Ask Claude to build a component using your extracted design system, and see it rendered live. Verify before you export. studio.superduperui.com
+AI Studio has a built-in test panel. Ask Claude to build a component using your extracted design system, and see it rendered live. Verify before you export. layout.design
 
 **Before/After**:
 Left: AI output without DESIGN.md — generic colours, wrong fonts, inconsistent spacing.
 Right: AI output with DESIGN.md — exact brand colours, correct typography, proper component patterns.
-The difference is structured context. studio.superduperui.com
+The difference is structured context. layout.design
 
 ---
 
@@ -52,7 +52,7 @@ The AI doesn't know your colour palette. It doesn't know your typography scale. 
 
 The fix isn't better prompting. It's better context.
 
-I built SuperDuper AI Studio to solve this. It's a design system compiler that:
+I built Layout to solve this. It's a design system compiler that:
 
 - Extracts tokens from Figma files or live websites (yes, any URL)
 - Generates a structured DESIGN.md optimised for LLM consumption
@@ -62,7 +62,7 @@ Paste a URL. Get an AI kit in 2 minutes. Every prompt your AI agent runs now has
 
 The website extraction is the part I'm most proud of — no Figma access needed. Playwright loads the page and scrapes computed CSS from the DOM. Fonts, colours, spacing, shadows. From the actual rendered output.
 
-Try it free: studio.superduperui.com
+Try it free: layout.design
 
 ### Founder Story Post
 Three days. 6,500 lines of TypeScript. One problem I couldn't stop thinking about.
@@ -71,13 +71,13 @@ I run a digital product agency. We build MVPs in 5-day sprints. AI coding agents
 
 The root cause: AI agents read markdown, but design systems live in Figma. There was nothing connecting the two.
 
-So I built the connection. SuperDuper AI Studio extracts design tokens from Figma (or any live website) and compiles them into structured DESIGN.md files. Drop it in your repo, and every AI prompt has full design context.
+So I built the connection. Layout extracts design tokens from Figma (or any live website) and compiles them into structured DESIGN.md files. Drop it in your repo, and every AI prompt has full design context.
 
 The hardest part wasn't the extraction — it was getting the DESIGN.md format right. Too much detail and you blow the context window. Too little and the AI still generates generic output. The Quick Reference section (50–75 lines) turned out to be the sweet spot.
 
 Built with Next.js 15, React 19, Claude, Playwright, and the Figma API. Deployed on Coolify/Hetzner.
 
-studio.superduperui.com
+layout.design
 
 ---
 
@@ -99,7 +99,7 @@ I built a tool that compiles design systems into context files for AI coding age
 
 Built with Next.js 15, TypeScript, Tailwind v4, Monaco Editor, Anthropic SDK, Playwright, Figma API.
 
-Free to try (BYOK with your Anthropic API key): studio.superduperui.com
+Free to try (BYOK with your Anthropic API key): layout.design
 
 Would love feedback on the DESIGN.md format — particularly the Quick Reference section and how well it works with different AI tools.
 
@@ -111,7 +111,7 @@ Would love feedback on the DESIGN.md format — particularly the Quick Reference
 The compiler between design systems and AI coding agents.
 
 ### Description
-SuperDuper AI Studio extracts design tokens from Figma files and live websites, then compiles them into structured context bundles for AI coding agents.
+Layout extracts design tokens from Figma files and live websites, then compiles them into structured context bundles for AI coding agents.
 
 Paste a URL. Get a DESIGN.md, CLAUDE.md, AGENTS.md, tokens.css, and tailwind.config.js in under 2 minutes.
 
@@ -130,9 +130,9 @@ I built AI Studio to bridge that gap. The two things I'm most proud of:
 
 2. The Quick Reference format — a 50-75 line summary inside DESIGN.md that fits in any context window without blowing your token budget.
 
-Would love feedback on what export formats would be most useful. Currently thinking about adding a CLI tool (`npx @superduperai/sync`) for zero-friction updates.
+Would love feedback on what export formats would be most useful. Currently thinking about adding a CLI tool (`npx @layoutdesign/sync`) for zero-friction updates.
 
-Try it free with your own Anthropic API key: studio.superduperui.com
+Try it free with your own Anthropic API key: layout.design
 
 ---
 
@@ -159,4 +159,4 @@ Try it free with your own Anthropic API key: studio.superduperui.com
 - **Technical deep-dive**: How `page.evaluate()` + `getComputedStyle()` captures actual rendered values.
 - **What we found**: Stripe's colour palette, font stack, spacing scale, shadow values.
 - **The DESIGN.md**: Publish the actual output (edited for clarity).
-- **CTA**: Extract your own at studio.superduperui.com.
+- **CTA**: Extract your own at layout.design.

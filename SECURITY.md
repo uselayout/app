@@ -2,11 +2,11 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in SuperDuper AI Studio, please report it responsibly.
+If you discover a security vulnerability in Layout, please report it responsibly.
 
 **Do NOT open a public GitHub issue for security vulnerabilities.**
 
-Instead, email us at **security@superduperui.com** with:
+Instead, email us at **security@layout.design** with:
 
 1. A description of the vulnerability
 2. Steps to reproduce
@@ -17,7 +17,7 @@ We will acknowledge your report within 48 hours and aim to provide a fix within 
 
 ## Scope
 
-This policy applies to the SuperDuper AI Studio codebase. Third-party dependencies should be reported to their respective maintainers.
+This policy applies to the Layout codebase. Third-party dependencies should be reported to their respective maintainers.
 
 ## Supported Versions
 

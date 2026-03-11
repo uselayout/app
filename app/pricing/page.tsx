@@ -56,7 +56,7 @@ function PricingContent() {
             <ArrowLeft className="h-4 w-4" />
             Back to Studio
           </button>
-          <span className="text-sm font-semibold text-gray-900">SuperDuper AI Studio</span>
+          <span className="text-sm font-semibold text-gray-900">Layout</span>
           {tier !== "free" && (
             <button
               onClick={handleManage}
@@ -136,7 +136,7 @@ function PricingContent() {
 
       {/* Footer */}
       <footer className="border-t border-gray-100 px-6 py-8 text-center text-xs text-gray-400">
-        SuperDuper AI Studio · superduperui.com
+        Layout · layout.design
       </footer>
     </div>
   );
@@ -165,7 +165,7 @@ const faqs = [
   },
   {
     q: "Is the CLI and MCP server free?",
-    a: "Yes, forever. The @superduperui/context CLI and MCP server are MIT-licensed open source. You can self-host the entire Studio too.",
+    a: "Yes, forever. The @layoutdesign/context CLI and MCP server are MIT-licensed open source. You can self-host the entire Studio too.",
   },
 ];
 

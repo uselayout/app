@@ -34,7 +34,7 @@ export async function getCreditBalance(
   userId: string
 ): Promise<CreditBalance | null> {
   const { data, error } = await supabase
-    .from("sd_aistudio_credit_balance")
+    .from("layout_credit_balance")
     .select("*")
     .eq("user_id", userId)
     .single();
@@ -95,7 +95,7 @@ export async function deductCredit(
 ): Promise<boolean> {
   const creditType = endpoint === "design-md" ? "design_md" : "test_query";
 
-  const { data, error } = await supabase.rpc("sd_aistudio_deduct_credit", {
+  const { data, error } = await supabase.rpc("layout_deduct_credit", {
     p_user_id: userId,
     p_type: creditType,
   });
@@ -123,7 +123,7 @@ export async function resetMonthlyCredits(
   const multiplier = tier === "team" ? seatCount : 1;
 
   const { error } = await supabase
-    .from("sd_aistudio_credit_balance")
+    .from("layout_credit_balance")
     .upsert(
       {
         user_id: userId,
@@ -145,7 +145,7 @@ export async function addTopupCredits(userId: string): Promise<void> {
   // First ensure a row exists
   const balance = await getCreditBalance(userId);
   if (!balance) {
-    const { error } = await supabase.from("sd_aistudio_credit_balance").insert({
+    const { error } = await supabase.from("layout_credit_balance").insert({
       user_id: userId,
       design_md_remaining: 0,
       test_query_remaining: 0,
@@ -160,7 +160,7 @@ export async function addTopupCredits(userId: string): Promise<void> {
 
   // Increment top-up credits
   const { error: updateError } = await supabase
-    .from("sd_aistudio_credit_balance")
+    .from("layout_credit_balance")
     .update({
       topup_design_md: balance.topupDesignMd + CREDITS.topup.designMd,
       topup_test_query: balance.topupTestQuery + CREDITS.topup.testQuery,

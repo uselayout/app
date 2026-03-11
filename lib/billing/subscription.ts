@@ -39,7 +39,7 @@ export async function getSubscription(
   userId: string
 ): Promise<Subscription | null> {
   const { data, error } = await supabase
-    .from("sd_aistudio_subscription")
+    .from("layout_subscription")
     .select("*")
     .eq("user_id", userId)
     .single();
@@ -79,7 +79,7 @@ export async function upsertSubscription(
   if (sub.seatCount !== undefined) row.seat_count = sub.seatCount;
 
   const { error } = await supabase
-    .from("sd_aistudio_subscription")
+    .from("layout_subscription")
     .upsert(row, { onConflict: "user_id" });
 
   if (error) {
@@ -91,7 +91,7 @@ export async function getSubscriptionByStripeCustomerId(
   stripeCustomerId: string
 ): Promise<Subscription | null> {
   const { data, error } = await supabase
-    .from("sd_aistudio_subscription")
+    .from("layout_subscription")
     .select("*")
     .eq("stripe_customer_id", stripeCustomerId)
     .single();

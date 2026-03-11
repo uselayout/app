@@ -6,9 +6,9 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Walkthrough — SuperDuper Docs",
+  title: "Walkthrough — Layout Docs",
   description:
-    "A complete end-to-end walkthrough of SuperDuper AI Studio — from extracting a design system to exporting a working AI kit and closing the Figma loop.",
+    "A complete end-to-end walkthrough of Layout AI Studio — from extracting a design system to exporting a working AI kit and closing the Figma loop.",
 };
 
 export default function WalkthroughPage() {
@@ -22,7 +22,7 @@ export default function WalkthroughPage() {
           End-to-End Walkthrough
         </h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          This walkthrough covers the complete SuperDuper AI Studio workflow —
+          This walkthrough covers the complete Layout AI Studio workflow —
           from pasting a URL to having your AI agent automatically generate
           on-brand UI. Each step builds on the previous one, so read it in
           order the first time through.
@@ -43,10 +43,10 @@ export default function WalkthroughPage() {
           Token. You can create one at{" "}
           <strong>Figma → Settings → Account → Personal access tokens</strong>.
           The token is stored only in your browser — it is never sent to
-          SuperDuper servers.
+          Layout servers.
         </p>
         <p className="text-base text-gray-600 leading-relaxed">
-          SuperDuper calls the Figma REST API in two passes: first to list
+          Layout calls the Figma REST API in two passes: first to list
           styles and component metadata, then to resolve actual values for each
           node. The following data is extracted:
         </p>
@@ -97,7 +97,7 @@ export default function WalkthroughPage() {
         </div>
         <Callout type="info">
           The Figma Variables API returns 403 on non-Enterprise plans. This is
-          expected — SuperDuper treats it as non-fatal and continues extraction
+          expected — Layout treats it as non-fatal and continues extraction
           using colour and typography styles instead. You will still get a
           complete DESIGN.md.
         </Callout>
@@ -109,7 +109,7 @@ export default function WalkthroughPage() {
           2. Extract from a Website
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          No Figma file? Paste any live website URL instead. SuperDuper uses
+          No Figma file? Paste any live website URL instead. Layout uses
           Playwright to load the page in a headless browser and extract design
           data directly from the rendered DOM and computed styles. This works
           on any public website — your own staging environment, a competitor
@@ -495,15 +495,15 @@ export default function WalkthroughPage() {
         <p className="text-base text-gray-600 leading-relaxed">
           The{" "}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
-            @superduperui/context
+            @layoutdesign/context
           </code>{" "}
           CLI imports your Studio export and configures the MCP server so your
           AI agent automatically reads the design system on every session. Two
           commands are all that is needed:
         </p>
         <CopyBlock
-          code={`npx @superduperui/context import ./superduper-export.zip
-npx @superduperui/context install`}
+          code={`npx @layoutdesign/context import ./layout-export.zip
+npx @layoutdesign/context install`}
           language="bash"
         />
         <p className="text-base text-gray-600 leading-relaxed">
@@ -513,7 +513,7 @@ npx @superduperui/context install`}
           </code>{" "}
           command unpacks the ZIP into a{" "}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
-            .superduper/
+            .layout/
           </code>{" "}
           directory in your project. The{" "}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
@@ -617,7 +617,7 @@ npx @superduperui/context install`}
           9. The Figma Closed Loop
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          SuperDuper closes the loop between code and design — something
+          Layout closes the loop between code and design — something
           previously requiring separate tools and manual handoffs. Preview
           components locally at{" "}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
@@ -783,9 +783,9 @@ npx @superduperui/context install`}
             </table>
           </div>
           <CopyBlock
-            code={`npx @superduperui/context init --kit linear-lite
-npx @superduperui/context init --kit stripe-lite
-npx @superduperui/context init --kit notion-lite`}
+            code={`npx @layoutdesign/context init --kit linear-lite
+npx @layoutdesign/context init --kit stripe-lite
+npx @layoutdesign/context init --kit notion-lite`}
             language="bash"
           />
           <Callout type="tip">

@@ -33,7 +33,7 @@ export function DocsShell({ children }: DocsShellProps) {
           </button>
 
           <Link href="/" className="font-black text-black tracking-tight text-lg">
-            SuperDuper
+            Layout
           </Link>
 
           <span className="text-gray-300 hidden sm:block">|</span>
@@ -42,7 +42,7 @@ export function DocsShell({ children }: DocsShellProps) {
             href="/"
             className="hidden sm:block text-sm text-gray-500 hover:text-black transition-colors"
           >
-            Back to SuperDuper
+            Back to Layout
           </Link>
 
           <div className="ml-auto">

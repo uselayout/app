@@ -48,7 +48,7 @@ export function FigmaLoopSection() {
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-gray-400 leading-relaxed">
             Every design-to-code tool is a one-way street.
-            SuperDuper closes the loop. Push AI-generated components to Figma
+            Layout closes the loop. Push AI-generated components to Figma
             as editable frames. Design new screens using your tokens.
             Pull designer changes back into code. No new tools. No friction.
           </p>

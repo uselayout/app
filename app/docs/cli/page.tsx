@@ -6,9 +6,9 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "CLI Guide — SuperDuper Docs",
+  title: "CLI Guide — Layout Docs",
   description:
-    "Install the @superduperui/context MCP server, import your Studio export, and give your AI agent automatic access to your design system.",
+    "Install the @layoutdesign/context MCP server, import your Studio export, and give your AI agent automatic access to your design system.",
 };
 
 export default function CliPage() {
@@ -18,10 +18,10 @@ export default function CliPage() {
     <div className="space-y-10">
       {/* Header */}
       <div className="space-y-3">
-        <h1 className="text-3xl font-bold text-[#0a0a0a]">SuperDuper CLI</h1>
+        <h1 className="text-3xl font-bold text-[#0a0a0a]">Layout CLI</h1>
         <p className="text-base text-gray-600 leading-relaxed">
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
-            @superduperui/context
+            @layoutdesign/context
           </code>{" "}
           is an open-source, MIT-licensed npm package that serves your design
           system context to AI agents via the Model Context Protocol (MCP). Once
@@ -40,18 +40,18 @@ export default function CliPage() {
         <p className="text-base text-gray-600 leading-relaxed">
           Initialise a{" "}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
-            .superduper/
+            .layout/
           </code>{" "}
           directory in your project with a free starter kit. No signup required.
         </p>
         <CopyBlock
-          code="npx @superduperui/context init --kit linear-lite"
+          code="npx @layoutdesign/context init --kit linear-lite"
           language="bash"
         />
         <p className="text-base text-gray-600 leading-relaxed">
           This creates a{" "}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
-            .superduper/
+            .layout/
           </code>{" "}
           directory containing DESIGN.md and the token files for the chosen
           starter kit. See the{" "}
@@ -62,7 +62,7 @@ export default function CliPage() {
         </p>
         <Callout type="tip">
           After <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">init</code>, run{" "}
-          <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">npx @superduperui/context install</code> to
+          <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">npx @layoutdesign/context install</code> to
           auto-configure your AI agent&apos;s MCP settings — no manual JSON editing required.
         </Callout>
       </section>
@@ -71,17 +71,17 @@ export default function CliPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Importing from Studio</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          If you have already exported a ZIP bundle from SuperDuper Studio,
+          If you have already exported a ZIP bundle from Layout Studio,
           import it directly — no need to use a starter kit.
         </p>
         <CopyBlock
-          code="npx @superduperui/context import ./export.zip"
+          code="npx @layoutdesign/context import ./export.zip"
           language="bash"
         />
         <p className="text-base text-gray-600 leading-relaxed">
           This unpacks the bundle into{" "}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
-            .superduper/
+            .layout/
           </code>{" "}
           and makes your extracted DESIGN.md and tokens available to the MCP
           server immediately.
@@ -95,7 +95,7 @@ export default function CliPage() {
           Start the local MCP server in your project directory:
         </p>
         <CopyBlock
-          code="npx @superduperui/context serve"
+          code="npx @layoutdesign/context serve"
           language="bash"
         />
         <p className="text-base text-gray-600 leading-relaxed">
@@ -118,16 +118,16 @@ export default function CliPage() {
           automatically writes the MCP server configuration to your AI tool&apos;s settings file:
         </p>
         <CopyBlock
-          code="npx @superduperui/context install"
+          code="npx @layoutdesign/context install"
           language="bash"
         />
         <p className="text-base text-gray-600 leading-relaxed">
           This detects Claude Code, Cursor, and Windsurf and configures whichever are present. To target a specific tool:
         </p>
         <CopyBlock
-          code={`npx @superduperui/context install --target claude
-npx @superduperui/context install --target cursor
-npx @superduperui/context install --target windsurf`}
+          code={`npx @layoutdesign/context install --target claude
+npx @layoutdesign/context install --target cursor
+npx @layoutdesign/context install --target windsurf`}
           language="bash"
         />
       </section>
@@ -139,14 +139,14 @@ npx @superduperui/context install --target windsurf`}
           List all available kits (both free starter kits and any you&apos;ve imported from Studio):
         </p>
         <CopyBlock
-          code="npx @superduperui/context list"
+          code="npx @layoutdesign/context list"
           language="bash"
         />
         <p className="text-base text-gray-600 leading-relaxed">
           Switch to a different kit:
         </p>
         <CopyBlock
-          code="npx @superduperui/context use stripe-lite"
+          code="npx @layoutdesign/context use stripe-lite"
           language="bash"
         />
       </section>
@@ -158,8 +158,8 @@ npx @superduperui/context install --target windsurf`}
           The fastest path from Studio to working AI context is three commands:
         </p>
         <CopyBlock
-          code={`npx @superduperui/context import ./superduper-export.zip
-npx @superduperui/context install
+          code={`npx @layoutdesign/context import ./layout-export.zip
+npx @layoutdesign/context install
 # Done — your AI agent reads the design system automatically`}
           language="bash"
         />
@@ -269,8 +269,8 @@ npx @superduperui/context install
         </div>
         <CopyBlock
           code={`# Use any kit name with the init command
-npx @superduperui/context init --kit stripe-lite
-npx @superduperui/context init --kit notion-lite`}
+npx @layoutdesign/context init --kit stripe-lite
+npx @layoutdesign/context init --kit notion-lite`}
           language="bash"
         />
       </section>
