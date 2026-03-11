@@ -1,0 +1,106 @@
+:root {
+  /* === COLOURS === */
+  --layer-context-menu: 1200;
+  --border-hairline: 1px;
+  --scrollbar-color: rgba(255,255,255,0.1);
+  --scrollbar-color-hover: rgba(255,255,255,0.2);
+  --scrollbar-color-active: rgba(255,255,255,0.4);
+  --color-white: #fff;
+  --color-black: #000;
+  --color-blue: #4ea7fc;
+  --color-red: #eb5757;
+  --color-green: #27a644;
+  --color-orange: #fc7840;
+  --color-yellow: #f0bf00;
+  --color-indigo: #5e6ad2;
+  --color-teal: #00b8cc;
+  --color-linear-plan: #68cc58;
+  --color-linear-build: #d4b144;
+  --color-linear-security: #7a7fad;
+  --focus-ring-color: var(--color-indigo);
+  --text-large: var(--text-large-size) /var(--text-large-line-height) var(--font-regular);
+  --text-large-size: 1.0625rem;
+  --text-large-line-height: 1.6;
+  --text-large-letter-spacing: 0;
+  --text-regular: var(--text-regular-size) /var(--text-regular-line-height) var(--font-regular);
+  --text-regular-size: 0.9375rem;
+  --text-regular-line-height: 1.6;
+  --text-regular-letter-spacing: -0.011em;
+  --text-small: var(--text-small-size) /var(--text-small-line-height) var(--font-regular);
+  --text-small-size: 0.875rem;
+  --text-small-line-height: calc(21 / 14);
+  --text-small-letter-spacing: -0.013em;
+  --text-mini: var(--text-mini-size) /var(--text-mini-line-height) var(--font-regular);
+  --text-mini-size: 0.8125rem;
+  --text-mini-line-height: 1.5;
+  --text-mini-letter-spacing: -0.01em;
+  --text-micro: var(--text-micro-size) /var(--text-micro-line-height) var(--font-regular);
+  --text-micro-size: 0.75rem;
+  --text-micro-line-height: 1.4;
+  --text-micro-letter-spacing: 0;
+  --text-tiny: var(--text-tiny-size) /var(--text-tiny-line-height) var(--font-regular);
+  --text-tiny-size: 0.625rem;
+  --text-tiny-line-height: 1.5;
+  --text-tiny-letter-spacing: -0.015em;
+
+  /* === TYPOGRAPHY === */
+  --font-serif-display: "Tiempos Headline",ui-serif,Georgia,Cambria,"Times New Roman",Times,serif;
+  --font-regular: "Inter Variable","SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI","Roboto","Oxygen","Ubuntu","Cantarell","Open Sans","Helvetica Neue",sans-serif;
+  --font-emoji: "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Segoe UI","Twemoji Mozilla","Noto Color Emoji","Android Emoji";
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 510;
+  --font-weight-semibold: 590;
+  --font-weight-bold: 680;
+  --min-tap-size: 44px;
+  --scrollbar-size: 6px;
+  --scrollbar-size-active: 10px;
+  --font-size-micro: 0.6875rem;
+  --font-size-microPlus: 0.6875rem;
+  --font-size-mini: 0.75rem;
+  --font-size-miniPlus: 0.75rem;
+  --font-size-small: 0.8125rem;
+  --font-size-smallPlus: 0.8125rem;
+  --font-size-regular: 0.9375rem;
+  --font-size-regularPlus: 0.9375rem;
+  --font-size-large: 1.125rem;
+  --font-size-largePlus: 1.125rem;
+  --font-size-title1: 2.25rem;
+  --font-size-title2: 1.5rem;
+  --font-size-title3: 1.25rem;
+  --title-1-size: 1.0625rem;
+  --title-2-size: 1.25rem;
+  --title-3-size: 1.5rem;
+  --title-4-size: 2rem;
+  --title-5-size: 2.5rem;
+  --title-6-size: 3rem;
+  --title-7-size: 3.5rem;
+  --title-8-size: 4rem;
+  --title-9-size: 4.5rem;
+
+  /* === SPACING === */
+  --font-monospace: "Berkeley Mono",ui-monospace,"SF Mono","Menlo",monospace;
+  --scrollbar-gap: 4px;
+  --title-1-letter-spacing: -0.012em;
+  --title-2-letter-spacing: -0.012em;
+  --title-3-letter-spacing: -0.012em;
+  --title-4-letter-spacing: -0.022em;
+  --title-5-letter-spacing: -0.022em;
+  --title-6-letter-spacing: -0.022em;
+  --title-7-letter-spacing: -0.022em;
+  --title-8-letter-spacing: -0.022em;
+  --title-9-letter-spacing: -0.022em;
+
+  /* === BORDER RADIUS === */
+  --radius-4: 4px;
+  --radius-6: 6px;
+  --radius-8: 8px;
+  --radius-12: 12px;
+  --radius-16: 16px;
+  --radius-24: 24px;
+  --radius-32: 32px;
+  --radius-rounded: 9999px;
+  --radius-circle: 50%;
+  --rounded-full: 9999px;
+
+}
