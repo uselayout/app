@@ -10,6 +10,7 @@ import {
   Check,
   ChevronDown,
   Trash2,
+  Figma,
 } from "lucide-react";
 import { calculateHealthScore } from "@/lib/health/score";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
@@ -490,6 +491,26 @@ function ResultBlock({
   onDelete: (id: string) => void;
 }) {
   const [tab, setTab] = useState<"preview" | "code">("preview");
+  const [figmaCopied, setFigmaCopied] = useState(false);
+
+  const handlePushToFigma = useCallback(async () => {
+    const block = extractFirstCodeBlock(result.output);
+    if (!block) return;
+    const code = block.code.replace(/^```\w*\r?\n?/gm, "").replace(/^```\s*$/gm, "").trim();
+    const prompt = [
+      `Use the push-to-figma tool with this component code:\n`,
+      "```tsx",
+      code,
+      "```",
+      "",
+      `Frame name: "${result.prompt}"`,
+    ].join("\n");
+    const ok = await copyToClipboard(prompt);
+    if (ok) {
+      setFigmaCopied(true);
+      setTimeout(() => setFigmaCopied(false), 2000);
+    }
+  }, [result.output, result.prompt]);
 
   return (
     <div className="space-y-2">
@@ -569,9 +590,28 @@ function ResultBlock({
             <button
               onClick={() => onRerun(result)}
               className="rounded p-1 text-[--text-muted] transition-colors hover:text-[--text-secondary]"
+              title="Re-run prompt"
             >
               <RotateCcw className="h-3 w-3" />
             </button>
+            {extractFirstCodeBlock(result.output) && (
+              <button
+                onClick={handlePushToFigma}
+                className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] transition-colors ${
+                  figmaCopied
+                    ? "text-emerald-400"
+                    : "text-[--text-muted] hover:text-[--text-secondary] hover:bg-[--bg-hover]"
+                }`}
+                title="Copy prompt for Figma MCP — paste into Claude Code or Cursor"
+              >
+                {figmaCopied ? (
+                  <Check className="h-3 w-3" />
+                ) : (
+                  <Figma className="h-3 w-3" />
+                )}
+                <span>{figmaCopied ? "Copied!" : "Push to Figma"}</span>
+              </button>
+            )}
           </>
         )}
         <button
