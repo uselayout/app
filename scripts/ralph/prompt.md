@@ -1,6 +1,6 @@
 # Ralph Iteration
 
-You are in a Ralph autonomous loop for **SuperDuper AI Studio**.
+You are in a Ralph autonomous loop for **Layout**.
 
 ## Your Job (ONE story only)
 
@@ -139,7 +139,7 @@ export const useProjectStore = create(
     (set, get) => ({
       // state and actions
     }),
-    { name: 'superduper-projects' }
+    { name: 'layout-projects' }
   )
 );
 ```

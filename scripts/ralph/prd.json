@@ -1,5 +1,5 @@
 {
-  "project": "superduper-ai-studio",
+  "project": "layout-studio",
   "description": "Browser-based tool that extracts design systems from Figma/websites and generates AI-ready DESIGN.md context bundles",
   "stack": {
     "frontend": "Next.js 15, React 19, TypeScript (strict), Tailwind CSS",
@@ -91,7 +91,7 @@
       "description": "Build the TopBar component with project name (inline editable), save status indicator, source badge, and action buttons.",
       "acceptanceCriteria": [
         "components/shared/TopBar.tsx renders with bg-[--bg-panel] and border-b border-[--border]",
-        "Left side: SuperDuper AI Studio logo/wordmark",
+        "Left side: Layout logo/wordmark",
         "Centre: project name as inline-editable text (click to edit, blur to save)",
         "Centre: 'Saved Xs ago' or 'Saving...' status indicator",
         "Centre: source badge (Figma icon or Globe icon with source name)",

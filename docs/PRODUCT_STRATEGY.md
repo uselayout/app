@@ -1,4 +1,4 @@
-# SuperDuper AI Studio — Product Strategy
+# Layout — Product Strategy
 
 ## What We Have Today
 
@@ -7,7 +7,13 @@ A working browser-based tool that:
 - Synthesises a structured DESIGN.md using Claude
 - Exports AI context bundles (CLAUDE.md, AGENTS.md, .cursorrules, tokens.css, tokens.json, tailwind.config.js)
 - Has auth (Better Auth), project persistence (Supabase), and a test panel with live component preview
-- Staging marketing page at superduperui.com/ai-studio
+- **Billing system** — Stripe integration with credit-based usage tracking, subscription tiers (Free BYOK / Pro £29/mo / Team £29+£15/seat)
+- **Pricing page** — tier comparison with billing CTAs
+- **Figma closed loop** — Push to Figma button in TestPanel + `design-in-figma` MCP tool
+- **Health scoring** — automated 0–100 design compliance scoring
+- **Documentation pages** — built-in docs with sidebar navigation
+- **Marketing homepage** — redesigned with Figma-centred narrative on main domain
+- **Open-source MCP server** — @layoutdesign/context (MIT, 9 tools, 3 free kits, published on npm)
 
 ---
 
@@ -62,27 +68,28 @@ These are high-margin (extract once, sell many times) and serve as proof of capa
 
 ## Missing Features (Priority Order)
 
-### 1. CLI Sync Tool (Highest Impact)
-**What:** `npx @superduperai/sync` — pulls latest DESIGN.md into your project from the cloud
-**Why:** Removes friction entirely. Developer runs one command, gets fresh context. No manual download/unzip.
-**Scope:** ~2–3 days of work. Read project config from `.superduperrc`, fetch from API, write files.
+### ~~1. CLI Sync Tool~~ ✅ Done
+Shipped as @layoutdesign/context — MIT-licensed MCP server + CLI with 9 tools, 3 free kits, and `npx @layoutdesign/context install` for one-command setup.
 
-### 2. Drift Detection
+### ~~Stripe Billing~~ ✅ Done
+Full Stripe integration with credit-based usage tracking, checkout sessions, customer portal, webhook handling, and a pricing page.
+
+### 1. Drift Detection (Highest Impact Remaining)
 **What:** Weekly automated re-extraction. Diff against previous version. Email/Slack alert if tokens changed.
 **Why:** Design systems drift. This is the "why you stay subscribed" feature for Pro tier.
 **Scope:** Cron job + diff engine + notification. ~1 week.
 
-### 3. Design System Versioning
+### 2. Design System Versioning
 **What:** Store every extraction as a version. Compare v1 vs v2. Roll back.
 **Why:** Enterprises need audit trails. Also enables the drift detection feature above.
 **Scope:** Database schema change + UI for version history. ~1 week.
 
-### 4. AI Kit Marketplace
+### 3. AI Kit Marketplace
 **What:** Browse and purchase pre-built kits for popular apps (Linear, Stripe, Apple, etc.)
 **Why:** Immediate revenue without requiring users to extract anything. Great for SEO ("Linear design system for AI").
-**Scope:** Product pages on superduperui.com + Stripe checkout + delivery. ~1–2 weeks.
+**Scope:** Product pages on layout.design + Stripe checkout + delivery. ~1–2 weeks.
 
-### 5. Team Features
+### 4. Team Features
 **What:** Shared project library, team seats, centralised billing.
 **Why:** Unlocks Team tier revenue. Companies have 3–10 developers sharing one design system.
 **Scope:** Database multi-tenancy, invite flow, permissions. ~2 weeks.
@@ -120,10 +127,10 @@ Publicly publish DESIGN.md teardowns for 10 famous products. This serves as:
 3. **Free samples** — developers try a kit, then want to extract their own
 4. **Social proof** — "used to analyse Stripe, Linear, Vercel design systems"
 
-### Distribution via superduperui.com
-- superduperui.com already gets traffic from developers browsing UI clones
-- The `/ai-studio` page is live (staging) — ready to link from nav on launch day
-- `studio.superduperui.com` subdomain for the app itself
+### Distribution via layout.design
+- layout.design already gets traffic from developers browsing UI clones
+- Marketing page redesigned on main domain with Figma-centred narrative
+- `layout.design` subdomain for the app itself (pending DNS setup)
 - Cross-promote: "Built a clone in Figma? Extract the design system with AI Studio"
 
 ---
@@ -142,11 +149,13 @@ Publicly publish DESIGN.md teardowns for 10 famous products. This serves as:
 
 ## Next Steps (Recommended Order)
 
-1. Set up `studio.superduperui.com` subdomain in Coolify (DNS + domain config)
-2. Build the CLI sync tool (`npx @superduperai/sync`)
-3. Create 3 AI Kits (Linear, Stripe, Vercel) and list on superduperui.com
+1. Set up `layout.design` subdomain in Coolify (DNS + domain config)
+2. ~~Build the CLI sync tool~~ ✅ Shipped as @layoutdesign/context
+3. Create premium AI Kits (Apple iOS, Revolut, Vercel) and list on layout.design
 4. Write 3 "design system teardown" blog posts for SEO
 5. Prepare Show HN post + 2-minute demo video
 6. Launch sequence: HN → Reddit → Product Hunt → Kits
-7. Add Stripe billing for Pro tier
+7. ~~Add Stripe billing for Pro tier~~ ✅ Done
 8. Build drift detection for subscriber retention
+9. Complete Figma push E2E flow (OAuth + generate_figma_design integration)
+10. Add rate limiting on public API endpoints

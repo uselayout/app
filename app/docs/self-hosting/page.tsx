@@ -6,9 +6,9 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Self-Hosting — SuperDuper Docs",
+  title: "Self-Hosting — Layout Docs",
   description:
-    "Deploy SuperDuper AI Studio on your own infrastructure using Docker, Coolify, Railway, or any VPS.",
+    "Deploy Layout AI Studio on your own infrastructure using Docker, Coolify, Railway, or any VPS.",
 };
 
 export default function SelfHostingPage() {
@@ -20,7 +20,7 @@ export default function SelfHostingPage() {
       <div className="space-y-3">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Self-Hosting</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          SuperDuper AI Studio is fully open source and designed to run on your
+          Layout AI Studio is fully open source and designed to run on your
           own infrastructure. This guide covers everything you need to deploy it
           — from environment variables to Docker builds to platform-specific
           notes.
@@ -73,8 +73,8 @@ export default function SelfHostingPage() {
           Clone the repository and create your local environment file:
         </p>
         <CopyBlock
-          code={`git clone https://github.com/mattthornhill/superduperaistudio.git
-cd superduperaistudio
+          code={`git clone https://github.com/uselayout/studio.git
+cd layoutaistudio
 cp .env.example .env.local`}
           language="bash"
         />
@@ -194,10 +194,10 @@ cp .env.example .env.local`}
         </p>
         <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 space-y-1">
           {[
-            "sd_aistudio_user",
-            "sd_aistudio_session",
-            "sd_aistudio_account",
-            "sd_aistudio_verification",
+            "layout_user",
+            "layout_session",
+            "layout_account",
+            "layout_verification",
           ].map((table) => (
             <p key={table} className="font-mono text-sm text-indigo-700">
               {table}
@@ -282,12 +282,12 @@ cp .env.example .env.local`}
   --build-arg NEXT_PUBLIC_SUPABASE_URL=https://your-supabase.example.com \\
   --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key \\
   --build-arg NEXT_PUBLIC_APP_URL=https://studio.yourdomain.com \\
-  -t superduper-studio .
+  -t layout-studio .
 
 docker run -d \\
   --env-file .env.local \\
   -p 3000:3000 \\
-  superduper-studio`}
+  layout-studio`}
           language="bash"
         />
         <p className="text-base text-gray-600 leading-relaxed">

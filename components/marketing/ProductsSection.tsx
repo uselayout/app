@@ -12,7 +12,7 @@ const STUDIO_BULLETS = [
 ];
 
 const CLI_BULLETS = [
-  "npx @superduperui/context import + install — two commands, zero config",
+  "npx @layoutdesign/context import + install — two commands, zero config",
   "Auto-configures Claude Code, Cursor, and Windsurf MCP settings",
   "10 MCP tools including get_design_system, check_compliance, and preview",
   "Live component preview + push to Figma + design in Figma",
@@ -20,9 +20,9 @@ const CLI_BULLETS = [
 
 const FLOW_STEPS = [
   { label: "Figma / Website", accent: false },
-  { label: "SuperDuper Studio", accent: true },
+  { label: "Layout Studio", accent: true },
   { label: "AI Kit (ZIP)", accent: false },
-  { label: "SuperDuper CLI", accent: true },
+  { label: "Layout CLI", accent: true },
   { label: "AI Agent", accent: false },
 ];
 
@@ -48,7 +48,7 @@ export function ProductsSection({ onOpenStudio }: ProductsSectionProps) {
               Web App — Extract &amp; Export
             </p>
             <h3 className="mb-6 text-2xl font-bold text-[#0a0a0a]">
-              SuperDuper Studio
+              Layout Studio
             </h3>
             <ul className="mb-8 space-y-3">
               {STUDIO_BULLETS.map((bullet) => (
@@ -74,7 +74,7 @@ export function ProductsSection({ onOpenStudio }: ProductsSectionProps) {
               npm Package — Serve to AI Agents
             </p>
             <h3 className="mb-6 text-2xl font-bold text-[#0a0a0a]">
-              SuperDuper CLI
+              Layout CLI
             </h3>
             <ul className="mb-8 space-y-3">
               {CLI_BULLETS.map((bullet) => (

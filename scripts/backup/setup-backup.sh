@@ -1,5 +1,5 @@
 #!/bin/bash
-# Setup nightly pg_dump backup for sd_aistudio_* tables
+# Setup nightly pg_dump backup for layout_* tables
 # Run this ON the VPS: bash setup-backup.sh
 set -euo pipefail
 
@@ -16,7 +16,7 @@ set -euo pipefail
 
 BACKUP_DIR="/opt/backups/postgres"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-DUMP_FILE="${BACKUP_DIR}/sd_aistudio_${TIMESTAMP}.sql.gz"
+DUMP_FILE="${BACKUP_DIR}/layout_${TIMESTAMP}.sql.gz"
 
 PGPASSWORD="gbeWVRpRTCVMyWxv0pxQ7rjlCJ2Ku3fN" pg_dump \
   -h 127.0.0.1 \
@@ -25,11 +25,11 @@ PGPASSWORD="gbeWVRpRTCVMyWxv0pxQ7rjlCJ2Ku3fN" pg_dump \
   -d postgres \
   --no-owner \
   --no-privileges \
-  -t 'sd_aistudio_*' \
+  -t 'layout_*' \
   | gzip > "${DUMP_FILE}"
 
 # Keep only last 14 days
-find "${BACKUP_DIR}" -name "sd_aistudio_*.sql.gz" -mtime +14 -delete
+find "${BACKUP_DIR}" -name "layout_*.sql.gz" -mtime +14 -delete
 
 echo "[$(date)] Backup complete: ${DUMP_FILE} ($(du -h "${DUMP_FILE}" | cut -f1))"
 SCRIPT

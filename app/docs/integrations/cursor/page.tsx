@@ -5,9 +5,9 @@ import { CopyBlock } from "@/components/shared/CopyBlock";
 import { Callout } from "@/components/docs/Callout";
 
 export const metadata: Metadata = {
-  title: "Cursor — SuperDuper Docs",
+  title: "Cursor — Layout Docs",
   description:
-    "Inject your SuperDuper design system into Cursor via .cursorrules or MDC rules files.",
+    "Inject your Layout design system into Cursor via .cursorrules or MDC rules files.",
 };
 
 const cursorrulesCopySnippet = `cp path/to/export/.cursorrules .cursorrules`;
@@ -38,7 +38,7 @@ export default function CursorPage() {
             .cursorrules
           </code>{" "}
           or MDC rules files to inject context into every AI prompt in the
-          editor. SuperDuper exports both formats — use whichever matches your
+          editor. Layout exports both formats — use whichever matches your
           Cursor version.
         </p>
       </div>

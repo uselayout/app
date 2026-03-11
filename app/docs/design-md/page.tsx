@@ -5,9 +5,9 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "DESIGN.md Specification — SuperDuper Docs",
+  title: "DESIGN.md Specification — Layout Docs",
   description:
-    "Complete reference for the DESIGN.md format: the structured, LLM-optimised context file that SuperDuper generates from your design system.",
+    "Complete reference for the DESIGN.md format: the structured, LLM-optimised context file that Layout generates from your design system.",
 };
 
 const quickReferenceExample = `## Quick Reference
@@ -323,13 +323,13 @@ export default function DesignMdPage() {
           DESIGN.md Specification
         </h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          The DESIGN.md file is the core output of SuperDuper. It follows a
+          The DESIGN.md file is the core output of Layout. It follows a
           strict structure optimised for LLM consumption — not for humans to
           read, but for AI agents to parse reliably and reference consistently
           when generating UI code.
         </p>
         <p className="text-base text-gray-600 leading-relaxed">
-          Every DESIGN.md produced by SuperDuper Studio follows the same
+          Every DESIGN.md produced by Layout Studio follows the same
           9-section + 2-appendix format. This predictability means agents
           always know where to find what they need, and the MCP tools can
           return specific sections on demand without the agent having to search

@@ -61,7 +61,7 @@ function LoginContent() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 5l-7 7 7 7" />
           </svg>
-          superduperui.com
+          layout.design
         </a>
       </div>
 
@@ -80,7 +80,7 @@ function LoginContent() {
                 />
               </svg>
               <span className="text-sm font-semibold tracking-widest uppercase text-gray-900">
-                SuperDuper
+                Layout
               </span>
             </div>
             <h1 className="text-3xl font-black tracking-tight text-[#0a0a0a]">

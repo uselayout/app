@@ -21,7 +21,7 @@ const CARDS = [
   },
   {
     icon: Sparkles,
-    title: "With SuperDuper",
+    title: "With Layout",
     desc: "Your AI reads your design system automatically. Every build, on-brand.",
     accent: true,
     iconColour: "text-indigo-600",

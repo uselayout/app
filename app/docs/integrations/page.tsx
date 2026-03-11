@@ -5,9 +5,9 @@ import { CopyBlock } from "@/components/shared/CopyBlock";
 import { Callout } from "@/components/docs/Callout";
 
 export const metadata: Metadata = {
-  title: "Integrations — SuperDuper Docs",
+  title: "Integrations — Layout Docs",
   description:
-    "Use SuperDuper Studio with Claude Code, Cursor, GitHub Copilot, Windsurf, and OpenAI Codex.",
+    "Use Layout Studio with Claude Code, Cursor, GitHub Copilot, Windsurf, and OpenAI Codex.",
 };
 
 const integrations = [
@@ -57,7 +57,7 @@ export default function IntegrationsPage() {
       <div className="space-y-3">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Integrations</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          SuperDuper works with every major AI coding tool. Export your design
+          Layout works with every major AI coding tool. Export your design
           system bundle once, then drop the right file into each tool — your AI
           assistant will follow the design system on every prompt without you
           having to paste context manually.
