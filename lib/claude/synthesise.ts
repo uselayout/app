@@ -202,7 +202,7 @@ function buildUserContent(
   const hasScreenshots = data.screenshots.length > 0;
 
   sections.push(
-    `Generate a complete DESIGN.md following the SuperDuper AI Studio specification:\n` +
+    `Generate a complete DESIGN.md following the Layout specification:\n` +
     `0. Quick Reference (50-75 lines, standalone injectable)\n` +
     `1. Design Direction & Philosophy\n` +
     `2. Colour System (three-tier: primitives → semantic → component)\n` +

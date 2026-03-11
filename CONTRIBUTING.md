@@ -1,4 +1,4 @@
-# Contributing to SuperDuper AI Studio
+# Contributing to Layout
 
 Thanks for your interest in contributing! This guide will help you get set up and understand our conventions.
 
@@ -118,8 +118,8 @@ refactor: extract token parser into separate module
 
 ## Getting Help
 
-- Open a [GitHub Discussion](https://github.com/mattthornhill/superduperaistudio/discussions) for questions
-- File a [bug report](https://github.com/mattthornhill/superduperaistudio/issues/new?template=bug_report.yml) for issues
+- Open a [GitHub Discussion](https://github.com/uselayout/studio/discussions) for questions
+- File a [bug report](https://github.com/uselayout/studio/issues/new?template=bug_report.yml) for issues
 - Check existing issues before opening a new one
 
 ## Code of Conduct

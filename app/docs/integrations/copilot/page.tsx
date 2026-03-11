@@ -5,9 +5,9 @@ import { CopyBlock } from "@/components/shared/CopyBlock";
 import { Callout } from "@/components/docs/Callout";
 
 export const metadata: Metadata = {
-  title: "GitHub Copilot — SuperDuper Docs",
+  title: "GitHub Copilot — Layout Docs",
   description:
-    "Persist your SuperDuper design system as Copilot context via .github/copilot-instructions.md.",
+    "Persist your Layout design system as Copilot context via .github/copilot-instructions.md.",
 };
 
 const mkdirSnippet = `mkdir -p .github`;

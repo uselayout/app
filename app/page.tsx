@@ -106,7 +106,7 @@ export default function LandingPage() {
                 />
               </svg>
               <span className="text-sm font-semibold text-[#0a0a0a]">
-                SuperDuper
+                Layout
               </span>
             </div>
 
@@ -191,7 +191,7 @@ export default function LandingPage() {
             {/* Subheadline */}
             <p className="animate-fade-up delay-200 mx-auto max-w-xl text-lg text-gray-500 leading-relaxed mb-12 sm:text-xl">
               Your AI agent writes working code but gets the design wrong.
-              SuperDuper extracts your design system from Figma or any website
+              Layout extracts your design system from Figma or any website
               and serves it to Claude Code, Cursor, and Copilot automatically.
             </p>
 

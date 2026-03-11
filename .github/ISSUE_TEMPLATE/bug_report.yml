@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug in SuperDuper AI Studio
+description: Report a bug in Layout
 labels: ["bug"]
 body:
   - type: markdown

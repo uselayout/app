@@ -30,7 +30,7 @@ Examples of unacceptable behaviour:
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behaviour may be
-reported to the project team at **conduct@superduperui.com**. All complaints
+reported to the project team at **hello@layout.design**. All complaints
 will be reviewed and investigated promptly and fairly.
 
 ## Attribution

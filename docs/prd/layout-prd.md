@@ -1,4 +1,4 @@
-# SuperDuper AI Studio — Product Requirements Document
+# Layout — Product Requirements Document
 
 ## Version 1.0 | March 2026 | Phase 1: Internal Tool
 
@@ -6,7 +6,7 @@
 
 ## 1. Product Overview
 
-SuperDuper AI Studio is a browser-based tool that extracts design systems from Figma files and live websites, then transforms them into structured, LLM-optimised context bundles (DESIGN.md) that enable AI coding agents to produce on-brand UI code consistently.
+Layout is a browser-based tool that extracts design systems from Figma files and live websites, then transforms them into structured, LLM-optimised context bundles (DESIGN.md) that enable AI coding agents to produce on-brand UI code consistently.
 
 **Core Value Proposition:** The compiler between design systems and AI coding agents.
 
@@ -32,7 +32,7 @@ Feature: App shell and navigation
 
   Scenario: Landing page loads
     Given I navigate to the root URL
-    Then I see the SuperDuper AI Studio landing page
+    Then I see the Layout landing page
     And the page has a dark theme with the Studio design tokens
     And there is a URL input field for Figma/website URLs
     And there is a row of pre-built AI Kit templates

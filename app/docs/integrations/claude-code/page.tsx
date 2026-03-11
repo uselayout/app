@@ -5,9 +5,9 @@ import { CopyBlock } from "@/components/shared/CopyBlock";
 import { Callout } from "@/components/docs/Callout";
 
 export const metadata: Metadata = {
-  title: "Claude Code — SuperDuper Docs",
+  title: "Claude Code — Layout Docs",
   description:
-    "Add your SuperDuper design system to CLAUDE.md so Claude Code generates on-brand components on every prompt.",
+    "Add your Layout design system to CLAUDE.md so Claude Code generates on-brand components on every prompt.",
 };
 
 const claudeMdSnippet = `## Design System

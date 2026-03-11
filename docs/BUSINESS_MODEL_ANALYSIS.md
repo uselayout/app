@@ -1,4 +1,4 @@
-# SuperDuper AI Studio — Business Model Analysis
+# Layout — Business Model Analysis
 
 **Date:** March 2026
 **Status:** Recommendation ready — Model C (Hybrid Open Core)
@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-SuperDuper AI Studio extracts design systems from Figma files and live websites, then packages them as LLM-optimised context bundles for AI coding agents. No other tool extracts from both Figma and live websites into portable, agent-ready formats — the closest are Pencil.dev (IDE canvas with MCP), Anima (Figma API for agents), Paper.design (AI agent bridge), and Zeroheight (design system docs for humans).
+Layout extracts design systems from Figma files and live websites, then packages them as LLM-optimised context bundles for AI coding agents. No other tool extracts from both Figma and live websites into portable, agent-ready formats — the closest are Pencil.dev (IDE canvas with MCP), Anima (Figma API for agents), Paper.design (AI agent bridge), and Zeroheight (design system docs for humans).
 
 This document evaluates five business models and recommends **Hybrid Open Core**: a free BYOK tier with zero AI cost exposure, a £29/mo Pro tier with hosted AI at 89–96% gross margin (typical usage), and a seat-based Team tier for organisations.
 
@@ -131,7 +131,7 @@ Open-source CLI/MCP server for adoption. Free hosted Studio with BYOK. Paid tier
 
 ### Model D — Platform / API-First
 
-SuperDuper as infrastructure. Other tools integrate via API. Pay-per-call pricing.
+Layout as infrastructure. Other tools integrate via API. Pay-per-call pricing.
 
 | Endpoint | Price |
 |----------|------:|
@@ -235,14 +235,14 @@ This disarms the "why would I pay?" objection by making BYOK the free tier, then
 
 ## Implementation Roadmap
 
-### Phase 1 — Monetisation Foundation (4 weeks)
+### Phase 1 — Monetisation Foundation ✅ Complete
 
-- Token counting middleware on all AI endpoints
-- Usage tracking persisted to Supabase
-- Credit/quota system (check before each AI call)
-- Stripe billing integration (Pro + Team subscriptions, credit top-ups)
-- `/pricing` page
-- Ensure BYOK path is frictionless
+- ~~Token counting middleware on all AI endpoints~~ ✅
+- ~~Usage tracking persisted to Supabase~~ ✅ (`lib/billing/usage.ts`)
+- ~~Credit/quota system (check before each AI call)~~ ✅ (`lib/billing/credits.ts`)
+- ~~Stripe billing integration (Pro + Team subscriptions, credit top-ups)~~ ✅ (`lib/billing/stripe.ts`, 5 API routes + webhook)
+- ~~`/pricing` page~~ ✅ (`app/pricing/page.tsx`)
+- ~~Ensure BYOK path is frictionless~~ ✅ (ApiKeyModal + localStorage persistence)
 
 ### Phase 2 — Team & Value-Add (Month 2–3)
 
@@ -307,4 +307,4 @@ This disarms the "why would I pay?" objection by making BYOK the free tier, then
 
 ---
 
-*Generated March 2026 — SuperDuper AI Studio*
+*Generated March 2026 — Layout*

@@ -1,4 +1,4 @@
-# SuperDuper AI Studio — Marketing Playbook
+# Layout — Marketing Playbook
 
 **Date:** March 2026 | **Status:** Pre-Alpha | **Goal:** First 50 early adopters
 
@@ -9,7 +9,7 @@
 1. [Product Summary](#1-product-summary)
 2. [Mission Statements](#2-mission-statements)
 3. [Elevator Pitches](#3-elevator-pitches)
-4. [Competitive Positioning: Why SuperDuper over Paper.design / Pencil.dev](#4-competitive-positioning)
+4. [Competitive Positioning: Why Layout over Paper.design / Pencil.dev](#4-competitive-positioning)
 5. [Why Figma (Not a New Canvas)](#5-why-figma-not-a-new-canvas)
 6. [The Figma Closed Loop — Our Killer Feature](#6-the-figma-closed-loop)
 7. [Why This is the Future of Design](#7-why-this-is-the-future-of-design)
@@ -27,11 +27,11 @@
 
 ## 1. Product Summary
 
-SuperDuper AI Studio extracts design systems from Figma files and live websites, then compiles them into structured, LLM-optimised context bundles (DESIGN.md) that enable AI coding agents to produce on-brand UI code consistently.
+Layout extracts design systems from Figma files and live websites, then compiles them into structured, LLM-optimised context bundles (DESIGN.md) that enable AI coding agents to produce on-brand UI code consistently.
 
 **Two products:**
 - **Studio (Web App)** — Paste URL → extract design system → edit DESIGN.md → test with AI → export ZIP bundle
-- **CLI/MCP Server (`@superduperui/context`)** — MIT open source, 10 MCP tools, serves design context to AI agents
+- **CLI/MCP Server (`@layoutdesign/context`)** — MIT open source, 10 MCP tools, serves design context to AI agents
 
 **Key differentiators:**
 - Only tool that extracts from both Figma AND live websites
@@ -55,9 +55,9 @@ SuperDuper AI Studio extracts design systems from Figma files and live websites,
 
 ### Longer form
 
-6. AI coding agents are powerful. They just don't know what your brand looks like. SuperDuper fixes that.
+6. AI coding agents are powerful. They just don't know what your brand looks like. Layout fixes that.
 7. We extract your design system, compile it into structured context, and give your AI agent the one thing it's been missing: taste.
-8. Every team with a design system deserves AI that builds like they designed it. SuperDuper makes that the default, not the exception.
+8. Every team with a design system deserves AI that builds like they designed it. Layout makes that the default, not the exception.
 
 ### Bold / provocative
 
@@ -70,57 +70,57 @@ SuperDuper AI Studio extracts design systems from Figma files and live websites,
 
 ### 10-second (one sentence)
 
-SuperDuper extracts your design system from Figma or any website and compiles it into structured context that your AI coding agent reads automatically — so everything it builds looks on-brand.
+Layout extracts your design system from Figma or any website and compiles it into structured context that your AI coding agent reads automatically — so everything it builds looks on-brand.
 
 ### 30-second
 
-When you ask Claude Code or Cursor to build a UI component, it produces working code with completely the wrong design. It doesn't know your colours, your type scale, your spacing system, or your component conventions. SuperDuper extracts all of that from your Figma file or live website and compiles it into a structured context bundle that your AI agent reads on every prompt. The result is on-brand UI, by default.
+When you ask Claude Code or Cursor to build a UI component, it produces working code with completely the wrong design. It doesn't know your colours, your type scale, your spacing system, or your component conventions. Layout extracts all of that from your Figma file or live website and compiles it into a structured context bundle that your AI agent reads on every prompt. The result is on-brand UI, by default.
 
 ### 60-second
 
-AI coding agents are changing how products get built. The problem is they produce generic-looking UI because they have no idea what your design system looks like. SuperDuper fixes the context gap. Paste a Figma URL or website URL into the Studio, and it extracts your entire design system — colours, typography, spacing, components, design philosophy — and compiles it into a structured DESIGN.md file optimised for LLM consumption. Export as a ZIP bundle, install the open-source CLI, and from that point on every AI agent on your project reads your design context automatically via the MCP server. It checks compliance, previews components, and can even push generated code back to Figma for designer review. One extraction. Every AI build, on-brand.
+AI coding agents are changing how products get built. The problem is they produce generic-looking UI because they have no idea what your design system looks like. Layout fixes the context gap. Paste a Figma URL or website URL into the Studio, and it extracts your entire design system — colours, typography, spacing, components, design philosophy — and compiles it into a structured DESIGN.md file optimised for LLM consumption. Export as a ZIP bundle, install the open-source CLI, and from that point on every AI agent on your project reads your design context automatically via the MCP server. It checks compliance, previews components, and can even push generated code back to Figma for designer review. One extraction. Every AI build, on-brand.
 
 ### Technical pitch (for developers)
 
-The MCP protocol lets AI agents call tools to fetch context at inference time. SuperDuper's CLI ships as an MCP server with 10 tools: `get_design_system`, `get_tokens`, `get_component`, `list_components`, `check_compliance`, `preview`, `push_to_figma`, `url_to_figma`, `design_in_figma`, and `update_tokens`. Two commands — `npx @superduperui/context import` and `npx @superduperui/context install` — extract your design system into a `.superduper/` directory and wire the MCP server into Claude Code, Cursor, or Windsurf automatically. Extraction sources: Figma (full REST API, batched node resolution) or live websites (DOM + computed CSS via Playwright). Output: DESIGN.md, CLAUDE.md, AGENTS.md, `.cursorrules`, `tokens.css`, `tokens.json` (W3C DTCG), `tailwind.config.js`. MIT licensed, self-hostable, no telemetry.
+The MCP protocol lets AI agents call tools to fetch context at inference time. Layout's CLI ships as an MCP server with 10 tools: `get_design_system`, `get_tokens`, `get_component`, `list_components`, `check_compliance`, `preview`, `push_to_figma`, `url_to_figma`, `design_in_figma`, and `update_tokens`. Two commands — `npx @layoutdesign/context import` and `npx @layoutdesign/context install` — extract your design system into a `.layout/` directory and wire the MCP server into Claude Code, Cursor, or Windsurf automatically. Extraction sources: Figma (full REST API, batched node resolution) or live websites (DOM + computed CSS via Playwright). Output: DESIGN.md, CLAUDE.md, AGENTS.md, `.cursorrules`, `tokens.css`, `tokens.json` (W3C DTCG), `tailwind.config.js`. MIT licensed, self-hostable, no telemetry.
 
 ### Business pitch (for CTOs / design leads)
 
-Your team is increasingly using AI coding agents to ship faster. The invisible cost is design drift — AI-generated components that are slightly off-brand, require design review cycles, and accumulate visual debt. SuperDuper solves this at the infrastructure level. We extract your design system once, compile it into a format every AI agent can consume, and serve it automatically through the Model Context Protocol. Your designers don't change their tools. Your developers don't change their workflow. The AI agents just start building correctly. Fewer design review rounds, faster component development, higher consistency. 60 seconds to install on an existing project.
+Your team is increasingly using AI coding agents to ship faster. The invisible cost is design drift — AI-generated components that are slightly off-brand, require design review cycles, and accumulate visual debt. Layout solves this at the infrastructure level. We extract your design system once, compile it into a format every AI agent can consume, and serve it automatically through the Model Context Protocol. Your designers don't change their tools. Your developers don't change their workflow. The AI agents just start building correctly. Fewer design review rounds, faster component development, higher consistency. 60 seconds to install on an existing project.
 
 ---
 
 ## 4. Competitive Positioning
 
-### Why SuperDuper over Paper.design / Pencil.dev
+### Why Layout over Paper.design / Pencil.dev
 
 **1. We meet your team where it already lives**
 
-Figma has ~5 million active users. Your designers, components, variables, and styles already live there. Paper.design ($4.2M seed from Accel) asks every designer to adopt a new canvas, learn a new tool, and migrate existing work. SuperDuper reads from Figma — no migration, no retraining, no political fight about tooling. Start tomorrow with the files you have today.
+Figma has ~5 million active users. Your designers, components, variables, and styles already live there. Paper.design ($4.2M seed from Accel) asks every designer to adopt a new canvas, learn a new tool, and migrate existing work. Layout reads from Figma — no migration, no retraining, no political fight about tooling. Start tomorrow with the files you have today.
 
 **2. We are a compiler, not a replacement**
 
-Paper.design and Pencil.dev are building new design surfaces. SuperDuper is infrastructure. A compiler sits between two things that already exist and translates between them. We sit between your Figma file (or live website) and your AI agent. No one changes how they design. No one changes how they code. The handoff becomes lossless.
+Paper.design and Pencil.dev are building new design surfaces. Layout is infrastructure. A compiler sits between two things that already exist and translates between them. We sit between your Figma file (or live website) and your AI agent. No one changes how they design. No one changes how they code. The handoff becomes lossless.
 
 **3. Figma is where design decisions are made and approved**
 
-Design is a social process. Stakeholders annotate in Figma. Developers inspect in Dev Mode. QA compares against Figma screens. If your source of truth lives in Pencil's `.pen` file or Paper's proprietary canvas, you've forked your design system. SuperDuper keeps Figma as the single source of truth and adds AI-readability on top.
+Design is a social process. Stakeholders annotate in Figma. Developers inspect in Dev Mode. QA compares against Figma screens. If your source of truth lives in Pencil's `.pen` file or Paper's proprietary canvas, you've forked your design system. Layout keeps Figma as the single source of truth and adds AI-readability on top.
 
 **4. We also extract from live websites — no one else does this**
 
-Figma files don't always exist. Third-party component libraries, products where the design system lives in CSS, brownfield projects — SuperDuper extracts design tokens directly from any live URL via DOM and computed styles. Paper and Pencil cannot do this. This matters for agency work and legacy products.
+Figma files don't always exist. Third-party component libraries, products where the design system lives in CSS, brownfield projects — Layout extracts design tokens directly from any live URL via DOM and computed styles. Paper and Pencil cannot do this. This matters for agency work and legacy products.
 
 **5. Fully open source means no lock-in**
 
-Both the CLI (`@superduperui/context`) and the Studio web app are MIT licensed. Fork it, self-host it, extend it, contribute to it. Paper.design is a VC-backed SaaS. Pencil.dev is a closed VS Code extension. If SuperDuper disappeared tomorrow, your DESIGN.md files still work with any AI agent and the source code is yours to run.
+Both the CLI (`@layoutdesign/context`) and the Studio web app are MIT licensed. Fork it, self-host it, extend it, contribute to it. Paper.design is a VC-backed SaaS. Pencil.dev is a closed VS Code extension. If Layout disappeared tomorrow, your DESIGN.md files still work with any AI agent and the source code is yours to run.
 
 **6. DESIGN.md is portable plain text — not a proprietary format**
 
-Pencil.dev uses `.pen` files — proprietary binary format tied to their renderer. SuperDuper outputs structured markdown. Any AI agent reads it. Any developer edits it by hand. Works in Claude Code, Cursor, Copilot, Windsurf, and Codex without plugins. Portability is a first-class design decision.
+Pencil.dev uses `.pen` files — proprietary binary format tied to their renderer. Layout outputs structured markdown. Any AI agent reads it. Any developer edits it by hand. Works in Claude Code, Cursor, Copilot, Windsurf, and Codex without plugins. Portability is a first-class design decision.
 
 **7. The Figma closed loop is unique**
 
-SuperDuper is not read-only. Push generated components back into Figma for designer review. Create Figma designs directly from tokens using `design_in_figma`. Pull changes back. Code → Figma → code, in a single loop. Paper's canvas can export code (one direction). SuperDuper is genuinely bidirectional.
+Layout is not read-only. Push generated components back into Figma for designer review. Create Figma designs directly from tokens using `design_in_figma`. Pull changes back. Code → Figma → code, in a single loop. Paper's canvas can export code (one direction). Layout is genuinely bidirectional.
 
 **8. Six output formats, not one**
 
@@ -128,15 +128,15 @@ DESIGN.md, CLAUDE.md, AGENTS.md, `.cursorrules`, `tokens.css`, `tokens.json` (W3
 
 **9. Pre-alpha with direct founder access vs funded startups on a roadmap**
 
-Paper has raised $4.2M and will build what its investors want. Join SuperDuper now and your workflow, edge cases, and needs shape the product. That window closes as teams grow and roadmaps harden.
+Paper has raised $4.2M and will build what its investors want. Join Layout now and your workflow, edge cases, and needs shape the product. That window closes as teams grow and roadmaps harden.
 
 **10. No new tool for anyone — only better output for AI agents**
 
-Paper and Pencil require someone on your team to use a new tool daily. SuperDuper requires no behavioural change from designers or developers. Purely additive infrastructure that makes the AI smarter. The people who benefit (developers prompting Claude Code or Cursor) are the only people who need to know it exists.
+Paper and Pencil require someone on your team to use a new tool daily. Layout requires no behavioural change from designers or developers. Purely additive infrastructure that makes the AI smarter. The people who benefit (developers prompting Claude Code or Cursor) are the only people who need to know it exists.
 
 ### Quick Comparison Table
 
-| Factor | SuperDuper | Paper.design | Pencil.dev |
+| Factor | Layout | Paper.design | Pencil.dev |
 |--------|-----------|-------------|-----------|
 | Approach | Compiler (extract from existing tools) | New design canvas | IDE-embedded canvas |
 | Figma required? | Works with, not dependent on | Replaces Figma | Works alongside |
@@ -155,7 +155,7 @@ Paper and Pencil require someone on your team to use a new tool daily. SuperDupe
 
 ### The Compiler Argument
 
-There's a seductive idea in developer tooling: if you're unhappy with the current landscape, build something from scratch. It's bold. It's fundable. And for the problem SuperDuper is solving, it's entirely the wrong approach.
+There's a seductive idea in developer tooling: if you're unhappy with the current landscape, build something from scratch. It's bold. It's fundable. And for the problem Layout is solving, it's entirely the wrong approach.
 
 **Figma is not just a tool — it's a coordination layer**
 
@@ -167,19 +167,19 @@ The moment you ask a team to move their design work out of Figma, you're asking 
 
 Designers think in Figma. They know its shortcuts, its auto-layout behaviour, its component structure. Their design systems are built around Figma's mental model. Asking them to adopt a new canvas isn't a feature request — it's a career disruption. Even if the new tool is objectively better, the switching cost is borne entirely by the designer.
 
-SuperDuper asks designers to change nothing. The extraction happens in the background. The designer never opens our product. That's not a compromise — it's a deliberate design principle. A compiler doesn't ask the source language to change itself.
+Layout asks designers to change nothing. The extraction happens in the background. The designer never opens our product. That's not a compromise — it's a deliberate design principle. A compiler doesn't ask the source language to change itself.
 
 **The TypeScript precedent**
 
 TypeScript didn't replace JavaScript. It added a type layer on top of an existing, widely-adopted language and let every JavaScript developer use it without abandoning their ecosystem. TypeScript was additive.
 
-SuperDuper takes the same approach. Figma is the runtime. We're the type checker — a layer that makes existing output more structured, more explicit, and more readable by machines.
+Layout takes the same approach. Figma is the runtime. We're the type checker — a layer that makes existing output more structured, more explicit, and more readable by machines.
 
 **Designer buy-in is not optional**
 
 Every design-to-code tool that tried to replace Figma has had to answer: will designers actually use this? The graveyard is long — InVision, Sketch (marginalised), Zeplin, Avocode. All promised to fix the handoff by asking one side to adopt a new tool.
 
-SuperDuper sidesteps this entirely. Designers don't need buy-in because we're not asking them for anything. The value flows to the AI-era developer who can extract context from Figma without involving the designer at all.
+Layout sidesteps this entirely. Designers don't need buy-in because we're not asking them for anything. The value flows to the AI-era developer who can extract context from Figma without involving the designer at all.
 
 **Figma's ecosystem is a structural advantage**
 
@@ -266,7 +266,7 @@ This is the single most defensible feature in the product. No competitor — ope
 **Competitor comparison:**
 - Paper.design: Can "Copy as React" (design → code). Cannot push code → design.
 - Pencil.dev: Renders in IDE only. No Figma integration.
-- SuperDuper: Code → Figma as editable auto-layout frames. The only tool that does this.
+- Layout: Code → Figma as editable auto-layout frames. The only tool that does this.
 
 ---
 
@@ -296,7 +296,7 @@ This is the single most defensible feature in the product. No competitor — ope
 
 **Why this is revolutionary:**
 - Traditional: Designer creates mockup (hours) → developer implements (hours) → designer reviews (hours)
-- With SuperDuper: Developer prompts AI (seconds) → AI creates Figma design from tokens (seconds) → designer refines (minutes) → code already matches because it used the same tokens
+- With Layout: Developer prompts AI (seconds) → AI creates Figma design from tokens (seconds) → designer refines (minutes) → code already matches because it used the same tokens
 
 ---
 
@@ -320,7 +320,7 @@ This is the single most defensible feature in the product. No competitor — ope
 
 ### Why No Competitor Can Replicate This
 
-The closed loop works because of three things that intersect uniquely in SuperDuper:
+The closed loop works because of three things that intersect uniquely in Layout:
 
 1. **Design system extraction** — We have your tokens, components, and rules in structured, machine-readable format. Without this, an AI agent designing in Figma would hallucinate your brand.
 
@@ -332,7 +332,7 @@ The closed loop works because of three things that intersect uniquely in SuperDu
 
 **Pencil.dev** can't do this because they're IDE-only — there's no Figma integration, so the designer has no role in the loop.
 
-**SuperDuper** is the only tool where the AI, the developer, AND the designer all participate in the same workflow, each using their own native tool (AI agent, IDE, Figma).
+**Layout** is the only tool where the AI, the developer, AND the designer all participate in the same workflow, each using their own native tool (AI agent, IDE, Figma).
 
 ### Figma Loop Marketing Copy
 
@@ -349,7 +349,7 @@ The closed loop works because of three things that intersect uniquely in SuperDu
 - **Pull back to code** — Designer tweaks the frame. AI reads the changes. Code updates in seconds.
 
 **For the comparison page:**
-> Paper.design exports code from its canvas. That's one direction. Pencil.dev renders in the IDE. That's one tool. SuperDuper connects your AI agent, your IDE, and your Figma file in a bidirectional loop where everyone uses their native tool. That's the difference between a feature and a workflow.
+> Paper.design exports code from its canvas. That's one direction. Pencil.dev renders in the IDE. That's one tool. Layout connects your AI agent, your IDE, and your Figma file in a bidirectional loop where everyone uses their native tool. That's the difference between a feature and a workflow.
 
 **For the technical blog post:**
 > The `push_to_figma` MCP tool renders your component at a capture URL, then instructs Figma MCP to capture it as editable auto-layout frames at three viewports. The `design_in_figma` tool compiles your extracted tokens, typography, spacing, components, and anti-patterns into a structured design brief that any AI agent can pass to Figma MCP. Together, they create a workflow where code and design stay permanently synchronised through the tools your team already uses.
@@ -361,7 +361,7 @@ The closed loop works because of three things that intersect uniquely in SuperDu
 
 This is the most powerful demo you can give. It takes ~3 minutes and is visually striking.
 
-**Setup:** Have a Figma file open. Have Claude Code with SuperDuper MCP installed. Have a design system already extracted.
+**Setup:** Have a Figma file open. Have Claude Code with Layout MCP installed. Have a design system already extracted.
 
 1. **[30 sec]** "Let me ask Claude to build a pricing card." → Prompt Claude, it calls `get_design_system`, generates TSX on-brand.
 2. **[15 sec]** "Here it is, live at localhost:4321." → Show the preview panel with the rendered component.
@@ -449,11 +449,11 @@ We follow the same model. Everything is MIT licensed — CLI, MCP server, and St
 
 **Open source is the best distribution for developer tools**
 
-Developer tools spread through GitHub, npm, blog posts, Slack messages, Discord servers. None of those channels respond well to "sign up for a trial first." Open source lets a developer try the full CLI in 60 seconds with `npx @superduperui/context`, no account, no payment. If it works, they tell other developers.
+Developer tools spread through GitHub, npm, blog posts, Slack messages, Discord servers. None of those channels respond well to "sign up for a trial first." Open source lets a developer try the full CLI in 60 seconds with `npx @layoutdesign/context`, no account, no payment. If it works, they tell other developers.
 
 **No vendor lock-in is itself a selling point**
 
-DESIGN.md is documented, plain-text markdown. Even the output format isn't locked to our tools. If SuperDuper disappeared, your files still work with any AI agent. Teams making infrastructure decisions weight exit risk heavily. Eliminating that risk removes the biggest objection.
+DESIGN.md is documented, plain-text markdown. Even the output format isn't locked to our tools. If Layout disappeared, your files still work with any AI agent. Teams making infrastructure decisions weight exit risk heavily. Eliminating that risk removes the biggest objection.
 
 **Community contributions make the product better faster**
 
@@ -461,7 +461,7 @@ We're a small team. We can't support every framework, every Figma edge case, eve
 
 **What's open vs. what's managed**
 
-Both the CLI (`@superduperui/context`) and the Studio web app are MIT licensed. You can self-host everything. The paid tier sells convenience and hosted AI — not access to closed-source software.
+Both the CLI (`@layoutdesign/context`) and the Studio web app are MIT licensed. You can self-host everything. The paid tier sells convenience and hosted AI — not access to closed-source software.
 
 | | Self-Host (Free, MIT) | Managed (Pro £29/mo) |
 |---|---|---|
@@ -488,7 +488,7 @@ You're not looking for another demo. You're looking for infrastructure that solv
 
 ### Why Join Now (Not in Six Months)
 
-In six months, SuperDuper will have a hardened roadmap and a growing user base shaped by the first cohort. The tradeoff: those first users decided what got built next. If the MCP tool you need doesn't exist yet, you can tell us and we'll build it. If extraction output is missing something specific to your Figma structure, we want to know.
+In six months, Layout will have a hardened roadmap and a growing user base shaped by the first cohort. The tradeoff: those first users decided what got built next. If the MCP tool you need doesn't exist yet, you can tell us and we'll build it. If extraction output is missing something specific to your Figma structure, we want to know.
 
 This is a pre-alpha. Some things will break. We'll fix them quickly because we're paying close attention to every user — in a way that won't be possible at scale.
 
@@ -504,27 +504,27 @@ This is a pre-alpha. Some things will break. We'll fix them quickly because we'r
 ### Call to Action Copy (4 variations)
 
 1. "We're looking for 50 developers who hate inconsistent AI-generated UI. Apply for early access."
-2. "SuperDuper is pre-alpha. We need developers building real products with AI agents who are willing to break things and tell us about it. Join the waitlist."
+2. "Layout is pre-alpha. We need developers building real products with AI agents who are willing to break things and tell us about it. Join the waitlist."
 3. "Get early access. Shape the product. Lock in founding member pricing. Apply now — we're onboarding manually."
 4. "The context gap between your design system and your AI agent is a solved problem. We need 50 developers to help us prove it."
 
 ### Discord Community Invitation
 
-Join the SuperDuper Discord. It's not a support forum — it's where the product gets built. Post your Figma extraction results. Share the MCP tools you wish existed. Break things in ways we haven't predicted. The founders are in there every day and will answer your messages personally. That won't always be true. Come in now.
+Join the Layout Discord. It's not a support forum — it's where the product gets built. Post your Figma extraction results. Share the MCP tools you wish existed. Break things in ways we haven't predicted. The founders are in there every day and will answer your messages personally. That won't always be true. Come in now.
 
 ### Email Signup Copy
 
-> **Subject:** You're on the SuperDuper early access list
+> **Subject:** You're on the Layout early access list
 >
-> You're one of the first people to sign up for SuperDuper. That means two things: you'll get access before anyone else, and your feedback will directly shape what we build next.
+> You're one of the first people to sign up for Layout. That means two things: you'll get access before anyone else, and your feedback will directly shape what we build next.
 >
 > We're onboarding manually. When your spot opens, we'll send everything — Studio link, CLI install command, and a direct line to us in Discord.
 >
 > While you wait: if you have a specific AI coding workflow or Figma edge case you're worried about, reply to this email. We read every response.
 >
-> — Matt and the SuperDuper team
+> — Matt and the Layout team
 >
-> *P.S. We're a small UK-based digital product agency. We built SuperDuper because we kept hitting the same wall on our own client projects. We're not building this to flip it — we're building it because we need it.*
+> *P.S. We're a small UK-based digital product agency. We built Layout because we kept hitting the same wall on our own client projects. We're not building this to flip it — we're building it because we need it.*
 
 ---
 
@@ -639,7 +639,7 @@ Join the SuperDuper Discord. It's not a support forum — it's where the product
 | Pitch Syntax.fm (frontend development audience) | Founder | 1 hr |
 | Publish blog post #4: "Why We Chose Figma Over Building a New Canvas" | Founder | 3 hrs |
 | Guest post pitch to Smashing Magazine: "Design Systems in the Age of AI Coding Agents" | Founder | 2 hrs |
-| Create comparison page: SuperDuper vs Paper.design vs Pencil.dev | Founder | 3 hrs |
+| Create comparison page: Layout vs Paper.design vs Pencil.dev | Founder | 3 hrs |
 
 #### Week 7 — Case Studies & Social Proof
 
@@ -655,11 +655,11 @@ Join the SuperDuper Discord. It's not a support forum — it's where the product
 
 | Action | Owner | Time |
 |--------|-------|------|
-| Publish integration guide: "SuperDuper + Claude Code" | Founder | 2 hrs |
-| Publish integration guide: "SuperDuper + Cursor" | Founder | 2 hrs |
-| Publish integration guide: "SuperDuper + GitHub Copilot" | Founder | 2 hrs |
-| Publish integration guide: "SuperDuper + Windsurf" | Founder | 2 hrs |
-| Publish integration guide: "SuperDuper + OpenAI Codex" | Founder | 2 hrs |
+| Publish integration guide: "Layout + Claude Code" | Founder | 2 hrs |
+| Publish integration guide: "Layout + Cursor" | Founder | 2 hrs |
+| Publish integration guide: "Layout + GitHub Copilot" | Founder | 2 hrs |
+| Publish integration guide: "Layout + Windsurf" | Founder | 2 hrs |
+| Publish integration guide: "Layout + OpenAI Codex" | Founder | 2 hrs |
 | Submit to MCP server directories/awesome lists | Founder | 1 hr |
 
 **Expected Phase 2 outcome:** 200-300 CLI installs, 80-100 Discord members, 100 Studio signups.
@@ -726,7 +726,7 @@ Join the SuperDuper Discord. It's not a support forum — it's where the product
 | 3 | "Extracting Stripe's Design System in 60 Seconds" | Tutorial | Blog, YouTube |
 | 4 | "Why We Chose Figma Over Building a New Canvas" | Strategy/opinion | Blog, HN |
 | 5 | "From Vibe Coding to On-Brand Coding: A Workflow Guide" | How-to | Blog, Reddit |
-| 6 | "SuperDuper vs Paper.design vs Pencil.dev: Honest Comparison" | Comparison (SEO) | Blog |
+| 6 | "Layout vs Paper.design vs Pencil.dev: Honest Comparison" | Comparison (SEO) | Blog |
 | 7 | "Open Source Design System Infrastructure: Our MIT Approach" | Philosophy | Blog, HN |
 | 8 | "Design System Compliance Checking with AI" | Technical | Blog, DEV.to |
 | 9 | "How Context Engineering is Changing Frontend Development" | Thought leadership | Blog, newsletters |
@@ -804,8 +804,8 @@ Join the SuperDuper Discord. It's not a support forum — it's where the product
 
 ### SEO Quick Wins
 
-- Every export format SuperDuper generates (CLAUDE.md, .cursorrules, AGENTS.md) is something developers are actively searching for
-- Publish definitive guides for each format — SuperDuper is the tool that auto-generates them
+- Every export format Layout generates (CLAUDE.md, .cursorrules, AGENTS.md) is something developers are actively searching for
+- Publish definitive guides for each format — Layout is the tool that auto-generates them
 - Target "how to" + format name keywords
 
 ---
@@ -832,16 +832,16 @@ Join the SuperDuper Discord. It's not a support forum — it's where the product
 
 - Submit to awesome-mcp-servers
 - Submit to MCP server directories
-- Write "Building an MCP Server for Design Systems" tutorial (positions SuperDuper as MCP expert)
+- Write "Building an MCP Server for Design Systems" tutorial (positions Layout as MCP expert)
 - Engage with MCP community on GitHub and Discord
 
 ### Integration Guides to Write
 
-1. Claude Code + SuperDuper (auto-install via `npx @superduperui/context install`)
-2. Cursor + SuperDuper (.cursorrules + MCP setup)
-3. GitHub Copilot + SuperDuper (CLAUDE.md context file)
-4. Windsurf + SuperDuper (MCP configuration)
-5. OpenAI Codex + SuperDuper (AGENTS.md)
+1. Claude Code + Layout (auto-install via `npx @layoutdesign/context install`)
+2. Cursor + Layout (.cursorrules + MCP setup)
+3. GitHub Copilot + Layout (CLAUDE.md context file)
+4. Windsurf + Layout (MCP configuration)
+5. OpenAI Codex + Layout (AGENTS.md)
 6. Self-hosting guide (Docker/Coolify)
 
 ---
@@ -984,21 +984,21 @@ They believe Figma is becoming bloated and slow to innovate. Paper is the next-g
 
 1. **They require a full tool migration.** Paper asks every designer on a team to abandon Figma. That's not a feature adoption — it's an organisational change management project. Design reviews, stakeholder comments, developer inspect workflows, component libraries, version history — all of it needs to move. Most teams won't do this, especially when Figma works fine for the 90% Paper themselves acknowledge.
 
-2. **They're solving the designer's problem, not the developer's.** Paper's entire pitch is "better tools for designers." SuperDuper's pitch is "better context for AI agents." These are adjacent but different markets. The developer using Claude Code at 11pm doesn't need a better design tool — they need the existing design system served to their AI agent.
+2. **They're solving the designer's problem, not the developer's.** Paper's entire pitch is "better tools for designers." Layout's pitch is "better context for AI agents." These are adjacent but different markets. The developer using Claude Code at 11pm doesn't need a better design tool — they need the existing design system served to their AI agent.
 
-3. **Code export is one-directional.** Paper can "Copy as React." That's design → code. SuperDuper has a full closed loop: code → preview → push to Figma → design in Figma → pull back to code. Bidirectional beats unidirectional.
+3. **Code export is one-directional.** Paper can "Copy as React." That's design → code. Layout has a full closed loop: code → preview → push to Figma → design in Figma → pull back to code. Bidirectional beats unidirectional.
 
-4. **No website extraction.** Paper only works with designs created in Paper. SuperDuper extracts from any live website — critical for brownfield projects, third-party integrations, and agency work on existing products.
+4. **No website extraction.** Paper only works with designs created in Paper. Layout extracts from any live website — critical for brownfield projects, third-party integrations, and agency work on existing products.
 
-5. **Proprietary format lock-in.** Designs live in Paper's platform. If Paper pivots, raises prices, or shuts down, your design system is trapped. SuperDuper outputs plain-text markdown (DESIGN.md) and standard formats (W3C DTCG tokens, CSS variables, Tailwind config). Maximum portability.
+5. **Proprietary format lock-in.** Designs live in Paper's platform. If Paper pivots, raises prices, or shuts down, your design system is trapped. Layout outputs plain-text markdown (DESIGN.md) and standard formats (W3C DTCG tokens, CSS variables, Tailwind config). Maximum portability.
 
-6. **The VC trajectory problem.** $4.2M seed from Accel means Paper must grow into a $100M+ business. That means aggressive monetisation, feature gating, or pivots. SuperDuper is bootstrapped with an MIT open-source core. Our incentives align with users, not investors.
+6. **The VC trajectory problem.** $4.2M seed from Accel means Paper must grow into a $100M+ business. That means aggressive monetisation, feature gating, or pivots. Layout is bootstrapped with an MIT open-source core. Our incentives align with users, not investors.
 
 **How to position against Paper in conversations:**
 
 > "Paper is building a beautiful new design tool. We're building infrastructure that makes your existing design tool work with AI agents. If your team is ready to migrate away from Figma, Paper is worth looking at. If you want your Figma files to work with Claude Code tomorrow, that's us."
 
-> "Paper asks designers to change tools. We ask no one to change anything. SuperDuper is purely additive — your designers stay in Figma, your developers stay in their IDE, and the AI agents just get smarter."
+> "Paper asks designers to change tools. We ask no one to change anything. Layout is purely additive — your designers stay in Figma, your developers stay in their IDE, and the AI agents just get smarter."
 
 ---
 
@@ -1037,21 +1037,21 @@ Design handoffs consume 15-20% of project timelines. The solution is to eliminat
 
 1. **Proprietary .pen format.** Even though .pen files live in Git, they're a proprietary binary format tied to Pencil's renderer. You can't read them without Pencil. DESIGN.md is plain markdown — readable by any AI agent, any developer, any tool, forever.
 
-2. **4-8px alignment discrepancies in complex layouts.** The article itself acknowledges this. For pixel-perfect brand consistency, approximate isn't good enough. SuperDuper extracts actual computed values from Figma/CSS — no approximation.
+2. **4-8px alignment discrepancies in complex layouts.** The article itself acknowledges this. For pixel-perfect brand consistency, approximate isn't good enough. Layout extracts actual computed values from Figma/CSS — no approximation.
 
-3. **No design system extraction.** Pencil is a canvas for creating or pasting designs. It doesn't extract and compile an existing design system into structured AI context. You still need to manually define your tokens, components, and rules. SuperDuper automates the entire extraction.
+3. **No design system extraction.** Pencil is a canvas for creating or pasting designs. It doesn't extract and compile an existing design system into structured AI context. You still need to manually define your tokens, components, and rules. Layout automates the entire extraction.
 
-4. **IDE-only, Claude Code-dependent.** Pencil requires VS Code or Cursor. It's optimised for Claude Code specifically. SuperDuper works with Claude Code, Cursor, GitHub Copilot, Windsurf, Codex — any agent that reads MCP or context files. Agent-agnostic by design.
+4. **IDE-only, Claude Code-dependent.** Pencil requires VS Code or Cursor. It's optimised for Claude Code specifically. Layout works with Claude Code, Cursor, GitHub Copilot, Windsurf, Codex — any agent that reads MCP or context files. Agent-agnostic by design.
 
 5. **No website extraction.** Same gap as Paper. Can't extract from live URLs. Agency developers working on existing products need this.
 
-6. **Frontend-only.** The article explicitly states Pencil doesn't handle backend logic, state management, or API integrations. SuperDuper's DESIGN.md provides context that helps AI agents build full components with proper state handling and accessibility.
+6. **Frontend-only.** The article explicitly states Pencil doesn't handle backend logic, state management, or API integrations. Layout's DESIGN.md provides context that helps AI agents build full components with proper state handling and accessibility.
 
-7. **Commercialisation uncertainty.** Free during early access, but the article notes "free models typically precede commercialisation shifts." SuperDuper's CLI is MIT open source with a permanent commitment. The paid tier (Studio) is clearly defined and separate.
+7. **Commercialisation uncertainty.** Free during early access, but the article notes "free models typically precede commercialisation shifts." Layout's CLI is MIT open source with a permanent commitment. The paid tier (Studio) is clearly defined and separate.
 
 **How to position against Pencil in conversations:**
 
-> "Pencil gives you a canvas to design in your IDE. SuperDuper gives your AI agent the complete context of your existing design system. Different tools, different problems. If you want to sketch UI in VS Code, use Pencil. If you want Claude Code to already know your design system when it starts building, use SuperDuper."
+> "Pencil gives you a canvas to design in your IDE. Layout gives your AI agent the complete context of your existing design system. Different tools, different problems. If you want to sketch UI in VS Code, use Pencil. If you want Claude Code to already know your design system when it starts building, use Layout."
 
 > "Pencil's .pen files are proprietary binaries tied to their tool. Our DESIGN.md is plain markdown that works with every AI agent, every IDE, every tool — today and in 10 years."
 
@@ -1065,7 +1065,7 @@ Design handoffs consume 15-20% of project timelines. The solution is to eliminat
          Nobody              Developers          Designers
            |                    |                    |
     ┌──────┴──────┐    ┌───────┴───────┐    ┌───────┴───────┐
-    │  SUPERDUPER  │    │   PENCIL.DEV  │    │ PAPER.DESIGN  │
+    │  LAYOUT  │    │   PENCIL.DEV  │    │ PAPER.DESIGN  │
     │              │    │               │    │               │
     │ Compiler     │    │ IDE canvas    │    │ New design    │
     │ (invisible   │    │ (.pen files   │    │ tool (replace │
@@ -1089,18 +1089,18 @@ Design handoffs consume 15-20% of project timelines. The solution is to eliminat
 
 **Paper** says: "Designers need a better tool. Let's replace Figma."
 **Pencil** says: "Developers need a design surface in their IDE. Let's add a canvas."
-**SuperDuper** says: "AI agents need design context. Let's compile it from what already exists."
+**Layout** says: "AI agents need design context. Let's compile it from what already exists."
 
-Paper and Pencil are building new surfaces. SuperDuper is building infrastructure. They create new places to design. We make existing designs readable by machines.
+Paper and Pencil are building new surfaces. Layout is building infrastructure. They create new places to design. We make existing designs readable by machines.
 
-The analogy: Paper is building a new programming language. Pencil is building a new IDE. SuperDuper is building a compiler. Compilers don't compete with languages or IDEs — they make the ecosystem work.
+The analogy: Paper is building a new programming language. Pencil is building a new IDE. Layout is building a compiler. Compilers don't compete with languages or IDEs — they make the ecosystem work.
 
-**The key talking point:** SuperDuper is the only tool in this space that requires zero behavioural change from anyone on the team. Designers stay in Figma. Developers stay in their IDE. The AI agents get smarter. That's it.
+**The key talking point:** Layout is the only tool in this space that requires zero behavioural change from anyone on the team. Designers stay in Figma. Developers stay in their IDE. The AI agents get smarter. That's it.
 
 ### Market White Space
 
-Nobody is automating the pipeline from "design source of truth" (Figma, live sites) → "agent-readable context" (DESIGN.md, tokens, MCP tools). Paper and Pencil are building new design surfaces. SuperDuper is the compiler that works with what teams already have. That is the white space.
+Nobody is automating the pipeline from "design source of truth" (Figma, live sites) → "agent-readable context" (DESIGN.md, tokens, MCP tools). Paper and Pencil are building new design surfaces. Layout is the compiler that works with what teams already have. That is the white space.
 
 ---
 
-*This playbook was compiled March 2026 for SuperDuper AI Studio pre-alpha launch.*
+*This playbook was compiled March 2026 for Layout pre-alpha launch.*

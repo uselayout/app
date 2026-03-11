@@ -1,4 +1,4 @@
-# SuperDuper AI Studio
+# Layout
 
 **The compiler between design systems and AI coding agents.**
 
@@ -12,7 +12,7 @@ Extract design systems from Figma files and live websites, then transform them i
 
 AI coding agents (Claude Code, Cursor, Windsurf, GitHub Copilot) generate beautiful UI — but it never matches your brand. They default to Inter, rounded corners, and generic blue buttons.
 
-SuperDuper AI Studio solves this by giving agents the design context they need:
+Layout solves this by giving agents the design context they need:
 
 1. **Extract** your design system from a Figma file or live website
 2. **Synthesise** it into a structured DESIGN.md using Claude
@@ -28,7 +28,7 @@ Your AI agents now generate code that matches your actual design system.
 - **Test panel** — Ask Claude to build components using your design system and preview them live in-browser
 - **Push to Figma** — Send generated components to Figma as editable frames with auto-layout via the [Figma MCP server](https://www.figma.com/developers/mcp)
 - **Export bundles** — One-click ZIP with DESIGN.md, CLAUDE.md section, .cursorrules, tokens.css, W3C DTCG tokens.json, and tailwind.config.js
-- **MCP server** — [`@superduperui/context`](https://www.npmjs.com/package/@superduperui/context) gives AI agents direct access to your design system via 10 MCP tools
+- **MCP server** — [`@layoutdesign/context`](https://www.npmjs.com/package/@layoutdesign/context) gives AI agents direct access to your design system via 10 MCP tools
 - **BYOK** — Bring Your Own Key for Anthropic API. Free tier costs nothing.
 - **Project management** — Save, switch between, and manage multiple design system projects
 
@@ -44,7 +44,7 @@ Your AI agents now generate code that matches your actual design system.
 
 ```bash
 # Clone the repo
-git clone https://github.com/mattthornhill/superduperaistudio.git
+git clone https://github.com/uselayout/studio.git
 cd ai-studio
 
 # Install dependencies
@@ -90,20 +90,20 @@ After exporting a bundle from the Studio, use the open-source CLI to connect it 
 
 ```bash
 # Import the bundle into your project
-npx @superduperui/context import ~/Downloads/my-design-system.zip
+npx @layoutdesign/context import ~/Downloads/my-design-system.zip
 
 # Auto-configure Claude Code, Cursor, or Windsurf
-npx @superduperui/context install
+npx @layoutdesign/context install
 ```
 
 The import command:
-1. Extracts the bundle into `.superduper/` in your project
+1. Extracts the bundle into `.layout/` in your project
 2. Merges design system rules into your root `CLAUDE.md` automatically
 3. Tells you to run `install` to connect the MCP server
 
 Once connected, your AI agent has access to 10 MCP tools including `get_design_system`, `get_tokens`, `check_compliance`, `push_to_figma`, `design_in_figma`, and `update_tokens`.
 
-See [`@superduperui/context`](https://github.com/mattthornhill/superduperui-context) for the full CLI and MCP server documentation.
+See [`@layoutdesign/context`](https://github.com/uselayout/layout-context) for the full CLI and MCP server documentation.
 
 ## Figma Integration
 
@@ -179,7 +179,7 @@ lib/
 
 ## Self-Hosting
 
-SuperDuper AI Studio runs on any platform that supports Node.js and Playwright:
+Layout runs on any platform that supports Node.js and Playwright:
 
 - **Coolify** / **Dokku** — Use the included Dockerfile
 - **Railway** / **Render** — Deploy from Git
@@ -197,4 +197,4 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 ## License
 
-[MIT](LICENSE) — SuperDuper UI Ltd
+[MIT](LICENSE) — Layout UI Ltd

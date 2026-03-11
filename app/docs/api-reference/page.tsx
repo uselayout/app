@@ -5,9 +5,9 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "API Reference — SuperDuper Docs",
+  title: "API Reference — Layout Docs",
   description:
-    "Complete reference for the 10 MCP tools exposed by the SuperDuper CLI for AI coding agents.",
+    "Complete reference for the 10 MCP tools exposed by the Layout CLI for AI coding agents.",
 };
 
 const tools = [
@@ -335,7 +335,7 @@ export default function ApiReferencePage() {
       <div className="space-y-4">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">API Reference</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          SuperDuper CLI exposes 10 MCP tools that AI agents call during
+          Layout CLI exposes 10 MCP tools that AI agents call during
           development. These tools give your agent structured access to design
           tokens, component specs, compliance checking, live preview, and a
           two-way Figma bridge — everything needed to build UI that stays on
@@ -344,7 +344,7 @@ export default function ApiReferencePage() {
         <Callout type="info">
           All tools are available after running{" "}
           <code className="font-mono text-indigo-600 text-xs bg-indigo-50 px-1.5 py-0.5 rounded">
-            npx @superduperui/context init
+            npx @layoutdesign/context init
           </code>{" "}
           and adding the MCP server config to your agent&apos;s settings. See
           the{" "}

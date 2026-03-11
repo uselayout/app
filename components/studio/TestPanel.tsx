@@ -498,7 +498,7 @@ function ResultBlock({
     if (!block) return;
     const code = block.code.replace(/^```\w*\r?\n?/gm, "").replace(/^```\s*$/gm, "").trim();
     const prompt = [
-      `Call the superduper MCP server's push_to_figma tool with the following inputs:`,
+      `Call the layout MCP server's push_to_figma tool with the following inputs:`,
       `- code: the TSX below`,
       `- name: "${result.prompt}"`,
       "",

@@ -5,7 +5,7 @@ import { CopyBlock } from "@/components/shared/CopyBlock";
 import { Callout } from "@/components/docs/Callout";
 
 export const metadata: Metadata = {
-  title: "Windsurf — SuperDuper Docs",
+  title: "Windsurf — Layout Docs",
   description:
     "Configure Windsurf rules and import tokens.css so Cascade suggestions follow your design system.",
 };

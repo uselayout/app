@@ -1,4 +1,4 @@
-# SuperDuper AI Studio — Product Reference for Content
+# Layout — Product Reference for Content
 
 Use this document when writing tweets, threads, blog posts, or any marketing content. Everything here is factual and verified against the codebase.
 
@@ -20,8 +20,8 @@ A browser-based tool that extracts design systems from **Figma files** and **liv
 
 Two products:
 
-1. **SuperDuper AI Studio** — the web app (extract, synthesise, test, export)
-2. **@superduperui/context** — open-source MCP server + CLI (npm package, MIT license)
+1. **Layout** — the web app (extract, synthesise, test, export)
+2. **@layoutdesign/context** — open-source MCP server + CLI (npm package, MIT license)
 
 ---
 
@@ -49,22 +49,22 @@ The pain: AI generates generic-looking UI. It doesn't know your design system. Y
 6. **Export bundle** — download a ZIP with CLAUDE.md, AGENTS.md, .cursorrules, tokens.css, tokens.json, tailwind.config.js
 7. **Drop into your project** — your AI coding tool now builds on-brand
 
-### @superduperui/context (CLI + MCP server)
-1. `npx @superduperui/context import ./superduper-export.zip` — unpacks Studio export into `.superduper/`
-2. `npx @superduperui/context install` — auto-configures Claude Code / Cursor / Windsurf MCP settings
+### @layoutdesign/context (CLI + MCP server)
+1. `npx @layoutdesign/context import ./layout-export.zip` — unpacks Studio export into `.layout/`
+2. `npx @layoutdesign/context install` — auto-configures Claude Code / Cursor / Windsurf MCP settings
 3. Your AI agent now calls `get_design_system` automatically when building UI
 4. Use `preview` to render components locally at localhost:4321
 5. Use `push_to_figma` to send generated components to Figma as editable frames
 
 Or start from a free kit without the Studio:
-1. `npx @superduperui/context init --kit linear-lite` — creates `.superduper/` with DESIGN.md + tokens
-2. `npx @superduperui/context install` — done
+1. `npx @layoutdesign/context init --kit linear-lite` — creates `.layout/` with DESIGN.md + tokens
+2. `npx @layoutdesign/context install` — done
 
 Other CLI commands:
-- `npx @superduperui/context serve` — start MCP server manually (stdio)
-- `npx @superduperui/context install --target claude` — target a specific tool
-- `npx @superduperui/context use <kit-name>` — switch design kits
-- `npx @superduperui/context list` — show available kits
+- `npx @layoutdesign/context serve` — start MCP server manually (stdio)
+- `npx @layoutdesign/context install --target claude` — target a specific tool
+- `npx @layoutdesign/context use <kit-name>` — switch design kits
+- `npx @layoutdesign/context list` — show available kits
 
 ---
 
@@ -163,7 +163,7 @@ No other open-source tool closes this loop.
 
 ## Free Starter Kits (3)
 
-Bundled with @superduperui/context, extracted from live websites via Playwright:
+Bundled with @layoutdesign/context, extracted from live websites via Playwright:
 
 | Kit | Aesthetic |
 |---|---|
@@ -278,7 +278,7 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 ### Technical Credibility
 - "We extract 500+ design tokens from a single URL in under 2 minutes"
 - "DESIGN.md isn't a style guide — it's a compiler target. Structured for LLM consumption."
-- "9 MCP tools, 3 free kits, MIT licensed. `npx @superduperui/context init` and your AI has taste."
+- "9 MCP tools, 3 free kits, MIT licensed. `npx @layoutdesign/context init` and your AI has taste."
 
 ### Use Cases
 - "Building a SaaS dashboard? Extract Linear's design system, drop it into Claude Code, ship in a day."
@@ -305,7 +305,7 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 
 ## Links
 
-- **AI Studio:** studio.superduperui.com (staging)
-- **Marketing page:** superduperui.com/ai-studio
-- **MCP server:** npm @superduperui/context
-- **GitHub:** superduperui/context (MIT)
+- **AI Studio:** layout.design (staging)
+- **Marketing page:** layout.design/ai-studio
+- **MCP server:** npm @layoutdesign/context
+- **GitHub:** uselayout/layout-context (MIT)
