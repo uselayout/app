@@ -1,0 +1,98 @@
+## Design System - linear.app
+
+This project uses the linear.app design system.
+AI coding agents: follow all rules in this section precisely.
+Violations will produce inconsistent, off-brand output.
+
+### Critical Rules (always apply)
+> Copy-paste into `CLAUDE.md` or `.cursorrules` for immediate effect.
+
+**Stack:** Dark-mode-only web app · CSS custom properties · Inter Variable as primary typeface · 8px spatial grid · No Tailwind
+
+```css
+/* === CORE TOKENS — Linear.app === */
+:root {
+  /* Colour */
+  --color-bg-base: #0f1011;           /* Page background */
+  --color-bg-elevated: #161718;       /* Card / panel surface */
+  --color-bg-subtle: #1c1d1f;         /* Hover / secondary surface */
+  --color-border-default: rgba(255,255,255,0.05); /* Card/panel border */
+  --color-border-subtle: rgba(255,255,255,0.08);  /* Dividers */
+  --color-text-primary: #f7f8f8;      /* Headings, high-emphasis */
+  --color-text-secondary: #8a8f98;    /* Body copy, subheadings */
+  --color-text-tertiary: #5a5f6a;     /* Captions, disabled labels */
+  --color-action-primary: #5e6ad2;    /* Primary CTA (indigo) */
+  --color-action-primary-hover: #6e7ae2; /* CTA hover */
+  --color-focus-ring: #5e6ad2;        /* Focus outline colour */
+  --color-status-success: #27a644;
+  --color-status-error: #eb5757;
+  --color-status-warning: #f0bf00;
+  --color-status-info: #4ea7fc;
+
+  /* Typography */
+  --font-regular: "Inter Variable","SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font-serif-display: "Tiempos Headline",ui-serif,Georgia,serif;
+  --font-monospace: "Berkeley Mono",ui-monospace,"SF Mono","Menlo",monospace;
+  --font-weight-normal: 400;
+  --font-weight-medium: 510;
+  --font-weight-semibold: 590;
+  --font-weight-bold: 680;
+
+  /* Spacing */
+  --space-1: 4px;   --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px;  --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px;
+
+  /* Radius */
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px;
+  --radius-pill: 9999px;
+
+  /* Motion */
+  --speed-quick: 0.1s;   --speed-regular: 0.25s;
+  --ease-out: cubic-bezier(0.25,0.46,0.45,0.94);
+  --ease-out-expo: cubic-bezier(0.19,1,0.22,1);
+}
+```
+
+```tsx
+// Primary Button — correct token usage
+<button className="btn-primary">Get started</button>
+
+// CSS:
+// .btn-primary { background: var(--color-action-primary); color: var(--color-text-primary);
+//   border-radius: var(--radius-sm); padding: var(--space-2) var(--space-4);
+//   font: var(--font-weight-medium) 13px/1.5 var(--font-regular);
+//   transition: background var(--speed-quick) var(--ease-out); }
+// .btn-primary:hover  { background: var(--color-action-primary-hover); }
+// .btn-primary:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+// .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+```
+
+**NEVER rules:**
+1. NEVER hardcode `#5e6ad2` — always `var(--color-action-primary)`
+2. NEVER use font-family `"Inter"` (not Variable) — always `var(--font-regular)`
+3. NEVER use `border-radius > 16px` on rectangular UI chrome (cards, panels, inputs)
+4. NEVER use light-mode colours — this system is dark-mode only
+5. NEVER use spacing values not on the 4px grid (e.g., 7px, 11px, 18px)
+6. NEVER use `font-weight` integers not in the defined scale (300/400/510/590/680)
+7. NEVER construct z-index values manually — use `var(--layer-*)` tokens
+
+**Full design system → see DESIGN.md**
+
+---
+
+### Design System Context
+
+If the **superduper** MCP server is connected, use these tools:
+- `get-design-system` — full DESIGN.md or a specific section (colours, typography, spacing, components)
+- `get-tokens` — design tokens in CSS or JSON format
+- `list-components` / `get-component` — component inventory and specs
+- `check-compliance` — validate code against design system rules
+- `design-in-figma` — create Figma mockups using the design system (requires Figma MCP)
+
+Otherwise, read the local files in `.superduper/`:
+- `.superduper/DESIGN.md` — complete design system specification
+- `.superduper/tokens.css` — CSS custom properties
+- `.superduper/tokens.json` — W3C DTCG token format
+
+**Before building any UI component, read the design system first.**
