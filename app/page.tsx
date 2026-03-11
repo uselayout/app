@@ -16,6 +16,7 @@ import { PricingCTA } from "@/components/marketing/PricingCTA";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { ProductsSection } from "@/components/marketing/ProductsSection";
 import { FigmaLoopSection } from "@/components/marketing/FigmaLoopSection";
+import { OpenSourceSection } from "@/components/marketing/OpenSourceSection";
 import { detectSourceType } from "@/lib/util/detect-source";
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
@@ -403,6 +404,7 @@ export default function LandingPage() {
         <HowItWorksSection />
         <AIKitsSection scrollTo={scrollTo} />
         <StatsStrip />
+        <OpenSourceSection />
         <FeaturesGrid />
         <FigmaLoopSection />
         <PricingCTA onOpenStudio={() => setShowExtractModal(true)} />

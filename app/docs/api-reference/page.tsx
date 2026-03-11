@@ -7,7 +7,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "API Reference — SuperDuper Docs",
   description:
-    "Complete reference for the 8 MCP tools exposed by the SuperDuper CLI for AI coding agents.",
+    "Complete reference for the 10 MCP tools exposed by the SuperDuper CLI for AI coding agents.",
 };
 
 const tools = [
@@ -240,6 +240,61 @@ await mcp.call("url_to_figma", {
 });
 // Creates annotated frames in Figma with the captured screenshots`,
   },
+  {
+    name: "design_in_figma",
+    description:
+      "Designs UI directly in Figma using your extracted design tokens. Takes a natural language prompt describing what to design, extracts the relevant colour, typography, and spacing tokens from your loaded kit, and returns structured instructions for the Figma MCP generate_figma_design tool.",
+    parameters: [
+      {
+        name: "prompt",
+        type: "string (required)",
+        description:
+          "Natural language description of what to design, e.g. 'A settings page with sidebar navigation'.",
+      },
+      {
+        name: "fileKey",
+        type: "string (optional)",
+        description:
+          "Figma file key to design into. If omitted, instructions are returned without a target file.",
+      },
+      {
+        name: "viewports",
+        type: "Array<{ width: number; height: number }> (optional)",
+        description:
+          "Viewport dimensions for the design. Defaults to desktop (1440×900).",
+      },
+    ],
+    example: `// Design a dashboard directly in Figma using your tokens
+await mcp.call("design_in_figma", {
+  prompt: "A settings page with sidebar navigation and dark theme",
+  fileKey: "EHmQZ1wq5qHUcifyRYtiBC"
+});
+// Returns token palette + Figma MCP instructions`,
+  },
+  {
+    name: "update_tokens",
+    description:
+      "Updates or adds design tokens in the currently loaded kit. Accepts new token values and merges them into the existing token set, persisting changes to the kit files.",
+    parameters: [
+      {
+        name: "tokens",
+        type: "Record<string, string> (required)",
+        description:
+          "Object of token name-value pairs to add or update, e.g. { '--color-primary': '#6366F1' }.",
+      },
+      {
+        name: "format",
+        type: "'css' | 'json' | 'tailwind' (optional)",
+        description:
+          "Which token file to update. Defaults to 'css' (tokens.css).",
+      },
+    ],
+    example: `// Add a new brand colour token
+await mcp.call("update_tokens", {
+  tokens: { "--color-brand": "#6366F1", "--color-brand-hover": "#7577F3" },
+  format: "css"
+});`,
+  },
 ];
 
 const loopDiagram = `Developer prompts Claude Code / Cursor
@@ -280,7 +335,7 @@ export default function ApiReferencePage() {
       <div className="space-y-4">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">API Reference</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          SuperDuper CLI exposes 8 MCP tools that AI agents call during
+          SuperDuper CLI exposes 10 MCP tools that AI agents call during
           development. These tools give your agent structured access to design
           tokens, component specs, compliance checking, live preview, and a
           two-way Figma bridge — everything needed to build UI that stays on
