@@ -1,4 +1,5 @@
 import { supabase } from "./client";
+import { deleteScreenshots } from "./storage";
 import type { Project } from "@/lib/types";
 
 interface ProjectRow {
@@ -40,10 +41,8 @@ function projectToRow(
   project: Project,
   userId: string
 ): Omit<ProjectRow, "created_at"> & { updated_at: string } {
-  // Strip screenshots before persisting — they can be several MB of base64
-  const extractionData = project.extractionData
-    ? { ...project.extractionData, screenshots: [] }
-    : null;
+  // Screenshots are now Supabase Storage URLs (not base64), safe to persist
+  const extractionData = project.extractionData ?? null;
 
   return {
     id: project.id,
@@ -90,6 +89,9 @@ export async function upsertProject(
 }
 
 export async function removeProject(id: string, userId: string): Promise<void> {
+  // Clean up screenshots from storage
+  await deleteScreenshots(id);
+
   const { error } = await supabase
     .from("sd_aistudio_projects")
     .delete()

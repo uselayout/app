@@ -63,6 +63,33 @@ export async function POST(request: NextRequest) {
     addFormatToZip(zip, format, proj);
   }
 
+  // Include screenshots if available (stored as Supabase Storage URLs)
+  if (proj.extractionData?.screenshots?.length) {
+    const screenshotDir = zip.folder("screenshots");
+    const names = ["full-page.png", "viewport.png"];
+
+    await Promise.all(
+      proj.extractionData.screenshots.map(async (urlOrDataUri, i) => {
+        try {
+          let buffer: ArrayBuffer;
+          if (urlOrDataUri.startsWith("data:")) {
+            // Base64 data URI (in-session, not yet uploaded)
+            const base64 = urlOrDataUri.replace(/^data:image\/\w+;base64,/, "");
+            buffer = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)).buffer;
+          } else {
+            // Supabase Storage URL
+            const res = await fetch(urlOrDataUri);
+            if (!res.ok) return;
+            buffer = await res.arrayBuffer();
+          }
+          screenshotDir?.file(names[i] ?? `screenshot-${i}.png`, buffer);
+        } catch {
+          // Skip failed screenshot downloads
+        }
+      })
+    );
+  }
+
   const zipBuffer = await zip.generateAsync({ type: "arraybuffer" });
   const safeName = project.name
     .toLowerCase()
