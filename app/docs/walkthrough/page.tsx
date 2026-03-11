@@ -1,0 +1,882 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { CopyBlock } from "@/components/shared/CopyBlock";
+import { Callout } from "@/components/docs/Callout";
+import { getAdjacentPages } from "@/lib/docs/navigation";
+
+export const metadata: Metadata = {
+  title: "Walkthrough — SuperDuper Docs",
+  description:
+    "A complete end-to-end walkthrough of SuperDuper AI Studio — from extracting a design system to exporting a working AI kit and closing the Figma loop.",
+};
+
+export default function WalkthroughPage() {
+  const { prev, next } = getAdjacentPages("/docs/walkthrough");
+
+  return (
+    <div className="space-y-10">
+      {/* Header */}
+      <div className="space-y-3">
+        <h1 className="text-3xl font-bold text-[#0a0a0a]">
+          End-to-End Walkthrough
+        </h1>
+        <p className="text-base text-gray-600 leading-relaxed">
+          This walkthrough covers the complete SuperDuper AI Studio workflow —
+          from pasting a URL to having your AI agent automatically generate
+          on-brand UI. Each step builds on the previous one, so read it in
+          order the first time through.
+        </p>
+      </div>
+
+      {/* Step 1 — Extract from Figma */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          1. Extract from Figma
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Paste a Figma file URL (e.g.{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            https://www.figma.com/file/AbCdEf/My-Design-System
+          </code>
+          ) on the Studio home screen and enter your Figma Personal Access
+          Token. You can create one at{" "}
+          <strong>Figma → Settings → Account → Personal access tokens</strong>.
+          The token is stored only in your browser — it is never sent to
+          SuperDuper servers.
+        </p>
+        <p className="text-base text-gray-600 leading-relaxed">
+          SuperDuper calls the Figma REST API in two passes: first to list
+          styles and component metadata, then to resolve actual values for each
+          node. The following data is extracted:
+        </p>
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                  What Gets Extracted
+                </th>
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                  Details
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {[
+                [
+                  "Colour styles",
+                  "Actual fill values resolved via node API — not just metadata",
+                ],
+                [
+                  "Typography styles",
+                  "Font family, size, weight, line-height, and letter-spacing as composites",
+                ],
+                [
+                  "Effect styles",
+                  "Drop shadows, inner shadows, and blur values",
+                ],
+                [
+                  "Component inventory",
+                  "Name, description, variant count, and property definitions for every component",
+                ],
+                [
+                  "Variables",
+                  "Enterprise plans only — the Variables API returns 403 on free/professional plans, which is treated as non-fatal and skipped automatically",
+                ],
+              ].map(([what, detail]) => (
+                <tr key={what} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-[#0a0a0a] whitespace-nowrap align-top pt-3.5">
+                    {what}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{detail}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Callout type="info">
+          The Figma Variables API returns 403 on non-Enterprise plans. This is
+          expected — SuperDuper treats it as non-fatal and continues extraction
+          using colour and typography styles instead. You will still get a
+          complete DESIGN.md.
+        </Callout>
+      </section>
+
+      {/* Step 2 — Extract from a Website */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          2. Extract from a Website
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          No Figma file? Paste any live website URL instead. SuperDuper uses
+          Playwright to load the page in a headless browser and extract design
+          data directly from the rendered DOM and computed styles. This works
+          on any public website — your own staging environment, a competitor
+          site, or a design reference you admire.
+        </p>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The following is extracted from the live page:
+        </p>
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                  What Gets Extracted
+                </th>
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                  Details
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {[
+                [
+                  "CSS custom properties",
+                  "Every --variable declaration found on the page",
+                ],
+                [
+                  "Font declarations",
+                  "@font-face rules and computed font families in use",
+                ],
+                [
+                  "Computed styles",
+                  "Colours, typography, spacing, borders, shadows, and transitions sampled from DOM elements",
+                ],
+                [
+                  "Animations",
+                  "@keyframes rules defined in the page stylesheets",
+                ],
+                [
+                  "Library detection",
+                  "Identifies Tailwind CSS, Bootstrap, and other CSS frameworks",
+                ],
+                [
+                  "Screenshots",
+                  "Full-page and viewport captures for visual reference",
+                ],
+              ].map(([what, detail]) => (
+                <tr key={what} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-[#0a0a0a] whitespace-nowrap align-top pt-3.5">
+                    {what}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{detail}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Callout type="info">
+          Website extraction uses Playwright and cannot run on Vercel
+          serverless. Self-hosted deployments on Coolify, Hetzner, or Railway
+          work without any extra configuration.
+        </Callout>
+      </section>
+
+      {/* Step 3 — Generate DESIGN.md */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          3. Generate DESIGN.md
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Once extraction completes, click{" "}
+          <strong>Generate DESIGN.md</strong> in the Studio. Claude Sonnet
+          analyses the raw extracted data and synthesises a structured,
+          LLM-optimised context file. Generation typically finishes in under 2
+          minutes and streams into the editor in real time.
+        </p>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The output follows a fixed 9-section structure with 2 appendices:
+        </p>
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                  Section
+                </th>
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                  Contents
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {[
+                [
+                  "Quick Reference",
+                  "One-page cheat sheet — the most important tokens and rules at a glance",
+                ],
+                [
+                  "1. Colour System",
+                  "All colour tokens with hex values and usage guidance",
+                ],
+                [
+                  "2. Typography",
+                  "Type scale, font families, weights, and line-heights",
+                ],
+                [
+                  "3. Spacing & Layout",
+                  "Spacing scale and grid conventions",
+                ],
+                [
+                  "4. Component Specs",
+                  "Per-component usage rules, variants, and TSX code examples",
+                ],
+                [
+                  "5. Elevation & Depth",
+                  "Shadow tokens and z-index scale",
+                ],
+                [
+                  "6. Motion & Animation",
+                  "Duration values, easing curves, and animation patterns",
+                ],
+                [
+                  "7. Border & Radius",
+                  "Border widths, styles, and border-radius scale",
+                ],
+                [
+                  "8. Anti-Patterns",
+                  "Explicit list of what the AI must not do — hardcoded colours, wrong tokens, off-brand patterns",
+                ],
+                [
+                  "9. Icons & Assets",
+                  "Icon library in use and asset conventions",
+                ],
+                [
+                  "Appendix A",
+                  "Raw CSS custom properties from the extraction",
+                ],
+                [
+                  "Appendix B",
+                  "Raw typography declarations",
+                ],
+              ].map(([section, contents]) => (
+                <tr key={section} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-[#0a0a0a] whitespace-nowrap align-top pt-3.5">
+                    {section}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{contents}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Callout type="tip">
+          The Quick Reference section is the highest-value part of DESIGN.md.
+          It is placed at the top because most AI agents read context
+          top-to-bottom and may truncate long files. If you manually edit
+          DESIGN.md, prioritise keeping the Quick Reference accurate.
+        </Callout>
+      </section>
+
+      {/* Step 4 — The Studio Editor */}
+      <section className="space-y-5">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          4. The Studio Editor
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          After generation completes, the Studio opens a three-panel workspace.
+          All changes auto-save to browser storage with a 2-second debounce —
+          there is no Save button and no account required.
+        </p>
+        <div className="space-y-4">
+          <div className="rounded-xl border border-gray-200 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              Source Panel{" "}
+              <span className="text-gray-400 font-normal text-sm">(left)</span>
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Displays the raw extracted data — colour tokens, typography
+              styles, spacing values, component inventory, and screenshots. Use
+              this to verify what was captured before or after generation. If
+              something is missing or misidentified, you can re-extract without
+              losing any edits made in the editor.
+            </p>
+          </div>
+          <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              Editor Panel{" "}
+              <span className="text-gray-400 font-normal text-sm">
+                (centre)
+              </span>
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              A Monaco-based markdown editor — the same editor used in VS Code.
+              This is where you refine DESIGN.md: fix misidentified tokens,
+              strengthen the anti-patterns section, rewrite component specs, or
+              add brand guidance that extraction cannot infer. Section
+              navigation pills let you jump between the 9 sections quickly.
+            </p>
+          </div>
+          <div className="rounded-xl border border-gray-200 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              Test Panel{" "}
+              <span className="text-gray-400 font-normal text-sm">(right)</span>
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Send prompts to Claude and see the generated TSX rendered live in
+              a sandboxed iframe. Use the context toggle to compare output with
+              and without DESIGN.md, check the health score, and iterate on
+              the context file until the AI reliably produces on-brand output.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Step 5 — Test Your Context */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          5. Test Your Context
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Testing is the most important step before exporting. It tells you
+          whether DESIGN.md actually improves AI output — and by how much.
+        </p>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">
+            Context Toggle
+          </h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            The toggle switches DESIGN.md in and out of the Claude prompt. Turn
+            it <strong>off</strong>, run a prompt, and note the output. Turn it{" "}
+            <strong>on</strong>, run the same prompt, and compare. A
+            well-written context file produces noticeably better output:
+            correct token usage, proper spacing, on-brand typography, and no
+            hardcoded colours. This A/B comparison is the clearest signal that
+            your DESIGN.md is working.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">
+            Quick Prompts
+          </h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            Preset component requests appear as one-click buttons — primary
+            button, card, form input, badge, and more. If your extraction
+            included Figma components, the Test panel also generates dynamic
+            prompts for each extracted component name, giving you targeted
+            tests for your specific design system rather than generic UI
+            patterns.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">
+            Health Score
+          </h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            After each generation, the Test panel shows a 0–100 health score
+            measuring token faithfulness, component accuracy, and anti-pattern
+            violations. The score reflects how closely the generated code
+            follows the rules in DESIGN.md. Aim for 80 or higher before
+            exporting.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">
+            Live Component Preview
+          </h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            Generated TSX is transpiled server-side and rendered inside a
+            sandboxed iframe with React and Tailwind CSS loaded. You see the
+            actual component — not just code — so visual errors such as wrong
+            colours or broken layouts are immediately obvious without leaving
+            the Studio.
+          </p>
+        </div>
+
+        <Callout type="tip">
+          If the health score is consistently below 60, check that the Colour
+          System and Typography sections of DESIGN.md contain well-formed CSS
+          code blocks. The AI needs concrete, parseable examples to reference
+          at generation time — prose descriptions alone are not enough.
+        </Callout>
+      </section>
+
+      {/* Step 6 — Export Your AI Kit */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          6. Export Your AI Kit
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Click <strong>Export</strong> in the top bar to open the export
+          modal. DESIGN.md is always included. The ZIP bundle can contain up
+          to 8 additional files, each optimised for a different AI tool or
+          framework:
+        </p>
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                  File
+                </th>
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                  Optimised For
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {[
+                [
+                  "DESIGN.md",
+                  "All AI agents — the primary context file",
+                ],
+                [
+                  "CLAUDE.md",
+                  "Claude Code — persistent project context injected on every prompt",
+                ],
+                [
+                  "AGENTS.md",
+                  "Codex, Jules, Factory, Amp — agents following the agents.md convention",
+                ],
+                [
+                  ".cursorrules",
+                  "Cursor — legacy rules format applied across all Composer and Chat sessions",
+                ],
+                [
+                  "copilot-instructions.md",
+                  "GitHub Copilot — workspace instructions file read by Copilot Chat",
+                ],
+                [
+                  ".windsurfrules",
+                  "Windsurf — global rules applied to all Cascade sessions in the project",
+                ],
+                [
+                  "tokens.css",
+                  "Any stylesheet — CSS custom properties ready to import directly",
+                ],
+                [
+                  "tokens.json",
+                  "Style Dictionary, Theo, and W3C DTCG-compatible tooling",
+                ],
+                [
+                  "tailwind.config.js",
+                  "Tailwind CSS — theme extension with extracted colours, spacing, and radii",
+                ],
+              ].map(([file, use]) => (
+                <tr key={file} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-mono text-xs text-indigo-700 whitespace-nowrap align-top pt-3.5">
+                    {file}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{use}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Callout type="info">
+          The{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            tailwind.config.js
+          </code>{" "}
+          uses{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            theme.extend
+          </code>{" "}
+          so it merges with your existing config without overwriting defaults.{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            tokens.css
+          </code>{" "}
+          can be imported at the top of your global stylesheet with no
+          modifications required.
+        </Callout>
+      </section>
+
+      {/* Step 7 — Set Up the CLI */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          7. Set Up the CLI
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            @superduperui/context
+          </code>{" "}
+          CLI imports your Studio export and configures the MCP server so your
+          AI agent automatically reads the design system on every session. Two
+          commands are all that is needed:
+        </p>
+        <CopyBlock
+          code={`npx @superduperui/context import ./superduper-export.zip
+npx @superduperui/context install`}
+          language="bash"
+        />
+        <p className="text-base text-gray-600 leading-relaxed">
+          The{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            import
+          </code>{" "}
+          command unpacks the ZIP into a{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            .superduper/
+          </code>{" "}
+          directory in your project. The{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            install
+          </code>{" "}
+          command detects Claude Code, Cursor, and Windsurf and writes the MCP
+          server configuration to whichever are present — no manual JSON
+          editing required.
+        </p>
+        <Callout type="tip">
+          After running{" "}
+          <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">
+            install
+          </code>
+          , restart your AI agent once so it picks up the new MCP server
+          configuration. From that point on, every session in the project
+          directory has automatic access to the design system tools.
+        </Callout>
+      </section>
+
+      {/* Step 8 — MCP Tools Reference */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          8. MCP Tools Reference
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Once the MCP server is configured, your AI agent can call 10 tools
+          automatically when building UI. You do not need to invoke them
+          manually — the agent decides when to use them based on the task.
+        </p>
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                  Tool
+                </th>
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                  What It Does
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {[
+                [
+                  "get_design_system",
+                  "Returns the full DESIGN.md, or a specific section by number",
+                ],
+                [
+                  "get_tokens",
+                  "Returns CSS, JSON, or Tailwind tokens filtered by type (colour, spacing, etc.)",
+                ],
+                [
+                  "get_component",
+                  "Returns the spec and TSX code example for a named component",
+                ],
+                [
+                  "list_components",
+                  "Returns the full inventory of components in the design system",
+                ],
+                [
+                  "check_compliance",
+                  "Validates a code snippet against design rules and returns violations",
+                ],
+                [
+                  "preview",
+                  "Renders a component in a local browser canvas at localhost:4321",
+                ],
+                [
+                  "push_to_figma",
+                  "Sends a rendered component to Figma as editable frames via the Figma MCP",
+                ],
+                [
+                  "url_to_figma",
+                  "Captures a public URL as editable Figma frames with auto-layout via Figma MCP and Playwright",
+                ],
+                [
+                  "design_in_figma",
+                  "Designs UI directly in Figma using extracted tokens from a natural language prompt",
+                ],
+                [
+                  "update_tokens",
+                  "Updates or adds design tokens in the loaded kit in CSS, JSON, or Tailwind format",
+                ],
+              ].map(([tool, desc]) => (
+                <tr key={tool} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-mono text-xs text-indigo-700 whitespace-nowrap align-top pt-3.5">
+                    {tool}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{desc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Step 9 — The Figma Closed Loop */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          9. The Figma Closed Loop
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          SuperDuper closes the loop between code and design — something
+          previously requiring separate tools and manual handoffs. Preview
+          components locally at{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            localhost:4321
+          </code>
+          , push them to Figma for designer review, design directly in Figma
+          using the extracted tokens, then pull changes back via the Figma MCP.
+          The full cycle looks like this:
+        </p>
+        <CopyBlock
+          code={`Developer prompts Claude
+  -> Claude calls get_design_system for context
+  -> Claude generates on-brand TSX
+  -> Claude calls preview -> renders at localhost:4321
+  -> Developer reviews, requests changes
+  -> Claude calls push_to_figma -> editable frame in Figma
+  -> Designer tweaks directly in Figma using the extracted tokens
+  -> Developer asks Claude to read Figma changes (via Figma MCP)
+  -> Claude updates the code to match`}
+          language="text"
+        />
+        <p className="text-base text-gray-600 leading-relaxed">
+          Each step in the loop uses the same design tokens extracted from the
+          source. The AI generates code with the tokens, the preview renders
+          using Tailwind, and the Figma frame uses the same values — so code
+          and design stay in sync without a separate handoff process.
+        </p>
+        <Callout type="info">
+          The{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            push_to_figma
+          </code>{" "}
+          and{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            design_in_figma
+          </code>{" "}
+          tools require the Figma MCP server to be configured in your AI agent
+          separately. See the{" "}
+          <a
+            href="https://www.figma.com/developers/mcp"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-indigo-600 hover:underline"
+          >
+            Figma MCP documentation
+          </a>{" "}
+          for setup instructions.
+        </Callout>
+      </section>
+
+      {/* Step 10 — Tips & Troubleshooting */}
+      <section className="space-y-5">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          10. Tips &amp; Troubleshooting
+        </h2>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">
+            Health Score Ranges
+          </h3>
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                  <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                    Score
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                    What It Means
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {[
+                  [
+                    "80–100",
+                    "Excellent — DESIGN.md is providing strong, reliable context. Safe to export and ship.",
+                  ],
+                  [
+                    "60–79",
+                    "Good — context is working but some tokens or anti-patterns may be ignored. Review the weakest sections before exporting.",
+                  ],
+                  [
+                    "Below 60",
+                    "Needs work — the AI is not reliably following your design system. Check that CSS code blocks are well-formed and the anti-patterns section is explicit.",
+                  ],
+                ].map(([score, meaning]) => (
+                  <tr key={score} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-mono text-xs text-indigo-700 whitespace-nowrap align-top pt-3.5">
+                      {score}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{meaning}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">
+            Re-Extracting After a Design Update
+          </h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            When the design system changes — new brand colours, updated type
+            scale, redesigned components — paste the URL again on the home
+            screen and re-extract. The Studio loads the updated data into the
+            Source panel. You can then re-generate DESIGN.md or manually update
+            only the changed sections in the editor.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">
+            Context Toggle A/B Comparison
+          </h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            The context toggle is the fastest way to validate whether DESIGN.md
+            is providing value. Run the same prompt with context off, then on.
+            If the output looks identical, the context file is not doing its job
+            and needs strengthening. Focus on the Quick Reference section and
+            the anti-patterns list first.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">
+            Free Starter Kits
+          </h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            If you want to try the CLI without extracting a design system first,
+            three free starter kits are bundled with the package. Each was
+            extracted from a live website using Playwright and includes a Quick
+            Reference, core tokens, and 5 component specs — enough to get
+            meaningful on-brand output immediately.
+          </p>
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                  <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                    Kit
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                    Aesthetic
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {[
+                  ["linear-lite", "Developer tool, dark-first, minimal"],
+                  ["stripe-lite", "Clean, trust-focused, enterprise"],
+                  ["notion-lite", "Document-first, typography-heavy, neutral"],
+                ].map(([kit, aesthetic]) => (
+                  <tr key={kit} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-mono text-xs text-indigo-700 whitespace-nowrap">
+                      {kit}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{aesthetic}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <CopyBlock
+            code={`npx @superduperui/context init --kit linear-lite
+npx @superduperui/context init --kit stripe-lite
+npx @superduperui/context init --kit notion-lite`}
+            language="bash"
+          />
+          <Callout type="tip">
+            Starter kits are a good way to test your AI agent integration end to
+            end before committing to a full extraction. Import a kit, run{" "}
+            <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">
+              install
+            </code>
+            , and verify the MCP tools are working before bringing in your own
+            design system.
+          </Callout>
+        </div>
+      </section>
+
+      {/* Next Steps */}
+      <section className="space-y-3">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Next Steps</h2>
+        <ul className="list-disc pl-6 space-y-2 text-gray-600">
+          <li>
+            <Link
+              href="/docs/studio"
+              className="text-indigo-600 hover:underline"
+            >
+              Studio Guide
+            </Link>{" "}
+            — deeper reference for the three-panel editor and all extraction
+            options.
+          </li>
+          <li>
+            <Link href="/docs/cli" className="text-indigo-600 hover:underline">
+              CLI Guide
+            </Link>{" "}
+            — full CLI command reference including kit management and
+            auto-configure options.
+          </li>
+          <li>
+            <Link
+              href="/docs/design-md"
+              className="text-indigo-600 hover:underline"
+            >
+              DESIGN.md Spec
+            </Link>{" "}
+            — the formal specification for each section of the context file.
+          </li>
+          <li>
+            <Link
+              href="/docs/integrations/claude-code"
+              className="text-indigo-600 hover:underline"
+            >
+              Claude Code Integration
+            </Link>{" "}
+            — add the export files to your project for persistent on-brand
+            context.
+          </li>
+          <li>
+            <Link
+              href="/docs/integrations/cursor"
+              className="text-indigo-600 hover:underline"
+            >
+              Cursor Integration
+            </Link>{" "}
+            — set up MDC rules files for Cursor 0.43+.
+          </li>
+        </ul>
+      </section>
+
+      {/* Prev / Next */}
+      <nav className="flex items-center justify-between border-t border-gray-200 pt-8">
+        <div>
+          {prev && (
+            <Link
+              href={prev.href}
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+            >
+              <ArrowLeft size={16} />
+              {prev.title}
+            </Link>
+          )}
+        </div>
+        <div>
+          {next && (
+            <Link
+              href={next.href}
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+            >
+              {next.title}
+              <ArrowRight size={16} />
+            </Link>
+          )}
+        </div>
+      </nav>
+    </div>
+  );
+}

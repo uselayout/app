@@ -169,7 +169,7 @@ npx @superduperui/context install
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Available MCP Tools</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The MCP server exposes 8 tools your AI agent can call automatically:
+          The MCP server exposes 10 tools your AI agent can call automatically:
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -212,6 +212,14 @@ npx @superduperui/context install
                 [
                   "url_to_figma",
                   "Captures a public URL as editable Figma frames with auto-layout (via Figma MCP + Playwright)",
+                ],
+                [
+                  "design_in_figma",
+                  "Designs UI directly in Figma using your extracted tokens — from a natural language prompt",
+                ],
+                [
+                  "update_tokens",
+                  "Updates or adds design tokens in the loaded kit (CSS, JSON, or Tailwind format)",
                 ],
               ].map(([tool, desc]) => (
                 <tr key={tool} className="hover:bg-gray-50">

@@ -24,7 +24,7 @@ const FEATURES = [
   {
     icon: Terminal,
     title: "MCP server built in",
-    desc: "SuperDuper CLI exposes 9 MCP tools. Your AI agent reads tokens, gets component specs, checks compliance, and previews output — without leaving the chat.",
+    desc: "SuperDuper CLI exposes 10 MCP tools. Your AI agent reads tokens, gets component specs, checks compliance, and previews output — without leaving the chat.",
   },
   {
     icon: Eye,

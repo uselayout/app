@@ -14,7 +14,7 @@ const STUDIO_BULLETS = [
 const CLI_BULLETS = [
   "npx @superduperui/context import + install — two commands, zero config",
   "Auto-configures Claude Code, Cursor, and Windsurf MCP settings",
-  "9 MCP tools including get_design_system, check_compliance, and preview",
+  "10 MCP tools including get_design_system, check_compliance, and preview",
   "Live component preview + push to Figma + design in Figma",
 ];
 
