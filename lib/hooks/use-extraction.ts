@@ -42,7 +42,7 @@ export function useExtraction() {
           : "/api/extract/website";
         const extractBody = isFigma
           ? { figmaUrl: project.sourceUrl, accessToken }
-          : { url: project.sourceUrl };
+          : { url: project.sourceUrl, projectId: project.id };
 
         const extractRes = await fetch(extractUrl, {
           method: "POST",

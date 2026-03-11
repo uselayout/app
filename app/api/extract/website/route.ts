@@ -2,9 +2,11 @@ import { NextRequest } from "next/server";
 import { z } from "zod/v4";
 import { extractFromWebsite } from "@/lib/website/extractor";
 import { validateExtractionUrl, SsrfError } from "@/lib/website/validate-url";
+import { uploadScreenshots } from "@/lib/supabase/storage";
 
 const RequestSchema = z.object({
   url: z.url(),
+  projectId: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -24,7 +26,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { url } = parsed.data;
+  const { url, projectId } = parsed.data;
 
   try {
     await validateExtractionUrl(url);
@@ -52,6 +54,15 @@ export async function POST(request: NextRequest) {
             send({ type: "step", step, percent, detail });
           },
         });
+
+        // Upload screenshots to Supabase Storage, replace base64 with URLs
+        if (projectId && result.screenshots.length > 0) {
+          send({ type: "step", step: "upload", percent: 85, detail: "Uploading screenshots..." });
+          const urls = await uploadScreenshots(projectId, result.screenshots);
+          if (urls.length > 0) {
+            result.screenshots = urls;
+          }
+        }
 
         send({ type: "complete", data: result });
       } catch (err) {

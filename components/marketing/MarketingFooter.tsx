@@ -8,7 +8,7 @@ const NAV_LINKS = [
   { label: "Products", id: "products" },
   { label: "How it Works", id: "how-it-works" },
   { label: "AI Kits", id: "ai-kits" },
-  { label: "Pricing", id: "pricing" },
+  { label: "Figma Loop", id: "figma-loop" },
 ];
 
 const HREF_LINKS = [{ label: "Docs", href: "/docs" }];
@@ -44,7 +44,7 @@ export function MarketingFooter({
                 SuperDuper
               </span>
             </div>
-            <p className="text-sm text-gray-500">Give your AI perfect taste.</p>
+            <p className="text-sm text-gray-500">The compiler between design systems and AI coding agents.</p>
           </div>
 
           {/* Links */}

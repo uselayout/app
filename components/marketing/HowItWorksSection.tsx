@@ -1,29 +1,23 @@
-import { Link as LinkIcon, Sparkles, Download, Terminal } from "lucide-react";
+import { Link as LinkIcon, Sparkles, Terminal } from "lucide-react";
 
 const STEPS = [
   {
     num: "01",
     icon: LinkIcon,
     title: "Paste a URL",
-    desc: "Drop in a Figma file link or any live website URL. Figma or no Figma — both work.",
+    desc: "Figma file or live website. We extract colours, typography, spacing, effects, components, and variables.",
   },
   {
     num: "02",
     icon: Sparkles,
-    title: "Extraction runs",
-    desc: "Colours, typography, spacing, components, and design tokens — extracted and synthesised into a structured DESIGN.md in under 2 minutes.",
+    title: "Get your DESIGN.md",
+    desc: "Claude synthesises a 9-section context file optimised for LLM consumption. Not a token dump \u2014 structured, semantic, actionable.",
   },
   {
     num: "03",
-    icon: Download,
-    title: "Download your AI kit",
-    desc: "A ZIP bundle with CLAUDE.md, AGENTS.md, .cursorrules, tokens.css, tokens.json, and tailwind.config.js. Every major AI tool covered.",
-  },
-  {
-    num: "04",
     icon: Terminal,
     title: "Serve it to your AI",
-    desc: "Run SuperDuper CLI. Your AI agent calls get_design_system automatically on every build prompt.",
+    desc: "Export a ZIP, run two CLI commands. Your AI agent reads the design system on every prompt via MCP.",
   },
 ];
 
@@ -36,11 +30,11 @@ export function HowItWorksSection() {
             How it Works
           </p>
           <h2 className="text-4xl font-bold text-[#0a0a0a] sm:text-5xl tracking-tight">
-            From URL to AI context in under 2 minutes.
+            Three steps. Under two minutes.
           </h2>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-3">
           {STEPS.map(({ num, icon: Icon, title, desc }) => (
             <div
               key={num}
@@ -58,6 +52,23 @@ export function HowItWorksSection() {
               <p className="text-sm leading-relaxed text-gray-500">{desc}</p>
             </div>
           ))}
+        </div>
+
+        {/* CLI snippet */}
+        <div className="mx-auto mt-12 max-w-lg rounded-xl bg-[#0a0a0a] p-6">
+          <pre className="text-sm leading-relaxed">
+            <code>
+              <span className="text-gray-500">$</span>{" "}
+              <span className="text-emerald-400">npx</span>{" "}
+              <span className="text-white">@superduperui/context import ./superduper-export.zip</span>
+              {"\n"}
+              <span className="text-gray-500">$</span>{" "}
+              <span className="text-emerald-400">npx</span>{" "}
+              <span className="text-white">@superduperui/context install</span>
+              {"\n"}
+              <span className="text-gray-500"># Done — your AI agent reads the design system automatically</span>
+            </code>
+          </pre>
         </div>
       </div>
     </section>
