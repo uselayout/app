@@ -24,12 +24,12 @@ const FEATURES = [
   {
     icon: Terminal,
     title: "MCP server built in",
-    desc: "SuperDuper CLI exposes 8 MCP tools. Your AI agent reads tokens, gets component specs, and previews output — without leaving the chat.",
+    desc: "SuperDuper CLI exposes 9 MCP tools. Your AI agent reads tokens, gets component specs, checks compliance, and previews output — without leaving the chat.",
   },
   {
     icon: Eye,
-    title: "Live component preview",
-    desc: "Generated TSX renders at localhost:4321 via the CLI. See exactly what your AI built before it touches your codebase.",
+    title: "Figma closed loop",
+    desc: "Preview components locally, push to Figma for designer review, or design directly in Figma using your tokens. Code ↔ Figma, fully connected.",
   },
 ];
 
