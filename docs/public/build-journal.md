@@ -1,7 +1,7 @@
-# Build Journal: SuperDuper AI Studio
+# Build Journal: Layout
 
 ## Overview
-- **Product**: SuperDuper AI Studio
+- **Product**: Layout
 - **Duration**: 5–8 March 2026 (3-day intensive build + 2-day polish)
 - **Team**: Matt (product/design) + Claude Code (AI pair programmer)
 - **Tech Stack**: Next.js 15, React 19, TypeScript, Tailwind CSS v4, Monaco Editor, Zustand, Anthropic SDK, Playwright, Figma API, Better Auth, Supabase
@@ -65,7 +65,7 @@
 - **Decisions**:
   - Better Auth over Supabase Auth — more control, works with direct PostgreSQL
   - Supabase for project storage (CRUD scoped by user_id)
-  - Table prefix `sd_aistudio_` to share the database with other SuperDuper products
+  - Table prefix `layout_` to share the database with other Layout products
 - **Gotcha**: Self-hosted Supabase does NOT use SSL. Spent time debugging connection failures before realising `ssl: false` was needed (or rather, just omitting the ssl option entirely)
 
 ### Afternoon (7 March)
@@ -77,7 +77,7 @@
 ### 8 March
 - **Documentation**: Created HOW_TO_USE.md — complete guide for using DESIGN.md with Claude Code, Cursor, GitHub Copilot, Windsurf, and OpenAI Codex
 - **AGENTS.md Export**: Added AGENTS.md generator and export format for OpenAI Codex compatibility
-- **Marketing Page**: Built `/ai-studio` page on superduperui.com (staging, not linked in nav yet)
+- **Marketing Page**: Built `/ai-studio` page on layout.design (staging, not linked in nav yet)
 - **Product Strategy**: Documented competitive landscape, pricing model, GTM plan
 
 ### End of Day
@@ -113,10 +113,45 @@
 
 ---
 
-## Stats
+## Stats (Initial Build)
 - **Lines of code**: 6,547 (TypeScript/TSX)
 - **Commits**: 22
 - **Components built**: 19
 - **API endpoints**: 7
 - **Export formats**: 7 (DESIGN.md, CLAUDE.md, AGENTS.md, .cursorrules, tokens.css, tokens.json, tailwind.config.js)
 - **Build duration**: 3 days (foundation → production-ready)
+
+---
+
+## Post-Launch Development (9–11 March)
+
+After the initial 3-day build, significant features were added over the following week:
+
+### Billing & Subscriptions
+- Full Stripe integration: checkout sessions, customer portal, webhook handling
+- Credit-based usage tracking — per-operation cost logging for DESIGN.md generation and test queries
+- Subscription tiers: Free (BYOK), Pro (£29/mo), Team (£29/mo + £15/seat)
+- 5 new billing API endpoints + Stripe webhook handler
+- Zustand billing store with subscription, credits, and usage state
+
+### Figma Closed Loop
+- "Push to Figma" button in TestPanel — copies structured prompt for Figma MCP's `generate_figma_design`
+- `design-in-figma` MCP tool — design UI in Figma from natural language using loaded design tokens
+- Full code-to-design-to-code loop: generate → preview → push to Figma → designer reviews → pull back
+
+### Marketing & Pages
+- Redesigned marketing homepage with Figma-centred narrative (ContextGap, HowItWorks, FigmaLoop, Comparison, OpenSource, AIKits sections)
+- Pricing page with tier comparison and billing CTAs
+- Documentation pages with sidebar navigation (getting started, Studio walkthrough, CLI, API reference, integration guides)
+- Light-mode login page matching marketing aesthetic
+
+### Infrastructure
+- Health scoring module (`lib/health/score.ts`) — 0–100 compliance scoring
+- SSRF protection on website extraction (`lib/website/validate-url.ts`)
+- Shared clipboard utility with `document.execCommand` fallback for HTTP contexts
+
+### Updated Stats
+- **API endpoints**: 12 (extraction, generation, export, transpile, billing, webhooks, auth)
+- **Commits**: 30+
+- **Components**: 25+ (including marketing sections, billing UI, docs)
+- **Zustand stores**: 3 (project, extraction, billing)

@@ -108,7 +108,7 @@ export function OpenSourceSection() {
           >
             <Terminal size={16} className="shrink-0 text-indigo-400" />
             <code className="flex-1 font-mono text-sm text-gray-200 select-all">
-              npx @superduperui/context init --kit linear-lite
+              npx @layoutdesign/context init --kit linear-lite
             </code>
             <span className="shrink-0 rounded-full bg-indigo-500/15 px-3 py-1 text-xs font-medium text-indigo-300">
               free
@@ -119,7 +119,7 @@ export function OpenSourceSection() {
         {/* CTA links */}
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link
-            href="https://github.com/mattthornhill/superduperaistudio"
+            href="https://github.com/uselayout/studio"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2.5 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-[#0a0a0a] transition-all hover:bg-gray-100 shadow-lg shadow-black/20"

@@ -30,7 +30,7 @@ export function EarlyAccessCTA() {
           Help us build this.
         </h2>
         <p className="mx-auto mb-10 max-w-xl text-lg text-gray-500 leading-relaxed">
-          SuperDuper is pre-alpha. We&apos;re onboarding 50 teams —
+          Layout is pre-alpha. We&apos;re onboarding 50 teams —
           designers and developers — who ship UI with AI agents
           and want to shape what gets built next. Direct founder access.
           First features. Founding member pricing.

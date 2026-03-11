@@ -1,8 +1,8 @@
-# SuperDuper AI Studio — Feature Documentation
+# Layout — Feature Documentation
 
 ## Product Overview
 
-SuperDuper AI Studio is a browser-based tool that extracts design systems from Figma files and live websites, then compiles them into structured, LLM-optimised context bundles. The output — a DESIGN.md file and supporting token files — gives AI coding agents (Claude Code, Cursor, GitHub Copilot, Windsurf, OpenAI Codex) the design context they need to generate on-brand UI code consistently.
+Layout is a browser-based tool that extracts design systems from Figma files and live websites, then compiles them into structured, LLM-optimised context bundles. The output — a DESIGN.md file and supporting token files — gives AI coding agents (Claude Code, Cursor, GitHub Copilot, Windsurf, OpenAI Codex) the design context they need to generate on-brand UI code consistently.
 
 Think of it as a compiler: design system in, AI-ready context out. No manual token extraction, no copy-pasting hex values, no maintaining separate documentation that drifts from the source.
 
@@ -71,13 +71,18 @@ Takes raw extraction data and synthesises a structured, LLM-optimised DESIGN.md 
 3. Content streams in real-time into the Monaco editor
 4. User can edit, refine, and regenerate sections
 
-#### DESIGN.md Structure
+#### DESIGN.md Structure (9 sections + 2 appendices)
 - **Section 0: Quick Reference** — 50–75 line summary for pasting into any context window
-- **Section 1: Colour System** — All colours with semantic naming, usage guidance
-- **Section 2: Typography** — Font stack, scale, line heights, usage
-- **Section 3: Spacing & Layout** — Spacing scale, grid system, breakpoints
-- **Section 4: Components** — Component inventory with props and usage patterns
-- **Section 5: Anti-Patterns** — Common mistakes to avoid
+- **Section 1: Design Direction & Philosophy** — Personality, aesthetic intent, explicit rejections
+- **Section 2: Colour System** — Three tiers: primitives, semantic aliases, component tokens
+- **Section 3: Typography System** — Composite token groups, font stack with fallbacks, pairing rules
+- **Section 4: Spacing & Layout** — Base unit, full scale, grid system, breakpoints, flex vs grid rules
+- **Section 5: Component Patterns** — 5–10 components with anatomy, token mappings for ALL states, TSX examples
+- **Section 6: Elevation & Depth** — Shadow tokens, border tokens, z-index scale
+- **Section 7: Motion** — Timing functions, durations, easing tokens
+- **Section 8: Anti-Patterns & Constraints** — Numbered NEVER rules with "why it fails" and "what to do instead"
+- **Appendix A:** Complete token reference table
+- **Appendix B:** Token source metadata + confidence levels
 
 ---
 
@@ -93,8 +98,9 @@ A professional editing environment with three resizable panels for working with 
 
 #### Editor Features
 - Token autocomplete — type a colour name and see the hex value
-- Section navigator — jump to any DESIGN.md section
-- Health scoring — visual indicator of design system completeness
+- Section navigator — pill buttons to jump between DESIGN.md sections
+- Health scoring — automatic 0–100 score measuring token faithfulness, component accuracy, and anti-pattern violations
+- Auto-save — 2-second debounce with save indicator
 - Keyboard shortcuts: Cmd+S save, Cmd+E export, Cmd+T focus test panel
 
 ---
@@ -151,6 +157,52 @@ Projects are saved automatically and accessible from the homepage. Return to any
 - Projects persist in localStorage for instant load (works offline)
 - When signed in, projects sync to Supabase (accessible from any device)
 - Each project stores: name, source URL, source type, extraction data, DESIGN.md content, health score, timestamps
+
+---
+
+### 8. Billing & Subscriptions
+
+#### What It Does
+Credit-based billing system with Stripe integration. Users on the Pro tier get hosted AI credits; free users bring their own API key (BYOK).
+
+#### How It Works
+- Stripe Checkout for subscription sign-up, Customer Portal for management
+- Credits deducted per AI operation (DESIGN.md generation, test queries)
+- Usage tracking with per-operation cost logging
+- Subscription tiers: Free (BYOK), Pro (£29/mo — 50 DESIGN.md + 100 test queries), Team (£29/mo + £15/seat)
+- Webhook handler syncs subscription state from Stripe events
+
+#### Billing Modules
+- `lib/billing/stripe.ts` — Checkout session + portal integration
+- `lib/billing/credits.ts` — Credit balance and deduction
+- `lib/billing/subscription.ts` — Tier management
+- `lib/billing/usage.ts` — Usage stats and history
+
+---
+
+### 9. Figma Closed Loop
+
+#### What It Does
+Bidirectional design workflow — push AI-generated components to Figma for designer review, then pull feedback back into code.
+
+#### How It Works
+1. Generate a component in the Test Panel using your DESIGN.md context
+2. Click **Push to Figma** on any result with a code block
+3. A structured prompt is copied to your clipboard with the component code and design tokens
+4. Paste into Claude Code or Cursor — the AI calls Figma MCP's `generate_figma_design` to create an editable auto-layout frame in Figma
+5. Designer reviews and tweaks in Figma
+6. Developer asks the AI to read Figma changes (via Figma MCP) and update the code
+
+#### Design Before Code
+Use the `design-in-figma` MCP tool to design UI directly in Figma from a natural language prompt, using your loaded design system tokens — before writing any code.
+
+#### The Loop
+```
+Extract design system → Generate DESIGN.md → Test components
+    → Push to Figma → Designer reviews → Update code → Repeat
+```
+
+No other open-source tool closes this loop.
 
 ---
 
@@ -227,15 +279,23 @@ Yes. The Studio includes a full Monaco editor. You can edit any section, add cus
 ### What if I don't use Tailwind?
 The DESIGN.md and tokens.css work with any CSS approach. The tailwind.config.js is optional — only include it in your export if you use Tailwind.
 
-### Is there an API?
-Not yet. The current version is browser-only. A CLI sync tool (`npx @superduperai/sync`) is planned.
+### Is there an API or CLI?
+Yes. The open-source **@layoutdesign/context** package (MIT licensed) provides both a CLI and an MCP server with 9 tools. Install via `npx @layoutdesign/context install` to auto-configure Claude Code, Cursor, or Windsurf. The MCP server gives AI agents direct access to your design system via tools like `get_design_system`, `get_tokens`, `check_compliance`, `preview`, and `push_to_figma`.
+
+### How does billing work?
+Free users bring their own Anthropic API key (BYOK) — unlimited extractions, all export formats. Pro users (£29/mo) get hosted AI credits so no API key management is needed. Credits are deducted per DESIGN.md generation and test query.
 
 ---
 
 ## Roadmap
 
-- [ ] CLI sync tool — `npx @superduperai/sync` pulls latest DESIGN.md into your project
+- [x] CLI + MCP server — @layoutdesign/context (MIT, 9 tools, 3 free kits)
+- [x] Pre-built AI Kits — 3 free starter kits (linear-lite, stripe-lite, notion-lite)
+- [x] Billing & subscriptions — Stripe integration, credit-based usage, pricing page
+- [x] Figma closed loop — Push to Figma button, design-in-figma MCP tool
+- [x] Health scoring — automated 0–100 compliance scoring
 - [ ] Drift detection — automated re-extraction with diff alerts when tokens change
 - [ ] Design system versioning — compare extractions over time
-- [ ] Pre-built AI Kits — ready-made bundles for Linear, Stripe, Vercel, Apple
+- [ ] Premium AI Kits — full DESIGN.md bundles for Apple iOS, Revolut, Vercel
 - [ ] Team features — shared project library, team seats, centralised billing
+- [ ] AI Kit marketplace — community-created kits with commission model

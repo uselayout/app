@@ -41,7 +41,7 @@ export function MarketingFooter({
                 />
               </svg>
               <span className="text-sm font-semibold">
-                SuperDuper
+                Layout
               </span>
             </div>
             <p className="text-sm text-gray-500">The compiler between design systems and AI coding agents.</p>
@@ -90,7 +90,7 @@ export function MarketingFooter({
 
         <div className="mt-14 border-t border-white/[0.06] pt-8">
           <p className="text-xs text-gray-600">
-            © 2026 SuperDuper
+            © 2026 Layout
           </p>
         </div>
       </div>

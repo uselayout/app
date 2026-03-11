@@ -15,17 +15,17 @@ ${quickRefLines}
 
 ### Design System Context
 
-If the **superduper** MCP server is connected, use these tools:
+If the **layout** MCP server is connected, use these tools:
 - \`get-design-system\` — full DESIGN.md or a specific section (colours, typography, spacing, components)
 - \`get-tokens\` — design tokens in CSS or JSON format
 - \`list-components\` / \`get-component\` — component inventory and specs
 - \`check-compliance\` — validate code against design system rules
 - \`design-in-figma\` — create Figma mockups using the design system (requires Figma MCP)
 
-Otherwise, read the local files in \`.superduper/\`:
-- \`.superduper/DESIGN.md\` — complete design system specification
-- \`.superduper/tokens.css\` — CSS custom properties
-- \`.superduper/tokens.json\` — W3C DTCG token format
+Otherwise, read the local files in \`.layout/\`:
+- \`.layout/DESIGN.md\` — complete design system specification
+- \`.layout/tokens.css\` — CSS custom properties
+- \`.layout/tokens.json\` — W3C DTCG token format
 
 **Before building any UI component, read the design system first.**
 `;

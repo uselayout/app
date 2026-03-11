@@ -51,7 +51,7 @@ export async function logUsage(params: {
 }): Promise<void> {
   const cost = estimateCost(params.usage);
 
-  const { error } = await supabase.from("sd_aistudio_usage_log").insert({
+  const { error } = await supabase.from("layout_usage_log").insert({
     user_id: params.userId,
     project_id: params.projectId ?? null,
     endpoint: params.endpoint,
@@ -75,7 +75,7 @@ export async function getUsageHistory(
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
   const { data, error } = await supabase
-    .from("sd_aistudio_usage_log")
+    .from("layout_usage_log")
     .select("*")
     .eq("user_id", userId)
     .gte("created_at", since)
@@ -97,7 +97,7 @@ export async function getUsageStats(
   periodEnd: string
 ): Promise<UsageStats> {
   const { data, error } = await supabase
-    .from("sd_aistudio_usage_log")
+    .from("layout_usage_log")
     .select("*")
     .eq("user_id", userId)
     .gte("created_at", periodStart)

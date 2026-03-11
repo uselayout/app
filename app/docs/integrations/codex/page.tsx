@@ -5,7 +5,7 @@ import { CopyBlock } from "@/components/shared/CopyBlock";
 import { Callout } from "@/components/docs/Callout";
 
 export const metadata: Metadata = {
-  title: "OpenAI Codex — SuperDuper Docs",
+  title: "OpenAI Codex — Layout Docs",
   description:
     "Add AGENTS.md to your repo so OpenAI Codex follows your design system on every task.",
 };

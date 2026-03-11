@@ -60,11 +60,11 @@ export function HowItWorksSection() {
             <code>
               <span className="text-gray-500">$</span>{" "}
               <span className="text-emerald-400">npx</span>{" "}
-              <span className="text-white">@superduperui/context import ./superduper-export.zip</span>
+              <span className="text-white">@layoutdesign/context import ./layout-export.zip</span>
               {"\n"}
               <span className="text-gray-500">$</span>{" "}
               <span className="text-emerald-400">npx</span>{" "}
-              <span className="text-white">@superduperui/context install</span>
+              <span className="text-white">@layoutdesign/context install</span>
               {"\n"}
               <span className="text-gray-500"># Done — your AI agent reads the design system automatically</span>
             </code>

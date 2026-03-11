@@ -8,20 +8,20 @@ export const auth = betterAuth({
     connectionString: process.env.DATABASE_URL!,
   }),
   user: {
-    modelName: "sd_aistudio_user",
+    modelName: "layout_user",
   },
   account: {
-    modelName: "sd_aistudio_account",
+    modelName: "layout_account",
   },
   verification: {
-    modelName: "sd_aistudio_verification",
+    modelName: "layout_verification",
   },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
   },
   session: {
-    modelName: "sd_aistudio_session",
+    modelName: "layout_session",
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 24,
     cookieCache: {

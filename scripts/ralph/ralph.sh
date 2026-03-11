@@ -1,7 +1,7 @@
 #!/bin/bash
 # ===================================================================
 # Ralph Autonomous Build Loop
-# Project: SuperDuper AI Studio
+# Project: Layout
 # Generated: 2026-03-05
 # ===================================================================
 
@@ -15,7 +15,7 @@ TOTAL_STORIES=$(cat scripts/ralph/prd.json | jq '.userStories | length')
 # Initialise build log if not exists
 if [ ! -f "$BUILD_LOG" ]; then
     echo "{
-  \"project\": \"superduper-ai-studio\",
+  \"project\": \"layout-studio\",
   \"startedAt\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
   \"completedAt\": null,
   \"totalStories\": $TOTAL_STORIES,
@@ -28,7 +28,7 @@ fi
 echo ""
 echo "RALPH AUTONOMOUS BUILD"
 echo "==================================================================="
-echo "Project:    SuperDuper AI Studio"
+echo "Project:    Layout"
 echo "Iterations: $MAX_ITERATIONS max"
 echo "Stories:    $TOTAL_STORIES total"
 echo "Remaining:  $(cat scripts/ralph/prd.json | jq '[.userStories[] | select(.passes == false)] | length')"

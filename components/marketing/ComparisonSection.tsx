@@ -38,7 +38,7 @@ export function ComparisonSection() {
             the tool your design team already knows.
           </p>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-500 leading-relaxed">
-            SuperDuper is a compiler, not a canvas. It reads your
+            Layout is a compiler, not a canvas. It reads your
             existing Figma files, extracts the design system, and serves
             structured context to your existing AI tools. Nobody changes
             anything. The AI just starts building correctly.
@@ -51,7 +51,7 @@ export function ComparisonSection() {
             TypeScript didn&apos;t replace JavaScript. It made JavaScript
             smarter by adding a type system on top.{" "}
             <span className="font-semibold text-[#0a0a0a]">
-              SuperDuper does the same for Figma
+              Layout does the same for Figma
             </span>{" "}
             — it adds an AI context layer on top of files your team already
             uses.
@@ -65,7 +65,7 @@ export function ComparisonSection() {
               <tr className="border-b border-black/[0.06] bg-[#fafafa]">
                 <th className="px-6 py-4 font-medium text-gray-500" />
                 <th className="px-6 py-4 font-semibold text-[#0a0a0a]">
-                  SuperDuper
+                  Layout
                 </th>
                 <th className="px-6 py-4 font-medium text-gray-500">
                   Paper.design
@@ -104,7 +104,7 @@ export function ComparisonSection() {
         {/* Closing */}
         <p className="mt-12 text-center text-base text-gray-500 leading-relaxed max-w-xl mx-auto">
           Your designers stay in Figma. Your developers stay in their terminal.
-          SuperDuper sits invisibly between them, making every AI build on-brand.
+          Layout sits invisibly between them, making every AI build on-brand.
         </p>
       </div>
     </section>

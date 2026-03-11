@@ -61,7 +61,7 @@ function projectToRow(
 
 export async function fetchAllProjects(userId: string): Promise<Project[]> {
   const { data, error } = await supabase
-    .from("sd_aistudio_projects")
+    .from("layout_projects")
     .select("*")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
@@ -79,7 +79,7 @@ export async function upsertProject(
   userId: string
 ): Promise<void> {
   const row = projectToRow(project, userId);
-  const { error } = await supabase.from("sd_aistudio_projects").upsert(row, {
+  const { error } = await supabase.from("layout_projects").upsert(row, {
     onConflict: "id",
   });
 
@@ -93,7 +93,7 @@ export async function removeProject(id: string, userId: string): Promise<void> {
   await deleteScreenshots(id);
 
   const { error } = await supabase
-    .from("sd_aistudio_projects")
+    .from("layout_projects")
     .delete()
     .eq("id", id)
     .eq("user_id", userId);
