@@ -6,6 +6,7 @@ export type DocNavItem = {
 
 export const docsNavigation: DocNavItem[] = [
   { title: "Getting Started", href: "/docs" },
+  { title: "Walkthrough", href: "/docs/walkthrough" },
   { title: "Studio", href: "/docs/studio" },
   { title: "CLI", href: "/docs/cli" },
   {
@@ -21,6 +22,7 @@ export const docsNavigation: DocNavItem[] = [
   },
   { title: "API Reference", href: "/docs/api-reference" },
   { title: "DESIGN.md Spec", href: "/docs/design-md" },
+  { title: "Self-Hosting", href: "/docs/self-hosting" },
 ];
 
 /** Flatten the nav tree into a single ordered list of leaf/top-level items. */
