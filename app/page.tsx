@@ -15,6 +15,7 @@ import { FeaturesGrid } from "@/components/marketing/FeaturesGrid";
 import { PricingCTA } from "@/components/marketing/PricingCTA";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { ProductsSection } from "@/components/marketing/ProductsSection";
+import { detectSourceType } from "@/lib/util/detect-source";
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
 
@@ -34,16 +35,6 @@ function getHostname(url: string): string {
     return new URL(url).hostname.replace("www.", "");
   } catch {
     return url;
-  }
-}
-
-function detectSourceType(url: string): SourceType | null {
-  if (/figma\.com\/(file|design)\//.test(url)) return "figma";
-  try {
-    new URL(url);
-    return "website";
-  } catch {
-    return null;
   }
 }
 
@@ -190,7 +181,6 @@ export default function LandingPage() {
                 { label: "Products", id: "products" },
                 { label: "How it Works", id: "how-it-works" },
                 { label: "AI Kits", id: "ai-kits" },
-                { label: "Pricing", id: "pricing" },
               ].map(({ label, id }) => (
                 <button
                   key={id}
@@ -203,6 +193,12 @@ export default function LandingPage() {
                   {label}
                 </button>
               ))}
+              <a
+                href="/pricing"
+                className="text-sm text-gray-600 hover:text-black transition-colors"
+              >
+                Pricing
+              </a>
               <a
                 href="/docs"
                 className="text-sm text-gray-600 hover:text-black transition-colors"

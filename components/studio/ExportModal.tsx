@@ -50,6 +50,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
   );
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadComplete, setDownloadComplete] = useState(false);
+  const [downloadFilename, setDownloadFilename] = useState("");
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -102,14 +103,16 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download =
+      const filename =
         res.headers
           .get("Content-Disposition")
           ?.match(/filename="(.+)"/)?.[1] ?? `${project.name}-ai-kit.zip`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      setDownloadFilename(filename);
       setDownloadComplete(true);
     } catch {
       // Error is visible via network tab; could add toast later
@@ -128,7 +131,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="export-modal-title"
-        className="w-full max-w-md rounded-xl border border-[--studio-border] bg-[--bg-panel] shadow-2xl"
+        className="w-full max-w-md rounded-xl border border-[--studio-border-strong] bg-[--bg-elevated] shadow-[0_0_80px_rgba(0,0,0,0.6)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -161,7 +164,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
                   <span className="mr-2 text-[--text-muted]">1.</span>
                   Import the bundle into your project
                 </p>
-                <CopyBlock code="npx @superduperui/context import ./your-export.zip" />
+                <CopyBlock code={`npx @superduperui/context import ~/Downloads/${downloadFilename}`} />
               </div>
 
               {/* Step 2 */}

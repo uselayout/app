@@ -1,0 +1,156 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { X, Layers, Globe, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useProjectStore } from "@/lib/store/project";
+import { getStoredApiKey } from "@/lib/hooks/use-api-key";
+import { detectSourceType } from "@/lib/util/detect-source";
+import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
+
+interface NewExtractionModalProps {
+  onClose: () => void;
+}
+
+export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
+  const router = useRouter();
+  const createProject = useProjectStore((s) => s.createProject);
+  const [url, setUrl] = useState("");
+  const [pat, setPat] = useState("");
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+
+  const sourceType = url ? detectSourceType(url) : null;
+  const isFigma = sourceType === "figma";
+  const isValid = sourceType !== null && (!isFigma || pat.length > 0);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  const handleExtract = () => {
+    if (!getStoredApiKey()) {
+      onClose();
+      setShowApiKeyModal(true);
+      return;
+    }
+    if (!isValid || !sourceType) return;
+
+    const projectId =
+      crypto.randomUUID?.() ??
+      Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const projectName = isFigma
+      ? "Figma Extraction"
+      : new URL(url).hostname.replace("www.", "");
+
+    createProject({
+      id: projectId,
+      name: projectName,
+      sourceType,
+      sourceUrl: url,
+      designMd: "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    if (isFigma && pat) {
+      sessionStorage.setItem(`pat-${projectId}`, pat);
+    }
+    sessionStorage.setItem(`extract-${projectId}`, "true");
+
+    router.push(`/studio/${projectId}`);
+  };
+
+  if (showApiKeyModal) {
+    return <ApiKeyModal onClose={() => setShowApiKeyModal(false)} />;
+  }
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative z-10 w-full max-w-lg rounded-xl border border-[--studio-border-strong] bg-[--bg-elevated] p-6 shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+        {/* Header */}
+        <div className="mb-5 flex items-start justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-[--text-primary]">
+              New Extraction
+            </h2>
+            <p className="mt-1 text-xs text-[--text-muted]">
+              Paste a Figma or website URL to extract a design system
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-[--text-muted] hover:text-[--text-primary] transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* URL input */}
+        <div className="space-y-3">
+          <div className="relative">
+            <input
+              type="url"
+              placeholder="https://figma.com/design/... or https://example.com"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
+              autoFocus
+              className="w-full rounded-lg border border-[--studio-border-strong] bg-[--bg-surface] px-4 py-3 pr-10 text-sm text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+            />
+            {sourceType && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {isFigma ? (
+                  <Layers className="h-4 w-4 text-[--studio-accent]" />
+                ) : (
+                  <Globe className="h-4 w-4 text-emerald-400" />
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Figma PAT field */}
+          {isFigma && (
+            <input
+              type="password"
+              placeholder="Figma Personal Access Token"
+              value={pat}
+              onChange={(e) => setPat(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
+              className="w-full rounded-lg border border-[--studio-border-strong] bg-[--bg-surface] px-4 py-3 text-sm text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+            />
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="mt-5 flex items-center justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="rounded-lg px-4 py-2 text-xs text-[--text-muted] hover:text-[--text-primary] transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleExtract}
+            disabled={!isValid}
+            className="flex items-center gap-2 rounded-lg bg-[--studio-accent] px-4 py-2 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] disabled:opacity-40 transition-colors"
+          >
+            Extract
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
