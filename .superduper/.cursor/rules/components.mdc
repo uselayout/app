@@ -1,0 +1,8 @@
+---
+description: Component specifications - auto-attached when working on .tsx files
+globs: ["**/*.tsx", "**/*.jsx"]
+---
+
+# linear.app Components
+
+See DESIGN.md Section 5 for component specifications.
