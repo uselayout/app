@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { calculateHealthScore } from "@/lib/health/score";
+import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { useProjectStore } from "@/lib/store/project";
 import type { TestResult, HealthScore } from "@/lib/types";
@@ -49,10 +50,14 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
   const outputRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const [highlighted, setHighlighted] = useState(false);
 
   useImperativeHandle(ref, () => ({
     focusPrompt: () => {
+      textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       textareaRef.current?.focus();
+      setHighlighted(true);
+      setTimeout(() => setHighlighted(false), 1500);
     },
   }));
   // Track latest results in a ref so we can persist after streaming without stale closures
@@ -271,7 +276,7 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
             onKeyDown={handleKeyDown}
             placeholder="Ask Claude to build a component..."
             rows={2}
-            className="flex-1 resize-none rounded-md border border-[--studio-border] bg-[--bg-surface] px-3 py-2 text-xs text-[--text-primary] placeholder:text-[--text-muted] focus:border-[--studio-border-focus] focus:outline-none"
+            className={`flex-1 resize-none rounded-md border border-[--studio-border] bg-[--bg-surface] px-3 py-2 text-xs text-[--text-primary] placeholder:text-[--text-muted] focus:border-[--studio-border-focus] focus:outline-none transition-shadow ${highlighted ? "ring-2 ring-[--studio-accent] ring-offset-1 ring-offset-[--bg-panel]" : ""}`}
           />
           <button
             onClick={handleSubmit}
@@ -662,10 +667,12 @@ function CodeBlock({ content }: { content: string }) {
   const lang = lines[0].replace("```", "").trim();
   const code = lines.slice(1, -1).join("\n");
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  const handleCopy = useCallback(async () => {
+    const ok = await copyToClipboard(code);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
   }, [code]);
 
   return (

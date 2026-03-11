@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 
 interface CopyBlockProps {
   code: string;
@@ -12,12 +13,10 @@ export function CopyBlock({ code, language }: CopyBlockProps) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(code);
+    const ok = await copyToClipboard(code);
+    if (ok) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard API unavailable in non-secure contexts
     }
   }
 

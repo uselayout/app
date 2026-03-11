@@ -3,11 +3,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Layers, Globe, RefreshCw, FlaskConical, Download, LogOut, KeyRound, ChevronDown, Trash2 } from "lucide-react";
+import { Layers, Globe, RefreshCw, FlaskConical, Download, LogOut, KeyRound, ChevronDown, Trash2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { signOut } from "@/lib/auth-client";
 import { useApiKey } from "@/lib/hooks/use-api-key";
 import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
+import { NewExtractionModal } from "@/components/studio/NewExtractionModal";
 import { useProjectStore } from "@/lib/store/project";
 import type { SourceType } from "@/lib/types";
 
@@ -36,6 +38,7 @@ export function TopBar({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(projectName);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [showNewExtraction, setShowNewExtraction] = useState(false);
   const [showProjectMenu, setShowProjectMenu] = useState(false);
   const { key: apiKey } = useApiKey();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -88,14 +91,27 @@ export function TopBar({
 
   return (
     <div className="flex h-12 items-center justify-between border-b border-[--studio-border] bg-[--bg-panel] px-4">
-      {/* Left: Logo */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 text-[--text-muted]">
+      {/* Left: Logo + New */}
+      <div className="flex items-center gap-2">
+        <Link
+          href="/"
+          className="flex items-center gap-1.5 text-[--text-muted] hover:text-[--text-primary] transition-colors"
+          title="Back to homepage"
+        >
           <Layers className="h-4 w-4 text-[--studio-accent]" />
           <span className="text-xs font-medium tracking-wide uppercase">
             Studio
           </span>
-        </div>
+        </Link>
+        <div className="h-4 w-px bg-[--studio-border]" />
+        <button
+          onClick={() => setShowNewExtraction(true)}
+          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+          title="New extraction"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">New</span>
+        </button>
       </div>
 
       {/* Centre: Project name + switcher + status */}
@@ -190,7 +206,7 @@ export function TopBar({
                     </div>
                   ))}
               </div>
-              <div className="border-t border-[--studio-border] px-3 py-2">
+              <div className="border-t border-[--studio-border] px-3 py-2 flex items-center justify-between">
                 <button
                   onClick={() => {
                     setShowProjectMenu(false);
@@ -198,7 +214,17 @@ export function TopBar({
                   }}
                   className="text-[10px] text-[--text-muted] hover:text-[--studio-accent] transition-colors"
                 >
-                  ← Back to homepage
+                  ← Homepage
+                </button>
+                <button
+                  onClick={() => {
+                    setShowProjectMenu(false);
+                    setShowNewExtraction(true);
+                  }}
+                  className="flex items-center gap-1 text-[10px] text-[--text-muted] hover:text-[--studio-accent] transition-colors"
+                >
+                  <Plus className="h-2.5 w-2.5" />
+                  New extraction
                 </button>
               </div>
             </div>
@@ -273,6 +299,9 @@ export function TopBar({
 
       {showApiKeyModal && (
         <ApiKeyModal onClose={() => setShowApiKeyModal(false)} />
+      )}
+      {showNewExtraction && (
+        <NewExtractionModal onClose={() => setShowNewExtraction(false)} />
       )}
     </div>
   );

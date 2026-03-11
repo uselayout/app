@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Figma, Globe, Copy, Check, X, ExternalLink } from "lucide-react";
+import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import type {
   ExtractionResult,
   ExtractedToken,
@@ -156,11 +157,13 @@ function TokensTab({
 function TokenRow({ token }: { token: ExtractedToken }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = useCallback(() => {
+  const handleCopy = useCallback(async () => {
     const varName = token.cssVariable ?? `--${token.name}`;
-    navigator.clipboard.writeText(varName);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    const ok = await copyToClipboard(varName);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
   }, [token]);
 
   const isColor = token.type === "color";
