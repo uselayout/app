@@ -1,36 +1,162 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SuperDuper AI Studio
 
-## Getting Started
+**The compiler between design systems and AI coding agents.**
 
-First, run the development server:
+Extract design systems from Figma files and live websites, then transform them into structured, LLM-optimised context bundles (DESIGN.md) that enable AI coding agents to produce on-brand UI code consistently.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org)
+
+## Why?
+
+AI coding agents (Claude Code, Cursor, Windsurf, GitHub Copilot) generate beautiful UI — but it never matches your brand. They default to Inter, rounded corners, and generic blue buttons.
+
+SuperDuper AI Studio solves this by giving agents the design context they need:
+
+1. **Extract** your design system from a Figma file or live website
+2. **Synthesise** it into a structured DESIGN.md using Claude
+3. **Export** bundles ready for CLAUDE.md, .cursorrules, tokens.css, tokens.json, and tailwind.config.js
+
+Your AI agents now generate code that matches your actual design system.
+
+## Features
+
+- **Website extraction** — Playwright scrapes CSS variables, computed styles, fonts, and full-page screenshots
+- **Figma extraction** — REST API pulls styles, components, variables, and metadata
+- **DESIGN.md synthesis** — Claude analyses extracted data and generates a comprehensive, structured design system document
+- **Test panel** — Ask Claude to build components using your design system and preview them live in-browser
+- **Export bundles** — One-click ZIP with DESIGN.md, CLAUDE.md section, .cursorrules, tokens.css, W3C DTCG tokens.json, and tailwind.config.js
+- **BYOK** — Bring Your Own Key for Anthropic API. Free tier costs nothing.
+- **Project management** — Save, switch between, and manage multiple design system projects
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- An Anthropic API key ([get one here](https://console.anthropic.com/))
+- PostgreSQL database (for auth — [Supabase](https://supabase.com/) works well)
+
+### Setup
 
 ```bash
+# Clone the repo
+git clone https://github.com/mattthornhill/superduperaistudio.git
+cd ai-studio
+
+# Install dependencies
+npm install
+
+# Install Playwright browsers (for website extraction)
+npx playwright install chromium
+
+# Copy environment variables
+cp .env.example .env.local
+# Edit .env.local with your values
+
+# Run the dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) and paste a website URL or Figma file link to get started.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How It Works
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  Figma File or   │────▶│  Extract tokens,  │────▶│  Claude synthe-  │
+│  Live Website    │     │  styles, comps    │     │  sises DESIGN.md │
+└─────────────────┘     └──────────────────┘     └────────┬────────┘
+                                                          │
+                    ┌─────────────────────────────────────┘
+                    ▼
+        ┌───────────────────────┐
+        │  Export bundle:       │
+        │  • DESIGN.md          │
+        │  • CLAUDE.md section  │
+        │  • .cursorrules       │
+        │  • tokens.css         │
+        │  • tokens.json (W3C)  │
+        │  • tailwind.config.js │
+        └───────────────────────┘
+```
 
-## Learn More
+## Studio Layout
 
-To learn more about Next.js, take a look at the following resources:
+The Studio is a three-panel workspace:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Left — Source Panel**: View extracted tokens, components, and screenshots
+- **Centre — Editor**: Monaco editor with your DESIGN.md (edit freely)
+- **Right — Test Panel**: Ask Claude to build components using your design system and preview them live
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tech Stack
 
-## Deploy on Vercel
+- **Frontend**: Next.js 15 (App Router), React 19, TypeScript (strict), Tailwind CSS v4
+- **UI**: shadcn/ui + custom dark design system
+- **State**: Zustand with localStorage persistence
+- **Editor**: Monaco Editor (markdown mode)
+- **AI**: Anthropic SDK — Claude Sonnet 4.6
+- **Extraction**: Playwright (websites), Figma REST API
+- **Export**: JSZip for bundle generation
+- **Auth**: Better Auth with PostgreSQL
+- **Database**: Supabase (project storage)
+- **Validation**: Zod for all API inputs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Commands
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev          # Development server
+npm run build        # Production build
+npm run lint         # ESLint (strict, zero warnings)
+npm run typecheck    # TypeScript type checking
+```
+
+## Project Structure
+
+```
+app/
+  page.tsx                      # Landing page
+  studio/[id]/page.tsx          # Three-panel Studio
+  api/
+    extract/figma/route.ts      # Figma extraction (SSE stream)
+    extract/website/route.ts    # Website extraction (SSE stream)
+    generate/design-md/route.ts # DESIGN.md synthesis (stream)
+    generate/test/route.ts      # Test panel (stream)
+    export/bundle/route.ts      # ZIP bundle generation
+
+components/
+  studio/                       # Studio panels and overlays
+  shared/                       # Shared components
+  ui/                           # shadcn/ui primitives
+
+lib/
+  figma/                        # Figma API client and parsers
+  website/                      # Playwright extraction
+  claude/                       # AI synthesis and test prompts
+  export/                       # Bundle generators
+  store/                        # Zustand stores
+  types/                        # TypeScript interfaces
+```
+
+## Self-Hosting
+
+SuperDuper AI Studio runs on any platform that supports Node.js and Playwright:
+
+- **Coolify** / **Dokku** — Use the included Dockerfile
+- **Railway** / **Render** — Deploy from Git
+- **VPS** — Docker or bare Node.js
+
+> **Note**: Playwright cannot run in Vercel serverless. Use a container-based platform for website extraction.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, coding standards, and PR guidelines.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for vulnerability reporting.
+
+## License
+
+[MIT](LICENSE) — SuperDuper UI Ltd

@@ -2,6 +2,30 @@
   "name": "superduper-ai-studio",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mattthornhill/superduperaistudio.git"
+  },
+  "homepage": "https://studio.superduperui.com",
+  "bugs": {
+    "url": "https://github.com/mattthornhill/superduperaistudio/issues"
+  },
+  "keywords": [
+    "design-system",
+    "ai",
+    "figma",
+    "design-tokens",
+    "claude",
+    "llm",
+    "cursor",
+    "design-to-code",
+    "mcp",
+    "tailwindcss"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -26,6 +50,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "sharp": "^0.34.5",
+    "stripe": "^20.4.1",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.11"
