@@ -9,6 +9,7 @@ import { FigmaImportModal } from "./FigmaImportModal";
 import { ResponsivePreview } from "./ResponsivePreview";
 import { ComparisonView } from "./ComparisonView";
 import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-variants";
+import { friendlyError } from "@/lib/explore/friendly-error";
 import { applyChangesToDesignMd } from "@/lib/figma/diff";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import type { ExplorationSession, DesignVariant, FigmaChange } from "@/lib/types";
@@ -118,8 +119,8 @@ export function ExplorerCanvas({
         });
 
         if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: "Request failed" }));
-          throw new Error(err.error ?? `HTTP ${res.status}`);
+          const errBody = await res.json().catch(() => ({ error: "Request failed" }));
+          throw new Error(friendlyError(errBody));
         }
 
         await streamVariants(res, sessionId, updatedExplorations);
@@ -176,8 +177,8 @@ export function ExplorerCanvas({
         });
 
         if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: "Request failed" }));
-          throw new Error(err.error ?? `HTTP ${res.status}`);
+          const errBody = await res.json().catch(() => ({ error: "Request failed" }));
+          throw new Error(friendlyError(errBody));
         }
 
         await streamVariants(res, sessionId, updatedExplorations);
@@ -260,19 +261,6 @@ export function ExplorerCanvas({
 
   return (
     <div className="flex h-full flex-col">
-      <ExplorerToolbar
-        onGenerate={handleGenerate}
-        onRefine={handleRefine}
-        onCompare={(prompt) => setComparePrompt(prompt)}
-        onRegenerate={handleRegenerate}
-        onPushToFigma={() => selectedVariant && handlePushToFigma(selectedVariant)}
-        onImportFromFigma={() => setShowImport(true)}
-        isGenerating={isGenerating}
-        hasVariants={variants.length > 0}
-        hasSelection={!!selectedVariant}
-        selectedVariantName={selectedVariant?.name}
-      />
-
       {/* Canvas area */}
       <div className="flex-1 overflow-y-auto p-4">
         {variants.length === 0 && !isGenerating ? (
@@ -321,6 +309,20 @@ export function ExplorerCanvas({
           </div>
         )}
       </div>
+
+      {/* Prompt bar — pinned to bottom */}
+      <ExplorerToolbar
+        onGenerate={handleGenerate}
+        onRefine={handleRefine}
+        onCompare={(prompt) => setComparePrompt(prompt)}
+        onRegenerate={handleRegenerate}
+        onPushToFigma={() => selectedVariant && handlePushToFigma(selectedVariant)}
+        onImportFromFigma={() => setShowImport(true)}
+        isGenerating={isGenerating}
+        hasVariants={variants.length > 0}
+        hasSelection={!!selectedVariant}
+        selectedVariantName={selectedVariant?.name}
+      />
 
       {pushVariant && (
         <FigmaPushModal

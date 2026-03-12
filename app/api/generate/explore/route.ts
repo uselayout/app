@@ -9,7 +9,7 @@ import type { AiMode } from "@/lib/types/billing";
 
 const RequestSchema = z.object({
   prompt: z.string().min(1),
-  designMd: z.string().min(1),
+  designMd: z.string(),
   variantCount: z.number().int().min(2).max(6),
   projectId: z.string().optional(),
   baseCode: z.string().optional(),
@@ -79,9 +79,10 @@ export async function POST(request: NextRequest) {
   }
 
   const { prompt, designMd, variantCount, baseCode } = parsed.data;
+  const effectiveDesignMd = designMd || "No design system provided. Use sensible defaults with a clean, modern aesthetic.";
   const { stream, usage } = baseCode
-    ? createRefineStream(baseCode, prompt, designMd, variantCount, apiKey)
-    : createExploreStream(prompt, designMd, variantCount, apiKey);
+    ? createRefineStream(baseCode, prompt, effectiveDesignMd, variantCount, apiKey)
+    : createExploreStream(prompt, effectiveDesignMd, variantCount, apiKey);
 
   void usage
     .then((u) =>

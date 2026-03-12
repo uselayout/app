@@ -36,6 +36,7 @@ export default function StudioPage({
   const extractionStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
   const [centreView, setCentreView] = useState<"editor" | "explorer">("editor");
+  const [showTestPanel, setShowTestPanel] = useState(true);
   const testPanelRef = useRef<TestPanelHandle>(null);
 
   useEffect(() => {
@@ -158,7 +159,8 @@ export default function StudioPage({
         }
         onNameChange={(name) => updateProjectName(id, name)}
         onReExtract={handleReExtract}
-        onTest={() => testPanelRef.current?.focusPrompt()}
+        onTest={() => setShowTestPanel((prev) => !prev)}
+        testPanelOpen={showTestPanel}
         onExport={() => setShowExport(true)}
         centreView={centreView}
         onCentreViewChange={setCentreView}
@@ -166,6 +168,7 @@ export default function StudioPage({
       <div className="flex-1 overflow-hidden">
         <StudioLayout
           centreView={centreView}
+          showTestPanel={showTestPanel}
           sourcePanel={
             <SourcePanel
               extractionData={project.extractionData}
