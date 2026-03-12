@@ -96,6 +96,18 @@ export default function StudioPage({
       .map((t) => ({ name: t.cssVariable!, value: t.value }));
   }, [project?.extractionData?.tokens]);
 
+  const handlePushToFigma = useCallback((variant: DesignVariant) => {
+    // Phase 2: FigmaPushModal — for now copy code to clipboard
+    navigator.clipboard.writeText(variant.code);
+  }, []);
+
+  const handleUpdateExplorations = useCallback(
+    (explorations: import("@/lib/types").ExplorationSession[]) => {
+      updateExplorations(id, explorations);
+    },
+    [id, updateExplorations]
+  );
+
   if (!project) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -129,18 +141,6 @@ export default function StudioPage({
       />
     );
   }
-
-  const handlePushToFigma = useCallback((variant: DesignVariant) => {
-    // Phase 2: FigmaPushModal — for now copy code to clipboard
-    navigator.clipboard.writeText(variant.code);
-  }, []);
-
-  const handleUpdateExplorations = useCallback(
-    (explorations: import("@/lib/types").ExplorationSession[]) => {
-      updateExplorations(id, explorations);
-    },
-    [id, updateExplorations]
-  );
 
   const componentNames =
     project.extractionData?.components.map((c) => c.name) ?? [];
