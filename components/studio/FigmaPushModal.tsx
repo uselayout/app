@@ -306,12 +306,14 @@ function StepItem({
 }
 
 function buildMcpCommand(variant: DesignVariant): string {
-  return `Use the push_to_figma MCP tool to push this component to Figma:
+  return `Call the layout MCP server's push_to_figma tool with the following inputs:
+- code: the TSX below
+- name: "${variant.name}"
 
-Component name: ${variant.name}
-Component code:
 \`\`\`tsx
 ${variant.code}
-\`\`\``;
+\`\`\`
+
+Do NOT create temp HTML files or start HTTP servers. The push_to_figma tool handles everything.`;
 }
 
