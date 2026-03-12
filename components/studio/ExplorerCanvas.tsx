@@ -223,7 +223,7 @@ export function ExplorerCanvas({
   }, []);
 
   const handlePushComplete = useCallback(
-    (record: { fileKey: string; nodeId: string }) => {
+    (record: { fileKey: string; nodeId: string; viewports: string[] }) => {
       if (!pushVariant || !currentExploration) return;
       const updated = explorations.map((e) =>
         e.id === currentExploration.id
@@ -237,7 +237,7 @@ export function ExplorerCanvas({
                         fileKey: record.fileKey,
                         nodeId: record.nodeId,
                         pushedAt: new Date().toISOString(),
-                        viewports: ["desktop"],
+                        viewports: record.viewports,
                       },
                     }
                   : v

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { X, Figma, Copy, Check, ExternalLink, Loader2 } from "lucide-react";
+import { X, Figma, Copy, Check, ExternalLink, Loader2, Smartphone, Tablet, Monitor } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { parseFigmaUrl } from "@/lib/figma/parse-url";
 import type { DesignVariant } from "@/lib/types";
@@ -9,7 +9,7 @@ import type { DesignVariant } from "@/lib/types";
 interface FigmaPushModalProps {
   variant: DesignVariant;
   onClose: () => void;
-  onPushComplete?: (record: { fileKey: string; nodeId: string }) => void;
+  onPushComplete?: (record: { fileKey: string; nodeId: string; viewports: string[] }) => void;
 }
 
 type PushStep = "preview" | "pushing" | "done";
@@ -22,8 +22,23 @@ export function FigmaPushModal({
   const [step, setStep] = useState<PushStep>("preview");
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [figmaUrl, setFigmaUrl] = useState("");
+  const [selectedViewports, setSelectedViewports] = useState<Set<string>>(
+    () => new Set(["mobile", "tablet", "desktop"])
+  );
 
-  const mcpCommand = buildMcpCommand(variant);
+  const toggleViewport = useCallback((vp: string) => {
+    setSelectedViewports((prev) => {
+      const next = new Set(prev);
+      if (next.has(vp)) {
+        if (next.size > 1) next.delete(vp);
+      } else {
+        next.add(vp);
+      }
+      return next;
+    });
+  }, []);
+
+  const mcpCommand = buildMcpCommand(variant, Array.from(selectedViewports));
 
   const handleCopy = useCallback(
     async (text: string, field: string) => {
@@ -40,9 +55,9 @@ export function FigmaPushModal({
     // Try to parse Figma URL for the push record
     const parsed = parseFigmaUrl(figmaUrl);
     if (parsed && onPushComplete) {
-      onPushComplete(parsed);
+      onPushComplete({ ...parsed, viewports: Array.from(selectedViewports) });
     }
-  }, [figmaUrl, onPushComplete]);
+  }, [figmaUrl, selectedViewports, onPushComplete]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -98,6 +113,32 @@ export function FigmaPushModal({
                     label="Component appears in Figma"
                     description="The rendered component is pushed as a new frame"
                   />
+                </div>
+              </div>
+
+              {/* Viewport selection */}
+              <div>
+                <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-[--text-muted]">
+                  Viewports to push
+                </p>
+                <div className="flex gap-1.5">
+                  {VIEWPORT_OPTIONS.map(({ key, label, icon: Icon }) => {
+                    const active = selectedViewports.has(key);
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => toggleViewport(key)}
+                        className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                          active
+                            ? "bg-[--studio-accent] text-white"
+                            : "bg-[--bg-surface] text-[--text-muted] hover:text-[--text-secondary] hover:bg-[--bg-hover]"
+                        }`}
+                      >
+                        <Icon size={12} />
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -305,10 +346,21 @@ function StepItem({
   );
 }
 
-function buildMcpCommand(variant: DesignVariant): string {
+const VIEWPORT_OPTIONS = [
+  { key: "mobile", label: "Mobile", icon: Smartphone },
+  { key: "tablet", label: "Tablet", icon: Tablet },
+  { key: "desktop", label: "Desktop", icon: Monitor },
+] as const;
+
+function buildMcpCommand(variant: DesignVariant, viewports: string[]): string {
+  const vpList = viewports.join(", ");
+  const multiVp = viewports.length > 1;
+
   return `Call the layout MCP server's push_to_figma tool with the following inputs:
 - code: the TSX below
 - name: "${variant.name}"
+
+Push for viewport(s): ${vpList}.${multiVp ? `\nCall push_to_figma once per viewport with the name suffixed — e.g. "${variant.name} — Mobile", "${variant.name} — Desktop".` : ""}
 
 \`\`\`tsx
 ${variant.code}
