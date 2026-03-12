@@ -119,6 +119,18 @@ export class FigmaClient {
     );
   }
 
+  async getImages(
+    fileKey: string,
+    nodeIds: string[],
+    format: "png" | "svg" = "png",
+    scale = 2
+  ): Promise<FigmaImagesResponse> {
+    const ids = encodeURIComponent(nodeIds.join(","));
+    return this.fetchWithRetry<FigmaImagesResponse>(
+      `/images/${fileKey}?ids=${ids}&format=${format}&scale=${scale}`
+    );
+  }
+
   async getVariables(fileKey: string): Promise<FigmaVariablesResponse> {
     return this.fetchWithRetry<FigmaVariablesResponse>(
       `/files/${fileKey}/variables/local`
@@ -253,6 +265,10 @@ export interface FigmaComponentSetInfo {
   name: string;
   description: string;
   node_id: string;
+}
+
+export interface FigmaImagesResponse {
+  images: Record<string, string | null>;
 }
 
 export interface FigmaVariablesResponse {

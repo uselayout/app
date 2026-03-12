@@ -113,6 +113,7 @@ export interface Project {
   tokenCount?: number;
   healthScore?: number;
   testResults?: TestResult[];
+  explorations?: ExplorationSession[];
   createdAt: string;
   updatedAt: string;
 }
@@ -140,4 +141,50 @@ export interface HealthIssue {
   rule: string;
   actual: string;
   expected: string;
+}
+
+// ─── Design Explorer ──────────────────────────────────────────────────────────
+
+export interface ExplorationSession {
+  id: string;
+  projectId: string;
+  prompt: string;
+  variantCount: number;
+  variants: DesignVariant[];
+  selectedVariantId?: string;
+  createdAt: string;
+}
+
+export interface DesignVariant {
+  id: string;
+  name: string;
+  rationale: string;
+  code: string;
+  compiledJs?: string;
+  healthScore?: HealthScore;
+  rating?: "up" | "down";
+  figmaPush?: FigmaPushRecord;
+  figmaImport?: FigmaImportRecord;
+}
+
+export interface FigmaPushRecord {
+  fileKey: string;
+  nodeId: string;
+  pushedAt: string;
+  viewports: string[];
+}
+
+export interface FigmaImportRecord {
+  importedAt: string;
+  changes: FigmaChange[];
+  screenshot?: string;
+}
+
+export interface FigmaChange {
+  type: "colour" | "typography" | "spacing" | "layout" | "content";
+  property: string;
+  before: string;
+  after: string;
+  designTokenMatch?: string;
+  accepted: boolean;
 }
