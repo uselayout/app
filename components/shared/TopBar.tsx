@@ -154,6 +154,8 @@ export function TopBar({
 
           {/* Project switcher dropdown */}
           {showProjectMenu && (
+            <>
+            <div className="fixed inset-0 z-40" onClick={() => setShowProjectMenu(false)} />
             <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-[--studio-border-strong] bg-[--bg-elevated] shadow-xl overflow-hidden z-50">
               <div className="px-3 py-2 border-b border-[--studio-border]">
                 <p className="text-[10px] font-medium uppercase tracking-wider text-[--text-muted]">
@@ -234,6 +236,7 @@ export function TopBar({
                 </button>
               </div>
             </div>
+            </>
           )}
         </div>
 
