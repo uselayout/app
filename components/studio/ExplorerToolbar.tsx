@@ -67,29 +67,8 @@ export function ExplorerToolbar({
 
   return (
     <div className="flex flex-col gap-3 border-t border-[--studio-border] bg-[--bg-panel] p-4">
-      {/* Prompt input */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Describe what to explore... e.g. &quot;a pricing card with feature tiers&quot;"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={isGenerating}
-          className="flex-1 rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-2 text-sm text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors disabled:opacity-50"
-        />
-        <button
-          onClick={handleSubmit}
-          disabled={!prompt.trim() || isGenerating}
-          className="inline-flex items-center gap-2 rounded-lg bg-[--studio-accent] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[--studio-accent-hover] disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <Sparkles size={14} />
-          {isGenerating ? "Generating..." : "Explore"}
-        </button>
-      </div>
-
-      {/* Refine row — visible when a variant is selected */}
-      {hasSelection && selectedVariantName && (
+      {/* Single prompt input — switches between explore and refine mode */}
+      {hasSelection && selectedVariantName ? (
         <div className="flex gap-2">
           <div className="flex flex-1 items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2">
             <Wand2 size={14} className="shrink-0 text-amber-400" />
@@ -110,6 +89,26 @@ export function ExplorerToolbar({
           >
             <Wand2 size={14} />
             Refine
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Describe what to explore... e.g. &quot;a pricing card with feature tiers&quot;"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isGenerating}
+            className="flex-1 rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-2 text-sm text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors disabled:opacity-50"
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={!prompt.trim() || isGenerating}
+            className="inline-flex items-center gap-2 rounded-lg bg-[--studio-accent] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[--studio-accent-hover] disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Sparkles size={14} />
+            {isGenerating ? "Generating..." : "Explore"}
           </button>
         </div>
       )}
