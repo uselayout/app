@@ -12,6 +12,7 @@ interface ProjectRow {
   token_count: number | null;
   health_score: number | null;
   test_results: unknown | null;
+  explorations: unknown | null;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -31,6 +32,9 @@ function rowToProject(row: ProjectRow): Project {
     healthScore: row.health_score ?? undefined,
     testResults: row.test_results
       ? (row.test_results as Project["testResults"])
+      : undefined,
+    explorations: row.explorations
+      ? (row.explorations as Project["explorations"])
       : undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -54,6 +58,7 @@ function projectToRow(
     token_count: project.tokenCount ?? null,
     health_score: project.healthScore ?? null,
     test_results: project.testResults ?? null,
+    explorations: project.explorations ?? null,
     user_id: userId,
     updated_at: new Date().toISOString(),
   };
