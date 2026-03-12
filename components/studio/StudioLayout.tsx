@@ -8,6 +8,7 @@ interface StudioLayoutProps {
   explorerPanel?: ReactNode;
   testPanel: ReactNode;
   centreView: "editor" | "explorer";
+  showTestPanel?: boolean;
 }
 
 const MIN_PANEL_WIDTH = 200;
@@ -20,6 +21,7 @@ export function StudioLayout({
   explorerPanel,
   testPanel,
   centreView,
+  showTestPanel = true,
 }: StudioLayoutProps) {
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT);
   const [rightWidth, setRightWidth] = useState(DEFAULT_RIGHT);
@@ -85,19 +87,21 @@ export function StudioLayout({
         {centreView === "explorer" && explorerPanel ? explorerPanel : editorPanel}
       </div>
 
-      {/* Right Resize Handle */}
-      <div
-        className="w-1 shrink-0 cursor-col-resize bg-transparent transition-colors hover:bg-[--studio-accent]/30"
-        onMouseDown={() => handleMouseDown("right")}
-      />
-
-      {/* Right Panel */}
-      <div
-        className="shrink-0 overflow-hidden border-l border-[--studio-border]"
-        style={{ width: rightWidth }}
-      >
-        {testPanel}
-      </div>
+      {/* Right Resize Handle + Panel (test panel toggle) */}
+      {showTestPanel && (
+        <>
+          <div
+            className="w-1 shrink-0 cursor-col-resize bg-transparent transition-colors hover:bg-[--studio-accent]/30"
+            onMouseDown={() => handleMouseDown("right")}
+          />
+          <div
+            className="shrink-0 overflow-hidden border-l border-[--studio-border]"
+            style={{ width: rightWidth }}
+          >
+            {testPanel}
+          </div>
+        </>
+      )}
     </div>
   );
 }

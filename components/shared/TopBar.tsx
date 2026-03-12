@@ -21,6 +21,7 @@ interface TopBarProps {
   onNameChange?: (name: string) => void;
   onReExtract?: () => void;
   onTest?: () => void;
+  testPanelOpen?: boolean;
   onExport?: () => void;
   centreView?: "editor" | "explorer";
   onCentreViewChange?: (view: "editor" | "explorer") => void;
@@ -34,6 +35,7 @@ export function TopBar({
   onNameChange,
   onReExtract,
   onTest,
+  testPanelOpen,
   onExport,
   centreView = "editor",
   onCentreViewChange,
@@ -291,7 +293,11 @@ export function TopBar({
           variant="ghost"
           size="sm"
           onClick={onTest}
-          className="h-8 gap-1.5 text-xs text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary]"
+          className={`h-8 gap-1.5 text-xs hover:bg-[--bg-hover] hover:text-[--text-primary] ${
+            testPanelOpen
+              ? "text-[--text-primary] bg-[--bg-hover]"
+              : "text-[--text-secondary]"
+          }`}
         >
           <FlaskConical className="h-3.5 w-3.5" />
           Test
