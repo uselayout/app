@@ -66,12 +66,12 @@ export function ExplorerToolbar({
   );
 
   return (
-    <div className="flex flex-col gap-3 border-b border-[--studio-border] bg-[--bg-panel] p-4">
+    <div className="flex flex-col gap-3 border-t border-[--studio-border] bg-[--bg-panel] p-4">
       {/* Prompt input */}
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="Describe what to explore... e.g. &quot;4 variations of a pricing card&quot;"
+          placeholder="Describe what to explore... e.g. &quot;a pricing card with feature tiers&quot;"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
