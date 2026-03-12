@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { upsertProject, removeProject } from "@/lib/supabase/db";
-import type { Project, ExtractionResult, TestResult } from "@/lib/types";
+import type { Project, ExtractionResult, TestResult, ExplorationSession } from "@/lib/types";
 
 interface ProjectState {
   projects: Project[];
@@ -22,6 +22,7 @@ interface ProjectState {
   updateTokenCount: (id: string, count: number) => void;
   updateHealthScore: (id: string, score: number) => void;
   updateTestResults: (id: string, results: TestResult[]) => void;
+  updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
   deleteProject: (id: string) => void;
   clearProjects: () => void;
 }
@@ -117,6 +118,19 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === id ? { ...p, testResults: results } : p
+      ),
+    }));
+    const { projects, userId } = get();
+    const project = projects.find((p) => p.id === id);
+    if (project && userId) void upsertProject(project, userId);
+  },
+
+  updateExplorations: (id, explorations) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id
+          ? { ...p, explorations, updatedAt: new Date().toISOString() }
+          : p
       ),
     }));
     const { projects, userId } = get();
