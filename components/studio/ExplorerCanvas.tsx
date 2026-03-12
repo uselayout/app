@@ -279,7 +279,7 @@ export function ExplorerCanvas({
             </div>
           </div>
         ) : (
-          <div className={`grid gap-4 ${variants.length > 4 ? "grid-cols-2 lg:grid-cols-3" : "grid-cols-2"}`}>
+          <div className={`grid gap-4 ${(currentExploration?.variantCount ?? variants.length) > 4 ? "grid-cols-2 lg:grid-cols-3" : "grid-cols-2"}`}>
             {variants.map((variant) => (
               <VariantCard
                 key={variant.id}
@@ -297,15 +297,25 @@ export function ExplorerCanvas({
                 onResponsive={() => setResponsiveVariant(variant)}
               />
             ))}
+            {isGenerating && variants.length < (currentExploration?.variantCount ?? 0) &&
+              Array.from({ length: (currentExploration?.variantCount ?? 4) - variants.length }).map((_, i) => (
+                <div key={`skeleton-${i}`} className="animate-pulse rounded-xl border border-[--studio-border] bg-[--bg-surface] p-4">
+                  <div className="mb-3 h-4 w-2/3 rounded bg-[--bg-hover]" />
+                  <div className="aspect-[4/3] rounded-lg bg-[--bg-hover]" />
+                </div>
+              ))
+            }
           </div>
         )}
 
         {isGenerating && variants.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center gap-3">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[--studio-border-strong] border-t-[--studio-accent]" />
-            <p className="text-xs text-[--text-secondary]">
-              Generating variants...
-            </p>
+          <div className="grid gap-4 grid-cols-2">
+            {Array.from({ length: currentExploration?.variantCount ?? 4 }).map((_, i) => (
+              <div key={`skeleton-${i}`} className="animate-pulse rounded-xl border border-[--studio-border] bg-[--bg-surface] p-4">
+                <div className="mb-3 h-4 w-2/3 rounded bg-[--bg-hover]" />
+                <div className="aspect-[4/3] rounded-lg bg-[--bg-hover]" />
+              </div>
+            ))}
           </div>
         )}
       </div>
