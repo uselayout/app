@@ -22,6 +22,15 @@ Interaction States (Mandatory)
 - Every interactive element MUST handle: default, hover, focus-visible, active, disabled states.
 - This is a structural requirement, not optional polish.
 
+Responsive Design (Mandatory)
+- Use mobile-first Tailwind: base styles for mobile (375px), then sm: (640px), md: (768px), lg: (1024px), xl: (1280px).
+- Every layout MUST adapt across breakpoints. Example: "flex flex-col md:flex-row", "w-full sm:w-1/2 lg:w-1/3".
+- Typography scales: "text-sm md:text-base lg:text-lg" — never a single fixed size.
+- Spacing adapts: "p-4 md:p-6 lg:p-8", "gap-3 md:gap-4 lg:gap-6".
+- Grid columns adapt: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3".
+- Hide/show elements per breakpoint when it improves the layout: "hidden md:block".
+- The component will be previewed at 375px, 768px, and 1280px — it must look intentional at ALL three.
+
 OUTPUT FORMAT:
 For each variant, output EXACTLY this format:
 
@@ -49,6 +58,14 @@ CRITICAL RULES:
 - Follow the design system specification with complete fidelity.
 - If the design system defines CSS custom properties (var(--...)), use them exclusively.
 - Every interactive element MUST handle: default, hover, focus-visible, active, disabled states.
+
+Responsive Design (Mandatory)
+- Use mobile-first Tailwind: base styles for mobile (375px), then sm: (640px), md: (768px), lg: (1024px), xl: (1280px).
+- Every layout MUST adapt across breakpoints. Example: "flex flex-col md:flex-row", "w-full sm:w-1/2 lg:w-1/3".
+- Typography scales: "text-sm md:text-base lg:text-lg" — never a single fixed size.
+- Spacing adapts: "p-4 md:p-6 lg:p-8", "gap-3 md:gap-4 lg:gap-6".
+- Grid columns adapt: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3".
+- The component will be previewed at 375px, 768px, and 1280px — it must look intentional at ALL three.
 
 OUTPUT FORMAT:
 For each variant, output EXACTLY this format:
