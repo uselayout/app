@@ -11,7 +11,9 @@ import { ExtractionProgress } from "@/components/studio/ExtractionProgress";
 import { EditorPanel } from "@/components/studio/EditorPanel";
 import { SourcePanel } from "@/components/studio/SourcePanel";
 import { TestPanel, type TestPanelHandle } from "@/components/studio/TestPanel";
+import { ExplorerCanvas } from "@/components/studio/ExplorerCanvas";
 import { ExportModal } from "@/components/studio/ExportModal";
+import type { DesignVariant } from "@/lib/types";
 
 export default function StudioPage({
   params,
@@ -22,6 +24,7 @@ export default function StudioPage({
   const projects = useProjectStore((s) => s.projects);
   const updateProjectName = useProjectStore((s) => s.updateProjectName);
   const updateDesignMd = useProjectStore((s) => s.updateDesignMd);
+  const updateExplorations = useProjectStore((s) => s.updateExplorations);
   const project = projects.find((p) => p.id === id);
 
   const extractionStatus = useExtractionStore((s) => s.status);
@@ -32,6 +35,7 @@ export default function StudioPage({
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
+  const [centreView, setCentreView] = useState<"editor" | "explorer">("editor");
   const testPanelRef = useRef<TestPanelHandle>(null);
 
   useEffect(() => {
@@ -125,6 +129,18 @@ export default function StudioPage({
     );
   }
 
+  const handlePushToFigma = useCallback((variant: DesignVariant) => {
+    // Phase 2: FigmaPushModal — for now copy code to clipboard
+    navigator.clipboard.writeText(variant.code);
+  }, []);
+
+  const handleUpdateExplorations = useCallback(
+    (explorations: import("@/lib/types").ExplorationSession[]) => {
+      updateExplorations(id, explorations);
+    },
+    [id, updateExplorations]
+  );
+
   const componentNames =
     project.extractionData?.components.map((c) => c.name) ?? [];
   const extractedFonts =
@@ -144,9 +160,12 @@ export default function StudioPage({
         onReExtract={handleReExtract}
         onTest={() => testPanelRef.current?.focusPrompt()}
         onExport={() => setShowExport(true)}
+        centreView={centreView}
+        onCentreViewChange={setCentreView}
       />
       <div className="flex-1 overflow-hidden">
         <StudioLayout
+          centreView={centreView}
           sourcePanel={
             <SourcePanel
               extractionData={project.extractionData}
@@ -159,6 +178,16 @@ export default function StudioPage({
               value={project.designMd}
               onChange={handleDesignMdChange}
               tokenSuggestions={tokenSuggestions}
+            />
+          }
+          explorerPanel={
+            <ExplorerCanvas
+              projectId={id}
+              designMd={project.designMd}
+              explorations={project.explorations ?? []}
+              onUpdateExplorations={handleUpdateExplorations}
+              onPushToFigma={handlePushToFigma}
+              onDesignMdUpdate={handleDesignMdChange}
             />
           }
           testPanel={
