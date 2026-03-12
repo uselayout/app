@@ -13,6 +13,7 @@ import {
   Figma,
 } from "lucide-react";
 import { calculateHealthScore } from "@/lib/health/score";
+import { friendlyError } from "@/lib/explore/friendly-error";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { useProjectStore } from "@/lib/store/project";
@@ -106,7 +107,8 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
       });
 
       if (!res.ok) {
-        throw new Error(`Test failed: ${res.status}`);
+        const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(friendlyError(errBody));
       }
 
       const reader = res.body?.getReader();
