@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Layers, Globe, RefreshCw, FlaskConical, Download, LogOut, KeyRound, ChevronDown, Trash2, Plus } from "lucide-react";
+import { Layers, Globe, RefreshCw, FlaskConical, Download, LogOut, KeyRound, ChevronDown, Trash2, Plus, PenTool, Code2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signOut } from "@/lib/auth-client";
@@ -22,6 +22,8 @@ interface TopBarProps {
   onReExtract?: () => void;
   onTest?: () => void;
   onExport?: () => void;
+  centreView?: "editor" | "explorer";
+  onCentreViewChange?: (view: "editor" | "explorer") => void;
 }
 
 export function TopBar({
@@ -33,6 +35,8 @@ export function TopBar({
   onReExtract,
   onTest,
   onExport,
+  centreView = "editor",
+  onCentreViewChange,
 }: TopBarProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -242,6 +246,34 @@ export function TopBar({
           )}
           {sourceName || sourceType}
         </Badge>
+
+        {/* Editor / Explorer toggle */}
+        {onCentreViewChange && (
+          <div className="flex items-center rounded-lg border border-[--studio-border] bg-[--bg-surface] p-0.5">
+            <button
+              onClick={() => onCentreViewChange("editor")}
+              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
+                centreView === "editor"
+                  ? "bg-[--bg-hover] text-[--text-primary] shadow-sm"
+                  : "text-[--text-muted] hover:text-[--text-secondary]"
+              }`}
+            >
+              <Code2 className="h-3 w-3" />
+              Editor
+            </button>
+            <button
+              onClick={() => onCentreViewChange("explorer")}
+              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
+                centreView === "explorer"
+                  ? "bg-[--bg-hover] text-[--text-primary] shadow-sm"
+                  : "text-[--text-muted] hover:text-[--text-secondary]"
+              }`}
+            >
+              <PenTool className="h-3 w-3" />
+              Explorer
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Right: Actions */}
