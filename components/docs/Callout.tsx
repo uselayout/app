@@ -7,16 +7,16 @@ interface CalloutProps {
 
 const styles = {
   info: {
-    wrapper: "border-l-indigo-500 bg-indigo-50",
-    icon: <Info size={16} className="text-indigo-500 mt-0.5 shrink-0" />,
+    wrapper: "border-l-gray-400 bg-gray-50",
+    icon: <Info size={16} className="text-gray-500 mt-0.5 shrink-0" />,
   },
   warning: {
-    wrapper: "border-l-amber-500 bg-amber-50",
-    icon: <AlertTriangle size={16} className="text-amber-500 mt-0.5 shrink-0" />,
+    wrapper: "border-l-gray-500 bg-gray-50",
+    icon: <AlertTriangle size={16} className="text-gray-500 mt-0.5 shrink-0" />,
   },
   tip: {
-    wrapper: "border-l-emerald-500 bg-emerald-50",
-    icon: <Lightbulb size={16} className="text-emerald-500 mt-0.5 shrink-0" />,
+    wrapper: "border-l-gray-400 bg-gray-50",
+    icon: <Lightbulb size={16} className="text-gray-500 mt-0.5 shrink-0" />,
   },
 } as const;
 

@@ -294,7 +294,7 @@ export default function WalkthroughPage() {
               losing any edits made in the editor.
             </p>
           </div>
-          <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-5 space-y-2">
+          <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
               Editor Panel{" "}
               <span className="text-gray-400 font-normal text-sm">
@@ -460,7 +460,7 @@ export default function WalkthroughPage() {
                 ],
               ].map(([file, use]) => (
                 <tr key={file} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-indigo-700 whitespace-nowrap align-top pt-3.5">
+                  <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap align-top pt-3.5">
                     {file}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{use}</td>
@@ -525,7 +525,7 @@ npx @layoutdesign/context install`}
         </p>
         <Callout type="tip">
           After running{" "}
-          <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
             install
           </code>
           , restart your AI agent once so it picks up the new MCP server
@@ -600,7 +600,7 @@ npx @layoutdesign/context install`}
                 ],
               ].map(([tool, desc]) => (
                 <tr key={tool} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-indigo-700 whitespace-nowrap align-top pt-3.5">
+                  <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap align-top pt-3.5">
                     {tool}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{desc}</td>
@@ -660,7 +660,7 @@ npx @layoutdesign/context install`}
             href="https://www.figma.com/developers/mcp"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-indigo-600 hover:underline"
+            className="text-gray-900 hover:underline"
           >
             Figma MCP documentation
           </a>{" "}
@@ -706,7 +706,7 @@ npx @layoutdesign/context install`}
                   ],
                 ].map(([score, meaning]) => (
                   <tr key={score} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs text-indigo-700 whitespace-nowrap align-top pt-3.5">
+                    <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap align-top pt-3.5">
                       {score}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{meaning}</td>
@@ -773,7 +773,7 @@ npx @layoutdesign/context install`}
                   ["notion-lite", "Document-first, typography-heavy, neutral"],
                 ].map(([kit, aesthetic]) => (
                   <tr key={kit} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs text-indigo-700 whitespace-nowrap">
+                    <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
                       {kit}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{aesthetic}</td>
@@ -791,7 +791,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           <Callout type="tip">
             Starter kits are a good way to test your AI agent integration end to
             end before committing to a full extraction. Import a kit, run{" "}
-            <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">
+            <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
               install
             </code>
             , and verify the MCP tools are working before bringing in your own
@@ -807,7 +807,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           <li>
             <Link
               href="/docs/studio"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               Studio Guide
             </Link>{" "}
@@ -815,7 +815,7 @@ npx @layoutdesign/context init --kit notion-lite`}
             options.
           </li>
           <li>
-            <Link href="/docs/cli" className="text-indigo-600 hover:underline">
+            <Link href="/docs/cli" className="text-gray-900 hover:underline">
               CLI Guide
             </Link>{" "}
             — full CLI command reference including kit management and
@@ -824,7 +824,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           <li>
             <Link
               href="/docs/design-md"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               DESIGN.md Spec
             </Link>{" "}
@@ -833,7 +833,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           <li>
             <Link
               href="/docs/integrations/claude-code"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               Claude Code Integration
             </Link>{" "}
@@ -843,7 +843,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           <li>
             <Link
               href="/docs/integrations/cursor"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               Cursor Integration
             </Link>{" "}
@@ -858,7 +858,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           {prev && (
             <Link
               href={prev.href}
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft size={16} />
               {prev.title}
@@ -869,7 +869,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           {next && (
             <Link
               href={next.href}
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
               {next.title}
               <ArrowRight size={16} />

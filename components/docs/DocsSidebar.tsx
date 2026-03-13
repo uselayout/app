@@ -31,7 +31,7 @@ function NavItem({ item }: { item: DocNavItem }) {
           className={[
             "flex-1 py-1.5 text-sm transition-colors duration-150",
             isActive
-              ? "text-indigo-600 font-medium"
+              ? "text-black font-medium"
               : "text-gray-600 hover:text-black",
           ].join(" ")}
         >
@@ -60,7 +60,7 @@ function NavItem({ item }: { item: DocNavItem }) {
                 className={[
                   "block py-1.5 text-sm transition-colors duration-150",
                   pathname === child.href
-                    ? "text-indigo-600 font-medium"
+                    ? "text-black font-medium"
                     : "text-gray-600 hover:text-black",
                 ].join(" ")}
               >

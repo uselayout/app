@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Layers, Globe, RefreshCw, FlaskConical, Download, LogOut, KeyRound, ChevronDown, Trash2, Plus, PenTool, Code2 } from "lucide-react";
+import { Globe, LogOut, KeyRound, ChevronDown, Trash2, Plus, RefreshCw, FlaskConical, Layers } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signOut } from "@/lib/auth-client";
@@ -23,8 +21,8 @@ interface TopBarProps {
   onTest?: () => void;
   testPanelOpen?: boolean;
   onExport?: () => void;
-  centreView?: "editor" | "explorer";
-  onCentreViewChange?: (view: "editor" | "explorer") => void;
+  centreView?: "editor" | "canvas";
+  onCentreViewChange?: (view: "editor" | "canvas") => void;
 }
 
 export function TopBar({
@@ -96,31 +94,60 @@ export function TopBar({
   };
 
   return (
-    <div className="flex h-12 items-center justify-between border-b border-[--studio-border] bg-[--bg-panel] px-4">
-      {/* Left: Logo + New */}
-      <div className="flex items-center gap-2">
-        <Link
-          href="/"
-          className="flex items-center gap-1.5 text-[--text-muted] hover:text-[--text-primary] transition-colors"
-          title="Back to homepage"
-        >
-          <Layers className="h-4 w-4 text-[--studio-accent]" />
-          <span className="text-xs font-medium tracking-wide uppercase">
-            Studio
-          </span>
-        </Link>
-        <div className="h-4 w-px bg-[--studio-border]" />
-        <button
-          onClick={() => setShowNewExtraction(true)}
-          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
-          title="New extraction"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">New</span>
-        </button>
+    <div className="flex h-12 items-center justify-between border-b border-[rgba(255,255,255,0.07)] bg-[#0c0c0e] px-4">
+      {/* Left: Logo + New + Editor/Canvas toggle */}
+      <div className="flex items-center gap-[17px]">
+        <div className="flex items-center gap-[17px]">
+          <Link
+            href="/studio"
+            className="flex items-center shrink-0"
+            title="Back to projects"
+          >
+            <img
+              src="/marketing/logo.svg"
+              alt="Layout"
+              width={80}
+              height={19}
+            />
+          </Link>
+          <button
+            onClick={() => setShowNewExtraction(true)}
+            className="flex items-center gap-1 h-6 px-[9px] rounded-[4px] border border-[#24282c] text-[12px] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+            title="New extraction"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">New</span>
+          </button>
+        </div>
+
+        {/* Editor / Canvas toggle */}
+        {onCentreViewChange && (
+          <div className="flex items-center">
+            <button
+              onClick={() => onCentreViewChange("editor")}
+              className={`flex items-center h-7 px-[11px] rounded-l-[4px] border text-[12px] font-medium transition-colors ${
+                centreView === "editor"
+                  ? "bg-white border-white text-[#0c0c0e]"
+                  : "bg-transparent border-[#24282c] text-[#e8e8f0]"
+              }`}
+            >
+              Editor
+            </button>
+            <button
+              onClick={() => onCentreViewChange("canvas")}
+              className={`flex items-center h-7 px-[11px] rounded-r-[4px] border-y border-r text-[12px] font-medium transition-colors ${
+                centreView === "canvas"
+                  ? "bg-white border-white text-[#0c0c0e]"
+                  : "bg-transparent border-[#24282c] text-[#e8e8f0]"
+              }`}
+            >
+              Canvas
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Centre: Project name + switcher + status */}
+      {/* Centre: Project name + source badge */}
       <div className="flex items-center gap-3">
         <div className="relative" ref={menuRef}>
           <div className="flex items-center gap-1">
@@ -131,12 +158,12 @@ export function TopBar({
                 onChange={(e) => setEditValue(e.target.value)}
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
-                className="h-7 rounded-sm border border-[--studio-border-strong] bg-[--bg-surface] px-2 text-sm text-[--text-primary] outline-none focus:border-[--studio-border-focus]"
+                className="h-7 rounded-sm border border-[rgba(255,255,255,0.22)] bg-[#1A1A20] px-2 text-sm text-[#e8e8f0] outline-none focus:border-[rgba(99,102,241,0.7)]"
               />
             ) : (
               <button
                 onClick={() => setIsEditing(true)}
-                className="text-sm font-medium text-[--text-primary] transition-colors hover:text-[--studio-accent]"
+                className="text-[14px] font-medium text-[#e8e8f0] transition-colors hover:text-white"
               >
                 {projectName}
               </button>
@@ -144,7 +171,7 @@ export function TopBar({
             {projects.length > 1 && !isEditing && (
               <button
                 onClick={() => setShowProjectMenu((v) => !v)}
-                className="rounded p-0.5 text-[--text-muted] hover:text-[--text-primary] hover:bg-[--bg-hover] transition-colors"
+                className="rounded-[4px] p-0.5 text-[#e8e8f0] hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition-colors"
                 aria-label="Switch project"
               >
                 <ChevronDown className="h-3.5 w-3.5" />
@@ -156,9 +183,9 @@ export function TopBar({
           {showProjectMenu && (
             <>
             <div className="fixed inset-0 z-40" onClick={() => setShowProjectMenu(false)} />
-            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-[--studio-border-strong] bg-[--bg-elevated] shadow-xl overflow-hidden z-50">
-              <div className="px-3 py-2 border-b border-[--studio-border]">
-                <p className="text-[10px] font-medium uppercase tracking-wider text-[--text-muted]">
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-[rgba(255,255,255,0.22)] bg-[#222228] shadow-xl overflow-hidden z-50">
+              <div className="px-3 py-2 border-b border-[rgba(255,255,255,0.12)]">
+                <p className="text-[10px] font-medium uppercase tracking-wider text-[rgba(237,237,244,0.5)]">
                   Switch project
                 </p>
               </div>
@@ -170,8 +197,8 @@ export function TopBar({
                       key={p.id}
                       className={`group flex items-center gap-2 px-3 py-2 text-left transition-colors ${
                         p.id === currentProjectId
-                          ? "bg-[--studio-accent-subtle]"
-                          : "hover:bg-[--bg-hover]"
+                          ? "bg-[#e4f222]/10"
+                          : "hover:bg-[#2A2A32]"
                       }`}
                     >
                       <button
@@ -179,16 +206,16 @@ export function TopBar({
                           setShowProjectMenu(false);
                           router.push(`/studio/${p.id}`);
                         }}
-                        className="flex-1 min-w-0"
+                        className="flex-1 min-w-0 text-left"
                       >
                         <p className={`text-xs font-medium truncate ${
                           p.id === currentProjectId
-                            ? "text-[--studio-accent]"
-                            : "text-[--text-primary]"
+                            ? "text-[#e4f222]"
+                            : "text-[#EDEDF4]"
                         }`}>
                           {p.name}
                         </p>
-                        <p className="text-[10px] text-[--text-muted] flex items-center gap-1.5">
+                        <p className="text-[10px] text-[rgba(237,237,244,0.5)] flex items-center gap-1.5">
                           {p.sourceType === "figma" ? (
                             <Layers className="h-2.5 w-2.5" />
                           ) : (
@@ -205,7 +232,7 @@ export function TopBar({
                               deleteProject(p.id);
                             }
                           }}
-                          className="rounded p-1 text-[--text-muted] opacity-0 group-hover:opacity-100 hover:bg-[--bg-surface] hover:text-red-400 transition-all"
+                          className="rounded p-1 text-[rgba(237,237,244,0.5)] opacity-0 group-hover:opacity-100 hover:bg-[#1A1A20] hover:text-red-400 transition-all"
                           aria-label={`Delete ${p.name}`}
                         >
                           <Trash2 className="h-3 w-3" />
@@ -214,22 +241,22 @@ export function TopBar({
                     </div>
                   ))}
               </div>
-              <div className="border-t border-[--studio-border] px-3 py-2 flex items-center justify-between">
+              <div className="border-t border-[rgba(255,255,255,0.12)] px-3 py-2 flex items-center justify-between">
                 <button
                   onClick={() => {
                     setShowProjectMenu(false);
-                    router.push("/");
+                    router.push("/studio");
                   }}
-                  className="text-[10px] text-[--text-muted] hover:text-[--studio-accent] transition-colors"
+                  className="text-[10px] text-[rgba(237,237,244,0.5)] hover:text-[#e4f222] transition-colors"
                 >
-                  ← Homepage
+                  ← All projects
                 </button>
                 <button
                   onClick={() => {
                     setShowProjectMenu(false);
                     setShowNewExtraction(true);
                   }}
-                  className="flex items-center gap-1 text-[10px] text-[--text-muted] hover:text-[--studio-accent] transition-colors"
+                  className="flex items-center gap-1 text-[10px] text-[rgba(237,237,244,0.5)] hover:text-[#e4f222] transition-colors"
                 >
                   <Plus className="h-2.5 w-2.5" />
                   New extraction
@@ -240,102 +267,55 @@ export function TopBar({
           )}
         </div>
 
-        <Badge
-          variant="secondary"
-          className="gap-1 bg-[--bg-surface] text-[--text-secondary]"
-        >
-          {sourceType === "figma" ? (
-            <Layers className="h-3 w-3" />
-          ) : (
-            <Globe className="h-3 w-3" />
-          )}
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-transparent px-[9px] py-[3px] text-[12px] font-medium text-[#e8e8f0] overflow-hidden">
+          <Globe className="h-3 w-3" />
           {sourceName || sourceType}
-        </Badge>
-
-        {/* Editor / Explorer toggle */}
-        {onCentreViewChange && (
-          <div className="flex items-center rounded-lg border border-[--studio-border] bg-[--bg-surface] p-0.5">
-            <button
-              onClick={() => onCentreViewChange("editor")}
-              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
-                centreView === "editor"
-                  ? "bg-[--bg-hover] text-[--text-primary] shadow-sm"
-                  : "text-[--text-muted] hover:text-[--text-secondary]"
-              }`}
-            >
-              <Code2 className="h-3 w-3" />
-              Editor
-            </button>
-            <button
-              onClick={() => onCentreViewChange("explorer")}
-              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
-                centreView === "explorer"
-                  ? "bg-[--bg-hover] text-[--text-primary] shadow-sm"
-                  : "text-[--text-muted] hover:text-[--text-secondary]"
-              }`}
-            >
-              <PenTool className="h-3 w-3" />
-              Explorer
-            </button>
-          </div>
-        )}
+        </span>
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
+      <div className="flex items-center gap-1.5">
+        <button
           onClick={onReExtract}
-          className="h-8 gap-1.5 text-xs text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary]"
+          className="flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] bg-[rgba(255,255,255,0.02)] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
+          title="Re-extract"
         >
           <RefreshCw className="h-3.5 w-3.5" />
-          Re-extract
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
+        </button>
+        <button
           onClick={onTest}
-          className={`h-8 gap-1.5 text-xs hover:bg-[--bg-hover] hover:text-[--text-primary] ${
+          className={`flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] transition-colors ${
             testPanelOpen
-              ? "text-[--text-primary] bg-[--bg-hover]"
-              : "text-[--text-secondary]"
+              ? "bg-[rgba(255,255,255,0.1)] text-white"
+              : "bg-[rgba(255,255,255,0.02)] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.06)]"
           }`}
+          title="Toggle test panel"
         >
           <FlaskConical className="h-3.5 w-3.5" />
-          Test
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
+        </button>
+        <button
           onClick={onExport}
-          className="h-8 gap-1.5 text-xs text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary]"
+          className="flex items-center justify-center h-7 px-[13px] rounded-[4px] bg-[#e6e6e6] border border-[#e6e6e6] text-[12px] font-medium text-[#08090a] shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] hover:bg-[#d9d9d9] transition-colors"
         >
-          <Download className="h-3.5 w-3.5" />
           Export
-        </Button>
-        <div className="ml-1 h-4 w-px bg-[--studio-border]" />
-        <Button
-          variant="ghost"
-          size="sm"
+        </button>
+        <button
           onClick={() => setShowApiKeyModal(true)}
-          className="relative h-8 gap-1.5 text-xs text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary]"
+          className="relative flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] bg-[rgba(255,255,255,0.02)] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
           title="API Key settings"
         >
           <KeyRound className="h-3.5 w-3.5" />
           {apiKey && (
-            <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-emerald-400" />
           )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
+        </button>
+        <button
           onClick={handleSignOut}
-          className="h-8 gap-1.5 text-xs text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary]"
+          className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] text-[12px] font-medium text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
         >
           <LogOut className="h-3.5 w-3.5" />
           Sign out
-        </Button>
+        </button>
       </div>
 
       {showApiKeyModal && (

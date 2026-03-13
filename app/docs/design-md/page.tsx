@@ -408,7 +408,7 @@ export default function DesignMdPage() {
         {sections.map((section) => (
           <div key={section.number} className="space-y-4">
             <div className="flex items-center gap-3">
-              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-sm font-bold flex items-center justify-center">
+              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-50 border border-gray-200 text-gray-900 text-sm font-bold flex items-center justify-center">
                 {section.number}
               </span>
               <h3 className="text-lg font-semibold text-[#0a0a0a]">
@@ -479,7 +479,7 @@ export default function DesignMdPage() {
         {prev ? (
           <Link
             href={prev.href}
-            className="flex flex-col gap-1 text-indigo-600 hover:underline"
+            className="flex flex-col gap-1 text-gray-900 hover:underline"
           >
             <span className="text-xs text-gray-400 uppercase tracking-wide">
               Previous
@@ -492,7 +492,7 @@ export default function DesignMdPage() {
         {next ? (
           <Link
             href={next.href}
-            className="flex flex-col gap-1 text-right text-indigo-600 hover:underline"
+            className="flex flex-col gap-1 text-right text-gray-900 hover:underline"
           >
             <span className="text-xs text-gray-400 uppercase tracking-wide">
               Next

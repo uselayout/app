@@ -35,8 +35,9 @@ export default function StudioPage({
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
-  const [centreView, setCentreView] = useState<"editor" | "explorer">("editor");
+  const [centreView, setCentreView] = useState<"editor" | "canvas">("editor");
   const [showTestPanel, setShowTestPanel] = useState(true);
+  const [includeContext, setIncludeContext] = useState(true);
   const testPanelRef = useRef<TestPanelHandle>(null);
 
   useEffect(() => {
@@ -148,7 +149,23 @@ export default function StudioPage({
     project.extractionData?.fonts.map((f) => f.family) ?? [];
 
   return (
-    <div className="flex h-screen flex-col">
+    <>
+    {/* Mobile gate */}
+    <div className="flex md:hidden h-screen flex-col items-center justify-center px-6 text-center">
+      <img src="/marketing/logo.svg" alt="Layout" width={100} height={24} className="mb-6" />
+      <h2 className="text-lg font-semibold text-[--text-primary]">Desktop only</h2>
+      <p className="mt-2 max-w-xs text-sm text-[--text-secondary]">
+        Layout Studio needs a larger screen to work properly. Please open this page on a desktop browser.
+      </p>
+      <a
+        href="/studio"
+        className="mt-6 rounded-md bg-[--bg-surface] px-4 py-2 text-sm font-medium text-[--text-primary] hover:bg-[--bg-hover] transition-colors"
+      >
+        Back to projects
+      </a>
+    </div>
+    {/* Desktop studio */}
+    <div className="hidden md:flex h-screen flex-col">
       <TopBar
         projectName={project.name}
         sourceType={project.sourceType}
@@ -183,7 +200,7 @@ export default function StudioPage({
               tokenSuggestions={tokenSuggestions}
             />
           }
-          explorerPanel={
+          canvasPanel={
             <ExplorerCanvas
               projectId={id}
               designMd={project.designMd}
@@ -201,6 +218,8 @@ export default function StudioPage({
               components={componentNames}
               extractedFonts={extractedFonts}
               initialResults={project.testResults ?? []}
+              includeContext={includeContext}
+              onToggleContext={() => setIncludeContext((v) => !v)}
             />
           }
         />
@@ -209,5 +228,6 @@ export default function StudioPage({
         <ExportModal project={project} onClose={() => setShowExport(false)} />
       )}
     </div>
+    </>
   );
 }

@@ -150,7 +150,7 @@ export default function StudioPage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-5 space-y-2">
+          <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
               Editor Panel <span className="text-gray-400 font-normal text-sm">(centre)</span>
             </h3>
@@ -253,7 +253,7 @@ export default function StudioPage() {
                   <td className="px-4 py-3 font-medium text-[#0a0a0a] whitespace-nowrap">
                     {format}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-indigo-700 whitespace-nowrap">
+                  <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
                     {file}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{use}</td>
@@ -278,7 +278,7 @@ export default function StudioPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Next Steps</h2>
         <ul className="list-disc pl-6 space-y-2 text-gray-600">
           <li>
-            <Link href="/docs/cli" className="text-indigo-600 hover:underline">
+            <Link href="/docs/cli" className="text-gray-900 hover:underline">
               CLI Guide
             </Link>{" "}
             — set up the MCP server to serve design context automatically to
@@ -287,7 +287,7 @@ export default function StudioPage() {
           <li>
             <Link
               href="/docs/integrations/claude-code"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               Claude Code integration
             </Link>{" "}
@@ -297,7 +297,7 @@ export default function StudioPage() {
           <li>
             <Link
               href="/docs/integrations/cursor"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               Cursor integration
             </Link>{" "}
@@ -312,7 +312,7 @@ export default function StudioPage() {
           {prev && (
             <Link
               href={prev.href}
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft size={16} />
               {prev.title}
@@ -323,7 +323,7 @@ export default function StudioPage() {
           {next && (
             <Link
               href={next.href}
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
               {next.title}
               <ArrowRight size={16} />

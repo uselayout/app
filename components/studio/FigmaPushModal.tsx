@@ -61,12 +61,12 @@ export function FigmaPushModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-xl border border-[--studio-border-strong] bg-[--bg-panel] shadow-2xl">
+      <div className="relative w-full max-w-lg rounded-xl border border-[--studio-border-strong] bg-[#272829] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[--studio-border] px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[--studio-accent-subtle]">
-              <Figma size={16} className="text-[--studio-accent]" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[--bg-surface]">
+              <Figma size={16} className="text-[--text-primary]" />
             </div>
             <div>
               <h2 className="text-sm font-semibold text-[--text-primary]">
@@ -90,8 +90,8 @@ export function FigmaPushModal({
           {step === "preview" && (
             <>
               {/* Prerequisites */}
-              <div className="flex items-start gap-2.5 rounded-lg border border-[--studio-accent]/20 bg-[--studio-accent-subtle] px-3.5 py-2.5">
-                <Info size={14} className="mt-0.5 shrink-0 text-[--studio-accent]" />
+              <div className="flex items-start gap-2.5 rounded-lg border border-[#e4f222]/30 bg-[#e4f222]/5 px-3.5 py-2.5">
+                <Info size={14} className="mt-0.5 shrink-0 text-[#e4f222]" />
                 <div className="text-xs text-[--text-secondary] leading-relaxed">
                   <span className="font-medium text-[--text-primary]">Requires the Layout MCP server.</span>{" "}
                   Install with{" "}
@@ -149,9 +149,9 @@ export function FigmaPushModal({
                       <button
                         key={key}
                         onClick={() => toggleViewport(key)}
-                        className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                        className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                           active
-                            ? "bg-[--studio-accent] text-white"
+                            ? "bg-emerald-600 text-white"
                             : "bg-[--bg-surface] text-[--text-muted] hover:text-[--text-secondary] hover:bg-[--bg-hover]"
                         }`}
                       >
@@ -239,32 +239,46 @@ export function FigmaPushModal({
           )}
 
           {step === "pushing" && (
-            <div className="flex flex-col items-center gap-4 py-6">
-              <div className="relative">
-                <div className="h-12 w-12 rounded-xl bg-[--studio-accent-subtle] flex items-center justify-center">
-                  <Figma size={24} className="text-[--studio-accent]" />
-                </div>
+            <div className="flex flex-col items-center gap-6 py-6">
+              {/* Figma coloured logo with spinner */}
+              <div className="relative h-12 w-12 flex items-center justify-center">
+                <svg width={26} height={39} viewBox="0 0 26 39" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6.5 38.5C10.09 38.5 13 35.59 13 32V25.5H6.5C2.91 25.5 0 28.41 0 32C0 35.59 2.91 38.5 6.5 38.5Z" fill="#0ACF83"/>
+                  <path d="M0 19.5C0 15.91 2.91 13 6.5 13H13V26H6.5C2.91 26 0 23.09 0 19.5Z" fill="#A259FF"/>
+                  <path d="M0 6.5C0 2.91 2.91 0 6.5 0H13V13H6.5C2.91 13 0 10.09 0 6.5Z" fill="#F24E1E"/>
+                  <path d="M13 0H19.5C23.09 0 26 2.91 26 6.5C26 10.09 23.09 13 19.5 13H13V0Z" fill="#FF7262"/>
+                  <path d="M26 19.5C26 23.09 23.09 26 19.5 26C15.91 26 13 23.09 13 19.5C13 15.91 15.91 13 19.5 13C23.09 13 26 15.91 26 19.5Z" fill="#1ABCFE"/>
+                </svg>
                 <Loader2
                   size={14}
-                  className="absolute -right-1 -bottom-1 animate-spin text-[--studio-accent]"
+                  className="absolute -right-1 -bottom-0.5 animate-spin text-[--text-secondary]"
                 />
               </div>
-              <div className="text-center">
+
+              {/* Text */}
+              <div className="text-center space-y-1">
                 <p className="text-sm font-medium text-[--text-primary]">
                   Waiting for Figma push...
                 </p>
-                <p className="mt-1 text-xs text-[--text-secondary]">
+                <p className="text-xs leading-4 text-[#8e8e95]">
                   Run the copied command in your AI agent. This modal will
                   update when the push is detected.
                 </p>
               </div>
 
-              {/* Figma URL reminder */}
-              {!figmaUrl && (
-                <p className="text-xs text-[--text-muted] text-center">
-                  After pushing, paste the Figma frame URL on the previous step to track it.
+              {/* Figma URL input */}
+              <div className="w-full space-y-2.5">
+                <p className="text-xs text-[--text-primary]">
+                  Paste the Figma frame URL after pushing (optional):
                 </p>
-              )}
+                <input
+                  type="text"
+                  value={figmaUrl}
+                  onChange={(e) => setFigmaUrl(e.target.value)}
+                  placeholder="https://www.figma.com/design/..."
+                  className="w-full h-[34px] rounded-md border border-[rgba(255,255,255,0.07)] bg-[#010101] px-3 text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+                />
+              </div>
             </div>
           )}
 
@@ -323,13 +337,13 @@ export function FigmaPushModal({
             <>
               <button
                 onClick={() => setStep("preview")}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+                className="h-7 rounded-md px-3 text-xs font-medium text-[--text-primary] hover:bg-[--bg-hover] transition-colors"
               >
                 Back
               </button>
               <button
                 onClick={handleMarkDone}
-                className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 transition-colors"
+                className="flex items-center gap-1.5 h-7 rounded-md bg-[#009966] px-4 text-xs font-medium text-white hover:bg-[#00aa73] transition-colors"
               >
                 <Check size={12} />
                 Mark as pushed
@@ -395,7 +409,8 @@ function buildMcpCommand(variant: DesignVariant, viewports: string[], figmaUrl?:
   return `Call the layout MCP server's push_to_figma tool with the following inputs:
 ${inputs.join("\n")}
 
-Viewports: ${vpList}.
+Push for viewport(s): ${vpList}.
+Call push_to_figma once per viewport with the name suffixed — e.g. "${variant.name} (mobile)".
 
 \`\`\`tsx
 ${variant.code}

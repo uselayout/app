@@ -38,7 +38,7 @@ export default function CodexPage() {
           Jules, Factory, Amp, and other agents that follow the{" "}
           <a
             href="https://agents.md"
-            className="text-indigo-600 hover:underline"
+            className="text-gray-900 hover:underline"
             target="_blank"
             rel="noreferrer"
           >
@@ -139,7 +139,7 @@ export default function CodexPage() {
           {prev && (
             <Link
               href={prev.href}
-              className="text-indigo-600 hover:underline text-sm"
+              className="text-gray-900 hover:underline text-sm"
             >
               ← {prev.title}
             </Link>
@@ -149,7 +149,7 @@ export default function CodexPage() {
           {next && (
             <Link
               href={next.href}
-              className="text-indigo-600 hover:underline text-sm"
+              className="text-gray-900 hover:underline text-sm"
             >
               {next.title} →
             </Link>

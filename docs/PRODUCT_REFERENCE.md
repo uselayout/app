@@ -196,8 +196,10 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 2. **AI-native output** — CLAUDE.md, AGENTS.md, .cursorrules are formats competitors don't generate.
 3. **Speed** — paste a URL, get a complete AI kit in under 2 minutes.
 4. **Works with every AI tool** — not locked to one editor or agent.
-5. **Open-source MCP server** — MIT licensed, 60-second install-to-value.
-6. **Live preview + Figma bridge** — code-to-design closed loop that no other OSS tool has.
+5. **Open-source MCP server** — MIT licensed, 9 tools, 60-second install-to-value.
+6. **Figma closed loop** — bidirectional code ↔ Figma workflow. Push, design, pull back. No other OSS tool closes this loop.
+7. **Zero behavioural change** — designers stay in Figma, developers stay in their IDE. Paper requires migration. Pencil requires a new canvas.
+8. **Plain-text portability** — DESIGN.md is markdown, readable forever. No proprietary format lock-in.
 
 ---
 
@@ -205,11 +207,12 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 
 | Competitor | What They Do | Our Edge |
 |---|---|---|
-| **Figma MCP Server** | Connects Claude directly to Figma | We extract from websites too. Figma MCP gives raw data, not structured tokens. |
-| **Anima / Locofy** | Figma-to-code plugins | They generate code. We generate context. Different job. |
-| **Style Dictionary** | Token pipeline tool | Manual setup, no extraction. We automate everything. |
-| **Zeroheight / Supernova** | Design system documentation | Enterprise, expensive, no AI agent integration. |
-| **Paper.design** | AI-native design canvas | Closed source, $20/month. We're open source + free tier. |
+| **Figma MCP Server** (free) | Connects Claude directly to Figma — AI reads raw layer data | We extract from websites too. Figma MCP gives raw data, not structured tokens. We synthesise semantic DESIGN.md with anti-patterns and component usage. |
+| **Paper.design** ($4.2M seed, Accel) | New AI-native design canvas replacing Figma. 24 MCP tools, code export, $20/user/mo | Requires full team migration from Figma. Code export is one-directional; our loop is bidirectional. Proprietary format. No website extraction. We're MIT open source. |
+| **Pencil.dev** (free early access) | IDE-embedded design canvas (.pen files in Git). MCP integration | Proprietary .pen binary format. IDE-only (VS Code/Cursor). No design system extraction — tokens defined manually. No website extraction. |
+| **Anima / Locofy** | Figma-to-code plugins (Anima powers Bolt.new & Replit) | They generate code. We generate context. Different job. Figma-only, proprietary format. |
+| **Style Dictionary** (Amazon) | Token pipeline tool | Manual setup, no extraction. We automate the whole pipeline. |
+| **Zeroheight / Supernova** | Design system documentation for humans | Enterprise, expensive, no AI agent integration. Docs for humans ≠ context for machines. |
 
 ---
 
@@ -219,7 +222,7 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 - 10x faster on-brand UI with AI context vs without
 - 100% compatible with Claude Code, Cursor, and GitHub Copilot
 - Under 2 minutes from URL paste to complete AI kit
-- 6 export formats covering every major AI coding tool
+- 7 export formats covering every major AI coding tool
 - 3 free starter kits bundled with the MCP server
 - 9 MCP tools including live preview and Figma bridge
 
@@ -240,7 +243,7 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 
 ## Tech Stack (for credibility tweets)
 
-- Next.js 15 (App Router), React 19, TypeScript strict mode
+- Next.js 16 (App Router), React 19, TypeScript strict mode
 - Claude Sonnet 4.6 for synthesis and testing
 - Playwright for website extraction
 - Figma REST API with rate limiting and batch node resolution
