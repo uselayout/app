@@ -38,7 +38,7 @@ export function OpenSourceSection() {
                 View on GitHub
               </a>
               <a
-                href="#"
+                href="/docs/self-hosting"
                 className="bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium inline-flex items-center justify-center"
               >
                 Self-hosting docs →

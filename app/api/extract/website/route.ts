@@ -1,8 +1,10 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { extractFromWebsite } from "@/lib/website/extractor";
 import { validateExtractionUrl, SsrfError } from "@/lib/website/validate-url";
 import { uploadScreenshots } from "@/lib/supabase/storage";
+import { extractLimiter } from "@/lib/rate-limit-instances";
+import { getClientIp } from "@/lib/get-client-ip";
 
 const RequestSchema = z.object({
   url: z.url(),
@@ -10,6 +12,15 @@ const RequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const ip = await getClientIp();
+  const { success } = extractLimiter.check(10, ip);
+  if (!success) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

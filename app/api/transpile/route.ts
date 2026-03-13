@@ -6,10 +6,21 @@ import {
   JsxEmit,
   ScriptTarget,
 } from "typescript";
+import { transpileLimiter } from "@/lib/rate-limit-instances";
+import { getClientIp } from "@/lib/get-client-ip";
 
 const schema = z.object({ code: z.string().max(200_000) });
 
 export async function POST(req: NextRequest) {
+  const ip = await getClientIp();
+  const { success } = transpileLimiter.check(60, ip);
+  if (!success) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
+
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {

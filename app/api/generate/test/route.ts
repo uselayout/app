@@ -1,10 +1,12 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { createTestStream } from "@/lib/claude/test";
 import { auth } from "@/lib/auth";
 import { getUserTier } from "@/lib/billing/subscription";
 import { checkQuota, deductCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
+import { generateLimiter } from "@/lib/rate-limit-instances";
+import { getClientIp } from "@/lib/get-client-ip";
 import type { AiMode } from "@/lib/types/billing";
 
 const RequestSchema = z.object({
@@ -15,6 +17,15 @@ const RequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const ip = await getClientIp();
+  const { success } = generateLimiter.check(20, ip);
+  if (!success) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

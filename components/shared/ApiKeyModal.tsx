@@ -45,12 +45,14 @@ export function ApiKeyModal({ onClose }: ApiKeyModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center">
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/95 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
-        className="absolute inset-0 bg-black/95 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="relative z-10 w-full max-w-md rounded-xl border border-[--studio-border-strong] bg-[--bg-elevated] p-6 shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+        className="w-full max-w-md rounded-xl border border-[--studio-border-strong] bg-[--bg-elevated] p-6 shadow-[0_0_80px_rgba(0,0,0,0.6)]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mb-5 flex items-start justify-between">
           <div className="flex items-center gap-2">
             <Key className="h-4 w-4 text-[--studio-accent]" />
