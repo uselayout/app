@@ -513,7 +513,7 @@ function ResultBlock({
             onClick={() => setTab("preview")}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               tab === "preview"
-                ? "bg-[#e4f222] text-[#08090a]"
+                ? "bg-[--studio-accent] text-white"
                 : "bg-[#28292a] text-[--text-primary] hover:bg-[#333]"
             }`}
           >
@@ -523,7 +523,7 @@ function ResultBlock({
             onClick={() => setTab("code")}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               tab === "code"
-                ? "bg-[#e4f222] text-[#08090a]"
+                ? "bg-[--studio-accent] text-white"
                 : "bg-[#28292a] text-[--text-primary] hover:bg-[#333]"
             }`}
           >

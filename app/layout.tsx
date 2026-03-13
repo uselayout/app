@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ProjectHydrator } from "@/components/ProjectHydrator";
 
@@ -14,8 +15,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Layout",
-  description: "Extract design systems from Figma and websites. Serve AI-ready context to Claude Code, Cursor, and GitHub Copilot via MCP.",
+  metadataBase: new URL("https://layout.design"),
+  title: {
+    default: "Layout",
+    template: "%s | Layout",
+  },
+  description:
+    "Extract design systems from Figma and websites. Generate LLM-optimised context bundles for AI coding agents.",
+  openGraph: {
+    title: "Layout",
+    description:
+      "Extract design systems from Figma and websites. Generate LLM-optimised context bundles for AI coding agents.",
+    siteName: "Layout",
+    locale: "en_GB",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
+  themeColor: "#0C0C0E",
 };
 
 export default function RootLayout({
@@ -28,6 +49,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Script
+          src="https://analytics.unified.studio/js/pa-quhX-YAYBj1aXc8GmZCkt.js"
+          strategy="afterInteractive"
+        />
+        <Script id="plausible-init" strategy="afterInteractive">
+          {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
+        </Script>
         <ProjectHydrator />
         {children}
       </body>

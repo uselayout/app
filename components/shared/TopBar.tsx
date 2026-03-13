@@ -197,7 +197,7 @@ export function TopBar({
                       key={p.id}
                       className={`group flex items-center gap-2 px-3 py-2 text-left transition-colors ${
                         p.id === currentProjectId
-                          ? "bg-[#e4f222]/10"
+                          ? "bg-[--studio-accent]/10"
                           : "hover:bg-[#2A2A32]"
                       }`}
                     >
@@ -210,7 +210,7 @@ export function TopBar({
                       >
                         <p className={`text-xs font-medium truncate ${
                           p.id === currentProjectId
-                            ? "text-[#e4f222]"
+                            ? "text-[--studio-accent]"
                             : "text-[#EDEDF4]"
                         }`}>
                           {p.name}
@@ -247,7 +247,7 @@ export function TopBar({
                     setShowProjectMenu(false);
                     router.push("/studio");
                   }}
-                  className="text-[10px] text-[rgba(237,237,244,0.5)] hover:text-[#e4f222] transition-colors"
+                  className="text-[10px] text-[rgba(237,237,244,0.5)] hover:text-[--studio-accent] transition-colors"
                 >
                   ← All projects
                 </button>
@@ -256,7 +256,7 @@ export function TopBar({
                     setShowProjectMenu(false);
                     setShowNewExtraction(true);
                   }}
-                  className="flex items-center gap-1 text-[10px] text-[rgba(237,237,244,0.5)] hover:text-[#e4f222] transition-colors"
+                  className="flex items-center gap-1 text-[10px] text-[rgba(237,237,244,0.5)] hover:text-[--studio-accent] transition-colors"
                 >
                   <Plus className="h-2.5 w-2.5" />
                   New extraction

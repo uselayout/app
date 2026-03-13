@@ -89,6 +89,14 @@ function PricingContent() {
   const { tier, loading } = useBilling();
   const success = searchParams.get("success");
 
+  const handleManageSubscription = async () => {
+    const res = await fetch("/api/billing/portal", { method: "POST" });
+    if (res.ok) {
+      const { url } = await res.json();
+      window.location.href = url;
+    }
+  };
+
   const handleSelectTier = async (selected: SubscriptionTier | "topup") => {
     if (selected === "free") {
       router.push("/studio");
@@ -265,6 +273,18 @@ function PricingContent() {
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Manage subscription link for paid users */}
+              {(tier === "pro" || tier === "team") && (
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={handleManageSubscription}
+                    className="text-[14px] tracking-[0.14px] text-[var(--mkt-text-secondary)] underline underline-offset-4 transition-opacity hover:opacity-80"
+                  >
+                    Manage subscription, billing & invoices
+                  </button>
                 </div>
               )}
             </div>
