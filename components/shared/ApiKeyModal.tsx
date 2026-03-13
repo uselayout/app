@@ -47,7 +47,7 @@ export function ApiKeyModal({ onClose }: ApiKeyModalProps) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/90 backdrop-blur-sm"
         onClick={onClose}
       />
       <div className="relative z-10 w-full max-w-md rounded-xl border border-[--studio-border-strong] bg-[--bg-elevated] p-6 shadow-[0_0_80px_rgba(0,0,0,0.6)]">
