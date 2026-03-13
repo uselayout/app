@@ -28,7 +28,7 @@ export function ExplorerCanvas({
   designMd,
   explorations,
   onUpdateExplorations,
-  onPushToFigma,
+  onPushToFigma: _onPushToFigma,
   onDesignMdUpdate,
 }: ExplorerCanvasProps) {
   const [isGenerating, setIsGenerating] = useState(false);
