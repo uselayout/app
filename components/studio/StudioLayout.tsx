@@ -5,9 +5,9 @@ import { useState, useCallback, useRef, type ReactNode } from "react";
 interface StudioLayoutProps {
   sourcePanel: ReactNode;
   editorPanel: ReactNode;
-  explorerPanel?: ReactNode;
+  canvasPanel?: ReactNode;
   testPanel: ReactNode;
-  centreView: "editor" | "explorer";
+  centreView: "editor" | "canvas";
   showTestPanel?: boolean;
 }
 
@@ -18,7 +18,7 @@ const DEFAULT_RIGHT = 340;
 export function StudioLayout({
   sourcePanel,
   editorPanel,
-  explorerPanel,
+  canvasPanel,
   testPanel,
   centreView,
   showTestPanel = true,
@@ -84,7 +84,7 @@ export function StudioLayout({
 
       {/* Centre Panel */}
       <div className="min-w-0 flex-1 overflow-hidden">
-        {centreView === "explorer" && explorerPanel ? explorerPanel : editorPanel}
+        {centreView === "canvas" && canvasPanel ? canvasPanel : editorPanel}
       </div>
 
       {/* Right Resize Handle + Panel (test panel toggle) */}

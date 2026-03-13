@@ -120,7 +120,7 @@ export default function CursorPage() {
           {prev && (
             <Link
               href={prev.href}
-              className="text-indigo-600 hover:underline text-sm"
+              className="text-gray-900 hover:underline text-sm"
             >
               ← {prev.title}
             </Link>
@@ -130,7 +130,7 @@ export default function CursorPage() {
           {next && (
             <Link
               href={next.href}
-              className="text-indigo-600 hover:underline text-sm"
+              className="text-gray-900 hover:underline text-sm"
             >
               {next.title} →
             </Link>

@@ -69,7 +69,7 @@ export default function IntegrationsPage() {
           <Link
             key={item.href}
             href={item.href}
-            className="rounded-xl border border-gray-200 p-6 hover:border-indigo-300 transition-colors block"
+            className="rounded-xl border border-gray-200 p-6 hover:border-gray-400 transition-colors block"
           >
             <h2 className="text-base font-semibold text-[#0a0a0a] mb-2">
               {item.name}
@@ -125,7 +125,7 @@ export default function IntegrationsPage() {
           Use it with{" "}
           <a
             href="https://github.com/theo-design/theo"
-            className="text-indigo-600 hover:underline"
+            className="text-gray-900 hover:underline"
             target="_blank"
             rel="noreferrer"
           >
@@ -134,7 +134,7 @@ export default function IntegrationsPage() {
           or{" "}
           <a
             href="https://styledictionary.com"
-            className="text-indigo-600 hover:underline"
+            className="text-gray-900 hover:underline"
             target="_blank"
             rel="noreferrer"
           >
@@ -151,7 +151,7 @@ export default function IntegrationsPage() {
           {prev && (
             <Link
               href={prev.href}
-              className="text-indigo-600 hover:underline text-sm"
+              className="text-gray-900 hover:underline text-sm"
             >
               ← {prev.title}
             </Link>
@@ -161,7 +161,7 @@ export default function IntegrationsPage() {
           {next && (
             <Link
               href={next.href}
-              className="text-indigo-600 hover:underline text-sm"
+              className="text-gray-900 hover:underline text-sm"
             >
               {next.title} →
             </Link>

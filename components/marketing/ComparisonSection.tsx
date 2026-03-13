@@ -1,112 +1,77 @@
-import { Check, Minus } from "lucide-react";
+'use client';
 
-const ROWS = [
-  { label: "Approach", us: "Compiler", paper: "New canvas", pencil: "IDE canvas" },
-  { label: "Figma integration", us: "Bidirectional", paper: "None", pencil: "None" },
-  { label: "Designer workflow", us: "Unchanged", paper: "Must re-learn", pencil: "Not involved" },
-  { label: "Website extraction", us: true, paper: false, pencil: false },
-  { label: "Output formats", us: "6 portable formats", paper: "Proprietary", pencil: ".pen files" },
-  { label: "AI agent support", us: "Any (via MCP)", paper: "Built-in only", pencil: "Built-in only" },
-  { label: "Open source", us: true, paper: false, pencil: false },
-  { label: "Adoption cost", us: "Zero", paper: "High", pencil: "Medium" },
-];
-
-function CellValue({ value }: { value: string | boolean }) {
-  if (value === true) return <Check size={16} className="text-emerald-500" />;
-  if (value === false) return <Minus size={16} className="text-gray-300" />;
-  return <span>{value}</span>;
-}
+import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 export function ComparisonSection() {
   return (
-    <section className="py-28 px-6">
-      <div className="mx-auto max-w-6xl">
-        {/* Header */}
-        <div className="mb-16 text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-indigo-600">
-            Why Figma
-          </p>
-          <h2 className="mb-6 text-4xl font-bold text-[#0a0a0a] sm:text-5xl tracking-tight leading-[1.1]">
-            We don&apos;t replace Figma.
-            <br />
-            We make it smarter.
+    <section className="bg-[var(--mkt-bg)] pt-[100px] lg:pt-[180px] flex flex-col items-center gap-[70px]">
+      <div className="max-w-[1280px] w-full px-6">
+        <motion.div
+          className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between w-full"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          <h2
+            className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)] w-full lg:w-[667px]"
+          >
+            We don&apos;t replace Figma.{' '}
+            <span className="text-[var(--mkt-accent)]">
+              We make it smarter.
+            </span>
           </h2>
-          <p className="mx-auto max-w-2xl text-lg text-gray-500 leading-relaxed">
-            Paper.design asks your designers to learn a new canvas.
-            Pencil.dev renders components only inside the IDE.
-            Both require adoption. Both create friction. Both ignore
-            the tool your design team already knows.
-          </p>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-500 leading-relaxed">
-            Layout is a compiler, not a canvas. It reads your
-            existing Figma files, extracts the design system, and serves
-            structured context to your existing AI tools. Nobody changes
-            anything. The AI just starts building correctly.
-          </p>
-        </div>
 
-        {/* TypeScript analogy */}
-        <div className="mx-auto mb-16 max-w-2xl rounded-2xl border border-indigo-200/60 bg-indigo-50/40 p-8 text-center">
-          <p className="text-base leading-relaxed text-gray-700">
-            TypeScript didn&apos;t replace JavaScript. It made JavaScript
-            smarter by adding a type system on top.{" "}
-            <span className="font-semibold text-[#0a0a0a]">
-              Layout does the same for Figma
-            </span>{" "}
-            — it adds an AI context layer on top of files your team already
-            uses.
-          </p>
-        </div>
-
-        {/* Comparison table */}
-        <div className="overflow-x-auto rounded-2xl border border-black/[0.06]">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-black/[0.06] bg-[#fafafa]">
-                <th className="px-6 py-4 font-medium text-gray-500" />
-                <th className="px-6 py-4 font-semibold text-[#0a0a0a]">
-                  Layout
-                </th>
-                <th className="px-6 py-4 font-medium text-gray-500">
-                  Paper.design
-                </th>
-                <th className="px-6 py-4 font-medium text-gray-500">
-                  Pencil.dev
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {ROWS.map(({ label, us, paper, pencil }, i) => (
-                <tr
-                  key={label}
-                  className={
-                    i < ROWS.length - 1 ? "border-b border-black/[0.04]" : ""
-                  }
-                >
-                  <td className="px-6 py-4 font-medium text-gray-600">
-                    {label}
-                  </td>
-                  <td className="px-6 py-4 font-semibold text-[#0a0a0a]">
-                    <CellValue value={us} />
-                  </td>
-                  <td className="px-6 py-4 text-gray-500">
-                    <CellValue value={paper} />
-                  </td>
-                  <td className="px-6 py-4 text-gray-500">
-                    <CellValue value={pencil} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Closing */}
-        <p className="mt-12 text-center text-base text-gray-500 leading-relaxed max-w-xl mx-auto">
-          Your designers stay in Figma. Your developers stay in their terminal.
-          Layout sits invisibly between them, making every AI build on-brand.
-        </p>
+          <div className="w-full lg:w-[575px] pt-[19px] flex flex-col gap-[18px]">
+            <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
+              Some tools ask designers to learn a new canvas. Others render components only inside the IDE. Both require adoption. Both create friction. Both ignore the tool your team already knows.
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+              <span className="text-[var(--mkt-accent)]">Layout</span> is a compiler, not a canvas. It reads your existing Figma files, extracts the design system, and serves structured context to your existing AI tools. Nobody changes anything. The AI just starts building correctly.
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+              Other tools ask designers to learn new software. Some lock previews inside the IDE. Layout Explorer generates real components, pushes real Figma frames, and lets everyone stay where they're productive.
+            </p>
+            <blockquote className="border-l-4 border-[var(--mkt-accent)] pl-[33px]">
+              <p className="text-[18px] leading-[1.4] text-[#e5e7eb] italic">
+                TypeScript didn&apos;t replace JavaScript. It added a type system on top. Layout does the same for Figma — an AI context layer on top of files your team already uses.
+              </p>
+            </blockquote>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+              Your designers stay in Figma. Your developers stay in their terminal. Layout sits invisibly between them.
+            </p>
+          </div>
+        </motion.div>
       </div>
+
+      <motion.div
+        className="w-[1424px] max-w-full mx-auto aspect-[1424/768] relative overflow-hidden rounded-[6px]"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        viewport={{ once: true }}
+      >
+        <Image
+          src="/marketing/aurora-comparison.png"
+          alt=""
+          fill
+          className="object-cover"
+          aria-hidden="true"
+        />
+        <div className="absolute left-0 top-0 w-full overflow-hidden px-4 lg:px-[60px] h-[93.75%]">
+          <div className="bg-white w-full h-full overflow-hidden relative">
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover"
+              aria-label="Comparison section demo"
+            />
+          </div>
+        </div>
+      </motion.div>
     </section>
   );
 }

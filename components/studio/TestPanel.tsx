@@ -2,13 +2,12 @@
 
 import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 import {
-  Send,
+  ArrowUp,
   ThumbsUp,
   ThumbsDown,
   RotateCcw,
   Copy,
   Check,
-  ChevronDown,
   Trash2,
   Figma,
 } from "lucide-react";
@@ -29,28 +28,24 @@ interface TestPanelProps {
   components?: string[];
   extractedFonts?: string[];
   initialResults?: TestResult[];
+  includeContext?: boolean;
+  onToggleContext?: () => void;
 }
 
-const QUICK_PROMPTS = [
-  "Build me a primary button with hover state",
-  "Build me a card component with title and description",
-  "Build me a form input with label and error state",
-  "Build me a navigation bar",
-  "Build me a modal dialog",
-];
 
 export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function TestPanel(
-  { projectId, designMd, components = [], extractedFonts = [], initialResults = [] },
+  { projectId, designMd, components: _components = [], extractedFonts = [], initialResults = [], includeContext: includeContextProp, onToggleContext: onToggleContextProp },
   ref
 ) {
   const updateTestResults = useProjectStore((s) => s.updateTestResults);
-  const [includeContext, setIncludeContext] = useState(true);
+  const [includeContextLocal, setIncludeContextLocal] = useState(true);
+  const includeContext = includeContextProp ?? includeContextLocal;
+  const toggleContext = onToggleContextProp ?? (() => setIncludeContextLocal((v) => !v));
   const [prompt, setPrompt] = useState("");
   const [results, setResults] = useState<TestResult[]>(initialResults);
   const [streamingId, setStreamingId] = useState<string | null>(null);
-  const [showQuickPrompts, setShowQuickPrompts] = useState(false);
   const outputRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const [highlighted, setHighlighted] = useState(false);
 
@@ -64,11 +59,6 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
   }));
   // Track latest results in a ref so we can persist after streaming without stale closures
   const resultsRef = useRef<TestResult[]>(initialResults);
-
-  const allPrompts = [
-    ...QUICK_PROMPTS,
-    ...components.map((c) => `Build me a ${c} component`),
-  ];
 
   const handleSubmit = useCallback(async () => {
     if (!prompt.trim() || streamingId !== null) return;
@@ -154,7 +144,7 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
+      if (e.key === "Enter") {
         e.preventDefault();
         handleSubmit();
       }
@@ -204,16 +194,24 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
           Test Panel
         </span>
         <button
-          onClick={() => setIncludeContext(!includeContext)}
+          onClick={toggleContext}
           className="flex items-center gap-2"
+          role="switch"
+          aria-checked={includeContext}
         >
-          <span
-            className={`h-2 w-2 rounded-full ${
-              includeContext ? "bg-emerald-400" : "bg-orange-400"
-            }`}
-          />
           <span className="text-xs text-[--text-secondary]">
-            {includeContext ? "DESIGN.md context: ON" : "Bare Claude"}
+            DESIGN.md context
+          </span>
+          <span
+            className={`relative inline-flex h-[18px] w-[32px] shrink-0 items-center rounded-full transition-colors ${
+              includeContext ? "bg-emerald-500" : "bg-[#3a3a3f]"
+            }`}
+          >
+            <span
+              className={`inline-block h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-transform ${
+                includeContext ? "translate-x-[16px]" : "translate-x-[2px]"
+              }`}
+            />
           </span>
         </button>
       </div>
@@ -242,52 +240,32 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
       </div>
 
       {/* Input area */}
-      <div className="border-t border-[--studio-border] p-3">
-        {/* Quick prompts */}
-        <div className="relative mb-2">
-          <button
-            onClick={() => setShowQuickPrompts(!showQuickPrompts)}
-            className="flex items-center gap-1 text-xs text-[--text-muted] hover:text-[--text-secondary]"
-          >
-            Quick prompts
-            <ChevronDown className="h-3 w-3" />
-          </button>
-          {showQuickPrompts && (
-            <div className="absolute bottom-full left-0 z-10 mb-1 w-full rounded-md border border-[--studio-border] bg-[--bg-elevated] py-1 shadow-lg">
-              {allPrompts.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => {
-                    setPrompt(p);
-                    setShowQuickPrompts(false);
-                    textareaRef.current?.focus();
-                  }}
-                  className="w-full px-3 py-1.5 text-left text-xs text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary]"
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-2">
-          <textarea
-            ref={textareaRef}
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask Claude to build a component..."
-            rows={2}
-            className={`flex-1 resize-none rounded-md border border-[--studio-border] bg-[--bg-surface] px-3 py-2 text-xs text-[--text-primary] placeholder:text-[--text-muted] focus:border-[--studio-border-focus] focus:outline-none transition-shadow ${highlighted ? "ring-2 ring-[--studio-accent] ring-offset-1 ring-offset-[--bg-panel]" : ""}`}
-          />
-          <button
-            onClick={handleSubmit}
-            disabled={!prompt.trim() || streamingId !== null}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[--studio-accent] text-[--text-on-accent] transition-colors hover:bg-[--studio-accent-hover] disabled:opacity-40"
-          >
-            <Send className="h-4 w-4" />
-          </button>
+      <div className={`mx-3 mb-3 flex flex-col rounded-lg border border-[rgba(255,255,255,0.05)] bg-[#161718] ${highlighted ? "ring-2 ring-[--studio-accent] ring-offset-1 ring-offset-[--bg-panel]" : ""}`}>
+        {/* Text area */}
+        <div className="relative p-2.5">
+          <div className="flex min-h-[68px] items-start rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.08)] px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
+            <input
+              ref={textareaRef}
+              type="text"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask Layout to build a component..."
+              className="flex-1 bg-transparent text-[13px] text-[--text-primary] placeholder:text-[#898d94] outline-none"
+            />
+          </div>
+          {/* Send button */}
+          <div className="absolute bottom-5 right-5 flex items-center gap-1.5">
+            {prompt.trim() && (
+              <button
+                onClick={handleSubmit}
+                disabled={!prompt.trim() || streamingId !== null}
+                className="flex items-center justify-center size-6 rounded-full bg-[--text-primary] text-[--bg-app] transition-colors hover:opacity-90 disabled:opacity-20 disabled:cursor-not-allowed"
+              >
+                <ArrowUp size={12} strokeWidth={2.5} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -528,25 +506,25 @@ function ResultBlock({
         </div>
       </div>
 
-      {/* Tab bar */}
+      {/* Preview / Code pill toggle */}
       {result.output && (
-        <div className="flex gap-1 border-b border-[--studio-border]">
+        <div className="flex gap-1">
           <button
             onClick={() => setTab("preview")}
-            className={`px-3 py-1 text-xs transition-colors ${
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               tab === "preview"
-                ? "border-b-2 border-[--studio-accent] text-[--text-primary]"
-                : "text-[--text-muted] hover:text-[--text-secondary]"
+                ? "bg-[#e4f222] text-[#08090a]"
+                : "bg-[#28292a] text-[--text-primary] hover:bg-[#333]"
             }`}
           >
             Preview
           </button>
           <button
             onClick={() => setTab("code")}
-            className={`px-3 py-1 text-xs transition-colors ${
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               tab === "code"
-                ? "border-b-2 border-[--studio-accent] text-[--text-primary]"
-                : "text-[--text-muted] hover:text-[--text-secondary]"
+                ? "bg-[#e4f222] text-[#08090a]"
+                : "bg-[#28292a] text-[--text-primary] hover:bg-[#333]"
             }`}
           >
             Code

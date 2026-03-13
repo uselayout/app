@@ -75,10 +75,10 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/90 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/95 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-lg rounded-xl border border-[--studio-border-strong] bg-[--bg-elevated] p-6 shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+      <div className="relative z-10 w-full max-w-lg rounded-xl border border-[--studio-border-strong] bg-[#272829] p-6 shadow-[0_0_80px_rgba(0,0,0,0.6)]">
         {/* Header */}
         <div className="mb-5 flex items-start justify-between">
           <div>
@@ -107,7 +107,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
               autoFocus
-              className="w-full rounded-lg border border-[--studio-border-strong] bg-[--bg-surface] px-4 py-3 pr-10 text-sm text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+              className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[#010101] px-4 py-3 pr-10 text-sm text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
             />
             {sourceType && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -128,7 +128,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
               value={pat}
               onChange={(e) => setPat(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
-              className="w-full rounded-lg border border-[--studio-border-strong] bg-[--bg-surface] px-4 py-3 text-sm text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+              className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[#010101] px-4 py-3 text-sm text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
             />
           )}
         </div>
@@ -144,7 +144,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
           <button
             onClick={handleExtract}
             disabled={!isValid}
-            className="flex items-center gap-2 rounded-lg bg-[--studio-accent] px-4 py-2 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] disabled:opacity-40 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium text-[--text-secondary] hover:text-[--text-primary] disabled:opacity-30 transition-colors"
           >
             Extract
             <ArrowRight className="h-3.5 w-3.5" />

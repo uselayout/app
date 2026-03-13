@@ -1,85 +1,73 @@
-import { X, MessageSquare, Sparkles } from "lucide-react";
+'use client';
 
-const CARDS = [
-  {
-    icon: X,
-    title: "Without context",
-    desc: "Your AI hallucinates a design system. Every component looks different. Nothing matches your brand.",
-    accent: false,
-    iconColour: "text-red-400",
-    iconBg: "bg-red-50",
-    border: "border-black/[0.06]",
-  },
-  {
-    icon: MessageSquare,
-    title: "With manual prompting",
-    desc: "You paste token values into every prompt. It works sometimes. It doesn\u2019t scale.",
-    accent: false,
-    iconColour: "text-amber-500",
-    iconBg: "bg-amber-50",
-    border: "border-black/[0.06]",
-  },
-  {
-    icon: Sparkles,
-    title: "With Layout",
-    desc: "Your AI reads your design system automatically. Every build, on-brand.",
-    accent: true,
-    iconColour: "text-indigo-600",
-    iconBg: "bg-indigo-50",
-    border: "border-indigo-300",
-  },
-];
+import { motion } from 'framer-motion';
 
 export function ContextGapSection() {
   return (
-    <section className="py-28 px-6">
-      <div className="mx-auto max-w-6xl">
-        {/* Header */}
-        <div className="mb-16 text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-indigo-600">
-            The Context Gap
-          </p>
-          <h2 className="mb-6 text-4xl font-bold text-[#0a0a0a] sm:text-5xl tracking-tight leading-[1.1]">
-            Your AI agent is brilliant.
-            <br />
-            And completely blind to your brand.
-          </h2>
-          <p className="mx-auto max-w-2xl text-lg text-gray-500 leading-relaxed">
-            AI coding agents can write entire features from a one-line prompt.
-            But ask one to build a UI component and you&apos;ll get working code
-            with completely the wrong design. The blue is off. The font weight
-            is too heavy. The border radius doesn&apos;t match.
-          </p>
-          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-[#0a0a0a]">
-            This is the context gap. Your design system exists, but your AI
-            can&apos;t see it.
-          </p>
-        </div>
+    <section className="bg-[var(--mkt-bg)] pt-[100px] lg:pt-[180px] flex flex-col items-center gap-[70px]">
+      <div className="max-w-[1280px] w-full px-6">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between w-full">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="w-full lg:max-w-[454px]"
+          >
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Brilliant code.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Wrong design.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-accent)]">Every time.</p>
+          </motion.div>
 
-        {/* Cards */}
-        <div className="grid gap-6 md:grid-cols-3">
-          {CARDS.map(({ icon: Icon, title, desc, accent, iconColour, iconBg, border }) => (
-            <div
-              key={title}
-              className={`relative rounded-2xl border ${border} bg-white p-8 transition-all ${
-                accent
-                  ? "shadow-md ring-1 ring-indigo-200/60"
-                  : "opacity-80"
-              }`}
-            >
-              <div
-                className={`mb-5 inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}
-              >
-                <Icon size={20} className={iconColour} />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold text-[#0a0a0a]">
-                {title}
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-500">{desc}</p>
-            </div>
-          ))}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="w-full lg:w-[683px] pt-[19px] flex flex-col gap-[10px]"
+          >
+            <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
+              AI coding agents can build entire features from a one-line prompt. But every UI they generate looks generic, wrong colours, wrong spacing, wrong type scale.
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+              Your design system lives in Figma. Your AI agent can&apos;t see it. Every component it builds is a guess. Every colour is a hallucination. Every spacing value is made up.
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+              This is the context gap, the invisible wall between your design system and your AI tools.
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+              <span className="text-[var(--mkt-accent)]">Layout</span> is the compiler that breaks it down.
+            </p>
+          </motion.div>
         </div>
       </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        viewport={{ once: true }}
+        className="w-[1424px] max-w-full mx-auto aspect-[1424/768] relative overflow-hidden rounded-[6px]"
+      >
+        <img
+          src="/marketing/aurora-context-gap.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        />
+        <div className="absolute left-0 top-0 w-full overflow-hidden px-4 lg:px-[60px] h-[93.75%]">
+          <div className="bg-white w-full h-full overflow-hidden relative">
+            <video
+              src="/marketing/videos/context-gap.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      </motion.div>
     </section>
   );
 }

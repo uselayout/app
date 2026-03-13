@@ -1,68 +1,68 @@
-import { Users, Eye, Tag, Lightbulb } from "lucide-react";
+'use client';
 
-const PERKS = [
-  {
-    icon: Users,
-    text: "Direct access to the founding team via Discord",
-  },
-  {
-    icon: Eye,
-    text: "First look at every new feature before public release",
-  },
-  {
-    icon: Tag,
-    text: "Permanent founding member discount on Pro tier",
-  },
-  {
-    icon: Lightbulb,
-    text: "Your use case genuinely shaping the product",
-  },
-];
+import { motion } from 'framer-motion';
+import { useSession } from '@/lib/auth-client';
 
-export function EarlyAccessCTA() {
+export function EarlyAccessCTA({ onInstallCLI }: { onInstallCLI?: () => void }) {
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
+
   return (
-    <section className="py-28 px-6">
-      <div className="mx-auto max-w-3xl text-center">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-indigo-600">
-          Early Access
-        </p>
-        <h2 className="mb-6 text-4xl font-bold text-[#0a0a0a] sm:text-5xl tracking-tight">
-          Help us build this.
-        </h2>
-        <p className="mx-auto mb-10 max-w-xl text-lg text-gray-500 leading-relaxed">
-          Layout is pre-alpha. We&apos;re onboarding 50 teams —
-          designers and developers — who ship UI with AI agents
-          and want to shape what gets built next. Direct founder access.
-          First features. Founding member pricing.
-        </p>
+    <section className="pb-[80px] pt-[100px] lg:pt-[180px] flex flex-col items-center gap-[70px]">
+      <div className="max-w-[1280px] w-full px-6">
+        <motion.div
+          className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between w-full"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          <h2
+            className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)] w-full lg:w-[485px]"
+          >
+            Give your AI{' '}
+            <span className="text-[var(--mkt-accent)]">
+              perfect taste.
+            </span>
+          </h2>
 
-        {/* Perks */}
-        <div className="mx-auto mb-10 grid max-w-lg gap-4 text-left">
-          {PERKS.map(({ icon: Icon, text }) => (
-            <div key={text} className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
-                <Icon size={14} className="text-indigo-600" />
-              </span>
-              <span className="text-sm text-gray-600">{text}</span>
+          <div className="w-full lg:w-[575px] flex flex-col gap-8 lg:gap-[64px]">
+            <div className="pt-[19px] flex flex-col gap-[10px]">
+              <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
+                Layout is in open alpha. We&apos;re looking for teams who ship UI with AI agents and want to shape what gets built next.
+              </p>
+              <div className="flex flex-col gap-0">
+                <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+                  → Direct founder access via Slack
+                </p>
+                <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+                  → First look at every feature before public release
+                </p>
+                <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+                  → Founding member pricing — locked in permanently
+                </p>
+                <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+                  → Your use case shaping the roadmap
+                </p>
+              </div>
             </div>
-          ))}
-        </div>
 
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <a
-            href="/login"
-            className="rounded-full bg-[#0a0a0a] px-8 py-3.5 text-sm font-semibold text-white hover:bg-[#1a1a1a] transition-all shadow-lg shadow-black/10"
-          >
-            Apply for early access →
-          </a>
-          <a
-            href="/docs/cli"
-            className="rounded-full border border-black/10 bg-white px-8 py-3.5 text-sm font-semibold text-[#0a0a0a] hover:border-black/20 hover:bg-gray-50 transition-all"
-          >
-            Install CLI — free &amp; MIT
-          </a>
-        </div>
+            <div className="flex gap-[12px]">
+              <a
+                href={isLoggedIn ? "/studio" : "/login"}
+                className="bg-[var(--mkt-btn-primary-bg)] border border-[#e6e6e6] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] inline-flex items-center justify-center"
+              >
+                {isLoggedIn ? "Open Studio →" : "Join early access →"}
+              </a>
+              <button
+                onClick={onInstallCLI}
+                className="hidden lg:inline-flex bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium items-center justify-center"
+              >
+                Install free CLI
+              </button>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );

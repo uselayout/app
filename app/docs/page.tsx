@@ -80,7 +80,7 @@ export default function GettingStartedPage() {
                 },
               ].map(({ file, purpose }) => (
                 <tr key={file} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-indigo-700 whitespace-nowrap">
+                  <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
                     {file}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{purpose}</td>
@@ -131,7 +131,7 @@ export default function GettingStartedPage() {
             },
           ].map(({ step, desc }, i) => (
             <li key={step} className="flex items-start gap-4">
-              <span className="shrink-0 mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-white text-sm font-bold">
+              <span className="shrink-0 mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-gray-800 text-white text-sm font-bold">
                 {i + 1}
               </span>
               <div>
@@ -154,19 +154,19 @@ export default function GettingStartedPage() {
           {[
             {
               range: "80–100",
-              colour: "bg-emerald-100 text-emerald-800 border-emerald-200",
+              colour: "bg-gray-100 text-gray-800 border-gray-200",
               label: "Ready to export",
               desc: "Tokens are being used correctly.",
             },
             {
               range: "50–79",
-              colour: "bg-amber-100 text-amber-800 border-amber-200",
+              colour: "bg-gray-100 text-gray-800 border-gray-200",
               label: "Partial adherence",
               desc: "Review the Anti-Patterns section in DESIGN.md.",
             },
             {
               range: "0–49",
-              colour: "bg-red-100 text-red-800 border-red-200",
+              colour: "bg-gray-100 text-gray-800 border-gray-200",
               label: "Low adherence",
               desc: "Check that DESIGN.md has well-formed CSS code blocks.",
             },
@@ -218,14 +218,14 @@ export default function GettingStartedPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Next Steps</h2>
         <ul className="list-disc pl-6 space-y-2 text-gray-600">
           <li>
-            <Link href="/docs/studio" className="text-indigo-600 hover:underline">
+            <Link href="/docs/studio" className="text-gray-900 hover:underline">
               Studio Guide
             </Link>{" "}
             — learn the three-panel editor, extraction options, and test panel in
             depth.
           </li>
           <li>
-            <Link href="/docs/cli" className="text-indigo-600 hover:underline">
+            <Link href="/docs/cli" className="text-gray-900 hover:underline">
               CLI Guide
             </Link>{" "}
             — set up the MCP server so your AI agent fetches design context
@@ -240,7 +240,7 @@ export default function GettingStartedPage() {
           {prev && (
             <Link
               href={prev.href}
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft size={16} />
               {prev.title}
@@ -251,7 +251,7 @@ export default function GettingStartedPage() {
           {next && (
             <Link
               href={next.href}
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
               {next.title}
               <ArrowRight size={16} />

@@ -20,18 +20,24 @@ A working browser-based tool that:
 ## Competitive Landscape
 
 ### Direct Threats
-| Competitor | What They Do | Our Edge |
-|---|---|---|
-| **Figma MCP Server** (free, Feb 2026) | Connects Claude directly to Figma — AI reads components live | We extract from *websites* too. Figma MCP gives raw Figma data, not structured design tokens |
-| **Anima / Locofy** | Figma-to-code plugins | They generate code, we generate *context*. Different job entirely |
-| **Style Dictionary** | Token pipeline tool | Manual setup, no extraction. We automate the whole flow |
-| **Zeroheight / Supernova** | Design system documentation | Enterprise, expensive, no AI agent integration |
+| Competitor | What They Do | Threat Level | Our Edge |
+|---|---|---|---|
+| **Figma MCP Server** (free, Feb 2026) | Connects Claude directly to Figma — AI reads components live | High | We extract from *websites* too. Figma MCP gives raw Figma data, not structured design tokens. We synthesise DESIGN.md with semantic context, anti-patterns, and component usage. |
+| **Paper.design** ($4.2M seed, Accel) | New AI-native design canvas replacing Figma. 24 MCP tools, code export, $20/user/mo | Medium | They require full team migration from Figma. We're invisible infrastructure — no one changes tools. Code export is one-directional; our loop is bidirectional. No website extraction. Proprietary format vs our plain-text markdown. |
+| **Pencil.dev** (free early access) | IDE-embedded design canvas (.pen files in Git). MCP integration for AI agents | Medium | Proprietary .pen format vs portable DESIGN.md. IDE-only (VS Code/Cursor) vs agent-agnostic. No design system extraction — you still define tokens manually. No website extraction. 4-8px alignment discrepancies acknowledged. |
+| **Anima / Locofy** | Figma-to-code plugins. Anima API powers Bolt.new & Replit | Low-Medium | They generate code, we generate *context*. Different job entirely. Anima is Figma-only, proprietary format. |
+| **Style Dictionary** (Amazon) | Token pipeline tool | Low | Manual setup, no extraction, no AI synthesis. We automate the whole flow. |
+| **Zeroheight / Supernova** | Design system documentation for humans | Low | Enterprise, expensive, no AI agent integration. Documentation for humans ≠ context for machines. |
 
 ### Key Differentiators
 1. **Website extraction** — no competitor does this. Massive unlock for teams without Figma
 2. **AI-native output** — CLAUDE.md, AGENTS.md, .cursorrules are formats competitors don't generate
 3. **Speed** — paste a URL, get a complete AI kit in under 2 minutes
 4. **Works with every AI tool** — not locked to one editor or agent
+5. **Figma closed loop** — bidirectional code ↔ Figma workflow. Push components to Figma, design from tokens, pull changes back. Paper exports one-way. Pencil has no Figma integration.
+6. **Open-source MCP server** — MIT licensed, 9 tools, 60-second install. Paper is VC-backed SaaS. Pencil is closed source.
+7. **Zero behavioural change** — designers stay in Figma, developers stay in their IDE. Paper requires full team migration. Pencil requires developers to use a new canvas.
+8. **Plain-text portability** — DESIGN.md is markdown, readable forever. Pencil's .pen is proprietary binary. Paper's designs live in their platform.
 
 ---
 
@@ -135,15 +141,33 @@ Publicly publish DESIGN.md teardowns for 10 famous products. This serves as:
 
 ---
 
-## Biggest Risk
+## Biggest Risks
 
-**Figma MCP gets good enough.** If Figma improves their MCP server to output structured tokens (not raw Figma data), the Figma extraction half of our tool becomes less valuable.
+### 1. Figma MCP gets good enough
+If Figma improves their MCP server to output structured tokens (not raw Figma data), the Figma extraction half of our tool becomes less valuable.
 
 **Mitigation:**
 1. Double down on website extraction — Figma MCP will never do this
 2. Position as "the compiler" not "the extractor" — we synthesise structured DESIGN.md, not raw data
-3. Build the CLI sync + drift detection moat — these are workflow features, not extraction features
-4. AI Kits are extraction-source-agnostic — they're valuable regardless of how the data was captured
+3. Build the drift detection moat — workflow features, not extraction features
+4. AI Kits are extraction-source-agnostic — valuable regardless of how data was captured
+
+### 2. Paper.design gains traction with VC backing
+$4.2M seed from Accel with strong angels (Guillermo Rauch, Adam Wathan). If Paper captures the "AI-native design" narrative, it could marginalise the extraction approach.
+
+**Mitigation:**
+1. Paper requires designer migration from Figma — high switching cost we don't impose
+2. Paper is a design tool; we're infrastructure. Different buyer, different budget
+3. Our open-source approach builds trust Paper's VC model can't replicate
+4. We complement Figma rather than compete with it — stronger ecosystem position
+
+### 3. AI agents get smart enough to infer design systems
+If models improve enough to generate on-brand UI from a screenshot alone, structured context files become less necessary.
+
+**Mitigation:**
+1. Even with better vision, explicit tokens + anti-patterns produce more consistent output
+2. DESIGN.md enforces constraints (NEVER rules) that inference alone won't catch
+3. The compliance checking and health scoring workflow remains valuable regardless
 
 ---
 
