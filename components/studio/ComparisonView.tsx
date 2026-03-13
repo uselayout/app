@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Sparkles, AlertTriangle } from "lucide-react";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { parseVariants } from "@/lib/explore/parse-variants";
