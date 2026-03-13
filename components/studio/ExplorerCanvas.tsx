@@ -289,10 +289,10 @@ export function ExplorerCanvas({
             </div>
             <div>
               <h3 className="mb-1 text-sm font-semibold text-[--text-primary]">
-                Design Explorer
+                Canvas
               </h3>
               <p className="max-w-xs text-xs text-[--text-secondary]">
-                Describe a component or page to explore. Claude will generate
+                Describe what to explore. Claude will generate
                 multiple design variations using your design system.
               </p>
             </div>

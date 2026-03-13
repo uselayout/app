@@ -157,7 +157,7 @@ await mcp.call("preview", {
       return (
         <div className="rounded-xl border border-gray-200 p-6 bg-white">
           <h3 className="text-lg font-semibold text-[#0a0a0a]">{plan}</h3>
-          <p className="text-3xl font-bold text-indigo-600 mt-2">{price}</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">{price}</p>
         </div>
       );
     }
@@ -343,12 +343,12 @@ export default function ApiReferencePage() {
         </p>
         <Callout type="info">
           All tools are available after running{" "}
-          <code className="font-mono text-indigo-600 text-xs bg-indigo-50 px-1.5 py-0.5 rounded">
+          <code className="font-mono text-gray-900 text-xs bg-gray-50 px-1.5 py-0.5 rounded">
             npx @layoutdesign/context init
           </code>{" "}
           and adding the MCP server config to your agent&apos;s settings. See
           the{" "}
-          <Link href="/docs/cli" className="text-indigo-600 hover:underline">
+          <Link href="/docs/cli" className="text-gray-900 hover:underline">
             CLI guide
           </Link>{" "}
           for setup instructions.
@@ -369,15 +369,15 @@ export default function ApiReferencePage() {
         <CopyBlock code={loopDiagram} language="plaintext" />
         <Callout type="tip">
           The loop works best when Claude calls{" "}
-          <code className="font-mono text-xs bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded">
+          <code className="font-mono text-xs bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
             get_design_system
           </code>{" "}
           automatically at the start of every UI task. Add a rule to your{" "}
-          <code className="font-mono text-xs bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded">
+          <code className="font-mono text-xs bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
             CLAUDE.md
           </code>{" "}
           or{" "}
-          <code className="font-mono text-xs bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded">
+          <code className="font-mono text-xs bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
             .cursorrules
           </code>{" "}
           instructing the agent to fetch design context before writing any UI
@@ -438,7 +438,7 @@ export default function ApiReferencePage() {
                                 : ""
                             }
                           >
-                            <td className="py-3 px-4 font-mono text-indigo-600 text-xs align-top">
+                            <td className="py-3 px-4 font-mono text-gray-900 text-xs align-top">
                               {param.name}
                             </td>
                             <td className="py-3 px-4 font-mono text-gray-500 text-xs align-top whitespace-nowrap">
@@ -476,7 +476,7 @@ export default function ApiReferencePage() {
         {prev ? (
           <Link
             href={prev.href}
-            className="flex flex-col gap-1 text-indigo-600 hover:underline"
+            className="flex flex-col gap-1 text-gray-900 hover:underline"
           >
             <span className="text-xs text-gray-400 uppercase tracking-wide">
               Previous
@@ -489,7 +489,7 @@ export default function ApiReferencePage() {
         {next ? (
           <Link
             href={next.href}
-            className="flex flex-col gap-1 text-right text-indigo-600 hover:underline"
+            className="flex flex-col gap-1 text-right text-gray-900 hover:underline"
           >
             <span className="text-xs text-gray-400 uppercase tracking-wide">
               Next

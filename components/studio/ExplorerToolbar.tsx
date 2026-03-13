@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { Sparkles, RotateCw, Figma, Minus, Plus, Download, Wand2, Split, ImagePlus, X } from "lucide-react";
+import { ArrowUp, RotateCw, Figma, Minus, Plus, Download, Wand2, Split, ImagePlus, X } from "lucide-react";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_DIMENSION = 1600;
@@ -46,7 +46,6 @@ export function ExplorerToolbar({
     let dataUrl: string;
 
     if (file.size > MAX_IMAGE_SIZE) {
-      // Resize using canvas
       dataUrl = await resizeImage(file);
     } else {
       dataUrl = await fileToDataUrl(file);
@@ -60,7 +59,6 @@ export function ExplorerToolbar({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) processFile(file);
-      // Reset so the same file can be re-selected
       e.target.value = "";
     },
     [processFile]
@@ -138,15 +136,15 @@ export function ExplorerToolbar({
 
   return (
     <div
-      className="flex flex-col gap-3 border-t border-[--studio-border] bg-[--bg-panel] p-4"
+      className="mx-3 mb-3 flex flex-col rounded-lg border border-[rgba(255,255,255,0.05)] bg-[#161718]"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
-      {/* Single prompt input — switches between explore and refine mode */}
-      {hasSelection && selectedVariantName ? (
-        <div className="flex gap-2">
-          <div className="flex flex-1 items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2">
-            <Wand2 size={14} className="shrink-0 text-amber-400" />
+      {/* Text area */}
+      <div className="p-2.5">
+        {hasSelection && selectedVariantName ? (
+          <div className="relative flex min-h-[68px] items-start rounded-md border border-amber-500/30 bg-amber-500/5 px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
+            <Wand2 size={14} className="mt-0.5 shrink-0 text-amber-400" />
             <input
               type="text"
               placeholder={`Refine "${selectedVariantName}"... e.g. "make the CTA more prominent"`}
@@ -154,88 +152,90 @@ export function ExplorerToolbar({
               onChange={(e) => setRefinePrompt(e.target.value)}
               onKeyDown={handleRefineKeyDown}
               disabled={isGenerating}
-              className="flex-1 bg-transparent text-sm text-[--text-primary] placeholder:text-amber-400/50 outline-none disabled:opacity-50"
+              className="ml-2 flex-1 bg-transparent text-[13px] text-[--text-primary] placeholder:text-amber-400/50 outline-none disabled:opacity-50"
             />
-          </div>
-          <button
-            onClick={handleRefineSubmit}
-            disabled={!refinePrompt.trim() || isGenerating}
-            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Wand2 size={14} />
-            Refine
-          </button>
-        </div>
-      ) : (
-        <div className="flex gap-2">
-          <div className="flex flex-1 items-center gap-2 rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-2 focus-within:border-[--studio-border-focus] transition-colors">
-            {/* Attach image button */}
             <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isGenerating}
-              className="shrink-0 rounded p-0.5 text-[--text-muted] hover:text-[--text-secondary] transition-colors disabled:opacity-40"
-              title="Attach reference image"
+              onClick={handleRefineSubmit}
+              disabled={!refinePrompt.trim() || isGenerating}
+              className="absolute bottom-2.5 right-2.5 shrink-0 flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[--text-muted] transition-colors hover:text-[--text-primary] disabled:opacity-20 disabled:cursor-not-allowed"
             >
-              <ImagePlus size={16} />
+              <ArrowUp size={12} strokeWidth={2.5} />
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-
-            {/* Image thumbnail chip */}
-            {imageDataUrl && (
-              <div className="flex shrink-0 items-center gap-1.5 rounded-md bg-[--bg-hover] px-1.5 py-0.5" title={imageName ?? "Attached image"}>
-                <img
-                  src={imageDataUrl}
-                  alt="Reference"
-                  className="h-6 w-6 rounded object-cover"
-                />
-                <button
-                  onClick={removeImage}
-                  className="rounded p-0.5 text-[--text-muted] hover:text-[--text-primary] transition-colors"
-                >
-                  <X size={10} />
-                </button>
-              </div>
-            )}
-
-            {/* Text input */}
-            <input
-              ref={promptInputRef}
-              type="text"
-              placeholder={imageDataUrl
-                ? "Describe how to use this reference... e.g. \"redesign this using our design system\""
-                : "Describe what to explore... e.g. \"a pricing card with feature tiers\""
-              }
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onPaste={handlePaste}
-              disabled={isGenerating}
-              className="flex-1 bg-transparent text-sm text-[--text-primary] placeholder:text-[--text-muted] outline-none disabled:opacity-50"
-            />
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={!prompt.trim() || isGenerating}
-            className="inline-flex items-center gap-2 rounded-lg bg-[--studio-accent] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[--studio-accent-hover] disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Sparkles size={14} />
-            {isGenerating ? "Generating..." : "Explore"}
-          </button>
-        </div>
-      )}
+        ) : (
+          <div className="relative">
+            <div className="flex min-h-[68px] items-start rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.08)] px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
+              {/* Image thumbnail chip */}
+              {imageDataUrl && (
+                <div className="mr-2 flex shrink-0 items-center gap-1.5 rounded-md bg-[--bg-hover] px-1.5 py-0.5" title={imageName ?? "Attached image"}>
+                  <img
+                    src={imageDataUrl}
+                    alt="Reference"
+                    className="h-6 w-6 rounded object-cover"
+                  />
+                  <button
+                    onClick={removeImage}
+                    className="rounded p-0.5 text-[--text-muted] hover:text-[--text-primary] transition-colors"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              )}
+
+              {/* Text input */}
+              <input
+                ref={promptInputRef}
+                type="text"
+                placeholder={imageDataUrl
+                  ? "Describe how to use this reference... e.g. \"redesign this using our design system\""
+                  : "Describe what to explore... e.g. \"a pricing card with feature tiers\""
+                }
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
+                disabled={isGenerating}
+                className="flex-1 bg-transparent text-[13px] text-[--text-primary] placeholder:text-[#898d94] outline-none disabled:opacity-50"
+              />
+            </div>
+
+            {/* Bottom-right action buttons */}
+            <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isGenerating}
+                className="flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[--text-muted] transition-colors hover:text-[--text-secondary] disabled:opacity-40"
+                title="Attach reference image"
+              >
+                <ImagePlus size={12} />
+              </button>
+              {prompt.trim() && (
+                <button
+                  onClick={handleSubmit}
+                  disabled={!prompt.trim() || isGenerating}
+                  className="flex items-center justify-center size-6 rounded-full bg-[--text-primary] text-[--bg-app] transition-colors hover:opacity-90 disabled:opacity-20 disabled:cursor-not-allowed"
+                >
+                  <ArrowUp size={12} strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Controls row */}
-      <div className="flex items-center justify-between">
+      <div className="flex h-[38px] items-center justify-between border-t border-[rgba(255,255,255,0.05)] px-5 pr-4">
         <div className="flex items-center gap-3">
           {/* Variant count */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-[--text-secondary]">Variants:</span>
+            <span className="text-xs text-[--text-primary]">Variants:</span>
             <button
               onClick={() => setVariantCount((c) => Math.max(2, c - 1))}
               disabled={variantCount <= 2 || isGenerating}
@@ -260,7 +260,7 @@ export function ExplorerToolbar({
             <button
               onClick={onRegenerate}
               disabled={isGenerating}
-              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-[--text-primary] hover:bg-[--bg-hover] transition-colors disabled:opacity-40"
             >
               <RotateCw size={12} />
               Regenerate
@@ -271,7 +271,7 @@ export function ExplorerToolbar({
           <button
             onClick={() => onCompare(prompt.trim())}
             disabled={!prompt.trim() || isGenerating}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-[--text-primary] hover:bg-[--bg-hover] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title="Compare with vs without design system"
           >
             <Split size={12} />
@@ -284,7 +284,7 @@ export function ExplorerToolbar({
           <button
             onClick={onImportFromFigma}
             disabled={isGenerating}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-1.5 text-xs font-medium text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[rgba(255,255,255,0.07)] h-[30px] px-3 text-xs font-medium text-[--text-primary] hover:bg-[--bg-hover] transition-colors disabled:opacity-40"
           >
             <Download size={12} />
             Import from Figma
@@ -293,7 +293,7 @@ export function ExplorerToolbar({
             <button
               onClick={onPushToFigma}
               disabled={isGenerating}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-1.5 text-xs font-medium text-[--text-primary] hover:bg-[--bg-hover] transition-colors disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-md border border-[rgba(255,255,255,0.07)] h-[30px] px-3 text-xs font-medium text-[--text-primary] hover:bg-[--bg-hover] transition-colors disabled:opacity-40"
             >
               <Figma size={12} />
               Push to Figma
@@ -329,7 +329,6 @@ function resizeImage(file: File): Promise<string> {
       if (!ctx) { reject(new Error("Canvas not supported")); return; }
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      // Convert to same type or fallback to PNG
       const mimeType = ACCEPTED_TYPES.includes(file.type) ? file.type : "image/png";
       resolve(canvas.toDataURL(mimeType, 0.85));
     };
