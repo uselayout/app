@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { X, Figma, Copy, Check, ExternalLink, Loader2, Smartphone, Tablet, Monitor } from "lucide-react";
+import { X, Figma, Copy, Check, ExternalLink, Loader2, Smartphone, Tablet, Monitor, Info } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { parseFigmaUrl } from "@/lib/figma/parse-url";
 import type { DesignVariant } from "@/lib/types";
@@ -60,7 +60,7 @@ export function FigmaPushModal({
   }, [figmaUrl, selectedViewports, onPushComplete]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
       <div className="relative w-full max-w-lg rounded-xl border border-[--studio-border-strong] bg-[--bg-panel] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[--studio-border] px-5 py-4">
@@ -89,6 +89,27 @@ export function FigmaPushModal({
         <div className="px-5 py-4 space-y-4">
           {step === "preview" && (
             <>
+              {/* Prerequisites */}
+              <div className="flex items-start gap-2.5 rounded-lg border border-[--studio-accent]/20 bg-[--studio-accent-subtle] px-3.5 py-2.5">
+                <Info size={14} className="mt-0.5 shrink-0 text-[--studio-accent]" />
+                <div className="text-xs text-[--text-secondary] leading-relaxed">
+                  <span className="font-medium text-[--text-primary]">Requires the Layout MCP server.</span>{" "}
+                  Install with{" "}
+                  <code className="rounded bg-[--bg-surface] px-1 py-0.5 font-mono text-[10px] text-[--text-primary]">
+                    npx @layoutdesign/context install
+                  </code>{" "}
+                  and the{" "}
+                  <a
+                    href="https://mcp.figma.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-[--studio-accent] hover:underline"
+                  >
+                    Figma MCP server
+                  </a>.
+                </div>
+              </div>
+
               {/* Instructions */}
               <div className="space-y-3">
                 <p className="text-xs text-[--text-secondary]">
