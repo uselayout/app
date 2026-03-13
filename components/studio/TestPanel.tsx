@@ -329,9 +329,9 @@ function buildPreviewHtml(js: string): string {
 <html>
 <head>
   <meta charset="UTF-8">
-  <script src="https://cdn.tailwindcss.com"><\/script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"><\/script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"><\/script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <style>
     body { margin: 0; padding: 32px; font-family: sans-serif; background: #f4f4f5; background-image: radial-gradient(circle, #d4d4d8 1px, transparent 1px); background-size: 20px 20px; display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; box-sizing: border-box; }
     * { box-sizing: border-box; }
@@ -368,7 +368,7 @@ function buildPreviewHtml(js: string): string {
         showError(e.stack || e.message);
       }
     });
-  <\/script>
+  </script>
 </body>
 </html>`;
 }
@@ -428,7 +428,9 @@ function ComponentPreview({
       try {
         const body = iframe.contentDocument?.body;
         if (body) iframe.style.height = body.scrollHeight + "px";
-      } catch {}
+      } catch {
+        // Cross-origin iframe — height auto-resize not possible
+      }
     };
     iframe.addEventListener("load", onLoad);
     return () => iframe.removeEventListener("load", onLoad);

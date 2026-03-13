@@ -31,7 +31,7 @@ export function TopBar({
   projectName,
   sourceType,
   sourceName,
-  lastSaved,
+  lastSaved: _lastSaved,
   onNameChange,
   onReExtract,
   onTest,
