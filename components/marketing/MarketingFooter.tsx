@@ -78,7 +78,7 @@ export function MarketingFooter() {
       />
 
       {/* Footer content */}
-      <div className="relative z-10 px-6 pt-[180px] lg:pt-[340px]">
+      <div className="relative z-10 px-6 pt-[240px] lg:pt-[400px]">
         <div className="mx-auto max-w-[1280px]">
           {/* Divider */}
           <div className="border-t border-white/[0.06]" />
