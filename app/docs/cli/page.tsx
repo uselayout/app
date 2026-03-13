@@ -55,14 +55,14 @@ export default function CliPage() {
           </code>{" "}
           directory containing DESIGN.md and the token files for the chosen
           starter kit. See the{" "}
-          <a href="#starter-kits" className="text-indigo-600 hover:underline">
+          <a href="#starter-kits" className="text-gray-900 hover:underline">
             Free Starter Kits
           </a>{" "}
           section below for all available kit names.
         </p>
         <Callout type="tip">
-          After <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">init</code>, run{" "}
-          <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">npx @layoutdesign/context install</code> to
+          After <code className="text-xs bg-gray-100 rounded px-1 py-0.5">init</code>, run{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">npx @layoutdesign/context install</code> to
           auto-configure your AI agent&apos;s MCP settings — no manual JSON editing required.
         </Callout>
       </section>
@@ -223,7 +223,7 @@ npx @layoutdesign/context install
                 ],
               ].map(([tool, desc]) => (
                 <tr key={tool} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-indigo-700 whitespace-nowrap align-top pt-3.5">
+                  <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap align-top pt-3.5">
                     {tool}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{desc}</td>
@@ -258,7 +258,7 @@ npx @layoutdesign/context install
                 ["notion-lite", "Document-first, typography-heavy"],
               ].map(([kit, aesthetic]) => (
                 <tr key={kit} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-indigo-700 whitespace-nowrap">
+                  <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
                     {kit}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{aesthetic}</td>
@@ -301,13 +301,13 @@ npx @layoutdesign/context init --kit notion-lite`}
           language="text"
         />
         <Callout type="tip">
-          The <code className="text-xs bg-emerald-50 rounded px-1 py-0.5">push_to_figma</code> tool requires the Figma MCP server to also be
+          The <code className="text-xs bg-gray-100 rounded px-1 py-0.5">push_to_figma</code> tool requires the Figma MCP server to also be
           configured in your agent. See the{" "}
           <a
             href="https://www.figma.com/developers/mcp"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-indigo-600 hover:underline"
+            className="text-gray-900 hover:underline"
           >
             Figma MCP docs
           </a>{" "}
@@ -325,7 +325,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           <li>
             <Link
               href="/docs/integrations/claude-code"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               Claude Code
             </Link>{" "}
@@ -334,7 +334,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           <li>
             <Link
               href="/docs/integrations/cursor"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               Cursor
             </Link>{" "}
@@ -343,7 +343,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           <li>
             <Link
               href="/docs/integrations/copilot"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               GitHub Copilot
             </Link>{" "}
@@ -352,7 +352,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           <li>
             <Link
               href="/docs/integrations/windsurf"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               Windsurf
             </Link>{" "}
@@ -361,7 +361,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           <li>
             <Link
               href="/docs/integrations/codex"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               OpenAI Codex
             </Link>{" "}
@@ -376,7 +376,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           {prev && (
             <Link
               href={prev.href}
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft size={16} />
               {prev.title}
@@ -387,7 +387,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           {next && (
             <Link
               href={next.href}
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
               {next.title}
               <ArrowRight size={16} />

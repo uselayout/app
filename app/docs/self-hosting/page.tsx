@@ -160,14 +160,14 @@ cp .env.example .env.local`}
                 ],
               ].map(([variable, required, description]) => (
                 <tr key={variable} className="hover:bg-gray-50 align-top">
-                  <td className="px-4 py-3 font-mono text-xs text-indigo-700 whitespace-nowrap pt-3.5">
+                  <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap pt-3.5">
                     {variable}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span
                       className={
                         required === "Yes"
-                          ? "inline-block rounded-full px-2 py-0.5 text-xs font-medium bg-red-50 text-red-600"
+                          ? "inline-block rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700"
                           : "inline-block rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500"
                       }
                     >
@@ -199,7 +199,7 @@ cp .env.example .env.local`}
             "layout_account",
             "layout_verification",
           ].map((table) => (
-            <p key={table} className="font-mono text-sm text-indigo-700">
+            <p key={table} className="font-mono text-sm text-gray-700">
               {table}
             </p>
           ))}
@@ -234,7 +234,7 @@ cp .env.example .env.local`}
         </p>
         <Callout type="info">
           If you are running a self-hosted Supabase instance, do not add the{" "}
-          <code className="text-xs bg-indigo-50 rounded px-1 py-0.5">ssl</code>{" "}
+          <code className="text-xs bg-gray-50 rounded px-1 py-0.5">ssl</code>{" "}
           option to your connection config. Self-hosted Supabase does not use
           SSL by default. The standard connection string without SSL options is
           correct.
@@ -258,21 +258,21 @@ cp .env.example .env.local`}
           produces the final slim image with Playwright Chromium pre-installed.
         </p>
         <Callout type="warning">
-          <code className="text-xs bg-amber-50 rounded px-1 py-0.5">
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
             NEXT_PUBLIC_*
           </code>{" "}
           variables are baked into the client JavaScript bundle at build time.
           They must be passed as{" "}
-          <code className="text-xs bg-amber-50 rounded px-1 py-0.5">
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
             --build-arg
           </code>{" "}
           values during{" "}
-          <code className="text-xs bg-amber-50 rounded px-1 py-0.5">
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
             docker build
           </code>
           , not set as runtime environment variables. All other variables (API
           keys, secrets) are runtime only and should be passed via{" "}
-          <code className="text-xs bg-amber-50 rounded px-1 py-0.5">
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
             --env-file
           </code>
           .
@@ -429,7 +429,7 @@ export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`}
         />
         <Callout type="info">
           The{" "}
-          <code className="text-xs bg-indigo-50 rounded px-1 py-0.5">
+          <code className="text-xs bg-gray-50 rounded px-1 py-0.5">
             --with-deps
           </code>{" "}
           flag installs the required OS-level dependencies (libnss3, libatk,
@@ -460,7 +460,7 @@ export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`}
               href="https://dashboard.stripe.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               Stripe Dashboard
             </a>
@@ -491,7 +491,7 @@ export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`}
         </ol>
         <Callout type="info">
           For local Stripe webhook testing, use the Stripe CLI:{" "}
-          <code className="text-xs bg-indigo-50 rounded px-1 py-0.5">
+          <code className="text-xs bg-gray-50 rounded px-1 py-0.5">
             stripe listen --forward-to localhost:3000/api/webhooks/stripe
           </code>
           . This forwards live events to your local instance without needing a
@@ -535,7 +535,7 @@ export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`}
             },
           ].map(({ step, label, desc }) => (
             <div key={step} className="flex gap-4 px-5 py-4">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 mt-0.5">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-900 mt-0.5">
                 {step}
               </div>
               <div>
@@ -548,11 +548,11 @@ export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`}
         <Callout type="warning">
           If website extraction fails with a timeout or browser error, Playwright
           is likely not installed correctly. Check the container logs for{" "}
-          <code className="text-xs bg-amber-50 rounded px-1 py-0.5">
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
             PLAYWRIGHT_BROWSERS_PATH
           </code>{" "}
           errors and confirm that{" "}
-          <code className="text-xs bg-amber-50 rounded px-1 py-0.5">
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
             npx playwright install --with-deps chromium
           </code>{" "}
           ran successfully during the build.
@@ -565,7 +565,7 @@ export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`}
           {prev && (
             <Link
               href={prev.href}
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft size={16} />
               {prev.title}
@@ -576,7 +576,7 @@ export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`}
           {next && (
             <Link
               href={next.href}
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
               {next.title}
               <ArrowRight size={16} />

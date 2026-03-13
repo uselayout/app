@@ -1,99 +1,111 @@
-interface MarketingFooterProps {
-  isLoggedIn: boolean;
-  onSignOut: () => void;
-  scrollTo: (id: string) => void;
-}
-
-const NAV_LINKS = [
-  { label: "Products", id: "products" },
-  { label: "How it Works", id: "how-it-works" },
-  { label: "AI Kits", id: "ai-kits" },
-  { label: "Figma Loop", id: "figma-loop" },
+const LAYOUT_LINKS = [
+  { label: "home", href: "/" },
+  { label: "pricing", href: "/pricing" },
+  { label: "docs", href: "/docs" },
+  { label: "changelog", href: "/changelog" },
 ];
 
-const HREF_LINKS = [{ label: "Docs", href: "/docs" }];
+const TOOLS_LINKS = [
+  { label: "Layout Studio", href: "/studio" },
+  { label: "Layout CLI", href: "/docs/cli" },
+  { label: "AI Kits", href: "/docs/kits" },
+];
 
-export function MarketingFooter({
-  isLoggedIn,
-  onSignOut,
-  scrollTo,
-}: MarketingFooterProps) {
+const SOCIALS_LINKS = [
+  { label: "GitHub", href: "https://github.com/uselayout/studio" },
+  { label: "Slack", href: "/slack" },
+  { label: "X / Twitter", href: "https://x.com/uselayout" },
+];
+
+function LinkColumn({
+  title,
+  links,
+}: {
+  title: string;
+  links: { label: string; href: string }[];
+}) {
   return (
-    <footer className="bg-[#0a0a0a] px-6 py-20 text-white">
-      <div className="mx-auto max-w-6xl">
-        <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
-          {/* Logo + tagline */}
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                className="text-indigo-400"
-              >
-                <path
-                  d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span className="text-sm font-semibold">
-                Layout
-              </span>
+    <div className="flex flex-col gap-4">
+      <p className="text-xs font-extrabold uppercase tracking-[1.2px] text-[#e6e6e6]">
+        {title}
+      </p>
+      <ul className="flex flex-col gap-3">
+        {links.map(({ label, href }) => (
+          <li key={href}>
+            <a
+              href={href}
+              className="text-sm leading-5 text-white hover:text-white/80 transition-colors"
+              {...(href.startsWith("http")
+                ? { target: "_blank", rel: "noopener noreferrer" }
+                : {})}
+            >
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export function MarketingFooter() {
+  return (
+    <footer className="sticky bottom-0 z-0 relative h-[700px] lg:h-[1100px] overflow-hidden bg-[var(--mkt-bg)]">
+      {/* Gradient overlay at top for smooth transition */}
+      <img
+        src="/marketing/footer-gradient.png"
+        alt=""
+        aria-hidden="true"
+        className="absolute top-[-10px] left-0 w-full h-[170px] object-cover pointer-events-none z-20"
+      />
+
+      {/* Aurora background */}
+      <img
+        src="/marketing/aurora-footer.png"
+        alt=""
+        aria-hidden="true"
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[841px] object-cover pointer-events-none"
+      />
+
+      {/* Dark-to-transparent gradient over aurora top edge */}
+      <div
+        className="absolute left-0 w-full h-[300px] pointer-events-none"
+        style={{
+          bottom: 841,
+          background:
+            "linear-gradient(to bottom, #080705, transparent)",
+        }}
+      />
+
+      {/* Footer content */}
+      <div className="relative z-10 px-6 pt-[180px] lg:pt-[340px]">
+        <div className="mx-auto max-w-[1280px]">
+          {/* Divider */}
+          <div className="border-t border-white/[0.06]" />
+
+          {/* Links row */}
+          <div className="flex flex-col gap-10 pt-12 lg:pt-[96px] lg:flex-row lg:justify-between">
+            <div className="flex flex-wrap gap-12 lg:gap-24">
+              <LinkColumn title="Layout" links={LAYOUT_LINKS} />
+              <LinkColumn title="Tools" links={TOOLS_LINKS} />
+              <LinkColumn title="Socials" links={SOCIALS_LINKS} />
             </div>
-            <p className="text-sm text-gray-500">The compiler between design systems and AI coding agents.</p>
+
+            {/* Copyright */}
+            <div className="flex flex-col items-start lg:items-end justify-end">
+              <p className="text-sm leading-5 text-white">© 2026 Layout</p>
+            </div>
           </div>
-
-          {/* Links */}
-          <nav className="flex flex-wrap gap-6">
-            {NAV_LINKS.map(({ label, id }) => (
-              <button
-                key={id}
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollTo(id);
-                }}
-                className="text-sm text-gray-500 hover:text-white transition-colors"
-              >
-                {label}
-              </button>
-            ))}
-            {HREF_LINKS.map(({ label, href }) => (
-              <a
-                key={href}
-                href={href}
-                className="text-sm text-gray-500 hover:text-white transition-colors"
-              >
-                {label}
-              </a>
-            ))}
-            {isLoggedIn ? (
-              <button
-                onClick={onSignOut}
-                className="text-sm text-gray-500 hover:text-white transition-colors"
-              >
-                Sign out
-              </button>
-            ) : (
-              <a
-                href="/login"
-                className="text-sm text-gray-500 hover:text-white transition-colors"
-              >
-                Sign in
-              </a>
-            )}
-          </nav>
-        </div>
-
-        <div className="mt-14 border-t border-white/[0.06] pt-8">
-          <p className="text-xs text-gray-600">
-            © 2026 Layout
-          </p>
         </div>
       </div>
+
+      {/* Large LAYOUT wordmark */}
+      <img
+        src="/marketing/footer-wordmark.svg"
+        alt=""
+        aria-hidden="true"
+        className="absolute bottom-0 left-0 w-full pointer-events-none select-none z-10"
+      />
     </footer>
   );
 }
