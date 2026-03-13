@@ -38,7 +38,7 @@ export function FigmaPushModal({
     });
   }, []);
 
-  const mcpCommand = buildMcpCommand(variant, Array.from(selectedViewports));
+  const mcpCommand = buildMcpCommand(variant, Array.from(selectedViewports), figmaUrl || undefined);
 
   const handleCopy = useCallback(
     async (text: string, field: string) => {
@@ -163,6 +163,20 @@ export function FigmaPushModal({
                 </div>
               </div>
 
+              {/* Target Figma file (optional) */}
+              <div>
+                <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-[--text-muted]">
+                  Figma file (optional)
+                </p>
+                <input
+                  type="text"
+                  value={figmaUrl}
+                  onChange={(e) => setFigmaUrl(e.target.value)}
+                  placeholder="https://www.figma.com/design/... — leave blank to create new"
+                  className="w-full rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-2 text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+                />
+              </div>
+
               {/* Command block */}
               <div className="rounded-lg border border-[--studio-border] bg-[--bg-surface] overflow-hidden">
                 <div className="flex items-center justify-between border-b border-[--studio-border] px-3 py-2">
@@ -245,19 +259,12 @@ export function FigmaPushModal({
                 </p>
               </div>
 
-              {/* Optional: paste Figma URL to confirm */}
-              <div className="w-full space-y-2">
-                <label className="text-xs text-[--text-muted]">
-                  Paste the Figma frame URL after pushing (optional):
-                </label>
-                <input
-                  type="text"
-                  value={figmaUrl}
-                  onChange={(e) => setFigmaUrl(e.target.value)}
-                  placeholder="https://www.figma.com/design/..."
-                  className="w-full rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-2 text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
-                />
-              </div>
+              {/* Figma URL reminder */}
+              {!figmaUrl && (
+                <p className="text-xs text-[--text-muted] text-center">
+                  After pushing, paste the Figma frame URL on the previous step to track it.
+                </p>
+              )}
             </div>
           )}
 
@@ -373,15 +380,22 @@ const VIEWPORT_OPTIONS = [
   { key: "desktop", label: "Desktop", icon: Monitor },
 ] as const;
 
-function buildMcpCommand(variant: DesignVariant, viewports: string[]): string {
+function buildMcpCommand(variant: DesignVariant, viewports: string[], figmaUrl?: string): string {
   const vpList = viewports.join(", ");
-  const multiVp = viewports.length > 1;
+
+  const inputs = [
+    `- code: the TSX below`,
+    `- name: "${variant.name}"`,
+    `- viewports: [${viewports.map((v) => `"${v}"`).join(", ")}]`,
+  ];
+  if (figmaUrl) {
+    inputs.push(`- figmaUrl: "${figmaUrl}"`);
+  }
 
   return `Call the layout MCP server's push_to_figma tool with the following inputs:
-- code: the TSX below
-- name: "${variant.name}"
+${inputs.join("\n")}
 
-Push for viewport(s): ${vpList}.${multiVp ? `\nCall push_to_figma once per viewport with the name suffixed — e.g. "${variant.name} — Mobile", "${variant.name} — Desktop".` : ""}
+Viewports: ${vpList}.
 
 \`\`\`tsx
 ${variant.code}
