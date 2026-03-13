@@ -109,25 +109,25 @@ The app uses its own dark-first design system. Always use CSS variables, never h
 ```css
 /* Backgrounds */
 --bg-app: #0C0C0E          /* Root background */
---bg-panel: #111115        /* Sidebar, panels */
---bg-surface: #17171C      /* Cards, rows */
---bg-elevated: #1E1E24     /* Dropdowns, tooltips */
---bg-hover: #24242B        /* Hover states */
+--bg-panel: #141418        /* Sidebar, panels */
+--bg-surface: #1A1A20      /* Cards, rows */
+--bg-elevated: #222228     /* Dropdowns, tooltips */
+--bg-hover: #2A2A32        /* Hover states */
 
 /* Borders */
---studio-border: rgba(255,255,255,0.07)
---studio-border-strong: rgba(255,255,255,0.14)
---studio-border-focus: rgba(99,102,241,0.6)
+--studio-border: rgba(255,255,255,0.12)
+--studio-border-strong: rgba(255,255,255,0.22)
+--studio-border-focus: rgba(99,102,241,0.7)
 
 /* Accent */
---studio-accent: #6366F1
---studio-accent-hover: #7577F3
---studio-accent-subtle: rgba(99,102,241,0.12)
+--studio-accent: #818CF8
+--studio-accent-hover: #939DF9
+--studio-accent-subtle: rgba(129,140,248,0.15)
 
 /* Text */
---text-primary: #E8E8F0
---text-secondary: rgba(232,232,240,0.55)
---text-muted: rgba(232,232,240,0.35)
+--text-primary: #EDEDF4
+--text-secondary: rgba(237,237,244,0.7)
+--text-muted: rgba(237,237,244,0.5)
 
 /* Motion */
 --duration-base: 150ms

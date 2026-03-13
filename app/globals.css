@@ -69,28 +69,28 @@
   --radius: 0.375rem;
 
   /* ===== STUDIO DESIGN SYSTEM ===== */
-  /* Backgrounds — 6-level elevation */
+  /* Backgrounds — 6-level elevation (boosted for contrast) */
   --bg-app: #0C0C0E;
-  --bg-panel: #111115;
-  --bg-surface: #17171C;
-  --bg-elevated: #1E1E24;
-  --bg-hover: #24242B;
-  --bg-active: #2A2A32;
+  --bg-panel: #141418;
+  --bg-surface: #1A1A20;
+  --bg-elevated: #222228;
+  --bg-hover: #2A2A32;
+  --bg-active: #32323B;
 
   /* Borders */
-  --studio-border: rgba(255,255,255,0.07);
-  --studio-border-strong: rgba(255,255,255,0.14);
-  --studio-border-focus: rgba(99,102,241,0.6);
+  --studio-border: rgba(255,255,255,0.12);
+  --studio-border-strong: rgba(255,255,255,0.22);
+  --studio-border-focus: rgba(99,102,241,0.7);
 
   /* Accent — Layout indigo */
-  --studio-accent: #6366F1;
-  --studio-accent-hover: #7577F3;
-  --studio-accent-subtle: rgba(99,102,241,0.12);
+  --studio-accent: #818CF8;
+  --studio-accent-hover: #939DF9;
+  --studio-accent-subtle: rgba(129,140,248,0.15);
 
   /* Text */
-  --text-primary: #E8E8F0;
-  --text-secondary: rgba(232,232,240,0.55);
-  --text-muted: rgba(232,232,240,0.35);
+  --text-primary: #EDEDF4;
+  --text-secondary: rgba(237,237,244,0.7);
+  --text-muted: rgba(237,237,244,0.5);
   --text-on-accent: #ffffff;
 
   /* Status */
