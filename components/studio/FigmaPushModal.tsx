@@ -90,8 +90,8 @@ export function FigmaPushModal({
           {step === "preview" && (
             <>
               {/* Prerequisites */}
-              <div className="flex items-start gap-2.5 rounded-lg border border-[#e4f222]/30 bg-[#e4f222]/5 px-3.5 py-2.5">
-                <Info size={14} className="mt-0.5 shrink-0 text-[#e4f222]" />
+              <div className="flex items-start gap-2.5 rounded-lg border border-[--studio-accent]/30 bg-[--studio-accent]/5 px-3.5 py-2.5">
+                <Info size={14} className="mt-0.5 shrink-0 text-[--studio-accent]" />
                 <div className="text-xs text-[--text-secondary] leading-relaxed">
                   <span className="font-medium text-[--text-primary]">Requires the Layout MCP server.</span>{" "}
                   Install with{" "}

@@ -12,7 +12,7 @@ export function AnnouncementBanner() {
       <p className="text-[14px] text-[#08090a] font-sans text-center">
         We&apos;re looking for 50 teams shipping UI with AI agents.{' '}
         <a
-          href="#"
+          href="/login"
           className="underline underline-offset-2 hover:opacity-80 transition-opacity"
         >
           Join early access →
