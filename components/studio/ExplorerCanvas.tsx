@@ -333,9 +333,9 @@ export function ExplorerCanvas({
             ))}
             {isGenerating && variants.length < (currentExploration?.variantCount ?? 0) &&
               Array.from({ length: (currentExploration?.variantCount ?? 4) - variants.length }).map((_, i) => (
-                <div key={`skeleton-${i}`} className="animate-pulse rounded-xl border-2 border-dashed border-[--studio-border-strong] bg-[--bg-surface] p-4">
-                  <div className="mb-3 h-4 w-2/3 rounded bg-[--bg-hover]" />
-                  <div className="aspect-[4/3] rounded-lg bg-[--bg-hover]" />
+                <div key={`skeleton-${i}`} className="animate-pulse rounded-xl border-2 border-dashed border-white/20 bg-white/[0.04] p-4">
+                  <div className="mb-3 h-4 w-2/3 rounded bg-white/10" />
+                  <div className="aspect-[4/3] rounded-lg bg-white/10" />
                 </div>
               ))
             }
@@ -346,9 +346,9 @@ export function ExplorerCanvas({
         {isGenerating && variants.length === 0 && (
           <div className="grid gap-4 grid-cols-2">
             {Array.from({ length: currentExploration?.variantCount ?? 4 }).map((_, i) => (
-              <div key={`skeleton-${i}`} className="animate-pulse rounded-xl border-2 border-dashed border-[--studio-border-strong] bg-[--bg-surface] p-4">
-                <div className="mb-3 h-4 w-2/3 rounded bg-[--bg-hover]" />
-                <div className="aspect-[4/3] rounded-lg bg-[--bg-hover]" />
+              <div key={`skeleton-${i}`} className="animate-pulse rounded-xl border-2 border-dashed border-white/20 bg-white/[0.04] p-4">
+                <div className="mb-3 h-4 w-2/3 rounded bg-white/10" />
+                <div className="aspect-[4/3] rounded-lg bg-white/10" />
               </div>
             ))}
           </div>
