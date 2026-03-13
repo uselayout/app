@@ -124,7 +124,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
