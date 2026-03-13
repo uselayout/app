@@ -85,7 +85,7 @@ export function ExplorerCanvas({
   );
 
   const handleGenerate = useCallback(
-    async (prompt: string, variantCount: number) => {
+    async (prompt: string, variantCount: number, imageDataUrl?: string) => {
       if (isGenerating) return;
 
       setIsGenerating(true);
@@ -100,6 +100,7 @@ export function ExplorerCanvas({
         prompt,
         variantCount,
         variants: [],
+        referenceImage: imageDataUrl,
         createdAt: new Date().toISOString(),
       };
 
@@ -116,7 +117,7 @@ export function ExplorerCanvas({
         const res = await fetch("/api/generate/explore", {
           method: "POST",
           headers,
-          body: JSON.stringify({ prompt, designMd, variantCount, projectId }),
+          body: JSON.stringify({ prompt, designMd, variantCount, projectId, imageDataUrl }),
           signal: abortRef.current.signal,
         });
 
@@ -297,6 +298,21 @@ export function ExplorerCanvas({
             </div>
           </div>
         ) : (
+          <div className="space-y-4">
+            {/* Reference image card */}
+            {currentExploration?.referenceImage && (
+              <div className="flex items-center gap-3 rounded-lg border border-[--studio-border] bg-[--bg-surface] p-3">
+                <img
+                  src={currentExploration.referenceImage}
+                  alt="Reference"
+                  className="h-16 w-16 rounded-md object-cover border border-[--studio-border]"
+                />
+                <div>
+                  <p className="text-xs font-medium text-[--text-primary]">Reference image</p>
+                  <p className="text-[11px] text-[--text-muted]">{currentExploration.prompt}</p>
+                </div>
+              </div>
+            )}
           <div className={`grid gap-4 ${(currentExploration?.variantCount ?? variants.length) > 4 ? "grid-cols-2 lg:grid-cols-3" : "grid-cols-2"}`}>
             {variants.map((variant) => (
               <VariantCard
@@ -323,6 +339,7 @@ export function ExplorerCanvas({
                 </div>
               ))
             }
+          </div>
           </div>
         )}
 

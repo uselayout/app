@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { ContentBlockParam } from "@anthropic-ai/sdk/resources/messages";
 import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
 
 const EXPLORE_SYSTEM = `You are an expert design explorer. You generate multiple distinct UI component variations that all faithfully follow a provided design system.
@@ -84,10 +85,14 @@ export function createExploreStream(
   prompt: string,
   designMd: string,
   variantCount: number,
-  apiKey?: string
+  apiKey?: string,
+  imageDataUrl?: string
 ): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
   const systemPrompt = `${EXPLORE_SYSTEM}\n\nGenerate exactly ${variantCount} variants.\n\n${designMd}`;
+
+  // Build user message — text-only or multi-content with image
+  const userContent = buildUserContent(prompt, imageDataUrl);
 
   let resolveUsage: (u: TokenUsageResult) => void;
   const usage = new Promise<TokenUsageResult>((resolve) => {
@@ -103,7 +108,7 @@ export function createExploreStream(
           model: "claude-sonnet-4-6",
           max_tokens: 64000,
           system: systemPrompt,
-          messages: [{ role: "user", content: prompt }],
+          messages: [{ role: "user", content: userContent }],
         });
 
         for await (const event of msgStream) {
@@ -197,4 +202,25 @@ Refinement request: ${refinementPrompt}`;
   });
 
   return { stream, usage };
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function parseDataUrl(dataUrl: string): { mediaType: "image/png" | "image/jpeg" | "image/webp"; data: string } | null {
+  const match = dataUrl.match(/^data:(image\/(png|jpeg|webp));base64,(.+)$/);
+  if (!match) return null;
+  return { mediaType: match[1] as "image/png" | "image/jpeg" | "image/webp", data: match[3] };
+}
+
+function buildUserContent(prompt: string, imageDataUrl?: string): string | ContentBlockParam[] {
+  if (!imageDataUrl) return prompt;
+  const parsed = parseDataUrl(imageDataUrl);
+  if (!parsed) return prompt;
+  return [
+    {
+      type: "image" as const,
+      source: { type: "base64" as const, media_type: parsed.mediaType, data: parsed.data },
+    },
+    { type: "text" as const, text: prompt },
+  ];
 }

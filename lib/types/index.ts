@@ -152,6 +152,7 @@ export interface ExplorationSession {
   variantCount: number;
   variants: DesignVariant[];
   selectedVariantId?: string;
+  referenceImage?: string;
   createdAt: string;
 }
 
