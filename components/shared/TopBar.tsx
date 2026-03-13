@@ -104,7 +104,7 @@ export function TopBar({
             title="Back to projects"
           >
             <img
-              src="/marketing/logo.svg"
+              src="/marketing/logo-white.svg"
               alt="Layout"
               width={80}
               height={19}

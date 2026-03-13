@@ -152,7 +152,7 @@ export default function StudioPage({
     <>
     {/* Mobile gate */}
     <div className="flex md:hidden h-screen flex-col items-center justify-center px-6 text-center">
-      <img src="/marketing/logo.svg" alt="Layout" width={100} height={24} className="mb-6" />
+      <img src="/marketing/logo-white.svg" alt="Layout" width={100} height={24} className="mb-6" />
       <h2 className="text-lg font-semibold text-[--text-primary]">Desktop only</h2>
       <p className="mt-2 max-w-xs text-sm text-[--text-secondary]">
         Layout Studio needs a larger screen to work properly. Please open this page on a desktop browser.
