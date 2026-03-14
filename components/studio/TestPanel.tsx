@@ -10,11 +10,13 @@ import {
   Check,
   Trash2,
   Figma,
+  ArrowUpToLine,
 } from "lucide-react";
 import { calculateHealthScore } from "@/lib/health/score";
 import { friendlyError } from "@/lib/explore/friendly-error";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
+import { usePushToDs } from "@/lib/hooks/use-push-to-ds";
 import { useProjectStore } from "@/lib/store/project";
 import type { TestResult, HealthScore } from "@/lib/types";
 
@@ -483,6 +485,7 @@ function ResultBlock({
 }) {
   const [tab, setTab] = useState<"preview" | "code">("preview");
   const [figmaCopied, setFigmaCopied] = useState(false);
+  const { pushComponent, pushing: pushingToDs, canPush } = usePushToDs();
 
   const handlePushToFigma = useCallback(async () => {
     const block = extractFirstCodeBlock(result.output);
@@ -522,7 +525,7 @@ function ResultBlock({
             onClick={() => setTab("preview")}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               tab === "preview"
-                ? "bg-[--studio-accent] text-white"
+                ? "bg-[--studio-accent] text-[--text-on-accent]"
                 : "bg-[#28292a] text-[--text-primary] hover:bg-[#333]"
             }`}
           >
@@ -532,7 +535,7 @@ function ResultBlock({
             onClick={() => setTab("code")}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               tab === "code"
-                ? "bg-[--studio-accent] text-white"
+                ? "bg-[--studio-accent] text-[--text-on-accent]"
                 : "bg-[#28292a] text-[--text-primary] hover:bg-[#333]"
             }`}
           >
@@ -604,6 +607,32 @@ function ResultBlock({
                   <Figma className="h-3 w-3" />
                 )}
                 <span>{figmaCopied ? "Copied!" : "Push to Figma"}</span>
+              </button>
+            )}
+            {canPush && extractFirstCodeBlock(result.output) && (
+              <button
+                onClick={() => {
+                  const block = extractFirstCodeBlock(result.output);
+                  if (!block) return;
+                  const code = block.code.replace(/^```\w*\r?\n?/gm, "").replace(/^```\s*$/gm, "").trim();
+                  const name = extractComponentName(code) ?? "Component";
+                  pushComponent({
+                    name,
+                    code,
+                    source: "extraction",
+                    description: result.prompt,
+                  });
+                }}
+                disabled={pushingToDs}
+                className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] transition-colors ${
+                  pushingToDs
+                    ? "text-[--text-muted] opacity-50"
+                    : "text-[--text-muted] hover:text-[--text-secondary] hover:bg-[--bg-hover]"
+                }`}
+                title="Push to Design System"
+              >
+                <ArrowUpToLine className="h-3 w-3" />
+                <span>Push to DS</span>
               </button>
             )}
           </>

@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Globe, LogOut, KeyRound, ChevronDown, Trash2, Plus, RefreshCw, FlaskConical, Layers } from "lucide-react";
+import { Globe, LogOut, KeyRound, ChevronDown, Trash2, Plus, RefreshCw, FlaskConical, Layers, ArrowUpToLine } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signOut } from "@/lib/auth-client";
 import { useApiKey } from "@/lib/hooks/use-api-key";
 import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
 import { NewExtractionModal } from "@/components/studio/NewExtractionModal";
+import { PushToDesignSystemModal } from "@/components/studio/PushToDesignSystemModal";
 import { useProjectStore } from "@/lib/store/project";
+import { useOrgStore } from "@/lib/store/organization";
 import type { SourceType } from "@/lib/types";
 
 interface TopBarProps {
@@ -44,12 +46,20 @@ export function TopBar({
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [showNewExtraction, setShowNewExtraction] = useState(false);
   const [showProjectMenu, setShowProjectMenu] = useState(false);
+  const [showPushModal, setShowPushModal] = useState(false);
   const { key: apiKey } = useApiKey();
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const projects = useProjectStore((s) => s.projects);
   const currentProjectId = useProjectStore((s) => s.currentProjectId);
   const deleteProject = useProjectStore((s) => s.deleteProject);
+  const orgId = useOrgStore((s) => s.currentOrgId);
+  const currentProject = projects.find((p) => p.id === currentProjectId);
+  const hasPushableData = !!(
+    currentProject?.extractionData?.tokens?.length ||
+    currentProject?.testResults?.length ||
+    currentProject?.explorations?.length
+  );
 
   // Close project menu on outside click
   useEffect(() => {
@@ -158,7 +168,7 @@ export function TopBar({
                 onChange={(e) => setEditValue(e.target.value)}
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
-                className="h-7 rounded-sm border border-[rgba(255,255,255,0.22)] bg-[#1A1A20] px-2 text-sm text-[#e8e8f0] outline-none focus:border-[rgba(99,102,241,0.7)]"
+                className="h-7 rounded-sm border border-[rgba(255,255,255,0.22)] bg-[#1A1A20] px-2 text-sm text-[#e8e8f0] outline-none focus:border-[--studio-border-focus]"
               />
             ) : (
               <button
@@ -293,6 +303,16 @@ export function TopBar({
         >
           <FlaskConical className="h-3.5 w-3.5" />
         </button>
+        {hasPushableData && orgId && (
+          <button
+            onClick={() => setShowPushModal(true)}
+            className="flex items-center gap-1 h-7 px-[9px] rounded-[4px] border border-[#24282c] text-[12px] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+            title="Push to design system"
+          >
+            <ArrowUpToLine className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Push</span>
+          </button>
+        )}
         <button
           onClick={onExport}
           className="flex items-center justify-center h-7 px-[13px] rounded-[4px] bg-[#e6e6e6] border border-[#e6e6e6] text-[12px] font-medium text-[#08090a] shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] hover:bg-[#d9d9d9] transition-colors"
@@ -323,6 +343,13 @@ export function TopBar({
       )}
       {showNewExtraction && (
         <NewExtractionModal onClose={() => setShowNewExtraction(false)} />
+      )}
+      {showPushModal && currentProject && orgId && (
+        <PushToDesignSystemModal
+          project={currentProject}
+          orgId={orgId}
+          onClose={() => setShowPushModal(false)}
+        />
       )}
     </div>
   );

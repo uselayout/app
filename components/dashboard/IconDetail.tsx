@@ -194,7 +194,7 @@ export function IconDetail({
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full rounded-[var(--studio-radius-md)] bg-[var(--studio-accent)] px-4 py-2 text-sm text-white transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
+          className="w-full rounded-[var(--studio-radius-md)] bg-[var(--studio-accent)] px-4 py-2 text-sm text-[--text-on-accent] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save Changes"}
         </button>
