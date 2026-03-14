@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { X, BookMarked, Loader2 } from "lucide-react";
 import { extractComponentName } from "@/lib/explore/preview-helpers";
 import { useOrgStore } from "@/lib/store/organization";
+import { toast } from "sonner";
 import type { DesignVariant } from "@/lib/types";
 
 interface PromoteToLibraryModalProps {
@@ -24,6 +25,7 @@ export function PromoteToLibraryModal({
   const [description, setDescription] = useState(variant.rationale ?? "");
   const [tagsInput, setTagsInput] = useState("");
   const [saving, setSaving] = useState(false);
+  const [submittingCandidate, setSubmittingCandidate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [existingCategories, setExistingCategories] = useState<string[]>([]);
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
@@ -89,6 +91,49 @@ export function PromoteToLibraryModal({
     },
     [orgId, name, category, description, tagsInput, variant.code, onClose, onSuccess]
   );
+
+  const handleSubmitAsCandidate = useCallback(async () => {
+    if (!orgId || !name.trim() || submittingCandidate) return;
+
+    setSubmittingCandidate(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/organizations/${orgId}/candidates`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          prompt: "Promoted from Explorer variant",
+          description: description.trim() || undefined,
+          category: category.trim() || undefined,
+          variants: [
+            {
+              name: name.trim(),
+              code: variant.code,
+              rationale: variant.rationale,
+            },
+          ],
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res
+          .json()
+          .catch(() => ({ error: "Failed to submit candidate" }));
+        throw new Error(
+          (body as { error?: string }).error ?? "Failed to submit candidate"
+        );
+      }
+
+      toast.success("Submitted for review");
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSubmittingCandidate(false);
+    }
+  }, [orgId, name, description, category, variant.code, variant.rationale, submittingCandidate, onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
@@ -239,6 +284,17 @@ export function PromoteToLibraryModal({
                   Add to Library
                 </>
               )}
+            </button>
+          </div>
+
+          <div className="mt-3 text-center">
+            <button
+              type="button"
+              onClick={handleSubmitAsCandidate}
+              disabled={submittingCandidate || !name.trim() || !orgId}
+              className="text-xs text-[--text-muted] hover:text-[--studio-accent] transition-colors underline underline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submittingCandidate ? "Submitting..." : "Submit for review instead"}
             </button>
           </div>
         </form>
