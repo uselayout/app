@@ -28,6 +28,12 @@ const CandidatesIcon = () => (
   </svg>
 );
 
+const IconsIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 1L2 4v4c0 3.314 2.686 6 6 7 3.314-1 6-3.686 6-7V4L8 1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 const SettingsIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M8 10a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -50,6 +56,11 @@ export function Sidebar() {
       label: "Library",
       href: `/${orgSlug}/library`,
       icon: <LibraryIcon />,
+    },
+    {
+      label: "Icons",
+      href: `/${orgSlug}/icons`,
+      icon: <IconsIcon />,
     },
     {
       label: "Candidates",
