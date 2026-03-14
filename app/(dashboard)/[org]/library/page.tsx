@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useOrgStore } from "@/lib/store/organization";
 import { ComponentCard } from "@/components/dashboard/ComponentCard";
+import { CreateComponentModal } from "@/components/dashboard/CreateComponentModal";
 import type { Component } from "@/lib/types/component";
 
 export default function LibraryPage() {
@@ -17,6 +18,8 @@ export default function LibraryPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [search, setSearch] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!orgId) return;
@@ -55,7 +58,7 @@ export default function LibraryPage() {
     return () => {
       cancelled = true;
     };
-  }, [orgId, filterStatus, filterCategory, search]);
+  }, [orgId, filterStatus, filterCategory, search, refreshKey]);
 
   return (
     <div className="p-8">
@@ -71,7 +74,10 @@ export default function LibraryPage() {
             </span>
           )}
         </div>
-        <button className="rounded-[var(--studio-radius-md)] bg-[var(--studio-accent)] px-4 py-2 text-sm text-white transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]">
+        <button
+          onClick={() => setShowCreate(true)}
+          className="rounded-[var(--studio-radius-md)] bg-[var(--studio-accent)] px-4 py-2 text-sm text-white transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
+        >
           Add Component
         </button>
       </div>
@@ -126,6 +132,14 @@ export default function LibraryPage() {
             <ComponentCard key={c.id} component={c} orgSlug={orgSlug} />
           ))}
         </div>
+      )}
+
+      {showCreate && (
+        <CreateComponentModal
+          orgSlug={orgSlug}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => setRefreshKey((k) => k + 1)}
+        />
       )}
     </div>
   );
