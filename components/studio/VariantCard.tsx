@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor } from "lucide-react";
+import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked } from "lucide-react";
 import { extractComponentName, buildSrcdoc } from "@/lib/explore/preview-helpers";
 import type { DesignVariant } from "@/lib/types";
 
@@ -14,6 +14,7 @@ interface VariantCardProps {
   onPushToFigma: () => void;
   onRegenerate: () => void;
   onResponsive?: () => void;
+  onPromoteToLibrary?: () => void;
 }
 
 export function VariantCard({
@@ -25,6 +26,7 @@ export function VariantCard({
   onPushToFigma,
   onRegenerate,
   onResponsive,
+  onPromoteToLibrary,
 }: VariantCardProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [previewReady, setPreviewReady] = useState(false);
@@ -201,6 +203,15 @@ export function VariantCard({
         >
           <Figma size={12} />
         </button>
+        {onPromoteToLibrary && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onPromoteToLibrary(); }}
+            className="rounded p-1 text-[--text-muted] hover:text-[--text-primary] hover:bg-[--bg-hover] transition-colors"
+            title="Add to Library"
+          >
+            <BookMarked size={12} />
+          </button>
+        )}
       </div>
     </div>
   );
