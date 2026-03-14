@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { Toaster } from "sonner";
 import "./globals.css";
 import { ProjectHydrator } from "@/components/ProjectHydrator";
 
@@ -58,6 +59,16 @@ export default function RootLayout({
         </Script>
         <ProjectHydrator />
         {children}
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--studio-border)",
+              color: "var(--text-primary)",
+            },
+          }}
+        />
       </body>
     </html>
   );
