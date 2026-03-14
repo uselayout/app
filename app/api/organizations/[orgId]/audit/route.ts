@@ -19,8 +19,8 @@ export async function GET(
     actorId: url.searchParams.get("actorId") ?? undefined,
     from: url.searchParams.get("from") ?? undefined,
     to: url.searchParams.get("to") ?? undefined,
-    limit: url.searchParams.get("limit") ? parseInt(url.searchParams.get("limit")!, 10) : 50,
-    offset: url.searchParams.get("offset") ? parseInt(url.searchParams.get("offset")!, 10) : 0,
+    limit: Math.min(Math.max(parseInt(url.searchParams.get("limit") ?? "50", 10) || 50, 1), 200),
+    offset: Math.max(parseInt(url.searchParams.get("offset") ?? "0", 10) || 0, 0),
   };
 
   const [entries, total] = await Promise.all([
