@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, Layers, Globe, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
+import { useOrgStore } from "@/lib/store/organization";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { detectSourceType } from "@/lib/util/detect-source";
 import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
@@ -15,6 +16,7 @@ interface NewExtractionModalProps {
 export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
   const router = useRouter();
   const createProject = useProjectStore((s) => s.createProject);
+  const currentOrgId = useOrgStore((s) => s.currentOrgId);
   const [url, setUrl] = useState("");
   const [pat, setPat] = useState("");
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
@@ -52,6 +54,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
 
     createProject({
       id: projectId,
+      orgId: currentOrgId ?? "",
       name: projectName,
       sourceType,
       sourceUrl: url,

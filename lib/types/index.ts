@@ -105,6 +105,7 @@ export interface ExtractionStep {
 
 export interface Project {
   id: string;
+  orgId: string;
   name: string;
   sourceType: SourceType;
   sourceUrl?: string;

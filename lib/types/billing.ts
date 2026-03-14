@@ -6,6 +6,7 @@ export type AiEndpoint = "design-md" | "test" | "explore";
 export interface Subscription {
   id: string;
   userId: string;
+  orgId: string;
   tier: SubscriptionTier;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
@@ -21,6 +22,7 @@ export interface Subscription {
 
 export interface CreditBalance {
   userId: string;
+  orgId: string;
   designMdRemaining: number;
   testQueryRemaining: number;
   periodStart: string;

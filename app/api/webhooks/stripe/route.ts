@@ -4,7 +4,8 @@ import {
   upsertSubscription,
   getSubscriptionByStripeCustomerId,
 } from "@/lib/billing/subscription";
-import { resetMonthlyCredits, addTopupCredits } from "@/lib/billing/credits";
+import { resetMonthlyCredits, resetMonthlyCreditsByOrg, addTopupCredits } from "@/lib/billing/credits";
+import { getPersonalOrg } from "@/lib/supabase/organization";
 import type Stripe from "stripe";
 
 // Stripe v20: period dates live on SubscriptionItem, not Subscription
@@ -104,8 +105,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const tier = session.metadata?.tier === "team" ? "team" : "pro";
     const { periodStart, periodEnd } = getSubscriptionPeriod(subscription);
 
+    // Resolve orgId from session metadata or fall back to personal org
+    let orgId = session.metadata?.orgId;
+    if (!orgId) {
+      const personalOrg = await getPersonalOrg(userId);
+      orgId = personalOrg?.id ?? "";
+    }
+
     await upsertSubscription({
       userId,
+      orgId,
       tier,
       stripeCustomerId: session.customer as string,
       stripeSubscriptionId: subscription.id,
@@ -117,7 +126,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       seatCount: tier === "team" ? (subscription.items.data[1]?.quantity ?? 1) : 1,
     });
 
-    await resetMonthlyCredits(userId, tier, 1, periodStart, periodEnd);
+    await resetMonthlyCreditsByOrg(orgId, tier, 1, periodStart, periodEnd);
   }
 }
 
@@ -170,8 +179,8 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     const { periodStart, periodEnd } = getSubscriptionPeriod(subscription);
 
-    await resetMonthlyCredits(
-      existing.userId,
+    await resetMonthlyCreditsByOrg(
+      existing.orgId,
       existing.tier,
       existing.seatCount,
       periodStart,
