@@ -154,7 +154,7 @@ export function CreateComponentModal({
   }, [orgId, name, code, description, category, tagsInput, onClose, onCreated, orgSlug, router]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[--bg-app]">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[--bg-app]">
       {/* Top bar */}
       <div className="flex items-center justify-between border-b border-[--studio-border] px-5 py-3">
         <h2 className="text-sm font-semibold text-[--text-primary]">
