@@ -67,6 +67,17 @@ function projectToRow(
   };
 }
 
+export async function fetchProjectById(id: string): Promise<Project | null> {
+  const { data, error } = await supabase
+    .from("layout_projects")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) return null;
+  return rowToProject(data as ProjectRow);
+}
+
 export async function fetchAllProjects(orgId: string): Promise<Project[]> {
   const { data, error } = await supabase
     .from("layout_projects")
