@@ -10,12 +10,19 @@ export async function DELETE(
   const authResult = await requireOrgAuth(orgId, "manageApiKeys");
   if (authResult instanceof NextResponse) return authResult;
 
-  // Verify key belongs to org
   const key = await getApiKeyById(keyId);
   if (!key || key.orgId !== orgId) {
     return NextResponse.json({ error: "API key not found" }, { status: 404 });
   }
 
+  if (key.revokedAt) {
+    return NextResponse.json(
+      { error: "API key already revoked" },
+      { status: 400 }
+    );
+  }
+
   await revokeApiKey(keyId, authResult.userId);
+
   return NextResponse.json({ success: true });
 }
