@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, Send } from "lucide-react";
 import { ExplorerToolbar } from "./ExplorerToolbar";
 import { VariantCard } from "./VariantCard";
 import { FigmaPushModal } from "./FigmaPushModal";
@@ -9,6 +9,7 @@ import { FigmaImportModal } from "./FigmaImportModal";
 import { ResponsivePreview } from "./ResponsivePreview";
 import { ComparisonView } from "./ComparisonView";
 import { PromoteToLibraryModal } from "./PromoteToLibraryModal";
+import { SubmitCandidateModal } from "./SubmitCandidateModal";
 import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-variants";
 import { friendlyError } from "@/lib/explore/friendly-error";
 import { applyChangesToDesignMd } from "@/lib/figma/diff";
@@ -39,6 +40,7 @@ export function ExplorerCanvas({
   const [showImport, setShowImport] = useState(false);
   const [responsiveVariant, setResponsiveVariant] = useState<DesignVariant | null>(null);
   const [promoteVariant, setPromoteVariant] = useState<DesignVariant | null>(null);
+  const [showSubmitCandidate, setShowSubmitCandidate] = useState(false);
   const [comparePrompt, setComparePrompt] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -315,6 +317,19 @@ export function ExplorerCanvas({
                 </div>
               </div>
             )}
+            {/* Submit all as candidate */}
+            {variants.length > 0 && !isGenerating && (
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowSubmitCandidate(true)}
+                  className="flex items-center gap-1.5 rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-1.5 text-[11px] font-medium text-[--text-secondary] hover:border-[--studio-border-strong] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+                >
+                  <Send size={12} />
+                  Submit All as Candidate
+                </button>
+              </div>
+            )}
+
           <div className={`grid gap-4 ${(currentExploration?.variantCount ?? variants.length) > 4 ? "grid-cols-2 lg:grid-cols-3" : "grid-cols-2"}`}>
             {variants.map((variant) => (
               <VariantCard
@@ -407,6 +422,14 @@ export function ExplorerCanvas({
         <PromoteToLibraryModal
           variant={promoteVariant}
           onClose={() => setPromoteVariant(null)}
+        />
+      )}
+
+      {showSubmitCandidate && currentExploration && (
+        <SubmitCandidateModal
+          variants={variants}
+          prompt={currentExploration.prompt}
+          onClose={() => setShowSubmitCandidate(false)}
         />
       )}
     </div>
