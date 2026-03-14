@@ -34,7 +34,7 @@ interface OrganizationState {
   clear: () => void;
 }
 
-export const useOrganizationStore = create<OrganizationState>()((set, get) => ({
+export const useOrgStore = create<OrganizationState>()((set, get) => ({
   organizations: [],
   currentOrgId: null,
   currentMembership: null,

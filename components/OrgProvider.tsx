@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
-import { useOrganizationStore } from "@/lib/store/organization";
+import { useOrgStore } from "@/lib/store/organization";
 import type { Organization, OrgMember } from "@/lib/types/organization";
 
 export function OrgProvider({ children }: { children: React.ReactNode }) {
@@ -11,14 +11,14 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const orgSlug = typeof params?.org === "string" ? params.org : null;
 
-  const loadOrganizations = useOrganizationStore((s) => s.loadOrganizations);
-  const setCurrentOrg = useOrganizationStore((s) => s.setCurrentOrg);
-  const setCurrentMembership = useOrganizationStore(
+  const loadOrganizations = useOrgStore((s) => s.loadOrganizations);
+  const setCurrentOrg = useOrgStore((s) => s.setCurrentOrg);
+  const setCurrentMembership = useOrgStore(
     (s) => s.setCurrentMembership
   );
-  const setMembers = useOrganizationStore((s) => s.setMembers);
-  const organizations = useOrganizationStore((s) => s.organizations);
-  const clear = useOrganizationStore((s) => s.clear);
+  const setMembers = useOrgStore((s) => s.setMembers);
+  const organizations = useOrgStore((s) => s.organizations);
+  const clear = useOrgStore((s) => s.clear);
 
   // Fetch organisations when session changes
   useEffect(() => {
