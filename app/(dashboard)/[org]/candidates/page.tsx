@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useOrgStore } from "@/lib/store/organization";
+import { CreateCandidateModal } from "@/components/dashboard/CreateCandidateModal";
 import type { Candidate, CandidateStatus } from "@/lib/types/candidate";
 
 const STATUS_CONFIG: Record<
@@ -44,6 +45,12 @@ export default function CandidatesPage() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleCreated = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     if (!orgId) return;
@@ -74,7 +81,7 @@ export default function CandidatesPage() {
     return () => {
       cancelled = true;
     };
-  }, [orgId, filterStatus, search]);
+  }, [orgId, filterStatus, search, refreshKey]);
 
   return (
     <div className="p-8">
@@ -91,6 +98,7 @@ export default function CandidatesPage() {
           )}
         </div>
         <button
+          onClick={() => setShowCreate(true)}
           className="rounded-[var(--studio-radius-md)] bg-[var(--studio-accent)] px-4 py-2 text-sm text-white transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
         >
           New Candidate
@@ -165,6 +173,14 @@ export default function CandidatesPage() {
             </Link>
           ))}
         </div>
+      )}
+
+      {showCreate && orgId && (
+        <CreateCandidateModal
+          orgId={orgId}
+          onClose={() => setShowCreate(false)}
+          onCreated={handleCreated}
+        />
       )}
     </div>
   );
