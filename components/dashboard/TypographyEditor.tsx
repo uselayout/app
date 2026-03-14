@@ -103,8 +103,9 @@ function InlineEdit({
 
 function GoogleFontLink({ url }: { url: string | null }) {
   if (!url) return null;
-  // eslint-disable-next-line @next/next/no-page-custom-font
-  return <link rel="stylesheet" href={url} />;
+  return (
+    <style>{`@import url('${url}');`}</style>
+  );
 }
 
 // ─── Typeface Form ────────────────────────────────────────────────────────────
