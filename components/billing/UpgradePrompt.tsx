@@ -19,7 +19,7 @@ export function UpgradePrompt({ onBuyCredits, onSwitchToByok }: UpgradePromptPro
       <div className="flex gap-2">
         <button
           onClick={onBuyCredits}
-          className="flex items-center gap-1.5 rounded-lg bg-[--studio-accent] px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-[--studio-accent-hover]"
+          className="flex items-center gap-1.5 rounded-lg bg-[--studio-accent] px-3 py-1.5 text-xs font-semibold text-[--text-on-accent] transition-all hover:bg-[--studio-accent-hover]"
         >
           <Zap className="h-3 w-3" />
           Buy Credits

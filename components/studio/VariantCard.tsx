@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked } from "lucide-react";
+import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUpToLine } from "lucide-react";
 import { extractComponentName, buildSrcdoc } from "@/lib/explore/preview-helpers";
+import { usePushToDs } from "@/lib/hooks/use-push-to-ds";
 import type { DesignVariant } from "@/lib/types";
 
 interface VariantCardProps {
@@ -31,6 +32,7 @@ export function VariantCard({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const { pushComponent, pushing: pushingToDs, canPush } = usePushToDs();
 
   // Transpile and render
   useEffect(() => {
@@ -105,7 +107,7 @@ export function VariantCard({
       {/* Selection indicator */}
       {isSelected && (
         <div className="absolute -right-1.5 -top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-[--studio-accent]">
-          <Check size={12} className="text-white" />
+          <Check size={12} className="text-[--text-on-accent]" />
         </div>
       )}
 
@@ -210,6 +212,24 @@ export function VariantCard({
             title="Add to Library"
           >
             <BookMarked size={12} />
+          </button>
+        )}
+        {canPush && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              pushComponent({
+                name: extractComponentName(variant.code),
+                code: variant.code,
+                source: "explorer",
+                description: variant.rationale,
+              });
+            }}
+            disabled={pushingToDs}
+            className="rounded p-1 text-[--text-muted] hover:text-[--text-primary] hover:bg-[--bg-hover] transition-colors disabled:opacity-50"
+            title="Push to Design System"
+          >
+            <ArrowUpToLine size={12} />
           </button>
         )}
       </div>

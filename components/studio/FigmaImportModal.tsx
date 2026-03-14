@@ -252,7 +252,7 @@ export function FigmaImportModal({
               <button
                 onClick={handleImport}
                 disabled={!figmaUrl.trim() || !pat.trim()}
-                className="flex items-center gap-1.5 rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-white hover:bg-[--studio-accent-hover] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Download size={12} />
                 Import
@@ -281,7 +281,7 @@ export function FigmaImportModal({
           {step === "done" && (
             <button
               onClick={onClose}
-              className="rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-white hover:bg-[--studio-accent-hover] transition-colors"
+              className="rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] transition-colors"
             >
               Done
             </button>

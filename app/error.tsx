@@ -37,7 +37,7 @@ export default function Error({
       )}
       <button
         onClick={reset}
-        className="mt-8 rounded-lg bg-[var(--studio-accent)] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--studio-accent-hover)]"
+        className="mt-8 rounded-lg bg-[var(--studio-accent)] px-6 py-2.5 text-sm font-medium text-[--text-on-accent] transition-colors hover:bg-[var(--studio-accent-hover)]"
       >
         Try again
       </button>

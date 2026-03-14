@@ -242,7 +242,7 @@ function TypefaceForm({
           type="button"
           disabled={submitting || !form.family.trim()}
           onClick={() => onSubmit(form)}
-          className="rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-white transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
+          className="rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-[--text-on-accent] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
         >
           {submitting ? "Saving..." : "Save"}
         </button>
@@ -380,7 +380,7 @@ function ScaleForm({
           type="button"
           disabled={submitting || !form.name.trim() || !form.typefaceId}
           onClick={() => onSubmit(form)}
-          className="rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-white transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
+          className="rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-[--text-on-accent] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
         >
           {submitting ? "Saving..." : "Save"}
         </button>
@@ -623,7 +623,7 @@ export function TypographyEditor({ orgId }: TypographyEditorProps) {
             <button
               type="button"
               onClick={() => setShowTypefaceForm(true)}
-              className="rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-white transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
+              className="rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-[--text-on-accent] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
             >
               Add Typeface
             </button>
@@ -763,7 +763,7 @@ export function TypographyEditor({ orgId }: TypographyEditorProps) {
             <button
               type="button"
               onClick={() => setShowScaleForm(true)}
-              className="rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-white transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
+              className="rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-[--text-on-accent] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
             >
               Add Scale Entry
             </button>
