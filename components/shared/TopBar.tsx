@@ -55,8 +55,16 @@ export function TopBar({
   const deleteProject = useProjectStore((s) => s.deleteProject);
   const orgId = useOrgStore((s) => s.currentOrgId);
   const currentProject = projects.find((p) => p.id === currentProjectId);
+  const tokens = currentProject?.extractionData?.tokens;
+  const hasTokens = tokens
+    ? tokens.colors.length > 0 ||
+      tokens.typography.length > 0 ||
+      tokens.spacing.length > 0 ||
+      tokens.radius.length > 0 ||
+      tokens.effects.length > 0
+    : false;
   const hasPushableData = !!(
-    currentProject?.extractionData?.tokens?.length ||
+    hasTokens ||
     currentProject?.testResults?.length ||
     currentProject?.explorations?.length
   );
