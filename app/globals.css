@@ -80,18 +80,18 @@
   /* Borders */
   --studio-border: rgba(255,255,255,0.12);
   --studio-border-strong: rgba(255,255,255,0.22);
-  --studio-border-focus: rgba(99,102,241,0.7);
+  --studio-border-focus: rgba(228,242,34,0.6);
 
-  /* Accent — Layout indigo */
-  --studio-accent: #818CF8;
-  --studio-accent-hover: #939DF9;
-  --studio-accent-subtle: rgba(129,140,248,0.15);
+  /* Accent — Layout yellow (used sparingly for CTAs and active states) */
+  --studio-accent: #e4f222;
+  --studio-accent-hover: #eaf655;
+  --studio-accent-subtle: rgba(228,242,34,0.10);
 
   /* Text */
   --text-primary: #EDEDF4;
   --text-secondary: rgba(237,237,244,0.7);
   --text-muted: rgba(237,237,244,0.5);
-  --text-on-accent: #ffffff;
+  --text-on-accent: #08090a;
 
   /* Status */
   --status-success: rgba(52,199,89,1);
@@ -123,31 +123,31 @@
   --card-foreground: #E8E8F0;
   --popover: #1E1E24;
   --popover-foreground: #E8E8F0;
-  --primary: #6366F1;
-  --primary-foreground: #ffffff;
+  --primary: #e4f222;
+  --primary-foreground: #08090a;
   --secondary: #17171C;
   --secondary-foreground: #E8E8F0;
   --muted: #17171C;
   --muted-foreground: rgba(232,232,240,0.55);
-  --accent: #6366F1;
-  --accent-foreground: #ffffff;
+  --accent: #1E1E24;
+  --accent-foreground: #E8E8F0;
   --destructive: rgba(255,69,58,1);
   --border: rgba(255,255,255,0.07);
   --input: rgba(255,255,255,0.07);
-  --ring: #6366F1;
-  --chart-1: #6366F1;
+  --ring: rgba(228,242,34,0.4);
+  --chart-1: #e4f222;
   --chart-2: rgba(52,199,89,1);
   --chart-3: rgba(255,159,10,1);
   --chart-4: rgba(255,69,58,1);
-  --chart-5: #7577F3;
+  --chart-5: #a8b000;
   --sidebar: #111115;
   --sidebar-foreground: #E8E8F0;
-  --sidebar-primary: #6366F1;
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar-primary: #e4f222;
+  --sidebar-primary-foreground: #08090a;
   --sidebar-accent: #17171C;
   --sidebar-accent-foreground: #E8E8F0;
   --sidebar-border: rgba(255,255,255,0.07);
-  --sidebar-ring: #6366F1;
+  --sidebar-ring: rgba(228,242,34,0.4);
 }
 
 /* Custom scrollbars — outside @layer for full specificity */

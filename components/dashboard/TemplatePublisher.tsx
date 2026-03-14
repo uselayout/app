@@ -218,7 +218,7 @@ export function TemplatePublisher({ orgId }: TemplatePublisherProps) {
         {!showCreateForm && (
           <button
             onClick={() => setShowCreateForm(true)}
-            className="rounded-lg bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-white transition-colors duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
+            className="rounded-lg bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-[--text-on-accent] transition-colors duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
           >
             Create Template
           </button>
@@ -381,7 +381,7 @@ export function TemplatePublisher({ orgId }: TemplatePublisherProps) {
               <button
                 onClick={handleCreate}
                 disabled={submitting}
-                className="rounded-lg bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-white transition-colors duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
+                className="rounded-lg bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-[--text-on-accent] transition-colors duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
               >
                 {submitting ? "Creating..." : "Create Template"}
               </button>
