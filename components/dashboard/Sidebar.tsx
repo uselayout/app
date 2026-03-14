@@ -28,9 +28,26 @@ const CandidatesIcon = () => (
   </svg>
 );
 
+const TokensIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="5" cy="5" r="3" stroke="currentColor" strokeWidth="1.5"/>
+    <circle cx="11" cy="5" r="3" stroke="currentColor" strokeWidth="1.5"/>
+    <circle cx="8" cy="11" r="3" stroke="currentColor" strokeWidth="1.5"/>
+  </svg>
+);
+
+const TypographyIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 3h12M5 3v10M11 3v10M3.5 13h3M9.5 13h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 const IconsIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M8 1L2 4v4c0 3.314 2.686 6 6 7 3.314-1 6-3.686 6-7V4L8 1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <rect x="1.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+    <rect x="9.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+    <rect x="1.5" y="9.5" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+    <rect x="9.5" y="9.5" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
   </svg>
 );
 
@@ -56,6 +73,16 @@ export function Sidebar() {
       label: "Library",
       href: `/${orgSlug}/library`,
       icon: <LibraryIcon />,
+    },
+    {
+      label: "Tokens",
+      href: `/${orgSlug}/tokens`,
+      icon: <TokensIcon />,
+    },
+    {
+      label: "Typography",
+      href: `/${orgSlug}/typography`,
+      icon: <TypographyIcon />,
     },
     {
       label: "Icons",
