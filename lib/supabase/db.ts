@@ -4,6 +4,7 @@ import type { Project } from "@/lib/types";
 
 interface ProjectRow {
   id: string;
+  org_id: string;
   name: string;
   source_type: string;
   source_url: string | null;
@@ -21,6 +22,7 @@ interface ProjectRow {
 function rowToProject(row: ProjectRow): Project {
   return {
     id: row.id,
+    orgId: row.org_id,
     name: row.name,
     sourceType: row.source_type as Project["sourceType"],
     sourceUrl: row.source_url ?? undefined,
@@ -50,6 +52,7 @@ function projectToRow(
 
   return {
     id: project.id,
+    org_id: project.orgId,
     name: project.name,
     source_type: project.sourceType,
     source_url: project.sourceUrl ?? null,
@@ -64,11 +67,11 @@ function projectToRow(
   };
 }
 
-export async function fetchAllProjects(userId: string): Promise<Project[]> {
+export async function fetchAllProjects(orgId: string): Promise<Project[]> {
   const { data, error } = await supabase
     .from("layout_projects")
     .select("*")
-    .eq("user_id", userId)
+    .eq("org_id", orgId)
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -93,7 +96,7 @@ export async function upsertProject(
   }
 }
 
-export async function removeProject(id: string, userId: string): Promise<void> {
+export async function removeProject(id: string, orgId: string): Promise<void> {
   // Clean up screenshots from storage
   await deleteScreenshots(id);
 
@@ -101,7 +104,7 @@ export async function removeProject(id: string, userId: string): Promise<void> {
     .from("layout_projects")
     .delete()
     .eq("id", id)
-    .eq("user_id", userId);
+    .eq("org_id", orgId);
 
   if (error) {
     console.error("Failed to delete project:", error.message);

@@ -3,29 +3,31 @@
 import { useEffect } from "react";
 import { fetchAllProjects } from "@/lib/supabase/db";
 import { useProjectStore } from "@/lib/store/project";
+import { useOrgStore } from "@/lib/store/organization";
 import { useSession } from "@/lib/auth-client";
 
 export function ProjectHydrator() {
   const { data: session } = useSession();
+  const currentOrgId = useOrgStore((s) => s.currentOrgId);
   const loadProjects = useProjectStore((s) => s.loadProjects);
   const clearProjects = useProjectStore((s) => s.clearProjects);
   const setHydrationError = useProjectStore((s) => s.setHydrationError);
   const hydrationError = useProjectStore((s) => s.hydrationError);
 
   useEffect(() => {
-    if (!session?.user?.id) {
+    if (!session?.user?.id || !currentOrgId) {
       clearProjects();
       return;
     }
 
     const userId = session.user.id;
-    fetchAllProjects(userId)
-      .then((projects) => loadProjects(projects, userId))
+    fetchAllProjects(currentOrgId)
+      .then((projects) => loadProjects(projects, userId, currentOrgId))
       .catch((err: unknown) => {
         console.error("Failed to hydrate projects from Supabase:", err);
         setHydrationError("Failed to load projects. Please refresh the page.");
       });
-  }, [session?.user?.id, loadProjects, clearProjects, setHydrationError]);
+  }, [session?.user?.id, currentOrgId, loadProjects, clearProjects, setHydrationError]);
 
   if (!hydrationError) return null;
 

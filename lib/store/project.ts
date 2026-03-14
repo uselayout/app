@@ -6,13 +6,14 @@ interface ProjectState {
   projects: Project[];
   currentProjectId: string | null;
   userId: string | null;
+  orgId: string | null;
   hydrationError: string | null;
 
   // Computed
   currentProject: () => Project | undefined;
 
   // Actions
-  loadProjects: (projects: Project[], userId: string) => void;
+  loadProjects: (projects: Project[], userId: string, orgId: string) => void;
   setHydrationError: (error: string | null) => void;
   createProject: (project: Project) => void;
   setCurrentProject: (id: string) => void;
@@ -31,6 +32,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   projects: [],
   currentProjectId: null,
   userId: null,
+  orgId: null,
   hydrationError: null,
 
   currentProject: () => {
@@ -38,7 +40,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     return projects.find((p) => p.id === currentProjectId);
   },
 
-  loadProjects: (projects, userId) => set({ projects, userId, hydrationError: null }),
+  loadProjects: (projects, userId, orgId) => set({ projects, userId, orgId, hydrationError: null }),
 
   setHydrationError: (error) => set({ hydrationError: error }),
 
@@ -139,14 +141,14 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   },
 
   deleteProject: (id) => {
-    const { userId } = get();
+    const { orgId } = get();
     set((state) => ({
       projects: state.projects.filter((p) => p.id !== id),
       currentProjectId:
         state.currentProjectId === id ? null : state.currentProjectId,
     }));
-    if (userId) void removeProject(id, userId);
+    if (orgId) void removeProject(id, orgId);
   },
 
-  clearProjects: () => set({ projects: [], currentProjectId: null, userId: null }),
+  clearProjects: () => set({ projects: [], currentProjectId: null, userId: null, orgId: null }),
 }));
