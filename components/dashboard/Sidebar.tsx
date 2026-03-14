@@ -51,6 +51,12 @@ const IconsIcon = () => (
   </svg>
 );
 
+const AnalyticsIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 14V9M6 14V6M10 14V4M14 14V2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 const SettingsIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M8 10a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -93,6 +99,11 @@ export function Sidebar() {
       label: "Candidates",
       href: `/${orgSlug}/candidates`,
       icon: <CandidatesIcon />,
+    },
+    {
+      label: "Analytics",
+      href: `/${orgSlug}/analytics`,
+      icon: <AnalyticsIcon />,
     },
   ];
 
