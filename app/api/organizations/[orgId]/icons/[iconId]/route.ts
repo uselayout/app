@@ -6,6 +6,7 @@ import {
   getIconById,
   updateIcon,
 } from "@/lib/supabase/icons";
+import { sanitiseSvg } from "../route";
 
 const UpdateIconSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -63,7 +64,12 @@ export async function PATCH(
     );
   }
 
-  await updateIcon(iconId, parsed.data);
+  const updateData = { ...parsed.data };
+  if (updateData.svg) {
+    updateData.svg = sanitiseSvg(updateData.svg);
+  }
+
+  await updateIcon(iconId, updateData);
 
   const updated = await getIconById(iconId);
   return NextResponse.json(updated);

@@ -5,6 +5,9 @@ import { createToken, getTokensByOrg } from "@/lib/supabase/tokens";
 import { logAuditEvent } from "@/lib/supabase/audit";
 import type { DesignTokenCategory, DesignTokenType } from "@/lib/types/token";
 
+const VALID_TOKEN_TYPES: DesignTokenType[] = ["color", "typography", "spacing", "radius", "effect", "motion"];
+const VALID_TOKEN_CATEGORIES: DesignTokenCategory[] = ["primitive", "semantic", "component"];
+
 const CreateTokenSchema = z.object({
   name: z.string().min(1).max(200),
   type: z.enum(["color", "typography", "spacing", "radius", "effect", "motion"]),
@@ -27,14 +30,16 @@ export async function GET(
   if (authResult instanceof NextResponse) return authResult;
 
   const url = new URL(request.url);
-  const type = url.searchParams.get("type") as DesignTokenType | null;
-  const category = url.searchParams.get("category") as DesignTokenCategory | null;
+  const rawType = url.searchParams.get("type");
+  const type = rawType && VALID_TOKEN_TYPES.includes(rawType as DesignTokenType) ? rawType as DesignTokenType : undefined;
+  const rawCategory = url.searchParams.get("category");
+  const category = rawCategory && VALID_TOKEN_CATEGORIES.includes(rawCategory as DesignTokenCategory) ? rawCategory as DesignTokenCategory : undefined;
   const group = url.searchParams.get("group");
   const search = url.searchParams.get("search");
 
   const tokens = await getTokensByOrg(orgId, {
-    type: type ?? undefined,
-    category: category ?? undefined,
+    type: type,
+    category: category,
     groupName: group ?? undefined,
     search: search ?? undefined,
   });
