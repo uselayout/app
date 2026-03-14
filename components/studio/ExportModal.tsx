@@ -227,7 +227,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
                     <div
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
                         selected
-                          ? "border-[--studio-accent] bg-[--studio-accent] text-white"
+                          ? "border-[--studio-accent] bg-[--studio-accent] text-[--text-on-accent]"
                           : "border-[--studio-border]"
                       }`}
                     >

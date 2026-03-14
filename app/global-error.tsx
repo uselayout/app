@@ -12,7 +12,7 @@ export default function GlobalError({
         <div className="flex min-h-screen flex-col items-center justify-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#141418]">
             <svg
-              className="h-8 w-8 text-[#818CF8]"
+              className="h-8 w-8 text-[--studio-accent]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -33,7 +33,7 @@ export default function GlobalError({
           </p>
           <button
             onClick={reset}
-            className="mt-8 rounded-lg bg-[#818CF8] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#939DF9]"
+            className="mt-8 rounded-lg bg-[--studio-accent] px-6 py-2.5 text-sm font-medium text-[--text-on-accent] transition-colors hover:bg-[--studio-accent-hover]"
           >
             Try again
           </button>

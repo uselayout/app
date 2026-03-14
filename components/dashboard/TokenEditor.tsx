@@ -147,7 +147,7 @@ export function TokenEditor({
             onClick={() => onTypeChange(key)}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-[var(--duration-base)] ${
               selectedType === key
-                ? "bg-[var(--studio-accent)] text-white"
+                ? "bg-[var(--studio-accent)] text-[--text-on-accent]"
                 : "bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             }`}
           >
@@ -165,7 +165,7 @@ export function TokenEditor({
             </p>
             <button
               onClick={() => setShowAddForm(true)}
-              className="mt-3 rounded-[var(--studio-radius-md)] bg-[var(--studio-accent)] px-4 py-2 text-sm text-white transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
+              className="mt-3 rounded-[var(--studio-radius-md)] bg-[var(--studio-accent)] px-4 py-2 text-sm text-[--text-on-accent] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
             >
               Add First Token
             </button>
@@ -253,7 +253,7 @@ export function TokenEditor({
             <button
               onClick={handleAdd}
               disabled={saving}
-              className="rounded-[var(--studio-radius-md)] bg-[var(--studio-accent)] px-4 py-2 text-sm text-white transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
+              className="rounded-[var(--studio-radius-md)] bg-[var(--studio-accent)] px-4 py-2 text-sm text-[--text-on-accent] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save"}
             </button>

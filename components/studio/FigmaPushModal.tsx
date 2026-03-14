@@ -326,7 +326,7 @@ export function FigmaPushModal({
                   handleCopy(mcpCommand, "command");
                   setStep("pushing");
                 }}
-                className="flex items-center gap-1.5 rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-white hover:bg-[--studio-accent-hover] transition-colors"
+                className="flex items-center gap-1.5 rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] transition-colors"
               >
                 <Copy size={12} />
                 Copy &amp; Continue
@@ -353,7 +353,7 @@ export function FigmaPushModal({
           {step === "done" && (
             <button
               onClick={onClose}
-              className="rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-white hover:bg-[--studio-accent-hover] transition-colors"
+              className="rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] transition-colors"
             >
               Done
             </button>

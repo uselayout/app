@@ -117,12 +117,12 @@ The app uses its own dark-first design system. Always use CSS variables, never h
 /* Borders */
 --studio-border: rgba(255,255,255,0.12)
 --studio-border-strong: rgba(255,255,255,0.22)
---studio-border-focus: rgba(99,102,241,0.7)
+--studio-border-focus: rgba(228,242,34,0.6)
 
-/* Accent */
---studio-accent: #818CF8
---studio-accent-hover: #939DF9
---studio-accent-subtle: rgba(129,140,248,0.15)
+/* Accent — yellow, used sparingly */
+--studio-accent: #e4f222
+--studio-accent-hover: #eaf655
+--studio-accent-subtle: rgba(228,242,34,0.10)
 
 /* Text */
 --text-primary: #EDEDF4
@@ -140,7 +140,7 @@ The app uses its own dark-first design system. Always use CSS variables, never h
 2. **All borders** use `--studio-border` or `--studio-border-strong`
 3. **All text** uses `--text-primary`, `--text-secondary`, or `--text-muted`
 4. **Interactive states** have transition `all var(--duration-base) var(--ease-out)`
-5. **Accent colour** is `--studio-accent` (#6366F1 indigo) — used for CTAs and active states
+5. **Accent colour** is `--studio-accent` (#e4f222 yellow) — used sparingly for primary CTAs and active states only. Text on accent uses `--text-on-accent` (#08090a dark). No indigo/purple anywhere.
 6. **Font:** Geist for UI, Geist Mono for code/editor/monospace content
 7. **No box-shadow** — elevation = background colour difference + border
 
