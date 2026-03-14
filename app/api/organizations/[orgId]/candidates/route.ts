@@ -5,6 +5,7 @@ import {
   createCandidate,
   getCandidatesByOrg,
 } from "@/lib/supabase/candidates";
+import { logAuditEvent } from "@/lib/supabase/audit";
 import type { CandidateStatus } from "@/lib/types/candidate";
 
 const CreateCandidateSchema = z.object({
@@ -88,6 +89,16 @@ export async function POST(
       { status: 500 }
     );
   }
+
+  void logAuditEvent({
+    orgId,
+    actorId: authResult.userId,
+    actorName: authResult.session?.user?.name ?? undefined,
+    action: "candidate.created",
+    resourceType: "candidate",
+    resourceId: candidate.id,
+    resourceName: candidate.name,
+  });
 
   return NextResponse.json(candidate, { status: 201 });
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireOrgAuth } from "@/lib/api/auth-context";
 import { deleteToken, getTokenById, updateToken } from "@/lib/supabase/tokens";
+import { logAuditEvent } from "@/lib/supabase/audit";
 
 const UpdateTokenSchema = z.object({
   name: z.string().min(1).max(200).optional(),
@@ -66,6 +67,17 @@ export async function PATCH(
 
   await updateToken(tokenId, parsed.data);
 
+  void logAuditEvent({
+    orgId,
+    actorId: authResult.userId,
+    actorName: authResult.session?.user?.name ?? undefined,
+    action: "token.updated",
+    resourceType: "token",
+    resourceId: tokenId,
+    resourceName: token.name,
+    details: parsed.data as Record<string, unknown>,
+  });
+
   const updated = await getTokenById(tokenId);
   return NextResponse.json(updated);
 }
@@ -85,5 +97,16 @@ export async function DELETE(
   }
 
   await deleteToken(tokenId);
+
+  void logAuditEvent({
+    orgId,
+    actorId: authResult.userId,
+    actorName: authResult.session?.user?.name ?? undefined,
+    action: "token.deleted",
+    resourceType: "token",
+    resourceId: tokenId,
+    resourceName: token.name,
+  });
+
   return NextResponse.json({ success: true });
 }

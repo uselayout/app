@@ -7,6 +7,7 @@ import {
   getComponentsByOrg,
   nameToComponentSlug,
 } from "@/lib/supabase/components";
+import { logAuditEvent } from "@/lib/supabase/audit";
 import type { ComponentStatus } from "@/lib/types/component";
 
 const CreateComponentSchema = z.object({
@@ -97,6 +98,16 @@ export async function POST(
       { status: 500 }
     );
   }
+
+  void logAuditEvent({
+    orgId,
+    actorId: authResult.userId,
+    actorName: authResult.session?.user?.name ?? undefined,
+    action: "component.created",
+    resourceType: "component",
+    resourceId: component.id,
+    resourceName: component.name,
+  });
 
   return NextResponse.json(component, { status: 201 });
 }
