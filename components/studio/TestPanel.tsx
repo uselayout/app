@@ -219,10 +219,19 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
       {/* Output area */}
       <div ref={outputRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {results.length === 0 && (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-center text-xs text-[--text-muted]">
-              Test your DESIGN.md by asking Claude to build components.
+          <div className="flex h-full flex-col items-center justify-center gap-3">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-[--text-muted]">
+              <rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+              <rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+              <rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+              <rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            <p className="text-center text-xs font-medium text-[--text-secondary]">
+              Test your DESIGN.md by asking Claude to
               <br />
+              build components.
+            </p>
+            <p className="text-center text-xs text-[--text-muted]">
               Toggle context ON/OFF to compare output quality.
             </p>
           </div>
