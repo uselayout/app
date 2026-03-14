@@ -6,7 +6,7 @@ import type { Template } from "@/lib/types/template";
 
 interface TemplatePublisherProps {
   orgId: string;
-  orgSlug: string;
+
 }
 
 const CATEGORIES = ["General", "Corporate", "Bold", "Minimal"];
@@ -47,7 +47,7 @@ interface AssetCounts {
   icons: number;
 }
 
-export function TemplatePublisher({ orgId, orgSlug }: TemplatePublisherProps) {
+export function TemplatePublisher({ orgId }: TemplatePublisherProps) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
