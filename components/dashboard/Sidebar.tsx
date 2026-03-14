@@ -1,0 +1,87 @@
+"use client";
+
+import Link from "next/link";
+import { useParams, usePathname } from "next/navigation";
+import { OrgSwitcher } from "./OrgSwitcher";
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+}
+
+const FolderIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 4a1 1 0 011-1h3.586a1 1 0 01.707.293L8.414 4.414A1 1 0 009.12 4.707H13a1 1 0 011 1V12a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const SettingsIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 10a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M13.05 10.13a1.1 1.1 0 00.22 1.213l.04.04a1.333 1.333 0 11-1.887 1.887l-.04-.04a1.1 1.1 0 00-1.213-.22 1.1 1.1 0 00-.667 1.007v.113a1.333 1.333 0 11-2.667 0v-.06A1.1 1.1 0 005.87 13.05a1.1 1.1 0 00-1.213.22l-.04.04a1.333 1.333 0 11-1.887-1.887l.04-.04a1.1 1.1 0 00.22-1.213 1.1 1.1 0 00-1.007-.667H1.87a1.333 1.333 0 010-2.667h.06A1.1 1.1 0 002.95 5.87a1.1 1.1 0 00-.22-1.213l-.04-.04A1.333 1.333 0 114.577 2.73l.04.04a1.1 1.1 0 001.213.22h.053a1.1 1.1 0 00.667-1.007V1.87a1.333 1.333 0 012.667 0v.06a1.1 1.1 0 00.667 1.007 1.1 1.1 0 001.213-.22l.04-.04a1.333 1.333 0 111.887 1.887l-.04.04a1.1 1.1 0 00-.22 1.213v.053a1.1 1.1 0 001.007.667h.113a1.333 1.333 0 010 2.667h-.06a1.1 1.1 0 00-1.007.667z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+export function Sidebar() {
+  const params = useParams();
+  const pathname = usePathname();
+  const orgSlug = typeof params?.org === "string" ? params.org : "";
+
+  const navItems: NavItem[] = [
+    {
+      label: "Projects",
+      href: `/${orgSlug}`,
+      icon: <FolderIcon />,
+    },
+  ];
+
+  function isActive(href: string): boolean {
+    return pathname === href;
+  }
+
+  return (
+    <aside className="flex h-full w-60 flex-col border-r border-[var(--studio-border)] bg-[var(--bg-panel)]">
+      {/* Top: Org Switcher */}
+      <div className="border-b border-[var(--studio-border)] p-3">
+        <OrgSwitcher />
+      </div>
+
+      {/* Nav items */}
+      <nav className="flex-1 p-2">
+        <ul className="space-y-1">
+          {navItems.map((item) => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className={`flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm transition-all duration-[var(--duration-base)] ${
+                  isActive(item.href)
+                    ? "bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {/* Bottom: Settings */}
+      <div className="border-t border-[var(--studio-border)] p-2">
+        <Link
+          href={`/${orgSlug}/settings`}
+          className={`flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm transition-all duration-[var(--duration-base)] ${
+            pathname?.startsWith(`/${orgSlug}/settings`)
+              ? "bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]"
+              : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+          }`}
+        >
+          <SettingsIcon />
+          Settings
+        </Link>
+      </div>
+    </aside>
+  );
+}
