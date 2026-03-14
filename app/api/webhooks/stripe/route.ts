@@ -4,7 +4,7 @@ import {
   upsertSubscription,
   getSubscriptionByStripeCustomerId,
 } from "@/lib/billing/subscription";
-import { resetMonthlyCredits, resetMonthlyCreditsByOrg, addTopupCredits } from "@/lib/billing/credits";
+import { resetMonthlyCreditsByOrg, addTopupCredits } from "@/lib/billing/credits";
 import { getPersonalOrg } from "@/lib/supabase/organization";
 import type Stripe from "stripe";
 
