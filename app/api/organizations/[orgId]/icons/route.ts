@@ -18,11 +18,33 @@ const CreateIconSchema = z.object({
   libraryName: z.string().optional(),
 });
 
-function sanitiseSvg(svg: string): string {
-  // Strip <script> tags
-  let clean = svg.replace(/<script[\s\S]*?<\/script>/gi, "");
-  // Strip on* event attributes
-  clean = clean.replace(/\s+on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)/gi, "");
+// Allowlist-based SVG sanitisation
+const ALLOWED_SVG_ELEMENTS = new Set([
+  "svg", "path", "circle", "ellipse", "line", "polyline", "polygon",
+  "rect", "g", "defs", "clippath", "mask", "use", "symbol",
+  "lineargradient", "radialgradient", "stop", "title", "desc", "text", "tspan",
+]);
+
+const BLOCKED_ATTRIBUTES = /^(on\w+|xlink:href|href|formaction|action|style)$/i;
+const DANGEROUS_HREF = /^\s*(javascript|data|vbscript):/i;
+
+export function sanitiseSvg(svg: string): string {
+  // Remove all tags not in allowlist (including script, foreignObject, iframe, etc.)
+  let clean = svg.replace(/<\/?([a-z][a-z0-9-]*)[^>]*\/?>/gi, (match, tagName: string) => {
+    if (!ALLOWED_SVG_ELEMENTS.has(tagName.toLowerCase())) return "";
+    // Strip dangerous attributes from allowed tags
+    return match.replace(/\s+([a-z][a-z0-9-:]*)\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)/gi,
+      (attrMatch, attrName: string, attrValue: string) => {
+        if (BLOCKED_ATTRIBUTES.test(attrName)) return "";
+        // Check href values for javascript: protocol
+        if (/^(href|xlink:href)$/i.test(attrName) && DANGEROUS_HREF.test(attrValue.replace(/["']/g, ""))) return "";
+        return attrMatch;
+      }
+    );
+  });
+  // Remove CDATA sections and HTML comments that could hide payloads
+  clean = clean.replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, "");
+  clean = clean.replace(/<!--[\s\S]*?-->/g, "");
   return clean;
 }
 

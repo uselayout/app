@@ -70,7 +70,8 @@ export async function getAnalyticsSummary(
     .select("event_type, event_data, created_at")
     .eq("org_id", orgId)
     .gte("created_at", sinceIso)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(10000);
 
   if (error || !data) {
     console.error("Failed to fetch analytics:", error?.message);

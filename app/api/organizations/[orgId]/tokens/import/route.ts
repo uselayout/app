@@ -16,7 +16,7 @@ const ImportTokensSchema = z.object({
       groupName: z.string().optional(),
       description: z.string().optional(),
     })
-  ),
+  ).min(1).max(500),
   source: z.enum(["extracted", "manual", "figma-variable"]).optional(),
 });
 
