@@ -10,6 +10,14 @@ Browser-based tool that extracts design systems from Figma files and live websit
 
 **Target users:** Developers using Claude Code, Cursor, GitHub Copilot, Windsurf to build UI.
 
+## Related Repos — DO NOT DUPLICATE
+
+- **CLI + MCP server:** `@layoutdesign/context` (npm) — lives in `mattthornhill/superduperui-context`, NOT here.
+  - Commands: `init`, `serve`, `install`, `doctor`, `list`, `use`, `import`
+  - 11 MCP tools including `get-design-system`, `preview`, `push-to-figma`
+  - If the CLI needs new features (e.g. `pull`, `login`), add them in that repo
+  - This repo provides the **backend API endpoints** the CLI calls (e.g. `/api/export/pull`)
+
 ## Tech Stack
 
 - **Frontend:** Next.js 15 (App Router), React 19, TypeScript strict mode, Tailwind CSS v4
