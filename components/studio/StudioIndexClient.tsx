@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useProjectStore } from "@/lib/store/project";
+import { useOrgStore } from "@/lib/store/organization";
 import { useSession } from "@/lib/auth-client";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
@@ -44,6 +45,7 @@ export function StudioIndexClient() {
   const isLoggedIn = !!session?.user;
   const projects = useProjectStore((s) => s.projects);
   const createProject = useProjectStore((s) => s.createProject);
+  const currentOrgId = useOrgStore((s) => s.currentOrgId);
   const deleteProject = useProjectStore((s) => s.deleteProject);
   const sortedProjects = [...projects].sort(
     (a, b) =>
@@ -79,6 +81,7 @@ export function StudioIndexClient() {
 
     createProject({
       id: projectId,
+      orgId: currentOrgId ?? "",
       name: projectName,
       sourceType,
       sourceUrl: url,

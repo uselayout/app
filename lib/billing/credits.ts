@@ -10,6 +10,7 @@ import { TIER_CREDITS as CREDITS } from "@/lib/types/billing";
 interface CreditRow {
   id: string;
   user_id: string;
+  org_id: string;
   design_md_remaining: number;
   test_query_remaining: number;
   period_start: string;
@@ -21,6 +22,7 @@ interface CreditRow {
 function rowToBalance(row: CreditRow): CreditBalance {
   return {
     userId: row.user_id,
+    orgId: row.org_id,
     designMdRemaining: row.design_md_remaining,
     testQueryRemaining: row.test_query_remaining,
     periodStart: row.period_start,
@@ -43,6 +45,19 @@ export async function getCreditBalance(
   return rowToBalance(data as CreditRow);
 }
 
+export async function getCreditBalanceByOrg(
+  orgId: string
+): Promise<CreditBalance | null> {
+  const { data, error } = await supabase
+    .from("layout_credit_balance")
+    .select("*")
+    .eq("org_id", orgId)
+    .single();
+
+  if (error || !data) return null;
+  return rowToBalance(data as CreditRow);
+}
+
 /**
  * Check whether a user has enough credits for an AI call.
  * Returns allowed: true if they have remaining monthly OR top-up credits.
@@ -52,6 +67,46 @@ export async function checkQuota(
   endpoint: AiEndpoint
 ): Promise<QuotaCheck> {
   const balance = await getCreditBalance(userId);
+  if (!balance) {
+    return { allowed: false, reason: "No credit balance found. Please subscribe to a plan." };
+  }
+
+  const creditType = endpoint === "design-md" ? "designMd" : "testQuery";
+  const monthly = endpoint === "design-md"
+    ? balance.designMdRemaining
+    : balance.testQueryRemaining;
+  const topup = endpoint === "design-md"
+    ? balance.topupDesignMd
+    : balance.topupTestQuery;
+
+  if (monthly <= 0 && topup <= 0) {
+    return {
+      allowed: false,
+      reason: `No ${creditType === "designMd" ? "DESIGN.md" : "test query"} credits remaining. Top up or switch to your own API key.`,
+      remaining: {
+        designMd: balance.designMdRemaining + balance.topupDesignMd,
+        testQuery: balance.testQueryRemaining + balance.topupTestQuery,
+      },
+    };
+  }
+
+  return {
+    allowed: true,
+    remaining: {
+      designMd: balance.designMdRemaining + balance.topupDesignMd,
+      testQuery: balance.testQueryRemaining + balance.topupTestQuery,
+    },
+  };
+}
+
+/**
+ * Check whether an org has enough credits for an AI call.
+ */
+export async function checkQuotaByOrg(
+  orgId: string,
+  endpoint: AiEndpoint
+): Promise<QuotaCheck> {
+  const balance = await getCreditBalanceByOrg(orgId);
   if (!balance) {
     return { allowed: false, reason: "No credit balance found. Please subscribe to a plan." };
   }
@@ -109,6 +164,29 @@ export async function deductCredit(
 }
 
 /**
+ * Atomically deduct one org credit. Uses a database RPC function to prevent
+ * race conditions when concurrent requests both pass the quota check.
+ */
+export async function deductCreditByOrg(
+  orgId: string,
+  endpoint: AiEndpoint
+): Promise<boolean> {
+  const creditType = endpoint === "design-md" ? "design_md" : "test_query";
+
+  const { data, error } = await supabase.rpc("layout_deduct_credit_org", {
+    p_org_id: orgId,
+    p_type: creditType,
+  });
+
+  if (error) {
+    console.error("Failed to deduct org credit:", error.message);
+    return false;
+  }
+
+  return data === true;
+}
+
+/**
  * Reset monthly credits for a new billing period.
  * Top-up credits are NOT reset — they carry over.
  */
@@ -137,6 +215,38 @@ export async function resetMonthlyCredits(
 
   if (error) {
     console.error("Failed to reset monthly credits:", error.message);
+  }
+}
+
+/**
+ * Reset monthly credits for an org for a new billing period.
+ * Top-up credits are NOT reset — they carry over.
+ */
+export async function resetMonthlyCreditsByOrg(
+  orgId: string,
+  tier: SubscriptionTier,
+  seatCount: number,
+  periodStart: string,
+  periodEnd: string
+): Promise<void> {
+  const allocation = CREDITS[tier];
+  const multiplier = tier === "team" ? seatCount : 1;
+
+  const { error } = await supabase
+    .from("layout_credit_balance")
+    .upsert(
+      {
+        org_id: orgId,
+        design_md_remaining: allocation.designMd * multiplier,
+        test_query_remaining: allocation.testQuery * multiplier,
+        period_start: periodStart,
+        period_end: periodEnd,
+      },
+      { onConflict: "org_id" }
+    );
+
+  if (error) {
+    console.error("Failed to reset monthly org credits:", error.message);
   }
 }
 

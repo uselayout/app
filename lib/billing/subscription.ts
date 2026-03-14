@@ -4,6 +4,7 @@ import type { Subscription, SubscriptionTier } from "@/lib/types/billing";
 interface SubscriptionRow {
   id: string;
   user_id: string;
+  org_id: string;
   tier: string;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
@@ -21,6 +22,7 @@ function rowToSubscription(row: SubscriptionRow): Subscription {
   return {
     id: row.id,
     userId: row.user_id,
+    orgId: row.org_id,
     tier: row.tier as SubscriptionTier,
     stripeCustomerId: row.stripe_customer_id,
     stripeSubscriptionId: row.stripe_subscription_id,
@@ -63,6 +65,8 @@ export async function upsertSubscription(
     updated_at: new Date().toISOString(),
   };
 
+  if (sub.orgId !== undefined) row.org_id = sub.orgId;
+
   if (sub.tier !== undefined) row.tier = sub.tier;
   if (sub.stripeCustomerId !== undefined)
     row.stripe_customer_id = sub.stripeCustomerId;
@@ -85,6 +89,19 @@ export async function upsertSubscription(
   if (error) {
     console.error("Failed to upsert subscription:", error.message);
   }
+}
+
+export async function getSubscriptionByOrg(
+  orgId: string
+): Promise<Subscription | null> {
+  const { data, error } = await supabase
+    .from("layout_subscription")
+    .select("*")
+    .eq("org_id", orgId)
+    .single();
+
+  if (error || !data) return null;
+  return rowToSubscription(data as SubscriptionRow);
 }
 
 export async function getSubscriptionByStripeCustomerId(
