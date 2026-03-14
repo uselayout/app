@@ -1,5 +1,5 @@
 export type ComponentStatus = "draft" | "approved" | "deprecated";
-export type ComponentSource = "manual" | "explorer" | "extraction" | "figma";
+export type ComponentSource = "manual" | "explorer" | "extraction" | "figma" | "candidate";
 
 export interface ComponentProp {
   name: string;
