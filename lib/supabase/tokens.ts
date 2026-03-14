@@ -70,8 +70,7 @@ async function uniqueSlug(orgId: string, baseSlug: string): Promise<string> {
   if (!data) return baseSlug;
 
   let suffix = 2;
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  for (;;) {
     const candidate = `${baseSlug}-${suffix}`;
     const { data: existing } = await supabase
       .from("layout_token")
