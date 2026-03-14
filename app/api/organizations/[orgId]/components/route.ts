@@ -16,7 +16,7 @@ const CreateComponentSchema = z.object({
   description: z.string().optional(),
   category: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  source: z.enum(["manual", "explorer", "extraction", "figma"]).optional(),
+  source: z.enum(["manual", "explorer", "extraction", "figma", "candidate"]).optional(),
 });
 
 export async function GET(
