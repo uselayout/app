@@ -11,6 +11,7 @@ import {
   updateComponentCode,
   nameToComponentSlug,
 } from "@/lib/supabase/components";
+import { logAuditEvent } from "@/lib/supabase/audit";
 
 const ApproveSchema = z.object({
   selectedVariantIndex: z.number().int().min(0),
@@ -118,6 +119,17 @@ export async function POST(
   // Mark candidate as approved
   await selectCandidateVariant(candidateId, selectedVariantIndex);
   await updateCandidateStatus(candidateId, "approved", authResult.userId);
+
+  void logAuditEvent({
+    orgId,
+    actorId: authResult.userId,
+    actorName: authResult.session?.user?.name ?? undefined,
+    action: "candidate.approved",
+    resourceType: "candidate",
+    resourceId: candidateId,
+    resourceName: candidate.name,
+    details: { selectedVariantIndex },
+  });
 
   return NextResponse.json(component, { status: 200 });
 }

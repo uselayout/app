@@ -6,6 +6,7 @@ import {
   updateCandidateStatus,
   addCandidateComment,
 } from "@/lib/supabase/candidates";
+import { logAuditEvent } from "@/lib/supabase/audit";
 
 const RejectSchema = z.object({
   reason: z.string().optional(),
@@ -52,6 +53,17 @@ export async function POST(
       body: parsed.data.reason,
     });
   }
+
+  void logAuditEvent({
+    orgId,
+    actorId: authResult.userId,
+    actorName: authResult.session?.user?.name ?? undefined,
+    action: "candidate.rejected",
+    resourceType: "candidate",
+    resourceId: candidateId,
+    resourceName: candidate.name,
+    details: parsed.data.reason ? { reason: parsed.data.reason } : {},
+  });
 
   return NextResponse.json({ status: "rejected" });
 }
