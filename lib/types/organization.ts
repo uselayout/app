@@ -43,6 +43,7 @@ export const ROLE_PERMISSIONS = {
     viewProject: true,
     deleteProject: true,
     reviewCandidate: true,
+    manageApiKeys: true,
   },
   admin: {
     manageOrg: false,
@@ -53,6 +54,7 @@ export const ROLE_PERMISSIONS = {
     viewProject: true,
     deleteProject: true,
     reviewCandidate: true,
+    manageApiKeys: true,
   },
   editor: {
     manageOrg: false,
@@ -63,6 +65,7 @@ export const ROLE_PERMISSIONS = {
     viewProject: true,
     deleteProject: false,
     reviewCandidate: false,
+    manageApiKeys: false,
   },
   viewer: {
     manageOrg: false,
@@ -73,6 +76,7 @@ export const ROLE_PERMISSIONS = {
     viewProject: true,
     deleteProject: false,
     reviewCandidate: false,
+    manageApiKeys: false,
   },
 } as const;
 
