@@ -115,17 +115,6 @@ export function AuditLogViewer({ orgId }: AuditLogViewerProps) {
     setOffset(0);
   }, [actionFilter, resourceTypeFilter, fromDate, toDate]);
 
-  function formatTime(iso: string): string {
-    const d = new Date(iso);
-    return d.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
-
   return (
     <div className="space-y-4">
       {/* Filter Bar */}

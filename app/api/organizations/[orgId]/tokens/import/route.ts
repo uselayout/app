@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireOrgAuth } from "@/lib/api/auth-context";
 import { bulkCreateTokens } from "@/lib/supabase/tokens";
+import { logAuditEvent } from "@/lib/supabase/audit";
 import type { DesignTokenSource } from "@/lib/types/token";
 
 const ImportTokensSchema = z.object({
@@ -51,6 +52,15 @@ export async function POST(
   }));
 
   const imported = await bulkCreateTokens(orgId, tokensWithSource);
+
+  void logAuditEvent({
+    orgId,
+    actorId: authResult.userId,
+    actorName: authResult.session?.user?.name ?? undefined,
+    action: "token.imported",
+    resourceType: "token",
+    details: { count: imported, source },
+  });
 
   return NextResponse.json({ imported }, { status: 201 });
 }

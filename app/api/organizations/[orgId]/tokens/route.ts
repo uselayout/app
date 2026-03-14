@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireOrgAuth } from "@/lib/api/auth-context";
 import { createToken, getTokensByOrg } from "@/lib/supabase/tokens";
+import { logAuditEvent } from "@/lib/supabase/audit";
 import type { DesignTokenCategory, DesignTokenType } from "@/lib/types/token";
 
 const CreateTokenSchema = z.object({
@@ -84,6 +85,16 @@ export async function POST(
       { status: 500 }
     );
   }
+
+  void logAuditEvent({
+    orgId,
+    actorId: authResult.userId,
+    actorName: authResult.session?.user?.name ?? undefined,
+    action: "token.created",
+    resourceType: "token",
+    resourceId: token.id,
+    resourceName: token.name,
+  });
 
   return NextResponse.json(token, { status: 201 });
 }
