@@ -1,12 +1,9 @@
 "use client";
 
-import { useParams } from "next/navigation";
 import { useOrgStore } from "@/lib/store/organization";
 import { TemplatePublisher } from "@/components/dashboard/TemplatePublisher";
 
 export default function TemplateSettingsPage() {
-  const params = useParams();
-  const orgSlug = typeof params?.org === "string" ? params.org : "";
   const currentOrg = useOrgStore((s) => s.currentOrg)();
   const hasPermission = useOrgStore((s) => s.hasPermission);
 
@@ -34,5 +31,5 @@ export default function TemplateSettingsPage() {
     );
   }
 
-  return <TemplatePublisher orgId={currentOrg.id} orgSlug={orgSlug} />;
+  return <TemplatePublisher orgId={currentOrg.id} />;
 }
