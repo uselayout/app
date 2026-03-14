@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireOrgAuth } from "@/lib/api/auth-context";
 import { createApiKey, getApiKeysByOrg } from "@/lib/supabase/api-keys";
+import { logAuditEvent } from "@/lib/supabase/audit";
 
 export async function GET(
   request: Request,
@@ -50,6 +51,16 @@ export async function POST(
       { status: 500 }
     );
   }
+
+  void logAuditEvent({
+    orgId,
+    actorId: authResult.userId,
+    actorName: authResult.session?.user?.name ?? undefined,
+    action: "api_key.created",
+    resourceType: "api_key",
+    resourceId: key.id,
+    resourceName: parsed.data.name,
+  });
 
   return NextResponse.json(key, { status: 201 });
 }
