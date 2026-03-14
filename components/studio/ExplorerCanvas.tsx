@@ -8,6 +8,7 @@ import { FigmaPushModal } from "./FigmaPushModal";
 import { FigmaImportModal } from "./FigmaImportModal";
 import { ResponsivePreview } from "./ResponsivePreview";
 import { ComparisonView } from "./ComparisonView";
+import { PromoteToLibraryModal } from "./PromoteToLibraryModal";
 import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-variants";
 import { friendlyError } from "@/lib/explore/friendly-error";
 import { applyChangesToDesignMd } from "@/lib/figma/diff";
@@ -37,6 +38,7 @@ export function ExplorerCanvas({
   const [pushVariant, setPushVariant] = useState<DesignVariant | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [responsiveVariant, setResponsiveVariant] = useState<DesignVariant | null>(null);
+  const [promoteVariant, setPromoteVariant] = useState<DesignVariant | null>(null);
   const [comparePrompt, setComparePrompt] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -329,6 +331,7 @@ export function ExplorerCanvas({
                 onPushToFigma={() => handlePushToFigma(variant)}
                 onRegenerate={handleRegenerate}
                 onResponsive={() => setResponsiveVariant(variant)}
+                onPromoteToLibrary={() => setPromoteVariant(variant)}
               />
             ))}
             {isGenerating && variants.length < (currentExploration?.variantCount ?? 0) &&
@@ -397,6 +400,13 @@ export function ExplorerCanvas({
           onClose={() => setShowImport(false)}
           designMd={designMd}
           onUpdateDesignMd={handleUpdateDesignMdFromImport}
+        />
+      )}
+
+      {promoteVariant && (
+        <PromoteToLibraryModal
+          variant={promoteVariant}
+          onClose={() => setPromoteVariant(null)}
         />
       )}
     </div>
