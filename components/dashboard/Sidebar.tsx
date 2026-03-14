@@ -16,6 +16,12 @@ const FolderIcon = () => (
   </svg>
 );
 
+const LibraryIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 2v12M7 2v12M11 2v12M1 3h4M5 13H1M9 3h4M9 13h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 const SettingsIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M8 10a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -34,10 +40,18 @@ export function Sidebar() {
       href: `/${orgSlug}`,
       icon: <FolderIcon />,
     },
+    {
+      label: "Library",
+      href: `/${orgSlug}/library`,
+      icon: <LibraryIcon />,
+    },
   ];
 
   function isActive(href: string): boolean {
-    return pathname === href;
+    if (href === `/${orgSlug}`) {
+      return pathname === href;
+    }
+    return pathname?.startsWith(href) ?? false;
   }
 
   return (
