@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS layout_drift_report (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES layout_organization(id) ON DELETE CASCADE,
-  project_id UUID REFERENCES layout_projects(id) ON DELETE SET NULL,
+  project_id TEXT REFERENCES layout_projects(id) ON DELETE SET NULL,
 
   source_url TEXT NOT NULL,
   source_type TEXT NOT NULL CHECK (source_type IN ('figma', 'website')),
