@@ -9,15 +9,15 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-[--studio-accent] text-[--text-on-accent] [a&]:hover:bg-[--studio-accent-hover]",
+        default: "bg-[var(--studio-accent)] text-[var(--text-on-accent)] [a&]:hover:bg-[var(--studio-accent-hover)]",
         secondary:
-          "bg-[--bg-surface] text-[--text-primary] [a&]:hover:bg-[--bg-hover]",
+          "bg-[var(--bg-surface)] text-[var(--text-primary)] [a&]:hover:bg-[var(--bg-hover)]",
         destructive:
           "bg-destructive text-white focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40 [a&]:hover:bg-destructive/90",
         outline:
-          "border-[--studio-border] text-[--text-primary] [a&]:hover:bg-[--bg-hover] [a&]:hover:text-[--text-primary]",
-        ghost: "[a&]:hover:bg-[--bg-hover] [a&]:hover:text-[--text-primary]",
-        link: "text-[--text-primary] underline-offset-4 [a&]:hover:underline",
+          "border-[var(--studio-border)] text-[var(--text-primary)] [a&]:hover:bg-[var(--bg-hover)] [a&]:hover:text-[var(--text-primary)]",
+        ghost: "[a&]:hover:bg-[var(--bg-hover)] [a&]:hover:text-[var(--text-primary)]",
+        link: "text-[var(--text-primary)] underline-offset-4 [a&]:hover:underline",
       },
     },
     defaultVariants: {

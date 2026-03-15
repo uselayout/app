@@ -183,7 +183,7 @@ export function IconLibrary() {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="rounded-[var(--studio-radius-md)] bg-[var(--studio-accent)] px-4 py-2 text-sm text-[--text-on-accent] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
+            className="rounded-[var(--studio-radius-md)] bg-[var(--studio-accent)] px-4 py-2 text-sm text-[var(--text-on-accent)] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
           >
             {uploading ? "Uploading..." : "Upload"}
           </button>

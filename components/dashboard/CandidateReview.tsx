@@ -119,7 +119,7 @@ function VariantPreview({
           {name || `Variant ${index + 1}`}
         </h3>
         {isSelected && (
-          <span className="rounded-full bg-[var(--studio-accent)] px-2 py-0.5 text-[10px] font-semibold text-[--text-on-accent]">
+          <span className="rounded-full bg-[var(--studio-accent)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-on-accent)]">
             Selected
           </span>
         )}

@@ -189,10 +189,10 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
   }, [results]);
 
   return (
-    <div className="flex h-full flex-col bg-[--bg-panel]">
+    <div className="flex h-full flex-col bg-[var(--bg-panel)]">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[--studio-border] px-4 py-2">
-        <span className="text-xs font-medium text-[--text-primary]">
+      <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-4 py-2">
+        <span className="text-xs font-medium text-[var(--text-primary)]">
           Test Panel
         </span>
         <button
@@ -201,7 +201,7 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
           role="switch"
           aria-checked={includeContext}
         >
-          <span className="text-xs text-[--text-secondary]">
+          <span className="text-xs text-[var(--text-secondary)]">
             DESIGN.md context
           </span>
           <span
@@ -222,18 +222,18 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
       <div ref={outputRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {results.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-3">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-[--text-muted]">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-[var(--text-muted)]">
               <rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
               <rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
               <rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
               <rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
             </svg>
-            <p className="text-center text-xs font-medium text-[--text-secondary]">
+            <p className="text-center text-xs font-medium text-[var(--text-secondary)]">
               Test your DESIGN.md by asking Claude to
               <br />
               build components.
             </p>
-            <p className="text-center text-xs text-[--text-muted]">
+            <p className="text-center text-xs text-[var(--text-muted)]">
               Toggle context ON/OFF to compare output quality.
             </p>
           </div>
@@ -251,7 +251,7 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
       </div>
 
       {/* Input area */}
-      <div className={`mx-3 mb-3 flex flex-col rounded-lg border border-[rgba(255,255,255,0.05)] bg-[#161718] ${highlighted ? "ring-2 ring-[--studio-accent] ring-offset-1 ring-offset-[--bg-panel]" : ""}`}>
+      <div className={`mx-3 mb-3 flex flex-col rounded-lg border border-[rgba(255,255,255,0.05)] bg-[#161718] ${highlighted ? "ring-2 ring-[var(--studio-accent)] ring-offset-1 ring-offset-[var(--bg-panel)]" : ""}`}>
         {/* Text area */}
         <div className="relative p-2.5">
           <div className="flex min-h-[68px] items-start rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.08)] px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
@@ -262,7 +262,7 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask Layout to build a component..."
-              className="flex-1 bg-transparent text-[13px] text-[--text-primary] placeholder:text-[#898d94] outline-none"
+              className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[#898d94] outline-none"
             />
           </div>
           {/* Send button */}
@@ -271,7 +271,7 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
               <button
                 onClick={handleSubmit}
                 disabled={!prompt.trim() || streamingId !== null}
-                className="flex items-center justify-center size-6 rounded-full bg-[--text-primary] text-[--bg-app] transition-colors hover:opacity-90 disabled:opacity-20 disabled:cursor-not-allowed"
+                className="flex items-center justify-center size-6 rounded-full bg-[var(--text-primary)] text-[var(--bg-app)] transition-colors hover:opacity-90 disabled:opacity-20 disabled:cursor-not-allowed"
               >
                 <ArrowUp size={12} strokeWidth={2.5} />
               </button>
@@ -426,7 +426,7 @@ function ComponentPreview({
   }, [html]);
 
   if (isStreaming) {
-    return <p className="text-xs text-[--text-muted]">Generating...</p>;
+    return <p className="text-xs text-[var(--text-muted)]">Generating...</p>;
   }
   if (!block) {
     // Check if output contains an error message (e.g. missing API key)
@@ -439,13 +439,13 @@ function ComponentPreview({
 
     return (
       <div className="space-y-2">
-        <p className="text-xs text-[--text-muted]">
+        <p className="text-xs text-[var(--text-muted)]">
           {looksLikeError ? trimmed : "No code block found in output."}
         </p>
         {onFallbackToCode && (
           <button
             onClick={onFallbackToCode}
-            className="text-xs text-[--studio-accent] hover:underline"
+            className="text-xs text-[var(--studio-accent)] hover:underline"
           >
             View raw output
           </button>
@@ -455,7 +455,7 @@ function ComponentPreview({
   }
   if (!componentName) {
     return (
-      <p className="text-xs text-[--text-muted]">
+      <p className="text-xs text-[var(--text-muted)]">
         Could not detect component name.
       </p>
     );
@@ -463,12 +463,12 @@ function ComponentPreview({
   if (transpileError) {
     return (
       <div className="space-y-2">
-        <p className="text-xs text-[--text-muted]">
+        <p className="text-xs text-[var(--text-muted)]">
           Preview unavailable — the code could not be rendered.{" "}
           {onFallbackToCode && (
             <button
               onClick={onFallbackToCode}
-              className="text-[--studio-accent] hover:underline"
+              className="text-[var(--studio-accent)] hover:underline"
             >
               View code instead
             </button>
@@ -478,14 +478,14 @@ function ComponentPreview({
     );
   }
   if (!html) {
-    return <p className="text-xs text-[--text-muted]">Transpiling...</p>;
+    return <p className="text-xs text-[var(--text-muted)]">Transpiling...</p>;
   }
 
   return (
     <iframe
       ref={iframeRef}
       srcDoc={html}
-      className="w-full rounded-md border border-[--studio-border] bg-white"
+      className="w-full rounded-md border border-[var(--studio-border)] bg-white"
       style={{ minHeight: 280 }}
       title="Component preview"
     />
@@ -535,7 +535,7 @@ function ResultBlock({
     <div className="space-y-2">
       {/* Prompt */}
       <div className="flex items-start gap-2">
-        <div className="rounded-md bg-[--studio-accent-subtle] px-3 py-1.5 text-xs text-[--text-primary]">
+        <div className="rounded-md bg-[var(--studio-accent-subtle)] px-3 py-1.5 text-xs text-[var(--text-primary)]">
           {result.prompt}
         </div>
       </div>
@@ -547,8 +547,8 @@ function ResultBlock({
             onClick={() => setTab("preview")}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               tab === "preview"
-                ? "bg-[--studio-accent] text-[--text-on-accent]"
-                : "bg-[#28292a] text-[--text-primary] hover:bg-[#333]"
+                ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                : "bg-[#28292a] text-[var(--text-primary)] hover:bg-[#333]"
             }`}
           >
             Preview
@@ -557,8 +557,8 @@ function ResultBlock({
             onClick={() => setTab("code")}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               tab === "code"
-                ? "bg-[--studio-accent] text-[--text-on-accent]"
-                : "bg-[#28292a] text-[--text-primary] hover:bg-[#333]"
+                ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                : "bg-[#28292a] text-[var(--text-primary)] hover:bg-[#333]"
             }`}
           >
             Code
@@ -567,7 +567,7 @@ function ResultBlock({
       )}
 
       {/* Output */}
-      <div className="rounded-md border border-[--studio-border] bg-[--bg-surface] p-3">
+      <div className="rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-3">
         {result.output && tab === "preview" ? (
           <ComponentPreview
             output={result.output}
@@ -591,7 +591,7 @@ function ResultBlock({
               className={`rounded p-1 transition-colors ${
                 result.rating === "up"
                   ? "text-emerald-400"
-                  : "text-[--text-muted] hover:text-[--text-secondary]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
               }`}
             >
               <ThumbsUp className="h-3 w-3" />
@@ -601,14 +601,14 @@ function ResultBlock({
               className={`rounded p-1 transition-colors ${
                 result.rating === "down"
                   ? "text-red-400"
-                  : "text-[--text-muted] hover:text-[--text-secondary]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
               }`}
             >
               <ThumbsDown className="h-3 w-3" />
             </button>
             <button
               onClick={() => onRerun(result)}
-              className="rounded p-1 text-[--text-muted] transition-colors hover:text-[--text-secondary]"
+              className="rounded p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)]"
               title="Re-run prompt"
             >
               <RotateCcw className="h-3 w-3" />
@@ -619,7 +619,7 @@ function ResultBlock({
                 className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] transition-colors ${
                   figmaCopied
                     ? "text-emerald-400"
-                    : "text-[--text-muted] hover:text-[--text-secondary] hover:bg-[--bg-hover]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                 }`}
                 title="Copy prompt for Figma MCP — paste into Claude Code or Cursor"
               >
@@ -648,8 +648,8 @@ function ResultBlock({
                 disabled={pushingToDs}
                 className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] transition-colors ${
                   pushingToDs
-                    ? "text-[--text-muted] opacity-50"
-                    : "text-[--text-muted] hover:text-[--text-secondary] hover:bg-[--bg-hover]"
+                    ? "text-[var(--text-muted)] opacity-50"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                 }`}
                 title="Push to Design System"
               >
@@ -661,7 +661,7 @@ function ResultBlock({
         )}
         <button
           onClick={() => onDelete(result.id)}
-          className="rounded p-1 text-[--text-muted] transition-colors hover:text-red-400"
+          className="rounded p-1 text-[var(--text-muted)] transition-colors hover:text-red-400"
         >
           <Trash2 className="h-3 w-3" />
         </button>
@@ -673,7 +673,7 @@ function ResultBlock({
 function OutputRenderer({ text }: { text: string }) {
   if (!text) {
     return (
-      <span className="text-xs text-[--text-muted]">Generating...</span>
+      <span className="text-xs text-[var(--text-muted)]">Generating...</span>
     );
   }
 
@@ -681,7 +681,7 @@ function OutputRenderer({ text }: { text: string }) {
   const parts = text.split(/(```[\s\S]*?```)/g);
 
   return (
-    <div className="space-y-2 text-xs leading-relaxed text-[--text-secondary]">
+    <div className="space-y-2 text-xs leading-relaxed text-[var(--text-secondary)]">
       {parts.map((part, i) => {
         if (part.startsWith("```")) {
           return <CodeBlock key={i} content={part} />;
@@ -714,7 +714,7 @@ function HealthScoreDisplay({ score }: { score: HealthScore }) {
   return (
     <div className={`rounded-md ${bgColour} p-3`}>
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-[--text-secondary]">
+        <span className="text-xs font-medium text-[var(--text-secondary)]">
           Context Health
         </span>
         <span className={`text-sm font-bold ${colour}`}>
@@ -734,7 +734,7 @@ function HealthScoreDisplay({ score }: { score: HealthScore }) {
               >
                 {issue.severity === "error" ? "✗" : "⚠"}
               </span>
-              <span className="text-[--text-muted]">
+              <span className="text-[var(--text-muted)]">
                 {issue.rule}: {issue.actual}
               </span>
             </div>
@@ -761,12 +761,12 @@ function CodeBlock({ content }: { content: string }) {
   }, [code]);
 
   return (
-    <div className="relative overflow-hidden rounded-md border border-[--studio-border] bg-[--bg-app]">
-      <div className="flex items-center justify-between border-b border-[--studio-border] px-3 py-1">
-        <span className="text-[10px] text-[--text-muted]">{lang || "code"}</span>
+    <div className="relative overflow-hidden rounded-md border border-[var(--studio-border)] bg-[var(--bg-app)]">
+      <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-3 py-1">
+        <span className="text-[10px] text-[var(--text-muted)]">{lang || "code"}</span>
         <button
           onClick={handleCopy}
-          className="text-[--text-muted] transition-colors hover:text-[--text-secondary]"
+          className="text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)]"
         >
           {copied ? (
             <Check className="h-3 w-3 text-emerald-400" />
@@ -776,7 +776,7 @@ function CodeBlock({ content }: { content: string }) {
         </button>
       </div>
       <pre className="overflow-x-auto p-3 text-xs">
-        <code className="text-[--text-primary]">{code}</code>
+        <code className="text-[var(--text-primary)]">{code}</code>
       </pre>
     </div>
   );

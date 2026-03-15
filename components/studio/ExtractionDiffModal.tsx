@@ -65,7 +65,7 @@ function isHexColour(value: string): boolean {
 function ColourSwatch({ value }: { value: string }) {
   return (
     <span
-      className="inline-block w-3.5 h-3.5 rounded-sm border border-[--studio-border] flex-shrink-0"
+      className="inline-block w-3.5 h-3.5 rounded-sm border border-[var(--studio-border)] flex-shrink-0"
       style={{ backgroundColor: value.trim() }}
       aria-hidden="true"
     />
@@ -92,16 +92,16 @@ function TokenRow({ token }: { token: TokenChange }) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[--text-primary] text-sm font-medium truncate">
+          <span className="text-[var(--text-primary)] text-sm font-medium truncate">
             {token.name}
           </span>
           {token.cssVariable && (
-            <span className="text-[--text-muted] text-xs font-mono truncate">
+            <span className="text-[var(--text-muted)] text-xs font-mono truncate">
               {token.cssVariable}
             </span>
           )}
           <span
-            className="text-[--text-muted] text-xs px-1.5 py-0.5 rounded bg-[--bg-elevated] border border-[--studio-border] flex-shrink-0"
+            className="text-[var(--text-muted)] text-xs px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--studio-border)] flex-shrink-0"
           >
             {token.type}
           </span>
@@ -111,14 +111,14 @@ function TokenRow({ token }: { token: TokenChange }) {
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             <div className="flex items-center gap-1.5">
               {showSwatches && <ColourSwatch value={token.previousValue} />}
-              <span className="text-[--text-secondary] text-xs font-mono line-through">
+              <span className="text-[var(--text-secondary)] text-xs font-mono line-through">
                 {token.previousValue}
               </span>
             </div>
-            <ArrowRight className="w-3 h-3 text-[--text-muted] flex-shrink-0" />
+            <ArrowRight className="w-3 h-3 text-[var(--text-muted)] flex-shrink-0" />
             <div className="flex items-center gap-1.5">
               {showSwatches && <ColourSwatch value={token.currentValue} />}
-              <span className="text-[--text-primary] text-xs font-mono">
+              <span className="text-[var(--text-primary)] text-xs font-mono">
                 {token.currentValue}
               </span>
             </div>
@@ -130,7 +130,7 @@ function TokenRow({ token }: { token: TokenChange }) {
             {token.type === "color" && isHexColour(token.currentValue) && (
               <ColourSwatch value={token.currentValue} />
             )}
-            <span className="text-[--text-secondary] text-xs font-mono">
+            <span className="text-[var(--text-secondary)] text-xs font-mono">
               {token.currentValue}
             </span>
           </div>
@@ -141,7 +141,7 @@ function TokenRow({ token }: { token: TokenChange }) {
             {token.type === "color" && isHexColour(token.previousValue) && (
               <ColourSwatch value={token.previousValue} />
             )}
-            <span className="text-[--text-secondary] text-xs font-mono line-through">
+            <span className="text-[var(--text-secondary)] text-xs font-mono line-through">
               {token.previousValue}
             </span>
           </div>
@@ -163,11 +163,11 @@ function ComponentRow({ component }: { component: ComponentChange }) {
         </span>
       </div>
       <div className="flex-1 min-w-0">
-        <span className="text-[--text-primary] text-sm font-medium">
+        <span className="text-[var(--text-primary)] text-sm font-medium">
           {component.name}
         </span>
         {component.details && (
-          <p className="text-[--text-muted] text-xs mt-0.5">{component.details}</p>
+          <p className="text-[var(--text-muted)] text-xs mt-0.5">{component.details}</p>
         )}
       </div>
     </div>
@@ -185,21 +185,21 @@ function Section({ title, badge, children, defaultOpen = false }: SectionProps) 
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="border border-[--studio-border] rounded-lg overflow-hidden">
+    <div className="border border-[var(--studio-border)] rounded-lg overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-[--bg-panel] hover:bg-[--bg-surface] transition-colors duration-[--duration-base] text-left"
+        className="w-full flex items-center justify-between px-4 py-3 bg-[var(--bg-panel)] hover:bg-[var(--bg-surface)] transition-colors duration-[var(--duration-base)] text-left"
       >
         <div className="flex items-center gap-2.5">
           {open ? (
-            <ChevronDown className="w-4 h-4 text-[--text-muted]" />
+            <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
           ) : (
-            <ChevronRight className="w-4 h-4 text-[--text-muted]" />
+            <ChevronRight className="w-4 h-4 text-[var(--text-muted)]" />
           )}
-          <span className="text-[--text-primary] text-sm font-medium">{title}</span>
+          <span className="text-[var(--text-primary)] text-sm font-medium">{title}</span>
           {badge > 0 && (
-            <span className="text-xs px-1.5 py-0.5 rounded-full bg-[--bg-elevated] text-[--text-secondary] border border-[--studio-border]">
+            <span className="text-xs px-1.5 py-0.5 rounded-full bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--studio-border)]">
               {badge}
             </span>
           )}
@@ -207,7 +207,7 @@ function Section({ title, badge, children, defaultOpen = false }: SectionProps) 
       </button>
 
       {open && (
-        <div className="px-4 py-3 bg-[--bg-surface] flex flex-col gap-2 border-t border-[--studio-border]">
+        <div className="px-4 py-3 bg-[var(--bg-surface)] flex flex-col gap-2 border-t border-[var(--studio-border)]">
           {children}
         </div>
       )}
@@ -241,15 +241,15 @@ export function ExtractionDiffModal({
       />
 
       {/* Panel */}
-      <div className="relative z-10 w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl border border-[--studio-border-strong] bg-[--bg-app] shadow-2xl">
+      <div className="relative z-10 w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-app)] shadow-2xl">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 px-5 py-4 border-b border-[--studio-border]">
+        <div className="flex items-start justify-between gap-4 px-5 py-4 border-b border-[var(--studio-border)]">
           <div className="flex-1 min-w-0">
-            <h2 className="text-[--text-primary] text-base font-semibold leading-snug">
+            <h2 className="text-[var(--text-primary)] text-base font-semibold leading-snug">
               Extraction Changes
             </h2>
             {diff.summary && (
-              <p className="text-[--text-secondary] text-sm mt-0.5 leading-snug">
+              <p className="text-[var(--text-secondary)] text-sm mt-0.5 leading-snug">
                 {diff.summary}
               </p>
             )}
@@ -259,7 +259,7 @@ export function ExtractionDiffModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-[--text-secondary] border border-[--studio-border] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-all duration-[--duration-base]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-[var(--text-secondary)] border border-[var(--studio-border)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-all duration-[var(--duration-base)]"
             >
               <X className="w-3.5 h-3.5" />
               Discard
@@ -267,7 +267,7 @@ export function ExtractionDiffModal({
             <button
               type="button"
               onClick={onAccept}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-[--text-on-accent] bg-[--studio-accent] hover:bg-[--studio-accent-hover] transition-all duration-[--duration-base]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-[var(--text-on-accent)] bg-[var(--studio-accent)] hover:bg-[var(--studio-accent-hover)] transition-all duration-[var(--duration-base)]"
             >
               <Check className="w-3.5 h-3.5" />
               Accept Changes
@@ -277,22 +277,22 @@ export function ExtractionDiffModal({
 
         {/* Stats bar */}
         {(tokenTotal > 0 || componentTotal > 0 || fontTotal > 0) && (
-          <div className="flex items-center gap-4 px-5 py-2.5 bg-[--bg-panel] border-b border-[--studio-border] text-xs text-[--text-muted] flex-wrap">
+          <div className="flex items-center gap-4 px-5 py-2.5 bg-[var(--bg-panel)] border-b border-[var(--studio-border)] text-xs text-[var(--text-muted)] flex-wrap">
             {tokenTotal > 0 && (
               <span>
-                <span className="text-[--text-secondary] font-medium">{tokenTotal}</span>{" "}
+                <span className="text-[var(--text-secondary)] font-medium">{tokenTotal}</span>{" "}
                 token {tokenTotal === 1 ? "change" : "changes"}
               </span>
             )}
             {componentTotal > 0 && (
               <span>
-                <span className="text-[--text-secondary] font-medium">{componentTotal}</span>{" "}
+                <span className="text-[var(--text-secondary)] font-medium">{componentTotal}</span>{" "}
                 component {componentTotal === 1 ? "change" : "changes"}
               </span>
             )}
             {fontTotal > 0 && (
               <span>
-                <span className="text-[--text-secondary] font-medium">{fontTotal}</span>{" "}
+                <span className="text-[var(--text-secondary)] font-medium">{fontTotal}</span>{" "}
                 font {fontTotal === 1 ? "change" : "changes"}
               </span>
             )}
@@ -304,9 +304,9 @@ export function ExtractionDiffModal({
           {/* No changes state */}
           {tokenTotal === 0 && componentTotal === 0 && fontTotal === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Check className="w-8 h-8 text-[--text-muted] mb-3" />
-              <p className="text-[--text-secondary] text-sm">No changes detected</p>
-              <p className="text-[--text-muted] text-xs mt-1">
+              <Check className="w-8 h-8 text-[var(--text-muted)] mb-3" />
+              <p className="text-[var(--text-secondary)] text-sm">No changes detected</p>
+              <p className="text-[var(--text-muted)] text-xs mt-1">
                 The extraction result matches the previous version.
               </p>
             </div>
@@ -346,7 +346,7 @@ export function ExtractionDiffModal({
                     <Plus className="w-3 h-3 text-emerald-400" />
                     <span className="text-xs font-medium text-emerald-400">Added</span>
                   </div>
-                  <span className="text-[--text-primary] text-sm font-medium">{font}</span>
+                  <span className="text-[var(--text-primary)] text-sm font-medium">{font}</span>
                 </div>
               ))}
               {diff.fonts.removed.map((font) => (
@@ -358,7 +358,7 @@ export function ExtractionDiffModal({
                     <Minus className="w-3 h-3 text-red-400" />
                     <span className="text-xs font-medium text-red-400">Removed</span>
                   </div>
-                  <span className="text-[--text-primary] text-sm font-medium">{font}</span>
+                  <span className="text-[var(--text-primary)] text-sm font-medium">{font}</span>
                 </div>
               ))}
             </Section>
@@ -366,18 +366,18 @@ export function ExtractionDiffModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[--studio-border] bg-[--bg-panel] rounded-b-xl">
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[var(--studio-border)] bg-[var(--bg-panel)] rounded-b-xl">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-md text-sm text-[--text-secondary] border border-[--studio-border] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-all duration-[--duration-base]"
+            className="px-4 py-2 rounded-md text-sm text-[var(--text-secondary)] border border-[var(--studio-border)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-all duration-[var(--duration-base)]"
           >
             Discard
           </button>
           <button
             type="button"
             onClick={onAccept}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium text-[--text-on-accent] bg-[--studio-accent] hover:bg-[--studio-accent-hover] transition-all duration-[--duration-base]"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium text-[var(--text-on-accent)] bg-[var(--studio-accent)] hover:bg-[var(--studio-accent-hover)] transition-all duration-[var(--duration-base)]"
           >
             <Check className="w-4 h-4" />
             Accept Changes

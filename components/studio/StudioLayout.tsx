@@ -74,7 +74,7 @@ export function StudioLayout({
       {showSourcePanel && (
         <>
           <div
-            className="shrink-0 overflow-hidden border-r border-[--studio-border]"
+            className="shrink-0 overflow-hidden border-r border-[var(--studio-border)]"
             style={{ width: leftWidth }}
           >
             {sourcePanel}
@@ -82,7 +82,7 @@ export function StudioLayout({
 
           {/* Left Resize Handle */}
           <div
-            className="w-1 shrink-0 cursor-col-resize bg-transparent transition-colors hover:bg-[--studio-accent]/30"
+            className="w-1 shrink-0 cursor-col-resize bg-transparent transition-colors hover:bg-[var(--studio-accent)]/30"
             onMouseDown={() => handleMouseDown("left")}
           />
         </>
@@ -97,11 +97,11 @@ export function StudioLayout({
       {showTestPanel && (
         <>
           <div
-            className="w-1 shrink-0 cursor-col-resize bg-transparent transition-colors hover:bg-[--studio-accent]/30"
+            className="w-1 shrink-0 cursor-col-resize bg-transparent transition-colors hover:bg-[var(--studio-accent)]/30"
             onMouseDown={() => handleMouseDown("right")}
           />
           <div
-            className="shrink-0 overflow-hidden border-l border-[--studio-border]"
+            className="shrink-0 overflow-hidden border-l border-[var(--studio-border)]"
             style={{ width: rightWidth }}
           >
             {testPanel}

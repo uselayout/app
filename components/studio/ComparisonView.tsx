@@ -86,18 +86,18 @@ export function ComparisonView({ prompt, designMd, onClose }: ComparisonViewProp
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-sm">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[--studio-border] bg-[--bg-panel] px-5 py-3">
+      <div className="flex items-center justify-between border-b border-[var(--studio-border)] bg-[var(--bg-panel)] px-5 py-3">
         <div>
-          <h2 className="text-sm font-semibold text-[--text-primary]">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Before / After Comparison
           </h2>
-          <p className="text-xs text-[--text-secondary]">
+          <p className="text-xs text-[var(--text-secondary)]">
             Same prompt — with and without your design system
           </p>
         </div>
         <button
           onClick={onClose}
-          className="rounded-md p-1.5 text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+          className="rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
         >
           <X size={16} />
         </button>
@@ -107,8 +107,8 @@ export function ComparisonView({ prompt, designMd, onClose }: ComparisonViewProp
       <div className="flex flex-1 overflow-hidden">
         {loading ? (
           <div className="flex flex-1 items-center justify-center gap-3">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[--studio-border-strong] border-t-[--studio-accent]" />
-            <p className="text-sm text-[--text-secondary]">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
+            <p className="text-sm text-[var(--text-secondary)]">
               Generating comparison...
             </p>
           </div>
@@ -120,8 +120,8 @@ export function ComparisonView({ prompt, designMd, onClose }: ComparisonViewProp
         ) : (
           <>
             {/* Without design system */}
-            <div className="flex flex-1 flex-col border-r border-[--studio-border]">
-              <div className="flex items-center gap-2 border-b border-[--studio-border] bg-red-500/5 px-4 py-2.5">
+            <div className="flex flex-1 flex-col border-r border-[var(--studio-border)]">
+              <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-red-500/5 px-4 py-2.5">
                 <span className="h-2 w-2 rounded-full bg-red-400" />
                 <span className="text-xs font-semibold text-red-400">
                   Without Design System
@@ -132,7 +132,7 @@ export function ComparisonView({ prompt, designMd, onClose }: ComparisonViewProp
                   <PreviewFrame code={withoutDs.code} />
                 ) : (
                   <div className="flex h-full items-center justify-center">
-                    <p className="text-xs text-[--text-muted]">No result</p>
+                    <p className="text-xs text-[var(--text-muted)]">No result</p>
                   </div>
                 )}
               </div>
@@ -140,7 +140,7 @@ export function ComparisonView({ prompt, designMd, onClose }: ComparisonViewProp
 
             {/* With design system */}
             <div className="flex flex-1 flex-col">
-              <div className="flex items-center gap-2 border-b border-[--studio-border] bg-emerald-500/5 px-4 py-2.5">
+              <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-emerald-500/5 px-4 py-2.5">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
                 <span className="text-xs font-semibold text-emerald-400">
                   With Design System
@@ -152,7 +152,7 @@ export function ComparisonView({ prompt, designMd, onClose }: ComparisonViewProp
                   <PreviewFrame code={withDs.code} />
                 ) : (
                   <div className="flex h-full items-center justify-center">
-                    <p className="text-xs text-[--text-muted]">No result</p>
+                    <p className="text-xs text-[var(--text-muted)]">No result</p>
                   </div>
                 )}
               </div>
@@ -162,8 +162,8 @@ export function ComparisonView({ prompt, designMd, onClose }: ComparisonViewProp
       </div>
 
       {/* Footer with prompt */}
-      <div className="border-t border-[--studio-border] bg-[--bg-panel] px-5 py-3">
-        <p className="text-xs text-[--text-muted]">
+      <div className="border-t border-[var(--studio-border)] bg-[var(--bg-panel)] px-5 py-3">
+        <p className="text-xs text-[var(--text-muted)]">
           Prompt: &ldquo;{prompt}&rdquo;
         </p>
       </div>
@@ -220,7 +220,7 @@ function PreviewFrame({ code }: { code: string }) {
       />
       {!ready && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[--studio-border-strong] border-t-[--studio-accent]" />
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
         </div>
       )}
     </div>

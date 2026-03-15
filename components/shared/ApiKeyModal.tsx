@@ -50,14 +50,14 @@ function KeyField({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-medium text-[--text-muted]">
+        <label className="text-xs font-medium text-[var(--text-muted)]">
           {label}
         </label>
         <a
           href={externalUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[10px] text-[--text-muted] hover:text-[--studio-accent] transition-colors"
+          className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--studio-accent)] transition-colors"
         >
           {externalLabel}
           <ExternalLink className="h-2.5 w-2.5" />
@@ -71,31 +71,31 @@ function KeyField({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSave()}
-            className="w-full rounded-md border border-[--studio-border-strong] bg-[--bg-surface] px-3 py-2 text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus]"
+            className="w-full rounded-md border border-[var(--studio-border-strong)] bg-[var(--bg-surface)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)]"
           />
           <button
             onClick={handleSave}
             disabled={!draft.trim() || draft.startsWith("•")}
-            className="shrink-0 rounded-md bg-[--studio-accent] px-3 py-2 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] disabled:opacity-40 transition-colors"
+            className="shrink-0 rounded-md bg-[var(--studio-accent)] px-3 py-2 text-xs font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-40 transition-colors"
           >
             Save
           </button>
         </div>
       ) : (
-        <div className="flex items-center justify-between rounded-md border border-[--studio-border] bg-[--bg-surface] px-3 py-2">
-          <span className="text-xs text-[--text-secondary]">
+        <div className="flex items-center justify-between rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2">
+          <span className="text-xs text-[var(--text-secondary)]">
             ••••••••••••••••
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={handleClear}
-              className="text-xs text-[--text-muted] hover:text-[--status-error] transition-colors"
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--status-error)] transition-colors"
             >
               Clear
             </button>
             <button
               onClick={handleEdit}
-              className="text-xs text-[--studio-accent] hover:underline"
+              className="text-xs text-[var(--studio-accent)] hover:underline"
             >
               Change
             </button>
@@ -128,25 +128,25 @@ export function ApiKeyModal({ onClose }: ApiKeyModalProps) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-xl border border-[--studio-border-strong] bg-[--bg-elevated] p-6 shadow-[0_0_80px_rgba(0,0,0,0.6)]"
+        className="w-full max-w-md rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] p-6 shadow-[0_0_80px_rgba(0,0,0,0.6)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <Key className="h-4 w-4 text-[--studio-accent]" />
-            <h2 className="text-sm font-semibold text-[--text-primary]">
+            <Key className="h-4 w-4 text-[var(--studio-accent)]" />
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">
               API Keys
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-[--text-muted] hover:text-[--text-primary] transition-colors"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <p className="mb-5 text-xs leading-relaxed text-[--text-secondary]">
+        <p className="mb-5 text-xs leading-relaxed text-[var(--text-secondary)]">
           Your keys are stored locally in your browser. We never persist them on
           our servers.
         </p>
@@ -176,7 +176,7 @@ export function ApiKeyModal({ onClose }: ApiKeyModalProps) {
         <div className="mt-5 flex justify-end">
           <button
             onClick={onClose}
-            className="rounded-md bg-[--studio-accent] px-3 py-1.5 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] transition-colors"
+            className="rounded-md bg-[var(--studio-accent)] px-3 py-1.5 text-xs font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors"
           >
             Done
           </button>

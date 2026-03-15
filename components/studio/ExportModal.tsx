@@ -131,24 +131,24 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="export-modal-title"
-        className="w-full max-w-md rounded-xl border border-[--studio-border-strong] bg-[--bg-elevated] shadow-[0_0_80px_rgba(0,0,0,0.6)]"
+        className="w-full max-w-md rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] shadow-[0_0_80px_rgba(0,0,0,0.6)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[--studio-border] px-5 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-5 py-4">
           <div className="flex items-center gap-2">
             {downloadComplete ? (
               <CheckCircle className="h-4 w-4 text-emerald-500" />
             ) : (
-              <Download className="h-4 w-4 text-[--studio-accent]" />
+              <Download className="h-4 w-4 text-[var(--studio-accent)]" />
             )}
-            <h2 id="export-modal-title" className="text-sm font-semibold text-[--text-primary]">
+            <h2 id="export-modal-title" className="text-sm font-semibold text-[var(--text-primary)]">
               {downloadComplete ? "Bundle downloaded" : "Export AI Kit"}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="rounded p-1 text-[--text-muted] transition-colors hover:text-[--text-primary]"
+            className="rounded p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -160,8 +160,8 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
             <div className="p-5 space-y-5">
               {/* Step 1 */}
               <div className="space-y-2">
-                <p className="text-xs font-medium text-[--text-primary]">
-                  <span className="mr-2 text-[--text-muted]">1.</span>
+                <p className="text-xs font-medium text-[var(--text-primary)]">
+                  <span className="mr-2 text-[var(--text-muted)]">1.</span>
                   Import the bundle into your project
                 </p>
                 <CopyBlock code={`npx @layoutdesign/context import ~/Downloads/${downloadFilename}`} />
@@ -169,12 +169,12 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
 
               {/* Step 2 */}
               <div className="space-y-2">
-                <p className="text-xs font-medium text-[--text-primary]">
-                  <span className="mr-2 text-[--text-muted]">2.</span>
+                <p className="text-xs font-medium text-[var(--text-primary)]">
+                  <span className="mr-2 text-[var(--text-muted)]">2.</span>
                   Auto-configure your AI tool
                 </p>
                 <CopyBlock code="npx @layoutdesign/context install" />
-                <p className="text-[10px] text-[--text-muted]">
+                <p className="text-[10px] text-[var(--text-muted)]">
                   Detects Claude Code, Cursor, and Windsurf automatically. Use{" "}
                   <code className="text-[10px]">--target claude</code> to target a specific tool.
                 </p>
@@ -182,13 +182,13 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
 
               {/* Step 3 */}
               <div className="space-y-2">
-                <p className="text-xs font-medium text-[--text-primary]">
-                  <span className="mr-2 text-[--text-muted]">3.</span>
+                <p className="text-xs font-medium text-[var(--text-primary)]">
+                  <span className="mr-2 text-[var(--text-muted)]">3.</span>
                   Done — your AI agent reads the design system automatically
                 </p>
                 <a
                   href="/docs/cli"
-                  className="inline-block rounded-lg border border-[--studio-border] px-3 py-2 text-xs text-[--text-secondary] transition-colors hover:border-[--studio-border-strong] hover:text-[--text-primary]"
+                  className="inline-block rounded-lg border border-[var(--studio-border)] px-3 py-2 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--studio-border-strong)] hover:text-[var(--text-primary)]"
                 >
                   View full CLI docs
                 </a>
@@ -196,10 +196,10 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
             </div>
 
             {/* Done action */}
-            <div className="border-t border-[--studio-border] px-5 py-4">
+            <div className="border-t border-[var(--studio-border)] px-5 py-4">
               <Button
                 onClick={onClose}
-                className="h-10 w-full bg-[--studio-accent] text-[--text-on-accent] hover:bg-[--studio-accent-hover]"
+                className="h-10 w-full bg-[var(--studio-accent)] text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)]"
               >
                 Done
               </Button>
@@ -209,7 +209,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
           <>
             {/* Format list */}
             <div className="p-5 space-y-2">
-              <p className="mb-3 text-xs text-[--text-secondary]">
+              <p className="mb-3 text-xs text-[var(--text-secondary)]">
                 Select formats to include in your bundle:
               </p>
               {FORMAT_OPTIONS.map((format) => {
@@ -220,25 +220,25 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
                     onClick={() => toggleFormat(format.id)}
                     className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors ${
                       selected
-                        ? "border-[--studio-accent] bg-[--studio-accent-subtle]"
-                        : "border-[--studio-border] bg-[--bg-surface] hover:border-[--studio-border-strong]"
+                        ? "border-[var(--studio-accent)] bg-[var(--studio-accent-subtle)]"
+                        : "border-[var(--studio-border)] bg-[var(--bg-surface)] hover:border-[var(--studio-border-strong)]"
                     }`}
                   >
                     <div
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
                         selected
-                          ? "border-[--studio-accent] bg-[--studio-accent] text-[--text-on-accent]"
-                          : "border-[--studio-border]"
+                          ? "border-[var(--studio-accent)] bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                          : "border-[var(--studio-border)]"
                       }`}
                     >
                       {selected && <Check className="h-3 w-3" />}
                     </div>
-                    <FileText className="h-4 w-4 shrink-0 text-[--text-muted]" />
+                    <FileText className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium text-[--text-primary]">
+                      <div className="text-xs font-medium text-[var(--text-primary)]">
                         {format.label}
                       </div>
-                      <div className="text-[10px] text-[--text-muted]">
+                      <div className="text-[10px] text-[var(--text-muted)]">
                         {format.description}
                       </div>
                     </div>
@@ -248,18 +248,18 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
             </div>
 
             {/* DESIGN.md always included note */}
-            <div className="border-t border-[--studio-border] px-5 py-3">
-              <p className="text-[10px] text-[--text-muted]">
+            <div className="border-t border-[var(--studio-border)] px-5 py-3">
+              <p className="text-[10px] text-[var(--text-muted)]">
                 DESIGN.md is always included in the bundle.
               </p>
             </div>
 
             {/* Actions */}
-            <div className="border-t border-[--studio-border] px-5 py-4">
+            <div className="border-t border-[var(--studio-border)] px-5 py-4">
               <Button
                 onClick={handleDownload}
                 disabled={isDownloading || selectedFormats.size === 0}
-                className="h-10 w-full bg-[--studio-accent] text-[--text-on-accent] hover:bg-[--studio-accent-hover] disabled:opacity-40"
+                className="h-10 w-full bg-[var(--studio-accent)] text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-40"
               >
                 {isDownloading ? "Generating..." : "Download Bundle"}
               </Button>
