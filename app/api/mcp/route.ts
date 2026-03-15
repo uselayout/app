@@ -14,8 +14,10 @@ import type { ExtractionResult } from "@/lib/types";
 const McpRequestSchema = z.object({
   tool: z.enum([
     "get_design_system",
+    "get_design_section",
     "get_tokens",
     "get_component",
+    "get_component_with_context",
     "list_components",
     "check_compliance",
   ]),
@@ -68,6 +70,177 @@ async function handleGetDesignSystem(
       designMd: data.design_md as string,
       projectName: data.name as string,
       projectId: data.id as string,
+    },
+  };
+}
+
+// ─── Section-level query ─────────────────────────────────────────────────────
+
+const SECTION_PATTERNS: Record<string, RegExp> = {
+  colours: /^#{1,3}\s*(?:\d[.)]?\s*)?colou?rs?\b/im,
+  typography: /^#{1,3}\s*(?:\d[.)]?\s*)?typography\b/im,
+  spacing: /^#{1,3}\s*(?:\d[.)]?\s*)?spacing\b/im,
+  components: /^#{1,3}\s*(?:\d[.)]?\s*)?components?\b/im,
+  "anti-patterns": /^#{1,3}\s*(?:\d[.)]?\s*)?(?:anti.?patterns?|constraints?)\b/im,
+  "quick-reference": /^#{1,3}\s*(?:\d[.)]?\s*)?quick\s*reference\b/im,
+  radius: /^#{1,3}\s*(?:\d[.)]?\s*)?(?:radius|border.?radius|corners?)\b/im,
+  effects: /^#{1,3}\s*(?:\d[.)]?\s*)?(?:effects?|shadows?|elevation)\b/im,
+  motion: /^#{1,3}\s*(?:\d[.)]?\s*)?(?:motion|animation|transition)\b/im,
+};
+
+function extractSection(md: string, sectionPattern: RegExp): string | null {
+  const match = sectionPattern.exec(md);
+  if (!match) return null;
+
+  const headingLine = match[0];
+  const level = (headingLine.match(/^#+/) ?? ["##"])[0].length;
+  const afterHeading = md.slice(match.index + headingLine.length);
+  const nextHeadingPattern = new RegExp(`^#{1,${level}}\\s`, "m");
+  const nextMatch = nextHeadingPattern.exec(afterHeading);
+  const body = nextMatch ? afterHeading.slice(0, nextMatch.index) : afterHeading;
+
+  return (headingLine + body).trim();
+}
+
+async function handleGetDesignSection(
+  orgId: string,
+  params: Record<string, unknown>
+) {
+  const sectionName = typeof params.section === "string" ? params.section.toLowerCase() : null;
+  if (!sectionName) {
+    return {
+      error: "Missing required parameter: section. Available sections: " +
+        Object.keys(SECTION_PATTERNS).join(", "),
+    };
+  }
+
+  const pattern = SECTION_PATTERNS[sectionName];
+  if (!pattern) {
+    return {
+      error: `Unknown section "${sectionName}". Available: ${Object.keys(SECTION_PATTERNS).join(", ")}`,
+    };
+  }
+
+  const projectId = typeof params.projectId === "string" ? params.projectId : null;
+
+  let query = supabase
+    .from("layout_projects")
+    .select("id, name, design_md")
+    .eq("org_id", orgId)
+    .not("design_md", "is", null);
+
+  if (projectId) {
+    query = query.eq("id", projectId);
+  } else {
+    query = query.order("updated_at", { ascending: false }).limit(1);
+  }
+
+  const { data, error } = await query.single();
+  if (error || !data) {
+    return { error: "No project with DESIGN.md found" };
+  }
+
+  const designMd = data.design_md as string;
+  const sectionContent = extractSection(designMd, pattern);
+
+  if (!sectionContent) {
+    return {
+      error: `Section "${sectionName}" not found in DESIGN.md for project "${data.name as string}"`,
+    };
+  }
+
+  return {
+    result: {
+      section: sectionName,
+      content: sectionContent,
+      projectName: data.name as string,
+      projectId: data.id as string,
+    },
+  };
+}
+
+// ─── Component with full context ─────────────────────────────────────────────
+
+async function handleGetComponentWithContext(
+  orgId: string,
+  params: Record<string, unknown>
+) {
+  const slug = typeof params.slug === "string" ? params.slug : null;
+  if (!slug) {
+    return { error: "Missing required parameter: slug" };
+  }
+
+  const component = await getComponentBySlug(orgId, slug);
+  if (!component) {
+    return { error: `Component "${slug}" not found` };
+  }
+
+  // Fetch design tokens from latest project to cross-reference
+  const { data: projectData } = await supabase
+    .from("layout_projects")
+    .select("extraction_data, design_md")
+    .eq("org_id", orgId)
+    .not("extraction_data", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  // Build token context: resolve actual values for tokens this component uses
+  const tokenContext: Array<{ variable: string; value: string; type: string }> = [];
+  if (projectData?.extraction_data && component.tokensUsed.length > 0) {
+    const extraction = projectData.extraction_data as ExtractionResult;
+    if (extraction.tokens) {
+      const allTokens = [
+        ...extraction.tokens.colors,
+        ...extraction.tokens.typography,
+        ...extraction.tokens.spacing,
+        ...extraction.tokens.radius,
+        ...extraction.tokens.effects,
+      ];
+
+      for (const tokenVar of component.tokensUsed) {
+        const found = allTokens.find((t) => t.cssVariable === tokenVar);
+        if (found) {
+          tokenContext.push({
+            variable: tokenVar,
+            value: found.value,
+            type: found.type,
+          });
+        }
+      }
+    }
+  }
+
+  // Extract relevant design guidelines from DESIGN.md
+  let usageGuidelines: string | null = null;
+  if (projectData?.design_md) {
+    const designMd = projectData.design_md as string;
+    // Search for component name mentions in DESIGN.md
+    const componentPattern = new RegExp(
+      `(?:^|\\n).*${component.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}.*(?:\\n|$)`,
+      "gi"
+    );
+    const mentions = designMd.match(componentPattern);
+    if (mentions && mentions.length > 0) {
+      usageGuidelines = mentions.join("\n").trim();
+    }
+  }
+
+  return {
+    result: {
+      name: component.name,
+      slug: component.slug,
+      description: component.description,
+      category: component.category,
+      code: component.code,
+      props: component.props,
+      variants: component.variants,
+      states: component.states,
+      tokensUsed: component.tokensUsed,
+      tokenContext,
+      usageGuidelines,
+      version: component.version,
+      tags: component.tags,
     },
   };
 }
@@ -157,7 +330,13 @@ async function handleListComponents(
         slug: c.slug,
         description: c.description,
         category: c.category,
+        tags: c.tags,
+        tokensUsed: c.tokensUsed,
+        propsCount: c.props.length,
+        variantsCount: c.variants.length,
+        statesCount: c.states.length,
         version: c.version,
+        codePreview: c.code.slice(0, 200) + (c.code.length > 200 ? "..." : ""),
       })),
     },
   };
@@ -315,11 +494,17 @@ export async function POST(request: Request) {
     case "get_design_system":
       toolResult = await handleGetDesignSystem(orgId, params);
       break;
+    case "get_design_section":
+      toolResult = await handleGetDesignSection(orgId, params);
+      break;
     case "get_tokens":
       toolResult = await handleGetTokens(orgId, params);
       break;
     case "get_component":
       toolResult = await handleGetComponent(orgId, params);
+      break;
+    case "get_component_with_context":
+      toolResult = await handleGetComponentWithContext(orgId, params);
       break;
     case "list_components":
       toolResult = await handleListComponents(orgId, params);
