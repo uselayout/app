@@ -8,6 +8,7 @@ interface StudioLayoutProps {
   canvasPanel?: ReactNode;
   testPanel: ReactNode;
   centreView: "editor" | "canvas";
+  showSourcePanel?: boolean;
   showTestPanel?: boolean;
 }
 
@@ -21,6 +22,7 @@ export function StudioLayout({
   canvasPanel,
   testPanel,
   centreView,
+  showSourcePanel = true,
   showTestPanel = true,
 }: StudioLayoutProps) {
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT);
@@ -69,18 +71,22 @@ export function StudioLayout({
   return (
     <div ref={containerRef} className="flex h-full overflow-hidden">
       {/* Left Panel */}
-      <div
-        className="shrink-0 overflow-hidden border-r border-[--studio-border]"
-        style={{ width: leftWidth }}
-      >
-        {sourcePanel}
-      </div>
+      {showSourcePanel && (
+        <>
+          <div
+            className="shrink-0 overflow-hidden border-r border-[--studio-border]"
+            style={{ width: leftWidth }}
+          >
+            {sourcePanel}
+          </div>
 
-      {/* Left Resize Handle */}
-      <div
-        className="w-1 shrink-0 cursor-col-resize bg-transparent transition-colors hover:bg-[--studio-accent]/30"
-        onMouseDown={() => handleMouseDown("left")}
-      />
+          {/* Left Resize Handle */}
+          <div
+            className="w-1 shrink-0 cursor-col-resize bg-transparent transition-colors hover:bg-[--studio-accent]/30"
+            onMouseDown={() => handleMouseDown("left")}
+          />
+        </>
+      )}
 
       {/* Centre Panel */}
       <div className="min-w-0 flex-1 overflow-hidden">

@@ -163,12 +163,23 @@ export function TokenEditor({
             <p className="text-sm text-[var(--text-muted)]">
               No {TOKEN_TYPES.find((t) => t.key === selectedType)?.label.toLowerCase()} tokens yet
             </p>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="mt-3 rounded-[var(--studio-radius-md)] bg-[var(--studio-accent)] px-4 py-2 text-sm text-[--text-on-accent] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
-            >
-              Add First Token
-            </button>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              Extract a design system in Studio to populate tokens, or add them manually.
+            </p>
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <a
+                href="/studio"
+                className="rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2 text-sm text-[var(--text-primary)] transition-all duration-[var(--duration-base)] hover:bg-[var(--bg-hover)]"
+              >
+                Open Studio
+              </a>
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="rounded-[var(--studio-radius-md)] bg-[var(--studio-accent)] px-4 py-2 text-sm text-[--text-on-accent] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
+              >
+                Add Manually
+              </button>
+            </div>
           </div>
         </div>
       ) : (

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   buildSrcdoc,
@@ -32,6 +33,11 @@ export function ComponentDetail({
   orgSlug,
   onUpdate,
 }: ComponentDetailProps) {
+  const params = useParams();
+  const projectId = (params?.projectId as string) ?? "";
+  const libraryBase = projectId
+    ? `/${orgSlug}/projects/${projectId}/library`
+    : `/${orgSlug}/library`;
   const [editing, setEditing] = useState(false);
   const [editCode, setEditCode] = useState(component.code);
   const [saving, setSaving] = useState(false);
@@ -113,7 +119,7 @@ export function ComponentDetail({
       {/* Header */}
       <div>
         <Link
-          href={`/${orgSlug}/library`}
+          href={libraryBase}
           className="mb-4 inline-flex items-center gap-1 text-sm text-[var(--text-muted)] transition-all duration-[var(--duration-base)] hover:text-[var(--text-primary)]"
         >
           &larr; Library
