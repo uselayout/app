@@ -17,13 +17,13 @@ interface ExtractionProgressProps {
 function StepIcon({ status }: { status: ExtractionStepStatus }) {
   switch (status) {
     case "complete":
-      return <Check className="h-4 w-4 text-[--status-success]" />;
+      return <Check className="h-4 w-4 text-[var(--status-success)]" />;
     case "running":
-      return <Loader2 className="h-4 w-4 animate-spin text-[--studio-accent]" />;
+      return <Loader2 className="h-4 w-4 animate-spin text-[var(--studio-accent)]" />;
     case "failed":
-      return <X className="h-4 w-4 text-[--status-error]" />;
+      return <X className="h-4 w-4 text-[var(--status-error)]" />;
     default:
-      return <div className="h-4 w-4 rounded-full border border-[--studio-border-strong]" />;
+      return <div className="h-4 w-4 rounded-full border border-[var(--studio-border-strong)]" />;
   }
 }
 
@@ -58,19 +58,19 @@ export function ExtractionProgress({
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-lg space-y-8 rounded-xl border border-[--studio-border] bg-[--bg-panel] p-8">
+      <div className="w-full max-w-lg space-y-8 rounded-xl border border-[var(--studio-border)] bg-[var(--bg-panel)] p-8">
         <div className="space-y-2">
-          <h2 className="text-lg font-medium text-[--text-primary]">
+          <h2 className="text-lg font-medium text-[var(--text-primary)]">
             Extracting {sourceName} design system
           </h2>
-          <p className="text-sm text-[--text-secondary]">
+          <p className="text-sm text-[var(--text-secondary)]">
             Source: {sourceType === "figma" ? "Figma" : "Website"}
           </p>
         </div>
 
         <div className="space-y-2">
           <Progress value={progress} className="h-2" />
-          <div className="flex justify-between text-xs text-[--text-muted]">
+          <div className="flex justify-between text-xs text-[var(--text-muted)]">
             <span>{Math.round(progress)}%</span>
             {progress < 100 && (
               <span>~{estimatedSeconds}s remaining</span>
@@ -88,18 +88,18 @@ export function ExtractionProgress({
                 <span
                   className={`text-sm ${
                     step.status === "running"
-                      ? "text-[--text-primary]"
+                      ? "text-[var(--text-primary)]"
                       : step.status === "complete"
-                        ? "text-[--text-secondary]"
+                        ? "text-[var(--text-secondary)]"
                         : step.status === "failed"
-                          ? "text-[--status-error]"
-                          : "text-[--text-muted]"
+                          ? "text-[var(--status-error)]"
+                          : "text-[var(--text-muted)]"
                   }`}
                 >
                   {step.label}
                 </span>
                 {step.detail && (
-                  <p className="text-xs text-[--text-muted]">{step.detail}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{step.detail}</p>
                 )}
               </div>
             </div>
@@ -111,12 +111,12 @@ export function ExtractionProgress({
             {(() => {
               const errorHelp = getErrorHelp(error);
               return (
-                <div className="flex items-start gap-2 rounded-md border border-[--status-error]/20 bg-[--status-error]/5 p-3">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[--status-error]" />
+                <div className="flex items-start gap-2 rounded-md border border-[var(--status-error)]/20 bg-[var(--status-error)]/5 p-3">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--status-error)]" />
                   <div className="space-y-1">
-                    <p className="text-sm text-[--text-primary]">{error}</p>
+                    <p className="text-sm text-[var(--text-primary)]">{error}</p>
                     {errorHelp && (
-                      <p className="text-xs text-[--text-muted]">
+                      <p className="text-xs text-[var(--text-muted)]">
                         {errorHelp}
                       </p>
                     )}
@@ -127,7 +127,7 @@ export function ExtractionProgress({
             {onRetry && (
               <button
                 onClick={onRetry}
-                className="w-full rounded-md bg-[--studio-accent] px-4 py-2 text-sm text-[--text-on-accent] transition-colors hover:bg-[--studio-accent-hover]"
+                className="w-full rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)]"
               >
                 Retry
               </button>

@@ -23,30 +23,30 @@ export function ResponsivePreview({ variant, onClose }: ResponsivePreviewProps) 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-sm">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[--studio-border] bg-[--bg-panel] px-5 py-3">
+      <div className="flex items-center justify-between border-b border-[var(--studio-border)] bg-[var(--bg-panel)] px-5 py-3">
         <div className="flex items-center gap-4">
           <div>
-            <h2 className="text-sm font-semibold text-[--text-primary]">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">
               Responsive Preview
             </h2>
-            <p className="text-xs text-[--text-secondary]">{variant.name}</p>
+            <p className="text-xs text-[var(--text-secondary)]">{variant.name}</p>
           </div>
 
           {/* Viewport tabs */}
-          <div className="flex items-center rounded-lg border border-[--studio-border] bg-[--bg-surface] p-0.5">
+          <div className="flex items-center rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-0.5">
             {VIEWPORTS.map(({ key, label, width, icon: Icon }) => (
               <button
                 key={key}
                 onClick={() => setActiveViewport(key)}
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                   activeViewport === key
-                    ? "bg-[--bg-hover] text-[--text-primary] shadow-sm"
-                    : "text-[--text-muted] hover:text-[--text-secondary]"
+                    ? "bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                 }`}
               >
                 <Icon size={12} />
                 {label}
-                <span className="text-[10px] text-[--text-muted]">{width}px</span>
+                <span className="text-[10px] text-[var(--text-muted)]">{width}px</span>
               </button>
             ))}
           </div>
@@ -54,7 +54,7 @@ export function ResponsivePreview({ variant, onClose }: ResponsivePreviewProps) 
 
         <button
           onClick={onClose}
-          className="rounded-md p-1.5 text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+          className="rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
         >
           <X size={16} />
         </button>
@@ -152,12 +152,12 @@ function ViewportFrame({
   return (
     <div className="flex flex-col items-center gap-3" ref={containerRef}>
       {/* Dimension label */}
-      <p className="text-xs text-[--text-muted]">
+      <p className="text-xs text-[var(--text-muted)]">
         {width} × {height}
       </p>
 
       <div
-        className="relative overflow-hidden rounded-lg border border-[--studio-border] bg-white"
+        className="relative overflow-hidden rounded-lg border border-[var(--studio-border)] bg-white"
         style={{
           width: width * scale,
           height: height * scale,
@@ -184,7 +184,7 @@ function ViewportFrame({
         )}
         {!ready && !error && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-[--studio-border-strong] border-t-[--studio-accent]" />
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
           </div>
         )}
       </div>

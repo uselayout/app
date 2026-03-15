@@ -10,8 +10,8 @@ import { useRouter, useParams } from "next/navigation";
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full items-center justify-center bg-[--bg-surface]">
-      <p className="text-sm text-[--text-muted]">Loading editor...</p>
+    <div className="flex h-full items-center justify-center bg-[var(--bg-surface)]">
+      <p className="text-sm text-[var(--text-muted)]">Loading editor...</p>
     </div>
   ),
 });
@@ -217,10 +217,10 @@ export function CreateComponentModal({
   }, [aiPrompt, aiGenerating, code, name]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-[--bg-app]">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[var(--bg-app)]">
       {/* Top bar */}
-      <div className="flex items-center justify-between border-b border-[--studio-border] px-5 py-3">
-        <h2 className="text-sm font-semibold text-[--text-primary]">
+      <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-5 py-3">
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">
           Create Component
         </h2>
         <div className="flex items-center gap-2">
@@ -229,14 +229,14 @@ export function CreateComponentModal({
           )}
           <button
             onClick={onClose}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+            className="rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving || !name.trim() || !code.trim() || !orgId}
-            className="flex items-center gap-1.5 rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 rounded-lg bg-[var(--studio-accent)] px-4 py-1.5 text-xs font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? (
               <>
@@ -252,7 +252,7 @@ export function CreateComponentModal({
           </button>
           <button
             onClick={onClose}
-            className="rounded-md p-1.5 text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+            className="rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
           >
             <X size={16} />
           </button>
@@ -260,14 +260,14 @@ export function CreateComponentModal({
       </div>
 
       {/* Form fields */}
-      <div className="flex items-center gap-3 border-b border-[--studio-border] px-5 py-3">
+      <div className="flex items-center gap-3 border-b border-[var(--studio-border)] px-5 py-3">
         <div className="flex-1">
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Component name *"
-            className="w-full rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-1.5 text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+            className="w-full rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
           />
         </div>
         <div className="w-40">
@@ -276,7 +276,7 @@ export function CreateComponentModal({
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             placeholder="Category"
-            className="w-full rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-1.5 text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+            className="w-full rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
           />
         </div>
         <div className="flex-1">
@@ -285,7 +285,7 @@ export function CreateComponentModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description"
-            className="w-full rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-1.5 text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+            className="w-full rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
           />
         </div>
         <div className="w-48">
@@ -294,7 +294,7 @@ export function CreateComponentModal({
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
             placeholder="Tags (comma-separated)"
-            className="w-full rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-1.5 text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+            className="w-full rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
           />
         </div>
       </div>
@@ -302,9 +302,9 @@ export function CreateComponentModal({
       {/* Editor + Preview split */}
       <div className="flex flex-1 min-h-0">
         {/* Left: Monaco editor */}
-        <div className="flex-1 border-r border-[--studio-border]">
-          <div className="flex items-center border-b border-[--studio-border] px-4 py-2">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-[--text-muted]">
+        <div className="flex-1 border-r border-[var(--studio-border)]">
+          <div className="flex items-center border-b border-[var(--studio-border)] px-4 py-2">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
               TSX Code
             </span>
           </div>
@@ -339,8 +339,8 @@ export function CreateComponentModal({
 
         {/* Right: Live preview */}
         <div className="flex-1 flex flex-col">
-          <div className="flex items-center border-b border-[--studio-border] px-4 py-2">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-[--text-muted]">
+          <div className="flex items-center border-b border-[var(--studio-border)] px-4 py-2">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
               Preview
             </span>
           </div>
@@ -361,7 +361,7 @@ export function CreateComponentModal({
             )}
             {!previewReady && !previewError && (
               <div className="absolute inset-0 flex items-center justify-center bg-white">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-200 border-t-[--studio-accent]" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--studio-accent)]" />
               </div>
             )}
           </div>
@@ -369,9 +369,9 @@ export function CreateComponentModal({
       </div>
 
       {/* AI Chat Bar */}
-      <div className="border-t border-[--studio-border] px-5 py-3">
+      <div className="border-t border-[var(--studio-border)] px-5 py-3">
         <div className="flex items-center gap-2">
-          <Sparkles size={14} className="shrink-0 text-[--studio-accent]" />
+          <Sparkles size={14} className="shrink-0 text-[var(--studio-accent)]" />
           <input
             type="text"
             value={aiPrompt}
@@ -387,21 +387,21 @@ export function CreateComponentModal({
               : "Ask AI to generate a component... e.g. \"a pricing card with 3 tiers\""
             }
             disabled={aiGenerating}
-            className="flex-1 bg-transparent text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none disabled:opacity-50"
+            className="flex-1 bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none disabled:opacity-50"
           />
           {aiGenerating ? (
-            <Loader2 size={14} className="shrink-0 animate-spin text-[--studio-accent]" />
+            <Loader2 size={14} className="shrink-0 animate-spin text-[var(--studio-accent)]" />
           ) : (
             <button
               onClick={handleAiGenerate}
               disabled={!aiPrompt.trim()}
-              className="flex shrink-0 items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[--text-muted] transition-colors hover:text-[--text-primary] disabled:opacity-20 disabled:cursor-not-allowed"
+              className="flex shrink-0 items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-20 disabled:cursor-not-allowed"
             >
               <ArrowUp size={12} strokeWidth={2.5} />
             </button>
           )}
         </div>
-        <p className="mt-1 text-[10px] text-[--text-muted]">
+        <p className="mt-1 text-[10px] text-[var(--text-muted)]">
           {"\u2318"}+Enter to send
         </p>
       </div>

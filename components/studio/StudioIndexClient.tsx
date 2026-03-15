@@ -124,13 +124,13 @@ export function StudioIndexClient() {
       {/* Mobile gate */}
       <div className="flex md:hidden h-screen flex-col items-center justify-center px-6 text-center bg-[#080705]">
         <img src="/marketing/logo-white.svg" alt="Layout" width={100} height={24} className="mb-6" />
-        <h2 className="text-lg font-semibold text-[--text-primary]">Desktop only</h2>
-        <p className="mt-2 max-w-xs text-sm text-[--text-secondary]">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)]">Desktop only</h2>
+        <p className="mt-2 max-w-xs text-sm text-[var(--text-secondary)]">
           Layout needs a larger screen to work properly. Please open this page on a desktop browser.
         </p>
         <a
           href="/"
-          className="mt-6 rounded-md bg-[rgba(255,255,255,0.08)] px-4 py-2 text-sm font-medium text-[--text-primary] hover:bg-[rgba(255,255,255,0.12)] transition-colors"
+          className="mt-6 rounded-md bg-[rgba(255,255,255,0.08)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.12)] transition-colors"
         >
           Back to home
         </a>

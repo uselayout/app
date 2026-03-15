@@ -268,46 +268,46 @@ export function PushToDesignSystemModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
-      <div className="relative flex w-full max-w-2xl flex-col rounded-xl border border-[--studio-border-strong] bg-[var(--bg-elevated)] shadow-2xl max-h-[80vh]">
+      <div className="relative flex w-full max-w-2xl flex-col rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] shadow-2xl max-h-[80vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[--studio-border] px-5 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[--bg-surface]">
-              <ArrowUpToLine size={16} className="text-[--studio-accent]" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--bg-surface)]">
+              <ArrowUpToLine size={16} className="text-[var(--studio-accent)]" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-[--text-primary]">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
                 Push to Design System
               </h2>
-              <p className="text-xs text-[--text-secondary]">
+              <p className="text-xs text-[var(--text-secondary)]">
                 Select tokens and components to add to your org library
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-1.5 text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+            className="rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
           >
             <X size={16} />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-[--studio-border] px-5">
+        <div className="flex border-b border-[var(--studio-border)] px-5">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`relative px-3 py-2.5 text-xs font-medium transition-colors ${
                 activeTab === tab.id
-                  ? "text-[--studio-accent]"
-                  : "text-[--text-muted] hover:text-[--text-secondary]"
+                  ? "text-[var(--studio-accent)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
               }`}
             >
               {tab.label}
               <span className="ml-1.5 text-[10px] opacity-60">{tab.count}</span>
               {activeTab === tab.id && (
-                <span className="absolute bottom-0 left-0 right-0 h-px bg-[--studio-accent]" />
+                <span className="absolute bottom-0 left-0 right-0 h-px bg-[var(--studio-accent)]" />
               )}
             </button>
           ))}
@@ -318,7 +318,7 @@ export function PushToDesignSystemModal({
           {activeTab === "tokens" && (
             <div className="space-y-3">
               {allTokens.length === 0 ? (
-                <p className="py-8 text-center text-xs text-[--text-muted]">
+                <p className="py-8 text-center text-xs text-[var(--text-muted)]">
                   No extracted tokens available. Run an extraction first.
                 </p>
               ) : (
@@ -335,21 +335,21 @@ export function PushToDesignSystemModal({
                         <span
                           className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] transition-colors ${
                             allSelected
-                              ? "border-[--studio-accent] bg-[--studio-accent] text-[--text-on-accent]"
+                              ? "border-[var(--studio-accent)] bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
                               : someSelected
-                                ? "border-[--studio-accent] bg-[--studio-accent-subtle]"
-                                : "border-[--studio-border-strong]"
+                                ? "border-[var(--studio-accent)] bg-[var(--studio-accent-subtle)]"
+                                : "border-[var(--studio-border-strong)]"
                           }`}
                         >
                           {allSelected && <Check size={10} />}
                           {someSelected && !allSelected && (
-                            <span className="block h-1.5 w-1.5 rounded-sm bg-[--studio-accent]" />
+                            <span className="block h-1.5 w-1.5 rounded-sm bg-[var(--studio-accent)]" />
                           )}
                         </span>
-                        <span className="text-xs font-medium text-[--text-primary]">
+                        <span className="text-xs font-medium text-[var(--text-primary)]">
                           {tokenTypeLabel(type)}
                         </span>
-                        <span className="text-[10px] text-[--text-muted]">
+                        <span className="text-[10px] text-[var(--text-muted)]">
                           {tokens.length}
                         </span>
                       </button>
@@ -363,13 +363,13 @@ export function PushToDesignSystemModal({
                             <button
                               key={globalIdx}
                               onClick={() => toggleToken(globalIdx)}
-                              className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-[--bg-hover] transition-colors"
+                              className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-[var(--bg-hover)] transition-colors"
                             >
                               <span
                                 className={`flex h-3.5 w-3.5 items-center justify-center rounded border text-[10px] transition-colors ${
                                   isSelected
-                                    ? "border-[--studio-accent] bg-[--studio-accent] text-[--text-on-accent]"
-                                    : "border-[--studio-border-strong]"
+                                    ? "border-[var(--studio-accent)] bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                                    : "border-[var(--studio-border-strong)]"
                                 }`}
                               >
                                 {isSelected && <Check size={8} />}
@@ -377,15 +377,15 @@ export function PushToDesignSystemModal({
 
                               {token.type === "color" && (
                                 <span
-                                  className="h-3 w-3 rounded-sm border border-[--studio-border] shrink-0"
+                                  className="h-3 w-3 rounded-sm border border-[var(--studio-border)] shrink-0"
                                   style={{ backgroundColor: token.value }}
                                 />
                               )}
 
-                              <span className="flex-1 truncate text-[11px] text-[--text-secondary]">
+                              <span className="flex-1 truncate text-[11px] text-[var(--text-secondary)]">
                                 {token.name}
                               </span>
-                              <span className="shrink-0 text-[10px] font-mono text-[--text-muted]">
+                              <span className="shrink-0 text-[10px] font-mono text-[var(--text-muted)]">
                                 {token.value}
                               </span>
                             </button>
@@ -402,7 +402,7 @@ export function PushToDesignSystemModal({
           {activeTab === "components" && (
             <div className="space-y-1">
               {allComponents.length === 0 ? (
-                <p className="py-8 text-center text-xs text-[--text-muted]">
+                <p className="py-8 text-center text-xs text-[var(--text-muted)]">
                   No generated components available. Use the Test Panel or Explorer
                   to generate components first.
                 </p>
@@ -414,13 +414,13 @@ export function PushToDesignSystemModal({
                     <button
                       key={comp.id}
                       onClick={() => toggleComponent(comp.id)}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-[--bg-hover] transition-colors"
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-[var(--bg-hover)] transition-colors"
                     >
                       <span
                         className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] shrink-0 transition-colors ${
                           isSelected
-                            ? "border-[--studio-accent] bg-[--studio-accent] text-[--text-on-accent]"
-                            : "border-[--studio-border-strong]"
+                            ? "border-[var(--studio-accent)] bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                            : "border-[var(--studio-border-strong)]"
                         }`}
                       >
                         {isSelected && <Check size={10} />}
@@ -428,20 +428,20 @@ export function PushToDesignSystemModal({
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-[--text-primary]">
+                          <span className="text-xs font-medium text-[var(--text-primary)]">
                             {comp.name}
                           </span>
-                          <span className="rounded-full bg-[--bg-surface] px-1.5 py-0.5 text-[9px] text-[--text-muted]">
+                          <span className="rounded-full bg-[var(--bg-surface)] px-1.5 py-0.5 text-[9px] text-[var(--text-muted)]">
                             {comp.source === "explorer" ? "Explorer" : "Test"}
                           </span>
                           {comp.healthScore != null && (
-                            <span className="text-[9px] text-[--text-muted]">
+                            <span className="text-[9px] text-[var(--text-muted)]">
                               {Math.round(comp.healthScore)}%
                             </span>
                           )}
                         </div>
                         {comp.rationale && (
-                          <p className="mt-0.5 truncate text-[10px] text-[--text-muted]">
+                          <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
                             {comp.rationale}
                           </p>
                         )}
@@ -449,7 +449,7 @@ export function PushToDesignSystemModal({
 
                       <ChevronRight
                         size={12}
-                        className="shrink-0 text-[--text-muted]"
+                        className="shrink-0 text-[var(--text-muted)]"
                       />
                     </button>
                   );
@@ -460,8 +460,8 @@ export function PushToDesignSystemModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-[--studio-border] px-5 py-4">
-          <p className="text-xs text-[--text-muted]">
+        <div className="flex items-center justify-between border-t border-[var(--studio-border)] px-5 py-4">
+          <p className="text-xs text-[var(--text-muted)]">
             {selectedTokenCount} token{selectedTokenCount === 1 ? "" : "s"},{" "}
             {selectedComponentCount} component
             {selectedComponentCount === 1 ? "" : "s"} selected
@@ -470,14 +470,14 @@ export function PushToDesignSystemModal({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handlePush}
               disabled={pushing || totalSelected === 0}
-              className="flex items-center gap-1.5 rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--studio-accent)] px-4 py-1.5 text-xs font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {pushing ? (
                 <>
