@@ -1,4 +1,4 @@
-# Layout — Product Reference for Content
+# Layout - Product Reference for Content
 
 Use this document when writing tweets, threads, blog posts, or any marketing content. Everything here is factual and verified against the codebase.
 
@@ -20,8 +20,8 @@ A browser-based tool that extracts design systems from **Figma files** and **liv
 
 Two products:
 
-1. **Layout** — the web app (extract, synthesise, test, export)
-2. **@layoutdesign/context** — open-source MCP server + CLI (npm package, MIT license)
+1. **Layout** - the web app (extract, synthesise, test, export)
+2. **@layoutdesign/context** - open-source MCP server + CLI (npm package, MIT license)
 
 ---
 
@@ -41,30 +41,30 @@ The pain: AI generates generic-looking UI. It doesn't know your design system. Y
 ## Core User Journey
 
 ### AI Studio (web app)
-1. **Paste a URL** — Figma file link or any website URL
-2. **Extraction runs** — AI pulls colours, typography, spacing, components, design tokens (under 2 minutes)
-3. **DESIGN.md generated** — Claude synthesises a structured context file from the raw extraction data
-4. **Edit in Studio** — three-panel editor: source tokens (left), markdown editor (centre), AI test panel (right)
-5. **Test with/without context** — toggle DESIGN.md on/off, ask Claude to build components, see the difference side-by-side with live preview
-6. **Export bundle** — download a ZIP with CLAUDE.md, AGENTS.md, .cursorrules, tokens.css, tokens.json, tailwind.config.js
-7. **Drop into your project** — your AI coding tool now builds on-brand
+1. **Paste a URL** - Figma file link or any website URL
+2. **Extraction runs** - AI pulls colours, typography, spacing, components, design tokens (under 2 minutes)
+3. **DESIGN.md generated** - Claude synthesises a structured context file from the raw extraction data
+4. **Edit in Studio** - three-panel editor: source tokens (left), markdown editor (centre), AI test panel (right)
+5. **Test with/without context** - toggle DESIGN.md on/off, ask Claude to build components, see the difference side-by-side with live preview
+6. **Export bundle** - download a ZIP with CLAUDE.md, AGENTS.md, .cursorrules, tokens.css, tokens.json, tailwind.config.js
+7. **Drop into your project** - your AI coding tool now builds on-brand
 
 ### @layoutdesign/context (CLI + MCP server)
-1. `npx @layoutdesign/context import ./layout-export.zip` — unpacks Studio export into `.layout/`
-2. `npx @layoutdesign/context install` — auto-configures Claude Code / Cursor / Windsurf MCP settings
+1. `npx @layoutdesign/context import ./layout-export.zip` - unpacks Studio export into `.layout/`
+2. `npx @layoutdesign/context install` - auto-configures Claude Code / Cursor / Windsurf MCP settings
 3. Your AI agent now calls `get_design_system` automatically when building UI
 4. Use `preview` to render components locally at localhost:4321
 5. Use `push_to_figma` to send generated components to Figma as editable frames
 
 Or start from a free kit without the Studio:
-1. `npx @layoutdesign/context init --kit linear-lite` — creates `.layout/` with DESIGN.md + tokens
-2. `npx @layoutdesign/context install` — done
+1. `npx @layoutdesign/context init --kit linear-lite` - creates `.layout/` with DESIGN.md + tokens
+2. `npx @layoutdesign/context install` - done
 
 Other CLI commands:
-- `npx @layoutdesign/context serve` — start MCP server manually (stdio)
-- `npx @layoutdesign/context install --target claude` — target a specific tool
-- `npx @layoutdesign/context use <kit-name>` — switch design kits
-- `npx @layoutdesign/context list` — show available kits
+- `npx @layoutdesign/context serve` - start MCP server manually (stdio)
+- `npx @layoutdesign/context install --target claude` - target a specific tool
+- `npx @layoutdesign/context use <kit-name>` - switch design kits
+- `npx @layoutdesign/context list` - show available kits
 
 ---
 
@@ -75,7 +75,7 @@ Other CLI commands:
 - Typography styles (font family, size, weight, line-height, letter-spacing as composites)
 - Effect styles (shadows, blur)
 - Component inventory (name, description, variant count, property definitions)
-- Variables (Enterprise plans only — gracefully skipped otherwise)
+- Variables (Enterprise plans only - gracefully skipped otherwise)
 
 ### From Websites
 - CSS custom properties (all `--var` declarations)
@@ -100,15 +100,15 @@ Other CLI commands:
 
 The AI-synthesised context file follows a strict 9-section + 2-appendix format:
 
-0. **Quick Reference** — 50-75 lines, copy-pasteable into CLAUDE.md or .cursorrules. Core tokens, one real component example, critical NEVER rules.
-1. **Design Direction & Philosophy** — personality, aesthetic intent, explicit rejections
-2. **Colour System** — three tiers: primitives, semantic aliases, component tokens
-3. **Typography System** — composite token groups, font stack with fallbacks, pairing rules
-4. **Spacing & Layout** — base unit, full scale, grid system, breakpoints, flex vs grid rules
-5. **Component Patterns** — 5-10 components with anatomy, token mappings for ALL states (default, hover, focus, active, disabled, loading, error), one real TSX example each
-6. **Elevation & Depth** — shadow tokens, border tokens, z-index scale
-7. **Motion** — timing functions, durations, easing tokens
-8. **Anti-Patterns & Constraints** — numbered NEVER rules with "why it fails" and "what to do instead"
+0. **Quick Reference** - 50-75 lines, copy-pasteable into CLAUDE.md or .cursorrules. Core tokens, one real component example, critical NEVER rules.
+1. **Design Direction & Philosophy** - personality, aesthetic intent, explicit rejections
+2. **Colour System** - three tiers: primitives, semantic aliases, component tokens
+3. **Typography System** - composite token groups, font stack with fallbacks, pairing rules
+4. **Spacing & Layout** - base unit, full scale, grid system, breakpoints, flex vs grid rules
+5. **Component Patterns** - 5-10 components with anatomy, token mappings for ALL states (default, hover, focus, active, disabled, loading, error), one real TSX example each
+6. **Elevation & Depth** - shadow tokens, border tokens, z-index scale
+7. **Motion** - timing functions, durations, easing tokens
+8. **Anti-Patterns & Constraints** - numbered NEVER rules with "why it fails" and "what to do instead"
 - **Appendix A:** Complete token reference table
 - **Appendix B:** Token source metadata + confidence levels
 
@@ -119,7 +119,7 @@ The AI-synthesised context file follows a strict 9-section + 2-appendix format:
 | Format | Filename | What It's For |
 |---|---|---|
 | **CLAUDE.md** | CLAUDE.md | Design system context for Claude Code |
-| **AGENTS.md** | AGENTS.md | Open standard for all agents (Codex, Jules, Factory, Amp) — [agents.md spec](https://agents.md) |
+| **AGENTS.md** | AGENTS.md | Open standard for all agents (Codex, Jules, Factory, Amp) - [agents.md spec](https://agents.md) |
 | **Cursor Rules** | .cursor/rules/design-system.mdc + components.mdc | Auto-applied rules in Cursor |
 | **CSS Tokens** | tokens.css | CSS custom properties, import directly |
 | **JSON Tokens** | tokens.json | W3C DTCG format for design token exchange |
@@ -144,15 +144,15 @@ DESIGN.md is always included in every export.
 ### The Full Code-to-Design Loop
 ```
 Developer prompts Claude
-  -> Claude calls get_design_system for context
-  -> Claude generates on-brand TSX
-  -> Claude calls preview -> renders at localhost:4321
-  -> Developer reviews, requests changes
-  -> Claude calls push_to_figma -> editable frame in Figma
-  -> Or: Claude calls design_in_figma to create new designs from scratch
-  -> Designer tweaks in Figma
-  -> Developer asks Claude to read Figma changes (via Figma MCP)
-  -> Claude updates the code to match
+ -> Claude calls get_design_system for context
+ -> Claude generates on-brand TSX
+ -> Claude calls preview -> renders at localhost:4321
+ -> Developer reviews, requests changes
+ -> Claude calls push_to_figma -> editable frame in Figma
+ -> Or: Claude calls design_in_figma to create new designs from scratch
+ -> Designer tweaks in Figma
+ -> Developer asks Claude to read Figma changes (via Figma MCP)
+ -> Claude updates the code to match
 ```
 
 No other open-source tool closes this loop.
@@ -190,14 +190,14 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 
 ## Key Differentiators
 
-1. **Website extraction** — no competitor does this. Massive unlock for teams without Figma.
-2. **AI-native output** — CLAUDE.md, AGENTS.md, .cursorrules are formats competitors don't generate.
-3. **Speed** — paste a URL, get a complete AI kit in under 2 minutes.
-4. **Works with every AI tool** — not locked to one editor or agent.
-5. **Open-source MCP server** — MIT licensed, 9 tools, 60-second install-to-value.
-6. **Figma closed loop** — bidirectional code ↔ Figma workflow. Push, design, pull back. No other OSS tool closes this loop.
-7. **Zero behavioural change** — designers stay in Figma, developers stay in their IDE. Paper requires migration. Pencil requires a new canvas.
-8. **Plain-text portability** — DESIGN.md is markdown, readable forever. No proprietary format lock-in.
+1. **Website extraction** - no competitor does this. Massive unlock for teams without Figma.
+2. **AI-native output** - CLAUDE.md, AGENTS.md, .cursorrules are formats competitors don't generate.
+3. **Speed** - paste a URL, get a complete AI kit in under 2 minutes.
+4. **Works with every AI tool** - not locked to one editor or agent.
+5. **Open-source MCP server** - MIT licensed, 9 tools, 60-second install-to-value.
+6. **Figma closed loop** - bidirectional code ↔ Figma workflow. Push, design, pull back. No other OSS tool closes this loop.
+7. **Zero behavioural change** - designers stay in Figma, developers stay in their IDE. Paper requires migration. Pencil requires a new canvas.
+8. **Plain-text portability** - DESIGN.md is markdown, readable forever. No proprietary format lock-in.
 
 ---
 
@@ -205,9 +205,9 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 
 | Competitor | What They Do | Our Edge |
 |---|---|---|
-| **Figma MCP Server** (free) | Connects Claude directly to Figma — AI reads raw layer data | We extract from websites too. Figma MCP gives raw data, not structured tokens. We synthesise semantic DESIGN.md with anti-patterns and component usage. |
+| **Figma MCP Server** (free) | Connects Claude directly to Figma - AI reads raw layer data | We extract from websites too. Figma MCP gives raw data, not structured tokens. We synthesise semantic DESIGN.md with anti-patterns and component usage. |
 | **Paper.design** ($4.2M seed, Accel) | New AI-native design canvas replacing Figma. 24 MCP tools, code export, $20/user/mo | Requires full team migration from Figma. Code export is one-directional; our loop is bidirectional. Proprietary format. No website extraction. We're MIT open source. |
-| **Pencil.dev** (free early access) | IDE-embedded design canvas (.pen files in Git). MCP integration | Proprietary .pen binary format. IDE-only (VS Code/Cursor). No design system extraction — tokens defined manually. No website extraction. |
+| **Pencil.dev** (free early access) | IDE-embedded design canvas (.pen files in Git). MCP integration | Proprietary .pen binary format. IDE-only (VS Code/Cursor). No design system extraction - tokens defined manually. No website extraction. |
 | **Anima / Locofy** | Figma-to-code plugins (Anima powers Bolt.new & Replit) | They generate code. We generate context. Different job. Figma-only, proprietary format. |
 | **Style Dictionary** (Amazon) | Token pipeline tool | Manual setup, no extraction. We automate the whole pipeline. |
 | **Zeroheight / Supernova** | Design system documentation for humans | Enterprise, expensive, no AI agent integration. Docs for humans ≠ context for machines. |
@@ -229,13 +229,31 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 ## Studio Features (for detailed tweets)
 
 - **Three-panel editor:** source tokens (left), Monaco markdown editor (centre), AI test panel (right)
-- **Context toggle:** test AI output with and without DESIGN.md — see the quality difference instantly
+- **Context toggle:** test AI output with and without DESIGN.md - see the quality difference instantly
 - **Live component preview:** TSX transpiled server-side, rendered in sandboxed iframe with React + Tailwind
 - **Health scoring:** automatic 0-100 score measuring token faithfulness, component accuracy, anti-pattern violations
 - **Quick prompts:** preset component requests + dynamic prompts from extracted Figma components
 - **Token autocomplete:** type `--` in the editor, get autocomplete suggestions from extracted tokens
 - **Section navigation:** pill buttons to jump between DESIGN.md sections
 - **Auto-save:** 2-second debounce, save indicator in editor
+
+### Dashboard and Team Features
+
+Layout includes a full team dashboard for managing design systems at scale:
+
+- **Projects** - List all projects with creation, deletion, and direct navigation to Studio
+- **Component Library** - Create, version, and manage reusable components per organisation with AI-assisted code editing
+- **Candidates Review** - Team members submit Explorer Canvas variants for review; reviewers can approve or reject
+- **Drift Detection** - Automated monitoring of component compliance against design system tokens
+- **Analytics** - Track design system adoption: token usage frequency, component coverage, quality score trends
+- **Settings** - API key management, audit log, template publishing, webhook configuration
+
+### Organisation Model
+
+- Multi-user teams with three roles: Owner, Admin, Member
+- Organisation-scoped projects, components, and API keys
+- Better Auth integration with email/password and OAuth support
+- Role-based permissions on all API routes via `requireOrgAuth`
 
 ### Explorer Canvas
 AI-powered design exploration that generates 2–6 component variants simultaneously. Supports reference image upload, variant refinement, A/B comparison (with/without design system context), and direct promotion to the component library.
@@ -250,7 +268,7 @@ Figma webhook integration that triggers automatic re-extraction when designers p
 Publish design systems as reusable templates. Other teams can browse and install templates to bootstrap their projects with pre-configured design tokens, components, and documentation.
 
 ### Figma Plugin (Coming Soon)
-Native Figma plugin for one-click AI Kit export, live token inspector, component sync status, push-to-canvas for AI variant generation, and webhook management — all without leaving Figma.
+Native Figma plugin for one-click AI Kit export, live token inspector, component sync status, push-to-canvas for AI variant generation, and webhook management - all without leaving Figma.
 
 ### AI Image Generation (Coming Soon)
 Gemini 3.1 Flash Image Preview integration for generating contextual images (hero photos, illustrations, icons) in full-page designs created through the Explorer Canvas.
@@ -259,7 +277,7 @@ Gemini 3.1 Flash Image Preview integration for generating contextual images (her
 
 ## Tech Stack (for credibility tweets)
 
-- Next.js 16 (App Router), React 19, TypeScript strict mode
+- Next.js 15 (App Router), React 19, TypeScript strict mode
 - Claude Sonnet 4.6 for synthesis and testing
 - Playwright for website extraction
 - Figma REST API with rate limiting and batch node resolution
@@ -291,12 +309,12 @@ Gemini 3.1 Flash Image Preview integration for generating contextual images (her
 - "Figma MCP gives your AI raw data. We give it taste."
 
 ### Before/After
-- Show identical prompt with context OFF vs ON — the visual difference is dramatic
+- Show identical prompt with context OFF vs ON - the visual difference is dramatic
 - "Left: Claude without design context. Right: Claude with DESIGN.md. Same prompt."
 
 ### Technical Credibility
 - "We extract 500+ design tokens from a single URL in under 2 minutes"
-- "DESIGN.md isn't a style guide — it's a compiler target. Structured for LLM consumption."
+- "DESIGN.md isn't a style guide - it's a compiler target. Structured for LLM consumption."
 - "9 MCP tools, 3 free kits, MIT licensed. `npx @layoutdesign/context init` and your AI has taste."
 
 ### Use Cases

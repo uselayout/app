@@ -5,7 +5,7 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "API Reference — Layout Docs",
+  title: "API Reference -  Layout Docs",
   description:
     "Complete reference for the 10 MCP tools exposed by the Layout CLI for AI coding agents.",
 };
@@ -14,7 +14,7 @@ const tools = [
   {
     name: "get_design_system",
     description:
-      "Returns the full DESIGN.md file, or a specific named section of it. Use this as the first call when starting any UI task — it gives the agent the complete design context it needs to produce on-brand code.",
+      "Returns the full DESIGN.md file, or a specific named section of it. Use this as the first call when starting any UI task -  it gives the agent the complete design context it needs to produce on-brand code.",
     parameters: [
       {
         name: "section",
@@ -202,14 +202,14 @@ await mcp.call("push_to_figma", {
       );
     }
   \`,
-  pageName: "Sprint 3 — Components",
+  pageName: "Sprint 3 -  Components",
   frameName: "HeroBanner / Desktop"
 });`,
   },
   {
     name: "url_to_figma",
     description:
-      "Captures a public URL — a live webpage or web app — into Figma as a set of editable frames. Each capture includes both a full-page screenshot and a viewport-cropped version. Useful for documenting reference designs or snapshotting production UI alongside component work.",
+      "Captures a public URL -  a live webpage or web app -  into Figma as a set of editable frames. Each capture includes both a full-page screenshot and a viewport-cropped version. Useful for documenting reference designs or snapshotting production UI alongside component work.",
     parameters: [
       {
         name: "url",
@@ -232,7 +232,7 @@ await mcp.call("push_to_figma", {
     example: `// Capture a reference site into Figma
 await mcp.call("url_to_figma", {
   url: "https://linear.app",
-  pageName: "Reference — Linear",
+  pageName: "Reference -  Linear",
   viewports: [
     { width: 1440, height: 900 },
     { width: 390, height: 844 }
@@ -324,7 +324,7 @@ Developer asks Claude to read Figma changes
 Claude updates TSX to match designer's changes
   │
   ▼
-Commit — design and code are in sync`;
+Commit -  design and code are in sync`;
 
 export default function ApiReferencePage() {
   const { prev, next } = getAdjacentPages("/docs/api-reference");
@@ -338,7 +338,7 @@ export default function ApiReferencePage() {
           Layout CLI exposes 10 MCP tools that AI agents call during
           development. These tools give your agent structured access to design
           tokens, component specs, compliance checking, live preview, and a
-          two-way Figma bridge — everything needed to build UI that stays on
+          two-way Figma bridge -  everything needed to build UI that stays on
           brand.
         </p>
         <Callout type="info">
@@ -362,7 +362,7 @@ export default function ApiReferencePage() {
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
           The MCP tools are designed to work together across the full
-          development workflow — from the first prompt to a Figma-reviewed,
+          development workflow -  from the first prompt to a Figma-reviewed,
           production-ready component. No other open-source tool closes this
           loop.
         </p>
@@ -455,7 +455,7 @@ export default function ApiReferencePage() {
                 </div>
               ) : (
                 <p className="text-sm text-gray-400 italic">
-                  No parameters — call with no arguments.
+                  No parameters -  call with no arguments.
                 </p>
               )}
 

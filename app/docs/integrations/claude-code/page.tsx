@@ -5,7 +5,7 @@ import { CopyBlock } from "@/components/shared/CopyBlock";
 import { Callout } from "@/components/docs/Callout";
 
 export const metadata: Metadata = {
-  title: "Claude Code — Layout Docs",
+  title: "Claude Code -  Layout Docs",
   description:
     "Add your Layout design system to CLAUDE.md so Claude Code generates on-brand components on every prompt.",
 };
@@ -33,7 +33,7 @@ export default function ClaudeCodePage() {
             CLAUDE.md
           </code>{" "}
           as persistent context on every prompt. Add the design system there so
-          every component Claude generates is on-brand — no manual context
+          every component Claude generates is on-brand -  no manual context
           pasting required.
         </p>
       </div>
@@ -45,7 +45,7 @@ export default function ClaudeCodePage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-[#0a0a0a]">
-                Step 1 — Open or create CLAUDE.md
+                Step 1 -  Open or create CLAUDE.md
               </h3>
               <p className="text-base text-gray-600 leading-relaxed">
                 Open your project&apos;s{" "}
@@ -59,7 +59,7 @@ export default function ClaudeCodePage() {
 
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-[#0a0a0a]">
-                Step 2 — Paste the design system section
+                Step 2 -  Paste the design system section
               </h3>
               <p className="text-base text-gray-600 leading-relaxed">
                 Copy the contents of{" "}
@@ -77,7 +77,7 @@ export default function ClaudeCodePage() {
 
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-[#0a0a0a]">
-                Step 3 — Reference or inject the full DESIGN.md
+                Step 3 -  Reference or inject the full DESIGN.md
               </h3>
               <p className="text-base text-gray-600 leading-relaxed">
                 For the full{" "}
@@ -113,7 +113,7 @@ export default function ClaudeCodePage() {
         <Callout type="tip">
           The <strong>Quick Reference</strong> (Section 0 of DESIGN.md) is
           designed specifically for{" "}
-          <code className="font-mono text-xs">CLAUDE.md</code> — it summarises
+          <code className="font-mono text-xs">CLAUDE.md</code> -  it summarises
           the most critical tokens and rules in 50–75 lines, keeping it concise
           enough to not exhaust your context budget on every message. Add the
           full <code className="font-mono text-xs">DESIGN.md</code> only when
@@ -131,7 +131,7 @@ export default function ClaudeCodePage() {
             </code>{" "}
             contains your design system context, Claude Code will automatically
             use your tokens, colour values, typography scale, and component
-            patterns in every response — without any extra prompting. You can
+            patterns in every response -  without any extra prompting. You can
             verify this by asking Claude to build a component and checking
             whether it uses your exact token names rather than arbitrary values.
           </p>
@@ -139,7 +139,7 @@ export default function ClaudeCodePage() {
             Commit{" "}
             <code className="font-mono text-xs">CLAUDE.md</code> and{" "}
             <code className="font-mono text-xs">DESIGN.md</code> to your repo.
-            Treat them like any other configuration file — update them when your
+            Treat them like any other configuration file -  update them when your
             design system changes.
           </Callout>
         </div>

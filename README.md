@@ -10,7 +10,7 @@ Extract design systems from Figma files and live websites, then transform them i
 
 ## Why?
 
-AI coding agents (Claude Code, Cursor, Windsurf, GitHub Copilot) generate beautiful UI — but it never matches your brand. They default to Inter, rounded corners, and generic blue buttons.
+AI coding agents (Claude Code, Cursor, Windsurf, GitHub Copilot) generate beautiful UI - but it never matches your brand. They default to Inter, rounded corners, and generic blue buttons.
 
 Layout solves this by giving agents the design context they need:
 
@@ -22,24 +22,24 @@ Your AI agents now generate code that matches your actual design system.
 
 ## Features
 
-- **Website extraction** — Playwright scrapes CSS variables, computed styles, fonts, and full-page screenshots
-- **Figma extraction** — REST API pulls styles, components, variables, and metadata
-- **DESIGN.md synthesis** — Claude analyses extracted data and generates a comprehensive, structured design system document
-- **Test panel** — Ask Claude to build components using your design system and preview them live in-browser
-- **Push to Figma** — Send generated components to Figma as editable frames with auto-layout via the [Figma MCP server](https://www.figma.com/developers/mcp)
-- **Export bundles** — One-click ZIP with DESIGN.md, CLAUDE.md section, .cursorrules, tokens.css, W3C DTCG tokens.json, and tailwind.config.js
-- **MCP server** — [`@layoutdesign/context`](https://www.npmjs.com/package/@layoutdesign/context) gives AI agents direct access to your design system via 7 MCP tools
-- **BYOK** — Bring Your Own Key for Anthropic API. Free tier costs nothing.
-- **Project management** — Save, switch between, and manage multiple design system projects
-- **Explorer Canvas** — AI-powered design exploration with multi-variant generation, image upload, comparison view, and iterative refinement
-- **Component Library** — Create, version, and manage reusable components per organisation with AI-assisted editing
-- **Quality Scoring** — Automated DESIGN.md completeness analysis across 6 weighted categories
-- **Extraction Diffing** — Visual diff when re-extracting an existing project, with accept/discard workflow per change
-- **Template Marketplace** — Publish and browse reusable design system templates across teams
-- **Design Drift Detection** — Monitor design system compliance across components and flag regressions
-- **Webhook Automation** — Figma webhook receiver triggers automatic re-extraction and opens a GitHub pull request with the diff
-- **Team Dashboard** — Candidate review, analytics, audit log, and organisation settings management
-- **Organisation Model** — Multi-user teams with role-based access (owner, admin, member)
+- **Website extraction** - Playwright scrapes CSS variables, computed styles, fonts, and full-page screenshots
+- **Figma extraction** - REST API pulls styles, components, variables, and metadata
+- **DESIGN.md synthesis** - Claude analyses extracted data and generates a comprehensive, structured design system document
+- **Test panel** - Ask Claude to build components using your design system and preview them live in-browser
+- **Push to Figma** - Send generated components to Figma as editable frames with auto-layout via the [Figma MCP server](https://www.figma.com/developers/mcp)
+- **Export bundles** - One-click ZIP with DESIGN.md, CLAUDE.md section, .cursorrules, tokens.css, W3C DTCG tokens.json, and tailwind.config.js
+- **MCP server** - [`@layoutdesign/context`](https://www.npmjs.com/package/@layoutdesign/context) gives AI agents direct access to your design system via 7 MCP tools
+- **BYOK** - Bring Your Own Key for Anthropic API. Free tier costs nothing.
+- **Project management** - Save, switch between, and manage multiple design system projects
+- **Explorer Canvas** - AI-powered design exploration with multi-variant generation, image upload, comparison view, and iterative refinement
+- **Component Library** - Create, version, and manage reusable components per organisation with AI-assisted editing
+- **Quality Scoring** - Automated DESIGN.md completeness analysis across 6 weighted categories
+- **Extraction Diffing** - Visual diff when re-extracting an existing project, with accept/discard workflow per change
+- **Template Marketplace** - Publish and browse reusable design system templates across teams
+- **Design Drift Detection** - Monitor design system compliance across components and flag regressions
+- **Webhook Automation** - Figma webhook receiver triggers automatic re-extraction and opens a GitHub pull request with the diff
+- **Team Dashboard** - Candidate review, analytics, audit log, and organisation settings management
+- **Organisation Model** - Multi-user teams with role-based access (owner, admin, member)
 
 ## Quick Start
 
@@ -47,7 +47,7 @@ Your AI agents now generate code that matches your actual design system.
 
 - Node.js 20+
 - An Anthropic API key ([get one here](https://console.anthropic.com/))
-- PostgreSQL database (for auth — [Supabase](https://supabase.com/) works well)
+- PostgreSQL database (for auth - [Supabase](https://supabase.com/) works well)
 
 ### Setup
 
@@ -132,20 +132,20 @@ A native Figma plugin is in development that will expose Layout features directl
 - Live token inspector for selected elements
 - Component sync status between Figma and your exported bundle
 - Push selected frames to Layout Canvas for AI variant generation
-- Webhook management — create and manage Figma webhooks from within the plugin
+- Webhook management - create and manage Figma webhooks from within the plugin
 
 ## AI Image Generation (Coming Soon)
 
-Contextual image generation powered by Gemini 3.1 Flash Image Preview will allow full-page designs to include on-brand placeholder imagery, hero images, and component previews generated directly within the Studio — no external tools required.
+Contextual image generation powered by Gemini 3.1 Flash Image Preview will allow full-page designs to include on-brand placeholder imagery, hero images, and component previews generated directly within the Studio - no external tools required.
 
 ## Figma Integration
 
 The Studio works bidirectionally with Figma:
 
-- **Extract from Figma** — Paste a Figma file URL to pull styles, components, and variables
-- **Push to Figma** — Test panel's "Send to Figma" button pushes generated components as editable Figma frames
-- **Design in Figma** — MCP tool lets AI agents create Figma mockups using your design system before writing code
-- **Update tokens** — Change colours or spacing and push updates back across all design system files
+- **Extract from Figma** - Paste a Figma file URL to pull styles, components, and variables
+- **Push to Figma** - Test panel's "Send to Figma" button pushes generated components as editable Figma frames
+- **Design in Figma** - MCP tool lets AI agents create Figma mockups using your design system before writing code
+- **Update tokens** - Change colours or spacing and push updates back across all design system files
 
 Requires the [Figma MCP server](https://www.figma.com/developers/mcp) (OAuth, no API key needed):
 
@@ -157,9 +157,9 @@ claude mcp add --transport http figma https://mcp.figma.com/mcp
 
 The Studio is a three-panel workspace:
 
-- **Left — Source Panel**: View extracted tokens, components, and screenshots
-- **Centre — Editor**: Monaco editor with your DESIGN.md (edit freely)
-- **Right — Test Panel**: Ask Claude to build components using your design system and preview them live
+- **Left - Source Panel**: View extracted tokens, components, and screenshots
+- **Centre - Editor**: Monaco editor with your DESIGN.md (edit freely)
+- **Right - Test Panel**: Ask Claude to build components using your design system and preview them live
 
 ## Tech Stack
 
@@ -167,7 +167,7 @@ The Studio is a three-panel workspace:
 - **UI**: shadcn/ui + custom dark design system
 - **State**: Zustand with localStorage persistence
 - **Editor**: Monaco Editor (markdown mode)
-- **AI**: Anthropic SDK — Claude Sonnet 4.6
+- **AI**: Anthropic SDK - Claude Sonnet 4.6
 - **Extraction**: Playwright (websites), Figma REST API
 - **Export**: JSZip for bundle generation
 - **Auth**: Better Auth with PostgreSQL
@@ -227,9 +227,9 @@ lib/
 
 Layout runs on any platform that supports Node.js and Playwright:
 
-- **Coolify** / **Dokku** — Use the included Dockerfile
-- **Railway** / **Render** — Deploy from Git
-- **VPS** — Docker or bare Node.js
+- **Coolify** / **Dokku** - Use the included Dockerfile
+- **Railway** / **Render** - Deploy from Git
+- **VPS** - Docker or bare Node.js
 
 > **Note**: Playwright cannot run in Vercel serverless. Use a container-based platform for website extraction.
 
@@ -243,4 +243,4 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 ## License
 
-[MIT](LICENSE) — Layout UI Ltd
+[MIT](LICENSE) - Layout UI Ltd
