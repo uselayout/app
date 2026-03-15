@@ -6,11 +6,15 @@ import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 import { HeroSection } from "@/components/marketing/HeroSection";
 import { ContextGapSection } from "@/components/marketing/ContextGapSection";
 import { ExtractSection } from "@/components/marketing/ExtractSection";
+import { CompletenessSection } from "@/components/marketing/CompletenessSection";
 import { ServeSection } from "@/components/marketing/ServeSection";
 import { FigmaLoopSection } from "@/components/marketing/FigmaLoopSection";
+import { DriftSection } from "@/components/marketing/DriftSection";
 import { ExplorerSection } from "@/components/marketing/ExplorerSection";
+import { DesignSystemSection } from "@/components/marketing/DesignSystemSection";
 import { ComparisonSection } from "@/components/marketing/ComparisonSection";
 import { OpenSourceSection } from "@/components/marketing/OpenSourceSection";
+import { TeamsSection } from "@/components/marketing/TeamsSection";
 import { EarlyAccessCTA } from "@/components/marketing/EarlyAccessCTA";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { InstallCLIModal } from "@/components/marketing/InstallCLIModal";
@@ -30,11 +34,15 @@ export function LandingPageClient() {
           <HeroSection onInstallCLI={openInstall} />
           <ContextGapSection />
           <ExtractSection />
+          <CompletenessSection />
           <ServeSection />
           <FigmaLoopSection />
+          <DriftSection />
           <ExplorerSection />
+          <DesignSystemSection />
           <ComparisonSection />
           <OpenSourceSection />
+          <TeamsSection />
           <EarlyAccessCTA onInstallCLI={openInstall} />
         </main>
       </div>

@@ -26,7 +26,7 @@ export function FigmaLoopSection() {
             className="w-full lg:w-[575px] pt-[19px] flex flex-col gap-[10px]"
           >
             <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-              Every design-to-code tool is a one-way street. Layout closes the loop.
+              Figma to code is a solved problem. Code back to Figma isn&apos;t. Until now.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
               Push AI-generated components to Figma as editable frames — three responsive breakpoints, real auto-layout, real styles. Not a screenshot.
@@ -39,6 +39,12 @@ export function FigmaLoopSection() {
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
               AI creates Figma mockups using your actual design tokens. New screens start correct — designers refine instead of recreating from scratch.
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-accent)] tracking-[-0.165px]">
+              Native Figma plugin
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+              Inspect any element to see which tokens it maps to and spot drift instantly. Export local styles and Variables on any Figma plan — not just Enterprise. Designers trigger AI variant generation without leaving the canvas.
             </p>
           </motion.div>
         </div>

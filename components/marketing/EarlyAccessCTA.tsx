@@ -29,7 +29,7 @@ export function EarlyAccessCTA({ onInstallCLI }: { onInstallCLI?: () => void }) 
           <div className="w-full lg:w-[575px] flex flex-col gap-8 lg:gap-[64px]">
             <div className="pt-[19px] flex flex-col gap-[10px]">
               <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-                Layout is in open alpha. We&apos;re looking for teams who ship UI with AI agents and want to shape what gets built next.
+                Layout is in early access. Join the teams shipping AI-built UI that actually looks right — and help shape what we build next.
               </p>
               <div className="flex flex-col gap-0">
                 <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
@@ -42,7 +42,7 @@ export function EarlyAccessCTA({ onInstallCLI }: { onInstallCLI?: () => void }) 
                   → Founding member pricing — locked in permanently
                 </p>
                 <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-                  → Your use case shaping the roadmap
+                  → Direct input on the roadmap
                 </p>
               </div>
             </div>
@@ -58,7 +58,7 @@ export function EarlyAccessCTA({ onInstallCLI }: { onInstallCLI?: () => void }) 
                 onClick={onInstallCLI}
                 className="hidden lg:inline-flex bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium items-center justify-center"
               >
-                Install free CLI
+                Install the free CLI
               </button>
             </div>
           </div>
