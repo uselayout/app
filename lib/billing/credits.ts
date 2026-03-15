@@ -6,6 +6,7 @@ import type {
   SubscriptionTier,
 } from "@/lib/types/billing";
 import { TIER_CREDITS as CREDITS } from "@/lib/types/billing";
+import { getUserTier } from "@/lib/billing/subscription";
 
 interface CreditRow {
   id: string;
@@ -66,9 +67,18 @@ export async function checkQuota(
   userId: string,
   endpoint: AiEndpoint
 ): Promise<QuotaCheck> {
-  const balance = await getCreditBalance(userId);
+  let balance = await getCreditBalance(userId);
   if (!balance) {
-    return { allowed: false, reason: "No credit balance found. Please subscribe to a plan." };
+    // Auto-provision starter credits for new users
+    const tier = await getUserTier(userId);
+    const allocation = CREDITS[tier];
+    const now = new Date();
+    const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    await resetMonthlyCredits(userId, tier, 1, now.toISOString(), periodEnd.toISOString());
+    balance = await getCreditBalance(userId);
+    if (!balance) {
+      return { allowed: false, reason: "Failed to provision credits. Please try again." };
+    }
   }
 
   const creditType = endpoint === "design-md" ? "designMd" : "testQuery";

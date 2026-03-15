@@ -20,7 +20,7 @@ export default function ExplorerPage() {
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Explorer Canvas</h1>
         <p className="text-base text-gray-600 leading-relaxed">
           Explorer Canvas is an AI-powered design exploration tool built into
-          Layout Studio. Enter a prompt, set how many variants to generate, and
+          the Studio. Enter a prompt, set how many variants to generate, and
           the AI produces multiple component options using your extracted design
           tokens - all in a single pass. Use it to explore directions quickly
           before committing to an implementation.

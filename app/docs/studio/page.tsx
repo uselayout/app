@@ -7,7 +7,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Studio Guide -  Layout Docs",
   description:
-    "How to use the Layout Studio three-panel editor -  extraction, DESIGN.md generation, testing, and exporting.",
+    "How to use the Studio — Layout's three-panel editor for extraction, DESIGN.md generation, testing, and exporting.",
 };
 
 export default function StudioPage() {
@@ -17,9 +17,9 @@ export default function StudioPage() {
     <div className="space-y-10">
       {/* Header */}
       <div className="space-y-3">
-        <h1 className="text-3xl font-bold text-[#0a0a0a]">Layout Studio</h1>
+        <h1 className="text-3xl font-bold text-[#0a0a0a]">Studio</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Layout Studio is a browser-based tool for extracting design
+          The Studio is Layout&apos;s browser-based tool for extracting design
           systems, synthesising LLM-optimised context files, and testing them
           against real AI output -  all in one place. Paste a URL, get a complete
           AI kit in under 2 minutes.

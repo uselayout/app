@@ -8,7 +8,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Walkthrough -  Layout Docs",
   description:
-    "A complete end-to-end walkthrough of Layout AI Studio -  from extracting a design system to exporting a working AI kit and closing the Figma loop.",
+    "A complete end-to-end walkthrough of Layout — from extracting a design system to exporting a working AI kit and closing the Figma loop.",
 };
 
 export default function WalkthroughPage() {
@@ -22,7 +22,7 @@ export default function WalkthroughPage() {
           End-to-End Walkthrough
         </h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          This walkthrough covers the complete Layout AI Studio workflow - 
+          This walkthrough covers the complete Layout workflow —
           from pasting a URL to having your AI agent automatically generate
           on-brand UI. Each step builds on the previous one, so read it in
           order the first time through.

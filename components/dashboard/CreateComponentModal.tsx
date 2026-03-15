@@ -217,7 +217,7 @@ export function CreateComponentModal({
   }, [aiPrompt, aiGenerating, code, name]);
 
   return (
-    <div className="absolute inset-0 z-[100] flex flex-col bg-[--bg-app]">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[--bg-app]">
       {/* Top bar */}
       <div className="flex items-center justify-between border-b border-[--studio-border] px-5 py-3">
         <h2 className="text-sm font-semibold text-[--text-primary]">
