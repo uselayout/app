@@ -20,16 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Explorer Canvas for AI-powered design exploration with multi-variant generation (2-6 variants)
 - Image upload support in Explorer (paste, drag-drop, file picker) for reference-based generation
-- Variant refinement — select and refine individual variants with follow-up prompts
-- Comparison view — A/B test component generation with vs without design system context
-- Promote to Library — save Explorer variants directly to org component library
-- Submit Candidate — submit variants for team review
-- Push to Design System — batch update tokens and components from Explorer
+- Variant refinement - select and refine individual variants with follow-up prompts
+- Comparison view - A/B test component generation with vs without design system context
+- Promote to Library - save Explorer variants directly to org component library
+- Submit Candidate - submit variants for team review
+- Push to Design System - batch update tokens and components from Explorer
 - DESIGN.md quality scoring (Completeness Panel) across 6 weighted categories
-- Extraction diff modal — visual diff on re-extraction with accept/discard workflow
+- Extraction diff modal - visual diff on re-extraction with accept/discard workflow
 - Component library with create, edit, version, and AI-assisted editing per organisation
-- Template publishing — publish design systems as reusable templates
-- Template browse and install — public gallery with search and one-click install
+- Template publishing - publish design systems as reusable templates
+- Template browse and install - public gallery with search and one-click install
 - Design drift detection dashboard
 - Usage analytics dashboard
 - Candidates review page for submitted design variants

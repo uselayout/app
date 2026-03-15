@@ -1,5 +1,5 @@
 /**
- * Gemini 3.1 Flash Image Preview — image generation client.
+ * Gemini 3.1 Flash Image Preview  -  image generation client.
  *
  * Generates contextual images (hero photos, illustrations, icons, abstract art)
  * for use in AI-generated page designs within the Explorer Canvas.
@@ -20,7 +20,7 @@ export type Resolution = "512" | "1K" | "2K";
 export interface GenerateImageOptions {
   /** Descriptive prompt for the image */
   prompt: string;
-  /** Visual style hint — prepended to the prompt */
+  /** Visual style hint  -  prepended to the prompt */
   style?: ImageStyle;
   /** Aspect ratio (default: 16:9) */
   aspectRatio?: AspectRatio;
@@ -133,7 +133,7 @@ export async function generateImageRaw(
   // Extract image from response
   const candidates = result.candidates;
   if (!candidates || candidates.length === 0) {
-    throw new Error("No image generated — Gemini returned empty candidates");
+    throw new Error("No image generated  -  Gemini returned empty candidates");
   }
 
   const parts = candidates[0].content?.parts;

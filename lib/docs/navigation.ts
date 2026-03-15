@@ -4,34 +4,73 @@ export type DocNavItem = {
   children?: DocNavItem[];
 };
 
-export const docsNavigation: DocNavItem[] = [
-  { title: "Getting Started", href: "/docs" },
-  { title: "Walkthrough", href: "/docs/walkthrough" },
-  { title: "Studio", href: "/docs/studio" },
-  { title: "CLI", href: "/docs/cli" },
+export type DocNavSection = {
+  label: string;
+  items: DocNavItem[];
+};
+
+export const docsNavigation: DocNavSection[] = [
   {
-    title: "Integrations",
-    href: "/docs/integrations",
-    children: [
-      { title: "Claude Code", href: "/docs/integrations/claude-code" },
-      { title: "Cursor", href: "/docs/integrations/cursor" },
-      { title: "GitHub Copilot", href: "/docs/integrations/copilot" },
-      { title: "Windsurf", href: "/docs/integrations/windsurf" },
-      { title: "OpenAI Codex", href: "/docs/integrations/codex" },
+    label: "Getting Started",
+    items: [
+      { title: "Introduction", href: "/docs" },
+      { title: "Walkthrough", href: "/docs/walkthrough" },
     ],
   },
-  { title: "API Reference", href: "/docs/api-reference" },
-  { title: "DESIGN.md Spec", href: "/docs/design-md" },
-  { title: "Self-Hosting", href: "/docs/self-hosting" },
+  {
+    label: "Studio",
+    items: [
+      { title: "Studio Guide", href: "/docs/studio" },
+      { title: "Explorer Canvas", href: "/docs/explorer" },
+      { title: "Component Library", href: "/docs/component-library" },
+    ],
+  },
+  {
+    label: "Integrations",
+    items: [
+      { title: "CLI & MCP Server", href: "/docs/cli" },
+      {
+        title: "AI Agents",
+        href: "/docs/integrations",
+        children: [
+          { title: "Claude Code", href: "/docs/integrations/claude-code" },
+          { title: "Cursor", href: "/docs/integrations/cursor" },
+          { title: "GitHub Copilot", href: "/docs/integrations/copilot" },
+          { title: "Windsurf", href: "/docs/integrations/windsurf" },
+          { title: "OpenAI Codex", href: "/docs/integrations/codex" },
+        ],
+      },
+      { title: "Figma Plugin", href: "/docs/figma-plugin" },
+    ],
+  },
+  {
+    label: "Platform",
+    items: [
+      { title: "Organisations", href: "/docs/organisations" },
+      { title: "Dashboard & Settings", href: "/docs/dashboard" },
+      { title: "Templates", href: "/docs/templates" },
+      { title: "Webhooks", href: "/docs/webhooks" },
+    ],
+  },
+  {
+    label: "Reference",
+    items: [
+      { title: "API Reference", href: "/docs/api-reference" },
+      { title: "DESIGN.md Spec", href: "/docs/design-md" },
+      { title: "Self-Hosting", href: "/docs/self-hosting" },
+    ],
+  },
 ];
 
-/** Flatten the nav tree into a single ordered list of leaf/top-level items. */
-function flattenNav(items: DocNavItem[]): DocNavItem[] {
+/** Flatten all sections into a single ordered list for prev/next navigation. */
+function flattenAllItems(sections: DocNavSection[]): DocNavItem[] {
   const result: DocNavItem[] = [];
-  for (const item of items) {
-    result.push(item);
-    if (item.children) {
-      result.push(...item.children);
+  for (const section of sections) {
+    for (const item of section.items) {
+      result.push(item);
+      if (item.children) {
+        result.push(...item.children);
+      }
     }
   }
   return result;
@@ -41,7 +80,7 @@ export function getAdjacentPages(currentPath: string): {
   prev: DocNavItem | null;
   next: DocNavItem | null;
 } {
-  const flat = flattenNav(docsNavigation);
+  const flat = flattenAllItems(docsNavigation);
   const index = flat.findIndex((item) => item.href === currentPath);
 
   if (index === -1) return { prev: null, next: null };

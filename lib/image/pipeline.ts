@@ -1,5 +1,5 @@
 /**
- * Image pipeline — scans generated HTML for image placeholders and
+ * Image pipeline  -  scans generated HTML for image placeholders and
  * replaces them with AI-generated images.
  *
  * Placeholders use the format:

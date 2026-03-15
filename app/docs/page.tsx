@@ -5,7 +5,7 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Getting Started — Layout Docs",
+  title: "Getting Started -  Layout Docs",
   description:
     "Learn how to extract a design system, generate DESIGN.md, and drop it into your AI coding workflow.",
 };
@@ -22,7 +22,7 @@ export default function GettingStartedPage() {
           Layout Studio extracts design systems from Figma files or live
           websites and compiles them into an LLM-optimised context bundle. Drop
           that bundle into your project and every component your AI generates
-          is on-brand — without pasting context manually.
+          is on-brand -  without pasting context manually.
         </p>
       </div>
 
@@ -46,7 +46,7 @@ export default function GettingStartedPage() {
                 {
                   file: "DESIGN.md",
                   purpose:
-                    "Full design system reference — tokens, components, anti-patterns",
+                    "Full design system reference -  tokens, components, anti-patterns",
                 },
                 {
                   file: "CLAUDE.md-section.md",
@@ -91,7 +91,7 @@ export default function GettingStartedPage() {
         </div>
         <Callout type="info">
           The <strong>Quick Reference</strong> inside <code className="text-xs bg-gray-100 rounded px-1 py-0.5">DESIGN.md</code> (Section 0) is designed to be
-          copy-pasted standalone — it fits within tight context budgets and
+          copy-pasted standalone -  it fits within tight context budgets and
           summarises the most critical tokens and rules in 50–75 lines.
         </Callout>
       </section>
@@ -115,7 +115,7 @@ export default function GettingStartedPage() {
             },
             {
               step: "Test",
-              desc: "Use the Test panel to generate a few components. Check the health score — aim for 80+.",
+              desc: "Use the Test panel to generate a few components. Check the health score -  aim for 80+.",
             },
             {
               step: "Iterate",
@@ -136,7 +136,7 @@ export default function GettingStartedPage() {
               </span>
               <div>
                 <span className="font-semibold text-[#0a0a0a]">{step}</span>
-                <span className="text-gray-600"> — {desc}</span>
+                <span className="text-gray-600"> -  {desc}</span>
               </div>
             </li>
           ))}
@@ -179,7 +179,7 @@ export default function GettingStartedPage() {
                 {range}
               </span>
               <div className="text-sm">
-                <span className="font-semibold">{label}</span> — {desc}
+                <span className="font-semibold">{label}</span> -  {desc}
               </div>
             </div>
           ))}
@@ -191,22 +191,22 @@ export default function GettingStartedPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Tips</h2>
         <div className="space-y-3">
           <Callout type="tip">
-            <strong>Narrow the Quick Reference</strong> — If you have a large
+            <strong>Narrow the Quick Reference</strong> -  If you have a large
             DESIGN.md, Section 0 is the most important part. Keep it focused on
             the 10–15 tokens your AI uses most.
           </Callout>
           <Callout type="tip">
-            <strong>Commit DESIGN.md to your repo</strong> — Treat it like any
+            <strong>Commit DESIGN.md to your repo</strong> -  Treat it like any
             other configuration file. Update it when the design system changes.
           </Callout>
           <Callout type="tip">
-            <strong>Use the context toggle</strong> — In the Test panel, toggle
+            <strong>Use the context toggle</strong> -  In the Test panel, toggle
             "DESIGN.md context: OFF" to see what the AI generates without your
             design system. The gap shows you exactly what value the context file
             is providing.
           </Callout>
           <Callout type="tip">
-            <strong>Re-extract periodically</strong> — Design systems evolve.
+            <strong>Re-extract periodically</strong> -  Design systems evolve.
             Re-run extraction after major design updates to keep the context file
             current.
           </Callout>
@@ -221,14 +221,14 @@ export default function GettingStartedPage() {
             <Link href="/docs/studio" className="text-gray-900 hover:underline">
               Studio Guide
             </Link>{" "}
-            — learn the three-panel editor, extraction options, and test panel in
+ -  learn the three-panel editor, extraction options, and test panel in
             depth.
           </li>
           <li>
             <Link href="/docs/cli" className="text-gray-900 hover:underline">
               CLI Guide
             </Link>{" "}
-            — set up the MCP server so your AI agent fetches design context
+ -  set up the MCP server so your AI agent fetches design context
             automatically.
           </li>
         </ul>

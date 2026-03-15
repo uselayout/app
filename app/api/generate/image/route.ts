@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { auth } from "@/lib/auth";
-import { generateImage, type ImageStyle, type AspectRatio, type Resolution } from "@/lib/image/generate";
+import { generateImage } from "@/lib/image/generate";
 import { processImagePlaceholders } from "@/lib/image/pipeline";
 
 // ---------------------------------------------------------------------------
@@ -85,9 +85,9 @@ export async function POST(request: NextRequest) {
 
     const result = await generateImage({
       prompt,
-      style: style as ImageStyle | undefined,
-      aspectRatio: aspectRatio as AspectRatio | undefined,
-      resolution: resolution as Resolution | undefined,
+      style,
+      aspectRatio,
+      resolution,
       brandColours,
       brandStyle,
       orgId,

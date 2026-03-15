@@ -52,7 +52,7 @@ npm run build        # Should complete successfully
 
 ### TypeScript
 
-- **Strict mode** — no `any` types
+- **Strict mode** - no `any` types
 - All API inputs validated with Zod
 - Named exports for components, default exports for pages
 
@@ -65,7 +65,7 @@ npm run build        # Should complete successfully
 ### Styling
 
 - Tailwind CSS v4 with CSS custom properties
-- Always use design tokens (`var(--bg-app)`, `var(--text-primary)`, etc.) — never hardcode colours
+- Always use design tokens (`var(--bg-app)`, `var(--text-primary)`, etc.) - never hardcode colours
 - See `app/globals.css` for the full token reference
 
 ### API Routes
@@ -94,7 +94,7 @@ refactor: extract token parser into separate module
 
 ## Pull Request Guidelines
 
-- Keep PRs focused — one feature or fix per PR
+- Keep PRs focused - one feature or fix per PR
 - Include a clear description of what changed and why
 - Ensure `npm run typecheck` and `npm run lint` pass
 - Add/update tests if applicable
@@ -156,9 +156,9 @@ Available tools: `get_design_system`, `get_design_section`, `get_tokens`, `get_c
 ### Store Patterns
 
 Zustand stores in `lib/store/`:
-- `project.ts` — Project state, persisted to Supabase via `ProjectHydrator`
-- `extraction.ts` — Extraction progress (ephemeral, not persisted)
-- `organization.ts` — Current org context
+- `project.ts` - Project state, persisted to Supabase via `ProjectHydrator`
+- `extraction.ts` - Extraction progress (ephemeral, not persisted)
+- `organization.ts` - Current org context
 
 All stores use the `create<T>()((set, get) => ({ ... }))` pattern. Database-backed stores call Supabase in action handlers after updating local state.
 
