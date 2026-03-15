@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import {
   buildSrcdoc,
   extractComponentName,
@@ -19,15 +20,21 @@ const STATUS_COLOURS: Record<string, string> = {
 };
 
 export function ComponentCard({ component, orgSlug }: ComponentCardProps) {
+  const params = useParams();
+  const projectId = (params?.projectId as string) ?? "";
   const componentName = extractComponentName(component.code);
   const srcdoc =
     component.compiledJs
       ? buildSrcdoc(component.compiledJs, componentName)
       : null;
 
+  const libraryBase = projectId
+    ? `/${orgSlug}/projects/${projectId}/library`
+    : `/${orgSlug}/library`;
+
   return (
     <Link
-      href={`/${orgSlug}/library/${component.slug}`}
+      href={`${libraryBase}/${component.slug}`}
       className="block overflow-hidden rounded-[var(--studio-radius-lg)] border border-[var(--studio-border)] bg-[var(--bg-surface)] transition-all duration-[var(--duration-base)] hover:border-[var(--studio-border-strong)] hover:bg-[var(--bg-hover)]"
     >
       {/* Preview area */}

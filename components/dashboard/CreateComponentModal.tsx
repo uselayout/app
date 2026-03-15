@@ -5,7 +5,7 @@ import { X, Loader2, Save, ArrowUp, Sparkles } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useOrgStore } from "@/lib/store/organization";
 import { extractComponentName, buildSrcdoc } from "@/lib/explore/preview-helpers";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -38,6 +38,8 @@ export function CreateComponentModal({
   onCreated,
 }: CreateComponentModalProps) {
   const router = useRouter();
+  const params = useParams();
+  const projectId = (params?.projectId as string) ?? "";
   const orgId = useOrgStore((s) => s.currentOrgId);
 
   const [name, setName] = useState("");
@@ -148,7 +150,10 @@ export function CreateComponentModal({
 
       // Navigate to the new component detail page
       if (created.slug) {
-        router.push(`/${orgSlug}/library/${created.slug}`);
+        const libraryBase = projectId
+          ? `/${orgSlug}/projects/${projectId}/library`
+          : `/${orgSlug}/library`;
+        router.push(`${libraryBase}/${created.slug}`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -212,7 +217,7 @@ export function CreateComponentModal({
   }, [aiPrompt, aiGenerating, code, name]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-[--bg-app]">
+    <div className="absolute inset-0 z-[100] flex flex-col bg-[--bg-app]">
       {/* Top bar */}
       <div className="flex items-center justify-between border-b border-[--studio-border] px-5 py-3">
         <h2 className="text-sm font-semibold text-[--text-primary]">

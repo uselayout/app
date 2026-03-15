@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Layers, Globe, ArrowRight } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
@@ -15,6 +15,8 @@ interface NewExtractionModalProps {
 
 export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
   const router = useRouter();
+  const params = useParams();
+  const orgSlug = (params?.org as string) ?? "";
   const createProject = useProjectStore((s) => s.createProject);
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
   const [url, setUrl] = useState("");
@@ -68,7 +70,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
     }
     sessionStorage.setItem(`extract-${projectId}`, "true");
 
-    router.push(`/studio/${projectId}`);
+    router.push(`/${orgSlug}/projects/${projectId}/studio`);
   };
 
   if (showApiKeyModal) {

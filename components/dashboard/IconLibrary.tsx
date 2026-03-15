@@ -221,7 +221,7 @@ export function IconLibrary() {
           <div className="text-center">
             <p className="text-sm text-[var(--text-muted)]">No icons found</p>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
-              Upload SVG files to get started
+              Upload SVG files or extract icons from a design system in Studio.
             </p>
           </div>
         </div>
