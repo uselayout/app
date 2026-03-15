@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { useOrgStore } from "@/lib/store/organization";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -41,8 +40,6 @@ function initials(name?: string, email?: string): string {
 }
 
 export default function MembersPage() {
-  const params = useParams();
-  const orgSlug = typeof params?.org === "string" ? params.org : "";
   const { data: session } = useSession();
   const currentOrg = useOrgStore((s) => s.currentOrg);
   const hasPermission = useOrgStore((s) => s.hasPermission);
