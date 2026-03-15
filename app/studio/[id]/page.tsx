@@ -13,7 +13,10 @@ import { SourcePanel } from "@/components/studio/SourcePanel";
 import { TestPanel, type TestPanelHandle } from "@/components/studio/TestPanel";
 import { ExplorerCanvas } from "@/components/studio/ExplorerCanvas";
 import { ExportModal } from "@/components/studio/ExportModal";
-import type { DesignVariant } from "@/lib/types";
+import { ExtractionDiffModal } from "@/components/studio/ExtractionDiffModal";
+import { diffExtractions } from "@/lib/extraction/diff";
+import type { ExtractionDiff } from "@/lib/extraction/diff";
+import type { DesignVariant, ExtractionResult } from "@/lib/types";
 
 export default function StudioPage({
   params,
@@ -24,6 +27,7 @@ export default function StudioPage({
   const projects = useProjectStore((s) => s.projects);
   const updateProjectName = useProjectStore((s) => s.updateProjectName);
   const updateDesignMd = useProjectStore((s) => s.updateDesignMd);
+  const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateExplorations = useProjectStore((s) => s.updateExplorations);
   const project = projects.find((p) => p.id === id);
 
@@ -39,6 +43,11 @@ export default function StudioPage({
   const [showTestPanel, setShowTestPanel] = useState(true);
   const [includeContext, setIncludeContext] = useState(true);
   const testPanelRef = useRef<TestPanelHandle>(null);
+
+  // Extraction diff state
+  const previousExtractionRef = useRef<ExtractionResult | null>(null);
+  const previousDesignMdRef = useRef<string | null>(null);
+  const [pendingDiff, setPendingDiff] = useState<ExtractionDiff | null>(null);
 
   useEffect(() => {
     if (extractionStarted.current || !project) return;
@@ -57,11 +66,59 @@ export default function StudioPage({
 
   const handleReExtract = useCallback(() => {
     if (!project) return;
+    // Capture previous state for diff comparison
+    if (project.extractionData) {
+      previousExtractionRef.current = project.extractionData;
+      previousDesignMdRef.current = project.designMd;
+    }
     extractionStarted.current = false;
     sessionStorage.setItem(`extract-${id}`, "true");
     const pat = sessionStorage.getItem(`pat-${id}`);
     runExtraction(project, pat ?? undefined);
   }, [id, project, runExtraction]);
+
+  // Show diff modal when re-extraction completes
+  useEffect(() => {
+    if (
+      extractionStatus === "complete" &&
+      previousExtractionRef.current &&
+      project?.extractionData &&
+      project.extractionData !== previousExtractionRef.current
+    ) {
+      const diff = diffExtractions(previousExtractionRef.current, project.extractionData);
+      const totalChanges =
+        diff.tokens.changes.length +
+        diff.components.changes.length +
+        diff.fonts.added.length +
+        diff.fonts.removed.length;
+
+      if (totalChanges > 0) {
+        setPendingDiff(diff);
+      } else {
+        previousExtractionRef.current = null;
+        previousDesignMdRef.current = null;
+      }
+    }
+  }, [extractionStatus, project?.extractionData]);
+
+  const handleAcceptDiff = useCallback(() => {
+    previousExtractionRef.current = null;
+    previousDesignMdRef.current = null;
+    setPendingDiff(null);
+  }, []);
+
+  const handleDiscardDiff = useCallback(() => {
+    // Revert to previous extraction data and DESIGN.md
+    if (previousExtractionRef.current) {
+      updateExtractionData(id, previousExtractionRef.current);
+    }
+    if (previousDesignMdRef.current !== null) {
+      updateDesignMd(id, previousDesignMdRef.current);
+    }
+    previousExtractionRef.current = null;
+    previousDesignMdRef.current = null;
+    setPendingDiff(null);
+  }, [id, updateExtractionData, updateDesignMd]);
 
   const handleDesignMdChange = useCallback(
     (value: string) => {
@@ -227,6 +284,13 @@ export default function StudioPage({
       </div>
       {showExport && (
         <ExportModal project={project} onClose={() => setShowExport(false)} />
+      )}
+      {pendingDiff && (
+        <ExtractionDiffModal
+          diff={pendingDiff}
+          onClose={handleDiscardDiff}
+          onAccept={handleAcceptDiff}
+        />
       )}
     </div>
     </>
