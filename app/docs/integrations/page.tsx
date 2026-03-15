@@ -5,7 +5,7 @@ import { CopyBlock } from "@/components/shared/CopyBlock";
 import { Callout } from "@/components/docs/Callout";
 
 export const metadata: Metadata = {
-  title: "Integrations — Layout Docs",
+  title: "Integrations -  Layout Docs",
   description:
     "Use Layout Studio with Claude Code, Cursor, GitHub Copilot, Windsurf, and OpenAI Codex.",
 };
@@ -39,14 +39,14 @@ const integrations = [
     name: "OpenAI Codex",
     href: "/docs/integrations/codex",
     description:
-      "Drop AGENTS.md into your repo root. Codex reads it automatically on every task — no further setup required.",
+      "Drop AGENTS.md into your repo root. Codex reads it automatically on every task -  no further setup required.",
   },
 ];
 
 const tokenFilesSnippet = `/* globals.css or app.css */
 @import "./tokens.css";`;
 
-const tailwindSnippet = `// tailwind.config.js — already maps all extracted tokens into Tailwind's theme
+const tailwindSnippet = `// tailwind.config.js -  already maps all extracted tokens into Tailwind's theme
 const config = require("./tailwind.config.js");`;
 
 export default function IntegrationsPage() {
@@ -58,7 +58,7 @@ export default function IntegrationsPage() {
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Integrations</h1>
         <p className="text-base text-gray-600 leading-relaxed">
           Layout works with every major AI coding tool. Export your design
-          system bundle once, then drop the right file into each tool — your AI
+          system bundle once, then drop the right file into each tool -  your AI
           assistant will follow the design system on every prompt without you
           having to paste context manually.
         </p>
@@ -93,13 +93,13 @@ export default function IntegrationsPage() {
           <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
             tailwind.config.js
           </code>{" "}
-          work with all tools — the AI sees the actual token values in your
+          work with all tools -  the AI sees the actual token values in your
           source files, reinforcing the design system rules in context.
         </p>
 
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-[#0a0a0a]">
-            tokens.css — CSS custom properties
+            tokens.css -  CSS custom properties
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
             Import in your global stylesheet to make all design tokens available
@@ -110,7 +110,7 @@ export default function IntegrationsPage() {
 
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-[#0a0a0a]">
-            tailwind.config.js — Tailwind theme
+            tailwind.config.js -  Tailwind theme
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
             Replace or merge with your existing Tailwind config. All extracted

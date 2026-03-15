@@ -6,7 +6,7 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "CLI Guide — Layout Docs",
+  title: "CLI Guide -  Layout Docs",
   description:
     "Install the @layoutdesign/context MCP server, import your Studio export, and give your AI agent automatic access to your design system.",
 };
@@ -29,7 +29,7 @@ export default function CliPage() {
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             get_design_system
           </code>{" "}
-          automatically whenever it builds UI — no manual context pasting
+          automatically whenever it builds UI -  no manual context pasting
           required.
         </p>
       </div>
@@ -63,7 +63,7 @@ export default function CliPage() {
         <Callout type="tip">
           After <code className="text-xs bg-gray-100 rounded px-1 py-0.5">init</code>, run{" "}
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">npx @layoutdesign/context install</code> to
-          auto-configure your AI agent&apos;s MCP settings — no manual JSON editing required.
+          auto-configure your AI agent&apos;s MCP settings -  no manual JSON editing required.
         </Callout>
       </section>
 
@@ -72,7 +72,7 @@ export default function CliPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Importing from Studio</h2>
         <p className="text-base text-gray-600 leading-relaxed">
           If you have already exported a ZIP bundle from Layout Studio,
-          import it directly — no need to use a starter kit.
+          import it directly -  no need to use a starter kit.
         </p>
         <CopyBlock
           code="npx @layoutdesign/context import ./export.zip"
@@ -100,13 +100,13 @@ export default function CliPage() {
         />
         <p className="text-base text-gray-600 leading-relaxed">
           The server runs on stdio and responds to MCP tool calls from your
-          configured AI agent. No port is opened — communication is via
+          configured AI agent. No port is opened -  communication is via
           standard input/output, which is the MCP convention for local tools.
         </p>
         <Callout type="info">
           Add the MCP server to your agent config once. After that, every
           session in that project directory automatically has access to the
-          design system tools — no flags, no manual context injection.
+          design system tools -  no flags, no manual context injection.
         </Callout>
       </section>
 
@@ -160,7 +160,7 @@ npx @layoutdesign/context install --target windsurf`}
         <CopyBlock
           code={`npx @layoutdesign/context import ./layout-export.zip
 npx @layoutdesign/context install
-# Done — your AI agent reads the design system automatically`}
+# Done -  your AI agent reads the design system automatically`}
           language="bash"
         />
       </section>
@@ -215,7 +215,7 @@ npx @layoutdesign/context install
                 ],
                 [
                   "design_in_figma",
-                  "Designs UI directly in Figma using your extracted tokens — from a natural language prompt",
+                  "Designs UI directly in Figma using your extracted tokens -  from a natural language prompt",
                 ],
                 [
                   "update_tokens",
@@ -240,7 +240,7 @@ npx @layoutdesign/context install
         <p className="text-base text-gray-600 leading-relaxed">
           Three starter kits are bundled with the package. Each was extracted
           from a live website using Playwright and includes a Quick Reference,
-          core tokens, and 5 component specs — enough to get meaningful on-brand
+          core tokens, and 5 component specs -  enough to get meaningful on-brand
           output immediately.
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
@@ -285,7 +285,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             push_to_figma
           </code>{" "}
-          tools close the full loop between code and design — something no other
+          tools close the full loop between code and design -  something no other
           open-source tool currently does:
         </p>
         <CopyBlock
@@ -329,7 +329,7 @@ npx @layoutdesign/context init --kit notion-lite`}
             >
               Claude Code
             </Link>{" "}
-            — add to CLAUDE.md for persistent context on every prompt
+ -  add to CLAUDE.md for persistent context on every prompt
           </li>
           <li>
             <Link
@@ -338,7 +338,7 @@ npx @layoutdesign/context init --kit notion-lite`}
             >
               Cursor
             </Link>{" "}
-            — .cursorrules or MDC rules for Composer and Chat
+ -  .cursorrules or MDC rules for Composer and Chat
           </li>
           <li>
             <Link
@@ -347,7 +347,7 @@ npx @layoutdesign/context init --kit notion-lite`}
             >
               GitHub Copilot
             </Link>{" "}
-            — copilot-instructions.md setup
+ -  copilot-instructions.md setup
           </li>
           <li>
             <Link
@@ -356,7 +356,7 @@ npx @layoutdesign/context init --kit notion-lite`}
             >
               Windsurf
             </Link>{" "}
-            — .windsurfrules and tokens.css import
+ -  .windsurfrules and tokens.css import
           </li>
           <li>
             <Link
@@ -365,7 +365,7 @@ npx @layoutdesign/context init --kit notion-lite`}
             >
               OpenAI Codex
             </Link>{" "}
-            — AGENTS.md placement and subdirectory overrides
+ -  AGENTS.md placement and subdirectory overrides
           </li>
         </ul>
       </section>
