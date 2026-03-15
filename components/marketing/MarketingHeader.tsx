@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useSession, signOut } from '@/lib/auth-client';
 
 const NAV_LINKS = [
@@ -13,8 +14,16 @@ const NAV_LINKS = [
   { label: 'Contact', href: '#contact' },
 ];
 
-function handleAnchorClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
+function handleAnchorClick(e: React.MouseEvent<HTMLAnchorElement>, href: string, pathname: string) {
   if (!href.startsWith('#')) return;
+
+  // If not on homepage, navigate there with the hash
+  if (pathname !== '/') {
+    e.preventDefault();
+    window.location.href = '/' + href;
+    return;
+  }
+
   const el = document.querySelector(href);
   if (!el) return;
   e.preventDefault();
@@ -24,6 +33,7 @@ function handleAnchorClick(e: React.MouseEvent<HTMLAnchorElement>, href: string)
 export function MarketingHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { data: session } = useSession();
+  const pathname = usePathname();
   const isLoggedIn = !!session?.user;
 
   return (
@@ -46,7 +56,7 @@ export function MarketingHeader() {
             <a
               key={link.label}
               href={link.href}
-              onClick={(e) => handleAnchorClick(e, link.href)}
+              onClick={(e) => handleAnchorClick(e, link.href, pathname)}
               className="px-3 text-[13px] text-[var(--mkt-text-secondary)] hover:text-white transition-colors duration-150"
             >
               {link.label}
@@ -117,7 +127,7 @@ export function MarketingHeader() {
               <a
                 key={link.label}
                 href={link.href}
-                onClick={(e) => { handleAnchorClick(e, link.href); setMenuOpen(false); }}
+                onClick={(e) => { handleAnchorClick(e, link.href, pathname); setMenuOpen(false); }}
                 className="text-[15px] text-[var(--mkt-text-secondary)] hover:text-white transition-colors duration-150"
               >
                 {link.label}
