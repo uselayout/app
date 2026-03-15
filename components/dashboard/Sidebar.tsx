@@ -1,9 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { OrgSwitcher } from "./OrgSwitcher";
-import { ProjectSwitcher } from "./ProjectSwitcher";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
+import { UserMenu } from "./UserMenu";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 interface NavItem {
   label: string;
@@ -11,6 +13,8 @@ interface NavItem {
   segment: string;
   icon: React.ReactNode;
 }
+
+const COLLAPSED_KEY = "layout_sidebar_collapsed";
 
 const StudioIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -73,72 +77,34 @@ const DocsIcon = () => (
   </svg>
 );
 
-const SettingsIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M8 10a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M13.05 10.13a1.1 1.1 0 00.22 1.213l.04.04a1.333 1.333 0 11-1.887 1.887l-.04-.04a1.1 1.1 0 00-1.213-.22 1.1 1.1 0 00-.667 1.007v.113a1.333 1.333 0 11-2.667 0v-.06A1.1 1.1 0 005.87 13.05a1.1 1.1 0 00-1.213.22l-.04.04a1.333 1.333 0 11-1.887-1.887l.04-.04a1.1 1.1 0 00.22-1.213 1.1 1.1 0 00-1.007-.667H1.87a1.333 1.333 0 010-2.667h.06A1.1 1.1 0 002.95 5.87a1.1 1.1 0 00-.22-1.213l-.04-.04A1.333 1.333 0 114.577 2.73l.04.04a1.1 1.1 0 001.213.22h.053a1.1 1.1 0 00.667-1.007V1.87a1.333 1.333 0 012.667 0v.06a1.1 1.1 0 00.667 1.007 1.1 1.1 0 001.213-.22l.04-.04a1.333 1.333 0 111.887 1.887l-.04.04a1.1 1.1 0 00-.22 1.213v.053a1.1 1.1 0 001.007.667h.113a1.333 1.333 0 010 2.667h-.06a1.1 1.1 0 00-1.007.667z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
 export function Sidebar() {
   const params = useParams();
   const pathname = usePathname();
   const orgSlug = typeof params?.org === "string" ? params.org : "";
   const projectId = typeof params?.projectId === "string" ? params.projectId : "";
 
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(COLLAPSED_KEY) === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem(COLLAPSED_KEY, String(collapsed));
+  }, [collapsed]);
+
   const projectBase = projectId
     ? `/${orgSlug}/projects/${projectId}`
     : `/${orgSlug}`;
 
   const navItems: NavItem[] = [
-    {
-      label: "Studio",
-      href: `${projectBase}/studio`,
-      segment: "studio",
-      icon: <StudioIcon />,
-    },
-    {
-      label: "Library",
-      href: `${projectBase}/library`,
-      segment: "library",
-      icon: <LibraryIcon />,
-    },
-    {
-      label: "Tokens",
-      href: `${projectBase}/tokens`,
-      segment: "tokens",
-      icon: <TokensIcon />,
-    },
-    {
-      label: "Typography",
-      href: `${projectBase}/typography`,
-      segment: "typography",
-      icon: <TypographyIcon />,
-    },
-    {
-      label: "Icons",
-      href: `${projectBase}/icons`,
-      segment: "icons",
-      icon: <IconsIcon />,
-    },
-    {
-      label: "Candidates",
-      href: `${projectBase}/candidates`,
-      segment: "candidates",
-      icon: <CandidatesIcon />,
-    },
-    {
-      label: "Drift",
-      href: `${projectBase}/drift`,
-      segment: "drift",
-      icon: <DriftIcon />,
-    },
-    {
-      label: "Analytics",
-      href: `${projectBase}/analytics`,
-      segment: "analytics",
-      icon: <AnalyticsIcon />,
-    },
+    { label: "Studio", href: `${projectBase}/studio`, segment: "studio", icon: <StudioIcon /> },
+    { label: "Library", href: `${projectBase}/library`, segment: "library", icon: <LibraryIcon /> },
+    { label: "Tokens", href: `${projectBase}/tokens`, segment: "tokens", icon: <TokensIcon /> },
+    { label: "Typography", href: `${projectBase}/typography`, segment: "typography", icon: <TypographyIcon /> },
+    { label: "Icons", href: `${projectBase}/icons`, segment: "icons", icon: <IconsIcon /> },
+    { label: "Candidates", href: `${projectBase}/candidates`, segment: "candidates", icon: <CandidatesIcon /> },
+    { label: "Drift", href: `${projectBase}/drift`, segment: "drift", icon: <DriftIcon /> },
+    { label: "Analytics", href: `${projectBase}/analytics`, segment: "analytics", icon: <AnalyticsIcon /> },
   ];
 
   function isActive(segment: string): boolean {
@@ -152,25 +118,26 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="flex h-full w-60 flex-col border-r border-[var(--studio-border)] bg-[var(--bg-panel)]">
-      {/* Top: Org Switcher */}
-      <div className="border-b border-[var(--studio-border)] p-3">
-        <OrgSwitcher />
-      </div>
-
-      {/* Project Switcher */}
-      <div className="border-b border-[var(--studio-border)] p-3">
-        <ProjectSwitcher />
+    <aside
+      className={`flex h-full flex-col border-r border-[var(--studio-border)] bg-[var(--bg-panel)] transition-all duration-200 ${
+        collapsed ? "w-14" : "w-60"
+      }`}
+    >
+      {/* Workspace Switcher */}
+      <div className="border-b border-[var(--studio-border)] p-2">
+        <WorkspaceSwitcher collapsed={collapsed} />
       </div>
 
       {/* Nav items */}
-      <nav className="flex-1 p-2">
+      <nav className="flex-1 overflow-y-auto p-2">
         <ul className="space-y-1">
           {navItems.map((item) => (
-            <li key={item.segment}>
+            <li key={item.segment} className="relative group">
               <Link
                 href={projectId ? item.href : `/${orgSlug}`}
                 className={`flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm transition-all duration-[var(--duration-base)] ${
+                  collapsed ? "justify-center" : ""
+                } ${
                   isActive(item.segment)
                     ? "bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]"
                     : projectId
@@ -178,34 +145,58 @@ export function Sidebar() {
                       : "text-[var(--text-muted)] cursor-default"
                 }`}
               >
-                {item.icon}
-                {item.label}
+                <span className="shrink-0">{item.icon}</span>
+                {!collapsed && item.label}
               </Link>
+              {/* Tooltip when collapsed */}
+              {collapsed && (
+                <div className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 rounded-md bg-[var(--bg-elevated)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] opacity-0 shadow-lg border border-[var(--studio-border)] transition-opacity group-hover:opacity-100">
+                  {item.label}
+                </div>
+              )}
             </li>
           ))}
         </ul>
       </nav>
 
-      {/* Bottom: Docs + Settings */}
+      {/* Bottom: User + Docs + Collapse */}
       <div className="border-t border-[var(--studio-border)] p-2 space-y-1">
-        <Link
-          href="/docs"
-          className="flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-all duration-[var(--duration-base)]"
-        >
-          <DocsIcon />
-          Docs
-        </Link>
-        <Link
-          href={`/${orgSlug}/settings`}
-          className={`flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm transition-all duration-[var(--duration-base)] ${
-            pathname?.startsWith(`/${orgSlug}/settings`)
-              ? "bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]"
-              : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+        <UserMenu collapsed={collapsed} />
+
+        <div className="relative group">
+          <Link
+            href="/docs"
+            className={`flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-all duration-[var(--duration-base)] ${
+              collapsed ? "justify-center" : ""
+            }`}
+          >
+            <DocsIcon />
+            {!collapsed && "Docs"}
+          </Link>
+          {collapsed && (
+            <div className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 rounded-md bg-[var(--bg-elevated)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] opacity-0 shadow-lg border border-[var(--studio-border)] transition-opacity group-hover:opacity-100">
+              Docs
+            </div>
+          )}
+        </div>
+
+        {/* Collapse toggle */}
+        <button
+          type="button"
+          onClick={() => setCollapsed((prev) => !prev)}
+          className={`flex w-full items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-all duration-[var(--duration-base)] ${
+            collapsed ? "justify-center" : ""
           }`}
         >
-          <SettingsIcon />
-          Settings
-        </Link>
+          {collapsed ? (
+            <PanelLeftOpen className="h-4 w-4" />
+          ) : (
+            <>
+              <PanelLeftClose className="h-4 w-4" />
+              Collapse
+            </>
+          )}
+        </button>
       </div>
     </aside>
   );

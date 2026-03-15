@@ -7,7 +7,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Organisations - Layout Docs",
   description:
-    "Multi-user teams with role-based access control in Layout Studio.",
+    "Multi-user teams with role-based access control in Layout.",
 };
 
 const roles = [

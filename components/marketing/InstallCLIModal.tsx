@@ -43,7 +43,7 @@ export function InstallCLIModal({ onClose }: { onClose: () => void }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-[520px] mx-4 bg-[#272829] border border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)] flex flex-col">
+      <div className="w-full max-w-[520px] mx-4 bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 h-[69px] border-b border-[rgba(255,255,255,0.07)]">
           <div className="flex items-center gap-[10px]">

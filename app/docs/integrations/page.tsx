@@ -7,7 +7,7 @@ import { Callout } from "@/components/docs/Callout";
 export const metadata: Metadata = {
   title: "Integrations -  Layout Docs",
   description:
-    "Use Layout Studio with Claude Code, Cursor, GitHub Copilot, Windsurf, and OpenAI Codex.",
+    "Use Layout with Claude Code, Cursor, GitHub Copilot, Windsurf, and OpenAI Codex.",
 };
 
 const integrations = [

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 const entries = [
   {
     date: "March 2026",
-    title: "Layout Studio public launch",
+    title: "Layout public launch",
     description:
       "Extract design systems from Figma and websites, generate LLM-optimised context bundles, and ship on-brand UI with any AI coding agent.",
   },
