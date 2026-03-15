@@ -296,7 +296,7 @@ export function ExplorerCanvas({
                 Canvas
               </h3>
               <p className="max-w-xs text-xs text-[var(--text-secondary)]">
-                Describe what to explore. Claude will generate
+                Describe what to explore. Layout will generate
                 multiple design variations using your design system.
               </p>
             </div>
