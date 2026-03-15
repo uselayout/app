@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { useOrgStore } from "@/lib/store/organization";
 import { TokenEditor } from "@/components/dashboard/TokenEditor";
 import type { DesignToken, DesignTokenType } from "@/lib/types/token";
 
 export default function TokensPage() {
   const orgId = useOrgStore((s) => s.currentOrgId);
+  const params = useParams<{ org: string; projectId: string }>();
 
   const [tokens, setTokens] = useState<DesignToken[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +78,7 @@ export default function TokensPage() {
           selectedType={selectedType}
           onTypeChange={setSelectedType}
           onTokensChange={handleTokensChange}
+          studioUrl={`/${params.org}/projects/${params.projectId}/studio`}
         />
       )}
     </div>
