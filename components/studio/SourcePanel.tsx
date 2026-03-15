@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Figma, Globe, Copy, Check, X, ExternalLink } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
+import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
 import type {
   ExtractionResult,
   ExtractedToken,
@@ -15,15 +16,17 @@ interface SourcePanelProps {
   extractionData?: ExtractionResult;
   sourceType: SourceType;
   sourceUrl?: string;
+  designMd?: string;
   onReExtract?: () => void;
 }
 
-type TabId = "tokens" | "components" | "screenshots";
+type TabId = "tokens" | "components" | "screenshots" | "quality";
 
 export function SourcePanel({
   extractionData,
   sourceType,
   sourceUrl,
+  designMd,
   onReExtract,
 }: SourcePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("tokens");
@@ -42,6 +45,7 @@ export function SourcePanel({
     { id: "tokens", label: "Tokens" },
     { id: "components", label: "Components" },
     { id: "screenshots", label: "Screenshots" },
+    { id: "quality", label: "Quality" },
   ];
 
   return (
@@ -109,6 +113,9 @@ export function SourcePanel({
         )}
         {activeTab === "screenshots" && (
           <ScreenshotsTab screenshots={extractionData.screenshots} />
+        )}
+        {activeTab === "quality" && (
+          <CompletenessPanel designMd={designMd ?? ""} />
         )}
       </div>
     </div>
