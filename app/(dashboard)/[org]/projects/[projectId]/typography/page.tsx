@@ -1,10 +1,12 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { useOrgStore } from "@/lib/store/organization";
 import { TypographyEditor } from "@/components/dashboard/TypographyEditor";
 
 export default function TypographyPage() {
   const currentOrg = useOrgStore((s) => s.currentOrg)();
+  const params = useParams<{ org: string; projectId: string }>();
 
   if (!currentOrg) {
     return (
@@ -25,7 +27,7 @@ export default function TypographyPage() {
         </p>
       </div>
 
-      <TypographyEditor orgId={currentOrg.id} />
+      <TypographyEditor orgId={currentOrg.id} studioUrl={`/${params.org}/projects/${params.projectId}/studio`} />
     </div>
   );
 }
