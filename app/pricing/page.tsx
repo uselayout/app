@@ -11,19 +11,19 @@ import type { SubscriptionTier } from "@/lib/types/billing";
 
 const PLANS = [
   {
-    name: "Hobby",
+    name: "Free",
     price: "$0",
     period: "forever",
     description:
-      "For developers exploring Layout with their own API key.",
+      "Get started with managed hosting and limited monthly credits.",
     features: [
+      "2 DESIGN.md generations / month",
+      "5 test panel queries / month",
       "Unlimited Figma & website extractions",
-      "DESIGN.md generation (BYOK)",
       "All 6 export formats",
       "3 starter design kits",
-      "Open-source CLI & MCP server",
     ],
-    cta: "Get started",
+    cta: "Get started free",
     tier: "free" as const,
     highlighted: false,
   },
@@ -32,13 +32,13 @@ const PLANS = [
     price: "$29",
     period: "per month",
     description:
-      "For professionals who want hosted AI — no API key needed.",
+      "Unlimited AI — no API key needed, no credit limits.",
     features: [
-      "Everything in Hobby",
-      "Hosted Claude AI — no API key needed",
+      "Everything in Free",
       "Unlimited DESIGN.md generations",
       "Unlimited test panel queries",
       "Priority Slack support",
+      "BYOK always included",
     ],
     cta: "Upgrade to Pro",
     tier: "pro" as const,
@@ -48,15 +48,15 @@ const PLANS = [
   {
     name: "Team",
     price: "$29",
-    period: "per $15 user / month",
+    period: "+ $15 per seat / month",
     description:
-      "For teams that need centralised billing, admin controls, and compliance.",
+      "Centralised billing, admin controls, and team-wide design systems.",
     features: [
       "Everything in Pro",
       "Centralised team billing",
       "Admin usage dashboard",
-      "SAML SSO & SCIM",
-      "Zero data retention policy",
+      "Role-based access controls",
+      "Invitation management",
     ],
     cta: "Start Team Plan",
     tier: "team" as const,
@@ -67,19 +67,23 @@ const PLANS = [
 const FAQS = [
   {
     q: "What's included in the free tier?",
-    a: "Everything except hosted AI. You get unlimited extractions from Figma and websites, all 6 export formats (DESIGN.md, CLAUDE.md, AGENTS.md, tokens.css, tokens.json, tailwind.config.js), unlimited projects, and 3 starter kits. You just need your own Anthropic API key for DESIGN.md generation and the test panel.",
+    a: "The free tier includes 2 DESIGN.md generations and 5 test panel queries per month using our hosted AI. You also get unlimited extractions from Figma and websites, all 6 export formats, 3 starter design kits, and the open-source CLI & MCP server. Credits reset monthly.",
+  },
+  {
+    q: "What is BYOK?",
+    a: "Bring Your Own Key. You can use your own Anthropic API key on any plan — free or paid. When you provide your own key, no hosted credits are consumed. BYOK gives you unlimited usage at your own API cost.",
+  },
+  {
+    q: "Can I self-host Layout?",
+    a: "Yes. The CLI, MCP server, and Studio are all open source (MIT). You can self-host the entire stack — no account needed, no usage limits. The managed service just removes the infrastructure overhead.",
   },
   {
     q: "What does 'hosted AI' mean?",
-    a: "On Pro and Team plans, we provide the Claude API calls — you don't need your own Anthropic key. We handle the AI infrastructure so you can focus on building.",
+    a: "On all managed plans, we provide the Claude API calls. On Free you get limited monthly credits. On Pro and Team, usage is unlimited. You never need your own Anthropic key (but you can always use one).",
   },
   {
     q: "Can I still use my own API key on a paid plan?",
     a: "Yes! BYOK always works, even on paid plans. When you provide your own key, no hosted credits are consumed.",
-  },
-  {
-    q: "Is the CLI and MCP server free?",
-    a: "Yes, forever. The @layoutdesign/context CLI and MCP server are MIT-licensed open source. You can self-host the entire Studio too.",
   },
 ];
 
@@ -141,12 +145,13 @@ function PricingContent() {
           <section className="pt-[180px] pb-[70px]">
             <div className="max-w-[1280px] mx-auto px-6">
               <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-                <h1 className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)] w-full lg:w-[454px]">
-                  Free forever with your own API key.
+                <h1 className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)] w-full lg:w-[509px]">
+                  Start free.{" "}
+                  <span className="text-[var(--mkt-accent)]">Scale when you&apos;re ready.</span>
                 </h1>
                 <div className="w-full lg:w-[591px] pt-[19px] flex flex-col gap-[10px]">
                   <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-                    Or let us handle everything for £29/month.
+                    Every plan includes managed hosting with AI credits. Bring your own API key or self-host for free — always.
                   </p>
                   <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
                     Extract design systems, generate DESIGN.md, test with AI —{" "}
@@ -287,6 +292,111 @@ function PricingContent() {
                   </button>
                 </div>
               )}
+            </div>
+          </section>
+
+          {/* Self-hosted & BYOK */}
+          <section className="pb-[100px] lg:pb-[180px]">
+            <div className="max-w-[1280px] mx-auto px-6">
+              <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+                <div className="w-full lg:max-w-[509px]">
+                  <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">
+                    Own your stack.
+                  </p>
+                  <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-accent)]">
+                    No lock-in. Ever.
+                  </p>
+                </div>
+                <div className="w-full lg:w-[591px] pt-[19px] flex flex-col gap-[10px]">
+                  <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
+                    The managed service is the easiest way to use Layout. But you always have two other options.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-[70px] grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* BYOK card */}
+                <div className="bg-[#282826] rounded-[4px] p-8 border border-[rgba(245,244,238,0.12)] flex flex-col gap-[27px]">
+                  <span className="text-[14px] tracking-[0.14px] text-[#7f7e7a]">
+                    Bring Your Own Key
+                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[48px] leading-[48px] tracking-[-0.5px] text-[#f5f4ee]">
+                      $0
+                    </span>
+                    <span className="text-[14px] tracking-[0.14px] text-[#7f7e7a]">
+                      you pay Anthropic directly
+                    </span>
+                  </div>
+                  <div className="h-px bg-[rgba(245,244,238,0.12)]" />
+                  <p className="text-[17px] leading-[23px] text-[#c6c5bf]">
+                    Use your own Anthropic API key for unlimited usage at your own cost. Works on any plan — free or paid.
+                  </p>
+                  <ul className="flex flex-col gap-3">
+                    {[
+                      "Works on every plan",
+                      "Unlimited DESIGN.md generations",
+                      "Unlimited test panel queries",
+                      "Your API key, your billing",
+                      "No hosted credits consumed",
+                    ].map((feature) => (
+                      <li key={feature} className="flex items-start gap-[12px]">
+                        <span className="text-[12px] leading-[21px] tracking-[0.14px] text-[#676662]">→</span>
+                        <span className="text-[14px] leading-[21px] tracking-[0.14px] text-[#c6c5bf]">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Self-hosted card */}
+                <div className="bg-[#282826] rounded-[4px] p-8 border border-[rgba(245,244,238,0.12)] flex flex-col gap-[27px]">
+                  <span className="text-[14px] tracking-[0.14px] text-[#7f7e7a]">
+                    Self-hosted
+                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[48px] leading-[48px] tracking-[-0.5px] text-[#f5f4ee]">
+                      $0
+                    </span>
+                    <span className="text-[14px] tracking-[0.14px] text-[#7f7e7a]">
+                      forever — MIT licensed
+                    </span>
+                  </div>
+                  <div className="h-px bg-[rgba(245,244,238,0.12)]" />
+                  <p className="text-[17px] leading-[23px] text-[#c6c5bf]">
+                    Run the entire stack yourself. No account needed, no usage limits, no vendor dependency.
+                  </p>
+                  <ul className="flex flex-col gap-3">
+                    {[
+                      "CLI & MCP server (npm install)",
+                      "Full Studio (Next.js app)",
+                      "No account required",
+                      "No usage limits",
+                      "Community support via GitHub",
+                    ].map((feature) => (
+                      <li key={feature} className="flex items-start gap-[12px]">
+                        <span className="text-[12px] leading-[21px] tracking-[0.14px] text-[#676662]">→</span>
+                        <span className="text-[14px] leading-[21px] tracking-[0.14px] text-[#c6c5bf]">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="flex gap-[12px] mt-2">
+                    <a
+                      href="https://github.com/uselayout/studio"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-[var(--mkt-btn-primary-bg)] border border-[#e6e6e6] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] inline-flex items-center justify-center"
+                    >
+                      View on GitHub
+                    </a>
+                    <a
+                      href="/docs/self-hosting"
+                      className="bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium inline-flex items-center justify-center"
+                    >
+                      Self-hosting docs →
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
