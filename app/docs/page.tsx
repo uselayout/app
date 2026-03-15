@@ -7,7 +7,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Getting Started -  Layout Docs",
   description:
-    "Learn how to extract a design system, generate DESIGN.md, and drop it into your AI coding workflow.",
+    "Give your AI coding agent a complete understanding of your design system so every component it builds is on-brand.",
 };
 
 export default function GettingStartedPage() {
@@ -19,10 +19,15 @@ export default function GettingStartedPage() {
       <div className="space-y-3">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Getting Started</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Layout Studio extracts design systems from Figma files or live
-          websites and compiles them into an LLM-optimised context bundle. Drop
-          that bundle into your project and every component your AI generates
-          is on-brand -  without pasting context manually.
+          Every AI coding agent generates UI that looks generic — wrong
+          colours, wrong spacing, wrong components. Layout fixes this by
+          giving your AI a complete understanding of your design system, so
+          every component it builds matches your brand perfectly.
+        </p>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Extract your design tokens and components from Figma or a live
+          website, then install the context bundle into your project. Claude
+          Code, Cursor, Copilot, and Windsurf use it automatically.
         </p>
       </div>
 
@@ -30,8 +35,7 @@ export default function GettingStartedPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">What You Get</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          When you click <strong>Export</strong> in the Studio, you download a
-          ZIP containing:
+          When you export from Layout, you download a ZIP containing:
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -103,7 +107,7 @@ export default function GettingStartedPage() {
           {[
             {
               step: "Extract",
-              desc: "Paste a Figma URL or website URL into Layout Studio and run extraction.",
+              desc: "Paste a Figma URL or website URL into Layout and run extraction.",
             },
             {
               step: "Review",

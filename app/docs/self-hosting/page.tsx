@@ -8,7 +8,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Self-Hosting -  Layout Docs",
   description:
-    "Deploy Layout AI Studio on your own infrastructure using Docker, Coolify, Railway, or any VPS.",
+    "Deploy Layout on your own infrastructure using Docker, Coolify, Railway, or any VPS.",
 };
 
 export default function SelfHostingPage() {
@@ -20,7 +20,7 @@ export default function SelfHostingPage() {
       <div className="space-y-3">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Self-Hosting</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Layout AI Studio is fully open source and designed to run on your
+          Layout is fully open source and designed to run on your
           own infrastructure. This guide covers everything you need to deploy it
  -  from environment variables to Docker builds to platform-specific
           notes.

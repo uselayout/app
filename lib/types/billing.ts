@@ -72,7 +72,7 @@ export interface UsageStats {
 
 /** Monthly credit allocations per tier */
 export const TIER_CREDITS = {
-  free: { designMd: 0, testQuery: 0 },
+  free: { designMd: 2, testQuery: 5 },
   pro: { designMd: 50, testQuery: 100 },
   team: { designMd: 50, testQuery: 100 }, // per seat
   topup: { designMd: 30, testQuery: 80 },

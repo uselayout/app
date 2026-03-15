@@ -329,7 +329,7 @@ export default function DesignMdPage() {
           when generating UI code.
         </p>
         <p className="text-base text-gray-600 leading-relaxed">
-          Every DESIGN.md produced by Layout Studio follows the same
+          Every DESIGN.md produced by Layout follows the same
           9-section + 2-appendix format. This predictability means agents
           always know where to find what they need, and the MCP tools can
           return specific sections on demand without the agent having to search

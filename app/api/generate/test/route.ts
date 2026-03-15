@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { createTestStream } from "@/lib/claude/test";
 import { auth } from "@/lib/auth";
-import { getUserTier } from "@/lib/billing/subscription";
 import { checkQuota, deductCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
 import { generateLimiter } from "@/lib/rate-limit-instances";
@@ -59,17 +58,6 @@ export async function POST(request: NextRequest) {
     mode = "byok";
     apiKey = userApiKey;
   } else {
-    const tier = await getUserTier(userId);
-    if (tier === "free") {
-      return Response.json(
-        {
-          error: "No API key provided. Add your Anthropic API key in Settings, or upgrade to Pro for hosted AI.",
-          code: "NO_API_KEY_OR_SUBSCRIPTION",
-        },
-        { status: 402 }
-      );
-    }
-
     const quota = await checkQuota(userId, "test");
     if (!quota.allowed) {
       return Response.json(

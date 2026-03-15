@@ -83,7 +83,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
         className="absolute inset-0 bg-black/95 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-lg rounded-xl border border-[--studio-border-strong] bg-[#272829] p-6 shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+      <div className="relative z-10 w-full max-w-lg rounded-xl border border-[--studio-border-strong] bg-[var(--bg-elevated)] p-6 shadow-[0_0_80px_rgba(0,0,0,0.6)]">
         {/* Header */}
         <div className="mb-5 flex items-start justify-between">
           <div>
