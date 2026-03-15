@@ -16,12 +16,14 @@ interface ProjectState {
   currentProjectId: string | null;
   userId: string | null;
   orgId: string | null;
+  hydrating: boolean;
   hydrationError: string | null;
 
   // Computed
   currentProject: () => Project | undefined;
 
   // Actions
+  setHydrating: (v: boolean) => void;
   loadProjects: (projects: Project[], userId: string, orgId: string) => void;
   setHydrationError: (error: string | null) => void;
   createProject: (project: Project) => void;
@@ -43,6 +45,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   currentProjectId: null,
   userId: null,
   orgId: null,
+  hydrating: false,
   hydrationError: null,
 
   currentProject: () => {
@@ -50,7 +53,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     return projects.find((p) => p.id === currentProjectId);
   },
 
-  loadProjects: (projects, userId, orgId) => set({ projects, userId, orgId, hydrationError: null }),
+  setHydrating: (v) => set({ hydrating: v }),
+
+  loadProjects: (projects, userId, orgId) => set({ projects, userId, orgId, hydrating: false, hydrationError: null }),
 
   setHydrationError: (error) => set({ hydrationError: error }),
 
