@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { X, Loader2, Save } from "lucide-react";
+import { X, Loader2, Save, ArrowUp, Sparkles } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useOrgStore } from "@/lib/store/organization";
 import { extractComponentName, buildSrcdoc } from "@/lib/explore/preview-helpers";
@@ -47,6 +47,10 @@ export function CreateComponentModal({
   const [code, setCode] = useState(DEFAULT_CODE);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // AI chat state
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   // Preview state
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -152,6 +156,60 @@ export function CreateComponentModal({
       setSaving(false);
     }
   }, [orgId, name, code, description, category, tagsInput, onClose, onCreated, orgSlug, router]);
+
+  const handleAiGenerate = useCallback(async () => {
+    const trimmed = aiPrompt.trim();
+    if (!trimmed || aiGenerating) return;
+
+    setAiGenerating(true);
+
+    try {
+      const systemContext = code !== DEFAULT_CODE
+        ? `The user has existing component code:\n\`\`\`tsx\n${code}\n\`\`\`\n\nModify or improve it based on the user's request. Return ONLY the complete TSX component code, no explanations.`
+        : `Generate a React component based on the user's request. Return ONLY the complete TSX component code with a default export, no explanations.`;
+
+      const res = await fetch("/api/generate/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: `${systemContext}\n\nUser request: ${trimmed}`,
+          includeContext: true,
+        }),
+      });
+
+      if (!res.ok) throw new Error("AI generation failed");
+      if (!res.body) throw new Error("No response body");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+      }
+
+      // Extract code from markdown code blocks if present
+      const codeMatch = accumulated.match(/```(?:tsx?|jsx?|react)?\s*\n([\s\S]*?)```/);
+      const extractedCode = codeMatch ? codeMatch[1].trim() : accumulated.trim();
+
+      if (extractedCode) {
+        setCode(extractedCode);
+        // Auto-detect component name for the name field
+        const nameMatch = extractedCode.match(/(?:export\s+default\s+function|function)\s+(\w+)/);
+        if (nameMatch && !name.trim()) {
+          setName(nameMatch[1]);
+        }
+      }
+
+      setAiPrompt("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "AI generation failed");
+    } finally {
+      setAiGenerating(false);
+    }
+  }, [aiPrompt, aiGenerating, code, name]);
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-[--bg-app]">
@@ -303,6 +361,44 @@ export function CreateComponentModal({
             )}
           </div>
         </div>
+      </div>
+
+      {/* AI Chat Bar */}
+      <div className="border-t border-[--studio-border] px-5 py-3">
+        <div className="flex items-center gap-2">
+          <Sparkles size={14} className="shrink-0 text-[--studio-accent]" />
+          <input
+            type="text"
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                handleAiGenerate();
+              }
+            }}
+            placeholder={code !== DEFAULT_CODE
+              ? "Ask AI to modify this component... e.g. \"add a dark mode toggle\""
+              : "Ask AI to generate a component... e.g. \"a pricing card with 3 tiers\""
+            }
+            disabled={aiGenerating}
+            className="flex-1 bg-transparent text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none disabled:opacity-50"
+          />
+          {aiGenerating ? (
+            <Loader2 size={14} className="shrink-0 animate-spin text-[--studio-accent]" />
+          ) : (
+            <button
+              onClick={handleAiGenerate}
+              disabled={!aiPrompt.trim()}
+              className="flex shrink-0 items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[--text-muted] transition-colors hover:text-[--text-primary] disabled:opacity-20 disabled:cursor-not-allowed"
+            >
+              <ArrowUp size={12} strokeWidth={2.5} />
+            </button>
+          )}
+        </div>
+        <p className="mt-1 text-[10px] text-[--text-muted]">
+          {"\u2318"}+Enter to send
+        </p>
       </div>
     </div>
   );
