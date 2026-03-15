@@ -19,7 +19,7 @@ export function ComparisonSection() {
           >
             We don&apos;t replace Figma.{' '}
             <span className="text-[var(--mkt-accent)]">
-              We make it smarter.
+              We compile it into AI context.
             </span>
           </h2>
 

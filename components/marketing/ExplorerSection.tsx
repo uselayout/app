@@ -19,13 +19,13 @@ export function ExplorerSection() {
           >
             Explore before you build.{' '}
             <span className="text-[var(--mkt-accent)]">
-              Six directions in seconds.
+              Six variations in seconds.
             </span>
           </h2>
 
           <div className="w-full lg:w-[575px] pt-[19px] flex flex-col gap-[10px]">
             <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-              Every AI coding tool generates one answer. One layout. One guess. Layout Explorer generates up to six — each following your design system perfectly.
+              Every AI coding tool generates one answer. One layout. One guess. Layout Explorer generates up to six — each built on your design system.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
               Describe what you need. Explorer creates distinct variations: different layouts, different visual weight, different density. All on-brand. Pick the one that works.
@@ -37,7 +37,7 @@ export function ExplorerSection() {
               Better than a new canvas
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Other tools ask designers to learn new software. Some lock previews inside the IDE. Layout Explorer generates real components, pushes real Figma frames, and lets everyone stay where they're productive.
+              Upload a reference image. Refine with follow-up prompts. Compare results with and without your design system. When you find the right direction, push it straight to Figma or promote it to your component library.
             </p>
           </div>
         </motion.div>
