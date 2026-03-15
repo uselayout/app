@@ -20,6 +20,7 @@ interface TokenEditorProps {
   selectedType: DesignTokenType;
   onTypeChange: (type: DesignTokenType) => void;
   onTokensChange: () => void;
+  studioUrl?: string;
 }
 
 interface AddFormState {
@@ -44,6 +45,7 @@ export function TokenEditor({
   selectedType,
   onTypeChange,
   onTokensChange,
+  studioUrl = "/studio",
 }: TokenEditorProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [addForm, setAddForm] = useState<AddFormState>(EMPTY_FORM);
@@ -168,7 +170,7 @@ export function TokenEditor({
             </p>
             <div className="mt-3 flex items-center justify-center gap-2">
               <a
-                href="/studio"
+                href={studioUrl}
                 className="rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2 text-sm text-[var(--text-primary)] transition-all duration-[var(--duration-base)] hover:bg-[var(--bg-hover)]"
               >
                 Open Studio
