@@ -13,6 +13,14 @@ const NAV_LINKS = [
   { label: 'Contact', href: '#contact' },
 ];
 
+function handleAnchorClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
+  if (!href.startsWith('#')) return;
+  const el = document.querySelector(href);
+  if (!el) return;
+  e.preventDefault();
+  el.scrollIntoView({ behavior: 'smooth' });
+}
+
 export function MarketingHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { data: session } = useSession();
@@ -38,6 +46,7 @@ export function MarketingHeader() {
             <a
               key={link.label}
               href={link.href}
+              onClick={(e) => handleAnchorClick(e, link.href)}
               className="px-3 text-[13px] text-[var(--mkt-text-secondary)] hover:text-white transition-colors duration-150"
             >
               {link.label}
@@ -108,7 +117,7 @@ export function MarketingHeader() {
               <a
                 key={link.label}
                 href={link.href}
-                onClick={() => setMenuOpen(false)}
+                onClick={(e) => { handleAnchorClick(e, link.href); setMenuOpen(false); }}
                 className="text-[15px] text-[var(--mkt-text-secondary)] hover:text-white transition-colors duration-150"
               >
                 {link.label}

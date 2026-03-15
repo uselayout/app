@@ -8,7 +8,7 @@ export function EarlyAccessCTA({ onInstallCLI }: { onInstallCLI?: () => void }) 
   const isLoggedIn = !!session?.user;
 
   return (
-    <section className="pb-[80px] pt-[100px] lg:pt-[180px] flex flex-col items-center gap-[70px]">
+    <section id="contact" className="pb-[80px] pt-[100px] lg:pt-[180px] flex flex-col items-center gap-[70px] scroll-mt-[72px]">
       <div className="max-w-[1280px] w-full px-6">
         <motion.div
           className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between w-full"

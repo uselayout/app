@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 export function FigmaLoopSection() {
   return (
-    <section className="bg-[var(--mkt-bg)] pt-[100px] lg:pt-[180px] flex flex-col items-center gap-[70px]">
+    <section id="figma-loop" className="bg-[var(--mkt-bg)] pt-[100px] lg:pt-[180px] flex flex-col items-center gap-[70px] scroll-mt-[72px]">
       <div className="max-w-[1280px] w-full px-6">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between w-full">
           <motion.div
