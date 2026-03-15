@@ -39,7 +39,7 @@ export function inviteEmailHtml({
           </tr>
           <tr>
             <td style="padding:24px 32px;">
-              <a href="${acceptUrl}" style="display:inline-block;background:#e4f222;color:#08090a;font-size:14px;font-weight:600;text-decoration:none;padding:10px 24px;border-radius:8px;">
+              <a href="${acceptUrl}" style="display:inline-block;background:#E0E0E6;color:#08090a;font-size:14px;font-weight:600;text-decoration:none;padding:10px 24px;border-radius:8px;">
                 Accept invitation
               </a>
             </td>
