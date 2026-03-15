@@ -18,7 +18,7 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/studio";
 
-  const [mode, setMode] = useState<"signin" | "signup">("signup");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
