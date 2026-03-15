@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireOrgAuth } from "@/lib/api/auth-context";
-import { createInvitation } from "@/lib/supabase/organization";
+import {
+  createInvitation,
+  getOrganization,
+} from "@/lib/supabase/organization";
+import { sendEmail } from "@/lib/email/send";
+import {
+  inviteEmailHtml,
+  inviteEmailSubject,
+} from "@/lib/email/templates/invite";
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -17,7 +25,7 @@ export async function POST(
   const authResult = await requireOrgAuth(orgId, "manageMembers");
   if (authResult instanceof NextResponse) return authResult;
 
-  const { userId } = authResult;
+  const { userId, session } = authResult;
 
   const body: unknown = await request.json();
   const parsed = inviteSchema.safeParse(body);
@@ -39,6 +47,26 @@ export async function POST(
       { status: 500 }
     );
   }
+
+  // Send invite email (non-blocking — don't fail the request if email fails)
+  const org = await getOrganization(orgId);
+  const inviterName =
+    session?.user?.name || session?.user?.email || "A team member";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const acceptUrl = `${appUrl}/invite/${invitation.token}`;
+
+  sendEmail({
+    to: email,
+    subject: inviteEmailSubject(org?.name || "your team"),
+    html: inviteEmailHtml({
+      orgName: org?.name || "your team",
+      inviterName,
+      role,
+      acceptUrl,
+    }),
+  }).catch((err) => {
+    console.error("Failed to send invite email:", err);
+  });
 
   return NextResponse.json(invitation, { status: 201 });
 }
