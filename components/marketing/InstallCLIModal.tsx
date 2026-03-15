@@ -72,10 +72,10 @@ export function InstallCLIModal({ onClose }: { onClose: () => void }) {
         {/* Content */}
         <div className="flex flex-col gap-4 px-5 pt-4 pb-5">
           {/* Info callout */}
-          <div className="flex items-start gap-3 rounded-[6px] border border-[#e4f222] bg-[rgba(255,255,255,0.09)] px-[14px] py-3">
+          <div className="flex items-start gap-3 rounded-[6px] border border-[#E0E0E6] bg-[rgba(255,255,255,0.09)] px-[14px] py-3">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0 mt-0.5">
-              <circle cx="7" cy="7" r="6" stroke="#e4f222" strokeWidth="1.2" />
-              <path d="M7 6.5v4M7 4.5v.01" stroke="#e4f222" strokeWidth="1.2" strokeLinecap="round" />
+              <circle cx="7" cy="7" r="6" stroke="#E0E0E6" strokeWidth="1.2" />
+              <path d="M7 6.5v4M7 4.5v.01" stroke="#E0E0E6" strokeWidth="1.2" strokeLinecap="round" />
             </svg>
             <p className="text-[12px] leading-[19.5px] text-[#ededf4]">
               <span className="font-medium">Open source and free forever.</span>{' '}
