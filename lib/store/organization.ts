@@ -4,6 +4,7 @@ import { create } from "zustand";
 import type {
   Organization,
   OrgMember,
+  OrgInvitation,
   OrgRole,
   Permission,
 } from "@/lib/types/organization";
@@ -14,6 +15,7 @@ interface OrganizationState {
   currentOrgId: string | null;
   currentMembership: OrgMember | null;
   members: OrgMember[];
+  invitations: OrgInvitation[];
 
   // Computed
   currentOrg: () => Organization | undefined;
@@ -26,6 +28,8 @@ interface OrganizationState {
   setCurrentOrg: (orgId: string | null) => void;
   setCurrentMembership: (membership: OrgMember | null) => void;
   setMembers: (members: OrgMember[]) => void;
+  setInvitations: (invitations: OrgInvitation[]) => void;
+  removeInvitation: (id: string) => void;
   addOrganization: (org: Organization) => void;
   updateOrganization: (
     id: string,
@@ -39,6 +43,7 @@ export const useOrgStore = create<OrganizationState>()((set, get) => ({
   currentOrgId: null,
   currentMembership: null,
   members: [],
+  invitations: [],
 
   currentOrg: () => {
     const { organizations, currentOrgId } = get();
@@ -70,6 +75,13 @@ export const useOrgStore = create<OrganizationState>()((set, get) => ({
 
   setMembers: (members) => set({ members }),
 
+  setInvitations: (invitations) => set({ invitations }),
+
+  removeInvitation: (id) =>
+    set((state) => ({
+      invitations: state.invitations.filter((i) => i.id !== id),
+    })),
+
   addOrganization: (org) =>
     set((state) => ({
       organizations: [...state.organizations, org],
@@ -88,5 +100,6 @@ export const useOrgStore = create<OrganizationState>()((set, get) => ({
       currentOrgId: null,
       currentMembership: null,
       members: [],
+      invitations: [],
     }),
 }));
