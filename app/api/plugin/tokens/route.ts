@@ -4,7 +4,6 @@ import { z } from "zod";
 import { requireMcpAuth } from "@/lib/api/mcp-auth";
 import { getTokensByOrg, bulkUpsertTokens } from "@/lib/supabase/tokens";
 import { fetchAllProjects } from "@/lib/supabase/db";
-import type { DesignTokenType } from "@/lib/types/token";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -46,8 +45,10 @@ const TokenEntrySchema = z.object({
   cssVariable: z.string().nullable().optional(),
 });
 
+const DesignTokenTypeSchema = z.enum(["color", "typography", "spacing", "radius", "effect", "motion"]);
+
 const ImportSchema = z.object({
-  tokens: z.record(z.string(), z.array(TokenEntrySchema)),
+  tokens: z.record(DesignTokenTypeSchema, z.array(TokenEntrySchema)),
 });
 
 export async function POST(request: Request) {
@@ -77,16 +78,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No projects found for this organisation" }, { status: 404, headers: CORS });
   }
 
+  const tokenData = parsed.data.tokens;
   const rows: Parameters<typeof bulkUpsertTokens>[2] = [];
-  for (const [type, entries] of Object.entries(parsed.data.tokens)) {
+  for (const key of Object.keys(tokenData) as Array<keyof typeof tokenData>) {
+    const entries = tokenData[key];
     for (const entry of entries) {
       rows.push({
         name: entry.name,
         value: entry.value,
-        type: type as DesignTokenType,
+        type: key,
         cssVariable: entry.cssVariable ?? undefined,
         source: "figma-variable",
-        groupName: type,
+        groupName: key,
       });
     }
   }
@@ -94,7 +97,7 @@ export async function POST(request: Request) {
   try {
     const result = await bulkUpsertTokens(auth.orgId, projects[0].id, rows);
     return NextResponse.json(
-      { created: result.created, updated: result.updated, unchanged: result.unchanged },
+      { created: result.created, updated: result.updated, unchanged: result.unchanged, conflicts: result.conflicts },
       { headers: CORS }
     );
   } catch {
