@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 import { useProjectStore } from "@/lib/store/project";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { NewExtractionModal } from "@/components/studio/NewExtractionModal";
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
@@ -30,15 +33,37 @@ export default function OrgProjectsPage() {
   const projects = useProjectStore((s) => s.projects);
   const deleteProject = useProjectStore((s) => s.deleteProject);
 
+  const [showNewExtraction, setShowNewExtraction] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
   return (
     <div className="p-8">
-      <h1 className="mb-6 text-xl font-semibold text-[var(--text-primary)]">
-        Projects
-      </h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-[var(--text-primary)]">
+          Projects
+        </h1>
+        <button
+          onClick={() => setShowNewExtraction(true)}
+          className="flex items-center gap-1.5 rounded-lg bg-[var(--studio-accent)] px-3.5 py-2 text-xs font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors"
+        >
+          <Plus size={14} />
+          New Project
+        </button>
+      </div>
 
       {projects.length === 0 ? (
-        <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4">
           <p className="text-sm text-[var(--text-muted)]">No projects yet</p>
+          <button
+            onClick={() => setShowNewExtraction(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-[var(--studio-border)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            <Plus size={14} />
+            Create your first project
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -70,11 +95,9 @@ export default function OrgProjectsPage() {
                 </p>
               </Link>
               <button
-                onClick={() => {
-                  if (confirm(`Delete "${project.name}"?`)) {
-                    deleteProject(project.id);
-                  }
-                }}
+                onClick={() =>
+                  setDeleteTarget({ id: project.id, name: project.name })
+                }
                 className="absolute right-3 top-3 rounded p-1.5 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 hover:bg-[var(--bg-active)] hover:text-red-400 transition-all"
                 aria-label={`Delete ${project.name}`}
               >
@@ -83,6 +106,24 @@ export default function OrgProjectsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {showNewExtraction && (
+        <NewExtractionModal onClose={() => setShowNewExtraction(false)} />
+      )}
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="Delete project"
+          message={`Are you sure you want to delete "${deleteTarget.name}"? This action cannot be undone.`}
+          confirmLabel="Delete"
+          destructive
+          onConfirm={() => {
+            deleteProject(deleteTarget.id);
+            setDeleteTarget(null);
+          }}
+          onClose={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   );
