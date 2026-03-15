@@ -191,6 +191,7 @@ export default function StudioPage({
               extractionData={project.extractionData}
               sourceType={project.sourceType}
               sourceUrl={project.sourceUrl}
+              designMd={project.designMd}
             />
           }
           editorPanel={
