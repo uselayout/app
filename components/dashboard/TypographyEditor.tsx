@@ -393,9 +393,10 @@ function ScaleForm({
 
 interface TypographyEditorProps {
   orgId: string;
+  studioUrl?: string;
 }
 
-export function TypographyEditor({ orgId }: TypographyEditorProps) {
+export function TypographyEditor({ orgId, studioUrl = "/studio" }: TypographyEditorProps) {
   const [typefaces, setTypefaces] = useState<Typeface[]>([]);
   const [scaleEntries, setScaleEntries] = useState<TypeScale[]>([]);
   const [loading, setLoading] = useState(true);
@@ -650,7 +651,7 @@ export function TypographyEditor({ orgId }: TypographyEditorProps) {
             </p>
             <div className="mt-3 flex items-center justify-center gap-2">
               <a
-                href="/studio"
+                href={studioUrl}
                 className="rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2 text-sm text-[var(--text-primary)] transition-all duration-[var(--duration-base)] hover:bg-[var(--bg-hover)]"
               >
                 Open Studio
