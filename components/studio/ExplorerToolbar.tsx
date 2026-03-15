@@ -152,12 +152,12 @@ export function ExplorerToolbar({
               onChange={(e) => setRefinePrompt(e.target.value)}
               onKeyDown={handleRefineKeyDown}
               disabled={isGenerating}
-              className="ml-2 flex-1 bg-transparent text-[13px] text-[--text-primary] placeholder:text-amber-400/50 outline-none disabled:opacity-50"
+              className="ml-2 flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-amber-400/50 outline-none disabled:opacity-50"
             />
             <button
               onClick={handleRefineSubmit}
               disabled={!refinePrompt.trim() || isGenerating}
-              className="absolute bottom-2.5 right-2.5 shrink-0 flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[--text-muted] transition-colors hover:text-[--text-primary] disabled:opacity-20 disabled:cursor-not-allowed"
+              className="absolute bottom-2.5 right-2.5 shrink-0 flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-20 disabled:cursor-not-allowed"
             >
               <ArrowUp size={12} strokeWidth={2.5} />
             </button>
@@ -167,7 +167,7 @@ export function ExplorerToolbar({
             <div className="flex min-h-[68px] items-start rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.08)] px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
               {/* Image thumbnail chip */}
               {imageDataUrl && (
-                <div className="mr-2 flex shrink-0 items-center gap-1.5 rounded-md bg-[--bg-hover] px-1.5 py-0.5" title={imageName ?? "Attached image"}>
+                <div className="mr-2 flex shrink-0 items-center gap-1.5 rounded-md bg-[var(--bg-hover)] px-1.5 py-0.5" title={imageName ?? "Attached image"}>
                   <img
                     src={imageDataUrl}
                     alt="Reference"
@@ -175,7 +175,7 @@ export function ExplorerToolbar({
                   />
                   <button
                     onClick={removeImage}
-                    className="rounded p-0.5 text-[--text-muted] hover:text-[--text-primary] transition-colors"
+                    className="rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                   >
                     <X size={10} />
                   </button>
@@ -195,7 +195,7 @@ export function ExplorerToolbar({
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
                 disabled={isGenerating}
-                className="flex-1 bg-transparent text-[13px] text-[--text-primary] placeholder:text-[#898d94] outline-none disabled:opacity-50"
+                className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[#898d94] outline-none disabled:opacity-50"
               />
             </div>
 
@@ -211,7 +211,7 @@ export function ExplorerToolbar({
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isGenerating}
-                className="flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[--text-muted] transition-colors hover:text-[--text-secondary] disabled:opacity-40"
+                className="flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)] disabled:opacity-40"
                 title="Attach reference image"
               >
                 <ImagePlus size={12} />
@@ -220,7 +220,7 @@ export function ExplorerToolbar({
                 <button
                   onClick={handleSubmit}
                   disabled={!prompt.trim() || isGenerating}
-                  className="flex items-center justify-center size-6 rounded-full bg-[--text-primary] text-[--bg-app] transition-colors hover:opacity-90 disabled:opacity-20 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center size-6 rounded-full bg-[var(--text-primary)] text-[var(--bg-app)] transition-colors hover:opacity-90 disabled:opacity-20 disabled:cursor-not-allowed"
                 >
                   <ArrowUp size={12} strokeWidth={2.5} />
                 </button>
@@ -235,21 +235,21 @@ export function ExplorerToolbar({
         <div className="flex items-center gap-3">
           {/* Variant count */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-[--text-primary]">Variants:</span>
+            <span className="text-xs text-[var(--text-primary)]">Variants:</span>
             <button
               onClick={() => setVariantCount((c) => Math.max(2, c - 1))}
               disabled={variantCount <= 2 || isGenerating}
-              className="rounded p-0.5 text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors disabled:opacity-30"
+              className="rounded p-0.5 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-30"
             >
               <Minus size={12} />
             </button>
-            <span className="w-4 text-center text-xs font-medium text-[--text-primary]">
+            <span className="w-4 text-center text-xs font-medium text-[var(--text-primary)]">
               {variantCount}
             </span>
             <button
               onClick={() => setVariantCount((c) => Math.min(6, c + 1))}
               disabled={variantCount >= 6 || isGenerating}
-              className="rounded p-0.5 text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors disabled:opacity-30"
+              className="rounded p-0.5 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-30"
             >
               <Plus size={12} />
             </button>
@@ -260,7 +260,7 @@ export function ExplorerToolbar({
             <button
               onClick={onRegenerate}
               disabled={isGenerating}
-              className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-[--text-primary] hover:bg-[--bg-hover] transition-colors disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-40"
             >
               <RotateCw size={12} />
               Regenerate
@@ -271,7 +271,7 @@ export function ExplorerToolbar({
           <button
             onClick={() => onCompare(prompt.trim())}
             disabled={!prompt.trim() || isGenerating}
-            className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-[--text-primary] hover:bg-[--bg-hover] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title="Compare with vs without design system"
           >
             <Split size={12} />
@@ -284,7 +284,7 @@ export function ExplorerToolbar({
           <button
             onClick={onImportFromFigma}
             disabled={isGenerating}
-            className="inline-flex items-center gap-1.5 rounded-md border border-[rgba(255,255,255,0.07)] h-[30px] px-3 text-xs font-medium text-[--text-primary] hover:bg-[--bg-hover] transition-colors disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[rgba(255,255,255,0.07)] h-[30px] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-40"
           >
             <Download size={12} />
             Import from Figma
@@ -293,7 +293,7 @@ export function ExplorerToolbar({
             <button
               onClick={onPushToFigma}
               disabled={isGenerating}
-              className="inline-flex items-center gap-1.5 rounded-md border border-[rgba(255,255,255,0.07)] h-[30px] px-3 text-xs font-medium text-[--text-primary] hover:bg-[--bg-hover] transition-colors disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-md border border-[rgba(255,255,255,0.07)] h-[30px] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-40"
             >
               <Figma size={12} />
               Push to Figma

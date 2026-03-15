@@ -204,10 +204,10 @@ export default function StudioPage({
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="space-y-4 text-center">
-          <h2 className="text-lg font-medium text-[--text-primary]">
+          <h2 className="text-lg font-medium text-[var(--text-primary)]">
             Project not found
           </h2>
-          <p className="text-sm text-[--text-secondary]">
+          <p className="text-sm text-[var(--text-secondary)]">
             This project may have been deleted or the URL is incorrect.
           </p>
         </div>
@@ -238,11 +238,11 @@ export default function StudioPage({
     {/* Mobile gate */}
     <div className="flex md:hidden h-screen flex-col items-center justify-center px-6 text-center">
       <img src="/marketing/logo-white.svg" alt="Layout" width={100} height={24} className="mb-6" />
-      <h2 className="text-lg font-semibold text-[--text-primary]">Desktop only</h2>
-      <p className="mt-2 max-w-xs text-sm text-[--text-secondary]">
+      <h2 className="text-lg font-semibold text-[var(--text-primary)]">Desktop only</h2>
+      <p className="mt-2 max-w-xs text-sm text-[var(--text-secondary)]">
         Layout needs a larger screen to work properly. Please open this page on a desktop browser.
       </p>
-      <p className="mt-6 text-xs text-[--text-muted]">
+      <p className="mt-6 text-xs text-[var(--text-muted)]">
         Please use a desktop browser for Studio.
       </p>
     </div>
