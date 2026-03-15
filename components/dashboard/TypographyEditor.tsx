@@ -643,8 +643,19 @@ export function TypographyEditor({ orgId }: TypographyEditorProps) {
         {typefaces.length === 0 && !showTypefaceForm && (
           <div className="rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-8 text-center">
             <p className="text-sm text-[var(--text-muted)]">
-              No typefaces yet. Add your first font family to get started.
+              No typefaces yet
             </p>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              Extract a design system in Studio to populate typography, or add fonts manually.
+            </p>
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <a
+                href="/studio"
+                className="rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2 text-sm text-[var(--text-primary)] transition-all duration-[var(--duration-base)] hover:bg-[var(--bg-hover)]"
+              >
+                Open Studio
+              </a>
+            </div>
           </div>
         )}
 

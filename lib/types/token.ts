@@ -21,4 +21,6 @@ export interface DesignToken {
   source: DesignTokenSource | null;
   createdAt: string;
   updatedAt: string;
+  lastSyncedAt: string | null;
+  modifiedLocally: boolean;
 }

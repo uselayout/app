@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { Trash2, Plus } from "lucide-react";
 import { useProjectStore } from "@/lib/store/project";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -30,6 +31,8 @@ function sourceLabel(sourceType: string): string {
 }
 
 export default function OrgProjectsPage() {
+  const params = useParams();
+  const orgSlug = typeof params?.org === "string" ? params.org : "";
   const projects = useProjectStore((s) => s.projects);
   const deleteProject = useProjectStore((s) => s.deleteProject);
 
@@ -73,7 +76,7 @@ export default function OrgProjectsPage() {
               className="group relative rounded-[var(--studio-radius-lg)] border border-[var(--studio-border)] bg-[var(--bg-surface)] transition-all duration-[var(--duration-base)] hover:border-[var(--studio-border-strong)] hover:bg-[var(--bg-hover)]"
             >
               <Link
-                href={`/studio/${project.id}`}
+                href={`/${orgSlug}/projects/${project.id}/studio`}
                 className="block p-5"
               >
                 <h3 className="mb-2 truncate text-sm font-medium text-[var(--text-primary)]">

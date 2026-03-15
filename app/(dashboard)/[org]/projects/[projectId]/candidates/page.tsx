@@ -39,6 +39,7 @@ function formatDate(dateStr: string): string {
 export default function CandidatesPage() {
   const params = useParams();
   const orgSlug = (params?.org as string) ?? "";
+  const projectId = (params?.projectId as string) ?? "";
   const orgId = useOrgStore((s) => s.currentOrgId);
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -142,7 +143,7 @@ export default function CandidatesPage() {
           {candidates.map((c) => (
             <Link
               key={c.id}
-              href={`/${orgSlug}/candidates/${c.id}`}
+              href={`/${orgSlug}/projects/${projectId}/candidates/${c.id}`}
               className="group flex items-center justify-between rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] px-5 py-4 transition-all duration-[var(--duration-base)] hover:border-[var(--studio-border-strong)] hover:bg-[var(--bg-hover)]"
             >
               <div className="flex min-w-0 flex-1 flex-col gap-1">
