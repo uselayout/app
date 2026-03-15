@@ -222,14 +222,11 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
       <div ref={outputRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {results.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-3">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-[var(--text-muted)]">
-              <rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-              <rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-              <rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-              <rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+            <svg width="24" height="24" viewBox="0 0 18.5586 18.5586" fill="none" className="text-[var(--text-muted)]">
+              <path d="M13.7168 0C16.3906 0 18.5586 2.16798 18.5586 4.8418V18.5586H0V0H13.7168ZM1.61426 16.9443H5.64844V12.9102H1.61426V16.9443ZM7.26172 12.9102V16.9443H16.9453V12.9102H7.26172ZM1.61426 11.2969H5.64844V1.61426H1.61426V11.2969Z" fill="currentColor" />
             </svg>
             <p className="text-center text-xs font-medium text-[var(--text-secondary)]">
-              Test your DESIGN.md by asking Claude to
+              Test your DESIGN.md by asking Layout to
               <br />
               build components.
             </p>
