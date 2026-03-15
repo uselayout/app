@@ -129,19 +129,17 @@ DESIGN.md is always included in every export.
 
 ---
 
-## MCP Server Tools (9)
+## MCP Server Tools (7)
 
-| Tool | What It Does |
-|---|---|
-| `get_design_system` | Returns full or sectioned DESIGN.md |
-| `get_tokens` | CSS, JSON, or Tailwind token output by type |
-| `get_component` | Component spec + code example by name |
-| `list_components` | Inventory of all available components |
-| `check_compliance` | Validate a code snippet against design rules |
-| `preview` | Render component live in local browser canvas (localhost:4321) |
-| `push_to_figma` | Send rendered component to Figma as editable frames (via Figma MCP) |
-| `url_to_figma` | Capture a public URL as editable Figma frames with auto-layout (via Figma MCP + Playwright) |
-| `design_in_figma` | Design UI in Figma from natural language prompt using loaded design tokens |
+| Tool | Description |
+|------|-------------|
+| `get_design_system` | Returns full DESIGN.md content for a project |
+| `get_design_section` | Returns a specific section (colours, typography, spacing, components, etc.) |
+| `get_tokens` | Returns CSS tokens filtered by category |
+| `get_component` | Returns component code by name |
+| `get_component_with_context` | Returns component code with resolved token values and usage guidelines |
+| `list_components` | Lists all components with metadata, tags, token usage, and code previews |
+| `check_compliance` | Validates code snippets against design system rules |
 
 ### The Full Code-to-Design Loop
 ```
@@ -238,6 +236,24 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 - **Token autocomplete:** type `--` in the editor, get autocomplete suggestions from extracted tokens
 - **Section navigation:** pill buttons to jump between DESIGN.md sections
 - **Auto-save:** 2-second debounce, save indicator in editor
+
+### Explorer Canvas
+AI-powered design exploration that generates 2–6 component variants simultaneously. Supports reference image upload, variant refinement, A/B comparison (with/without design system context), and direct promotion to the component library.
+
+### Quality Scoring
+Automated DESIGN.md completeness analysis across 6 weighted categories. Scores from 0–100 with actionable suggestions for improvement.
+
+### Webhook Automation
+Figma webhook integration that triggers automatic re-extraction when designers publish changes. Combined with GitHub integration, this creates a fully automated design-to-code pipeline with auto-generated PRs.
+
+### Template Marketplace
+Publish design systems as reusable templates. Other teams can browse and install templates to bootstrap their projects with pre-configured design tokens, components, and documentation.
+
+### Figma Plugin (Coming Soon)
+Native Figma plugin for one-click AI Kit export, live token inspector, component sync status, push-to-canvas for AI variant generation, and webhook management — all without leaving Figma.
+
+### AI Image Generation (Coming Soon)
+Gemini 3.1 Flash Image Preview integration for generating contextual images (hero photos, illustrations, icons) in full-page designs created through the Explorer Canvas.
 
 ---
 
