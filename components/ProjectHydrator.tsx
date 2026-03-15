@@ -11,6 +11,7 @@ export function ProjectHydrator() {
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
   const loadProjects = useProjectStore((s) => s.loadProjects);
   const clearProjects = useProjectStore((s) => s.clearProjects);
+  const setHydrating = useProjectStore((s) => s.setHydrating);
   const setHydrationError = useProjectStore((s) => s.setHydrationError);
   const hydrationError = useProjectStore((s) => s.hydrationError);
 
@@ -21,13 +22,15 @@ export function ProjectHydrator() {
     }
 
     const userId = session.user.id;
+    setHydrating(true);
     fetchAllProjects(currentOrgId)
       .then((projects) => loadProjects(projects, userId, currentOrgId))
       .catch((err: unknown) => {
         console.error("Failed to hydrate projects from Supabase:", err);
+        setHydrating(false);
         setHydrationError("Failed to load projects. Please refresh the page.");
       });
-  }, [session?.user?.id, currentOrgId, loadProjects, clearProjects, setHydrationError]);
+  }, [session?.user?.id, currentOrgId, loadProjects, clearProjects, setHydrating, setHydrationError]);
 
   if (!hydrationError) return null;
 
