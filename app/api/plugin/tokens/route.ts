@@ -1,7 +1,10 @@
 // app/api/plugin/tokens/route.ts
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { requireMcpAuth } from "@/lib/api/mcp-auth";
-import { getTokensByOrg } from "@/lib/supabase/tokens";
+import { getTokensByOrg, bulkUpsertTokens } from "@/lib/supabase/tokens";
+import { fetchAllProjects } from "@/lib/supabase/db";
+import type { DesignTokenType } from "@/lib/types/token";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -32,6 +35,68 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ tokens: byType }, { headers: CORS });
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500, headers: CORS });
+  }
+}
+
+const TokenEntrySchema = z.object({
+  name: z.string(),
+  value: z.string(),
+  cssVariable: z.string().nullable().optional(),
+});
+
+const ImportSchema = z.object({
+  tokens: z.record(z.string(), z.array(TokenEntrySchema)),
+});
+
+export async function POST(request: Request) {
+  const auth = await requireMcpAuth(request, "write");
+  if (auth instanceof NextResponse) {
+    return new NextResponse(auth.body, {
+      status: auth.status,
+      headers: { ...Object.fromEntries(auth.headers.entries()), ...CORS },
+    });
+  }
+
+  const body = await request.json().catch(() => null);
+  if (!body) {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400, headers: CORS });
+  }
+
+  const parsed = ImportSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid body", details: parsed.error.flatten() },
+      { status: 400, headers: CORS }
+    );
+  }
+
+  const projects = await fetchAllProjects(auth.orgId);
+  if (!projects.length) {
+    return NextResponse.json({ error: "No projects found for this organisation" }, { status: 404, headers: CORS });
+  }
+
+  const rows: Parameters<typeof bulkUpsertTokens>[2] = [];
+  for (const [type, entries] of Object.entries(parsed.data.tokens)) {
+    for (const entry of entries) {
+      rows.push({
+        name: entry.name,
+        value: entry.value,
+        type: type as DesignTokenType,
+        cssVariable: entry.cssVariable ?? undefined,
+        source: "figma-variable",
+        groupName: type,
+      });
+    }
+  }
+
+  try {
+    const result = await bulkUpsertTokens(auth.orgId, projects[0].id, rows);
+    return NextResponse.json(
+      { created: result.created, updated: result.updated, unchanged: result.unchanged },
+      { headers: CORS }
+    );
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500, headers: CORS });
   }
