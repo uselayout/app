@@ -34,6 +34,7 @@ export default function OrgProjectsPage() {
   const params = useParams();
   const orgSlug = typeof params?.org === "string" ? params.org : "";
   const projects = useProjectStore((s) => s.projects);
+  const hydrating = useProjectStore((s) => s.hydrating);
   const deleteProject = useProjectStore((s) => s.deleteProject);
 
   const [showNewExtraction, setShowNewExtraction] = useState(false);
@@ -57,7 +58,12 @@ export default function OrgProjectsPage() {
         </button>
       </div>
 
-      {projects.length === 0 ? (
+      {hydrating ? (
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
+          <p className="text-sm text-[var(--text-muted)]">Loading projects...</p>
+        </div>
+      ) : projects.length === 0 ? (
         <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4">
           <p className="text-sm text-[var(--text-muted)]">No projects yet</p>
           <button
