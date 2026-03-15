@@ -116,6 +116,52 @@ refactor: extract token parser into separate module
 - **BYOK**: Users can provide their own Anthropic API key via `X-Api-Key` header
 - **Rate limiting**: Figma API calls are batched (max 50 node IDs per request)
 
+### Dashboard Architecture
+
+The dashboard lives at `app/(dashboard)/[org]/` and uses a shared layout with sidebar navigation. Each page is a client component that fetches data from org-scoped API routes.
+
+Key patterns:
+- **Auth guard:** All API routes use `requireOrgAuth(orgId, permission)` from `lib/api/auth-context.ts`
+- **Org context:** `useOrgStore` provides current org ID and slug
+- **Project hydration:** `ProjectHydrator` component loads projects from Supabase on mount
+
+### Webhook Testing
+
+To test the Figma webhook locally:
+1. Configure a webhook in Settings > Webhooks with a passcode
+2. Send a POST to `/api/webhooks/figma` with a valid payload:
+```json
+{
+  "event_type": "FILE_UPDATE",
+  "file_key": "your-figma-file-key",
+  "file_name": "Test File",
+  "passcode": "your-passcode",
+  "timestamp": "2026-03-15T00:00:00Z",
+  "webhook_id": "test-webhook"
+}
+```
+3. The endpoint verifies the passcode against Supabase config or `FIGMA_WEBHOOK_PASSCODE` env var
+
+### MCP Testing
+
+The MCP endpoint is at `/api/mcp`. Test locally:
+```bash
+curl -X POST http://localhost:3000/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"tool": "list_components", "params": {"projectId": "your-project-id"}}'
+```
+
+Available tools: `get_design_system`, `get_design_section`, `get_tokens`, `get_component`, `get_component_with_context`, `list_components`, `check_compliance`.
+
+### Store Patterns
+
+Zustand stores in `lib/store/`:
+- `project.ts` — Project state, persisted to Supabase via `ProjectHydrator`
+- `extraction.ts` — Extraction progress (ephemeral, not persisted)
+- `organization.ts` — Current org context
+
+All stores use the `create<T>()((set, get) => ({ ... }))` pattern. Database-backed stores call Supabase in action handlers after updating local state.
+
 ## Getting Help
 
 - Open a [GitHub Discussion](https://github.com/uselayout/studio/discussions) for questions
