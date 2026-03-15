@@ -71,7 +71,6 @@ export async function checkQuota(
   if (!balance) {
     // Auto-provision starter credits for new users
     const tier = await getUserTier(userId);
-    const allocation = CREDITS[tier];
     const now = new Date();
     const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     await resetMonthlyCredits(userId, tier, 1, now.toISOString(), periodEnd.toISOString());
