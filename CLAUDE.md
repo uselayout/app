@@ -62,12 +62,25 @@ app/
     [id]/
       page.tsx                  # Three-panel Studio
       loading.tsx               # Loading skeleton
+  (dashboard)/
+    [org]/
+      page.tsx                  # Projects list
+      library/                  # Component library pages
+      candidates/               # Design variant review
+      drift/                    # Drift detection
+      analytics/                # Usage analytics
+      settings/                 # Org settings (API keys, webhooks, audit, templates)
   api/
     extract/figma/route.ts      # Figma extraction → SSE stream
     extract/website/route.ts    # Website extraction → SSE stream
     generate/design-md/route.ts # Claude DESIGN.md synthesis → stream
     generate/test/route.ts      # Test panel Claude calls → stream
     export/bundle/route.ts      # ZIP bundle generation
+    webhooks/figma/route.ts     # Figma webhook receiver
+    health/completeness/route.ts # DESIGN.md quality analysis
+    organizations/[orgId]/      # Org-scoped API routes
+    templates/                  # Template CRUD + publishing
+    transpile/route.ts          # TSX transpilation for preview
 
 components/
   studio/
@@ -77,9 +90,18 @@ components/
     TestPanel.tsx               # Right panel (AI test)
     ExtractionProgress.tsx      # Full-screen progress overlay
     ExportModal.tsx             # Export format selection + download
+    ExplorerCanvas.tsx          # AI-powered design exploration canvas
+    ExplorerToolbar.tsx         # Explorer toolbar (prompts, image upload)
+    ExplorerVariantCard.tsx     # Individual variant display + actions
+    CompletenessPanel.tsx       # DESIGN.md quality score + suggestions
+    ExtractionDiffModal.tsx     # Token/component diff on re-extraction
+  dashboard/
+    CreateComponentModal.tsx    # Component editor with AI chat
   shared/
     TopBar.tsx                  # Studio top bar
-  ui/                           # shadcn/ui components
+  ui/
+    ConfirmModal.tsx            # Reusable confirm dialog
+    # (other shadcn/ui components)
 
 lib/
   figma/
@@ -101,12 +123,116 @@ lib/
     tokens-css.ts               # tokens.css generator
     tokens-json.ts              # W3C DTCG tokens.json generator
     tailwind-config.ts          # tailwind.config.js generator
+  auth.ts                       # Better Auth server config
+  auth-client.ts                # Better Auth client
+  health/
+    completeness.ts             # DESIGN.md quality scorer
+  extraction/
+    diff.ts                     # Extraction diff engine
+  integrations/
+    github.ts                   # GitHub Git Data API (PR creation)
   store/
     project.ts                  # Zustand: project state + localStorage
     extraction.ts               # Zustand: extraction progress state
+    organization.ts             # Org state store
+  api/
+    auth-context.ts             # API route auth guards
   types/
     index.ts                    # All shared TypeScript interfaces
 ```
+
+### Dashboard & Settings Pages
+
+The app has a full dashboard at `app/(dashboard)/[org]/`:
+
+```
+app/(dashboard)/
+  [org]/
+    page.tsx                    # Projects list with New Project button
+    library/
+      page.tsx                  # Component library (create, edit, version)
+      [slug]/page.tsx           # Component detail + code editor + preview
+    candidates/page.tsx         # Review submitted design variants
+    drift/page.tsx              # Design drift detection reports
+    analytics/page.tsx          # Usage analytics dashboard
+    icons/page.tsx              # Icon library management
+    typography/page.tsx         # Typography token explorer
+    tokens/page.tsx             # Token browser and editor
+    settings/
+      page.tsx                  # Settings index
+      api-keys/page.tsx         # API key management
+      audit/page.tsx            # Audit log viewer
+      templates/page.tsx        # Template publishing dashboard
+      webhooks/page.tsx         # Figma webhook + GitHub auto-PR config
+```
+
+### Explorer Canvas
+
+The Explorer Canvas (`components/studio/ExplorerCanvas.tsx`) enables AI-powered design exploration:
+
+- **Multi-variant generation:** Prompt AI to generate 2-6 component variants simultaneously
+- **Image upload:** Attach reference images (paste, drag-drop, or file picker) for AI to interpret
+- **Refinement:** Select a variant and refine with follow-up prompts (amber-highlighted input)
+- **Comparison view:** A/B compare results with vs without design system context
+- **Promote to library:** Save any variant as a component in the org's component library
+- **Submit candidate:** Submit variants for team review (appears in candidates dashboard)
+- **Push to Figma:** Export selected variant to Figma via push modal
+- **Responsive preview:** Preview variants at different viewport sizes
+
+Key files: `ExplorerCanvas.tsx`, `ExplorerToolbar.tsx`, `ExplorerVariantCard.tsx`
+
+### Quality & Health
+
+- **Completeness Panel** (`components/studio/CompletenessPanel.tsx`): Analyses DESIGN.md quality across 6 weighted sections (Quick Reference, Colours, Typography, Spacing, Components, Anti-patterns). Shows score 0-100 with suggestions. Accessed via "Quality" tab in SourcePanel.
+- **Extraction Diff** (`components/studio/ExtractionDiffModal.tsx`): On re-extraction, shows token/component/font changes (added, removed, modified) with accept/discard options. Reverts both extraction data and DESIGN.md on discard.
+- **Health Score** stored per project, visible in project cards.
+
+### Authentication & Organisation Model
+
+- **Auth:** Better Auth (`lib/auth.ts`, `lib/auth-client.ts`) with email/password + OAuth
+- **Organisations:** Multi-user teams with roles (owner, admin, member)
+- **Stores:** `lib/store/organization.ts` — current org state, `useOrgStore`
+- **Auth guard:** `lib/api/auth-context.ts` — `requireOrgAuth(orgId, permission)` for API routes
+
+### Webhook System
+
+- **Figma webhook receiver** (`app/api/webhooks/figma/route.ts`): Handles FILE_UPDATE events, verifies passcode (per-org Supabase config or env var fallback), looks up project by file key
+- **GitHub auto-PR** (`lib/integrations/github.ts`): Creates PRs via Git Data API (blobs → tree → commit → ref → PR) without local clone
+- **Webhook config API** (`app/api/organizations/[orgId]/webhook-config/route.ts`): CRUD for per-org webhook settings
+- **Settings UI** (`app/(dashboard)/[org]/settings/webhooks/page.tsx`): Configure endpoint URL, passcode, GitHub repo details
+
+### MCP Server (7 Tools)
+
+The MCP endpoint at `app/api/mcp/route.ts` exposes 7 tools for AI coding agents:
+
+| Tool | Purpose |
+|------|---------|
+| `get_design_system` | Full DESIGN.md content |
+| `get_design_section` | Single section (colours, typography, spacing, etc.) |
+| `get_tokens` | CSS tokens by category |
+| `get_component` | Component code by name |
+| `get_component_with_context` | Component + resolved token values + guidelines |
+| `list_components` | All components with metadata, tags, token usage |
+| `check_compliance` | Validate code against design system rules |
+
+### Template System
+
+- **Publishing:** Org admins can publish their design system as a reusable template
+- **Browse:** Public template gallery at `/templates` with search/filter
+- **Install:** One-click install of templates into new projects
+- **API:** `app/api/templates/` routes for CRUD + publishing
+
+### Component Library
+
+- **Per-org component library** with categories, tags, and versioning
+- **Create components** via code editor with live preview and AI chat assistance
+- **API:** `app/api/organizations/[orgId]/components/` routes
+- **Store:** Components fetched per-org, displayed in dashboard library page
+
+### Planned Features
+
+- **Figma Plugin:** Native Figma plugin for one-click AI Kit export, live token inspector, component sync, push-to-canvas for AI variant generation, webhook management
+- **AI Image Generation:** Gemini 3.1 Flash Image Preview integration for generating contextual images in full-page designs
 
 ## Studio Design System
 
@@ -173,6 +299,8 @@ Batch node IDs in groups of max 50.
 ```bash
 ANTHROPIC_API_KEY=sk-ant-...          # Required for Claude synthesis and testing
 FIGMA_DEFAULT_TOKEN=figd_...          # Optional: for testing against own Figma files
+FIGMA_WEBHOOK_PASSCODE=...            # Optional: global fallback for Figma webhook verification
+GOOGLE_AI_API_KEY=...                 # Optional: for AI image generation (planned)
 ```
 
 ## Gotchas

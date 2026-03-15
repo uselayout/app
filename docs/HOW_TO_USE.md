@@ -236,6 +236,45 @@ The health score (0–100) in the Test panel measures how closely the generated 
 
 ---
 
+## Explorer Canvas
+
+After extracting your design system, use the Explorer Canvas to generate AI-powered component variants:
+
+1. Switch to the Canvas view using the toggle in the top bar
+2. Enter a prompt describing what to explore (e.g. "a pricing card with three tiers")
+3. Optionally attach a reference image by pasting, dragging, or clicking the image button
+4. Set the number of variants (2–6) and press Cmd+Enter
+5. Review generated variants in the grid view
+6. Select a variant to refine it with follow-up prompts
+7. Use "Compare" to see results with vs without design system context
+8. Promote a variant to your component library or submit it for team review
+
+---
+
+## Quality Score
+
+The Quality tab in the Source Panel shows your DESIGN.md completeness score:
+
+- **90–100:** Production-ready — comprehensive coverage across all sections
+- **70–89:** Good — covers most areas, minor gaps in documentation
+- **40–69:** Needs work — missing key sections or lacking detail
+- **0–39:** Incomplete — significant gaps that will affect AI output quality
+
+The score analyses 6 weighted categories: Quick Reference (15%), Colours (20%), Typography (15%), Spacing (10%), Components (25%), Anti-patterns (15%).
+
+---
+
+## Re-extraction and Diffing
+
+When you re-extract a design system (via the re-extract button in the top bar):
+
+1. Layout captures the previous extraction state
+2. Runs a fresh extraction from the source
+3. Shows a diff modal highlighting all changes (added, removed, modified tokens/components/fonts)
+4. Choose "Accept" to keep the new extraction or "Discard" to revert to the previous state
+
+---
+
 ## Figma-First Workflow
 
 Layout supports a bidirectional design loop — push generated components to Figma for designer review, then pull feedback back into code.
@@ -270,6 +309,34 @@ Extract design system → Generate DESIGN.md → Test components
 ```
 
 No other open-source tool closes this loop.
+
+---
+
+## Webhook Setup
+
+To automatically sync design changes from Figma:
+
+1. Go to Settings > Webhooks in your organisation dashboard
+2. Copy the webhook endpoint URL
+3. Paste it into Figma > Admin > Webhooks
+4. Generate or enter a matching passcode in both Figma and Layout
+5. Optionally configure GitHub settings (owner, repo, branch, token) for automatic PR creation
+6. When a designer publishes changes in Figma, Layout re-extracts tokens and opens a PR
+
+---
+
+## Component Library
+
+Create and manage reusable components for your organisation:
+
+1. Navigate to Library in the dashboard sidebar
+2. Click "Create Component" to open the editor
+3. Write TSX code in the editor — preview updates live on the right
+4. Use the AI chat bar at the bottom to generate or modify code with AI assistance (Cmd+Enter to send)
+5. Add name, category, description, and tags
+6. Save to add it to your library
+
+Components can also be promoted from the Explorer Canvas.
 
 ---
 
