@@ -6,7 +6,7 @@ const LAYOUT_LINKS = [
 ];
 
 const TOOLS_LINKS = [
-  { label: "Layout Studio", href: "/studio" },
+  { label: "Studio", href: "/studio" },
   { label: "Layout CLI", href: "/docs/cli" },
   { label: "AI Kits", href: "/docs/kits" },
 ];

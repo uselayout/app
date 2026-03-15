@@ -71,7 +71,7 @@ export default function CliPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Importing from Studio</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          If you have already exported a ZIP bundle from Layout Studio,
+          If you have already exported a ZIP bundle from Layout,
           import it directly -  no need to use a starter kit.
         </p>
         <CopyBlock
