@@ -64,6 +64,29 @@ export default function SettingsPage() {
 
       <div className="mt-8 space-y-3">
         <Link
+          href={`/${orgSlug}/settings/profile`}
+          className="flex items-center gap-4 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4 transition-all duration-[var(--duration-base)] hover:border-[var(--studio-border-strong)] hover:bg-[var(--bg-hover)]"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="10" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M3.5 17.5c0-3.59 2.91-6.5 6.5-6.5s6.5 2.91 6.5 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-[var(--text-primary)]">
+              Profile
+            </p>
+            <p className="text-xs text-[var(--text-muted)]">
+              Update your name and change your password
+            </p>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[var(--text-muted)]">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </Link>
+
+        <Link
           href={`/${orgSlug}/settings/api-keys`}
           className="flex items-center gap-4 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4 transition-all duration-[var(--duration-base)] hover:border-[var(--studio-border-strong)] hover:bg-[var(--bg-hover)]"
         >
