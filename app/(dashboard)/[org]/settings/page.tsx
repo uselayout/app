@@ -23,6 +23,23 @@ const WebhookIcon = () => (
   </svg>
 );
 
+const BillingIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2.5" y="4.167" width="15" height="11.667" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M2.5 8.333h15" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M5.833 12.5h3.334" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+
+const MembersIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="7.5" cy="6.667" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M2.5 16.667c0-2.762 2.239-5 5-5s5 2.238 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <circle cx="14.167" cy="7.5" r="1.667" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M15 11.667a3.333 3.333 0 012.5 3.216v1.784" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+
 const TemplateIcon = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="2.5" y="2.5" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -59,6 +76,46 @@ export default function SettingsPage() {
             </p>
             <p className="text-xs text-[var(--text-muted)]">
               Manage keys for programmatic access to your design system
+            </p>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[var(--text-muted)]">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </Link>
+
+        <Link
+          href={`/${orgSlug}/settings/billing`}
+          className="flex items-center gap-4 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4 transition-all duration-[var(--duration-base)] hover:border-[var(--studio-border-strong)] hover:bg-[var(--bg-hover)]"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]">
+            <BillingIcon />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-[var(--text-primary)]">
+              Billing
+            </p>
+            <p className="text-xs text-[var(--text-muted)]">
+              Manage your subscription, credits, and usage
+            </p>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[var(--text-muted)]">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </Link>
+
+        <Link
+          href={`/${orgSlug}/settings/members`}
+          className="flex items-center gap-4 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4 transition-all duration-[var(--duration-base)] hover:border-[var(--studio-border-strong)] hover:bg-[var(--bg-hover)]"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]">
+            <MembersIcon />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-[var(--text-primary)]">
+              Members
+            </p>
+            <p className="text-xs text-[var(--text-muted)]">
+              Invite team members and manage roles
             </p>
           </div>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[var(--text-muted)]">
