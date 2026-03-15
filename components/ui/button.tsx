@@ -9,16 +9,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-[--studio-accent] text-[--text-on-accent] hover:bg-[--studio-accent-hover]",
+        default: "bg-[var(--studio-accent)] text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)]",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
         outline:
-          "border border-[--studio-border] bg-transparent text-[--text-primary] shadow-xs hover:bg-[--bg-hover] hover:text-[--text-primary]",
+          "border border-[var(--studio-border)] bg-transparent text-[var(--text-primary)] shadow-xs hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
         secondary:
-          "bg-[--bg-surface] text-[--text-primary] hover:bg-[--bg-hover]",
+          "bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]",
         ghost:
-          "text-[--text-primary] hover:bg-[--bg-hover] hover:text-[--text-primary]",
-        link: "text-[--text-primary] underline-offset-4 hover:underline",
+          "text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+        link: "text-[var(--text-primary)] underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

@@ -23,7 +23,7 @@ export function BillingButton() {
   return (
     <button
       onClick={handleClick}
-      className="flex items-center gap-1.5 rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-1.5 text-xs font-medium text-[--text-secondary] transition-all hover:bg-[--bg-hover] hover:text-[--text-primary]"
+      className="flex items-center gap-1.5 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-all hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
     >
       {tier === "free" ? (
         <>

@@ -153,7 +153,7 @@ export function ApiKeyManager({ orgId }: ApiKeyManagerProps) {
         {!showCreateForm && !newKeySecret && (
           <button
             onClick={() => setShowCreateForm(true)}
-            className="rounded-lg bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-[--text-on-accent] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
+            className="rounded-lg bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-[var(--text-on-accent)] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)]"
           >
             Create Key
           </button>
@@ -233,7 +233,7 @@ export function ApiKeyManager({ orgId }: ApiKeyManagerProps) {
               <button
                 onClick={() => void handleCreate()}
                 disabled={creating}
-                className="rounded-lg bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-[--text-on-accent] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
+                className="rounded-lg bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-[var(--text-on-accent)] transition-all duration-[var(--duration-base)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
               >
                 {creating ? "Creating..." : "Create"}
               </button>

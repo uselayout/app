@@ -288,14 +288,14 @@ export function ExplorerCanvas({
       <div className="flex-1 overflow-y-auto p-4">
         {variants.length === 0 && !isGenerating ? (
           <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-            <div className="rounded-xl bg-[--bg-surface] p-4">
-              <Sparkles size={24} className="text-[--text-muted]" />
+            <div className="rounded-xl bg-[var(--bg-surface)] p-4">
+              <Sparkles size={24} className="text-[var(--text-muted)]" />
             </div>
             <div>
-              <h3 className="mb-1 text-sm font-semibold text-[--text-primary]">
+              <h3 className="mb-1 text-sm font-semibold text-[var(--text-primary)]">
                 Canvas
               </h3>
-              <p className="max-w-xs text-xs text-[--text-secondary]">
+              <p className="max-w-xs text-xs text-[var(--text-secondary)]">
                 Describe what to explore. Claude will generate
                 multiple design variations using your design system.
               </p>
@@ -305,15 +305,15 @@ export function ExplorerCanvas({
           <div className="space-y-4">
             {/* Reference image card */}
             {currentExploration?.referenceImage && (
-              <div className="flex items-center gap-3 rounded-lg border border-[--studio-border] bg-[--bg-surface] p-3">
+              <div className="flex items-center gap-3 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-3">
                 <img
                   src={currentExploration.referenceImage}
                   alt="Reference"
-                  className="h-16 w-16 rounded-md object-cover border border-[--studio-border]"
+                  className="h-16 w-16 rounded-md object-cover border border-[var(--studio-border)]"
                 />
                 <div>
-                  <p className="text-xs font-medium text-[--text-primary]">Reference image</p>
-                  <p className="text-[11px] text-[--text-muted]">{currentExploration.prompt}</p>
+                  <p className="text-xs font-medium text-[var(--text-primary)]">Reference image</p>
+                  <p className="text-[11px] text-[var(--text-muted)]">{currentExploration.prompt}</p>
                 </div>
               </div>
             )}
@@ -322,7 +322,7 @@ export function ExplorerCanvas({
               <div className="flex justify-end">
                 <button
                   onClick={() => setShowSubmitCandidate(true)}
-                  className="flex items-center gap-1.5 rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-1.5 text-[11px] font-medium text-[--text-secondary] hover:border-[--studio-border-strong] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+                  className="flex items-center gap-1.5 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] hover:border-[var(--studio-border-strong)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   <Send size={12} />
                   Submit All as Candidate

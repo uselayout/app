@@ -20,18 +20,18 @@ function CreditGauge({
   const remaining = Math.max(total - used, 0);
 
   return (
-    <div className="rounded-xl border border-[--studio-border] bg-[--bg-surface] p-4">
+    <div className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4">
       <div className="mb-3 flex items-center gap-2">
-        <Icon className="h-4 w-4 text-[--studio-accent]" />
-        <span className="text-xs font-medium text-[--text-secondary]">{label}</span>
+        <Icon className="h-4 w-4 text-[var(--studio-accent)]" />
+        <span className="text-xs font-medium text-[var(--text-secondary)]">{label}</span>
       </div>
-      <div className="mb-2 text-2xl font-bold text-[--text-primary]">
+      <div className="mb-2 text-2xl font-bold text-[var(--text-primary)]">
         {remaining}
-        <span className="text-sm font-normal text-[--text-muted]"> / {total}</span>
+        <span className="text-sm font-normal text-[var(--text-muted)]"> / {total}</span>
       </div>
-      <div className="h-1.5 rounded-full bg-[--bg-hover]">
+      <div className="h-1.5 rounded-full bg-[var(--bg-hover)]">
         <div
-          className="h-full rounded-full bg-[--studio-accent] transition-all"
+          className="h-full rounded-full bg-[var(--studio-accent)] transition-all"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -62,8 +62,8 @@ export function UsageDashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-[--text-primary]">Usage</h3>
-        <span className="rounded-md bg-[--studio-accent-subtle] px-2 py-0.5 text-xs font-medium text-[--studio-accent]">
+        <h3 className="text-lg font-semibold text-[var(--text-primary)]">Usage</h3>
+        <span className="rounded-md bg-[var(--studio-accent-subtle)] px-2 py-0.5 text-xs font-medium text-[var(--studio-accent)]">
           {tier.charAt(0).toUpperCase() + tier.slice(1)}
         </span>
       </div>
@@ -87,21 +87,21 @@ export function UsageDashboard() {
 
       {stats && (
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-xl border border-[--studio-border] bg-[--bg-surface] p-4">
+          <div className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4">
             <div className="mb-1 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-[--text-muted]" />
-              <span className="text-xs text-[--text-secondary]">Total tokens</span>
+              <TrendingUp className="h-4 w-4 text-[var(--text-muted)]" />
+              <span className="text-xs text-[var(--text-secondary)]">Total tokens</span>
             </div>
-            <span className="text-lg font-bold text-[--text-primary]">
+            <span className="text-lg font-bold text-[var(--text-primary)]">
               {((stats.totalInputTokens + stats.totalOutputTokens) / 1000).toFixed(1)}k
             </span>
           </div>
-          <div className="rounded-xl border border-[--studio-border] bg-[--bg-surface] p-4">
+          <div className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4">
             <div className="mb-1 flex items-center gap-2">
-              <Coins className="h-4 w-4 text-[--text-muted]" />
-              <span className="text-xs text-[--text-secondary]">Est. cost</span>
+              <Coins className="h-4 w-4 text-[var(--text-muted)]" />
+              <span className="text-xs text-[var(--text-secondary)]">Est. cost</span>
             </div>
-            <span className="text-lg font-bold text-[--text-primary]">
+            <span className="text-lg font-bold text-[var(--text-primary)]">
               £{stats.totalCostGbp.toFixed(2)}
             </span>
           </div>
@@ -110,26 +110,26 @@ export function UsageDashboard() {
 
       {history.length > 0 && (
         <div>
-          <h4 className="mb-3 text-sm font-medium text-[--text-secondary]">Recent activity</h4>
+          <h4 className="mb-3 text-sm font-medium text-[var(--text-secondary)]">Recent activity</h4>
           <div className="max-h-48 overflow-y-auto space-y-1">
             {history.slice(0, 20).map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between rounded-lg bg-[--bg-surface] px-3 py-2 text-xs"
+                className="flex items-center justify-between rounded-lg bg-[var(--bg-surface)] px-3 py-2 text-xs"
               >
                 <div className="flex items-center gap-2">
                   <span className={`rounded px-1.5 py-0.5 font-mono text-[10px] ${
                     entry.mode === "hosted"
-                      ? "bg-[--studio-accent-subtle] text-[--studio-accent]"
-                      : "bg-[--bg-hover] text-[--text-muted]"
+                      ? "bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]"
+                      : "bg-[var(--bg-hover)] text-[var(--text-muted)]"
                   }`}>
                     {entry.mode}
                   </span>
-                  <span className="text-[--text-primary]">
+                  <span className="text-[var(--text-primary)]">
                     {entry.endpoint === "design-md" ? "DESIGN.md" : "Test query"}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 text-[--text-muted]">
+                <div className="flex items-center gap-3 text-[var(--text-muted)]">
                   <span>{((entry.inputTokens + entry.outputTokens) / 1000).toFixed(1)}k tok</span>
                   <span>£{entry.costEstimateGbp.toFixed(3)}</span>
                 </div>

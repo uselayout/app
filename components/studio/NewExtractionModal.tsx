@@ -83,20 +83,20 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
         className="absolute inset-0 bg-black/95 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-lg rounded-xl border border-[--studio-border-strong] bg-[var(--bg-elevated)] p-6 shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+      <div className="relative z-10 w-full max-w-lg rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] p-6 shadow-[0_0_80px_rgba(0,0,0,0.6)]">
         {/* Header */}
         <div className="mb-5 flex items-start justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-[--text-primary]">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">
               New Extraction
             </h2>
-            <p className="mt-1 text-xs text-[--text-muted]">
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
               Paste a Figma or website URL to extract a design system
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-[--text-muted] hover:text-[--text-primary] transition-colors"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -112,12 +112,12 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
               autoFocus
-              className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[#010101] px-4 py-3 pr-10 text-sm text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+              className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[#010101] px-4 py-3 pr-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
             />
             {sourceType && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 {isFigma ? (
-                  <Layers className="h-4 w-4 text-[--studio-accent]" />
+                  <Layers className="h-4 w-4 text-[var(--studio-accent)]" />
                 ) : (
                   <Globe className="h-4 w-4 text-emerald-400" />
                 )}
@@ -133,7 +133,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
               value={pat}
               onChange={(e) => setPat(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
-              className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[#010101] px-4 py-3 text-sm text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+              className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[#010101] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
             />
           )}
         </div>
@@ -142,14 +142,14 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
         <div className="mt-5 flex items-center justify-end gap-3">
           <button
             onClick={onClose}
-            className="rounded-lg px-4 py-2 text-xs text-[--text-muted] hover:text-[--text-primary] transition-colors"
+            className="rounded-lg px-4 py-2 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleExtract}
             disabled={!isValid}
-            className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium text-[--text-secondary] hover:text-[--text-primary] disabled:opacity-30 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-30 transition-colors"
           >
             Extract
             <ArrowRight className="h-3.5 w-3.5" />

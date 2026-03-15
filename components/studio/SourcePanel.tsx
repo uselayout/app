@@ -29,8 +29,8 @@ export function SourcePanel({
 
   if (!extractionData) {
     return (
-      <div className="flex h-full flex-col items-center justify-center bg-[--bg-panel] p-6">
-        <p className="text-sm text-[--text-muted]">
+      <div className="flex h-full flex-col items-center justify-center bg-[var(--bg-panel)] p-6">
+        <p className="text-sm text-[var(--text-muted)]">
           No extraction data yet. Extract a design system to see tokens here.
         </p>
       </div>
@@ -45,17 +45,17 @@ export function SourcePanel({
   ];
 
   return (
-    <div className="flex h-full flex-col bg-[--bg-panel]">
+    <div className="flex h-full flex-col bg-[var(--bg-panel)]">
       {/* Tabs */}
-      <div className="flex border-b border-[--studio-border]">
+      <div className="flex border-b border-[var(--studio-border)]">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
               activeTab === tab.id
-                ? "border-b-2 border-[--studio-accent] text-[--text-primary]"
-                : "text-[--text-muted] hover:text-[--text-secondary]"
+                ? "border-b-2 border-[var(--studio-accent)] text-[var(--text-primary)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
             }`}
           >
             {tab.label}
@@ -113,22 +113,22 @@ function TokenSectionHeader({
       className="group flex w-full items-center gap-1.5 px-2 py-2 text-left"
     >
       <ChevronRight
-        className={`h-3 w-3 text-[--text-muted] transition-transform duration-150 ${
+        className={`h-3 w-3 text-[var(--text-muted)] transition-transform duration-150 ${
           open ? "rotate-90" : ""
         }`}
       />
-      <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[--text-muted]">
+      <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
         {label} ({count})
       </span>
       <span
         onClick={handleCopy}
-        className="shrink-0 rounded p-1 opacity-0 transition-opacity hover:bg-[--bg-hover] group-hover:opacity-100"
+        className="shrink-0 rounded p-1 opacity-0 transition-opacity hover:bg-[var(--bg-hover)] group-hover:opacity-100"
         title={`Copy all ${label.toLowerCase()}`}
       >
         {copied ? (
           <Check className="h-3 w-3 text-emerald-400" />
         ) : (
-          <Copy className="h-3 w-3 text-[--text-muted]" />
+          <Copy className="h-3 w-3 text-[var(--text-muted)]" />
         )}
       </span>
     </button>
@@ -173,7 +173,7 @@ function TokensTab({
 
   if (sections.length === 0) {
     return (
-      <div className="p-4 text-xs text-[--text-muted]">
+      <div className="p-4 text-xs text-[var(--text-muted)]">
         No tokens extracted.
       </div>
     );
@@ -220,25 +220,25 @@ function TokenRow({ token }: { token: ExtractedToken }) {
   return (
     <button
       onClick={handleCopy}
-      className="group flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-[--bg-hover]"
+      className="group flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-[var(--bg-hover)]"
     >
       {isColor && (
         <span
-          className="h-4 w-4 shrink-0 rounded-full border border-[--studio-border]"
+          className="h-4 w-4 shrink-0 rounded-full border border-[var(--studio-border)]"
           style={{ backgroundColor: token.value }}
         />
       )}
-      <span className="min-w-0 flex-1 truncate text-xs text-[--text-primary]">
+      <span className="min-w-0 flex-1 truncate text-xs text-[var(--text-primary)]">
         {token.cssVariable ?? token.name}
       </span>
-      <span className="shrink-0 text-xs text-[--text-muted]">
+      <span className="shrink-0 text-xs text-[var(--text-muted)]">
         {token.value}
       </span>
       <span className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
         {copied ? (
           <Check className="h-3 w-3 text-emerald-400" />
         ) : (
-          <Copy className="h-3 w-3 text-[--text-muted]" />
+          <Copy className="h-3 w-3 text-[var(--text-muted)]" />
         )}
       </span>
     </button>
@@ -252,7 +252,7 @@ function ComponentsTab({
 }) {
   if (components.length === 0) {
     return (
-      <div className="p-4 text-xs text-[--text-muted]">
+      <div className="p-4 text-xs text-[var(--text-muted)]">
         No components extracted.
       </div>
     );
@@ -263,29 +263,29 @@ function ComponentsTab({
       {components.map((component) => (
         <div
           key={component.name}
-          className="flex items-center gap-2 rounded px-2 py-2 transition-colors hover:bg-[--bg-hover]"
+          className="flex items-center gap-2 rounded px-2 py-2 transition-colors hover:bg-[var(--bg-hover)]"
         >
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="truncate text-xs font-medium text-[--text-primary]">
+              <span className="truncate text-xs font-medium text-[var(--text-primary)]">
                 {component.name}
               </span>
               {component.variantCount > 0 && (
                 <Badge
                   variant="secondary"
-                  className="bg-[--bg-elevated] text-[--text-muted] text-[10px] px-1.5 py-0"
+                  className="bg-[var(--bg-elevated)] text-[var(--text-muted)] text-[10px] px-1.5 py-0"
                 >
                   {component.variantCount} variants
                 </Badge>
               )}
             </div>
             {component.description && (
-              <p className="mt-0.5 truncate text-[10px] text-[--text-muted]">
+              <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
                 {component.description}
               </p>
             )}
           </div>
-          <ExternalLink className="h-3 w-3 shrink-0 text-[--text-muted]" />
+          <ExternalLink className="h-3 w-3 shrink-0 text-[var(--text-muted)]" />
         </div>
       ))}
     </div>
@@ -306,7 +306,7 @@ function ScreenshotsTab({ screenshots }: { screenshots: string[] }) {
 
   if (screenshots.length === 0) {
     return (
-      <div className="p-4 text-xs text-[--text-muted]">
+      <div className="p-4 text-xs text-[var(--text-muted)]">
         No screenshots captured. Screenshots are only available for website extractions.
       </div>
     );
@@ -319,7 +319,7 @@ function ScreenshotsTab({ screenshots }: { screenshots: string[] }) {
           <button
             key={i}
             onClick={() => setLightboxIdx(i)}
-            className="overflow-hidden rounded border border-[--studio-border] transition-colors hover:border-[--studio-border-strong]"
+            className="overflow-hidden rounded border border-[var(--studio-border)] transition-colors hover:border-[var(--studio-border-strong)]"
           >
             <img
               src={src.startsWith("data:") || src.startsWith("http") ? src : `data:image/png;base64,${src}`}
@@ -337,9 +337,9 @@ function ScreenshotsTab({ screenshots }: { screenshots: string[] }) {
         >
           <button
             onClick={() => setLightboxIdx(null)}
-            className="absolute top-4 right-4 rounded-full bg-[--bg-panel] p-2 hover:bg-[--bg-elevated]"
+            className="absolute top-4 right-4 rounded-full bg-[var(--bg-panel)] p-2 hover:bg-[var(--bg-elevated)]"
           >
-            <X className="h-5 w-5 text-[--text-primary]" />
+            <X className="h-5 w-5 text-[var(--text-primary)]" />
           </button>
           <img
             src={

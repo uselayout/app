@@ -100,25 +100,25 @@ export function FigmaImportModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
-      <div className="relative w-full max-w-xl rounded-xl border border-[--studio-border-strong] bg-[--bg-panel] shadow-2xl">
+      <div className="relative w-full max-w-xl rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-panel)] shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[--studio-border] px-5 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[--studio-accent-subtle]">
-              <Download size={16} className="text-[--studio-accent]" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--studio-accent-subtle)]">
+              <Download size={16} className="text-[var(--studio-accent)]" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-[--text-primary]">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
                 Import from Figma
               </h2>
-              <p className="text-xs text-[--text-secondary]">
+              <p className="text-xs text-[var(--text-secondary)]">
                 Pull design changes back into Studio
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-1.5 text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+            className="rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
           >
             <X size={16} />
           </button>
@@ -129,7 +129,7 @@ export function FigmaImportModal({
           {step === "input" && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-medium text-[--text-primary]">
+                <label className="text-xs font-medium text-[var(--text-primary)]">
                   Figma Frame URL
                 </label>
                 <input
@@ -137,12 +137,12 @@ export function FigmaImportModal({
                   value={figmaUrl}
                   onChange={(e) => setFigmaUrl(e.target.value)}
                   placeholder="https://www.figma.com/design/abc123/File-Name?node-id=1-2"
-                  className="w-full rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-2 text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+                  className="w-full rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-medium text-[--text-primary]">
+                <label className="text-xs font-medium text-[var(--text-primary)]">
                   Figma Personal Access Token
                 </label>
                 <input
@@ -150,9 +150,9 @@ export function FigmaImportModal({
                   value={pat}
                   onChange={(e) => setPat(e.target.value)}
                   placeholder="figd_..."
-                  className="w-full rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-2 text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors font-mono"
+                  className="w-full rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors font-mono"
                 />
-                <p className="text-[10px] text-[--text-muted]">
+                <p className="text-[10px] text-[var(--text-muted)]">
                   Stored in session only. Generate at figma.com → Settings → Personal access tokens.
                 </p>
               </div>
@@ -168,12 +168,12 @@ export function FigmaImportModal({
 
           {step === "loading" && (
             <div className="flex flex-col items-center gap-4 py-8">
-              <Loader2 size={24} className="animate-spin text-[--studio-accent]" />
+              <Loader2 size={24} className="animate-spin text-[var(--studio-accent)]" />
               <div className="text-center">
-                <p className="text-sm font-medium text-[--text-primary]">
+                <p className="text-sm font-medium text-[var(--text-primary)]">
                   Importing from Figma...
                 </p>
-                <p className="mt-1 text-xs text-[--text-secondary]">
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
                   Fetching node data and generating screenshot
                 </p>
               </div>
@@ -184,7 +184,7 @@ export function FigmaImportModal({
             <div className="space-y-4">
               {/* Screenshot */}
               {result.node.screenshotUrl && (
-                <div className="overflow-hidden rounded-lg border border-[--studio-border] bg-white">
+                <div className="overflow-hidden rounded-lg border border-[var(--studio-border)] bg-white">
                   <img
                     src={result.node.screenshotUrl}
                     alt={result.node.name}
@@ -195,10 +195,10 @@ export function FigmaImportModal({
               )}
 
               <div>
-                <h3 className="text-xs font-semibold text-[--text-primary]">
+                <h3 className="text-xs font-semibold text-[var(--text-primary)]">
                   {result.node.name}
                 </h3>
-                <p className="mt-0.5 text-[11px] text-[--text-secondary]">
+                <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
                   {changes.length === 0
                     ? "No differences found between Figma and your design system."
                     : `${changes.length} change${changes.length === 1 ? "" : "s"} detected. Select which to apply to DESIGN.md.`}
@@ -226,10 +226,10 @@ export function FigmaImportModal({
                 <Check size={24} className="text-emerald-400" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-[--text-primary]">
+                <p className="text-sm font-medium text-[var(--text-primary)]">
                   Import complete
                 </p>
-                <p className="mt-1 text-xs text-[--text-secondary]">
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
                   {acceptedCount > 0
                     ? `${acceptedCount} change${acceptedCount === 1 ? "" : "s"} applied to DESIGN.md.`
                     : "No changes applied."}
@@ -240,19 +240,19 @@ export function FigmaImportModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 border-t border-[--studio-border] px-5 py-3">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--studio-border)] px-5 py-3">
           {step === "input" && (
             <>
               <button
                 onClick={onClose}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleImport}
                 disabled={!figmaUrl.trim() || !pat.trim()}
-                className="flex items-center gap-1.5 rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 rounded-lg bg-[var(--studio-accent)] px-4 py-1.5 text-xs font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Download size={12} />
                 Import
@@ -263,7 +263,7 @@ export function FigmaImportModal({
             <>
               <button
                 onClick={onClose}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
               >
                 Cancel
               </button>
@@ -281,7 +281,7 @@ export function FigmaImportModal({
           {step === "done" && (
             <button
               onClick={onClose}
-              className="rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] transition-colors"
+              className="rounded-lg bg-[var(--studio-accent)] px-4 py-1.5 text-xs font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors"
             >
               Done
             </button>
@@ -315,7 +315,7 @@ function ChangeRow({
       className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-all ${
         change.accepted
           ? "border-emerald-500/30 bg-emerald-500/5"
-          : "border-[--studio-border] bg-[--bg-surface] hover:bg-[--bg-hover]"
+          : "border-[var(--studio-border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)]"
       }`}
     >
       {/* Checkbox */}
@@ -323,7 +323,7 @@ function ChangeRow({
         className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
           change.accepted
             ? "border-emerald-500 bg-emerald-500"
-            : "border-[--studio-border-strong] bg-transparent"
+            : "border-[var(--studio-border-strong)] bg-transparent"
         }`}
       >
         {change.accepted && <Check size={10} className="text-white" />}
@@ -340,7 +340,7 @@ function ChangeRow({
 
       {/* Values */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs text-[--text-primary]">
+        <p className="truncate text-xs text-[var(--text-primary)]">
           {change.property}
         </p>
         <div className="flex items-center gap-1.5 mt-0.5">
@@ -349,7 +349,7 @@ function ChangeRow({
               {change.before}
             </code>
           )}
-          {change.before && <ArrowRight size={8} className="text-[--text-muted]" />}
+          {change.before && <ArrowRight size={8} className="text-[var(--text-muted)]" />}
           <code className="text-[10px] text-emerald-400 font-mono">
             {change.after}
           </code>
@@ -358,7 +358,7 @@ function ChangeRow({
 
       {/* Token match */}
       {change.designTokenMatch && (
-        <code className="shrink-0 text-[10px] text-[--text-muted] font-mono">
+        <code className="shrink-0 text-[10px] text-[var(--text-muted)] font-mono">
           {change.designTokenMatch}
         </code>
       )}

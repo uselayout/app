@@ -61,25 +61,25 @@ export function FigmaPushModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-xl border border-[--studio-border-strong] bg-[var(--bg-elevated)] shadow-2xl">
+      <div className="relative w-full max-w-lg rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[--studio-border] px-5 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[--bg-surface]">
-              <Figma size={16} className="text-[--text-primary]" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--bg-surface)]">
+              <Figma size={16} className="text-[var(--text-primary)]" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-[--text-primary]">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
                 Push to Figma
               </h2>
-              <p className="text-xs text-[--text-secondary]">
+              <p className="text-xs text-[var(--text-secondary)]">
                 {variant.name}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-1.5 text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+            className="rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
           >
             <X size={16} />
           </button>
@@ -90,12 +90,12 @@ export function FigmaPushModal({
           {step === "preview" && (
             <>
               {/* Prerequisites */}
-              <div className="flex items-start gap-2.5 rounded-lg border border-[--studio-accent]/30 bg-[--studio-accent]/5 px-3.5 py-2.5">
-                <Info size={14} className="mt-0.5 shrink-0 text-[--studio-accent]" />
-                <div className="text-xs text-[--text-secondary] leading-relaxed">
-                  <span className="font-medium text-[--text-primary]">Requires the Layout MCP server.</span>{" "}
+              <div className="flex items-start gap-2.5 rounded-lg border border-[var(--studio-accent)]/30 bg-[var(--studio-accent)]/5 px-3.5 py-2.5">
+                <Info size={14} className="mt-0.5 shrink-0 text-[var(--studio-accent)]" />
+                <div className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                  <span className="font-medium text-[var(--text-primary)]">Requires the Layout MCP server.</span>{" "}
                   Install with{" "}
-                  <code className="rounded bg-[--bg-surface] px-1 py-0.5 font-mono text-[10px] text-[--text-primary]">
+                  <code className="rounded bg-[var(--bg-surface)] px-1 py-0.5 font-mono text-[10px] text-[var(--text-primary)]">
                     npx @layoutdesign/context install
                   </code>{" "}
                   and the{" "}
@@ -103,7 +103,7 @@ export function FigmaPushModal({
                     href="https://mcp.figma.com"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-medium text-[--studio-accent] hover:underline"
+                    className="font-medium text-[var(--studio-accent)] hover:underline"
                   >
                     Figma MCP server
                   </a>.
@@ -112,7 +112,7 @@ export function FigmaPushModal({
 
               {/* Instructions */}
               <div className="space-y-3">
-                <p className="text-xs text-[--text-secondary]">
+                <p className="text-xs text-[var(--text-secondary)]">
                   Copy the command below and run it in your AI coding agent
                   (Claude Code, Cursor, etc.) to push this component to Figma.
                 </p>
@@ -139,7 +139,7 @@ export function FigmaPushModal({
 
               {/* Viewport selection */}
               <div>
-                <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-[--text-muted]">
+                <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
                   Viewports to push
                 </p>
                 <div className="flex gap-1.5">
@@ -152,7 +152,7 @@ export function FigmaPushModal({
                         className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                           active
                             ? "bg-emerald-600 text-white"
-                            : "bg-[--bg-surface] text-[--text-muted] hover:text-[--text-secondary] hover:bg-[--bg-hover]"
+                            : "bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                         }`}
                       >
                         <Icon size={12} />
@@ -165,7 +165,7 @@ export function FigmaPushModal({
 
               {/* Target Figma file (optional) */}
               <div>
-                <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-[--text-muted]">
+                <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
                   Figma file (optional)
                 </p>
                 <input
@@ -173,19 +173,19 @@ export function FigmaPushModal({
                   value={figmaUrl}
                   onChange={(e) => setFigmaUrl(e.target.value)}
                   placeholder="https://www.figma.com/design/... — leave blank to create new"
-                  className="w-full rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-2 text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+                  className="w-full rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
                 />
               </div>
 
               {/* Command block */}
-              <div className="rounded-lg border border-[--studio-border] bg-[--bg-surface] overflow-hidden">
-                <div className="flex items-center justify-between border-b border-[--studio-border] px-3 py-2">
-                  <span className="text-[10px] font-medium uppercase tracking-wider text-[--text-muted]">
+              <div className="rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] overflow-hidden">
+                <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-3 py-2">
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
                     MCP Command
                   </span>
                   <button
                     onClick={() => handleCopy(mcpCommand, "command")}
-                    className="flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+                    className="flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
                   >
                     {copiedField === "command" ? (
                       <>
@@ -200,22 +200,22 @@ export function FigmaPushModal({
                     )}
                   </button>
                 </div>
-                <pre className="p-3 text-xs text-[--text-primary] font-mono leading-relaxed overflow-x-auto max-h-40">
+                <pre className="p-3 text-xs text-[var(--text-primary)] font-mono leading-relaxed overflow-x-auto max-h-40">
                   {mcpCommand}
                 </pre>
               </div>
 
               {/* Code block */}
               <details className="group">
-                <summary className="flex cursor-pointer items-center gap-1.5 text-xs text-[--text-muted] hover:text-[--text-secondary] transition-colors">
+                <summary className="flex cursor-pointer items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">
                   <span className="group-open:rotate-90 transition-transform">▸</span>
                   View component code ({variant.code.split("\n").length} lines)
                 </summary>
-                <div className="mt-2 rounded-lg border border-[--studio-border] bg-[--bg-surface] overflow-hidden">
-                  <div className="flex items-center justify-end border-b border-[--studio-border] px-3 py-1.5">
+                <div className="mt-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] overflow-hidden">
+                  <div className="flex items-center justify-end border-b border-[var(--studio-border)] px-3 py-1.5">
                     <button
                       onClick={() => handleCopy(variant.code, "code")}
-                      className="flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+                      className="flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
                     >
                       {copiedField === "code" ? (
                         <>
@@ -230,7 +230,7 @@ export function FigmaPushModal({
                       )}
                     </button>
                   </div>
-                  <pre className="p-3 text-[11px] text-[--text-secondary] font-mono leading-relaxed overflow-x-auto max-h-48">
+                  <pre className="p-3 text-[11px] text-[var(--text-secondary)] font-mono leading-relaxed overflow-x-auto max-h-48">
                     {variant.code}
                   </pre>
                 </div>
@@ -251,13 +251,13 @@ export function FigmaPushModal({
                 </svg>
                 <Loader2
                   size={14}
-                  className="absolute -right-1 -bottom-0.5 animate-spin text-[--text-secondary]"
+                  className="absolute -right-1 -bottom-0.5 animate-spin text-[var(--text-secondary)]"
                 />
               </div>
 
               {/* Text */}
               <div className="text-center space-y-1">
-                <p className="text-sm font-medium text-[--text-primary]">
+                <p className="text-sm font-medium text-[var(--text-primary)]">
                   Waiting for Figma push...
                 </p>
                 <p className="text-xs leading-4 text-[#8e8e95]">
@@ -268,7 +268,7 @@ export function FigmaPushModal({
 
               {/* Figma URL input */}
               <div className="w-full space-y-2.5">
-                <p className="text-xs text-[--text-primary]">
+                <p className="text-xs text-[var(--text-primary)]">
                   Paste the Figma frame URL after pushing (optional):
                 </p>
                 <input
@@ -276,7 +276,7 @@ export function FigmaPushModal({
                   value={figmaUrl}
                   onChange={(e) => setFigmaUrl(e.target.value)}
                   placeholder="https://www.figma.com/design/..."
-                  className="w-full h-[34px] rounded-md border border-[rgba(255,255,255,0.07)] bg-[#010101] px-3 text-xs text-[--text-primary] placeholder:text-[--text-muted] outline-none focus:border-[--studio-border-focus] transition-colors"
+                  className="w-full h-[34px] rounded-md border border-[rgba(255,255,255,0.07)] bg-[#010101] px-3 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
                 />
               </div>
             </div>
@@ -288,10 +288,10 @@ export function FigmaPushModal({
                 <Check size={24} className="text-emerald-400" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-[--text-primary]">
+                <p className="text-sm font-medium text-[var(--text-primary)]">
                   Pushed to Figma
                 </p>
-                <p className="mt-1 text-xs text-[--text-secondary]">
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
                   &ldquo;{variant.name}&rdquo; is now in your Figma file.
                   Edit it there, then import changes back into Studio.
                 </p>
@@ -301,7 +301,7 @@ export function FigmaPushModal({
                   href={figmaUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 rounded-lg border border-[--studio-border] bg-[--bg-surface] px-3 py-2 text-xs font-medium text-[--text-primary] hover:bg-[--bg-hover] transition-colors"
+                  className="flex items-center gap-1.5 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
                 >
                   <ExternalLink size={12} />
                   Open in Figma
@@ -312,12 +312,12 @@ export function FigmaPushModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 border-t border-[--studio-border] px-5 py-3">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--studio-border)] px-5 py-3">
           {step === "preview" && (
             <>
               <button
                 onClick={onClose}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium text-[--text-secondary] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors"
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
               >
                 Cancel
               </button>
@@ -326,7 +326,7 @@ export function FigmaPushModal({
                   handleCopy(mcpCommand, "command");
                   setStep("pushing");
                 }}
-                className="flex items-center gap-1.5 rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] transition-colors"
+                className="flex items-center gap-1.5 rounded-lg bg-[var(--studio-accent)] px-4 py-1.5 text-xs font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors"
               >
                 <Copy size={12} />
                 Copy &amp; Continue
@@ -337,7 +337,7 @@ export function FigmaPushModal({
             <>
               <button
                 onClick={() => setStep("preview")}
-                className="h-7 rounded-md px-3 text-xs font-medium text-[--text-primary] hover:bg-[--bg-hover] transition-colors"
+                className="h-7 rounded-md px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
               >
                 Back
               </button>
@@ -353,7 +353,7 @@ export function FigmaPushModal({
           {step === "done" && (
             <button
               onClick={onClose}
-              className="rounded-lg bg-[--studio-accent] px-4 py-1.5 text-xs font-medium text-[--text-on-accent] hover:bg-[--studio-accent-hover] transition-colors"
+              className="rounded-lg bg-[var(--studio-accent)] px-4 py-1.5 text-xs font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors"
             >
               Done
             </button>
@@ -377,12 +377,12 @@ function StepItem({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[--studio-accent-subtle] text-[10px] font-bold text-[--studio-accent]">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--studio-accent-subtle)] text-[10px] font-bold text-[var(--studio-accent)]">
         {number}
       </span>
       <div>
-        <p className="text-xs font-medium text-[--text-primary]">{label}</p>
-        <p className="text-[11px] text-[--text-muted]">{description}</p>
+        <p className="text-xs font-medium text-[var(--text-primary)]">{label}</p>
+        <p className="text-[11px] text-[var(--text-muted)]">{description}</p>
       </div>
     </div>
   );

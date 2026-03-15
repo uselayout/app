@@ -170,15 +170,15 @@ export default function StudioPage({
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="space-y-4 text-center">
-          <h2 className="text-lg font-medium text-[--text-primary]">
+          <h2 className="text-lg font-medium text-[var(--text-primary)]">
             Project not found
           </h2>
-          <p className="text-sm text-[--text-secondary]">
+          <p className="text-sm text-[var(--text-secondary)]">
             This project may have been deleted or the URL is incorrect.
           </p>
           <a
             href="/"
-            className="inline-block rounded-md bg-[--studio-accent] px-4 py-2 text-sm text-[--text-on-accent] transition-colors hover:bg-[--studio-accent-hover]"
+            className="inline-block rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)]"
           >
             Start a new extraction
           </a>
@@ -210,13 +210,13 @@ export default function StudioPage({
     {/* Mobile gate */}
     <div className="flex md:hidden h-screen flex-col items-center justify-center px-6 text-center">
       <img src="/marketing/logo-white.svg" alt="Layout" width={100} height={24} className="mb-6" />
-      <h2 className="text-lg font-semibold text-[--text-primary]">Desktop only</h2>
-      <p className="mt-2 max-w-xs text-sm text-[--text-secondary]">
+      <h2 className="text-lg font-semibold text-[var(--text-primary)]">Desktop only</h2>
+      <p className="mt-2 max-w-xs text-sm text-[var(--text-secondary)]">
         Layout needs a larger screen to work properly. Please open this page on a desktop browser.
       </p>
       <a
         href="/studio"
-        className="mt-6 rounded-md bg-[--bg-surface] px-4 py-2 text-sm font-medium text-[--text-primary] hover:bg-[--bg-hover] transition-colors"
+        className="mt-6 rounded-md bg-[var(--bg-surface)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
       >
         Back to projects
       </a>
