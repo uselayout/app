@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
 import type {
@@ -37,30 +38,34 @@ export function SourcePanel({
     );
   }
 
-  const tabs: { id: TabId; label: string }[] = [
-    { id: "tokens", label: "Tokens" },
-    { id: "components", label: "Components" },
-    { id: "screenshots", label: "Screenshots" },
-    { id: "quality", label: "Quality" },
+  const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
+    { id: "tokens", label: "Tokens", icon: Palette },
+    { id: "components", label: "Components", icon: LayoutGrid },
+    { id: "screenshots", label: "Screenshots", icon: Image },
+    { id: "quality", label: "Quality", icon: Gauge },
   ];
 
   return (
     <div className="flex h-full flex-col bg-[var(--bg-panel)]">
       {/* Tabs */}
-      <div className="flex border-b border-[var(--studio-border)]">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
-              activeTab === tab.id
-                ? "border-b-2 border-[var(--studio-accent)] text-[var(--text-primary)]"
-                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex items-center gap-1 border-b border-[var(--studio-border)] px-2 py-1.5">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              title={tab.label}
+              className={`flex size-7 items-center justify-center rounded-md transition-all ${
+                activeTab === tab.id
+                  ? "bg-[rgba(255,255,255,0.1)] text-white"
+                  : "text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-secondary)]"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </button>
+          );
+        })}
       </div>
 
       {/* Content */}
