@@ -16,6 +16,13 @@ const AuditIcon = () => (
   </svg>
 );
 
+const WebhookIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 7.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M10 12.5V17.5M6.25 7.5L3.333 2.5M13.75 7.5l2.917-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 const TemplateIcon = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="2.5" y="2.5" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -92,6 +99,26 @@ export default function SettingsPage() {
             </p>
             <p className="text-xs text-[var(--text-muted)]">
               Publish your design system as a reusable template
+            </p>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[var(--text-muted)]">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </Link>
+
+        <Link
+          href={`/${orgSlug}/settings/webhooks`}
+          className="flex items-center gap-4 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4 transition-all duration-[var(--duration-base)] hover:border-[var(--studio-border-strong)] hover:bg-[var(--bg-hover)]"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]">
+            <WebhookIcon />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-[var(--text-primary)]">
+              Webhooks
+            </p>
+            <p className="text-xs text-[var(--text-muted)]">
+              Configure Figma webhooks for automatic design sync
             </p>
           </div>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[var(--text-muted)]">
