@@ -277,6 +277,7 @@ export default function StudioPage({
               sourceType={project.sourceType}
               sourceUrl={project.sourceUrl}
               designMd={project.designMd}
+              projectId={project.id}
             />
           }
           editorPanel={

@@ -2,10 +2,11 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
+import { useProjectStore } from "@/lib/store/project";
 import type {
   ExtractionResult,
   ExtractedToken,
@@ -18,6 +19,7 @@ interface SourcePanelProps {
   sourceType: SourceType;
   sourceUrl?: string;
   designMd?: string;
+  projectId?: string;
 }
 
 type TabId = "tokens" | "components" | "screenshots" | "quality";
@@ -25,15 +27,43 @@ type TabId = "tokens" | "components" | "screenshots" | "quality";
 export function SourcePanel({
   extractionData,
   designMd,
+  projectId,
 }: SourcePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("tokens");
+  const syncTokensFromDesignMd = useProjectStore((s) => s.syncTokensFromDesignMd);
+  const [syncResult, setSyncResult] = useState<{ count: number } | null>(null);
+
+  const handleSyncTokens = useCallback(() => {
+    if (!projectId) return;
+    const count = syncTokensFromDesignMd(projectId);
+    setSyncResult({ count });
+    setTimeout(() => setSyncResult(null), 3000);
+  }, [projectId, syncTokensFromDesignMd]);
+
+  const hasDesignMd = !!designMd && designMd.length > 0;
 
   if (!extractionData) {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-[var(--bg-panel)] p-6">
-        <p className="text-sm text-[var(--text-muted)]">
+        <p className="text-sm text-[var(--text-muted)] text-center">
           No extraction data yet. Extract a design system to see tokens here.
         </p>
+        {hasDesignMd && projectId && (
+          <button
+            onClick={handleSyncTokens}
+            className="mt-3 flex items-center gap-1.5 rounded-md bg-[var(--bg-elevated)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Sync tokens from DESIGN.md
+          </button>
+        )}
+        {syncResult && (
+          <p className="mt-2 text-xs text-emerald-400">
+            {syncResult.count > 0
+              ? `Synced ${syncResult.count} tokens from DESIGN.md`
+              : "No tokens found in DESIGN.md"}
+          </p>
+        )}
       </div>
     );
   }
@@ -66,7 +96,25 @@ export function SourcePanel({
             </button>
           );
         })}
+        <div className="flex-1" />
+        {hasDesignMd && projectId && activeTab === "tokens" && (
+          <button
+            onClick={handleSyncTokens}
+            title="Sync tokens from DESIGN.md"
+            className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] text-[var(--text-muted)] transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-secondary)]"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Sync
+          </button>
+        )}
       </div>
+      {syncResult && (
+        <div className={`px-2 py-1.5 text-xs ${syncResult.count > 0 ? "text-emerald-400 bg-emerald-500/5" : "text-[var(--text-muted)] bg-[var(--bg-surface)]"}`}>
+          {syncResult.count > 0
+            ? `Synced ${syncResult.count} tokens from DESIGN.md`
+            : "No tokens found in DESIGN.md"}
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
