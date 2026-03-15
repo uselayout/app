@@ -267,7 +267,7 @@ export function ExtractionDiffModal({
             <button
               type="button"
               onClick={onAccept}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-white bg-[--studio-accent] hover:bg-[--studio-accent-hover] transition-all duration-[--duration-base]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-[--text-on-accent] bg-[--studio-accent] hover:bg-[--studio-accent-hover] transition-all duration-[--duration-base]"
             >
               <Check className="w-3.5 h-3.5" />
               Accept Changes
@@ -377,7 +377,7 @@ export function ExtractionDiffModal({
           <button
             type="button"
             onClick={onAccept}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium text-white bg-[--studio-accent] hover:bg-[--studio-accent-hover] transition-all duration-[--duration-base]"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium text-[--text-on-accent] bg-[--studio-accent] hover:bg-[--studio-accent-hover] transition-all duration-[--duration-base]"
           >
             <Check className="w-4 h-4" />
             Accept Changes

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { extractComponentName, buildSrcdoc } from "@/lib/explore/preview-helpers";
 import { CandidateCommentThread } from "@/components/dashboard/CandidateCommentThread";
@@ -187,6 +188,11 @@ export function CandidateReview({
   canReview,
   onStatusChange,
 }: CandidateReviewProps) {
+  const params = useParams();
+  const projectId = (params?.projectId as string) ?? "";
+  const candidatesBase = projectId
+    ? `/${orgSlug}/projects/${projectId}/candidates`
+    : `/${orgSlug}/candidates`;
   const [selectedVariantIndex, setSelectedVariantIndex] = useState<
     number | null
   >(candidate.selectedVariantIndex);
@@ -262,7 +268,7 @@ export function CandidateReview({
       {/* Header */}
       <div className="mb-6">
         <Link
-          href={`/${orgSlug}/candidates`}
+          href={candidatesBase}
           className="mb-3 inline-flex items-center gap-1 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           &larr; Candidates

@@ -8,7 +8,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <ProjectHydrator />
       <div className="flex h-screen bg-[var(--bg-app)]">
         <Sidebar />
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="relative flex-1 overflow-auto">{children}</main>
       </div>
     </OrgProvider>
   );

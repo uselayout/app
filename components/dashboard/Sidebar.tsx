@@ -3,16 +3,19 @@
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { OrgSwitcher } from "./OrgSwitcher";
+import { ProjectSwitcher } from "./ProjectSwitcher";
 
 interface NavItem {
   label: string;
   href: string;
+  segment: string;
   icon: React.ReactNode;
 }
 
-const FolderIcon = () => (
+const StudioIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2 4a1 1 0 011-1h3.586a1 1 0 01.707.293L8.414 4.414A1 1 0 009.12 4.707H13a1 1 0 011 1V12a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M5.5 2.5v11M10.5 2.5v11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 );
 
@@ -63,6 +66,13 @@ const AnalyticsIcon = () => (
   </svg>
 );
 
+const DocsIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 2.5A1.5 1.5 0 013.5 1H10l4 4v8.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 13.5v-11z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M10 1v4h4M5.5 8h5M5.5 10.5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 const SettingsIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M8 10a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -74,55 +84,71 @@ export function Sidebar() {
   const params = useParams();
   const pathname = usePathname();
   const orgSlug = typeof params?.org === "string" ? params.org : "";
+  const projectId = typeof params?.projectId === "string" ? params.projectId : "";
+
+  const projectBase = projectId
+    ? `/${orgSlug}/projects/${projectId}`
+    : `/${orgSlug}`;
 
   const navItems: NavItem[] = [
     {
-      label: "Projects",
-      href: `/${orgSlug}`,
-      icon: <FolderIcon />,
+      label: "Studio",
+      href: `${projectBase}/studio`,
+      segment: "studio",
+      icon: <StudioIcon />,
     },
     {
       label: "Library",
-      href: `/${orgSlug}/library`,
+      href: `${projectBase}/library`,
+      segment: "library",
       icon: <LibraryIcon />,
     },
     {
       label: "Tokens",
-      href: `/${orgSlug}/tokens`,
+      href: `${projectBase}/tokens`,
+      segment: "tokens",
       icon: <TokensIcon />,
     },
     {
       label: "Typography",
-      href: `/${orgSlug}/typography`,
+      href: `${projectBase}/typography`,
+      segment: "typography",
       icon: <TypographyIcon />,
     },
     {
       label: "Icons",
-      href: `/${orgSlug}/icons`,
+      href: `${projectBase}/icons`,
+      segment: "icons",
       icon: <IconsIcon />,
     },
     {
       label: "Candidates",
-      href: `/${orgSlug}/candidates`,
+      href: `${projectBase}/candidates`,
+      segment: "candidates",
       icon: <CandidatesIcon />,
     },
     {
       label: "Drift",
-      href: `/${orgSlug}/drift`,
+      href: `${projectBase}/drift`,
+      segment: "drift",
       icon: <DriftIcon />,
     },
     {
       label: "Analytics",
-      href: `/${orgSlug}/analytics`,
+      href: `${projectBase}/analytics`,
+      segment: "analytics",
       icon: <AnalyticsIcon />,
     },
   ];
 
-  function isActive(href: string): boolean {
-    if (href === `/${orgSlug}`) {
-      return pathname === href;
+  function isActive(segment: string): boolean {
+    if (!pathname || !projectId) return false;
+    const prefix = `/${orgSlug}/projects/${projectId}/`;
+    if (pathname.startsWith(prefix)) {
+      const current = pathname.slice(prefix.length).split("/")[0];
+      return current === segment;
     }
-    return pathname?.startsWith(href) ?? false;
+    return false;
   }
 
   return (
@@ -132,17 +158,24 @@ export function Sidebar() {
         <OrgSwitcher />
       </div>
 
+      {/* Project Switcher */}
+      <div className="border-b border-[var(--studio-border)] p-3">
+        <ProjectSwitcher />
+      </div>
+
       {/* Nav items */}
       <nav className="flex-1 p-2">
         <ul className="space-y-1">
           {navItems.map((item) => (
-            <li key={item.href}>
+            <li key={item.segment}>
               <Link
-                href={item.href}
+                href={projectId ? item.href : `/${orgSlug}`}
                 className={`flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm transition-all duration-[var(--duration-base)] ${
-                  isActive(item.href)
+                  isActive(item.segment)
                     ? "bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                    : projectId
+                      ? "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                      : "text-[var(--text-muted)] cursor-default"
                 }`}
               >
                 {item.icon}
@@ -153,8 +186,15 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      {/* Bottom: Settings */}
-      <div className="border-t border-[var(--studio-border)] p-2">
+      {/* Bottom: Docs + Settings */}
+      <div className="border-t border-[var(--studio-border)] p-2 space-y-1">
+        <Link
+          href="/docs"
+          className="flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-all duration-[var(--duration-base)]"
+        >
+          <DocsIcon />
+          Docs
+        </Link>
         <Link
           href={`/${orgSlug}/settings`}
           className={`flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm transition-all duration-[var(--duration-base)] ${

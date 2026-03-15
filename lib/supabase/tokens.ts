@@ -25,6 +25,8 @@ interface TokenRow {
   source: string | null;
   created_at: string;
   updated_at: string;
+  last_synced_at: string | null;
+  modified_locally: boolean;
 }
 
 // ─── Row Mapper ───────────────────────────────────────────────────────────────
@@ -47,6 +49,8 @@ function rowToToken(row: TokenRow): DesignToken {
     source: row.source as DesignTokenSource | null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    lastSyncedAt: row.last_synced_at,
+    modifiedLocally: row.modified_locally,
   };
 }
 
@@ -296,6 +300,139 @@ export async function bulkCreateTokens(
   }
 
   return rows.length;
+}
+
+// ─── Token Sync ──────────────────────────────────────────────────────────────
+
+export interface TokenConflict {
+  slug: string;
+  existingValue: string;
+  newValue: string;
+  tokenId: string;
+}
+
+export interface BulkUpsertResult {
+  created: number;
+  updated: number;
+  unchanged: number;
+  conflicts: TokenConflict[];
+}
+
+export async function bulkUpsertTokens(
+  orgId: string,
+  projectId: string,
+  tokens: Array<{
+    name: string;
+    value: string;
+    type: DesignTokenType;
+    category?: DesignTokenCategory;
+    cssVariable?: string;
+    groupName?: string;
+    sortOrder?: number;
+    description?: string;
+    source?: DesignTokenSource;
+  }>
+): Promise<BulkUpsertResult> {
+  const result: BulkUpsertResult = {
+    created: 0,
+    updated: 0,
+    unchanged: 0,
+    conflicts: [],
+  };
+
+  if (tokens.length === 0) return result;
+
+  const existing = await getTokensByOrg(orgId);
+  const existingBySlug = new Map(existing.map((t) => [t.slug, t]));
+  const now = new Date().toISOString();
+
+  for (const token of tokens) {
+    const slug = nameToTokenSlug(token.name);
+    const match = existingBySlug.get(slug);
+
+    if (!match) {
+      // No existing token — create it
+      const id = crypto.randomUUID();
+      const finalSlug = await uniqueSlug(orgId, slug);
+
+      const { error } = await supabase.from("layout_token").insert({
+        id,
+        org_id: orgId,
+        project_id: projectId,
+        name: token.name,
+        slug: finalSlug,
+        css_variable: token.cssVariable ?? null,
+        type: token.type,
+        category: token.category ?? "primitive",
+        value: token.value,
+        resolved_value: null,
+        group_name: token.groupName ?? token.type,
+        sort_order: token.sortOrder ?? 0,
+        description: token.description ?? null,
+        source: token.source ?? "extracted",
+        created_at: now,
+        updated_at: now,
+        last_synced_at: now,
+        modified_locally: false,
+      });
+
+      if (!error) result.created++;
+      continue;
+    }
+
+    // Existing token with same value — skip
+    if (match.value === token.value) {
+      result.unchanged++;
+      continue;
+    }
+
+    // Value differs and token was modified locally — conflict
+    if (match.modifiedLocally) {
+      result.conflicts.push({
+        slug: match.slug,
+        existingValue: match.value,
+        newValue: token.value,
+        tokenId: match.id,
+      });
+      continue;
+    }
+
+    // Value differs, not locally modified — safe to update
+    const { error } = await supabase
+      .from("layout_token")
+      .update({
+        value: token.value,
+        updated_at: now,
+        last_synced_at: now,
+        modified_locally: false,
+      })
+      .eq("id", match.id);
+
+    if (!error) result.updated++;
+  }
+
+  return result;
+}
+
+export async function resolveConflict(
+  tokenId: string,
+  newValue: string
+): Promise<void> {
+  const now = new Date().toISOString();
+
+  const { error } = await supabase
+    .from("layout_token")
+    .update({
+      value: newValue,
+      modified_locally: false,
+      last_synced_at: now,
+      updated_at: now,
+    })
+    .eq("id", tokenId);
+
+  if (error) {
+    console.error("Failed to resolve token conflict:", error.message);
+  }
 }
 
 export async function getTokenGroups(

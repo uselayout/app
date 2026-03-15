@@ -429,7 +429,29 @@ function ComponentPreview({
     return <p className="text-xs text-[--text-muted]">Generating...</p>;
   }
   if (!block) {
-    return <p className="text-xs text-[--text-muted]">No code block found in output.</p>;
+    // Check if output contains an error message (e.g. missing API key)
+    const trimmed = output.trim();
+    const looksLikeError =
+      trimmed.toLowerCase().includes("error") ||
+      trimmed.toLowerCase().includes("api key") ||
+      trimmed.toLowerCase().includes("unauthorized") ||
+      trimmed.startsWith("{");
+
+    return (
+      <div className="space-y-2">
+        <p className="text-xs text-[--text-muted]">
+          {looksLikeError ? trimmed : "No code block found in output."}
+        </p>
+        {onFallbackToCode && (
+          <button
+            onClick={onFallbackToCode}
+            className="text-xs text-[--studio-accent] hover:underline"
+          >
+            View raw output
+          </button>
+        )}
+      </div>
+    );
   }
   if (!componentName) {
     return (

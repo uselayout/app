@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Figma, Globe, Copy, Check, X, ExternalLink } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
 import type {
@@ -17,17 +17,13 @@ interface SourcePanelProps {
   sourceType: SourceType;
   sourceUrl?: string;
   designMd?: string;
-  onReExtract?: () => void;
 }
 
 type TabId = "tokens" | "components" | "screenshots" | "quality";
 
 export function SourcePanel({
   extractionData,
-  sourceType,
-  sourceUrl,
   designMd,
-  onReExtract,
 }: SourcePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("tokens");
 
@@ -50,42 +46,6 @@ export function SourcePanel({
 
   return (
     <div className="flex h-full flex-col bg-[--bg-panel]">
-      {/* Source info */}
-      <div className="border-b border-[--studio-border] p-3">
-        <div className="flex items-center gap-2">
-          {sourceType === "figma" ? (
-            <Figma className="h-4 w-4 text-[--text-muted]" />
-          ) : (
-            <Globe className="h-4 w-4 text-[--text-muted]" />
-          )}
-          <Badge
-            variant="secondary"
-            className="bg-[--studio-accent-subtle] text-[--studio-accent]"
-          >
-            {sourceType === "figma" ? "Figma" : "Website"}
-          </Badge>
-          {sourceUrl && (
-            <span className="truncate text-xs text-[--text-muted]">
-              {(() => {
-                try {
-                  return new URL(sourceUrl).hostname;
-                } catch {
-                  return sourceUrl;
-                }
-              })()}
-            </span>
-          )}
-        </div>
-        {onReExtract && (
-          <button
-            onClick={onReExtract}
-            className="mt-2 text-xs text-[--studio-accent] hover:underline"
-          >
-            Re-extract
-          </button>
-        )}
-      </div>
-
       {/* Tabs */}
       <div className="flex border-b border-[--studio-border]">
         {tabs.map((tab) => (
@@ -122,6 +82,59 @@ export function SourcePanel({
   );
 }
 
+function TokenSectionHeader({
+  label,
+  count,
+  open,
+  onToggle,
+  onCopy,
+}: {
+  label: string;
+  count: number;
+  open: boolean;
+  onToggle: () => void;
+  onCopy: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onCopy();
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    },
+    [onCopy]
+  );
+
+  return (
+    <button
+      onClick={onToggle}
+      className="group flex w-full items-center gap-1.5 px-2 py-2 text-left"
+    >
+      <ChevronRight
+        className={`h-3 w-3 text-[--text-muted] transition-transform duration-150 ${
+          open ? "rotate-90" : ""
+        }`}
+      />
+      <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[--text-muted]">
+        {label} ({count})
+      </span>
+      <span
+        onClick={handleCopy}
+        className="shrink-0 rounded p-1 opacity-0 transition-opacity hover:bg-[--bg-hover] group-hover:opacity-100"
+        title={`Copy all ${label.toLowerCase()}`}
+      >
+        {copied ? (
+          <Check className="h-3 w-3 text-emerald-400" />
+        ) : (
+          <Copy className="h-3 w-3 text-[--text-muted]" />
+        )}
+      </span>
+    </button>
+  );
+}
+
 function TokensTab({
   tokens,
 }: {
@@ -135,6 +148,29 @@ function TokensTab({
     { label: "Effects", items: tokens.effects },
   ].filter((s) => s.items.length > 0);
 
+  const [openSections, setOpenSections] = useState<Set<string>>(
+    () => new Set(sections.map((s) => s.label))
+  );
+
+  const toggleSection = useCallback((label: string) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  }, []);
+
+  const copySection = useCallback((items: ExtractedToken[]) => {
+    const text = items
+      .map((t) => `${t.cssVariable ?? t.name}: ${t.value}`)
+      .join("\n");
+    copyToClipboard(text);
+  }, []);
+
   if (sections.length === 0) {
     return (
       <div className="p-4 text-xs text-[--text-muted]">
@@ -146,15 +182,21 @@ function TokensTab({
   return (
     <div className="p-2">
       {sections.map((section) => (
-        <div key={section.label} className="mb-4">
-          <h4 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-[--text-muted]">
-            {section.label} ({section.items.length})
-          </h4>
-          <div className="space-y-0.5">
-            {section.items.map((token) => (
-              <TokenRow key={token.name} token={token} />
-            ))}
-          </div>
+        <div key={section.label} className="mb-1">
+          <TokenSectionHeader
+            label={section.label}
+            count={section.items.length}
+            open={openSections.has(section.label)}
+            onToggle={() => toggleSection(section.label)}
+            onCopy={() => copySection(section.items)}
+          />
+          {openSections.has(section.label) && (
+            <div className="space-y-0.5 pl-2">
+              {section.items.map((token) => (
+                <TokenRow key={token.name} token={token} />
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </div>

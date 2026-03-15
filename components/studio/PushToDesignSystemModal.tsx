@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from "react";
 import { X, ArrowUpToLine, Loader2, Check, ChevronRight } from "lucide-react";
 import { extractComponentName } from "@/lib/explore/preview-helpers";
 import { toast } from "sonner";
-import type { Project, ExtractedToken, DesignVariant, TestResult } from "@/lib/types";
+import type { Project, ExtractedToken } from "@/lib/types";
 
 interface PushToDesignSystemModalProps {
   project: Project;
