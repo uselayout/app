@@ -1,6 +1,15 @@
 import { create } from "zustand";
 import { upsertProject, removeProject } from "@/lib/supabase/db";
-import type { Project, ExtractionResult, TestResult, ExplorationSession } from "@/lib/types";
+import { parseTokensFromDesignMd } from "@/lib/tokens/parse-design-md";
+import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, TestResult, ExplorationSession } from "@/lib/types";
+
+/** Merge two token arrays, deduplicating by name (new values overwrite existing). */
+function mergeTokens(existing: ExtractedToken[] | undefined, parsed: ExtractedToken[]): ExtractedToken[] {
+  const map = new Map<string, ExtractedToken>();
+  for (const t of existing ?? []) map.set(t.name, t);
+  for (const t of parsed) map.set(t.name, t);
+  return [...map.values()];
+}
 
 interface ProjectState {
   projects: Project[];
@@ -24,6 +33,7 @@ interface ProjectState {
   updateHealthScore: (id: string, score: number) => void;
   updateTestResults: (id: string, results: TestResult[]) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
+  syncTokensFromDesignMd: (id: string) => number;
   deleteProject: (id: string) => void;
   clearProjects: () => void;
 }
@@ -138,6 +148,72 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     const { projects, userId } = get();
     const project = projects.find((p) => p.id === id);
     if (project && userId) void upsertProject(project, userId);
+  },
+
+  syncTokensFromDesignMd: (id) => {
+    const project = get().projects.find((p) => p.id === id);
+    if (!project?.designMd) return 0;
+
+    const parsed = parseTokensFromDesignMd(project.designMd);
+    const totalParsed =
+      parsed.colors.length +
+      parsed.typography.length +
+      parsed.spacing.length +
+      parsed.radius.length +
+      parsed.effects.length;
+
+    if (totalParsed === 0) return 0;
+
+    // Merge with existing extraction data, parsed tokens added after existing
+    const existing = project.extractionData;
+    const mergedTokens: ExtractedTokens = {
+      colors: mergeTokens(existing?.tokens.colors, parsed.colors),
+      typography: mergeTokens(existing?.tokens.typography, parsed.typography),
+      spacing: mergeTokens(existing?.tokens.spacing, parsed.spacing),
+      radius: mergeTokens(existing?.tokens.radius, parsed.radius),
+      effects: mergeTokens(existing?.tokens.effects, parsed.effects),
+    };
+
+    const mergedData: ExtractionResult = existing
+      ? { ...existing, tokens: mergedTokens }
+      : {
+          sourceType: "manual",
+          sourceName: "DESIGN.md",
+          tokens: mergedTokens,
+          components: [],
+          screenshots: [],
+          fonts: [],
+          animations: [],
+          librariesDetected: {},
+          cssVariables: {},
+          computedStyles: {},
+        };
+
+    const newCount =
+      mergedTokens.colors.length +
+      mergedTokens.typography.length +
+      mergedTokens.spacing.length +
+      mergedTokens.radius.length +
+      mergedTokens.effects.length;
+
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              extractionData: mergedData,
+              tokenCount: newCount,
+              updatedAt: new Date().toISOString(),
+            }
+          : p
+      ),
+    }));
+
+    const { projects, userId } = get();
+    const updated = projects.find((p) => p.id === id);
+    if (updated && userId) void upsertProject(updated, userId);
+
+    return totalParsed;
   },
 
   deleteProject: (id) => {
