@@ -77,11 +77,20 @@ function NavItem({ item }: { item: DocNavItem }) {
 export function DocsSidebar() {
   return (
     <nav aria-label="Docs navigation">
-      <ul className="space-y-0.5">
-        {docsNavigation.map((item) => (
-          <NavItem key={item.href} item={item} />
+      <div className="space-y-6">
+        {docsNavigation.map((section) => (
+          <div key={section.label}>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-0">
+              {section.label}
+            </p>
+            <ul className="space-y-0.5">
+              {section.items.map((item) => (
+                <NavItem key={item.href} item={item} />
+              ))}
+            </ul>
+          </div>
         ))}
-      </ul>
+      </div>
     </nav>
   );
 }

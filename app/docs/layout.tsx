@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { DocsShell } from "@/components/docs/DocsShell";
 
 export const metadata: Metadata = {
-  title: "Docs — Layout",
+  title: "Docs -  Layout",
 };
 
 export default function DocsLayout({

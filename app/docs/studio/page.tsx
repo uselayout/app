@@ -5,9 +5,9 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Studio Guide — Layout Docs",
+  title: "Studio Guide -  Layout Docs",
   description:
-    "How to use the Layout Studio three-panel editor — extraction, DESIGN.md generation, testing, and exporting.",
+    "How to use the Layout Studio three-panel editor -  extraction, DESIGN.md generation, testing, and exporting.",
 };
 
 export default function StudioPage() {
@@ -21,7 +21,7 @@ export default function StudioPage() {
         <p className="text-base text-gray-600 leading-relaxed">
           Layout Studio is a browser-based tool for extracting design
           systems, synthesising LLM-optimised context files, and testing them
-          against real AI output — all in one place. Paste a URL, get a complete
+          against real AI output -  all in one place. Paste a URL, get a complete
           AI kit in under 2 minutes.
         </p>
       </div>
@@ -46,7 +46,7 @@ export default function StudioPage() {
                 https://www.figma.com/file/...
               </code>
               ) and provide your Figma personal access token. The Studio calls
-              the Figma REST API to resolve actual token values — not just
+              the Figma REST API to resolve actual token values -  not just
               metadata.
             </p>
             <div className="overflow-x-auto rounded-xl border border-gray-200">
@@ -67,7 +67,7 @@ export default function StudioPage() {
                     ["Typography styles", "Font family, size, weight, line-height, letter-spacing as composites"],
                     ["Effect styles", "Shadows, blur"],
                     ["Component inventory", "Name, description, variant count, property definitions"],
-                    ["Variables", "Enterprise plans only — gracefully skipped otherwise"],
+                    ["Variables", "Enterprise plans only -  gracefully skipped otherwise"],
                   ].map(([what, detail]) => (
                     <tr key={what} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium text-[#0a0a0a] whitespace-nowrap">
@@ -87,7 +87,7 @@ export default function StudioPage() {
             <p className="text-base text-gray-600 leading-relaxed">
               Paste any live website URL. Playwright loads the page in a
               headless browser and extracts design data from the rendered DOM and
-              computed styles — no Figma access required.
+              computed styles -  no Figma access required.
             </p>
             <div className="overflow-x-auto rounded-xl border border-gray-200">
               <table className="w-full text-sm">
@@ -143,7 +143,7 @@ export default function StudioPage() {
               Source Panel <span className="text-gray-400 font-normal text-sm">(left)</span>
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              Shows the raw extracted data — colour tokens, typography styles,
+              Shows the raw extracted data -  colour tokens, typography styles,
               spacing values, component inventory, and screenshots. Use this to
               verify what was extracted before generating DESIGN.md. If
               something looks wrong, you can re-extract with different options.
@@ -192,7 +192,7 @@ export default function StudioPage() {
             generates with no design system context. Then toggle it back{" "}
             <strong>ON</strong> and run the same prompt. The visual difference
             shows you exactly what value DESIGN.md is providing. A good context
-            file produces noticeably better output — correct token usage, proper
+            file produces noticeably better output -  correct token usage, proper
             spacing, on-brand typography.
           </p>
         </div>
@@ -212,7 +212,7 @@ export default function StudioPage() {
             Preset component requests appear as buttons (primary button, card,
             form input, etc.). If your extraction included Figma components, the
             panel also generates dynamic prompts for each extracted component
-            name — giving you targeted tests for your specific design system.
+            name -  giving you targeted tests for your specific design system.
           </p>
         </div>
 
@@ -220,6 +220,88 @@ export default function StudioPage() {
           If the health score is below 50, check that DESIGN.md has well-formed
           CSS code blocks in the token sections. The AI needs parseable examples
           to reference at generation time.
+        </Callout>
+      </section>
+
+      {/* Quality Score */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Quality Score</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The Quality tab in the Source Panel shows your DESIGN.md completeness
+          score across 6 weighted categories:
+        </p>
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">Category</th>
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">Weight</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {[
+                ["Quick Reference", "15%"],
+                ["Colours", "20%"],
+                ["Typography", "15%"],
+                ["Spacing", "10%"],
+                ["Components", "25%"],
+                ["Anti-patterns", "15%"],
+              ].map(([category, weight]) => (
+                <tr key={category} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-[#0a0a0a]">{category}</td>
+                  <td className="px-4 py-3 text-gray-600">{weight}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="space-y-3">
+          {[
+            { range: "90 - 100", label: "Production-ready", desc: "Comprehensive coverage across all sections." },
+            { range: "70 - 89", label: "Good", desc: "Covers most areas, minor gaps in documentation." },
+            { range: "40 - 69", label: "Needs work", desc: "Missing key sections or lacking detail." },
+            { range: "0 - 39", label: "Incomplete", desc: "Significant gaps that will affect AI output quality." },
+          ].map(({ range, label, desc }) => (
+            <div
+              key={range}
+              className="flex items-start gap-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-800 px-4 py-3"
+            >
+              <span className="shrink-0 font-mono text-sm font-bold pt-0.5">{range}</span>
+              <div className="text-sm">
+                <span className="font-semibold">{label}</span> - {desc}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Re-extraction and Diffing */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Re-extraction and Diffing</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          When you re-extract a design system (via the re-extract button in the
+          top bar), Layout compares the new extraction against the previous one
+          and shows a visual diff:
+        </p>
+        <ol className="space-y-3 text-base text-gray-600 leading-relaxed list-none pl-0">
+          {[
+            "Layout captures the previous extraction state",
+            "Runs a fresh extraction from the source",
+            "Shows a diff modal highlighting all changes (added, removed, modified tokens/components/fonts)",
+            'Choose "Accept" to keep the new extraction or "Discard" to revert to the previous state',
+          ].map((step, i) => (
+            <li key={i} className="flex items-start gap-4">
+              <span className="shrink-0 mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-gray-800 text-white text-sm font-bold">
+                {i + 1}
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+        <Callout type="tip">
+          Re-extract periodically after major design updates. The diff view
+          makes it easy to see exactly what changed without manually comparing
+          token lists.
         </Callout>
       </section>
 
@@ -243,7 +325,7 @@ export default function StudioPage() {
             <tbody className="divide-y divide-gray-100">
               {[
                 ["CLAUDE.md", "CLAUDE.md-section.md", "Persistent context in Claude Code projects"],
-                ["AGENTS.md", "AGENTS.md", "Codex, Jules, Factory, Amp — any agent following agents.md spec"],
+                ["AGENTS.md", "AGENTS.md", "Codex, Jules, Factory, Amp -  any agent following agents.md spec"],
                 ["Cursor Rules", ".cursor/rules/design-system.mdc", "Auto-applied rules in Cursor 0.43+"],
                 ["CSS Tokens", "tokens.css", "Import directly into any stylesheet"],
                 ["JSON Tokens", "tokens.json", "W3C DTCG format for Style Dictionary, Theo, etc."],
@@ -265,7 +347,7 @@ export default function StudioPage() {
 
         <Callout type="info">
           The Tailwind config and tokens.css are ready to drop into your project
-          as-is — no manual editing required. The Tailwind config uses{" "}
+          as-is -  no manual editing required. The Tailwind config uses{" "}
           <code className="text-xs bg-white rounded px-1 py-0.5 border border-gray-200">
             theme.extend
           </code>{" "}
@@ -281,7 +363,7 @@ export default function StudioPage() {
             <Link href="/docs/cli" className="text-gray-900 hover:underline">
               CLI Guide
             </Link>{" "}
-            — set up the MCP server to serve design context automatically to
+ -  set up the MCP server to serve design context automatically to
             your AI agent.
           </li>
           <li>
@@ -291,7 +373,7 @@ export default function StudioPage() {
             >
               Claude Code integration
             </Link>{" "}
-            — add the export files to your project for persistent on-brand
+ -  add the export files to your project for persistent on-brand
             context.
           </li>
           <li>
@@ -301,7 +383,7 @@ export default function StudioPage() {
             >
               Cursor integration
             </Link>{" "}
-            — set up .cursorrules or MDC rules files.
+ -  set up .cursorrules or MDC rules files.
           </li>
         </ul>
       </section>

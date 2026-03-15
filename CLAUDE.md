@@ -6,13 +6,13 @@ Browser-based tool that extracts design systems from Figma files and live websit
 
 **Tagline:** The compiler between design systems and AI coding agents.
 
-**Phase 1 scope:** Internal tool — no auth, no database, localStorage persistence only.
+**Phase 1 scope:** Internal tool - no auth, no database, localStorage persistence only.
 
 **Target users:** Developers using Claude Code, Cursor, GitHub Copilot, Windsurf to build UI.
 
-## Related Repos — DO NOT DUPLICATE
+## Related Repos - DO NOT DUPLICATE
 
-- **CLI + MCP server:** `@layoutdesign/context` (npm) — lives in `mattthornhill/superduperui-context`, NOT here.
+- **CLI + MCP server:** `@layoutdesign/context` (npm) - lives in `mattthornhill/superduperui-context`, NOT here.
   - Commands: `init`, `serve`, `install`, `doctor`, `list`, `use`, `import`
   - 11 MCP tools including `get-design-system`, `preview`, `push-to-figma`
   - If the CLI needs new features (e.g. `pull`, `login`), add them in that repo
@@ -24,7 +24,7 @@ Browser-based tool that extracts design systems from Figma files and live websit
 - **UI:** shadcn/ui components, custom Studio design system
 - **State:** Zustand with localStorage persistence
 - **Editor:** @monaco-editor/react (markdown mode, custom dark theme)
-- **AI:** @anthropic-ai/sdk — Claude Sonnet 4.6 (claude-sonnet-4-6)
+- **AI:** @anthropic-ai/sdk - Claude Sonnet 4.6 (claude-sonnet-4-6)
 - **Extraction:** Playwright (website), Figma REST API (Figma files)
 - **Export:** JSZip for bundle generation
 - **Validation:** Zod for all API inputs
@@ -191,8 +191,8 @@ Key files: `ExplorerCanvas.tsx`, `ExplorerToolbar.tsx`, `ExplorerVariantCard.tsx
 
 - **Auth:** Better Auth (`lib/auth.ts`, `lib/auth-client.ts`) with email/password + OAuth
 - **Organisations:** Multi-user teams with roles (owner, admin, member)
-- **Stores:** `lib/store/organization.ts` — current org state, `useOrgStore`
-- **Auth guard:** `lib/api/auth-context.ts` — `requireOrgAuth(orgId, permission)` for API routes
+- **Stores:** `lib/store/organization.ts` - current org state, `useOrgStore`
+- **Auth guard:** `lib/api/auth-context.ts` - `requireOrgAuth(orgId, permission)` for API routes
 
 ### Webhook System
 
@@ -253,7 +253,7 @@ The app uses its own dark-first design system. Always use CSS variables, never h
 --studio-border-strong: rgba(255,255,255,0.22)
 --studio-border-focus: rgba(228,242,34,0.6)
 
-/* Accent — yellow, used sparingly */
+/* Accent - yellow, used sparingly */
 --studio-accent: #e4f222
 --studio-accent-hover: #eaf655
 --studio-accent-subtle: rgba(228,242,34,0.10)
@@ -270,13 +270,13 @@ The app uses its own dark-first design system. Always use CSS variables, never h
 
 ### Design Rules
 
-1. **All backgrounds** use elevation tokens — never arbitrary dark colours
+1. **All backgrounds** use elevation tokens - never arbitrary dark colours
 2. **All borders** use `--studio-border` or `--studio-border-strong`
 3. **All text** uses `--text-primary`, `--text-secondary`, or `--text-muted`
 4. **Interactive states** have transition `all var(--duration-base) var(--ease-out)`
-5. **Accent colour** is `--studio-accent` (#e4f222 yellow) — used sparingly for primary CTAs and active states only. Text on accent uses `--text-on-accent` (#08090a dark). No indigo/purple anywhere.
+5. **Accent colour** is `--studio-accent` (#e4f222 yellow) - used sparingly for primary CTAs and active states only. Text on accent uses `--text-on-accent` (#08090a dark). No indigo/purple anywhere.
 6. **Font:** Geist for UI, Geist Mono for code/editor/monospace content
-7. **No box-shadow** — elevation = background colour difference + border
+7. **No box-shadow** - elevation = background colour difference + border
 
 ## Conventions
 
@@ -306,7 +306,7 @@ GOOGLE_AI_API_KEY=...                 # Optional: for AI image generation (plann
 ## Gotchas
 
 - Monaco editor MUST use `dynamic(() => import('@monaco-editor/react'), { ssr: false })`
-- Playwright cannot run in Vercel serverless — fine for Coolify/Hetzner deployment
-- Figma Variables API returns 403 on non-Enterprise plans — treat as non-fatal, continue with styles
+- Playwright cannot run in Vercel serverless - fine for Coolify/Hetzner deployment
+- Figma Variables API returns 403 on non-Enterprise plans - treat as non-fatal, continue with styles
 - Zustand persist with complex types: store only serialisable data (no functions, no Blobs)
-- Next.js 16 + Tailwind v4: use `@import "tailwindcss"` not `@tailwind base/components/utilities`
+- Next.js 15 + Tailwind v4: use `@import "tailwindcss"` not `@tailwind base/components/utilities`

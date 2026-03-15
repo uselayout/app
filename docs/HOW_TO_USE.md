@@ -19,7 +19,7 @@ When you click **Export** in the Studio, you download a ZIP containing:
 | `tailwind.config.js` | Tailwind config pre-loaded with the extracted token values |
 | `tokens.json` | W3C DTCG-compatible token file for Theo, Style Dictionary, etc. |
 
-The **Quick Reference** inside `DESIGN.md` (Section 0) is designed to be copy-pasted standalone — it fits within tight context budgets and summarises the most critical tokens and rules in 50–75 lines.
+The **Quick Reference** inside `DESIGN.md` (Section 0) is designed to be copy-pasted standalone - it fits within tight context budgets and summarises the most critical tokens and rules in 50–75 lines.
 
 ---
 
@@ -41,7 +41,7 @@ Claude Code reads your project's `CLAUDE.md` as persistent context on every prom
 - Add it to the repo and reference it: `See DESIGN.md for full design system`
 - Use `claude --context DESIGN.md` to inject it per-session
 
-**Tip:** The Quick Reference (Section 0) is designed for `CLAUDE.md` — it's concise enough to not blow your context budget on every message. Add the full `DESIGN.md` only when you need deep token or component reference.
+**Tip:** The Quick Reference (Section 0) is designed for `CLAUDE.md` - it's concise enough to not blow your context budget on every message. Add the full `DESIGN.md` only when you need deep token or component reference.
 
 ---
 
@@ -68,7 +68,7 @@ mkdir -p .cursor/rules
 cp path/to/export/cursor/rules/design-system.mdc .cursor/rules/design-system.mdc
 ```
 
-MDC rules let you set scoping — e.g. apply the design system rules only to `*.tsx` and `*.css` files. Open the file and adjust the `globs` frontmatter field if needed.
+MDC rules let you set scoping - e.g. apply the design system rules only to `*.tsx` and `*.css` files. Open the file and adjust the `globs` frontmatter field if needed.
 
 ### Using in Cursor Composer
 
@@ -99,7 +99,7 @@ mkdir -p .github
 <!-- Paste Section 0 from DESIGN.md here -->
 ```
 
-For inline completions, Copilot also picks up context from open files — keeping `DESIGN.md` or `tokens.css` open in a tab improves completion quality.
+For inline completions, Copilot also picks up context from open files - keeping `DESIGN.md` or `tokens.css` open in a tab improves completion quality.
 
 ---
 
@@ -121,7 +121,7 @@ This makes all design tokens available as CSS custom properties throughout your 
 
 ## OpenAI Codex
 
-Codex reads `AGENTS.md` — an open standard context file supported by Codex, Cursor, Google Jules, Factory, Amp, and other agents that follow the [agents.md](https://agents.md) spec. One file, many agents.
+Codex reads `AGENTS.md` - an open standard context file supported by Codex, Cursor, Google Jules, Factory, Amp, and other agents that follow the [agents.md](https://agents.md) spec. One file, many agents.
 
 **Step 1:** Copy `AGENTS.md` from the export to your project root:
 
@@ -129,7 +129,7 @@ Codex reads `AGENTS.md` — an open standard context file supported by Codex, Cu
 cp path/to/export/AGENTS.md AGENTS.md
 ```
 
-**Step 2:** Commit it to your repo — Codex reads it automatically on every task.
+**Step 2:** Commit it to your repo - Codex reads it automatically on every task.
 
 **That's it.** Codex will follow the design system rules in every UI component it generates.
 
@@ -163,33 +163,33 @@ cp path/to/export/AGENTS.md ~/.codex/AGENTS.md
 
 Regardless of which AI tool you use, adding the token files to your codebase makes completions more accurate:
 
-**`tokens.css`** — Import in your global stylesheet:
+**`tokens.css`** - Import in your global stylesheet:
 ```css
 /* In globals.css or app.css */
 @import "./tokens.css";
 ```
 
-**`tailwind.config.js`** — Replace or merge with your existing config:
+**`tailwind.config.js`** - Replace or merge with your existing config:
 ```js
 // Already maps all extracted tokens into Tailwind's theme
 const config = require("./tailwind.config.js");
 ```
 
-**`tokens.json`** — Use with Style Dictionary or Theo to generate platform-specific tokens (iOS, Android, SCSS variables, etc.).
+**`tokens.json`** - Use with Style Dictionary or Theo to generate platform-specific tokens (iOS, Android, SCSS variables, etc.).
 
 ---
 
 ## Recommended Workflow
 
-1. **Extract** — Paste a Figma URL or website URL into Layout and run extraction
-2. **Review** — Check the extracted tokens in the Source panel. Re-extract if something looks off
-3. **Generate** — Click "Generate DESIGN.md" to synthesise the context file from extracted data
-4. **Test** — Use the Test panel to generate a few components. Check the health score (aim for 80+)
-5. **Iterate** — Edit DESIGN.md in the Studio's editor to fix anything the AI misidentified. Re-test
-6. **Export** — Download the ZIP bundle
-7. **Import** — Run `npx @layoutdesign/context import ./layout-export.zip` in your project root
-8. **Install** — Run `npx @layoutdesign/context install` to auto-configure your AI tool's MCP settings
-9. **Build** — Your AI coding tool now has the design system as context on every prompt
+1. **Extract** - Paste a Figma URL or website URL into Layout and run extraction
+2. **Review** - Check the extracted tokens in the Source panel. Re-extract if something looks off
+3. **Generate** - Click "Generate DESIGN.md" to synthesise the context file from extracted data
+4. **Test** - Use the Test panel to generate a few components. Check the health score (aim for 80+)
+5. **Iterate** - Edit DESIGN.md in the Studio's editor to fix anything the AI misidentified. Re-test
+6. **Export** - Download the ZIP bundle
+7. **Import** - Run `npx @layoutdesign/context import ./layout-export.zip` in your project root
+8. **Install** - Run `npx @layoutdesign/context install` to auto-configure your AI tool's MCP settings
+9. **Build** - Your AI coding tool now has the design system as context on every prompt
 
 ### Quick Setup (CLI)
 
@@ -198,7 +198,7 @@ After exporting from the Studio, the fastest path is three commands:
 ```bash
 npx @layoutdesign/context import ./layout-export.zip
 npx @layoutdesign/context install
-# Done — your AI agent reads the design system automatically
+# Done - your AI agent reads the design system automatically
 ```
 
 To target a specific tool:
@@ -224,15 +224,15 @@ npx @layoutdesign/context install --target windsurf
 
 ### Manual Setup (without CLI)
 
-If you prefer not to use the CLI, you can still drop the exported files into your project manually — see the per-tool sections above.
+If you prefer not to use the CLI, you can still drop the exported files into your project manually - see the per-tool sections above.
 
 ### Health Score
 
 The health score (0–100) in the Test panel measures how closely the generated code follows the design system:
 
-- **80–100** — Tokens are being used correctly; ready to export
-- **50–79** — Partial adherence; review the Anti-Patterns section in DESIGN.md
-- **0–49** — AI is not picking up the design system; check that DESIGN.md has well-formed CSS code blocks
+- **80–100** - Tokens are being used correctly; ready to export
+- **50–79** - Partial adherence; review the Anti-Patterns section in DESIGN.md
+- **0–49** - AI is not picking up the design system; check that DESIGN.md has well-formed CSS code blocks
 
 ---
 
@@ -255,10 +255,10 @@ After extracting your design system, use the Explorer Canvas to generate AI-powe
 
 The Quality tab in the Source Panel shows your DESIGN.md completeness score:
 
-- **90–100:** Production-ready — comprehensive coverage across all sections
-- **70–89:** Good — covers most areas, minor gaps in documentation
-- **40–69:** Needs work — missing key sections or lacking detail
-- **0–39:** Incomplete — significant gaps that will affect AI output quality
+- **90–100:** Production-ready - comprehensive coverage across all sections
+- **70–89:** Good - covers most areas, minor gaps in documentation
+- **40–69:** Needs work - missing key sections or lacking detail
+- **0–39:** Incomplete - significant gaps that will affect AI output quality
 
 The score analyses 6 weighted categories: Quick Reference (15%), Colours (20%), Typography (15%), Spacing (10%), Components (25%), Anti-patterns (15%).
 
@@ -277,11 +277,11 @@ When you re-extract a design system (via the re-extract button in the top bar):
 
 ## Figma-First Workflow
 
-Layout supports a bidirectional design loop — push generated components to Figma for designer review, then pull feedback back into code.
+Layout supports a bidirectional design loop - push generated components to Figma for designer review, then pull feedback back into code.
 
 ### Prerequisites
 
-Connect the Figma MCP server (free, OAuth — no API key needed):
+Connect the Figma MCP server (free, OAuth - no API key needed):
 
 ```bash
 claude mcp add --transport http figma https://mcp.figma.com/mcp
@@ -293,7 +293,7 @@ In the Test panel, any result with a code block shows a **Push to Figma** button
 
 ### Design Before Code
 
-Use the `design-in-figma` MCP tool to design UI directly in Figma using your loaded design system — before writing any code:
+Use the `design-in-figma` MCP tool to design UI directly in Figma using your loaded design system - before writing any code:
 
 ```
 "Design a settings page with sidebar navigation"
@@ -331,7 +331,7 @@ Create and manage reusable components for your organisation:
 
 1. Navigate to Library in the dashboard sidebar
 2. Click "Create Component" to open the editor
-3. Write TSX code in the editor — preview updates live on the right
+3. Write TSX code in the editor - preview updates live on the right
 4. Use the AI chat bar at the bottom to generate or modify code with AI assistance (Cmd+Enter to send)
 5. Add name, category, description, and tags
 6. Save to add it to your library
@@ -342,7 +342,7 @@ Components can also be promoted from the Explorer Canvas.
 
 ## Tips
 
-- **Narrow the Quick Reference** — If you have a large DESIGN.md, the Quick Reference (Section 0) is the most important part. Keep it focused on the 10–15 tokens your AI uses most.
-- **Commit DESIGN.md to your repo** — Treat it like any other configuration file. Update it when the design system changes.
-- **Use the context toggle** — In the Test panel, toggle "DESIGN.md context: OFF" to see what the AI generates without your design system. The gap shows you exactly what value the context file is providing.
-- **Re-extract periodically** — Design systems evolve. Re-run extraction after major design updates to keep the context file current.
+- **Narrow the Quick Reference** - If you have a large DESIGN.md, the Quick Reference (Section 0) is the most important part. Keep it focused on the 10–15 tokens your AI uses most.
+- **Commit DESIGN.md to your repo** - Treat it like any other configuration file. Update it when the design system changes.
+- **Use the context toggle** - In the Test panel, toggle "DESIGN.md context: OFF" to see what the AI generates without your design system. The gap shows you exactly what value the context file is providing.
+- **Re-extract periodically** - Design systems evolve. Re-run extraction after major design updates to keep the context file current.
