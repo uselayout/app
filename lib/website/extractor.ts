@@ -46,7 +46,10 @@ export async function extractFromWebsite({
     const page = await browser.newPage();
 
     onProgress?.("navigate", 10, `Navigating to ${url}...`);
-    await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+    // Allow JS-rendered content to settle before extracting styles
+    await page.waitForLoadState("load", { timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(2000);
 
     // Extract CSS variables
     onProgress?.("css", 25, "Extracting CSS custom properties...");
