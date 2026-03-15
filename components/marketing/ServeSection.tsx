@@ -27,10 +27,10 @@ export function ServeSection() {
             className="w-full lg:w-[683px] pt-[19px] flex flex-col gap-[10px]"
           >
             <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-              Import your extraction. Run install. Layout auto-configures MCP settings for Claude Code, Cursor, and Windsurf. Your AI agent reads the design system on every prompt — no copy-pasting, no manual context windows.
+              Import your extraction. Run install. Layout auto-configures MCP settings for Claude Code, Cursor, and Windsurf. Your AI agent has your design system available on every prompt — no copy-pasting, no manual context windows.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              10 MCP tools: get the full design system, query individual tokens, check compliance against your standards, preview components live.
+              9 MCP tools: get the full design system, query individual tokens, check component code against your design system, preview components live.
             </p>
           </motion.div>
         </div>

@@ -30,7 +30,7 @@ export function ExtractSection() {
               Connect a Figma file and Layout pulls colour styles, typography, effects, spacing, and component inventory — actual values, not just metadata.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              No Figma file? Paste any live URL. Layout extracts design tokens directly from CSS and the DOM. No other tool does this.
+              No Figma file? Paste any live URL. Layout extracts design tokens directly from CSS and the DOM.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-accent)] tracking-[-0.165px]">
               Under two minutes
