@@ -20,7 +20,12 @@ const QuerySchema = z.object({
 
 export async function GET(request: Request) {
   const auth = await requireMcpAuth(request, "read");
-  if (auth instanceof NextResponse) return auth;
+  if (auth instanceof NextResponse) {
+    return new NextResponse(auth.body, {
+      status: auth.status,
+      headers: { ...Object.fromEntries(auth.headers.entries()), ...CORS },
+    });
+  }
 
   const url = new URL(request.url);
   const parsed = QuerySchema.safeParse({
