@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  transpileModule,
-  ModuleKind,
-  JsxEmit,
-  ScriptTarget,
-} from "typescript";
+import { transpileTsx } from "@/lib/transpile";
 import { transpileLimiter } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
 
@@ -30,24 +25,8 @@ export async function POST(req: NextRequest) {
   const { code } = parsed.data;
 
   try {
-    // TypeScript transpiles TSX → CommonJS JS:
-    // - strips all types and interfaces
-    // - transforms JSX to React.createElement calls
-    // - converts import statements to require() calls
-    // - converts export statements to exports.X = ... assignments
-    const result = transpileModule(code, {
-      compilerOptions: {
-        module: ModuleKind.CommonJS,
-        jsx: JsxEmit.React,
-        jsxFactory: "React.createElement",
-        jsxFragmentFactory: "React.Fragment",
-        target: ScriptTarget.ES2020,
-        esModuleInterop: true,
-      },
-      fileName: "component.tsx",
-    });
-
-    return NextResponse.json({ js: result.outputText });
+    const js = transpileTsx(code);
+    return NextResponse.json({ js });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : String(err) },

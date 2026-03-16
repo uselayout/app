@@ -4,6 +4,7 @@ import { requireOrgAuth } from "@/lib/api/auth-context";
 import { bulkCreateTokens, getTokensByProject } from "@/lib/supabase/tokens";
 import { createComponent, getComponentsByProject } from "@/lib/supabase/components";
 import { logAuditEvent } from "@/lib/supabase/audit";
+import { transpileTsx } from "@/lib/transpile";
 import type { DesignTokenType } from "@/lib/types/token";
 import type { ComponentSource } from "@/lib/types/component";
 
@@ -140,12 +141,20 @@ export async function POST(
         continue;
       }
 
+      let compiledJs: string | undefined;
+      try {
+        compiledJs = transpileTsx(comp.code);
+      } catch {
+        // Non-fatal: component will show "No preview"
+      }
+
       const slug = nameToSlug(comp.name);
       const created = await createComponent({
         orgId,
         name: comp.name,
         slug,
         code: comp.code,
+        compiledJs,
         description: comp.description,
         category: comp.category,
         source: (comp.source ?? "explorer") as ComponentSource,

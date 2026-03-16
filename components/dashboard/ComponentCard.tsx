@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -23,10 +24,37 @@ export function ComponentCard({ component, orgSlug }: ComponentCardProps) {
   const params = useParams();
   const projectId = (params?.projectId as string) ?? "";
   const componentName = extractComponentName(component.code);
-  const srcdoc =
-    component.compiledJs
-      ? buildSrcdoc(component.compiledJs, componentName)
-      : null;
+
+  const [lazyJs, setLazyJs] = useState<string | null>(null);
+
+  // Lazy-transpile for existing components that lack compiledJs
+  useEffect(() => {
+    if (component.compiledJs || !component.code) return;
+
+    let cancelled = false;
+
+    fetch("/api/transpile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: component.code }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { js: string } | null) => {
+        if (!cancelled && data?.js) {
+          setLazyJs(data.js);
+        }
+      })
+      .catch(() => {
+        // Silently fail — card will show "No preview"
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [component.compiledJs, component.code]);
+
+  const resolvedJs = component.compiledJs ?? lazyJs;
+  const srcdoc = resolvedJs ? buildSrcdoc(resolvedJs, componentName) : null;
 
   const libraryBase = projectId
     ? `/${orgSlug}/projects/${projectId}/library`
