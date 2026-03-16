@@ -42,6 +42,7 @@ const PushSchema = z.object({
   fileName: z.string().optional(),
   fileKey: z.string().optional(),
   projectId: z.string().optional(),
+  projectName: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { tokens, components, fileName, fileKey, projectId: requestedProjectId } = parsed.data;
+  const { tokens, components, fileName, fileKey, projectId: requestedProjectId, projectName } = parsed.data;
 
   // Get org to obtain the owner's userId (needed for project upsert)
   const org = await getOrganization(auth.orgId);
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
   if (!project) {
     // Try to find an existing Figma project with the same file name
     const projects = await fetchAllProjects(auth.orgId);
-    const name = fileName ?? "Figma Design System";
+    const name = projectName ?? fileName ?? "Figma Design System";
 
     if (fileKey) {
       project = projects.find((p) => p.sourceType === "figma" && p.sourceUrl === fileKey) ?? null;
