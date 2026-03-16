@@ -1,4 +1,4 @@
--- Migration: Billing tables for SuperDuper AI Studio
+-- Migration: Billing tables for Layout
 -- Run against Supabase PostgreSQL
 
 -- Subscriptions
