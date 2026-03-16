@@ -19,6 +19,7 @@ import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { usePushToDs } from "@/lib/hooks/use-push-to-ds";
 import { useProjectStore } from "@/lib/store/project";
 import { FigmaPushModal, toFrameName } from "@/components/studio/FigmaPushModal";
+import { processCodeImages } from "@/lib/image/process-code-images";
 import type { TestResult, HealthScore, DesignVariant } from "@/lib/types";
 
 export interface TestPanelHandle {
@@ -128,6 +129,18 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
         resultsRef.current = next;
         return next;
       });
+
+      // Process image placeholders (non-blocking — updates output in place)
+      const processedOutput = await processCodeImages(output);
+      if (processedOutput !== output) {
+        setResults((prev) => {
+          const next = prev.map((r) =>
+            r.id === resultId ? { ...r, output: processedOutput } : r
+          );
+          resultsRef.current = next;
+          return next;
+        });
+      }
     } catch (err) {
       if (controller.signal.aborted) return;
       const message = err instanceof Error ? err.message : "Unknown error";

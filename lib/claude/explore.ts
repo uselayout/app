@@ -49,6 +49,15 @@ export default function Variant1() {
 export default function Variant2() { ... }
 \`\`\`
 
+Images
+- When the design calls for images (hero photos, illustrations, product shots, team photos, etc.), use this exact format:
+  <img data-generate-image="descriptive prompt for the image" data-image-style="photo" data-image-ratio="16:9" alt="Descriptive alt text" class="..." />
+- data-image-style options: "photo", "illustration", "icon", "abstract"
+- data-image-ratio options: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9"
+- Write detailed, specific prompts — e.g. "A diverse team collaborating in a modern sunlit office with plants" not "team photo".
+- Do NOT use placeholder services (placehold.co, placeholder.com, via.placeholder.com, unsplash source URLs).
+- Do NOT use empty src or data: URIs. Just omit the src attribute — the pipeline will add it.
+
 IMPORTANT: Each component must be fully self-contained. No shared imports between variants. No prose outside the variant blocks.`;
 
 const REFINE_SYSTEM = `You are an expert design refiner. You take an existing UI component and generate refined variations based on specific feedback, while staying faithful to the design system.
@@ -78,6 +87,11 @@ export default function Variant1() {
   // complete, self-contained component
 }
 \`\`\`
+
+Images
+- When the design calls for images, use: <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." class="..." />
+- Styles: "photo", "illustration", "icon", "abstract". Ratios: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9".
+- Write detailed prompts. Do NOT use placeholder services or empty src attributes.
 
 IMPORTANT: Each component must be fully self-contained. No shared imports between variants. No prose outside the variant blocks.`;
 

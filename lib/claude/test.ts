@@ -27,6 +27,13 @@ Before outputting code, verify:
 
 Produce complete, copy-paste-ready components.
 
+Images
+- When the design calls for images (hero photos, illustrations, product shots, etc.), use this exact format:
+  <img data-generate-image="descriptive prompt for the image" data-image-style="photo" data-image-ratio="16:9" alt="Descriptive alt text" className="..." />
+- data-image-style options: "photo", "illustration", "icon", "abstract"
+- data-image-ratio options: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9"
+- Write detailed, specific prompts. Do NOT use placeholder services (placehold.co, etc.) or empty src attributes.
+
 OUTPUT FORMAT: Respond with ONLY a single \`\`\`tsx code block. End with a concise default-exported \`Demo\` component (max 30 lines) that renders the key variants and states. No prose before or after.`;
 
 const CONTEXT_OFF_SYSTEM = `You are an expert senior frontend developer. Build production-ready UI components using TypeScript + React + Tailwind CSS.
@@ -41,6 +48,11 @@ Critical Rules
 - NEVER omit interaction states.
 - NEVER use inline styles for permanent styling.
 - NEVER leave placeholder content in code.
+
+Images
+- When the design calls for images, use: <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." className="..." />
+- Styles: "photo", "illustration", "icon", "abstract". Ratios: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9".
+- Write detailed prompts. Do NOT use placeholder services or empty src attributes.
 
 OUTPUT FORMAT: Respond with ONLY a single \`\`\`tsx code block. End with a concise default-exported \`Demo\` component (max 30 lines) that renders key variants and states. No prose before or after.`;
 
