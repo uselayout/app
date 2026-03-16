@@ -1,14 +1,18 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { ArrowUp, RotateCw, Figma, Minus, Plus, Download, Wand2, Split, ImagePlus, X } from "lucide-react";
+import { ArrowUp, RotateCw, Figma, Minus, Plus, Download, Wand2, Split, ImagePlus, Paperclip, X } from "lucide-react";
+import type { ContextFile } from "@/lib/types";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_DIMENSION = 1600;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
+const MAX_CONTEXT_FILE_SIZE = 50 * 1024; // 50KB
+const MAX_CONTEXT_FILES = 3;
+const ACCEPTED_TEXT_TYPES = ".md,.txt,.json,.css,.html,.tsx,.ts,.jsx,.js";
 
 interface ExplorerToolbarProps {
-  onGenerate: (prompt: string, variantCount: number, imageDataUrl?: string) => void;
+  onGenerate: (prompt: string, variantCount: number, imageDataUrl?: string, contextFiles?: ContextFile[]) => void;
   onRefine: (refinementPrompt: string, variantCount: number) => void;
   onCompare: (prompt: string) => void;
   onRegenerate: () => void;
@@ -43,7 +47,10 @@ export function ExplorerToolbar({
   const [variantCount, setVariantCount] = useState(2);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [imageName, setImageName] = useState<string | null>(null);
+  const [contextFiles, setContextFiles] = useState<ContextFile[]>([]);
+  const [fileError, setFileError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const contextFileInputRef = useRef<HTMLInputElement>(null);
   const promptInputRef = useRef<HTMLInputElement>(null);
 
   // Pre-populate with Figma push-to-canvas image
@@ -114,12 +121,53 @@ export function ExplorerToolbar({
     setImageName(null);
   }, []);
 
+  const handleContextFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files) return;
+      setFileError(null);
+
+      const remaining = MAX_CONTEXT_FILES - contextFiles.length;
+      if (remaining <= 0) {
+        setFileError(`Maximum ${MAX_CONTEXT_FILES} files allowed`);
+        e.target.value = "";
+        return;
+      }
+
+      const toProcess = Array.from(files).slice(0, remaining);
+      for (const file of toProcess) {
+        if (file.size > MAX_CONTEXT_FILE_SIZE) {
+          setFileError(`${file.name} exceeds 50KB limit`);
+          continue;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          setContextFiles((prev) => {
+            if (prev.length >= MAX_CONTEXT_FILES) return prev;
+            if (prev.some((f) => f.name === file.name)) return prev;
+            return [...prev, { name: file.name, content: reader.result as string }];
+          });
+        };
+        reader.readAsText(file);
+      }
+      e.target.value = "";
+    },
+    [contextFiles.length]
+  );
+
+  const removeContextFile = useCallback((name: string) => {
+    setContextFiles((prev) => prev.filter((f) => f.name !== name));
+    setFileError(null);
+  }, []);
+
   const handleSubmit = useCallback(() => {
     const trimmed = prompt.trim();
     if (!trimmed || isGenerating) return;
-    onGenerate(trimmed, variantCount, imageDataUrl ?? undefined);
+    onGenerate(trimmed, variantCount, imageDataUrl ?? undefined, contextFiles.length > 0 ? contextFiles : undefined);
     removeImage();
-  }, [prompt, variantCount, isGenerating, imageDataUrl, onGenerate, removeImage]);
+    setContextFiles([]);
+    setFileError(null);
+  }, [prompt, variantCount, isGenerating, imageDataUrl, contextFiles, onGenerate, removeImage]);
 
   const handleRefineSubmit = useCallback(() => {
     const trimmed = refinePrompt.trim();
@@ -196,12 +244,36 @@ export function ExplorerToolbar({
                 </div>
               )}
 
+              {/* Context file chips */}
+              {contextFiles.length > 0 && (
+                <div className="mr-2 flex shrink-0 items-center gap-1">
+                  {contextFiles.map((f) => (
+                    <div
+                      key={f.name}
+                      className="flex items-center gap-1 rounded-md bg-[var(--bg-hover)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]"
+                      title={`${f.name} (${(f.content.length / 1024).toFixed(1)}KB)`}
+                    >
+                      <Paperclip size={9} />
+                      <span className="max-w-[80px] truncate">{f.name}</span>
+                      <button
+                        onClick={() => removeContextFile(f.name)}
+                        className="rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                      >
+                        <X size={8} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Text input */}
               <input
                 ref={promptInputRef}
                 type="text"
                 placeholder={imageDataUrl
                   ? "Describe how to use this reference... e.g. \"redesign this using our design system\""
+                  : contextFiles.length > 0
+                  ? "Describe what to build with these files as context..."
                   : "Describe what to explore... e.g. \"a pricing card with feature tiers\""
                 }
                 value={prompt}
@@ -213,6 +285,11 @@ export function ExplorerToolbar({
               />
             </div>
 
+            {/* File error */}
+            {fileError && (
+              <p className="mt-1 text-[10px] text-red-400 px-1">{fileError}</p>
+            )}
+
             {/* Bottom-right action buttons */}
             <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5">
               <input
@@ -222,6 +299,22 @@ export function ExplorerToolbar({
                 onChange={handleFileChange}
                 className="hidden"
               />
+              <input
+                ref={contextFileInputRef}
+                type="file"
+                accept={ACCEPTED_TEXT_TYPES}
+                onChange={handleContextFileChange}
+                multiple
+                className="hidden"
+              />
+              <button
+                onClick={() => contextFileInputRef.current?.click()}
+                disabled={isGenerating || contextFiles.length >= MAX_CONTEXT_FILES}
+                className="flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)] disabled:opacity-40"
+                title={contextFiles.length >= MAX_CONTEXT_FILES ? `Maximum ${MAX_CONTEXT_FILES} files` : "Attach context files (.md, .txt, .css, etc.)"}
+              >
+                <Paperclip size={12} />
+              </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isGenerating}
