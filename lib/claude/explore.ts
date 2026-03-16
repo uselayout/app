@@ -166,6 +166,7 @@ export function createRefineStream(
   variantCount: number,
   apiKey?: string,
   contextFiles?: Array<{ name: string; content: string }>,
+  imageDataUrl?: string,
 ): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
   const systemPrompt = `${REFINE_SYSTEM}\n\nGenerate exactly ${variantCount} refined variants.\n\n${designMd}`;
@@ -179,13 +180,15 @@ export function createRefineStream(
     ? contextFiles.map((f) => `--- context: ${f.name} ---\n${f.content}\n--- end ---`).join("\n\n") + "\n\n"
     : "";
 
-  const userMessage = `${contextBlock}Here is the base component to refine:
+  const textPrompt = `${contextBlock}Here is the base component to refine:
 
 \`\`\`tsx
 ${baseCode}
 \`\`\`
 
 Refinement request: ${refinementPrompt}`;
+
+  const userContent = buildUserContent(textPrompt, imageDataUrl);
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -196,7 +199,7 @@ Refinement request: ${refinementPrompt}`;
           model: "claude-sonnet-4-6",
           max_tokens: 64000,
           system: systemPrompt,
-          messages: [{ role: "user", content: userMessage }],
+          messages: [{ role: "user", content: userContent }],
         });
 
         for await (const event of msgStream) {
