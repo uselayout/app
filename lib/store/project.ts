@@ -35,6 +35,7 @@ interface ProjectState {
   updateHealthScore: (id: string, score: number) => void;
   updateTestResults: (id: string, results: TestResult[]) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
+  removeTokens: (id: string, tokenType: keyof ExtractedTokens, tokenNames: string[]) => void;
   syncTokensFromDesignMd: (id: string) => number;
   deleteProject: (id: string) => void;
   clearProjects: () => void;
@@ -149,6 +150,32 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           ? { ...p, explorations, updatedAt: new Date().toISOString() }
           : p
       ),
+    }));
+    const { projects, userId } = get();
+    const project = projects.find((p) => p.id === id);
+    if (project && userId) void upsertProject(project, userId);
+  },
+
+  removeTokens: (id, tokenType, tokenNames) => {
+    const nameSet = new Set(tokenNames);
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id || !p.extractionData) return p;
+        const tokens = { ...p.extractionData.tokens };
+        tokens[tokenType] = tokens[tokenType].filter((t) => !nameSet.has(t.name));
+        const tokenCount =
+          tokens.colors.length +
+          tokens.typography.length +
+          tokens.spacing.length +
+          tokens.radius.length +
+          tokens.effects.length;
+        return {
+          ...p,
+          extractionData: { ...p.extractionData, tokens },
+          tokenCount,
+          updatedAt: new Date().toISOString(),
+        };
+      }),
     }));
     const { projects, userId } = get();
     const project = projects.find((p) => p.id === id);

@@ -119,7 +119,7 @@ export function SourcePanel({
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         {activeTab === "tokens" && (
-          <TokensTab tokens={extractionData.tokens} />
+          <TokensTab tokens={extractionData.tokens} projectId={projectId} />
         )}
         {activeTab === "components" && (
           <ComponentsTab components={extractionData.components} />
@@ -188,11 +188,69 @@ function TokenSectionHeader({
   );
 }
 
+const SECTION_TYPE_MAP: Record<string, keyof import("@/lib/types").ExtractedTokens> = {
+  Colours: "colors",
+  Typography: "typography",
+  Spacing: "spacing",
+  Radius: "radius",
+  Effects: "effects",
+};
+
 function TokensTab({
   tokens,
+  projectId,
 }: {
   tokens: ExtractionResult["tokens"];
+  projectId?: string;
 }) {
+  const removeTokens = useProjectStore((s) => s.removeTokens);
+  const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
+
+  const [undoState, setUndoState] = useState<{
+    tokenType: keyof import("@/lib/types").ExtractedTokens;
+    token: ExtractedToken;
+    timeoutId: ReturnType<typeof setTimeout>;
+  } | null>(null);
+
+  const handleDelete = useCallback(
+    (sectionLabel: string, token: ExtractedToken) => {
+      if (!projectId) return;
+      const tokenType = SECTION_TYPE_MAP[sectionLabel];
+      if (!tokenType) return;
+
+      // Clear any existing undo timeout
+      if (undoState) clearTimeout(undoState.timeoutId);
+
+      removeTokens(projectId, tokenType, [token.name]);
+
+      const timeoutId = setTimeout(() => setUndoState(null), 4000);
+      setUndoState({ tokenType, token, timeoutId });
+    },
+    [projectId, removeTokens, undoState]
+  );
+
+  const handleUndo = useCallback(() => {
+    if (!undoState || !projectId) return;
+    clearTimeout(undoState.timeoutId);
+
+    // Re-insert the token by reading current state and adding it back
+    const project = useProjectStore.getState().projects.find((p) => p.id === projectId);
+    if (project?.extractionData) {
+      const tokens = { ...project.extractionData.tokens };
+      tokens[undoState.tokenType] = [...tokens[undoState.tokenType], undoState.token];
+      updateExtractionData(projectId, { ...project.extractionData, tokens });
+    }
+
+    setUndoState(null);
+  }, [undoState, projectId, updateExtractionData]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (undoState) clearTimeout(undoState.timeoutId);
+    };
+  }, [undoState]);
+
   const sections: { label: string; items: ExtractedToken[] }[] = [
     { label: "Colours", items: tokens.colors },
     { label: "Typography", items: tokens.typography },
@@ -233,7 +291,7 @@ function TokensTab({
   }
 
   return (
-    <div className="p-2">
+    <div className="relative p-2">
       {sections.map((section) => (
         <div key={section.label} className="mb-1">
           <TokenSectionHeader
@@ -246,17 +304,32 @@ function TokensTab({
           {openSections.has(section.label) && (
             <div className="space-y-0.5 pl-2">
               {section.items.map((token) => (
-                <TokenRow key={token.name} token={token} />
+                <TokenRow
+                  key={token.name}
+                  token={token}
+                  onDelete={() => handleDelete(section.label, token)}
+                />
               ))}
             </div>
           )}
         </div>
       ))}
+      {undoState && (
+        <div className="sticky bottom-0 flex items-center justify-between border-t border-[var(--studio-border)] bg-[var(--bg-elevated)] px-3 py-2">
+          <span className="text-xs text-[var(--text-secondary)]">Token removed</span>
+          <button
+            onClick={handleUndo}
+            className="text-xs font-medium text-[var(--studio-accent)] hover:text-[var(--studio-accent-hover)] transition-colors"
+          >
+            Undo
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-function TokenRow({ token }: { token: ExtractedToken }) {
+function TokenRow({ token, onDelete }: { token: ExtractedToken; onDelete?: () => void }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -294,6 +367,18 @@ function TokenRow({ token }: { token: ExtractedToken }) {
           <Copy className="h-3 w-3 text-[var(--text-muted)]" />
         )}
       </span>
+      {onDelete && (
+        <span
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="shrink-0 rounded p-0.5 opacity-0 transition-opacity hover:bg-[rgba(255,255,255,0.06)] group-hover:opacity-100"
+          title="Remove token"
+        >
+          <X className="h-3 w-3 text-[var(--text-muted)] hover:text-red-400 transition-colors" />
+        </span>
+      )}
     </button>
   );
 }
