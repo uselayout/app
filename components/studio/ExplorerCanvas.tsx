@@ -459,20 +459,6 @@ export function ExplorerCanvas({
           </div>
         )}
 
-        {isGenerating && variants.length === 0 && (
-          <div className="grid gap-4 grid-cols-2">
-            {Array.from({ length: currentExploration?.variantCount ?? 2 }).map((_, i) => (
-              <div key={`skeleton-${i}`} className="rounded-xl border-2 border-dashed border-white/20 bg-white/[0.04] p-4 flex flex-col items-center justify-center">
-                <div className="aspect-[4/3] w-full flex flex-col items-center justify-center gap-3">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white/60" />
-                  <p className="text-xs text-[var(--text-muted)] animate-pulse">
-                    Generating variant {i + 1}...
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Prompt bar — pinned to bottom */}
