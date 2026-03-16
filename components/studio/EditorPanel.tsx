@@ -326,7 +326,7 @@ function EditorChatBar({
     <div className="border-t border-[var(--studio-border)]">
       <div className="mx-3 mb-3 mt-3 flex flex-col rounded-lg border border-[rgba(255,255,255,0.05)] bg-[#161718]">
         <div className="relative p-2.5">
-          <div className="flex min-h-[44px] items-center rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.08)] px-3.5 py-2.5 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
+          <div className="flex min-h-[68px] items-start rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.08)] px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
             <input
               ref={inputRef}
               type="text"
