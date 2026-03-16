@@ -24,6 +24,7 @@ interface ExplorerCanvasProps {
   onUpdateExplorations: (explorations: ExplorationSession[]) => void;
   onPushToFigma: (variant: DesignVariant) => void;
   onDesignMdUpdate?: (newMd: string) => void;
+  initialImage?: string;
 }
 
 export function ExplorerCanvas({
@@ -33,6 +34,7 @@ export function ExplorerCanvas({
   onUpdateExplorations,
   onPushToFigma: _onPushToFigma,
   onDesignMdUpdate,
+  initialImage,
 }: ExplorerCanvasProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessingImages, setIsProcessingImages] = useState(false);
@@ -92,6 +94,12 @@ export function ExplorerCanvas({
     }
     return groups;
   }, [variants, currentExploration?.prompt]);
+
+  const handleClearAllExplorations = useCallback(() => {
+    onUpdateExplorations([]);
+    setActiveExplorationIndex(null);
+    setSelectedVariantId(null);
+  }, [onUpdateExplorations]);
 
   const handleDeleteExploration = useCallback(
     (index: number) => {
@@ -518,6 +526,16 @@ export function ExplorerCanvas({
           >
             <Trash2 size={13} />
           </button>
+          {explorations.length > 1 && (
+            <button
+              onClick={handleClearAllExplorations}
+              disabled={isGenerating}
+              className="shrink-0 rounded px-1.5 py-1 text-[10px] text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 transition-colors"
+              title="Clear all explorations"
+            >
+              Clear all
+            </button>
+          )}
           <span className="shrink-0 text-[10px] text-[var(--text-muted)] tabular-nums">
             {explorationIndex + 1}/{explorations.length}
           </span>
@@ -663,6 +681,7 @@ export function ExplorerCanvas({
         hasSelection={!!selectedVariant}
         selectedVariantName={selectedVariant?.name}
         currentPrompt={currentExploration?.prompt}
+        initialImage={initialImage}
       />
 
       {pushVariant && (
