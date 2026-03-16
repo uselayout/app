@@ -9,7 +9,7 @@ import type { AiMode } from "@/lib/types/billing";
 const RequestSchema = z.object({
   prompt: z.string().min(1),
   designMd: z.string(),
-  variantCount: z.number().int().min(2).max(6),
+  variantCount: z.number().int().min(1).max(6),
   projectId: z.string().optional(),
   baseCode: z.string().optional(),
   imageDataUrl: z.string().optional(),
