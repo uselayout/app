@@ -34,6 +34,23 @@ export default function CliPage() {
         </p>
       </div>
 
+      {/* Prerequisites */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Prerequisites</h2>
+        <ul className="list-disc pl-6 space-y-2 text-gray-600">
+          <li>
+            <strong className="font-semibold text-[#0a0a0a]">Node.js 18 or later</strong> — run{" "}
+            <code className="text-xs bg-gray-100 rounded px-1 py-0.5">node --version</code> to check.
+            Download from{" "}
+            <a href="https://nodejs.org" target="_blank" rel="noopener noreferrer" className="text-gray-900 hover:underline">nodejs.org</a>.
+          </li>
+          <li>
+            <strong className="font-semibold text-[#0a0a0a]">npm 7+ or npx</strong> — included with Node.js.
+            Run <code className="text-xs bg-gray-100 rounded px-1 py-0.5">npm --version</code> to confirm.
+          </li>
+        </ul>
+      </section>
+
       {/* Installation */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Installation</h2>
@@ -275,6 +292,61 @@ npx @layoutdesign/context init --kit notion-lite`}
         />
       </section>
 
+      {/* Doctor */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Checking Your Setup</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">doctor</code>{" "}
+          command inspects your environment and reports any configuration issues:
+        </p>
+        <CopyBlock
+          code="npx @layoutdesign/context doctor"
+          language="bash"
+        />
+        <p className="text-base text-gray-600 leading-relaxed">
+          It checks: Node.js version, Claude Code installation, Figma MCP configuration, and Playwright MCP availability.
+          To automatically install any missing dependencies:
+        </p>
+        <CopyBlock
+          code="npx @layoutdesign/context doctor --fix"
+          language="bash"
+        />
+        <Callout type="tip">
+          Run <code className="text-xs bg-gray-100 rounded px-1 py-0.5">doctor</code> first if{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">push_to_figma</code> or{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">url_to_figma</code> are not working —
+          those tools require the Figma MCP and Playwright MCP to be configured separately.
+        </Callout>
+      </section>
+
+      {/* Serve Local */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Serving a Local Directory</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">serve-local</code>{" "}
+          command serves a local directory over HTTP so the{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">url_to_figma</code>{" "}
+          MCP tool can capture locally-built components as Figma frames:
+        </p>
+        <CopyBlock
+          code="npx @layoutdesign/context serve-local ./my-components"
+          language="bash"
+        />
+        <p className="text-base text-gray-600 leading-relaxed">
+          The directory is served at{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">http://localhost:4322</code>.
+          You can then pass that URL to the{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">url_to_figma</code> tool.
+        </p>
+        <Callout type="info">
+          Requires Python 3 to be installed on your system.
+          Check with <code className="text-xs bg-gray-100 rounded px-1 py-0.5">python3 --version</code>.
+          Python 3 is pre-installed on macOS and most Linux distributions.
+        </Callout>
+      </section>
+
       {/* Code-to-Design Loop */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">The Code-to-Design Loop</h2>
@@ -313,6 +385,59 @@ npx @layoutdesign/context init --kit notion-lite`}
           </a>{" "}
           for setup instructions.
         </Callout>
+      </section>
+
+      {/* Troubleshooting */}
+      <section className="space-y-5">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Troubleshooting</h2>
+        <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
+          {[
+            {
+              problem: "Port 4321 already in use",
+              fix: (
+                <>
+                  Another process is using the preview port. Kill it and retry:{" "}
+                  <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+                    lsof -ti:4321 | xargs kill
+                  </code>
+                </>
+              ),
+            },
+            {
+              problem: "Figma MCP not authenticated",
+              fix: (
+                <>
+                  Run{" "}
+                  <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+                    claude mcp run figma
+                  </code>{" "}
+                  once in your terminal to complete the OAuth flow, then try again.
+                </>
+              ),
+            },
+            {
+              problem: "MCP tools not showing in Claude Code",
+              fix: (
+                <>
+                  Run{" "}
+                  <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+                    npx @layoutdesign/context install
+                  </code>{" "}
+                  again to re-register the MCP server, then fully restart Claude Code (not just reload the window).
+                </>
+              ),
+            },
+            {
+              problem: "ZIP import fails",
+              fix: "Ensure the file ends in .zip and was downloaded directly from Layout Studio — browser-zipped or re-archived files may have a different structure. Try re-downloading from Studio.",
+            },
+          ].map(({ problem, fix }) => (
+            <div key={problem} className="px-5 py-4 space-y-1">
+              <p className="text-sm font-semibold text-[#0a0a0a]">{problem}</p>
+              <p className="text-sm text-gray-600">{fix}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Next steps */}
