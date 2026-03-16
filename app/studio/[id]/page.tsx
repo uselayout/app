@@ -29,7 +29,13 @@ export default function StudioPage({
   const updateDesignMd = useProjectStore((s) => s.updateDesignMd);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateExplorations = useProjectStore((s) => s.updateExplorations);
+  const setCurrentProject = useProjectStore((s) => s.setCurrentProject);
   const project = projects.find((p) => p.id === id);
+
+  // Set currentProjectId so TopBar can resolve the project (e.g. for Push button)
+  useEffect(() => {
+    setCurrentProject(id);
+  }, [id, setCurrentProject]);
 
   const extractionStatus = useExtractionStore((s) => s.status);
   const extractionProgress = useExtractionStore((s) => s.progress);
