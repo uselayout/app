@@ -42,14 +42,31 @@ export async function processCodeImages(
     });
 
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.warn("[process-code-images] API returned", res.status, errText);
+      const errBody = await res.json().catch(() => ({ error: "Unknown error" }));
+      const errMsg = errBody.error ?? `HTTP ${res.status}`;
+      console.warn(`[process-code-images] API error: ${errMsg}`);
+
+      if (errBody.code === "NO_API_KEY") {
+        console.warn("[process-code-images] GOOGLE_AI_API_KEY is not configured on the server. Images will not be generated.");
+      }
+
       return code;
     }
 
-    const { html } = await res.json();
-    console.log("[process-code-images] Images processed successfully");
-    return html ?? code;
+    const data = await res.json();
+
+    if (data.failedCount > 0) {
+      console.warn(
+        `[process-code-images] ${data.failedCount}/${data.totalCount} images failed to generate`,
+        data.errors?.[0] ?? ""
+      );
+    }
+
+    if (data.failedCount === 0 && data.totalCount > 0) {
+      console.log(`[process-code-images] All ${data.totalCount} images generated successfully`);
+    }
+
+    return data.html ?? code;
   } catch (err) {
     console.warn("[process-code-images] Failed:", err);
     return code;

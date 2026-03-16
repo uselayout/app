@@ -87,22 +87,32 @@ export function findPlaceholders(html: string): ImagePlaceholder[] {
 // Pipeline
 // ---------------------------------------------------------------------------
 
+export interface PipelineResult {
+  html: string;
+  totalCount: number;
+  failedCount: number;
+  errors: string[];
+}
+
+// Fallback SVG for failed image generation
+const FALLBACK_SVG = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><rect fill="%23f3f4f6" width="800" height="450"/><text x="400" y="210" text-anchor="middle" fill="%239ca3af" font-family="system-ui,sans-serif" font-size="16">Image generation failed</text><text x="400" y="240" text-anchor="middle" fill="%23d1d5db" font-family="system-ui,sans-serif" font-size="13">Check GOOGLE_AI_API_KEY is configured</text></svg>')}`;
+
 /**
  * Process all image placeholders in HTML, generating images and replacing
  * placeholder tags with real image URLs.
- *
- * Returns the updated HTML with all placeholders resolved.
  */
 export async function processImagePlaceholders(
   html: string,
   options: PipelineOptions = {}
-): Promise<string> {
+): Promise<PipelineResult> {
   const placeholders = findPlaceholders(html);
 
-  if (placeholders.length === 0) return html;
+  if (placeholders.length === 0) return { html, totalCount: 0, failedCount: 0, errors: [] };
 
   const concurrency = options.concurrency ?? 3;
   let result = html;
+  let failedCount = 0;
+  const errors: string[] = [];
 
   // Process in batches to respect concurrency limits
   for (let i = 0; i < placeholders.length; i += concurrency) {
@@ -149,21 +159,39 @@ export async function processImagePlaceholders(
         result = result.replace(placeholder.match, replacement);
         options.onImageComplete?.(i + j, imageUrl);
       } else {
-        // On failure, replace with a placeholder image
-        const fallback = placeholder.match.replace(
-          /data-generate-image=["'][^"']*["']\s*/i,
-          ""
-        );
+        failedCount++;
+        const errMsg = genResult.reason instanceof Error
+          ? genResult.reason.message
+          : String(genResult.reason);
+        errors.push(errMsg);
+
+        // Replace with fallback placeholder image
+        const fallback = placeholder.match
+          .replace(/data-generate-image=["'][^"']*["']\s*/i, "")
+          .replace(/data-image-style=["'][^"']*["']\s*/i, "")
+          .replace(/data-image-ratio=["'][^"']*["']\s*/i, "")
+          .replace(
+            /src=["'][^"']*["']/i,
+            `src="${FALLBACK_SVG}"`
+          )
+          .replace(
+            /\/?>$/,
+            (closing) =>
+              closing.includes("src=")
+                ? closing
+                : ` src="${FALLBACK_SVG}" ${closing}`
+          );
+
         result = result.replace(placeholder.match, fallback);
         console.warn(
           `[image-pipeline] Failed to generate image for "${placeholder.prompt}":`,
-          genResult.reason
+          errMsg
         );
       }
     }
   }
 
-  return result;
+  return { html: result, totalCount: placeholders.length, failedCount, errors };
 }
 
 /**
