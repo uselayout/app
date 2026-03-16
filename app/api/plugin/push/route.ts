@@ -164,7 +164,8 @@ export async function POST(request: Request) {
 
   await upsertProject(updatedProject, org.ownerId);
 
-  const url = `https://layout.design/studio/${updatedProject.id}`;
+  const origin = new URL(request.url).origin;
+  const url = `${origin}/studio/${updatedProject.id}`;
 
   return NextResponse.json(
     { projectId: updatedProject.id, url },
