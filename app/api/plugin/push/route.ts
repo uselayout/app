@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireMcpAuth } from "@/lib/api/mcp-auth";
 import { getOrganization } from "@/lib/supabase/organization";
 import { fetchAllProjects, upsertProject } from "@/lib/supabase/db";
+import { bulkUpsertTokens } from "@/lib/supabase/tokens";
 import type { Project } from "@/lib/types";
 
 const CORS = {
@@ -163,6 +164,18 @@ export async function POST(request: Request) {
   };
 
   await upsertProject(updatedProject, org.ownerId);
+
+  // Also populate the tokens table so Variables sync can read them
+  const tokenRows: Parameters<typeof bulkUpsertTokens>[2] = [
+    ...tokens.colors.map((t) => ({ name: t.name, value: t.value, type: "color" as const, cssVariable: t.cssVariable, source: "figma-variable" as const, groupName: "color" })),
+    ...tokens.typography.map((t) => ({ name: t.name, value: t.value, type: "typography" as const, cssVariable: t.cssVariable, source: "figma-variable" as const, groupName: "typography" })),
+    ...tokens.spacing.map((t) => ({ name: t.name, value: t.value, type: "spacing" as const, cssVariable: t.cssVariable, source: "figma-variable" as const, groupName: "spacing" })),
+    ...tokens.radius.map((t) => ({ name: t.name, value: t.value, type: "radius" as const, cssVariable: t.cssVariable, source: "figma-variable" as const, groupName: "radius" })),
+    ...tokens.effects.map((t) => ({ name: t.name, value: t.value, type: "effect" as const, cssVariable: t.cssVariable, source: "figma-variable" as const, groupName: "effect" })),
+  ];
+  if (tokenRows.length > 0) {
+    await bulkUpsertTokens(auth.orgId, updatedProject.id, tokenRows);
+  }
 
   const origin = new URL(request.url).origin;
   const url = `${origin}/studio/${updatedProject.id}`;
