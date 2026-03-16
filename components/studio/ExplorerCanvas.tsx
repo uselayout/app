@@ -86,6 +86,14 @@ export function ExplorerCanvas({
       );
       onUpdateExplorations(finalExplorations);
 
+      // Debug: check what Claude generated
+      console.log("[ExplorerCanvas] Final variants:", finalVariants.length);
+      finalVariants.forEach((v, i) => {
+        const hasPlaceholder = /data-generate-image/i.test(v.code);
+        const hasPlaceholderService = /placehold\.co|placeholder\.com|via\.placeholder/i.test(v.code);
+        console.log(`[ExplorerCanvas] Variant ${i + 1}: hasImagePlaceholder=${hasPlaceholder}, hasPlaceholderService=${hasPlaceholderService}, codeLength=${v.code.length}`);
+      });
+
       // Process image placeholders in parallel (non-blocking)
       const variantsWithImages = await Promise.all(
         finalVariants.map(async (v) => {
