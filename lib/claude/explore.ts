@@ -102,13 +102,14 @@ export function createExploreStream(
   designMd: string,
   variantCount: number,
   apiKey?: string,
-  imageDataUrl?: string
+  imageDataUrl?: string,
+  contextFiles?: Array<{ name: string; content: string }>,
 ): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
   const systemPrompt = `${EXPLORE_SYSTEM}\n\nGenerate exactly ${variantCount} variants.\n\n${designMd}`;
 
-  // Build user message — text-only or multi-content with image
-  const userContent = buildUserContent(prompt, imageDataUrl);
+  // Build user message — text-only or multi-content with image + context files
+  const userContent = buildUserContent(prompt, imageDataUrl, contextFiles);
 
   let resolveUsage: (u: TokenUsageResult) => void;
   const usage = new Promise<TokenUsageResult>((resolve) => {
@@ -163,7 +164,8 @@ export function createRefineStream(
   refinementPrompt: string,
   designMd: string,
   variantCount: number,
-  apiKey?: string
+  apiKey?: string,
+  contextFiles?: Array<{ name: string; content: string }>,
 ): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
   const systemPrompt = `${REFINE_SYSTEM}\n\nGenerate exactly ${variantCount} refined variants.\n\n${designMd}`;
@@ -173,7 +175,11 @@ export function createRefineStream(
     resolveUsage = resolve;
   });
 
-  const userMessage = `Here is the base component to refine:
+  const contextBlock = contextFiles?.length
+    ? contextFiles.map((f) => `--- context: ${f.name} ---\n${f.content}\n--- end ---`).join("\n\n") + "\n\n"
+    : "";
+
+  const userMessage = `${contextBlock}Here is the base component to refine:
 
 \`\`\`tsx
 ${baseCode}
@@ -228,15 +234,24 @@ function parseDataUrl(dataUrl: string): { mediaType: "image/png" | "image/jpeg" 
   return { mediaType: match[1] as "image/png" | "image/jpeg" | "image/webp", data: match[3] };
 }
 
-function buildUserContent(prompt: string, imageDataUrl?: string): string | ContentBlockParam[] {
-  if (!imageDataUrl) return prompt;
+function buildUserContent(
+  prompt: string,
+  imageDataUrl?: string,
+  contextFiles?: Array<{ name: string; content: string }>,
+): string | ContentBlockParam[] {
+  const contextBlock = contextFiles?.length
+    ? contextFiles.map((f) => `--- context: ${f.name} ---\n${f.content}\n--- end ---`).join("\n\n") + "\n\n"
+    : "";
+  const fullPrompt = contextBlock + prompt;
+
+  if (!imageDataUrl) return fullPrompt;
   const parsed = parseDataUrl(imageDataUrl);
-  if (!parsed) return prompt;
+  if (!parsed) return fullPrompt;
   return [
     {
       type: "image" as const,
       source: { type: "base64" as const, media_type: parsed.mediaType, data: parsed.data },
     },
-    { type: "text" as const, text: prompt },
+    { type: "text" as const, text: fullPrompt },
   ];
 }

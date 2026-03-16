@@ -13,6 +13,10 @@ const RequestSchema = z.object({
   projectId: z.string().optional(),
   baseCode: z.string().optional(),
   imageDataUrl: z.string().optional(),
+  contextFiles: z.array(z.object({
+    name: z.string(),
+    content: z.string().max(50_000),
+  })).max(3).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -67,11 +71,11 @@ export async function POST(request: NextRequest) {
     apiKey = process.env.ANTHROPIC_API_KEY;
   }
 
-  const { prompt, designMd, variantCount, baseCode, imageDataUrl } = parsed.data;
+  const { prompt, designMd, variantCount, baseCode, imageDataUrl, contextFiles } = parsed.data;
   const effectiveDesignMd = designMd || "No design system provided. Use sensible defaults with a clean, modern aesthetic.";
   const { stream, usage } = baseCode
-    ? createRefineStream(baseCode, prompt, effectiveDesignMd, variantCount, apiKey)
-    : createExploreStream(prompt, effectiveDesignMd, variantCount, apiKey, imageDataUrl);
+    ? createRefineStream(baseCode, prompt, effectiveDesignMd, variantCount, apiKey, contextFiles)
+    : createExploreStream(prompt, effectiveDesignMd, variantCount, apiKey, imageDataUrl, contextFiles);
 
   void usage
     .then((u) =>

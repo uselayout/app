@@ -158,6 +158,11 @@ export interface ExplorationSession {
   createdAt: string;
 }
 
+export interface ContextFile {
+  name: string;
+  content: string;
+}
+
 export interface DesignVariant {
   id: string;
   name: string;
