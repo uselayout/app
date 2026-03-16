@@ -5,6 +5,7 @@ import {
   createComponent,
   getComponentBySlug,
   getComponentsByOrg,
+  getComponentsByProject,
   nameToComponentSlug,
 } from "@/lib/supabase/components";
 import { logAuditEvent } from "@/lib/supabase/audit";
@@ -33,12 +34,19 @@ export async function GET(
   const status = url.searchParams.get("status") as ComponentStatus | null;
   const category = url.searchParams.get("category");
   const search = url.searchParams.get("search");
+  const projectId = url.searchParams.get("projectId");
 
-  const components = await getComponentsByOrg(orgId, {
-    status: status ?? undefined,
-    category: category ?? undefined,
-    search: search ?? undefined,
-  });
+  const components = projectId
+    ? await getComponentsByProject(orgId, projectId, {
+        status: status ?? undefined,
+        category: category ?? undefined,
+        search: search ?? undefined,
+      })
+    : await getComponentsByOrg(orgId, {
+        status: status ?? undefined,
+        category: category ?? undefined,
+        search: search ?? undefined,
+      });
 
   return NextResponse.json(components);
 }
