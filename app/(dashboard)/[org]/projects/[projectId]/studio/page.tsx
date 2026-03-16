@@ -263,6 +263,7 @@ export default function StudioPage({
             ? new URL(project.sourceUrl).hostname
             : undefined
         }
+        project={project}
         onNameChange={(name) => updateProjectName(id, name)}
         onReExtract={handleReExtract}
         onToggleSource={() => setShowSourcePanel((prev) => !prev)}
