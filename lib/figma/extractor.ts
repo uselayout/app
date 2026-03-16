@@ -30,6 +30,7 @@ export async function extractFromFigma({
     client,
     (msg) => onProgress?.("styles", 30, msg)
   );
+  onProgress?.("styles", 40, `Found ${colors.length} colours, ${typography.length} typography styles, ${effects.length} effects`);
 
   // Step 3: Components extraction
   onProgress?.("components", 45, "Extracting components...");
@@ -38,6 +39,7 @@ export async function extractFromFigma({
     client,
     (msg) => onProgress?.("components", 55, msg)
   );
+  onProgress?.("components", 60, `Found ${components.length} components`);
 
   // Step 4: Variables (Enterprise only - non-fatal)
   let cssVariables: Record<string, string> = {};
@@ -74,7 +76,8 @@ export async function extractFromFigma({
     }
   }
 
-  onProgress?.("complete", 80, "Figma extraction complete");
+  const varCount = Object.keys(cssVariables).length;
+  onProgress?.("complete", 80, `Extraction complete — ${colors.length + typography.length + effects.length} tokens${varCount > 0 ? `, ${varCount} variables` : ""}`);
 
   return {
     sourceType: "figma",
