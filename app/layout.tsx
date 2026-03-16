@@ -4,6 +4,7 @@ import Script from "next/script";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { ProjectHydrator } from "@/components/ProjectHydrator";
+import { OrgProvider } from "@/components/OrgProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,7 +59,9 @@ export default function RootLayout({
           {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
         </Script>
         <ProjectHydrator />
-        {children}
+        <OrgProvider>
+          {children}
+        </OrgProvider>
         <Toaster
           position="bottom-right"
           toastOptions={{

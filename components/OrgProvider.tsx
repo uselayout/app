@@ -44,7 +44,9 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
 
     const org = orgSlug
       ? organizations.find((o) => o.slug === orgSlug)
-      : null;
+      : organizations.find((o) => o.slug.startsWith("personal-")) ??
+        organizations[0] ??
+        null;
 
     if (!org) {
       setCurrentOrg(null);
