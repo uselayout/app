@@ -164,8 +164,8 @@ All stores use the `create<T>()((set, get) => ({ ... }))` pattern. Database-back
 
 ## Getting Help
 
-- Open a [GitHub Discussion](https://github.com/uselayout/studio/discussions) for questions
-- File a [bug report](https://github.com/uselayout/studio/issues/new?template=bug_report.yml) for issues
+- Open a [GitHub Discussion](https://github.com/uselayout/app/discussions) for questions
+- File a [bug report](https://github.com/uselayout/app/issues/new?template=bug_report.yml) for issues
 - Check existing issues before opening a new one
 
 ## Code of Conduct
