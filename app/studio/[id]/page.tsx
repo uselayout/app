@@ -25,6 +25,7 @@ export default function StudioPage({
 }) {
   const { id } = use(params);
   const projects = useProjectStore((s) => s.projects);
+  const hydrating = useProjectStore((s) => s.hydrating);
   const updateProjectName = useProjectStore((s) => s.updateProjectName);
   const updateDesignMd = useProjectStore((s) => s.updateDesignMd);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
@@ -173,6 +174,18 @@ export default function StudioPage({
   );
 
   if (!project) {
+    // Store is still loading projects from Supabase — show spinner
+    if (hydrating || projects.length === 0) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-[var(--bg-app)]">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
+            <p className="text-sm text-[var(--text-secondary)]">Loading project…</p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="space-y-4 text-center">
