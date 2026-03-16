@@ -50,7 +50,7 @@ export function CompletenessSection() {
         className="w-[1424px] max-w-full mx-auto aspect-[1424/768] relative overflow-hidden rounded-[6px]"
       >
         <img
-          src="/marketing/aurora-completeness.png"
+          src="/marketing/aurora-completeness.webp"
           alt=""
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
