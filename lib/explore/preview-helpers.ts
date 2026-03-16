@@ -17,9 +17,18 @@ export function extractComponentName(code: string): string {
 }
 
 export function buildSrcdoc(js: string, componentName: string): string {
-  const escaped = JSON.stringify(js)
-    .replace(/</g, "\\u003c")
-    .replace(/>/g, "\\u003e");
+  // Encode the transpiled JS as base64 to avoid HTML/JS parsing issues
+  // when embedding in an inline script. This eliminates problems with
+  // special characters (colons, angle brackets, template literals, etc.)
+  // breaking the script.textContent / appendChild approach.
+  //
+  // Safety: This runs inside a sandboxed iframe (sandbox="allow-scripts")
+  // with content we transpiled ourselves — the base64 decode + script
+  // injection is equivalent to the previous textContent approach but
+  // avoids the parser fragility.
+  const base64 = typeof btoa === "function"
+    ? btoa(unescape(encodeURIComponent(js)))
+    : Buffer.from(js, "utf-8").toString("base64");
 
   return [
     "<!DOCTYPE html>",
@@ -42,9 +51,9 @@ export function buildSrcdoc(js: string, componentName: string): string {
     "try{",
     "  var exports={};var module={exports:exports};",
     "  function require(n){if(n==='react')return React;if(n==='react-dom')return ReactDOM;if(n==='react-dom/client')return ReactDOM;return {}}",
-    "  var s=document.createElement('script');",
-    "  s.textContent='var exports={};var module={exports:exports};function require(n){if(n===\"react\")return React;if(n===\"react-dom\")return ReactDOM;if(n===\"react-dom/client\")return ReactDOM;return {}};'+",
-    "  " + escaped + ";",
+    // Decode the base64-encoded JS and run it via a dynamically created script element
+    `  var s=document.createElement('script');`,
+    `  s.textContent=atob("${base64}");`,
     "  document.head.appendChild(s);",
     `  var C=module.exports.default||module.exports['${componentName}']||module.exports;`,
     "  if(typeof C==='object'&&C.default)C=C.default;",
