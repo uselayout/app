@@ -32,6 +32,8 @@ export interface GenerateImageOptions {
   brandStyle?: string;
   /** Organisation ID for usage tracking and storage */
   orgId?: string;
+  /** User-provided Google AI API key (BYOK) — falls back to env var */
+  googleApiKey?: string;
 }
 
 export interface GeneratedImage {
@@ -61,8 +63,8 @@ const STYLE_PREFIXES: Record<ImageStyle, string> = {
 // Core
 // ---------------------------------------------------------------------------
 
-function getApiKey(): string {
-  const key = process.env.GOOGLE_AI_API_KEY;
+function getApiKey(userKey?: string): string {
+  const key = userKey || process.env.GOOGLE_AI_API_KEY;
   if (!key) {
     throw new Error("GOOGLE_AI_API_KEY environment variable is not set");
   }
@@ -101,7 +103,7 @@ function buildPrompt(options: GenerateImageOptions): string {
 export async function generateImageRaw(
   options: GenerateImageOptions
 ): Promise<{ data: string; mimeType: string }> {
-  const apiKey = getApiKey();
+  const apiKey = getApiKey(options.googleApiKey);
   const prompt = buildPrompt(options);
 
   const requestBody = {
