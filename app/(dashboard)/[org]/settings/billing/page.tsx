@@ -8,7 +8,10 @@ import {
   Loader2,
   ShoppingCart,
   ExternalLink,
+  Check,
+  Key,
 } from "lucide-react";
+import { getStoredApiKey, getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 
 interface CreditBalance {
   designMdRemaining: number;
@@ -51,6 +54,15 @@ export default function BillingPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [hasClaudeKey, setHasClaudeKey] = useState(false);
+  const [hasGoogleKey, setHasGoogleKey] = useState(false);
+
+  useEffect(() => {
+    setHasClaudeKey(!!getStoredApiKey());
+    setHasGoogleKey(!!getStoredGoogleApiKey());
+  }, []);
+
+  const isByok = hasClaudeKey;
 
   useEffect(() => {
     async function fetchData() {
@@ -149,95 +161,145 @@ export default function BillingPage() {
                   Current plan
                 </p>
                 <p className="mt-1 text-lg font-semibold text-[var(--text-primary)]">
-                  {TIER_LABELS[tier] || tier}
+                  {isByok ? "Bring your own key" : (TIER_LABELS[tier] || tier)}
                 </p>
+                {isByok && (
+                  <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">
+                    Underlying plan: {TIER_LABELS[tier] || tier}
+                  </p>
+                )}
               </div>
               <span
                 className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  STATUS_STYLES[subscription?.status || "active"] ||
-                  STATUS_STYLES.active
+                  isByok
+                    ? STATUS_STYLES.active
+                    : STATUS_STYLES[subscription?.status || "active"] ||
+                      STATUS_STYLES.active
                 }`}
               >
-                {subscription?.status === "past_due"
-                  ? "Past due"
-                  : subscription?.cancelAtPeriodEnd
-                    ? "Cancelling"
-                    : (subscription?.status || "active").charAt(0).toUpperCase() +
-                      (subscription?.status || "active").slice(1)}
+                {isByok
+                  ? "Active"
+                  : subscription?.status === "past_due"
+                    ? "Past due"
+                    : subscription?.cancelAtPeriodEnd
+                      ? "Cancelling"
+                      : (subscription?.status || "active").charAt(0).toUpperCase() +
+                        (subscription?.status || "active").slice(1)}
               </span>
             </div>
 
-            {/* Credit balance */}
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="rounded-md bg-[var(--bg-panel)] p-3">
-                <p className="text-xs text-[var(--text-muted)]">
-                  DESIGN.md credits
-                </p>
-                <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">
-                  {credits ? (
-                    <>
-                      <span
-                        className={
-                          designMdTotal === 0 ? "text-red-400" : ""
-                        }
-                      >
-                        {designMdTotal}
-                      </span>
-                      <span className="text-[var(--text-muted)]">
-                        {" "}
-                        / {allocation.designMd} monthly
-                      </span>
-                    </>
+            {/* BYOK key status */}
+            {isByok && (
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center gap-2 rounded-md bg-[var(--bg-panel)] p-3">
+                  <Check size={14} className="shrink-0 text-emerald-400" />
+                  <span className="text-sm text-[var(--text-primary)]">Anthropic API key</span>
+                  <span className="ml-auto text-xs text-emerald-400">Connected</span>
+                </div>
+                <div className="flex items-center gap-2 rounded-md bg-[var(--bg-panel)] p-3">
+                  {hasGoogleKey ? (
+                    <Check size={14} className="shrink-0 text-emerald-400" />
                   ) : (
-                    `${allocation.designMd} / month`
+                    <Key size={14} className="shrink-0 text-[var(--text-muted)]" />
                   )}
+                  <span className="text-sm text-[var(--text-primary)]">Google AI key</span>
+                  <span className={`ml-auto text-xs ${hasGoogleKey ? "text-emerald-400" : "text-[var(--text-muted)]"}`}>
+                    {hasGoogleKey ? "Connected" : "Not configured"}
+                  </span>
+                </div>
+                <p className="text-[10px] text-[var(--text-muted)]">
+                  All AI queries use your own keys — no credits consumed.
+                  {!hasGoogleKey && " Add a Google AI key to enable image generation."}
                 </p>
-                {(credits?.topupDesignMd ?? 0) > 0 && (
-                  <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
-                    incl. {credits!.topupDesignMd} top-up
+                {isPaid && (
+                  <p className="text-[10px] text-amber-400/80">
+                    Your {TIER_LABELS[tier]} credits are preserved while using your own keys.
                   </p>
                 )}
               </div>
-              <div className="rounded-md bg-[var(--bg-panel)] p-3">
-                <p className="text-xs text-[var(--text-muted)]">
-                  Test query credits
-                </p>
-                <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">
-                  {credits ? (
-                    <>
-                      <span
-                        className={
-                          testQueryTotal === 0 ? "text-red-400" : ""
-                        }
-                      >
-                        {testQueryTotal}
-                      </span>
-                      <span className="text-[var(--text-muted)]">
-                        {" "}
-                        / {allocation.testQuery} monthly
-                      </span>
-                    </>
-                  ) : (
-                    `${allocation.testQuery} / month`
-                  )}
-                </p>
-                {(credits?.topupTestQuery ?? 0) > 0 && (
-                  <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
-                    incl. {credits!.topupTestQuery} top-up
-                  </p>
-                )}
-              </div>
-            </div>
+            )}
 
-            {credits?.periodEnd && (
-              <p className="mt-3 text-[10px] text-[var(--text-muted)]">
-                Credits reset{" "}
-                {new Date(credits.periodEnd).toLocaleDateString("en-GB", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </p>
+            {/* Credit balance — only shown when not on BYOK */}
+            {!isByok && (
+              <>
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div className="rounded-md bg-[var(--bg-panel)] p-3">
+                    <p className="text-xs text-[var(--text-muted)]">
+                      DESIGN.md credits
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
+                      Design system extractions
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">
+                      {credits ? (
+                        <>
+                          <span
+                            className={
+                              designMdTotal === 0 ? "text-red-400" : ""
+                            }
+                          >
+                            {designMdTotal}
+                          </span>
+                          <span className="text-[var(--text-muted)]">
+                            {" "}
+                            / {allocation.designMd} monthly
+                          </span>
+                        </>
+                      ) : (
+                        `${allocation.designMd} / month`
+                      )}
+                    </p>
+                    {(credits?.topupDesignMd ?? 0) > 0 && (
+                      <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
+                        incl. {credits!.topupDesignMd} top-up
+                      </p>
+                    )}
+                  </div>
+                  <div className="rounded-md bg-[var(--bg-panel)] p-3">
+                    <p className="text-xs text-[var(--text-muted)]">
+                      AI query credits
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
+                      Test panel · Explorer · DESIGN.md edits
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">
+                      {credits ? (
+                        <>
+                          <span
+                            className={
+                              testQueryTotal === 0 ? "text-red-400" : ""
+                            }
+                          >
+                            {testQueryTotal}
+                          </span>
+                          <span className="text-[var(--text-muted)]">
+                            {" "}
+                            / {allocation.testQuery} monthly
+                          </span>
+                        </>
+                      ) : (
+                        `${allocation.testQuery} / month`
+                      )}
+                    </p>
+                    {(credits?.topupTestQuery ?? 0) > 0 && (
+                      <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
+                        incl. {credits!.topupTestQuery} top-up
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {credits?.periodEnd && (
+                  <p className="mt-3 text-[10px] text-[var(--text-muted)]">
+                    Credits reset{" "}
+                    {new Date(credits.periodEnd).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                )}
+              </>
             )}
 
             {/* Manage subscription (paid users) */}
@@ -252,37 +314,39 @@ export default function BillingPage() {
             )}
           </div>
 
-          {/* Buy more credits */}
-          <div className="mt-4 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-5">
-            <div className="flex items-start gap-3">
-              <ShoppingCart className="mt-0.5 h-4 w-4 text-[var(--text-muted)]" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-[var(--text-primary)]">
-                  Buy more credits
-                </p>
-                <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                  Top up with 30 DESIGN.md extractions and 80 test queries.
-                  Top-up credits never expire and carry over between billing
-                  periods.
-                </p>
-                <button
-                  onClick={() => handleCheckout("topup")}
-                  disabled={checkoutLoading === "topup"}
-                  className="mt-3 flex items-center gap-1.5 rounded-lg bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {checkoutLoading === "topup" ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <ShoppingCart size={14} />
-                  )}
-                  Buy credit pack
-                </button>
+          {/* Buy more credits — only when not on BYOK */}
+          {!isByok && (
+            <div className="mt-4 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-5">
+              <div className="flex items-start gap-3">
+                <ShoppingCart className="mt-0.5 h-4 w-4 text-[var(--text-muted)]" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">
+                    Buy more credits
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                    Top up with 30 DESIGN.md extractions and 80 AI queries.
+                    Top-up credits never expire and carry over between billing
+                    periods.
+                  </p>
+                  <button
+                    onClick={() => handleCheckout("topup")}
+                    disabled={checkoutLoading === "topup"}
+                    className="mt-3 flex items-center gap-1.5 rounded-lg bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {checkoutLoading === "topup" ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <ShoppingCart size={14} />
+                    )}
+                    Buy credit pack
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Upgrade prompt (free users only) */}
-          {isFree && (
+          {/* Upgrade prompt (free users only, not on BYOK) */}
+          {isFree && !isByok && (
             <div className="mt-4 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-5">
               <div className="flex items-start gap-3">
                 <Zap className="mt-0.5 h-4 w-4 text-[var(--studio-accent)]" />
@@ -291,7 +355,7 @@ export default function BillingPage() {
                     Upgrade to Pro
                   </p>
                   <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                    Get 50 DESIGN.md extractions and 100 test queries per month,
+                    Get 50 DESIGN.md extractions and 100 AI queries per month,
                     plus priority support.
                   </p>
                   <button
@@ -312,16 +376,44 @@ export default function BillingPage() {
 
           {/* BYOK section */}
           <div className="mt-4 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-5">
-            <p className="text-sm font-medium text-[var(--text-primary)]">
-              Bring your own key
-            </p>
-            <p className="mt-1 text-xs text-[var(--text-secondary)]">
-              Use your own Anthropic API key to bypass credit limits entirely.
-              Your key is stored locally in your browser — we never persist it.
-            </p>
-            <p className="mt-3 text-xs text-[var(--text-muted)]">
-              Configure your API key from the key icon in the top bar.
-            </p>
+            <div className="flex items-start gap-3">
+              <Key className="mt-0.5 h-4 w-4 text-[var(--text-muted)]" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-[var(--text-primary)]">
+                  Bring your own key
+                </p>
+                {isByok ? (
+                  <>
+                    <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                      Your API keys are stored locally in your browser — we never persist them on our servers.
+                      Manage your keys from the key icon in the studio top bar.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+                        <Check size={12} />
+                        Anthropic
+                      </div>
+                      {hasGoogleKey && (
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+                          <Check size={12} />
+                          Google AI
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                      Use your own Anthropic API key to bypass credit limits entirely.
+                      Your key is stored locally in your browser — we never persist it.
+                    </p>
+                    <p className="mt-3 text-xs text-[var(--text-muted)]">
+                      Configure your API key from the key icon in the top bar.
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </>
       )}
