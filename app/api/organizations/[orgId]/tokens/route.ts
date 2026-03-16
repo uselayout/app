@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireOrgAuth } from "@/lib/api/auth-context";
-import { createToken, getTokensByOrg } from "@/lib/supabase/tokens";
+import { createToken, getTokensByOrg, getTokensByProject } from "@/lib/supabase/tokens";
 import { logAuditEvent } from "@/lib/supabase/audit";
 import type { DesignTokenCategory, DesignTokenType } from "@/lib/types/token";
 
@@ -36,13 +36,21 @@ export async function GET(
   const category = rawCategory && VALID_TOKEN_CATEGORIES.includes(rawCategory as DesignTokenCategory) ? rawCategory as DesignTokenCategory : undefined;
   const group = url.searchParams.get("group");
   const search = url.searchParams.get("search");
+  const projectId = url.searchParams.get("projectId");
 
-  const tokens = await getTokensByOrg(orgId, {
-    type: type,
-    category: category,
-    groupName: group ?? undefined,
-    search: search ?? undefined,
-  });
+  const tokens = projectId
+    ? await getTokensByProject(orgId, projectId, {
+        type: type,
+        category: category,
+        groupName: group ?? undefined,
+        search: search ?? undefined,
+      })
+    : await getTokensByOrg(orgId, {
+        type: type,
+        category: category,
+        groupName: group ?? undefined,
+        search: search ?? undefined,
+      });
 
   return NextResponse.json(tokens);
 }
