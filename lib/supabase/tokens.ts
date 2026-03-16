@@ -330,7 +330,9 @@ export async function bulkCreateTokens(
     });
   }
 
-  const { error } = await supabase.from("layout_token").insert(rows);
+  const { error } = await supabase
+    .from("layout_token")
+    .upsert(rows, { onConflict: "org_id,project_id,slug", ignoreDuplicates: true });
 
   if (error) {
     console.error("Failed to bulk create tokens:", error.message);

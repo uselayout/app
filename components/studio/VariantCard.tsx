@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUpToLine } from "lucide-react";
+import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUpToLine, ArrowUp } from "lucide-react";
 import { extractComponentName, buildSrcdoc } from "@/lib/explore/preview-helpers";
 import { usePushToDs } from "@/lib/hooks/use-push-to-ds";
 import type { DesignVariant } from "@/lib/types";
@@ -13,7 +13,7 @@ interface VariantCardProps {
   onRate: (rating: "up" | "down") => void;
   onCopyCode: () => void;
   onPushToFigma: () => void;
-  onRegenerate: () => void;
+  onRegenerate: (feedback?: string) => void;
   onResponsive?: () => void;
   onPromoteToLibrary?: () => void;
 }
@@ -30,8 +30,11 @@ export function VariantCard({
   onPromoteToLibrary,
 }: VariantCardProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const refineInputRef = useRef<HTMLInputElement>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [showRefineInput, setShowRefineInput] = useState(false);
+  const [refineText, setRefineText] = useState("");
   const { pushComponent, pushing: pushingToDs, canPush } = usePushToDs();
 
   // Transpile and render
@@ -183,9 +186,18 @@ export function VariantCard({
           <Copy size={12} />
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); onRegenerate(); }}
-          className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-          title="Regenerate"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowRefineInput(!showRefineInput);
+            setRefineText("");
+            setTimeout(() => refineInputRef.current?.focus(), 50);
+          }}
+          className={`rounded p-1 transition-colors ${
+            showRefineInput
+              ? "text-amber-400 bg-amber-500/10"
+              : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+          }`}
+          title="Regenerate with feedback"
         >
           <RotateCw size={12} />
         </button>
@@ -233,6 +245,45 @@ export function VariantCard({
           </button>
         )}
       </div>
+
+      {/* Inline refine input */}
+      {showRefineInput && (
+        <div
+          className="flex items-center gap-1.5 border-t border-amber-500/20 bg-amber-500/5 px-3 py-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <input
+            ref={refineInputRef}
+            type="text"
+            placeholder="What to change... (Enter to submit, empty = regenerate as-is)"
+            value={refineText}
+            onChange={(e) => setRefineText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onRegenerate(refineText.trim() || undefined);
+                setShowRefineInput(false);
+                setRefineText("");
+              }
+              if (e.key === "Escape") {
+                setShowRefineInput(false);
+                setRefineText("");
+              }
+            }}
+            className="flex-1 bg-transparent text-[11px] text-[var(--text-primary)] placeholder:text-amber-400/40 outline-none"
+          />
+          <button
+            onClick={() => {
+              onRegenerate(refineText.trim() || undefined);
+              setShowRefineInput(false);
+              setRefineText("");
+            }}
+            className="shrink-0 flex items-center justify-center size-5 rounded-full bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
+          >
+            <ArrowUp size={10} strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
