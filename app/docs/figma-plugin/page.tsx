@@ -58,8 +58,8 @@ export default function FigmaPluginPage() {
                 ],
                 [
                   "Variables",
-                  "Works on all plans",
-                  "Enterprise plans only",
+                  "Local Styles on all plans; Variables API requires Enterprise",
+                  "Enterprise plans only via REST API",
                 ],
                 [
                   "Selection Context",
@@ -119,6 +119,8 @@ export default function FigmaPluginPage() {
               Capture a component or frame as a screenshot with token context.
               Push it to Layout&apos;s Explorer Canvas where AI rebuilds it
               using your design system tokens and generates multiple variants.
+              Requires at least one existing project in Layout Studio — create a
+              project first if you have not already.
             </p>
           </div>
 
@@ -137,28 +139,106 @@ export default function FigmaPluginPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Installation</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          Search &quot;Layout&quot; in Figma&apos;s plugin browser (coming
-          soon), or for development:
+          During alpha, install the plugin as a development plugin using the
+          downloaded plugin folder provided by the Layout team. Once the plugin
+          has passed Figma Community review, a one-click install method will be
+          available and documented here.
         </p>
         <ol className="list-decimal pl-6 space-y-2 text-gray-600">
-          <li>Clone the plugin repository</li>
           <li>
-            Run{" "}
+            In Figma, click{" "}
+            <strong className="font-semibold text-[#0a0a0a]">
+              Plugins &gt; Development &gt; Import plugin from manifest
+            </strong>
+          </li>
+          <li>
+            Navigate to the downloaded plugin folder and select{" "}
             <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
-              npm install &amp;&amp; npm run build
+              manifest.json
             </code>
           </li>
           <li>
-            In Figma: Plugins &gt; Development &gt; Import plugin from manifest
+            The plugin now appears in your Figma plugins list as{" "}
+            <strong className="font-semibold text-[#0a0a0a]">Layout</strong>
           </li>
           <li>
-            Select{" "}
-            <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
-              manifest.json
-            </code>{" "}
-            from the cloned repo
+            Open any Figma file and run the plugin from{" "}
+            <strong className="font-semibold text-[#0a0a0a]">
+              Plugins &gt; Development &gt; Layout
+            </strong>
           </li>
         </ol>
+        <Callout type="info">
+          Once published to the Figma Community, a separate &quot;Install from Figma
+          Community&quot; method will be available — no manifest import needed.
+        </Callout>
+      </section>
+
+      {/* Getting Your API Key */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Getting Your API Key</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The plugin connects to your Layout account using an API key. To generate one:
+        </p>
+        <ol className="list-decimal pl-6 space-y-2 text-gray-600">
+          <li>
+            Go to{" "}
+            <a href="https://layout.design" className="text-gray-900 hover:underline">
+              layout.design
+            </a>
+            , click your organisation name in the top left, and go to{" "}
+            <strong className="font-semibold text-[#0a0a0a]">Settings &gt; API Keys</strong>
+          </li>
+          <li>
+            Click{" "}
+            <strong className="font-semibold text-[#0a0a0a]">Generate New Key</strong>
+          </li>
+          <li>Give it a name — for example, &quot;Figma Plugin&quot;</li>
+          <li>
+            Copy the key immediately — it is only shown once. Store it somewhere
+            safe (a password manager is ideal).
+          </li>
+          <li>
+            In the plugin: open the{" "}
+            <strong className="font-semibold text-[#0a0a0a]">Settings</strong> tab,
+            paste the key into the API Key field, and click{" "}
+            <strong className="font-semibold text-[#0a0a0a]">Verify</strong>
+          </li>
+        </ol>
+        <Callout type="tip">
+          The plugin stores your API key in Figma&apos;s client storage — it never
+          leaves your machine and is not sent to any third party.
+        </Callout>
+      </section>
+
+      {/* Troubleshooting */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Troubleshooting</h2>
+        <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
+          {[
+            {
+              problem: "Settings tab shows \"Not connected\"",
+              fix: "Double-check that the API key was copied correctly — it is only shown once at generation time. If unsure, generate a new key in Layout → Settings → API Keys and try again.",
+            },
+            {
+              problem: "Extraction returns no tokens",
+              fix: "Ensure the Figma file has local styles set up (Paint, Text, or Effect styles visible in the Assets panel). Styles imported from team libraries may not be accessible to the plugin.",
+            },
+            {
+              problem: "Variables sync fails or shows an error",
+              fix: "On Professional and Starter Figma plans, the Variables API is unavailable (Figma restriction). The plugin automatically falls back to syncing Local Styles — this is expected behaviour, not a bug.",
+            },
+            {
+              problem: "Canvas push returns an error",
+              fix: "Ensure you have at least one project in Layout Studio. Create a project at layout.design first, then return to Figma and try again. Also verify your API key is valid.",
+            },
+          ].map(({ problem, fix }) => (
+            <div key={problem} className="px-5 py-4 space-y-1">
+              <p className="text-sm font-semibold text-[#0a0a0a]">{problem}</p>
+              <p className="text-sm text-gray-600">{fix}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Tips */}
@@ -183,9 +263,10 @@ export default function FigmaPluginPage() {
         </ul>
 
         <Callout type="info">
-          The plugin reads local (unpublished) styles and works with Variables
-          on all Figma plans - two significant advantages over the REST API
-          approach used by the Web Studio.
+          The plugin reads local (unpublished) styles on all Figma plans — a
+          significant advantage over the REST API approach used by Web Studio.
+          Full Figma Variables API access requires an Enterprise plan; on other
+          plans, the plugin syncs Local Styles instead.
         </Callout>
       </section>
 

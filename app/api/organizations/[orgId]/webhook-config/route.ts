@@ -1,7 +1,42 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import { requireOrgAuth } from "@/lib/api/auth-context";
 import { supabase } from "@/lib/supabase/client";
+
+const ENCRYPTION_KEY = process.env.WEBHOOK_ENCRYPTION_KEY;
+
+function encryptToken(token: string): string {
+  if (!ENCRYPTION_KEY) {
+    console.warn("[webhook-config] WEBHOOK_ENCRYPTION_KEY not set — storing token unencrypted");
+    return token;
+  }
+  const key = Buffer.from(ENCRYPTION_KEY, "hex");
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(token, "utf8"), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  return `${iv.toString("hex")}:${authTag.toString("hex")}:${encrypted.toString("hex")}`;
+}
+
+function decryptToken(encrypted: string): string {
+  if (!ENCRYPTION_KEY) {
+    return encrypted;
+  }
+  const parts = encrypted.split(":");
+  if (parts.length !== 3) {
+    // Not an encrypted value (stored before encryption was enabled)
+    return encrypted;
+  }
+  const [ivHex, authTagHex, ciphertextHex] = parts;
+  const key = Buffer.from(ENCRYPTION_KEY, "hex");
+  const iv = Buffer.from(ivHex, "hex");
+  const authTag = Buffer.from(authTagHex, "hex");
+  const ciphertext = Buffer.from(ciphertextHex, "hex");
+  const decipher = createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(authTag);
+  return decipher.update(ciphertext).toString("utf8") + decipher.final("utf8");
+}
 
 const UpsertSchema = z.object({
   provider: z.enum(["figma"]),
@@ -22,7 +57,7 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("layout_webhook_config")
-    .select("id, provider, webhook_id, passcode, github_owner, github_repo, github_branch, enabled, created_at, updated_at")
+    .select("id, provider, webhook_id, passcode, github_owner, github_repo, github_branch, github_token_encrypted, enabled, created_at, updated_at")
     .eq("org_id", orgId)
     .order("created_at", { ascending: false });
 
@@ -33,7 +68,13 @@ export async function GET(
     );
   }
 
-  return NextResponse.json(data ?? []);
+  // Strip the raw token — return only whether it's set
+  const sanitised = (data ?? []).map((row: Record<string, unknown>) => {
+    const { github_token_encrypted, ...rest } = row;
+    return { ...rest, hasGithubToken: !!github_token_encrypted };
+  });
+
+  return NextResponse.json(sanitised);
 }
 
 export async function POST(
@@ -77,7 +118,7 @@ export async function POST(
     github_owner: githubOwner ?? null,
     github_repo: githubRepo ?? null,
     github_branch: githubBranch ?? "main",
-    github_token_encrypted: githubToken ?? null, // TODO: encrypt before storing
+    github_token_encrypted: githubToken ? encryptToken(githubToken) : null,
     enabled: true,
     updated_at: now,
   };
