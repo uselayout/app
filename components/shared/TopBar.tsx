@@ -7,12 +7,13 @@ import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
 import { PushToDesignSystemModal } from "@/components/studio/PushToDesignSystemModal";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
-import type { SourceType } from "@/lib/types";
+import type { Project, SourceType } from "@/lib/types";
 
 interface TopBarProps {
   projectName: string;
   sourceType: SourceType;
   sourceName?: string;
+  project?: Project;
   onNameChange?: (name: string) => void;
   onReExtract?: () => void;
   onToggleSource?: () => void;
@@ -28,6 +29,7 @@ export function TopBar({
   projectName,
   sourceType,
   sourceName,
+  project: projectProp,
   onNameChange,
   onReExtract,
   onToggleSource,
@@ -46,7 +48,8 @@ export function TopBar({
   const inputRef = useRef<HTMLInputElement>(null);
   const currentProjectId = useProjectStore((s) => s.currentProjectId);
   const projects = useProjectStore((s) => s.projects);
-  const currentProject = projects.find((p) => p.id === currentProjectId);
+  const storeProject = projects.find((p) => p.id === currentProjectId);
+  const currentProject = projectProp ?? storeProject;
   const orgId = useOrgStore((s) => s.currentOrgId);
   const tokens = currentProject?.extractionData?.tokens;
   const hasTokens = tokens
