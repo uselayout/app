@@ -15,7 +15,7 @@ import { friendlyError } from "@/lib/explore/friendly-error";
 import { applyChangesToDesignMd } from "@/lib/figma/diff";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { processCodeImages } from "@/lib/image/process-code-images";
-import type { ExplorationSession, DesignVariant, FigmaChange } from "@/lib/types";
+import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile } from "@/lib/types";
 
 interface ExplorerCanvasProps {
   projectId: string;
@@ -239,7 +239,7 @@ export function ExplorerCanvas({
   );
 
   const handleGenerate = useCallback(
-    async (prompt: string, variantCount: number, imageDataUrl?: string) => {
+    async (prompt: string, variantCount: number, imageDataUrl?: string, contextFiles?: ContextFile[]) => {
       if (isGenerating) return;
 
       setIsGenerating(true);
@@ -289,7 +289,7 @@ export function ExplorerCanvas({
           batchId,
           batchPrompt,
           updatedExplorations,
-          { prompt, designMd, variantCount, projectId, imageDataUrl },
+          { prompt, designMd, variantCount, projectId, imageDataUrl, contextFiles },
           variantCount,
         );
       } catch (err) {
