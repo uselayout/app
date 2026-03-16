@@ -267,8 +267,8 @@ Figma webhook integration that triggers automatic re-extraction when designers p
 ### Template Marketplace
 Publish design systems as reusable templates. Other teams can browse and install templates to bootstrap their projects with pre-configured design tokens, components, and documentation.
 
-### Figma Plugin (Coming Soon)
-Native Figma plugin for one-click AI Kit export, live token inspector, component sync status, push-to-canvas for AI variant generation, and webhook management - all without leaving Figma.
+### Figma Plugin
+Native Figma plugin for one-click AI Kit export, live token inspector, component sync, and push-to-canvas for AI variant generation — all without leaving Figma. Reads local (unpublished) styles on all Figma plans, no access token needed. Full Variables API access requires an Enterprise plan; on other plans, the plugin syncs Local Styles instead.
 
 ### AI Image Generation (Coming Soon)
 Gemini 3.1 Flash Image Preview integration for generating contextual images (hero photos, illustrations, icons) in full-page designs created through the Explorer Canvas.
