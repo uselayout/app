@@ -46,7 +46,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   currentProjectId: null,
   userId: null,
   orgId: null,
-  hydrating: false,
+  hydrating: true,
   hydrationError: null,
 
   currentProject: () => {
@@ -258,5 +258,5 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (orgId) void removeProject(id, orgId);
   },
 
-  clearProjects: () => set({ projects: [], currentProjectId: null, userId: null, orgId: null }),
+  clearProjects: () => set({ projects: [], currentProjectId: null, userId: null, orgId: null, hydrating: false }),
 }));
