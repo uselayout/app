@@ -19,6 +19,7 @@ function encryptToken(token: string): string {
   return `${iv.toString("hex")}:${authTag.toString("hex")}:${encrypted.toString("hex")}`;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function decryptToken(encrypted: string): string {
   if (!ENCRYPTION_KEY) {
     return encrypted;
