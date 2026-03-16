@@ -123,7 +123,7 @@ export default function GettingStartedPage() {
             },
             {
               step: "Iterate",
-              desc: "Edit DESIGN.md in the Studio editor to fix anything the AI misidentified. Re-test.",
+              desc: "Edit DESIGN.md manually or use the AI edit bar to make changes in plain English (e.g. \"make buttons square\"). Re-test.",
             },
             {
               step: "Export",
