@@ -7,6 +7,8 @@
  * This module runs CLIENT-SIDE — no server-only imports allowed.
  */
 
+import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
+
 const IMAGE_PLACEHOLDER_RE = /data-generate-image=["'][^"']+["']/i;
 
 interface ProcessOptions {
@@ -28,10 +30,14 @@ export async function processCodeImages(
   console.log("[process-code-images] Found image placeholders, calling API...");
 
   try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const googleKey = getStoredGoogleApiKey();
+    if (googleKey) headers["X-Google-Api-Key"] = googleKey;
+
     const res = await fetch("/api/generate/image", {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         mode: "batch",
         html: code,
