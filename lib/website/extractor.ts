@@ -54,24 +54,32 @@ export async function extractFromWebsite({
     // Extract CSS variables
     onProgress?.("css", 25, "Extracting CSS custom properties...");
     const cssVariables: Record<string, string> = await page.evaluate(`(${extractCSSVariablesScript})()`);
+    onProgress?.("css", 30, `Found ${Object.keys(cssVariables).length} CSS custom properties`);
 
     // Extract fonts
     onProgress?.("fonts", 35, "Extracting font declarations...");
     const fonts: FontDeclaration[] = await page.evaluate(`(${extractFontsScript})()`);
+    onProgress?.("fonts", 40, `Found ${fonts.length} font declarations`);
 
     // Extract computed styles
     onProgress?.("computed", 45, "Extracting computed styles...");
     const computedStyles: Record<string, ComputedStyleMap> = await page.evaluate(
       `(${extractComputedStylesScript})()`
     );
+    onProgress?.("computed", 50, `Sampled ${Object.keys(computedStyles).length} element styles`);
 
     // Extract animations
     onProgress?.("animations", 55, "Extracting animations...");
     const animations: AnimationDefinition[] = await page.evaluate(`(${extractAnimationsScript})()`);
+    onProgress?.("animations", 58, `Found ${animations.length} animations`);
 
     // Detect libraries
     onProgress?.("libraries", 60, "Detecting libraries...");
     const librariesDetected: Record<string, boolean> = await page.evaluate(`(${detectLibrariesScript})()`);
+    const libCount = Object.values(librariesDetected).filter(Boolean).length;
+    if (libCount > 0) {
+      onProgress?.("libraries", 65, `Detected ${libCount} ${libCount === 1 ? "library" : "libraries"}`);
+    }
 
     // Take screenshots
     onProgress?.("screenshots", 70, "Capturing screenshots...");
@@ -124,7 +132,8 @@ export async function extractFromWebsite({
 
     const hostname = new URL(url).hostname.replace("www.", "");
 
-    onProgress?.("complete", 80, "Website extraction complete");
+    const tokenCount = colors.length + typography.length + spacing.length + radius.length;
+    onProgress?.("complete", 80, `Extraction complete — ${tokenCount} tokens, ${allFonts.length} fonts`);
 
     return {
       sourceType: "website",

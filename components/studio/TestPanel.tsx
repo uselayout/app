@@ -18,7 +18,8 @@ import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { usePushToDs } from "@/lib/hooks/use-push-to-ds";
 import { useProjectStore } from "@/lib/store/project";
-import type { TestResult, HealthScore } from "@/lib/types";
+import { FigmaPushModal, toFrameName } from "@/components/studio/FigmaPushModal";
+import type { TestResult, HealthScore, DesignVariant } from "@/lib/types";
 
 export interface TestPanelHandle {
   focusPrompt: () => void;
@@ -503,30 +504,21 @@ function ResultBlock({
   onDelete: (id: string) => void;
 }) {
   const [tab, setTab] = useState<"preview" | "code">("preview");
-  const [figmaCopied, setFigmaCopied] = useState(false);
+  const [figmaPushVariant, setFigmaPushVariant] = useState<DesignVariant | null>(null);
   const { pushComponent, pushing: pushingToDs, canPush } = usePushToDs();
 
-  const handlePushToFigma = useCallback(async () => {
+  const handlePushToFigma = useCallback(() => {
     const block = extractFirstCodeBlock(result.output);
     if (!block) return;
     const code = block.code.replace(/^```\w*\r?\n?/gm, "").replace(/^```\s*$/gm, "").trim();
-    const prompt = [
-      `Call the layout MCP server's push_to_figma tool with the following inputs:`,
-      `- code: the TSX below`,
-      `- name: "${result.prompt}"`,
-      "",
-      "```tsx",
+    const name = extractComponentName(code) ?? toFrameName(result.prompt);
+    setFigmaPushVariant({
+      id: result.id,
+      name,
+      rationale: result.prompt,
       code,
-      "```",
-      "",
-      "Do NOT create temp HTML files or start HTTP servers. The push_to_figma tool handles everything.",
-    ].join("\n");
-    const ok = await copyToClipboard(prompt);
-    if (ok) {
-      setFigmaCopied(true);
-      setTimeout(() => setFigmaCopied(false), 2000);
-    }
-  }, [result.output, result.prompt]);
+    });
+  }, [result.output, result.prompt, result.id]);
 
   return (
     <div className="space-y-2">
@@ -613,19 +605,11 @@ function ResultBlock({
             {extractFirstCodeBlock(result.output) && (
               <button
                 onClick={handlePushToFigma}
-                className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] transition-colors ${
-                  figmaCopied
-                    ? "text-emerald-400"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                }`}
-                title="Copy prompt for Figma MCP — paste into Claude Code or Cursor"
+                className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+                title="Push to Figma via MCP"
               >
-                {figmaCopied ? (
-                  <Check className="h-3 w-3" />
-                ) : (
-                  <Figma className="h-3 w-3" />
-                )}
-                <span>{figmaCopied ? "Copied!" : "Push to Figma"}</span>
+                <Figma className="h-3 w-3" />
+                <span>Push to Figma</span>
               </button>
             )}
             {canPush && extractFirstCodeBlock(result.output) && (
@@ -663,6 +647,13 @@ function ResultBlock({
           <Trash2 className="h-3 w-3" />
         </button>
       </div>
+
+      {figmaPushVariant && (
+        <FigmaPushModal
+          variant={figmaPushVariant}
+          onClose={() => setFigmaPushVariant(null)}
+        />
+      )}
     </div>
   );
 }

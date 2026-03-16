@@ -394,23 +394,37 @@ const VIEWPORT_OPTIONS = [
   { key: "desktop", label: "Desktop", icon: Monitor },
 ] as const;
 
+/** Clean up a user prompt or variant name into a short Figma frame label. */
+export function toFrameName(raw: string): string {
+  // Strip leading verbs like "create", "build", "make", "design", "generate"
+  let name = raw.replace(/^(?:create|build|make|design|generate|show|write|implement)\s+(?:me\s+)?(?:a\s+|an\s+|the\s+|all\s+(?:the\s+)?)?/i, "");
+  // Title-case first letter
+  name = name.charAt(0).toUpperCase() + name.slice(1);
+  // Truncate at 60 chars on a word boundary
+  if (name.length > 60) {
+    name = name.slice(0, 60).replace(/\s+\S*$/, "");
+  }
+  return name.trim() || raw.slice(0, 60);
+}
+
 function buildMcpCommand(variant: DesignVariant, viewports: string[], figmaUrl?: string): string {
+  const frameName = toFrameName(variant.name);
   const vpList = viewports.join(", ");
 
   const inputs = [
     `- code: the TSX below`,
-    `- name: "${variant.name}"`,
+    `- name: "${frameName}" (this becomes the Figma frame label)`,
     `- viewports: [${viewports.map((v) => `"${v}"`).join(", ")}]`,
   ];
   if (figmaUrl) {
-    inputs.push(`- figmaUrl: "${figmaUrl}"`);
+    inputs.push(`- figmaUrl: "${figmaUrl}" (push into this existing file)`);
   }
 
   return `Call the layout MCP server's push_to_figma tool with the following inputs:
 ${inputs.join("\n")}
 
 Push for viewport(s): ${vpList}.
-Call push_to_figma once per viewport with the name suffixed — e.g. "${variant.name} (mobile)".
+Call push_to_figma once per viewport with the name suffixed — e.g. "${frameName} (mobile)".
 
 \`\`\`tsx
 ${variant.code}
