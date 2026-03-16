@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Sparkles, X, Send, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { ExplorerToolbar } from "./ExplorerToolbar";
 import { VariantCard } from "./VariantCard";
@@ -45,6 +45,16 @@ export function ExplorerCanvas({
   const [comparePrompt, setComparePrompt] = useState<string | null>(null);
   const [activeExplorationIndex, setActiveExplorationIndex] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Warn user before navigating away during generation
+  useEffect(() => {
+    if (!isGenerating) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isGenerating]);
 
   // Active exploration — default to most recent, or user-selected
   const explorationIndex = activeExplorationIndex !== null && activeExplorationIndex < explorations.length
