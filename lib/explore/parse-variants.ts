@@ -13,7 +13,15 @@ import type { DesignVariant } from "@/lib/types";
  *   ### Variant 2: Minimal
  *   ...
  */
-export function parseVariants(output: string): DesignVariant[] {
+
+interface ParseOptions {
+  idOffset?: number;
+  batchId?: string;
+  batchPrompt?: string;
+}
+
+export function parseVariants(output: string, options: ParseOptions = {}): DesignVariant[] {
+  const { idOffset = 0, batchId, batchPrompt } = options;
   const sections = output.split(/^### Variant \d+:\s*/m).filter(Boolean);
   const variants: DesignVariant[] = [];
 
@@ -40,10 +48,12 @@ export function parseVariants(output: string): DesignVariant[] {
     if (!code) continue;
 
     variants.push({
-      id: `variant-${i}`,
+      id: `variant-${idOffset + i}`,
       name,
       rationale,
       code,
+      ...(batchId != null && { batchId }),
+      ...(batchPrompt != null && { batchPrompt }),
     });
   }
 
