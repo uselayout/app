@@ -46,3 +46,16 @@ tmp.json
 
 # playwright mcp
 .playwright-mcp/
+homepage*.png
+screenshot*.png
+
+# Internal docs — business strategy, plans, PRDs, session notes (not for public repo)
+docs/BUSINESS_MODEL_ANALYSIS.md
+docs/DEVELOPMENT_PLAN.md
+docs/ENTERPRISE_STRATEGY.md
+docs/MARKETING_PLAYBOOK.md
+docs/PRODUCT_STRATEGY.md
+docs/v1-alpha-launch-plan.md
+docs/handoff/
+docs/plans/
+docs/prd/
