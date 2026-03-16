@@ -35,6 +35,7 @@ export function ExplorerCanvas({
   onDesignMdUpdate,
 }: ExplorerCanvasProps) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isProcessingImages, setIsProcessingImages] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [pushVariant, setPushVariant] = useState<DesignVariant | null>(null);
@@ -117,20 +118,25 @@ export function ExplorerCanvas({
       );
       onUpdateExplorations(finalExplorations);
 
-      // Process image placeholders in parallel (non-blocking)
-      const variantsWithImages = await Promise.all(
-        finalVariants.map(async (v) => {
-          const processed = await processCodeImages(v.code);
-          return processed !== v.code ? { ...v, code: processed } : v;
-        })
-      );
-
-      const anyChanged = variantsWithImages.some((v, i) => v !== finalVariants[i]);
-      if (anyChanged) {
-        const imageExplorations = finalExplorations.map((e) =>
-          e.id === sessionId ? { ...e, variants: variantsWithImages } : e
+      // Process image placeholders in parallel
+      setIsProcessingImages(true);
+      try {
+        const variantsWithImages = await Promise.all(
+          finalVariants.map(async (v) => {
+            const processed = await processCodeImages(v.code);
+            return processed !== v.code ? { ...v, code: processed } : v;
+          })
         );
-        onUpdateExplorations(imageExplorations);
+
+        const anyChanged = variantsWithImages.some((v, i) => v !== finalVariants[i]);
+        if (anyChanged) {
+          const imageExplorations = finalExplorations.map((e) =>
+            e.id === sessionId ? { ...e, variants: variantsWithImages } : e
+          );
+          onUpdateExplorations(imageExplorations);
+        }
+      } finally {
+        setIsProcessingImages(false);
       }
     },
     [onUpdateExplorations]
@@ -257,6 +263,65 @@ export function ExplorerCanvas({
     if (!currentExploration) return;
     handleGenerate(currentExploration.prompt, currentExploration.variantCount);
   }, [currentExploration, handleGenerate]);
+
+  const handleRefineVariant = useCallback(
+    async (variant: DesignVariant, feedback: string) => {
+      if (isGenerating) return;
+
+      setIsGenerating(true);
+      setGenerationError(null);
+      abortRef.current = new AbortController();
+
+      const sessionId = crypto.randomUUID();
+      const newExploration: ExplorationSession = {
+        id: sessionId,
+        projectId,
+        prompt: `Refine "${variant.name}": ${feedback}`,
+        variantCount: 1,
+        variants: [],
+        createdAt: new Date().toISOString(),
+      };
+
+      const updatedExplorations = [...explorations, newExploration];
+      onUpdateExplorations(updatedExplorations);
+      setActiveExplorationIndex(updatedExplorations.length - 1);
+      setSelectedVariantId(null);
+
+      try {
+        const apiKey = getStoredApiKey();
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (apiKey) headers["X-Api-Key"] = apiKey;
+
+        const res = await fetch("/api/generate/explore", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            prompt: feedback,
+            designMd,
+            variantCount: 1,
+            projectId,
+            baseCode: variant.code,
+          }),
+          signal: abortRef.current.signal,
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: "Generation failed" }));
+          throw new Error(errorData.error || `HTTP ${res.status}`);
+        }
+
+        await streamVariants(res, sessionId, updatedExplorations);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        const message = err instanceof Error ? err.message : "Generation failed";
+        setGenerationError(friendlyError({ error: message }));
+      } finally {
+        setIsGenerating(false);
+        abortRef.current = null;
+      }
+    },
+    [isGenerating, projectId, designMd, explorations, onUpdateExplorations, streamVariants]
+  );
 
   const handleRateVariant = useCallback(
     (variantId: string, rating: "up" | "down") => {
@@ -440,7 +505,13 @@ export function ExplorerCanvas({
                 onRate={(rating) => handleRateVariant(variant.id, rating)}
                 onCopyCode={() => navigator.clipboard.writeText(variant.code)}
                 onPushToFigma={() => handlePushToFigma(variant)}
-                onRegenerate={handleRegenerate}
+                onRegenerate={(feedback) => {
+                  if (feedback) {
+                    handleRefineVariant(variant, feedback);
+                  } else {
+                    handleRegenerate();
+                  }
+                }}
                 onResponsive={() => setResponsiveVariant(variant)}
                 onPromoteToLibrary={() => setPromoteVariant(variant)}
               />
@@ -458,6 +529,12 @@ export function ExplorerCanvas({
               ))
             }
           </div>
+            {isProcessingImages && (
+              <div className="flex items-center gap-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2.5">
+                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
+                <span className="text-xs text-[var(--text-secondary)]">Generating images — this may take a moment...</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -475,6 +552,7 @@ export function ExplorerCanvas({
         hasVariants={variants.length > 0}
         hasSelection={!!selectedVariant}
         selectedVariantName={selectedVariant?.name}
+        currentPrompt={currentExploration?.prompt}
       />
 
       {pushVariant && (
