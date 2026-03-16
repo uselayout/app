@@ -139,7 +139,7 @@ export function StudioIndexClient() {
       <div className="hidden md:block min-h-screen bg-[#080705] relative overflow-hidden">
         {/* Aurora background */}
         <img
-          src="/marketing/aurora-hero.png"
+          src="/marketing/aurora-hero.webp"
           alt=""
           aria-hidden="true"
           className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[1456px] opacity-40 pointer-events-none select-none"
