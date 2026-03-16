@@ -28,7 +28,7 @@ const ComponentSchema = z.object({
 const PushSchema = z.object({
   tokens: z.array(TokenSchema).optional().default([]),
   components: z.array(ComponentSchema).optional().default([]),
-  projectId: z.string().uuid(),
+  projectId: z.string().min(1),
   skipDuplicates: z.boolean().optional().default(true),
 });
 
