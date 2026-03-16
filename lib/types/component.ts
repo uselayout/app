@@ -23,6 +23,7 @@ export interface ComponentState {
 export interface Component {
   id: string;
   orgId: string;
+  projectId: string | null;
   name: string;
   slug: string;
   description: string | null;
