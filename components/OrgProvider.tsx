@@ -48,9 +48,6 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
         organizations[0] ??
         null;
 
-    // Debug: remove after confirming push button works
-    console.log("[OrgProvider]", { orgSlug, orgFound: org?.slug, orgId: org?.id, orgCount: organizations.length });
-
     if (!org) {
       setCurrentOrg(null);
       setCurrentMembership(null);

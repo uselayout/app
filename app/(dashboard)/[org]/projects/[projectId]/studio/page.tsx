@@ -51,6 +51,12 @@ export default function StudioPage({
   // Push to design system state
   const orgId = useOrgStore((s) => s.currentOrgId);
   const [showPushModal, setShowPushModal] = useState(false);
+  const setCurrentProject = useProjectStore((s) => s.setCurrentProject);
+
+  // Set currentProjectId so TopBar can resolve the project (e.g. for Push button)
+  useEffect(() => {
+    setCurrentProject(id);
+  }, [id, setCurrentProject]);
 
   // Extraction diff state
   const previousExtractionRef = useRef<ExtractionResult | null>(null);
