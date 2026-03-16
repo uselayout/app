@@ -49,14 +49,16 @@ export default function Variant1() {
 export default function Variant2() { ... }
 \`\`\`
 
-Images
-- When the design calls for images (hero photos, illustrations, product shots, team photos, etc.), use this exact format:
-  <img data-generate-image="descriptive prompt for the image" data-image-style="photo" data-image-ratio="16:9" alt="Descriptive alt text" class="..." />
+Images (MANDATORY — read carefully)
+- ALL images — hero photos, product shots, team photos, avatars, headshots, thumbnails, icons — MUST use this exact format:
+  <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." className="..." />
 - data-image-style options: "photo", "illustration", "icon", "abstract"
 - data-image-ratio options: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9"
+- For small images like avatars/headshots, use data-image-ratio="1:1": <img data-generate-image="professional headshot of a smiling woman in her 30s" data-image-style="photo" data-image-ratio="1:1" alt="Sarah Chen" className="w-10 h-10 rounded-full object-cover" />
 - Write detailed, specific prompts — e.g. "A diverse team collaborating in a modern sunlit office with plants" not "team photo".
-- Do NOT use placeholder services (placehold.co, placeholder.com, via.placeholder.com, unsplash source URLs).
-- Do NOT use empty src or data: URIs. Just omit the src attribute — the pipeline will add it.
+- NEVER use placeholder services (placehold.co, placeholder.com, via.placeholder.com, unsplash, picsum, dummyimage, or ANY external image URL).
+- NEVER use empty src, data: URIs, or inline SVG placeholders for images. Omit the src attribute entirely — the pipeline adds it.
+- If a section has testimonials, team members, or any people — each person MUST have a data-generate-image headshot.
 
 IMPORTANT: Each component must be fully self-contained. No shared imports between variants. No prose outside the variant blocks.`;
 
@@ -88,10 +90,10 @@ export default function Variant1() {
 }
 \`\`\`
 
-Images
-- When the design calls for images, use: <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." class="..." />
-- Styles: "photo", "illustration", "icon", "abstract". Ratios: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9".
-- Write detailed prompts. Do NOT use placeholder services or empty src attributes.
+Images (MANDATORY)
+- ALL images MUST use: <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." className="..." />
+- This includes avatars, headshots, thumbnails — use data-image-ratio="1:1" for small square images.
+- NEVER use placeholder services (placehold.co, placeholder.com, unsplash, etc.) or empty src attributes.
 
 IMPORTANT: Each component must be fully self-contained. No shared imports between variants. No prose outside the variant blocks.`;
 
