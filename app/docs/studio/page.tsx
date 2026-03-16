@@ -226,6 +226,29 @@ export default function StudioPage() {
           </p>
         </div>
 
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">Push to Figma</h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            Click the Figma icon on any test result to open the Push to Figma
+            modal. Choose viewport sizes (mobile, tablet, desktop), optionally
+            target an existing Figma file, and copy a ready-to-paste command for
+            Claude Code or other AI agents with the Figma MCP server installed.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">AI Image Generation</h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            When you prompt for layouts that include imagery (landing pages,
+            hero sections, team pages), the AI generates real images using
+            Google Gemini instead of placeholder services. Images are produced
+            automatically after the component code is generated and seamlessly
+            replace any placeholders in the preview. Requires a{" "}
+            <code className="text-xs bg-gray-100 rounded px-1 py-0.5">GOOGLE_AI_API_KEY</code>{" "}
+            environment variable.
+          </p>
+        </div>
+
         <Callout type="tip">
           If the health score is below 50, check that DESIGN.md has well-formed
           CSS code blocks in the token sections. The AI needs parseable examples
