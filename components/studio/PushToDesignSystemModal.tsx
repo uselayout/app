@@ -98,8 +98,8 @@ export function PushToDesignSystemModal({
   const [selectedTokenIds, setSelectedTokenIds] = useState<Set<number>>(
     () => new Set(allTokens.map((_, i) => i))
   );
-  const [selectedComponentIds, setSelectedComponentIds] = useState<Set<string>>(
-    () => new Set(allComponents.map((c) => c.id))
+  const [selectedComponentIndices, setSelectedComponentIndices] = useState<Set<number>>(
+    () => new Set(allComponents.map((_, i) => i))
   );
 
   // Group tokens by type
@@ -143,20 +143,20 @@ export function PushToDesignSystemModal({
     });
   }, []);
 
-  const toggleComponent = useCallback((id: string) => {
-    setSelectedComponentIds((prev) => {
+  const toggleComponent = useCallback((index: number) => {
+    setSelectedComponentIndices((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
+      if (next.has(index)) {
+        next.delete(index);
       } else {
-        next.add(id);
+        next.add(index);
       }
       return next;
     });
   }, []);
 
   const selectedTokenCount = selectedTokenIds.size;
-  const selectedComponentCount = selectedComponentIds.size;
+  const selectedComponentCount = selectedComponentIndices.size;
   const totalSelected = selectedTokenCount + selectedComponentCount;
 
   const handlePush = useCallback(async () => {
@@ -179,7 +179,7 @@ export function PushToDesignSystemModal({
       });
 
       const components = allComponents
-        .filter((c) => selectedComponentIds.has(c.id))
+        .filter((_, i) => selectedComponentIndices.has(i))
         .map((c) => ({
           name: c.name,
           code: c.code,
@@ -253,7 +253,7 @@ export function PushToDesignSystemModal({
     totalSelected,
     pushing,
     selectedTokenIds,
-    selectedComponentIds,
+    selectedComponentIndices,
     allTokens,
     allComponents,
     orgId,
@@ -293,24 +293,42 @@ export function PushToDesignSystemModal({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-[var(--studio-border)] px-5">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`relative px-3 py-2.5 text-xs font-medium transition-colors ${
-                activeTab === tab.id
-                  ? "text-[var(--studio-accent)]"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-              }`}
-            >
-              {tab.label}
-              <span className="ml-1.5 text-[10px] opacity-60">{tab.count}</span>
-              {activeTab === tab.id && (
-                <span className="absolute bottom-0 left-0 right-0 h-px bg-[var(--studio-accent)]" />
-              )}
-            </button>
-          ))}
+        <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-5">
+          <div className="flex">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative px-3 py-2.5 text-xs font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? "text-[var(--studio-accent)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+              >
+                {tab.label}
+                <span className="ml-1.5 text-[10px] opacity-60">{tab.count}</span>
+                {activeTab === tab.id && (
+                  <span className="absolute bottom-0 left-0 right-0 h-px bg-[var(--studio-accent)]" />
+                )}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => {
+              if (activeTab === "tokens") {
+                const allSelected = allTokens.length > 0 && selectedTokenIds.size === allTokens.length;
+                setSelectedTokenIds(allSelected ? new Set() : new Set(allTokens.map((_, i) => i)));
+              } else {
+                const allSelected = allComponents.length > 0 && selectedComponentIndices.size === allComponents.length;
+                setSelectedComponentIndices(allSelected ? new Set() : new Set(allComponents.map((_, i) => i)));
+              }
+            }}
+            className="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+          >
+            {activeTab === "tokens"
+              ? selectedTokenIds.size === allTokens.length ? "Select none" : "Select all"
+              : selectedComponentIndices.size === allComponents.length ? "Select none" : "Select all"}
+          </button>
         </div>
 
         {/* Content */}
@@ -407,13 +425,13 @@ export function PushToDesignSystemModal({
                   to generate components first.
                 </p>
               ) : (
-                allComponents.map((comp) => {
-                  const isSelected = selectedComponentIds.has(comp.id);
+                allComponents.map((comp, compIndex) => {
+                  const isSelected = selectedComponentIndices.has(compIndex);
 
                   return (
                     <button
-                      key={comp.id}
-                      onClick={() => toggleComponent(comp.id)}
+                      key={compIndex}
+                      onClick={() => toggleComponent(compIndex)}
                       className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-[var(--bg-hover)] transition-colors"
                     >
                       <span
