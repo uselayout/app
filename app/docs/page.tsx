@@ -8,6 +8,9 @@ import {
   Sparkles,
   Server,
   Download,
+  Figma,
+  Puzzle,
+  ArrowUpRight,
 } from "lucide-react";
 import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
@@ -158,6 +161,67 @@ export default function GettingStartedPage() {
             CLI Guide
           </Link>
           .
+        </Callout>
+      </section>
+
+      {/* Figma Integration */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          Figma Integration
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Figma is a first-class citizen in Layout. Extract directly from your
+          design files, use the native plugin for in-Figma workflows, and push
+          AI-generated components back as real auto-layout frames.
+        </p>
+        <div className="space-y-4">
+          {[
+            {
+              icon: Figma,
+              title: "Extract from Figma",
+              description:
+                "Paste any Figma file URL and Layout pulls tokens, components, fonts, and screenshots via the REST API. It resolves actual style values automatically — colours, typography, spacing, effects — in two passes. You just need a Personal Access Token.",
+              href: "/docs/walkthrough",
+            },
+            {
+              icon: Puzzle,
+              title: "Figma Plugin",
+              description:
+                "The native Figma plugin extracts tokens, inspects elements against your design system, and pushes to Layout Cloud — all without leaving Figma. Key advantage: it reads local (unpublished) styles on all plans, no access token needed.",
+              href: "/docs/figma-plugin",
+            },
+            {
+              icon: ArrowUpRight,
+              title: "Push to Figma",
+              description:
+                "Generate component variants in the Explorer Canvas, then push your favourite back to Figma as a real auto-layout frame. Designers review AI output in their native tool — closing the loop between code and design.",
+              href: "/docs/explorer",
+            },
+          ].map(({ icon: Icon, title, description, href }) => (
+            <div
+              key={title}
+              className="flex items-start gap-4 rounded-xl border border-gray-200 px-5 py-4"
+            >
+              <div className="shrink-0 mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
+                <Icon size={18} className="text-gray-700" />
+              </div>
+              <div className="space-y-1">
+                <Link
+                  href={href}
+                  className="text-base font-semibold text-[#0a0a0a] hover:underline"
+                >
+                  {title}
+                </Link>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <Callout type="tip">
+          Figma extraction works on Vercel — no Playwright needed. Website
+          extraction requires a Docker or VPS deployment.
         </Callout>
       </section>
 
@@ -337,6 +401,15 @@ export default function GettingStartedPage() {
             </Link>{" "}
             — set up the MCP server so your AI agent fetches design context
             automatically.
+          </li>
+          <li>
+            <Link
+              href="/docs/figma-plugin"
+              className="text-gray-900 hover:underline"
+            >
+              Figma Plugin
+            </Link>{" "}
+            — extract tokens and inspect elements without leaving Figma.
           </li>
         </ul>
       </section>

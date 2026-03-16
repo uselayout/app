@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireMcpAuth } from "@/lib/api/mcp-auth";
-import { getTokensByOrg, bulkUpsertTokens } from "@/lib/supabase/tokens";
+import { getTokensByOrg, getTokensByProject, bulkUpsertTokens } from "@/lib/supabase/tokens";
 import { fetchAllProjects } from "@/lib/supabase/db";
 
 const CORS = {
@@ -25,7 +25,12 @@ export async function GET(request: Request) {
   }
 
   try {
-    const tokens = await getTokensByOrg(auth.orgId);
+    const url = new URL(request.url);
+    const projectId = url.searchParams.get("projectId");
+
+    const tokens = projectId
+      ? await getTokensByProject(auth.orgId, projectId)
+      : await getTokensByOrg(auth.orgId);
 
     const byType: Record<string, Array<{ name: string; value: string; cssVariable: string | null }>> = {};
     for (const t of tokens) {
@@ -49,6 +54,7 @@ const DesignTokenTypeSchema = z.enum(["color", "typography", "spacing", "radius"
 
 const ImportSchema = z.object({
   tokens: z.record(DesignTokenTypeSchema, z.array(TokenEntrySchema)),
+  projectId: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -73,9 +79,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const projects = await fetchAllProjects(auth.orgId);
-  if (!projects.length) {
-    return NextResponse.json({ error: "No projects found for this organisation" }, { status: 404, headers: CORS });
+  let targetProjectId = parsed.data.projectId;
+
+  if (!targetProjectId) {
+    const projects = await fetchAllProjects(auth.orgId);
+    if (!projects.length) {
+      return NextResponse.json({ error: "No projects found for this organisation" }, { status: 404, headers: CORS });
+    }
+    targetProjectId = projects[0].id;
   }
 
   const tokenData = parsed.data.tokens;
@@ -95,7 +106,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await bulkUpsertTokens(auth.orgId, projects[0].id, rows);
+    const result = await bulkUpsertTokens(auth.orgId, targetProjectId, rows);
     return NextResponse.json(
       { created: result.created, updated: result.updated, unchanged: result.unchanged, conflicts: result.conflicts },
       { headers: CORS }
