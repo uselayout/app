@@ -14,6 +14,7 @@ import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-varian
 import { friendlyError } from "@/lib/explore/friendly-error";
 import { applyChangesToDesignMd } from "@/lib/figma/diff";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
+import { processCodeImages } from "@/lib/image/process-code-images";
 import type { ExplorationSession, DesignVariant, FigmaChange } from "@/lib/types";
 
 interface ExplorerCanvasProps {
@@ -84,6 +85,22 @@ export function ExplorerCanvas({
         e.id === sessionId ? { ...e, variants: finalVariants } : e
       );
       onUpdateExplorations(finalExplorations);
+
+      // Process image placeholders in parallel (non-blocking)
+      const variantsWithImages = await Promise.all(
+        finalVariants.map(async (v) => {
+          const processed = await processCodeImages(v.code);
+          return processed !== v.code ? { ...v, code: processed } : v;
+        })
+      );
+
+      const anyChanged = variantsWithImages.some((v, i) => v !== finalVariants[i]);
+      if (anyChanged) {
+        const imageExplorations = finalExplorations.map((e) =>
+          e.id === sessionId ? { ...e, variants: variantsWithImages } : e
+        );
+        onUpdateExplorations(imageExplorations);
+      }
     },
     [onUpdateExplorations]
   );
