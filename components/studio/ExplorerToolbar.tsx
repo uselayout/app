@@ -34,7 +34,7 @@ export function ExplorerToolbar({
 }: ExplorerToolbarProps) {
   const [prompt, setPrompt] = useState("");
   const [refinePrompt, setRefinePrompt] = useState("");
-  const [variantCount, setVariantCount] = useState(4);
+  const [variantCount, setVariantCount] = useState(2);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [imageName, setImageName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
