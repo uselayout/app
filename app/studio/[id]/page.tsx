@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useRef, useCallback, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { useExtractionStore } from "@/lib/store/extraction";
 import { useExtraction } from "@/lib/hooks/use-extraction";
@@ -43,13 +44,33 @@ export default function StudioPage({
   const extractionSteps = useExtractionStore((s) => s.steps);
   const extractionError = useExtractionStore((s) => s.error);
 
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const sourceParam = searchParams.get("source");
+
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
-  const [centreView, setCentreView] = useState<"editor" | "canvas">("editor");
+  const [centreView, setCentreView] = useState<"editor" | "canvas">(
+    tabParam === "explorer" ? "canvas" : "editor"
+  );
   const [showTestPanel, setShowTestPanel] = useState(true);
   const [includeContext, setIncludeContext] = useState(true);
   const testPanelRef = useRef<TestPanelHandle>(null);
+
+  // Figma push-to-canvas: pre-load screenshot as reference image
+  const pendingFigmaImage = useRef<string | null>(
+    sourceParam === "figma"
+      ? project?.extractionData?.screenshots?.at(-1) ?? null
+      : null
+  );
+
+  // Clear URL params after consuming so refresh doesn't re-trigger
+  useEffect(() => {
+    if (tabParam || sourceParam) {
+      window.history.replaceState({}, "", `/studio/${id}`);
+    }
+  }, [id, tabParam, sourceParam]);
 
   // Extraction diff state
   const previousExtractionRef = useRef<ExtractionResult | null>(null);
@@ -288,6 +309,7 @@ export default function StudioPage({
               onUpdateExplorations={handleUpdateExplorations}
               onPushToFigma={handlePushToFigma}
               onDesignMdUpdate={handleDesignMdChange}
+              initialImage={pendingFigmaImage.current ?? undefined}
             />
           }
           testPanel={
