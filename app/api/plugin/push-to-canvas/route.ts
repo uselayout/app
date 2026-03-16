@@ -93,7 +93,7 @@ export async function POST(request: Request) {
   await upsertProject(updatedProject, org.ownerId);
 
   const origin = new URL(request.url).origin;
-  const url = `${origin}/studio/${project.id}?tab=explorer`;
+  const url = `${origin}/studio/${project.id}?tab=explorer&source=figma`;
 
   return NextResponse.json(
     { explorationId: project.id, url },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { ArrowUp, RotateCw, Figma, Minus, Plus, Download, Wand2, Split, ImagePlus, X } from "lucide-react";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -20,6 +20,8 @@ interface ExplorerToolbarProps {
   selectedVariantName?: string;
   /** Current exploration prompt — used to pre-fill on regenerate */
   currentPrompt?: string;
+  /** Pre-loaded reference image (e.g. from Figma push-to-canvas) */
+  initialImage?: string;
 }
 
 export function ExplorerToolbar({
@@ -34,6 +36,7 @@ export function ExplorerToolbar({
   hasSelection,
   selectedVariantName,
   currentPrompt,
+  initialImage,
 }: ExplorerToolbarProps) {
   const [prompt, setPrompt] = useState("");
   const [refinePrompt, setRefinePrompt] = useState("");
@@ -42,6 +45,15 @@ export function ExplorerToolbar({
   const [imageName, setImageName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const promptInputRef = useRef<HTMLInputElement>(null);
+
+  // Pre-populate with Figma push-to-canvas image
+  useEffect(() => {
+    if (initialImage && !imageDataUrl) {
+      setImageDataUrl(initialImage);
+      setImageName("Figma design");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialImage]);
 
   const processFile = useCallback(async (file: File) => {
     if (!ACCEPTED_TYPES.includes(file.type)) return;
