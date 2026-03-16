@@ -111,6 +111,34 @@ export default function ExplorerPage() {
 
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              AI Image Generation
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              When you prompt for full-page layouts, marketing pages, or any
+              component that includes imagery, the AI automatically generates
+              real images using Google Gemini instead of placeholder services.
+              Images are generated in parallel after the component code is
+              produced, then seamlessly replaced in the preview. You can control
+              image style (photo, illustration, icon, abstract) and aspect ratio
+              through your prompt.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              Push to Figma
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Select any variant and push it directly to a Figma file. The push
+              modal lets you choose viewport sizes (mobile, tablet, desktop),
+              optionally target an existing Figma file URL, and generates a
+              ready-to-paste command for Claude Code or other AI agents with the
+              Figma MCP server installed.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
               Push to Design System
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
@@ -256,6 +284,10 @@ export default function ExplorerPage() {
                 [
                   "Refine iteratively",
                   "Submit follow-up prompts on a selected variant rather than regenerating from scratch. Each iteration builds on the previous output and converges faster.",
+                ],
+                [
+                  "AI images need a Gemini key",
+                  "Image generation requires a GOOGLE_AI_API_KEY environment variable. Without it, image placeholders will remain unprocessed. Self-hosted users should add this to their environment.",
                 ],
               ].map(([tip, detail]) => (
                 <tr key={tip} className="hover:bg-gray-50">
