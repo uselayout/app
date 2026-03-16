@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, Check, X, AlertTriangle } from "lucide-react";
 import type { ExtractionStep, ExtractionStepStatus } from "@/lib/types";
@@ -12,6 +13,7 @@ interface ExtractionProgressProps {
   error?: string | null;
   errorStep?: string | null;
   onRetry?: () => void;
+  streamingContent?: string;
 }
 
 function StepIcon({ status }: { status: ExtractionStepStatus }) {
@@ -46,6 +48,42 @@ function getErrorHelp(error: string): string | null {
   return null;
 }
 
+function StreamingPreview({ content }: { content: string }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [content]);
+
+  const lines = content.split("\n");
+  const displayLines = lines.slice(-20);
+
+  return (
+    <div className="space-y-1.5">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+        DESIGN.md
+      </p>
+      <div className="relative overflow-hidden rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)]">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-8 bg-gradient-to-b from-[var(--bg-surface)] to-transparent"
+        />
+        <div
+          ref={scrollRef}
+          className="h-[120px] overflow-hidden px-3 py-2 font-mono text-[10px] leading-relaxed text-[var(--text-muted)]"
+        >
+          {displayLines.map((line, i) => (
+            <div key={i} className="whitespace-pre-wrap">
+              {line || "\u00A0"}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ExtractionProgress({
   sourceName,
   sourceType,
@@ -53,8 +91,20 @@ export function ExtractionProgress({
   steps,
   error,
   onRetry,
+  streamingContent,
 }: ExtractionProgressProps) {
-  const estimatedSeconds = Math.max(0, Math.round(((100 - progress) / 100) * 60));
+  const startTimeRef = useRef(Date.now());
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const isGenerating = steps.some((s) => s.id === "generate" && s.status === "running");
+  const showPreview = isGenerating && streamingContent && streamingContent.length > 0;
 
   return (
     <div className="flex min-h-screen items-center justify-center">
@@ -73,7 +123,7 @@ export function ExtractionProgress({
           <div className="flex justify-between text-xs text-[var(--text-muted)]">
             <span>{Math.round(progress)}%</span>
             {progress < 100 && (
-              <span>~{estimatedSeconds}s remaining</span>
+              <span>{elapsed}s elapsed &middot; typically 30-90s</span>
             )}
           </div>
         </div>
@@ -105,6 +155,10 @@ export function ExtractionProgress({
             </div>
           ))}
         </div>
+
+        {showPreview && (
+          <StreamingPreview content={streamingContent} />
+        )}
 
         {error && (
           <div className="space-y-3">

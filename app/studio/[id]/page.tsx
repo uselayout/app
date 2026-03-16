@@ -196,6 +196,7 @@ export default function StudioPage({
         progress={extractionProgress}
         steps={extractionSteps}
         error={extractionError}
+        streamingContent={project.designMd}
       />
     );
   }
