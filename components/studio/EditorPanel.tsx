@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { OnMount } from "@monaco-editor/react";
 import type * as monacoType from "monaco-editor";
+import { ArrowUp, Undo2, Loader2 } from "lucide-react";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -190,7 +191,7 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [] }: EditorPa
       )}
 
       {/* Editor */}
-      <div className="flex-1">
+      <div className="min-h-0 flex-1">
         <MonacoEditor
           height="100%"
           language="markdown"
@@ -217,6 +218,158 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [] }: EditorPa
           }}
         />
       </div>
+
+      {/* AI Edit Chat Bar */}
+      <EditorChatBar value={value} onChange={onChange} editorRef={editorRef} />
+    </div>
+  );
+}
+
+function EditorChatBar({
+  value,
+  onChange,
+  editorRef,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  editorRef: React.RefObject<monacoType.editor.IStandaloneCodeEditor | null>;
+}) {
+  const [instruction, setInstruction] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [previousValue, setPreviousValue] = useState<string | null>(null);
+  const [showUndo, setShowUndo] = useState(false);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    };
+  }, []);
+
+  const handleSubmit = useCallback(async () => {
+    if (!instruction.trim() || isStreaming) return;
+
+    setPreviousValue(value);
+    setIsStreaming(true);
+    setShowUndo(false);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+
+    try {
+      const res = await fetch("/api/generate/edit-design-md", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instruction: instruction.trim(), designMd: value }),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({ error: "Request failed" }));
+        throw new Error(errBody.error || `Request failed (${res.status})`);
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let accumulated = "";
+
+      while (true) {
+        const { done, value: chunk } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(chunk, { stream: true });
+      }
+
+      if (accumulated.startsWith("\n\n[Error:")) {
+        throw new Error(accumulated);
+      }
+
+      // Apply the updated DESIGN.md
+      editorRef.current?.setValue(accumulated);
+      onChange(accumulated);
+      setInstruction("");
+
+      // Show undo toast
+      setShowUndo(true);
+      undoTimerRef.current = setTimeout(() => {
+        setShowUndo(false);
+        setPreviousValue(null);
+      }, 8000);
+    } catch (err) {
+      console.error("AI edit failed:", err);
+      // Restore previous value on error
+      setPreviousValue(null);
+    } finally {
+      setIsStreaming(false);
+    }
+  }, [instruction, isStreaming, value, onChange, editorRef]);
+
+  const handleUndo = useCallback(() => {
+    if (previousValue === null) return;
+    editorRef.current?.setValue(previousValue);
+    onChange(previousValue);
+    setPreviousValue(null);
+    setShowUndo(false);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+  }, [previousValue, onChange, editorRef]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmit();
+      }
+    },
+    [handleSubmit]
+  );
+
+  return (
+    <div className="border-t border-[var(--studio-border)]">
+      <div className="mx-3 mb-3 mt-3 flex flex-col rounded-lg border border-[rgba(255,255,255,0.05)] bg-[#161718]">
+        <div className="relative p-2.5">
+          <div className="flex min-h-[44px] items-center rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.08)] px-3.5 py-2.5 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
+            <input
+              ref={inputRef}
+              type="text"
+              value={instruction}
+              onChange={(e) => setInstruction(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask Layout to edit your design system..."
+              disabled={isStreaming}
+              className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[#898d94] outline-none disabled:opacity-50"
+            />
+          </div>
+          <div className="absolute bottom-5 right-5 flex items-center gap-1.5">
+            {isStreaming ? (
+              <div className="flex items-center justify-center size-6">
+                <Loader2 size={14} className="animate-spin text-[var(--text-muted)]" />
+              </div>
+            ) : instruction.trim() ? (
+              <button
+                onClick={handleSubmit}
+                className="flex items-center justify-center size-6 rounded-full bg-[var(--text-primary)] text-[var(--bg-app)] transition-colors hover:opacity-90"
+              >
+                <ArrowUp size={12} strokeWidth={2.5} />
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      {/* Undo toast */}
+      {showUndo && (
+        <div className="mx-3 mb-3 flex items-center justify-between rounded-md border border-[rgba(255,255,255,0.08)] bg-[var(--bg-elevated)] px-3 py-2">
+          <span className="text-xs text-[var(--text-secondary)]">
+            AI edit applied
+          </span>
+          <button
+            onClick={handleUndo}
+            className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)]"
+          >
+            <Undo2 size={12} />
+            Undo
+          </button>
+        </div>
+      )}
     </div>
   );
 }
