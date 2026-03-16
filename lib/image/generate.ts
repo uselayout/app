@@ -109,10 +109,10 @@ export async function generateImageRaw(
   const requestBody = {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
-      responseModalities: ["IMAGE"],
-      imageGenerationConfig: {
+      responseModalities: ["TEXT", "IMAGE"],
+      imageConfig: {
         aspectRatio: options.aspectRatio ?? "16:9",
-        resolution: options.resolution ?? "1K",
+        imageSize: options.resolution ?? "1K",
       },
     },
   };
