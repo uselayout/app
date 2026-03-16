@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireOrgAuth } from "@/lib/api/auth-context";
-import { bulkCreateTokens, getTokensByOrg } from "@/lib/supabase/tokens";
-import { createComponent, getComponentsByOrg } from "@/lib/supabase/components";
+import { bulkCreateTokens, getTokensByProject } from "@/lib/supabase/tokens";
+import { createComponent, getComponentsByProject } from "@/lib/supabase/components";
 import { logAuditEvent } from "@/lib/supabase/audit";
 import type { DesignTokenType } from "@/lib/types/token";
 import type { ComponentSource } from "@/lib/types/component";
@@ -78,7 +78,7 @@ export async function POST(
     let tokensToCreate = tokens;
 
     if (skipDuplicates) {
-      const existing = await getTokensByOrg(orgId);
+      const existing = await getTokensByProject(orgId, projectId);
       const existingSlugs = new Set(existing.map((t) => t.slug));
 
       tokensToCreate = tokens.filter((t) => {
@@ -130,7 +130,7 @@ export async function POST(
     let existingNames: Set<string> | undefined;
 
     if (skipDuplicates) {
-      const existing = await getComponentsByOrg(orgId);
+      const existing = await getComponentsByProject(orgId, projectId);
       existingNames = new Set(existing.map((c) => c.name.toLowerCase()));
     }
 
@@ -150,6 +150,7 @@ export async function POST(
         category: comp.category,
         source: (comp.source ?? "explorer") as ComponentSource,
         createdBy: userId,
+        projectId,
       });
 
       if (created) {
