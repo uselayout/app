@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
   const { prompt, designMd, variantCount, baseCode, imageDataUrl, contextFiles } = parsed.data;
   const effectiveDesignMd = designMd || "No design system provided. Use sensible defaults with a clean, modern aesthetic.";
   const { stream, usage } = baseCode
-    ? createRefineStream(baseCode, prompt, effectiveDesignMd, variantCount, apiKey, contextFiles)
+    ? createRefineStream(baseCode, prompt, effectiveDesignMd, variantCount, apiKey, contextFiles, imageDataUrl)
     : createExploreStream(prompt, effectiveDesignMd, variantCount, apiKey, imageDataUrl, contextFiles);
 
   void usage
