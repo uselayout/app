@@ -30,7 +30,7 @@ export function OpenSourceSection() {
 
             <div className="flex gap-[12px]">
               <a
-                href="https://github.com/uselayout/studio"
+                href="https://github.com/uselayout/cli"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-[var(--mkt-btn-primary-bg)] border border-[#e6e6e6] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] inline-flex items-center justify-center"
@@ -56,7 +56,7 @@ export function OpenSourceSection() {
         className="w-[1424px] max-w-full mx-auto aspect-[1424/768] relative overflow-hidden rounded-[6px]"
       >
         <img
-          src="/marketing/aurora-open-source.png"
+          src="/marketing/aurora-open-source.webp"
           alt=""
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"

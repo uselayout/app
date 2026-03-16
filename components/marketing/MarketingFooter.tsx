@@ -12,7 +12,7 @@ const TOOLS_LINKS = [
 ];
 
 const SOCIALS_LINKS = [
-  { label: "GitHub", href: "https://github.com/uselayout/studio" },
+  { label: "GitHub", href: "https://github.com/uselayout/cli" },
   { label: "Slack", href: "/slack" },
   { label: "X / Twitter", href: "https://x.com/uselayout" },
 ];
@@ -53,7 +53,7 @@ export function MarketingFooter() {
     <footer className="sticky bottom-0 z-0 relative h-[700px] lg:h-[1100px] overflow-hidden bg-[var(--mkt-bg)]">
       {/* Gradient overlay at top for smooth transition */}
       <img
-        src="/marketing/footer-gradient.png"
+        src="/marketing/footer-gradient.webp"
         alt=""
         aria-hidden="true"
         className="absolute top-[-10px] left-0 w-full h-[170px] object-cover pointer-events-none z-20"
@@ -61,7 +61,7 @@ export function MarketingFooter() {
 
       {/* Aurora background */}
       <img
-        src="/marketing/aurora-footer.png"
+        src="/marketing/aurora-footer.webp"
         alt=""
         aria-hidden="true"
         className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[841px] object-cover pointer-events-none"

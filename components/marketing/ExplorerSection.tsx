@@ -51,7 +51,7 @@ export function ExplorerSection() {
         viewport={{ once: true }}
       >
         <Image
-          src="/marketing/aurora-explorer.png"
+          src="/marketing/aurora-explorer.webp"
           alt=""
           fill
           className="object-cover"
