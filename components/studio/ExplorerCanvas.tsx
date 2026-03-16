@@ -305,7 +305,7 @@ export function ExplorerCanvas({
   );
 
   const handleRefine = useCallback(
-    async (refinementPrompt: string, variantCount: number) => {
+    async (refinementPrompt: string, variantCount: number, imageDataUrl?: string, contextFiles?: ContextFile[]) => {
       if (isGenerating || !selectedVariant || !currentExploration) return;
 
       setIsGenerating(true);
@@ -332,6 +332,8 @@ export function ExplorerCanvas({
             variantCount,
             projectId,
             baseCode: selectedVariant.code,
+            imageDataUrl,
+            contextFiles,
           },
           variantCount,
         );

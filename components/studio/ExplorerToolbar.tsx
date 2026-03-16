@@ -13,7 +13,7 @@ const ACCEPTED_TEXT_TYPES = ".md,.txt,.json,.css,.html,.tsx,.ts,.jsx,.js";
 
 interface ExplorerToolbarProps {
   onGenerate: (prompt: string, variantCount: number, imageDataUrl?: string, contextFiles?: ContextFile[]) => void;
-  onRefine: (refinementPrompt: string, variantCount: number) => void;
+  onRefine: (refinementPrompt: string, variantCount: number, imageDataUrl?: string, contextFiles?: ContextFile[]) => void;
   onCompare: (prompt: string) => void;
   onRegenerate: () => void;
   onPushToFigma: () => void;
@@ -172,9 +172,12 @@ export function ExplorerToolbar({
   const handleRefineSubmit = useCallback(() => {
     const trimmed = refinePrompt.trim();
     if (!trimmed || isGenerating) return;
-    onRefine(trimmed, variantCount);
+    onRefine(trimmed, variantCount, imageDataUrl ?? undefined, contextFiles.length > 0 ? contextFiles : undefined);
     setRefinePrompt("");
-  }, [refinePrompt, variantCount, isGenerating, onRefine]);
+    removeImage();
+    setContextFiles([]);
+    setFileError(null);
+  }, [refinePrompt, variantCount, isGenerating, imageDataUrl, contextFiles, onRefine, removeImage]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -202,27 +205,79 @@ export function ExplorerToolbar({
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
+      {/* Hidden file inputs — shared by both generate and refine modes */}
+      <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileChange} className="hidden" />
+      <input ref={contextFileInputRef} type="file" accept={ACCEPTED_TEXT_TYPES} onChange={handleContextFileChange} multiple className="hidden" />
+
       {/* Text area */}
       <div className="p-2.5">
         {hasSelection && selectedVariantName ? (
-          <div className="relative flex min-h-[68px] items-start rounded-md border border-amber-500/30 bg-amber-500/5 px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
-            <Wand2 size={14} className="mt-0.5 shrink-0 text-amber-400" />
-            <input
-              type="text"
-              placeholder={`Refine "${selectedVariantName}"... e.g. "make the CTA more prominent"`}
-              value={refinePrompt}
-              onChange={(e) => setRefinePrompt(e.target.value)}
-              onKeyDown={handleRefineKeyDown}
-              disabled={isGenerating}
-              className="ml-2 flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-amber-400/50 outline-none disabled:opacity-50"
-            />
-            <button
-              onClick={handleRefineSubmit}
-              disabled={!refinePrompt.trim() || isGenerating}
-              className="absolute bottom-2.5 right-2.5 shrink-0 flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-20 disabled:cursor-not-allowed"
-            >
-              <ArrowUp size={12} strokeWidth={2.5} />
-            </button>
+          <div className="relative">
+            <div className="flex min-h-[68px] items-start rounded-md border border-amber-500/30 bg-amber-500/5 px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
+              <Wand2 size={14} className="mt-0.5 shrink-0 text-amber-400" />
+              {/* Image chip */}
+              {imageDataUrl && (
+                <div className="ml-2 mr-1 flex shrink-0 items-center gap-1.5 rounded-md bg-[var(--bg-hover)] px-1.5 py-0.5" title={imageName ?? "Attached image"}>
+                  <img src={imageDataUrl} alt="Reference" className="h-6 w-6 rounded object-cover" />
+                  <button onClick={removeImage} className="rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                    <X size={10} />
+                  </button>
+                </div>
+              )}
+              {/* Context file chips */}
+              {contextFiles.length > 0 && (
+                <div className="ml-2 mr-1 flex shrink-0 items-center gap-1">
+                  {contextFiles.map((f) => (
+                    <div key={f.name} className="flex items-center gap-1 rounded-md bg-[var(--bg-hover)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]" title={`${f.name} (${(f.content.length / 1024).toFixed(1)}KB)`}>
+                      <Paperclip size={9} />
+                      <span className="max-w-[80px] truncate">{f.name}</span>
+                      <button onClick={() => removeContextFile(f.name)} className="rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                        <X size={8} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <input
+                type="text"
+                placeholder={`Refine "${selectedVariantName}"... e.g. "make the CTA more prominent"`}
+                value={refinePrompt}
+                onChange={(e) => setRefinePrompt(e.target.value)}
+                onKeyDown={handleRefineKeyDown}
+                onPaste={handlePaste}
+                disabled={isGenerating}
+                className="ml-2 flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-amber-400/50 outline-none disabled:opacity-50"
+              />
+            </div>
+            {fileError && (
+              <p className="mt-1 text-[10px] text-red-400 px-1">{fileError}</p>
+            )}
+            {/* Bottom-right action buttons */}
+            <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5">
+              <button
+                onClick={() => contextFileInputRef.current?.click()}
+                disabled={isGenerating || contextFiles.length >= MAX_CONTEXT_FILES}
+                className="flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors hover:text-amber-400/60 disabled:opacity-40"
+                title={contextFiles.length >= MAX_CONTEXT_FILES ? `Maximum ${MAX_CONTEXT_FILES} files` : "Attach context files"}
+              >
+                <Paperclip size={12} />
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isGenerating}
+                className="flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors hover:text-amber-400/60 disabled:opacity-40"
+                title="Attach reference image"
+              >
+                <ImagePlus size={12} />
+              </button>
+              <button
+                onClick={handleRefineSubmit}
+                disabled={!refinePrompt.trim() || isGenerating}
+                className="flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-20 disabled:cursor-not-allowed"
+              >
+                <ArrowUp size={12} strokeWidth={2.5} />
+              </button>
+            </div>
           </div>
         ) : (
           <div className="relative">
@@ -292,21 +347,6 @@ export function ExplorerToolbar({
 
             {/* Bottom-right action buttons */}
             <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <input
-                ref={contextFileInputRef}
-                type="file"
-                accept={ACCEPTED_TEXT_TYPES}
-                onChange={handleContextFileChange}
-                multiple
-                className="hidden"
-              />
               <button
                 onClick={() => contextFileInputRef.current?.click()}
                 disabled={isGenerating || contextFiles.length >= MAX_CONTEXT_FILES}
