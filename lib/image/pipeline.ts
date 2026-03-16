@@ -96,6 +96,38 @@ export interface PipelineResult {
   errors: string[];
 }
 
+// ---------------------------------------------------------------------------
+// Placeholder URL replacement — catches cases where the AI uses external URLs
+// instead of data-generate-image attributes
+// ---------------------------------------------------------------------------
+
+const PLACEHOLDER_URL_REGEX =
+  /(<img\s[^>]*?)src=["'](https?:\/\/(?:placehold\.co|via\.placeholder\.com|placeholder\.com|images\.unsplash\.com|source\.unsplash\.com|picsum\.photos|dummyimage\.com)[^"']*)["']([^>]*?)\/?>/gi;
+
+/**
+ * Replace common placeholder image URLs with data-generate-image attributes,
+ * using the alt text as the generation prompt.
+ */
+function replacePlaceholderUrls(html: string): string {
+  PLACEHOLDER_URL_REGEX.lastIndex = 0;
+  return html.replace(PLACEHOLDER_URL_REGEX, (fullMatch, before, _url, after) => {
+    // Skip if already has data-generate-image
+    if (fullMatch.includes("data-generate-image")) return fullMatch;
+
+    const altMatch = (before + after).match(ALT_ATTR_REGEX);
+    const prompt = altMatch?.[1] || "professional photograph for a modern website";
+
+    // Determine ratio from dimensions in the URL or class hints
+    const isSmall = /(?:w-(?:8|10|12|14|16)|h-(?:8|10|12|14|16)|rounded-full|avatar)/i.test(before + after);
+    const ratio = isSmall ? "1:1" : "16:9";
+    const style = isSmall ? "photo" : "photo";
+
+    // Remove the src attribute, add data-generate-image
+    const cleaned = (before + after).replace(/src=["'][^"']*["']\s*/gi, "");
+    return `${cleaned} data-generate-image="${prompt}" data-image-style="${style}" data-image-ratio="${ratio}" />`;
+  });
+}
+
 // Fallback SVG for failed image generation
 const FALLBACK_SVG = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><rect fill="%23f3f4f6" width="800" height="450"/><text x="400" y="210" text-anchor="middle" fill="%239ca3af" font-family="system-ui,sans-serif" font-size="16">Image generation failed</text><text x="400" y="240" text-anchor="middle" fill="%23d1d5db" font-family="system-ui,sans-serif" font-size="13">Check GOOGLE_AI_API_KEY is configured</text></svg>')}`;
 
@@ -107,12 +139,14 @@ export async function processImagePlaceholders(
   html: string,
   options: PipelineOptions = {}
 ): Promise<PipelineResult> {
-  const placeholders = findPlaceholders(html);
+  // First, convert any placeholder URLs to data-generate-image attributes
+  const preprocessed = replacePlaceholderUrls(html);
+  const placeholders = findPlaceholders(preprocessed);
 
   if (placeholders.length === 0) return { html, totalCount: 0, failedCount: 0, errors: [] };
 
   const concurrency = options.concurrency ?? 3;
-  let result = html;
+  let result = preprocessed;
   let failedCount = 0;
   const errors: string[] = [];
 
