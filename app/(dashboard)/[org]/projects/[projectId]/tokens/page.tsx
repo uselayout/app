@@ -23,7 +23,7 @@ export default function TokensPage() {
       setLoading(true);
       try {
         const res = await fetch(
-          `/api/organizations/${orgId}/tokens?type=${selectedType}`
+          `/api/organizations/${orgId}/tokens?type=${selectedType}&projectId=${params.projectId}`
         );
         if (!cancelled && res.ok) {
           const data: DesignToken[] = await res.json();
