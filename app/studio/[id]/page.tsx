@@ -39,6 +39,21 @@ export default function StudioPage({
     setCurrentProject(id);
   }, [id, setCurrentProject]);
 
+  // Grace period before showing "Project not found" — when switching projects
+  // the store may momentarily not contain the target project (e.g. navigating
+  // from dashboard while hydration is settling, or the project was just created
+  // in another tab). Show spinner for 2s before giving up.
+  const [notFoundConfirmed, setNotFoundConfirmed] = useState(false);
+  useEffect(() => {
+    if (project) {
+      setNotFoundConfirmed(false);
+      return;
+    }
+    setNotFoundConfirmed(false);
+    const timer = setTimeout(() => setNotFoundConfirmed(true), 2000);
+    return () => clearTimeout(timer);
+  }, [id, project]);
+
   const extractionStatus = useExtractionStore((s) => s.status);
   const extractionProgress = useExtractionStore((s) => s.progress);
   const extractionSteps = useExtractionStore((s) => s.steps);
@@ -195,8 +210,9 @@ export default function StudioPage({
   );
 
   if (!project) {
-    // Store is still loading projects from Supabase — show spinner
-    if (hydrating || projects.length === 0) {
+    // Show spinner while store is hydrating, or during the grace period
+    // when switching projects (store may not have the project yet)
+    if (hydrating || !notFoundConfirmed) {
       return (
         <div className="flex min-h-screen items-center justify-center bg-[var(--bg-app)]">
           <div className="flex flex-col items-center gap-3">
