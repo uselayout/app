@@ -174,7 +174,7 @@ export function PushToDesignSystemModal({
           category: t.category,
           cssVariable: t.cssVariable,
           description: t.description,
-          groupName: t.type,
+          groupName: t.groupName ?? t.type,
         };
       });
 

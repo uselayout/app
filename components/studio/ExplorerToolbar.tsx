@@ -18,11 +18,13 @@ interface ExplorerToolbarProps {
   hasVariants: boolean;
   hasSelection: boolean;
   selectedVariantName?: string;
+  /** Current exploration prompt — used to pre-fill on regenerate */
+  currentPrompt?: string;
 }
 
 export function ExplorerToolbar({
   onGenerate,
-  onRegenerate,
+  onRegenerate: _onRegenerate,
   onRefine,
   onCompare,
   onPushToFigma,
@@ -31,7 +33,9 @@ export function ExplorerToolbar({
   hasVariants,
   hasSelection,
   selectedVariantName,
+  currentPrompt: _currentPrompt,
 }: ExplorerToolbarProps) {
+  const currentPrompt = _currentPrompt;
   const [prompt, setPrompt] = useState("");
   const [refinePrompt, setRefinePrompt] = useState("");
   const [variantCount, setVariantCount] = useState(2);
@@ -255,10 +259,13 @@ export function ExplorerToolbar({
             </button>
           </div>
 
-          {/* Regenerate */}
+          {/* Regenerate — pre-fills prompt and focuses input */}
           {hasVariants && (
             <button
-              onClick={onRegenerate}
+              onClick={() => {
+                if (currentPrompt) setPrompt(currentPrompt);
+                promptInputRef.current?.focus();
+              }}
               disabled={isGenerating}
               className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-40"
             >

@@ -29,6 +29,7 @@ export interface ExtractedToken {
   category: TokenCategory;
   cssVariable?: string;
   description?: string;
+  groupName?: string;
 }
 
 export interface ComponentProperty {
