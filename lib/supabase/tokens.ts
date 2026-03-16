@@ -126,6 +126,44 @@ export async function getTokensByOrg(
   return (data as TokenRow[]).map(rowToToken);
 }
 
+export async function getTokensByProject(
+  orgId: string,
+  projectId: string,
+  filters?: {
+    type?: DesignTokenType;
+    category?: DesignTokenCategory;
+    groupName?: string;
+    search?: string;
+  }
+): Promise<DesignToken[]> {
+  let query = supabase
+    .from("layout_token")
+    .select("*")
+    .eq("org_id", orgId)
+    .eq("project_id", projectId)
+    .order("type", { ascending: true })
+    .order("group_name", { ascending: true })
+    .order("sort_order", { ascending: true });
+
+  if (filters?.type) {
+    query = query.eq("type", filters.type);
+  }
+  if (filters?.category) {
+    query = query.eq("category", filters.category);
+  }
+  if (filters?.groupName) {
+    query = query.eq("group_name", filters.groupName);
+  }
+  if (filters?.search) {
+    query = query.ilike("name", `%${filters.search}%`);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data) return [];
+  return (data as TokenRow[]).map(rowToToken);
+}
+
 export async function getTokenById(id: string): Promise<DesignToken | null> {
   const { data, error } = await supabase
     .from("layout_token")
