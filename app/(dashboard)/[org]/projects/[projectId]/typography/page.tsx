@@ -27,7 +27,7 @@ export default function TypographyPage() {
         </p>
       </div>
 
-      <TypographyEditor orgId={currentOrg.id} studioUrl={`/${params.org}/projects/${params.projectId}/studio`} />
+      <TypographyEditor orgId={currentOrg.id} projectId={params.projectId} studioUrl={`/${params.org}/projects/${params.projectId}/studio`} />
     </div>
   );
 }

@@ -168,6 +168,8 @@ export interface DesignVariant {
   rating?: "up" | "down";
   figmaPush?: FigmaPushRecord;
   figmaImport?: FigmaImportRecord;
+  batchId?: string;
+  batchPrompt?: string;
 }
 
 export interface FigmaPushRecord {
