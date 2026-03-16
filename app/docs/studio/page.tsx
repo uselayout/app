@@ -161,6 +161,14 @@ export default function StudioPage() {
               Auto-saves with a 2-second debounce. Section navigation pills let
               you jump between the 9 sections of DESIGN.md quickly.
             </p>
+            <p className="text-base text-gray-600 leading-relaxed">
+              An <strong>AI edit bar</strong> sits below the editor — type
+              natural-language instructions like{" "}
+              <em>&quot;make buttons square instead of rounded&quot;</em> or{" "}
+              <em>&quot;add a smaller button size variant&quot;</em> and Layout
+              will apply the changes directly to your DESIGN.md. An undo button
+              appears after each edit so you can revert instantly if needed.
+            </p>
           </div>
 
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
@@ -171,7 +179,9 @@ export default function StudioPage() {
               Ask Claude to generate components using your design system. Renders
               live TSX output in a sandboxed iframe with React and Tailwind. Use
               the health score to measure context adherence and the context
-              toggle to compare output with and without DESIGN.md.
+              toggle to compare output with and without DESIGN.md. Push any
+              result directly to Figma, or generate AI images automatically
+              when prompting for layouts with imagery.
             </p>
           </div>
         </div>
