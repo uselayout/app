@@ -33,9 +33,8 @@ export function ExplorerToolbar({
   hasVariants,
   hasSelection,
   selectedVariantName,
-  currentPrompt: _currentPrompt,
+  currentPrompt,
 }: ExplorerToolbarProps) {
-  const currentPrompt = _currentPrompt;
   const [prompt, setPrompt] = useState("");
   const [refinePrompt, setRefinePrompt] = useState("");
   const [variantCount, setVariantCount] = useState(2);
