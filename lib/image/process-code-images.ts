@@ -3,9 +3,11 @@
  *
  * Calls the /api/generate/image batch endpoint to replace
  * data-generate-image attributes with real AI-generated image URLs.
+ *
+ * This module runs CLIENT-SIDE — no server-only imports allowed.
  */
 
-import { hasImagePlaceholders } from "./pipeline";
+const IMAGE_PLACEHOLDER_RE = /data-generate-image=["'][^"']+["']/i;
 
 interface ProcessOptions {
   orgId?: string;
@@ -21,11 +23,14 @@ export async function processCodeImages(
   code: string,
   options: ProcessOptions = {}
 ): Promise<string> {
-  if (!hasImagePlaceholders(code)) return code;
+  if (!IMAGE_PLACEHOLDER_RE.test(code)) return code;
+
+  console.log("[process-code-images] Found image placeholders, calling API...");
 
   try {
     const res = await fetch("/api/generate/image", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         mode: "batch",
@@ -37,11 +42,13 @@ export async function processCodeImages(
     });
 
     if (!res.ok) {
-      console.warn("[process-code-images] API returned", res.status);
+      const errText = await res.text().catch(() => "");
+      console.warn("[process-code-images] API returned", res.status, errText);
       return code;
     }
 
     const { html } = await res.json();
+    console.log("[process-code-images] Images processed successfully");
     return html ?? code;
   } catch (err) {
     console.warn("[process-code-images] Failed:", err);
