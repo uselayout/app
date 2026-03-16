@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import { Sparkles, X, Send, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { Sparkles, X, Send, ChevronLeft, ChevronRight, Trash2, Plus } from "lucide-react";
 import { ExplorerToolbar } from "./ExplorerToolbar";
 import { VariantCard } from "./VariantCard";
 import { FigmaPushModal } from "./FigmaPushModal";
@@ -46,6 +46,9 @@ export function ExplorerCanvas({
   const [comparePrompt, setComparePrompt] = useState<string | null>(null);
   const [activeExplorationIndex, setActiveExplorationIndex] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const streamingBatchRef = useRef<string | null>(null);
+  const pendingBatchCountRef = useRef(0);
 
   // Warn user before navigating away during generation
   useEffect(() => {
@@ -64,11 +67,36 @@ export function ExplorerCanvas({
   const currentExploration = explorations.length > 0 ? explorations[explorationIndex] : null;
   const variants = currentExploration?.variants ?? [];
 
+  // Auto-scroll to bottom when new variants stream in
+  useEffect(() => {
+    if (isGenerating && scrollRef.current) {
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    }
+  }, [isGenerating, variants.length]);
+
+  // Group variants by batch for rendering
+  const batches = useMemo(() => {
+    const groups: { batchId: string; prompt: string; variants: DesignVariant[] }[] = [];
+    for (const v of variants) {
+      const bid = v.batchId ?? "initial";
+      const last = groups[groups.length - 1];
+      if (last?.batchId === bid) {
+        last.variants.push(v);
+      } else {
+        groups.push({
+          batchId: bid,
+          prompt: v.batchPrompt ?? currentExploration?.prompt ?? "",
+          variants: [v],
+        });
+      }
+    }
+    return groups;
+  }, [variants, currentExploration?.prompt]);
+
   const handleDeleteExploration = useCallback(
     (index: number) => {
       const updated = explorations.filter((_, i) => i !== index);
       onUpdateExplorations(updated);
-      // Adjust active index
       if (updated.length === 0) {
         setActiveExplorationIndex(null);
       } else if (activeExplorationIndex !== null) {
@@ -81,13 +109,32 @@ export function ExplorerCanvas({
     [explorations, activeExplorationIndex, onUpdateExplorations]
   );
 
+  const handleNewExploration = useCallback(() => {
+    const sessionId = crypto.randomUUID();
+    const newExploration: ExplorationSession = {
+      id: sessionId,
+      projectId,
+      prompt: "",
+      variantCount: 0,
+      variants: [],
+      createdAt: new Date().toISOString(),
+    };
+    const updated = [...explorations, newExploration];
+    onUpdateExplorations(updated);
+    setActiveExplorationIndex(updated.length - 1);
+    setSelectedVariantId(null);
+  }, [explorations, projectId, onUpdateExplorations]);
+
   const selectedVariant = variants.find((v) => v.id === selectedVariantId) ?? null;
 
   const streamVariants = useCallback(
     async (
       res: Response,
       sessionId: string,
-      updatedExplorations: ExplorationSession[]
+      updatedExplorations: ExplorationSession[],
+      existingVariants: DesignVariant[],
+      batchId: string,
+      batchPrompt: string,
     ) => {
       const reader = res.body?.getReader();
       if (!reader) throw new Error("No response body");
@@ -95,6 +142,7 @@ export function ExplorerCanvas({
       const decoder = new TextDecoder();
       let fullOutput = "";
       let lastCount = 0;
+      const parseOpts = { idOffset: existingVariants.length, batchId, batchPrompt };
 
       while (true) {
         const { done, value } = await reader.read();
@@ -104,42 +152,82 @@ export function ExplorerCanvas({
         const completeCount = countCompleteVariants(fullOutput);
         if (completeCount > lastCount) {
           lastCount = completeCount;
-          const parsed = parseVariants(fullOutput);
+          const parsed = parseVariants(fullOutput, parseOpts);
+          const merged = [...existingVariants, ...parsed];
           const updated = updatedExplorations.map((e) =>
-            e.id === sessionId ? { ...e, variants: parsed } : e
+            e.id === sessionId ? { ...e, variants: merged } : e
           );
           onUpdateExplorations(updated);
         }
       }
 
-      const finalVariants = parseVariants(fullOutput);
+      const finalNew = parseVariants(fullOutput, parseOpts);
+      const finalMerged = [...existingVariants, ...finalNew];
       const finalExplorations = updatedExplorations.map((e) =>
-        e.id === sessionId ? { ...e, variants: finalVariants } : e
+        e.id === sessionId ? { ...e, variants: finalMerged } : e
       );
       onUpdateExplorations(finalExplorations);
 
-      // Process image placeholders in parallel
+      // Process image placeholders in the new batch only
       setIsProcessingImages(true);
       try {
-        const variantsWithImages = await Promise.all(
-          finalVariants.map(async (v) => {
+        const newWithImages = await Promise.all(
+          finalNew.map(async (v) => {
             const processed = await processCodeImages(v.code);
             return processed !== v.code ? { ...v, code: processed } : v;
           })
         );
 
-        const anyChanged = variantsWithImages.some((v, i) => v !== finalVariants[i]);
+        const anyChanged = newWithImages.some((v, i) => v !== finalNew[i]);
         if (anyChanged) {
+          const imageMerged = [...existingVariants, ...newWithImages];
           const imageExplorations = finalExplorations.map((e) =>
-            e.id === sessionId ? { ...e, variants: variantsWithImages } : e
+            e.id === sessionId ? { ...e, variants: imageMerged } : e
           );
           onUpdateExplorations(imageExplorations);
         }
       } finally {
         setIsProcessingImages(false);
+        streamingBatchRef.current = null;
+        pendingBatchCountRef.current = 0;
       }
     },
     [onUpdateExplorations]
+  );
+
+  /** Shared fetch + stream logic used by all generation handlers */
+  const runGeneration = useCallback(
+    async (
+      sessionId: string,
+      existingVariants: DesignVariant[],
+      batchId: string,
+      batchPrompt: string,
+      latestExplorations: ExplorationSession[],
+      fetchBody: Record<string, unknown>,
+      variantCount: number,
+    ) => {
+      streamingBatchRef.current = batchId;
+      pendingBatchCountRef.current = variantCount;
+
+      const apiKey = getStoredApiKey();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (apiKey) headers["X-Api-Key"] = apiKey;
+
+      const res = await fetch("/api/generate/explore", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(fetchBody),
+        signal: abortRef.current!.signal,
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({ error: "Request failed" }));
+        throw new Error(friendlyError(errBody));
+      }
+
+      await streamVariants(res, sessionId, latestExplorations, existingVariants, batchId, batchPrompt);
+    },
+    [streamVariants]
   );
 
   const handleGenerate = useCallback(
@@ -151,41 +239,51 @@ export function ExplorerCanvas({
       setSelectedVariantId(null);
       abortRef.current = new AbortController();
 
-      const sessionId = crypto.randomUUID();
-      const newExploration: ExplorationSession = {
-        id: sessionId,
-        projectId,
-        prompt,
-        variantCount,
-        variants: [],
-        referenceImage: imageDataUrl,
-        createdAt: new Date().toISOString(),
-      };
+      const batchId = crypto.randomUUID();
+      const batchPrompt = prompt;
 
-      const updatedExplorations = [...explorations, newExploration];
-      onUpdateExplorations(updatedExplorations);
-      setActiveExplorationIndex(updatedExplorations.length - 1);
+      // Append to current exploration if it exists; otherwise create new
+      let sessionId: string;
+      let existingVariants: DesignVariant[];
+      let updatedExplorations: ExplorationSession[];
+
+      if (currentExploration) {
+        sessionId = currentExploration.id;
+        existingVariants = currentExploration.variants;
+        // Update the exploration's prompt if it was empty (new tab)
+        updatedExplorations = explorations.map((e) =>
+          e.id === sessionId
+            ? { ...e, ...(e.prompt === "" && { prompt }), variantCount }
+            : e
+        );
+        onUpdateExplorations(updatedExplorations);
+      } else {
+        sessionId = crypto.randomUUID();
+        existingVariants = [];
+        const newExploration: ExplorationSession = {
+          id: sessionId,
+          projectId,
+          prompt,
+          variantCount,
+          variants: [],
+          referenceImage: imageDataUrl,
+          createdAt: new Date().toISOString(),
+        };
+        updatedExplorations = [...explorations, newExploration];
+        onUpdateExplorations(updatedExplorations);
+        setActiveExplorationIndex(updatedExplorations.length - 1);
+      }
 
       try {
-        const apiKey = getStoredApiKey();
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-        };
-        if (apiKey) headers["X-Api-Key"] = apiKey;
-
-        const res = await fetch("/api/generate/explore", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ prompt, designMd, variantCount, projectId, imageDataUrl }),
-          signal: abortRef.current.signal,
-        });
-
-        if (!res.ok) {
-          const errBody = await res.json().catch(() => ({ error: "Request failed" }));
-          throw new Error(friendlyError(errBody));
-        }
-
-        await streamVariants(res, sessionId, updatedExplorations);
+        await runGeneration(
+          sessionId,
+          existingVariants,
+          batchId,
+          batchPrompt,
+          updatedExplorations,
+          { prompt, designMd, variantCount, projectId, imageDataUrl },
+          variantCount,
+        );
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
         const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
@@ -195,58 +293,40 @@ export function ExplorerCanvas({
         abortRef.current = null;
       }
     },
-    [isGenerating, projectId, designMd, explorations, onUpdateExplorations, streamVariants]
+    [isGenerating, projectId, designMd, explorations, currentExploration, onUpdateExplorations, runGeneration]
   );
 
   const handleRefine = useCallback(
     async (refinementPrompt: string, variantCount: number) => {
-      if (isGenerating || !selectedVariant) return;
+      if (isGenerating || !selectedVariant || !currentExploration) return;
 
       setIsGenerating(true);
       setGenerationError(null);
       abortRef.current = new AbortController();
 
-      const sessionId = crypto.randomUUID();
-      const newExploration: ExplorationSession = {
-        id: sessionId,
-        projectId,
-        prompt: `Refine "${selectedVariant.name}": ${refinementPrompt}`,
-        variantCount,
-        variants: [],
-        createdAt: new Date().toISOString(),
-      };
+      const batchId = crypto.randomUUID();
+      const batchPrompt = `Refine "${selectedVariant.name}": ${refinementPrompt}`;
+      const sessionId = currentExploration.id;
+      const existingVariants = currentExploration.variants;
 
-      const updatedExplorations = [...explorations, newExploration];
-      onUpdateExplorations(updatedExplorations);
-      setActiveExplorationIndex(updatedExplorations.length - 1);
       setSelectedVariantId(null);
 
       try {
-        const apiKey = getStoredApiKey();
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-        };
-        if (apiKey) headers["X-Api-Key"] = apiKey;
-
-        const res = await fetch("/api/generate/explore", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
+        await runGeneration(
+          sessionId,
+          existingVariants,
+          batchId,
+          batchPrompt,
+          explorations,
+          {
             prompt: refinementPrompt,
             designMd,
             variantCount,
             projectId,
             baseCode: selectedVariant.code,
-          }),
-          signal: abortRef.current.signal,
-        });
-
-        if (!res.ok) {
-          const errBody = await res.json().catch(() => ({ error: "Request failed" }));
-          throw new Error(friendlyError(errBody));
-        }
-
-        await streamVariants(res, sessionId, updatedExplorations);
+          },
+          variantCount,
+        );
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
         const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
@@ -256,7 +336,7 @@ export function ExplorerCanvas({
         abortRef.current = null;
       }
     },
-    [isGenerating, selectedVariant, projectId, designMd, explorations, onUpdateExplorations, streamVariants]
+    [isGenerating, selectedVariant, currentExploration, projectId, designMd, explorations, runGeneration]
   );
 
   const handleRegenerate = useCallback(() => {
@@ -266,51 +346,35 @@ export function ExplorerCanvas({
 
   const handleRefineVariant = useCallback(
     async (variant: DesignVariant, feedback: string) => {
-      if (isGenerating) return;
+      if (isGenerating || !currentExploration) return;
 
       setIsGenerating(true);
       setGenerationError(null);
       abortRef.current = new AbortController();
 
-      const sessionId = crypto.randomUUID();
-      const newExploration: ExplorationSession = {
-        id: sessionId,
-        projectId,
-        prompt: `Refine "${variant.name}": ${feedback}`,
-        variantCount: 1,
-        variants: [],
-        createdAt: new Date().toISOString(),
-      };
+      const batchId = crypto.randomUUID();
+      const batchPrompt = `Refine "${variant.name}": ${feedback}`;
+      const sessionId = currentExploration.id;
+      const existingVariants = currentExploration.variants;
 
-      const updatedExplorations = [...explorations, newExploration];
-      onUpdateExplorations(updatedExplorations);
-      setActiveExplorationIndex(updatedExplorations.length - 1);
       setSelectedVariantId(null);
 
       try {
-        const apiKey = getStoredApiKey();
-        const headers: Record<string, string> = { "Content-Type": "application/json" };
-        if (apiKey) headers["X-Api-Key"] = apiKey;
-
-        const res = await fetch("/api/generate/explore", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
+        await runGeneration(
+          sessionId,
+          existingVariants,
+          batchId,
+          batchPrompt,
+          explorations,
+          {
             prompt: feedback,
             designMd,
             variantCount: 1,
             projectId,
             baseCode: variant.code,
-          }),
-          signal: abortRef.current.signal,
-        });
-
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({ error: "Generation failed" }));
-          throw new Error(errorData.error || `HTTP ${res.status}`);
-        }
-
-        await streamVariants(res, sessionId, updatedExplorations);
+          },
+          1,
+        );
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         const message = err instanceof Error ? err.message : "Generation failed";
@@ -320,7 +384,7 @@ export function ExplorerCanvas({
         abortRef.current = null;
       }
     },
-    [isGenerating, projectId, designMd, explorations, onUpdateExplorations, streamVariants]
+    [isGenerating, currentExploration, projectId, designMd, explorations, runGeneration]
   );
 
   const handleRateVariant = useCallback(
@@ -384,6 +448,13 @@ export function ExplorerCanvas({
     [designMd, onDesignMdUpdate]
   );
 
+  // Calculate skeleton count for the current streaming batch
+  const skeletonCount = isGenerating && streamingBatchRef.current
+    ? Math.max(0, pendingBatchCountRef.current - variants.filter((v) => v.batchId === streamingBatchRef.current).length)
+    : 0;
+
+  const gridClassName = `grid gap-4 ${variants.length > 4 ? "grid-cols-2 lg:grid-cols-3" : "grid-cols-2"}`;
+
   return (
     <div className="flex h-full flex-col">
       {/* Error banner */}
@@ -420,9 +491,17 @@ export function ExplorerCanvas({
                     : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                 }`}
               >
-                {e.prompt.length > 40 ? e.prompt.slice(0, 40) + "…" : e.prompt}
+                {e.prompt ? (e.prompt.length > 40 ? e.prompt.slice(0, 40) + "…" : e.prompt) : "New exploration"}
               </button>
             ))}
+            <button
+              onClick={handleNewExploration}
+              disabled={isGenerating}
+              className="shrink-0 flex items-center justify-center size-6 rounded-md text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 transition-colors"
+              title="New exploration"
+            >
+              <Plus size={13} />
+            </button>
           </div>
           <button
             disabled={explorationIndex >= explorations.length - 1}
@@ -446,7 +525,7 @@ export function ExplorerCanvas({
       )}
 
       {/* Canvas area */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
         {variants.length === 0 && !isGenerating ? (
           <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
             <div className="rounded-xl bg-[var(--bg-surface)] p-4">
@@ -491,44 +570,75 @@ export function ExplorerCanvas({
               </div>
             )}
 
-          <div className={`grid gap-4 ${(currentExploration?.variantCount ?? variants.length) > 4 ? "grid-cols-2 lg:grid-cols-3" : "grid-cols-2"}`}>
-            {variants.map((variant) => (
-              <VariantCard
-                key={variant.id}
-                variant={variant}
-                isSelected={selectedVariantId === variant.id}
-                onSelect={() =>
-                  setSelectedVariantId(
-                    selectedVariantId === variant.id ? null : variant.id
-                  )
-                }
-                onRate={(rating) => handleRateVariant(variant.id, rating)}
-                onCopyCode={() => navigator.clipboard.writeText(variant.code)}
-                onPushToFigma={() => handlePushToFigma(variant)}
-                onRegenerate={(feedback) => {
-                  if (feedback) {
-                    handleRefineVariant(variant, feedback);
-                  } else {
-                    handleRegenerate();
-                  }
-                }}
-                onResponsive={() => setResponsiveVariant(variant)}
-                onPromoteToLibrary={() => setPromoteVariant(variant)}
-              />
-            ))}
-            {isGenerating && variants.length < (currentExploration?.variantCount ?? 0) &&
-              Array.from({ length: (currentExploration?.variantCount ?? 2) - variants.length }).map((_, i) => (
-                <div key={`skeleton-${i}`} className="rounded-xl border-2 border-dashed border-white/20 bg-white/[0.04] p-4 flex flex-col items-center justify-center">
-                  <div className="aspect-[4/3] w-full flex flex-col items-center justify-center gap-3">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white/60" />
-                    <p className="text-xs text-[var(--text-muted)] animate-pulse">
-                      Generating variant {variants.length + i + 1}...
-                    </p>
+            {/* Grouped variant batches */}
+            {batches.map((batch, batchIdx) => (
+              <div key={batch.batchId}>
+                {/* Batch separator — skip for first batch */}
+                {batchIdx > 0 && (
+                  <div className="flex items-center gap-3 py-3">
+                    <div className="h-px flex-1 bg-[var(--studio-border)]" />
+                    <span className="shrink-0 max-w-[300px] truncate text-[11px] text-[var(--text-muted)]">
+                      {batch.prompt}
+                    </span>
+                    <div className="h-px flex-1 bg-[var(--studio-border)]" />
                   </div>
+                )}
+                <div className={gridClassName}>
+                  {batch.variants.map((variant) => (
+                    <VariantCard
+                      key={variant.id}
+                      variant={variant}
+                      isSelected={selectedVariantId === variant.id}
+                      onSelect={() =>
+                        setSelectedVariantId(
+                          selectedVariantId === variant.id ? null : variant.id
+                        )
+                      }
+                      onRate={(rating) => handleRateVariant(variant.id, rating)}
+                      onCopyCode={() => navigator.clipboard.writeText(variant.code)}
+                      onPushToFigma={() => handlePushToFigma(variant)}
+                      onRegenerate={(feedback) => {
+                        if (feedback) {
+                          handleRefineVariant(variant, feedback);
+                        } else {
+                          handleRegenerate();
+                        }
+                      }}
+                      onResponsive={() => setResponsiveVariant(variant)}
+                      onPromoteToLibrary={() => setPromoteVariant(variant)}
+                    />
+                  ))}
                 </div>
-              ))
-            }
-          </div>
+              </div>
+            ))}
+
+            {/* Skeleton loaders for in-progress batch */}
+            {skeletonCount > 0 && (
+              <>
+                {batches.length > 0 && (
+                  <div className="flex items-center gap-3 py-3">
+                    <div className="h-px flex-1 bg-[var(--studio-border)]" />
+                    <span className="shrink-0 text-[11px] text-[var(--text-muted)] animate-pulse">
+                      Generating…
+                    </span>
+                    <div className="h-px flex-1 bg-[var(--studio-border)]" />
+                  </div>
+                )}
+                <div className={gridClassName}>
+                  {Array.from({ length: skeletonCount }).map((_, i) => (
+                    <div key={`skeleton-${i}`} className="rounded-xl border-2 border-dashed border-white/20 bg-white/[0.04] p-4 flex flex-col items-center justify-center">
+                      <div className="aspect-[4/3] w-full flex flex-col items-center justify-center gap-3">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white/60" />
+                        <p className="text-xs text-[var(--text-muted)] animate-pulse">
+                          Generating variant…
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
             {isProcessingImages && (
               <div className="flex items-center gap-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2.5">
                 <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
