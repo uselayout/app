@@ -65,15 +65,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // BYOK: user-provided Google AI key via header, falls back to server env var
+  const userGoogleKey = request.headers.get("X-Google-Api-Key") || undefined;
+  const googleApiKey = userGoogleKey || process.env.GOOGLE_AI_API_KEY;
+
   try {
     if (parsed.data.mode === "batch") {
       // Batch mode: process all image placeholders in HTML
       const { html, orgId, brandColours, brandStyle } = parsed.data;
 
-      // Fail fast if API key is missing
-      if (!process.env.GOOGLE_AI_API_KEY) {
+      // Fail fast if no API key available (neither BYOK nor server env)
+      if (!googleApiKey) {
         return NextResponse.json(
-          { error: "Image generation not configured (missing GOOGLE_AI_API_KEY)", code: "NO_API_KEY" },
+          { error: "Image generation not configured. Add your Google AI API Key in Settings, or set GOOGLE_AI_API_KEY on the server.", code: "NO_API_KEY" },
           { status: 503 }
         );
       }
@@ -82,6 +86,7 @@ export async function POST(request: NextRequest) {
         orgId,
         brandColours,
         brandStyle,
+        googleApiKey,
       });
 
       return NextResponse.json({
@@ -104,6 +109,7 @@ export async function POST(request: NextRequest) {
       brandColours,
       brandStyle,
       orgId,
+      googleApiKey,
     });
 
     return NextResponse.json(result);
