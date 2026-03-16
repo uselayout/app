@@ -52,8 +52,7 @@ export function ExplorerToolbar({
       setImageDataUrl(initialImage);
       setImageName("Figma design");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialImage]);
+  }, [initialImage]); // imageDataUrl intentionally excluded to avoid re-triggering
 
   const processFile = useCallback(async (file: File) => {
     if (!ACCEPTED_TYPES.includes(file.type)) return;
