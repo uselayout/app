@@ -70,13 +70,26 @@ export async function POST(request: NextRequest) {
       // Batch mode: process all image placeholders in HTML
       const { html, orgId, brandColours, brandStyle } = parsed.data;
 
-      const processedHtml = await processImagePlaceholders(html, {
+      // Fail fast if API key is missing
+      if (!process.env.GOOGLE_AI_API_KEY) {
+        return NextResponse.json(
+          { error: "Image generation not configured (missing GOOGLE_AI_API_KEY)", code: "NO_API_KEY" },
+          { status: 503 }
+        );
+      }
+
+      const result = await processImagePlaceholders(html, {
         orgId,
         brandColours,
         brandStyle,
       });
 
-      return NextResponse.json({ html: processedHtml });
+      return NextResponse.json({
+        html: result.html,
+        totalCount: result.totalCount,
+        failedCount: result.failedCount,
+        errors: result.errors,
+      });
     }
 
     // Single image mode
