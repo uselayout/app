@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { Sparkles, X, Send } from "lucide-react";
+import { Sparkles, X, Send, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { ExplorerToolbar } from "./ExplorerToolbar";
 import { VariantCard } from "./VariantCard";
 import { FigmaPushModal } from "./FigmaPushModal";
@@ -43,11 +43,32 @@ export function ExplorerCanvas({
   const [promoteVariant, setPromoteVariant] = useState<DesignVariant | null>(null);
   const [showSubmitCandidate, setShowSubmitCandidate] = useState(false);
   const [comparePrompt, setComparePrompt] = useState<string | null>(null);
+  const [activeExplorationIndex, setActiveExplorationIndex] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Current exploration is the most recent one
-  const currentExploration = explorations.length > 0 ? explorations[explorations.length - 1] : null;
+  // Active exploration — default to most recent, or user-selected
+  const explorationIndex = activeExplorationIndex !== null && activeExplorationIndex < explorations.length
+    ? activeExplorationIndex
+    : explorations.length - 1;
+  const currentExploration = explorations.length > 0 ? explorations[explorationIndex] : null;
   const variants = currentExploration?.variants ?? [];
+
+  const handleDeleteExploration = useCallback(
+    (index: number) => {
+      const updated = explorations.filter((_, i) => i !== index);
+      onUpdateExplorations(updated);
+      // Adjust active index
+      if (updated.length === 0) {
+        setActiveExplorationIndex(null);
+      } else if (activeExplorationIndex !== null) {
+        if (index <= activeExplorationIndex) {
+          setActiveExplorationIndex(Math.max(0, activeExplorationIndex - 1));
+        }
+      }
+      setSelectedVariantId(null);
+    },
+    [explorations, activeExplorationIndex, onUpdateExplorations]
+  );
 
   const selectedVariant = variants.find((v) => v.id === selectedVariantId) ?? null;
 
@@ -135,6 +156,7 @@ export function ExplorerCanvas({
 
       const updatedExplorations = [...explorations, newExploration];
       onUpdateExplorations(updatedExplorations);
+      setActiveExplorationIndex(updatedExplorations.length - 1);
 
       try {
         const apiKey = getStoredApiKey();
@@ -188,6 +210,7 @@ export function ExplorerCanvas({
 
       const updatedExplorations = [...explorations, newExploration];
       onUpdateExplorations(updatedExplorations);
+      setActiveExplorationIndex(updatedExplorations.length - 1);
       setSelectedVariantId(null);
 
       try {
@@ -306,6 +329,52 @@ export function ExplorerCanvas({
           >
             <X size={14} />
           </button>
+        </div>
+      )}
+
+      {/* Exploration history bar */}
+      {explorations.length > 0 && (
+        <div className="flex items-center gap-2 border-b border-[var(--studio-border)] px-4 py-2">
+          <button
+            disabled={explorationIndex <= 0}
+            onClick={() => { setActiveExplorationIndex(explorationIndex - 1); setSelectedVariantId(null); }}
+            className="shrink-0 rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <div className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+            {explorations.map((e, i) => (
+              <button
+                key={e.id}
+                onClick={() => { setActiveExplorationIndex(i); setSelectedVariantId(null); }}
+                className={`shrink-0 max-w-[200px] truncate rounded-md px-2.5 py-1 text-[11px] transition-colors ${
+                  i === explorationIndex
+                    ? "bg-[var(--studio-accent-subtle)] text-[var(--text-primary)] font-medium"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                }`}
+              >
+                {e.prompt.length > 40 ? e.prompt.slice(0, 40) + "…" : e.prompt}
+              </button>
+            ))}
+          </div>
+          <button
+            disabled={explorationIndex >= explorations.length - 1}
+            onClick={() => { setActiveExplorationIndex(explorationIndex + 1); setSelectedVariantId(null); }}
+            className="shrink-0 rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+          >
+            <ChevronRight size={14} />
+          </button>
+          <button
+            onClick={() => handleDeleteExploration(explorationIndex)}
+            disabled={isGenerating}
+            className="shrink-0 rounded p-1 text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 transition-colors"
+            title="Delete this exploration"
+          >
+            <Trash2 size={13} />
+          </button>
+          <span className="shrink-0 text-[10px] text-[var(--text-muted)] tabular-nums">
+            {explorationIndex + 1}/{explorations.length}
+          </span>
         </div>
       )}
 
