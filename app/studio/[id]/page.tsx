@@ -238,6 +238,7 @@ export default function StudioPage({
             ? new URL(project.sourceUrl).hostname
             : undefined
         }
+        project={project}
         onNameChange={(name) => updateProjectName(id, name)}
         onReExtract={handleReExtract}
         onTest={() => setShowTestPanel((prev) => !prev)}
