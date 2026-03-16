@@ -10,6 +10,7 @@ import type { Component } from "@/lib/types/component";
 export default function LibraryPage() {
   const params = useParams();
   const orgSlug = (params?.org as string) ?? "";
+  const projectId = (params?.projectId as string) ?? "";
   const orgId = useOrgStore((s) => s.currentOrgId);
 
   const [components, setComponents] = useState<Component[]>([]);
@@ -33,6 +34,7 @@ export default function LibraryPage() {
         if (filterStatus) searchParams.set("status", filterStatus);
         if (filterCategory) searchParams.set("category", filterCategory);
         if (search) searchParams.set("search", search);
+        if (projectId) searchParams.set("projectId", projectId);
 
         const [componentsRes, categoriesRes] = await Promise.all([
           fetch(
