@@ -69,6 +69,13 @@ export default function WebhooksPage() {
         </div>
       </section>
 
+      {/* Coming Soon Notice */}
+      <Callout type="warning">
+        <strong>Note:</strong> Automatic re-extraction triggered by Figma webhooks is coming soon.
+        Currently, webhooks are received and logged, but re-extraction must be triggered manually
+        by clicking <strong>Re-extract</strong> in the Studio.
+      </Callout>
+
       {/* Setup */}
       <section className="space-y-8">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Setup</h2>
