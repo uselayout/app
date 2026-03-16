@@ -175,7 +175,7 @@ export async function generateImage(
 
   // Upload to Supabase Storage
   const { error: uploadError } = await supabase.storage
-    .from("images")
+    .from("layout-images")
     .upload(filename, buffer, {
       contentType: mimeType,
       upsert: false,
@@ -186,7 +186,7 @@ export async function generateImage(
   }
 
   const { data: publicUrlData } = supabase.storage
-    .from("images")
+    .from("layout-images")
     .getPublicUrl(filename);
 
   return {
