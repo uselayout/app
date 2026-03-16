@@ -25,7 +25,9 @@ export async function processCodeImages(
   code: string,
   options: ProcessOptions = {}
 ): Promise<string> {
-  if (!IMAGE_PLACEHOLDER_RE.test(code)) return code;
+  const hasPlaceholders = IMAGE_PLACEHOLDER_RE.test(code);
+  console.log(`[process-code-images] Checking code (${code.length} chars), hasPlaceholders=${hasPlaceholders}`);
+  if (!hasPlaceholders) return code;
 
   console.log("[process-code-images] Found image placeholders, calling API...");
 
