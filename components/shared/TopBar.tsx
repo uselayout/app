@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { RefreshCw, FlaskConical, ArrowUpToLine, PanelLeft, KeyRound, Plus } from "lucide-react";
+import { RefreshCw, FlaskConical, ArrowUpToLine, PanelLeft, KeyRound } from "lucide-react";
 import { useApiKey } from "@/lib/hooks/use-api-key";
 import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
-import { NewExtractionModal } from "@/components/studio/NewExtractionModal";
 import { PushToDesignSystemModal } from "@/components/studio/PushToDesignSystemModal";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
@@ -42,7 +41,6 @@ export function TopBar({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(projectName);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [showNewExtraction, setShowNewExtraction] = useState(false);
   const [showPushModal, setShowPushModal] = useState(false);
   const { key: apiKey } = useApiKey();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -91,15 +89,18 @@ export function TopBar({
 
   return (
     <div className="flex h-12 items-center justify-between border-b border-[rgba(255,255,255,0.07)] bg-[#0c0c0e] px-4">
-      {/* Left: New + Editor/Canvas toggle */}
+      {/* Left: Source panel toggle + Editor/Canvas toggle */}
       <div className="flex items-center gap-[17px]">
         <button
-          onClick={() => setShowNewExtraction(true)}
-          className="flex items-center gap-1 h-6 px-[9px] rounded-[4px] border border-[#24282c] text-[12px] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
-          title="New extraction"
+          onClick={onToggleSource}
+          className={`flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] transition-colors ${
+            sourcePanelOpen
+              ? "bg-[rgba(255,255,255,0.1)] text-white"
+              : "bg-[rgba(255,255,255,0.02)] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.06)]"
+          }`}
+          title="Toggle source panel"
         >
-          <Plus className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">New</span>
+          <PanelLeft className="h-3.5 w-3.5" />
         </button>
 
         {/* Editor / Canvas toggle */}
@@ -157,17 +158,6 @@ export function TopBar({
       {/* Right: Actions */}
       <div className="flex items-center gap-1.5">
         <button
-          onClick={onToggleSource}
-          className={`flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] transition-colors ${
-            sourcePanelOpen
-              ? "bg-[rgba(255,255,255,0.1)] text-white"
-              : "bg-[rgba(255,255,255,0.02)] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.06)]"
-          }`}
-          title="Toggle source panel"
-        >
-          <PanelLeft className="h-3.5 w-3.5" />
-        </button>
-        <button
           onClick={onReExtract}
           className="flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] bg-[rgba(255,255,255,0.02)] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
           title="Re-extract"
@@ -215,9 +205,6 @@ export function TopBar({
 
       {showApiKeyModal && (
         <ApiKeyModal onClose={() => setShowApiKeyModal(false)} />
-      )}
-      {showNewExtraction && (
-        <NewExtractionModal onClose={() => setShowNewExtraction(false)} />
       )}
       {showPushModal && currentProject && orgId && (
         <PushToDesignSystemModal
