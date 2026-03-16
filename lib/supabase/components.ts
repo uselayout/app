@@ -14,6 +14,7 @@ import type {
 interface ComponentRow {
   id: string;
   org_id: string;
+  project_id: string | null;
   name: string;
   slug: string;
   description: string | null;
@@ -52,6 +53,7 @@ function rowToComponent(row: ComponentRow): Component {
   return {
     id: row.id,
     orgId: row.org_id,
+    projectId: row.project_id,
     name: row.name,
     slug: row.slug,
     description: row.description,
@@ -160,6 +162,34 @@ export async function getComponentsByOrg(
   return (data as ComponentRow[]).map(rowToComponent);
 }
 
+export async function getComponentsByProject(
+  orgId: string,
+  projectId: string,
+  opts?: { status?: ComponentStatus; category?: string; search?: string }
+): Promise<Component[]> {
+  let query = supabase
+    .from("layout_component")
+    .select("*")
+    .eq("org_id", orgId)
+    .eq("project_id", projectId)
+    .order("name", { ascending: true });
+
+  if (opts?.status) {
+    query = query.eq("status", opts.status);
+  }
+  if (opts?.category) {
+    query = query.eq("category", opts.category);
+  }
+  if (opts?.search) {
+    query = query.ilike("name", `%${opts.search}%`);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data) return [];
+  return (data as ComponentRow[]).map(rowToComponent);
+}
+
 export async function createComponent(data: {
   orgId: string;
   name: string;
@@ -174,6 +204,7 @@ export async function createComponent(data: {
   states?: ComponentState[];
   source?: ComponentSource;
   createdBy?: string;
+  projectId?: string;
 }): Promise<Component | null> {
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
@@ -184,6 +215,7 @@ export async function createComponent(data: {
     .insert({
       id,
       org_id: data.orgId,
+      project_id: data.projectId ?? null,
       name: data.name,
       slug: data.slug,
       description: data.description ?? null,
