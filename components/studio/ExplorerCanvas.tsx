@@ -367,10 +367,14 @@ export function ExplorerCanvas({
               />
             ))}
             {isGenerating && variants.length < (currentExploration?.variantCount ?? 0) &&
-              Array.from({ length: (currentExploration?.variantCount ?? 4) - variants.length }).map((_, i) => (
-                <div key={`skeleton-${i}`} className="animate-pulse rounded-xl border-2 border-dashed border-white/20 bg-white/[0.04] p-4">
-                  <div className="mb-3 h-4 w-2/3 rounded bg-white/10" />
-                  <div className="aspect-[4/3] rounded-lg bg-white/10" />
+              Array.from({ length: (currentExploration?.variantCount ?? 2) - variants.length }).map((_, i) => (
+                <div key={`skeleton-${i}`} className="rounded-xl border-2 border-dashed border-white/20 bg-white/[0.04] p-4 flex flex-col items-center justify-center">
+                  <div className="aspect-[4/3] w-full flex flex-col items-center justify-center gap-3">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white/60" />
+                    <p className="text-xs text-[var(--text-muted)] animate-pulse">
+                      Generating variant {variants.length + i + 1}...
+                    </p>
+                  </div>
                 </div>
               ))
             }
@@ -380,10 +384,14 @@ export function ExplorerCanvas({
 
         {isGenerating && variants.length === 0 && (
           <div className="grid gap-4 grid-cols-2">
-            {Array.from({ length: currentExploration?.variantCount ?? 4 }).map((_, i) => (
-              <div key={`skeleton-${i}`} className="animate-pulse rounded-xl border-2 border-dashed border-white/20 bg-white/[0.04] p-4">
-                <div className="mb-3 h-4 w-2/3 rounded bg-white/10" />
-                <div className="aspect-[4/3] rounded-lg bg-white/10" />
+            {Array.from({ length: currentExploration?.variantCount ?? 2 }).map((_, i) => (
+              <div key={`skeleton-${i}`} className="rounded-xl border-2 border-dashed border-white/20 bg-white/[0.04] p-4 flex flex-col items-center justify-center">
+                <div className="aspect-[4/3] w-full flex flex-col items-center justify-center gap-3">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white/60" />
+                  <p className="text-xs text-[var(--text-muted)] animate-pulse">
+                    Generating variant {i + 1}...
+                  </p>
+                </div>
               </div>
             ))}
           </div>
