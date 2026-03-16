@@ -42,6 +42,8 @@ export interface PipelineOptions {
   concurrency?: number;
   /** Callback when an individual image completes */
   onImageComplete?: (index: number, url: string) => void;
+  /** User-provided Google AI API key (BYOK) */
+  googleApiKey?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -127,6 +129,7 @@ export async function processImagePlaceholders(
           orgId: options.orgId,
           brandColours: options.brandColours,
           brandStyle: options.brandStyle,
+          googleApiKey: options.googleApiKey,
         })
       )
     );
