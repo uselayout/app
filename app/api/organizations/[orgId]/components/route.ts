@@ -9,6 +9,7 @@ import {
   nameToComponentSlug,
 } from "@/lib/supabase/components";
 import { logAuditEvent } from "@/lib/supabase/audit";
+import { transpileTsx } from "@/lib/transpile";
 import type { ComponentStatus } from "@/lib/types/component";
 
 const CreateComponentSchema = z.object({
@@ -87,12 +88,21 @@ export async function POST(
     slug = `${slug}-${suffix}`;
   }
 
+  let compiledJs = parsed.data.compiledJs;
+  if (!compiledJs && parsed.data.code) {
+    try {
+      compiledJs = transpileTsx(parsed.data.code);
+    } catch {
+      // Non-fatal: component will show "No preview"
+    }
+  }
+
   const component = await createComponent({
     orgId,
     name: parsed.data.name,
     slug,
     code: parsed.data.code,
-    compiledJs: parsed.data.compiledJs,
+    compiledJs,
     description: parsed.data.description,
     category: parsed.data.category,
     tags: parsed.data.tags,

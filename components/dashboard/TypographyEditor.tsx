@@ -391,14 +391,28 @@ function ScaleForm({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+interface TypographyToken {
+  id: string;
+  name: string;
+  value: string;
+  slug: string;
+}
+
 interface TypographyEditorProps {
   orgId: string;
+  projectId?: string;
   studioUrl?: string;
 }
 
-export function TypographyEditor({ orgId, studioUrl = "/studio" }: TypographyEditorProps) {
+function parsePrimaryFamily(value: string): string {
+  const first = value.split(",")[0].trim();
+  return first.replace(/^["']|["']$/g, "");
+}
+
+export function TypographyEditor({ orgId, projectId, studioUrl = "/studio" }: TypographyEditorProps) {
   const [typefaces, setTypefaces] = useState<Typeface[]>([]);
   const [scaleEntries, setScaleEntries] = useState<TypeScale[]>([]);
+  const [typographyTokens, setTypographyTokens] = useState<TypographyToken[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTypefaceForm, setShowTypefaceForm] = useState(false);
   const [editingTypefaceId, setEditingTypefaceId] = useState<string | null>(null);
@@ -408,19 +422,22 @@ export function TypographyEditor({ orgId, studioUrl = "/studio" }: TypographyEdi
 
   const fetchAll = useCallback(async () => {
     try {
-      const [tfRes, scRes] = await Promise.all([
+      const tokenUrl = `/api/organizations/${orgId}/tokens?type=typography${projectId ? "&projectId=" + projectId : ""}`;
+      const [tfRes, scRes, tokRes] = await Promise.all([
         fetch(`/api/organizations/${orgId}/typography`),
         fetch(`/api/organizations/${orgId}/typography/scale`),
+        fetch(tokenUrl),
       ]);
 
       if (tfRes.ok) setTypefaces((await tfRes.json()) as Typeface[]);
       if (scRes.ok) setScaleEntries((await scRes.json()) as TypeScale[]);
+      if (tokRes.ok) setTypographyTokens((await tokRes.json()) as TypographyToken[]);
     } catch {
       toast.error("Failed to load typography data");
     } finally {
       setLoading(false);
     }
-  }, [orgId]);
+  }, [orgId, projectId]);
 
   useEffect(() => {
     void fetchAll();
@@ -610,6 +627,65 @@ export function TypographyEditor({ orgId, studioUrl = "/studio" }: TypographyEdi
         .map((t) => (
           <GoogleFontLink key={t.id} url={t.googleFontsUrl} />
         ))}
+
+      {/* ── Extracted Fonts Section ──────────────────────────────────────── */}
+      {typographyTokens.length > 0 && (() => {
+        const grouped = new Map<string, TypographyToken[]>();
+        for (const tok of typographyTokens) {
+          const family = parsePrimaryFamily(tok.value);
+          if (!family) continue;
+          const existing = grouped.get(family);
+          if (existing) {
+            existing.push(tok);
+          } else {
+            grouped.set(family, [tok]);
+          }
+        }
+
+        return (
+          <section>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Extracted Fonts</h2>
+              <p className="text-sm text-[var(--text-muted)]">
+                Font families detected from your design system tokens
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {Array.from(grouped.entries()).map(([family, tokens]) => (
+                <div
+                  key={family}
+                  className="rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4"
+                >
+                  <h3
+                    className="text-base font-semibold text-[var(--text-primary)]"
+                    style={{ fontFamily: family }}
+                  >
+                    {family}
+                  </h3>
+                  <p
+                    className="mt-2 text-sm text-[var(--text-secondary)]"
+                    style={{ fontFamily: family }}
+                  >
+                    {SAMPLE_TEXT}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {tokens.map((tok) => (
+                      <span
+                        key={tok.id}
+                        className="inline-flex items-center gap-1.5 rounded bg-[var(--bg-elevated)] px-2 py-0.5 font-mono text-[10px] text-[var(--text-muted)]"
+                      >
+                        <span className="text-[var(--text-secondary)]">{tok.name}</span>
+                        <span>{tok.value}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* ── Typefaces Section ──────────────────────────────────────────────── */}
       <section>

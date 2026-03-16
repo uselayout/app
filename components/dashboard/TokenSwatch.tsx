@@ -150,7 +150,7 @@ function ColorSwatch(props: RenderProps) {
     <div className="group flex flex-col items-start gap-2">
       <button
         onClick={props.onStartEdit}
-        className="h-12 w-12 shrink-0 rounded-[var(--studio-radius-md)] border border-[var(--studio-border)]"
+        className="h-9 w-9 shrink-0 rounded-[var(--studio-radius-md)] border border-[var(--studio-border)]"
         style={{ backgroundColor: token.value }}
         title={`Click to edit — ${token.value}`}
       />
@@ -178,7 +178,7 @@ function BarSwatch(props: RenderProps) {
   const barWidth = !isNaN(numericValue) ? Math.min(numericValue * 4, 200) : 40;
 
   return (
-    <div className="group flex items-center gap-4 rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-3">
+    <div className="group flex items-center gap-4 rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2">
       <div
         className="h-4 shrink-0 rounded-sm bg-[var(--studio-accent)]"
         style={{ width: `${barWidth}px` }}
@@ -203,7 +203,7 @@ function TypographySwatch(props: RenderProps) {
   const { token, onDeleteClick, confirmDelete } = props;
 
   return (
-    <div className="group flex items-center gap-4 rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-3">
+    <div className="group flex items-center gap-4 rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2">
       <p
         className="w-32 shrink-0 truncate text-[var(--text-primary)]"
         style={{ fontSize: token.value }}
@@ -230,7 +230,7 @@ function EffectSwatch(props: RenderProps) {
   const { token, onDeleteClick, confirmDelete } = props;
 
   return (
-    <div className="group flex items-center gap-4 rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-3">
+    <div className="group flex items-center gap-4 rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2">
       <div
         className="h-10 w-10 shrink-0 rounded-[var(--studio-radius-sm)] bg-[var(--bg-elevated)]"
         style={{ boxShadow: token.value }}
@@ -255,7 +255,7 @@ function MotionSwatch(props: RenderProps) {
   const { token, onDeleteClick, confirmDelete } = props;
 
   return (
-    <div className="group flex items-center gap-4 rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-3">
+    <div className="group flex items-center gap-4 rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--studio-radius-sm)] bg-[var(--bg-elevated)]">
         <span className="font-mono text-xs text-[var(--text-muted)]">M</span>
       </div>
