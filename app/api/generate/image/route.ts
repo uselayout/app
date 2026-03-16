@@ -65,22 +65,21 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // BYOK: user-provided Google AI key via header, falls back to server env var
+  // Image generation is BYOK-only for now (no hosted credit system for images).
+  // User must provide their own Google AI API key via the Settings modal.
   const userGoogleKey = request.headers.get("X-Google-Api-Key") || undefined;
-  const googleApiKey = userGoogleKey || process.env.GOOGLE_AI_API_KEY;
+  if (!userGoogleKey) {
+    return NextResponse.json(
+      { error: "Image generation requires a Google AI API Key. Add yours in the API Keys settings.", code: "NO_API_KEY" },
+      { status: 503 }
+    );
+  }
+  const googleApiKey = userGoogleKey;
 
   try {
     if (parsed.data.mode === "batch") {
       // Batch mode: process all image placeholders in HTML
       const { html, orgId, brandColours, brandStyle } = parsed.data;
-
-      // Fail fast if no API key available (neither BYOK nor server env)
-      if (!googleApiKey) {
-        return NextResponse.json(
-          { error: "Image generation not configured. Add your Google AI API Key in Settings, or set GOOGLE_AI_API_KEY on the server.", code: "NO_API_KEY" },
-          { status: 503 }
-        );
-      }
 
       const result = await processImagePlaceholders(html, {
         orgId,
