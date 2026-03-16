@@ -1,108 +1,111 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Scan,
+  Columns3,
+  Sparkles,
+  Server,
+  Download,
+} from "lucide-react";
 import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Getting Started -  Layout Docs",
+  title: "What is Layout? - Layout Docs",
   description:
-    "Give your AI coding agent a complete understanding of your design system so every component it builds is on-brand.",
+    "Layout is the compiler between design systems and AI coding agents. Extract from Figma or websites, refine in a studio editor, serve to AI agents via MCP.",
 };
+
+const capabilities = [
+  {
+    icon: Scan,
+    title: "Extract",
+    description:
+      "Pull design tokens, components, fonts, and screenshots from Figma files or live websites. Layout resolves actual style values automatically — no manual mapping.",
+    href: "/docs/walkthrough",
+  },
+  {
+    icon: Columns3,
+    title: "Studio",
+    description:
+      "Three-panel editor: browse extracted tokens on the left, edit DESIGN.md in the centre with an AI chat bar for inline edits, and test components with live preview on the right.",
+    href: "/docs/studio",
+  },
+  {
+    icon: Sparkles,
+    title: "Explorer",
+    description:
+      "Generate 2–6 component variants from a single prompt. Compare with and without design context, upload reference images, and push results to Figma as real auto-layout frames.",
+    href: "/docs/explorer",
+  },
+  {
+    icon: Server,
+    title: "MCP Server",
+    description:
+      "Install @layoutdesign/context and your AI agent fetches design tokens and checks compliance in real-time. Works with Claude Code, Cursor, Copilot, and Windsurf — no copy-paste needed.",
+    href: "/docs/cli",
+  },
+  {
+    icon: Download,
+    title: "Export",
+    description:
+      "Download a ZIP bundle with DESIGN.md, tokens.css, tokens.json, tailwind.config.js, AGENTS.md, and Cursor rules. Or skip the export entirely and use MCP.",
+    href: "#export-bundle",
+  },
+] as const;
 
 export default function GettingStartedPage() {
   const { prev, next } = getAdjacentPages("/docs");
 
   return (
     <div className="space-y-10">
-      {/* Header */}
+      {/* Hero */}
       <div className="space-y-3">
-        <h1 className="text-3xl font-bold text-[#0a0a0a]">Getting Started</h1>
+        <h1 className="text-3xl font-bold text-[#0a0a0a]">What is Layout?</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Every AI coding agent generates UI that looks generic — wrong
-          colours, wrong spacing, wrong components. Layout fixes this by
-          giving your AI a complete understanding of your design system, so
-          every component it builds matches your brand perfectly.
-        </p>
-        <p className="text-base text-gray-600 leading-relaxed">
-          Extract your design tokens and components from Figma or a live
-          website, then install the context bundle into your project. Claude
-          Code, Cursor, Copilot, and Windsurf use it automatically.
+          Layout is the compiler between design systems and AI coding agents.
+          It extracts your tokens, components, and visual patterns from Figma
+          or a live website, lets you refine them in a studio editor with AI
+          assistance, then serves the result directly to your coding agent via
+          MCP — so every component it builds is on-brand, every time.
         </p>
       </div>
 
-      {/* What You Get */}
+      {/* Core Capabilities */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-bold text-[#0a0a0a]">What You Get</h2>
-        <p className="text-base text-gray-600 leading-relaxed">
-          When you export from Layout, you download a ZIP containing:
-        </p>
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50 text-left">
-                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">File</th>
-                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">Purpose</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {[
-                {
-                  file: "DESIGN.md",
-                  purpose:
-                    "Full design system reference -  tokens, components, anti-patterns",
-                },
-                {
-                  file: "CLAUDE.md-section.md",
-                  purpose: "Drop-in section for your project's CLAUDE.md",
-                },
-                {
-                  file: "AGENTS.md",
-                  purpose:
-                    "Context for OpenAI Codex, Jules, Factory, Amp (agents.md standard)",
-                },
-                {
-                  file: "tokens.css",
-                  purpose: "CSS custom properties for all design tokens",
-                },
-                {
-                  file: ".cursorrules",
-                  purpose: "Cursor rules file with Quick Reference context",
-                },
-                {
-                  file: "cursor/rules/design-system.mdc",
-                  purpose: "Cursor v0.43+ MDC rules format",
-                },
-                {
-                  file: "tailwind.config.js",
-                  purpose: "Tailwind config pre-loaded with extracted token values",
-                },
-                {
-                  file: "tokens.json",
-                  purpose:
-                    "W3C DTCG-compatible token file for Theo, Style Dictionary, etc.",
-                },
-              ].map(({ file, purpose }) => (
-                <tr key={file} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
-                    {file}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{purpose}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          Core Capabilities
+        </h2>
+        <div className="space-y-4">
+          {capabilities.map(({ icon: Icon, title, description, href }) => (
+            <div
+              key={title}
+              className="flex items-start gap-4 rounded-xl border border-gray-200 px-5 py-4"
+            >
+              <div className="shrink-0 mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
+                <Icon size={18} className="text-gray-700" />
+              </div>
+              <div className="space-y-1">
+                <Link
+                  href={href}
+                  className="text-base font-semibold text-[#0a0a0a] hover:underline"
+                >
+                  {title}
+                </Link>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {description}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
-        <Callout type="info">
-          The <strong>Quick Reference</strong> inside <code className="text-xs bg-gray-100 rounded px-1 py-0.5">DESIGN.md</code> (Section 0) is designed to be
-          copy-pasted standalone -  it fits within tight context budgets and
-          summarises the most critical tokens and rules in 50–75 lines.
-        </Callout>
       </section>
 
-      {/* Recommended Workflow */}
+      {/* How It Works */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-bold text-[#0a0a0a]">Recommended Workflow</h2>
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">How It Works</h2>
         <ol className="space-y-4 text-base text-gray-600 leading-relaxed list-none pl-0">
           {[
             {
@@ -119,11 +122,11 @@ export default function GettingStartedPage() {
             },
             {
               step: "Test",
-              desc: "Use the Test panel to generate a few components. Check the health score -  aim for 80+.",
+              desc: "Use the Test panel to generate a few components. Check the health score — aim for 80+.",
             },
             {
               step: "Iterate",
-              desc: "Edit DESIGN.md manually or use the AI edit bar to make changes in plain English (e.g. \"make buttons square\"). Re-test.",
+              desc: 'Edit DESIGN.md manually or use the AI chat bar to make changes in plain English (e.g. "make buttons square"). Re-test.',
             },
             {
               step: "Export",
@@ -140,11 +143,22 @@ export default function GettingStartedPage() {
               </span>
               <div>
                 <span className="font-semibold text-[#0a0a0a]">{step}</span>
-                <span className="text-gray-600"> -  {desc}</span>
+                <span className="text-gray-600"> — {desc}</span>
               </div>
             </li>
           ))}
         </ol>
+        <Callout type="tip">
+          Using the MCP server? You can skip steps 6–7. Your AI agent fetches
+          design context automatically — see the{" "}
+          <Link
+            href="/docs/cli"
+            className="text-gray-900 font-medium hover:underline"
+          >
+            CLI Guide
+          </Link>
+          .
+        </Callout>
       </section>
 
       {/* Health Score */}
@@ -183,11 +197,100 @@ export default function GettingStartedPage() {
                 {range}
               </span>
               <div className="text-sm">
-                <span className="font-semibold">{label}</span> -  {desc}
+                <span className="font-semibold">{label}</span> — {desc}
               </div>
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Export Bundle */}
+      <section id="export-bundle" className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Export Bundle</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          When you export from Layout, you download a ZIP containing:
+        </p>
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                  File
+                </th>
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">
+                  Purpose
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {[
+                {
+                  file: "DESIGN.md",
+                  purpose:
+                    "Full design system reference — tokens, components, anti-patterns",
+                },
+                {
+                  file: "CLAUDE.md-section.md",
+                  purpose: "Drop-in section for your project's CLAUDE.md",
+                },
+                {
+                  file: "AGENTS.md",
+                  purpose:
+                    "Context for OpenAI Codex, Jules, Factory, Amp (agents.md standard)",
+                },
+                {
+                  file: "tokens.css",
+                  purpose: "CSS custom properties for all design tokens",
+                },
+                {
+                  file: ".cursorrules",
+                  purpose: "Cursor rules file with Quick Reference context",
+                },
+                {
+                  file: "cursor/rules/design-system.mdc",
+                  purpose: "Cursor v0.43+ MDC rules format",
+                },
+                {
+                  file: "tailwind.config.js",
+                  purpose:
+                    "Tailwind config pre-loaded with extracted token values",
+                },
+                {
+                  file: "tokens.json",
+                  purpose:
+                    "W3C DTCG-compatible token file for Theo, Style Dictionary, etc.",
+                },
+              ].map(({ file, purpose }) => (
+                <tr key={file} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
+                    {file}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{purpose}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Callout type="info">
+          The{" "}
+          <Link
+            href="/docs/cli"
+            className="text-gray-900 font-medium hover:underline"
+          >
+            MCP server
+          </Link>{" "}
+          makes manual export optional. Once installed, your AI agent fetches
+          tokens and checks compliance on every prompt — no files to manage.
+        </Callout>
+        <Callout type="info">
+          The <strong>Quick Reference</strong> inside{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            DESIGN.md
+          </code>{" "}
+          (Section 0) is designed to be copy-pasted standalone — it fits within
+          tight context budgets and summarises the most critical tokens and
+          rules in 50–75 lines.
+        </Callout>
       </section>
 
       {/* Tips */}
@@ -195,22 +298,22 @@ export default function GettingStartedPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Tips</h2>
         <div className="space-y-3">
           <Callout type="tip">
-            <strong>Narrow the Quick Reference</strong> -  If you have a large
+            <strong>Narrow the Quick Reference</strong> — If you have a large
             DESIGN.md, Section 0 is the most important part. Keep it focused on
             the 10–15 tokens your AI uses most.
           </Callout>
           <Callout type="tip">
-            <strong>Commit DESIGN.md to your repo</strong> -  Treat it like any
+            <strong>Commit DESIGN.md to your repo</strong> — Treat it like any
             other configuration file. Update it when the design system changes.
           </Callout>
           <Callout type="tip">
-            <strong>Use the context toggle</strong> -  In the Test panel, toggle
-            "DESIGN.md context: OFF" to see what the AI generates without your
-            design system. The gap shows you exactly what value the context file
-            is providing.
+            <strong>Use the context toggle</strong> — In the Test panel, toggle
+            &ldquo;DESIGN.md context: OFF&rdquo; to see what the AI generates
+            without your design system. The gap shows you exactly what value the
+            context file is providing.
           </Callout>
           <Callout type="tip">
-            <strong>Re-extract periodically</strong> -  Design systems evolve.
+            <strong>Re-extract periodically</strong> — Design systems evolve.
             Re-run extraction after major design updates to keep the context file
             current.
           </Callout>
@@ -225,14 +328,14 @@ export default function GettingStartedPage() {
             <Link href="/docs/studio" className="text-gray-900 hover:underline">
               Studio Guide
             </Link>{" "}
- -  learn the three-panel editor, extraction options, and test panel in
+            — learn the three-panel editor, extraction options, and test panel in
             depth.
           </li>
           <li>
             <Link href="/docs/cli" className="text-gray-900 hover:underline">
               CLI Guide
             </Link>{" "}
- -  set up the MCP server so your AI agent fetches design context
+            — set up the MCP server so your AI agent fetches design context
             automatically.
           </li>
         </ul>
