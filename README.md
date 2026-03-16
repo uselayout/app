@@ -53,7 +53,7 @@ Your AI agents now generate code that matches your actual design system.
 
 ```bash
 # Clone the repo
-git clone https://github.com/uselayout/studio.git
+git clone https://github.com/uselayout/app.git
 cd ai-studio
 
 # Install dependencies
@@ -122,7 +122,7 @@ Once connected, your AI agent has access to 7 MCP tools:
 | `list_components` | All components in the active project |
 | `check_compliance` | Validate a code snippet against the design system |
 
-See [`@layoutdesign/context`](https://github.com/uselayout/layout-context) for the full CLI and MCP server documentation.
+See [`@layoutdesign/context`](https://github.com/uselayout/cli) for the full CLI and MCP server documentation.
 
 ## Figma Plugin (Coming Soon)
 

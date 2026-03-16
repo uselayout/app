@@ -5,11 +5,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/uselayout/studio.git"
+    "url": "https://github.com/uselayout/app.git"
   },
   "homepage": "https://layout.design",
   "bugs": {
-    "url": "https://github.com/uselayout/studio/issues"
+    "url": "https://github.com/uselayout/app/issues"
   },
   "keywords": [
     "design-system",

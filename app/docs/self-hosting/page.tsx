@@ -73,7 +73,7 @@ export default function SelfHostingPage() {
           Clone the repository and create your local environment file:
         </p>
         <CopyBlock
-          code={`git clone https://github.com/uselayout/studio.git
+          code={`git clone https://github.com/uselayout/app.git
 cd layoutaistudio
 cp .env.example .env.local`}
           language="bash"
