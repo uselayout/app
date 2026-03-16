@@ -185,14 +185,17 @@ export function TokenEditor({
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
-          {Array.from(grouped.entries()).map(([groupName, groupTokens]) => (
-            <div key={groupName}>
-              <h3 className="mb-3 text-sm font-medium text-[var(--text-muted)] uppercase tracking-wider">
+        <div className="space-y-4">
+          {Array.from(grouped.entries()).map(([groupName, groupTokens], idx) => (
+            <div key={groupName} className={idx > 0 ? "border-t border-[var(--studio-border)] pt-4" : ""}>
+              <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-[var(--text-muted)] uppercase tracking-wider">
                 {groupName}
+                <span className="rounded-full bg-[var(--bg-elevated)] px-2 py-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+                  {groupTokens.length}
+                </span>
               </h3>
               {isColorType ? (
-                <div className="grid grid-cols-4 gap-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8">
+                <div className="grid grid-cols-6 gap-3 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12">
                   {groupTokens.map((token) => (
                     <TokenSwatch
                       key={token.id}
@@ -203,7 +206,7 @@ export function TokenEditor({
                   ))}
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {groupTokens.map((token) => (
                     <TokenSwatch
                       key={token.id}
