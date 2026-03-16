@@ -100,7 +100,7 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
       <div className="relative w-full max-w-[1424px] px-6">
         {/* Aurora background */}
         <img
-          src="/marketing/aurora-hero.png"
+          src="/marketing/aurora-hero.webp"
           alt=""
           aria-hidden="true"
           className="absolute bottom-0 left-0 w-full pointer-events-none object-cover select-none"

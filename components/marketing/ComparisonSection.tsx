@@ -53,7 +53,7 @@ export function ComparisonSection() {
         viewport={{ once: true }}
       >
         <Image
-          src="/marketing/aurora-comparison.png"
+          src="/marketing/aurora-comparison.webp"
           alt=""
           fill
           className="object-cover"
