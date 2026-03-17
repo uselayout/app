@@ -12,7 +12,7 @@
  *   4. Replaces placeholder src attributes with real URLs
  */
 
-import { generateImage, type ImageStyle, type AspectRatio } from "./generate";
+import { generateImage, ImageSafetyError, type ImageStyle, type AspectRatio } from "./generate";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -193,13 +193,17 @@ export async function processImagePlaceholders(
                 : ` src="${imageUrl}" ${closing}`
           );
 
-        result = result.replace(placeholder.match, replacement);
+        // replaceAll handles duplicate identical prompts
+        result = result.replaceAll(placeholder.match, replacement);
         options.onImageComplete?.(i + j, imageUrl);
       } else {
         failedCount++;
-        const errMsg = genResult.reason instanceof Error
-          ? genResult.reason.message
-          : String(genResult.reason);
+        const isSafetyBlock = genResult.reason instanceof ImageSafetyError;
+        const errMsg = isSafetyBlock
+          ? `Safety policy blocked "${placeholder.prompt}" — try a more abstract description`
+          : genResult.reason instanceof Error
+            ? genResult.reason.message
+            : String(genResult.reason);
         errors.push(errMsg);
 
         // Replace with fallback placeholder image
@@ -219,7 +223,7 @@ export async function processImagePlaceholders(
                 : ` src="${FALLBACK_SVG}" ${closing}`
           );
 
-        result = result.replace(placeholder.match, fallback);
+        result = result.replaceAll(placeholder.match, fallback);
         console.warn(
           `[image-pipeline] Failed to generate image for "${placeholder.prompt}":`,
           errMsg
