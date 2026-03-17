@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUpToLine, ArrowUp } from "lucide-react";
-import { extractComponentName, buildSrcdoc } from "@/lib/explore/preview-helpers";
+import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import { usePushToDs } from "@/lib/hooks/use-push-to-ds";
 import type { DesignVariant } from "@/lib/types";
 
@@ -50,7 +50,7 @@ export function VariantCard({
         const res = await fetch("/api/transpile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: variant.code }),
+          body: JSON.stringify({ code: sanitizeRelativeSrc(variant.code) }),
         });
 
         if (!res.ok) {
