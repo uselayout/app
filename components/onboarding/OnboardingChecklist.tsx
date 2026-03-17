@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Check, Circle, X, Copy, CheckCheck } from "lucide-react";
 import { useOnboardingStore } from "@/lib/store/onboarding";
@@ -45,7 +45,6 @@ export function OnboardingChecklist({
   }, [steps, allStepsComplete, dismissed, dismiss]);
 
   if (dismissed && !celebrating) return null;
-  if (!celebrating && allStepsComplete()) return null;
 
   const handleCopy = async () => {
     const ok = await copyToClipboard(MCP_COMMAND);
@@ -62,7 +61,7 @@ export function OnboardingChecklist({
     key: StepKey;
     label: string;
     description?: string;
-    renderCta?: () => React.ReactNode;
+    renderCta?: () => ReactNode;
   }
 
   const allStepDefs: StepDef[] = [
@@ -76,7 +75,7 @@ export function OnboardingChecklist({
                 <div className="flex flex-col gap-1 mt-1">
                   <button
                     onClick={onOpenApiKeyModal}
-                    className="self-start text-xs px-2.5 py-1 rounded-md bg-[var(--studio-accent)] text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] border border-transparent transition-all duration-[var(--duration-base)]"
+                    className="self-start text-xs px-2.5 py-1 rounded-md bg-[var(--studio-accent)] text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] border border-transparent transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)]"
                   >
                     Add key
                   </button>
@@ -95,7 +94,7 @@ export function OnboardingChecklist({
         !steps.extracted ? (
           <button
             onClick={onOpenExtraction}
-            className="self-start text-xs px-2.5 py-1 rounded-md bg-[var(--studio-accent)] text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] border border-transparent transition-all duration-[var(--duration-base)] mt-1"
+            className="self-start text-xs px-2.5 py-1 rounded-md bg-[var(--studio-accent)] text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] border border-transparent transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)] mt-1"
           >
             Extract now
           </button>
@@ -108,7 +107,7 @@ export function OnboardingChecklist({
         !steps.viewedDesignMd && firstProjectId ? (
           <Link
             href={`/${orgSlug}/projects/${firstProjectId}/studio`}
-            className="self-start text-xs px-2.5 py-1 rounded-md bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--studio-border)] transition-all duration-[var(--duration-base)] mt-1 inline-block"
+            className="self-start text-xs px-2.5 py-1 rounded-md bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--studio-border)] transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)] mt-1 inline-block"
           >
             Open studio
           </Link>
@@ -127,7 +126,7 @@ export function OnboardingChecklist({
               <button
                 onClick={handleCopy}
                 aria-label="Copy command"
-                className="text-xs px-2 py-1 rounded-md bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--studio-border)] transition-all duration-[var(--duration-base)] flex items-center gap-1"
+                className="text-xs px-2 py-1 rounded-md bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--studio-border)] transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)] flex items-center gap-1"
               >
                 {copied ? (
                   <CheckCheck className="w-3 h-3" />
@@ -138,7 +137,7 @@ export function OnboardingChecklist({
             </div>
             <button
               onClick={() => markStep("installedMcp")}
-              className="self-start text-xs px-2.5 py-1 rounded-md bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--studio-border)] transition-all duration-[var(--duration-base)]"
+              className="self-start text-xs px-2.5 py-1 rounded-md bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--studio-border)] transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)]"
             >
               Mark as done
             </button>
@@ -180,7 +179,7 @@ export function OnboardingChecklist({
               <button
                 onClick={dismiss}
                 aria-label="Dismiss checklist"
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm transition-all duration-[var(--duration-base)] leading-none"
+                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)] leading-none"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -189,7 +188,7 @@ export function OnboardingChecklist({
           {/* Progress bar */}
           <div className="bg-[var(--bg-elevated)] rounded-full h-1">
             <div
-              className="bg-[var(--studio-accent)] rounded-full h-1 transition-all duration-[var(--duration-base)]"
+              className="bg-[var(--studio-accent)] rounded-full h-1 transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)]"
               style={{ width: `${(completedCount / totalCount) * 100}%` }}
             />
           </div>
@@ -208,11 +207,13 @@ export function OnboardingChecklist({
                   <Check
                     className="w-4 h-4"
                     style={{ color: "var(--studio-accent)" }}
+                    aria-hidden="true"
                   />
                 ) : (
                   <Circle
                     className="w-4 h-4"
                     style={{ color: "var(--text-muted)" }}
+                    aria-hidden="true"
                   />
                 )}
               </div>
