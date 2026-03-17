@@ -142,20 +142,30 @@ function SectionRow({ section }: SectionRowProps) {
 }
 
 function buildFixInstruction(report: CompletenessReport): string {
-  const issues: string[] = [];
+  const lines: string[] = [
+    "CRITICAL: Preserve ALL existing sections, headings, content, and formatting exactly as-is.",
+    "Only ADD missing content — never remove, rename, or restructure existing sections.",
+    "Keep all existing heading patterns unchanged (e.g. '## 5. Components', '## Anti-patterns').",
+    "",
+  ];
+
   for (const section of report.sections) {
+    if (section.missing.length === 0) continue;
+    lines.push(`## ${section.section} section:`);
     for (const missing of section.missing) {
-      issues.push(`- ${section.section}: ${missing}`);
+      lines.push(`- ${missing}`);
+    }
+    lines.push("");
+  }
+
+  if (report.suggestions.length > 0) {
+    lines.push("## Additional suggestions:");
+    for (const s of report.suggestions) {
+      lines.push(`- ${s}`);
     }
   }
-  const parts: string[] = [];
-  if (issues.length > 0) {
-    parts.push(`Fix these missing items:\n${issues.join("\n")}`);
-  }
-  if (report.suggestions.length > 0) {
-    parts.push(`Also address these suggestions:\n${report.suggestions.map(s => `- ${s}`).join("\n")}`);
-  }
-  return `Improve the DESIGN.md to increase its quality score. ${parts.join("\n\n")}`;
+
+  return lines.join("\n");
 }
 
 export function CompletenessPanel({ designMd, onDesignMdChange, className = '' }: CompletenessPanelProps) {
