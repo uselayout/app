@@ -43,6 +43,7 @@ export default function StudioPage({
   const [showExport, setShowExport] = useState(false);
   const [centreView, setCentreView] = useState<"editor" | "canvas">("editor");
   const [showSourcePanel, setShowSourcePanel] = useState(true);
+  const [whatsNextDismissed, setWhatsNextDismissed] = useState(false);
 
   // Push to design system state
   const orgId = useOrgStore((s) => s.currentOrgId);
@@ -217,8 +218,13 @@ export default function StudioPage({
     );
   }
 
-  // Show progress screen when running, or when failed with no extraction data yet
-  if (extractionStatus === "running" || (extractionStatus === "failed" && !project.extractionData)) {
+  // Show progress screen when running, or when failed with no extraction data yet,
+  // or when complete but the "What's next?" screen hasn't been dismissed yet
+  if (
+    extractionStatus === "running" ||
+    (extractionStatus === "failed" && !project.extractionData) ||
+    (extractionStatus === "complete" && !whatsNextDismissed)
+  ) {
     return (
       <ExtractionProgress
         sourceName={project.name}
@@ -227,6 +233,14 @@ export default function StudioPage({
         steps={extractionSteps}
         error={extractionError}
         streamingContent={project.designMd}
+        onOpenEditor={() => {
+          setCentreView("editor");
+          setWhatsNextDismissed(true);
+        }}
+        onOpenCanvas={() => {
+          setCentreView("canvas");
+          setWhatsNextDismissed(true);
+        }}
       />
     );
   }
