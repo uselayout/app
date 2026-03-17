@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo, Fragment } from "react";
 import { Sparkles, X, ChevronLeft, ChevronRight, Trash2, Plus } from "lucide-react";
 import { ExplorerToolbar } from "./ExplorerToolbar";
 import { VariantCard } from "./VariantCard";
@@ -48,6 +48,7 @@ export function ExplorerCanvas({
   const [responsiveVariant, setResponsiveVariant] = useState<DesignVariant | null>(null);
   const [promoteVariant, setPromoteVariant] = useState<DesignVariant | null>(null);
   const [comparePrompt, setComparePrompt] = useState<string | null>(null);
+  const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null);
   const [activeExplorationIndex, setActiveExplorationIndex] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -494,7 +495,7 @@ export function ExplorerCanvas({
     ? Math.max(0, pendingBatchCountRef.current - variants.filter((v) => v.batchId === streamingBatchRef.current).length)
     : 0;
 
-  const gridClassName = `grid gap-4 ${variants.length > 4 ? "grid-cols-2 lg:grid-cols-3" : "grid-cols-2"}`;
+  const gridClassName = "grid grid-cols-2 gap-4";
 
   return (
     <div className="flex h-full flex-col">
@@ -611,13 +612,32 @@ export function ExplorerCanvas({
             {/* Grouped variant batches */}
             {batches.map((batch, batchIdx) => (
               <div key={batch.batchId}>
-                {/* Batch separator — skip for first batch */}
+                {/* Batch separator */}
+                {batchIdx === 0 && batch.prompt && !currentExploration?.referenceImage && (
+                  <div className="flex items-center gap-3 pb-3">
+                    <div className="h-px flex-1 bg-[var(--studio-border)]" />
+                    <button
+                      onClick={() => setExpandedBatchId(expandedBatchId === batch.batchId ? null : batch.batchId)}
+                      className={`shrink-0 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors text-center ${
+                        expandedBatchId === batch.batchId ? "max-w-md" : "max-w-[300px] truncate"
+                      }`}
+                    >
+                      {batch.prompt}
+                    </button>
+                    <div className="h-px flex-1 bg-[var(--studio-border)]" />
+                  </div>
+                )}
                 {batchIdx > 0 && (
                   <div className="flex items-center gap-3 py-3">
                     <div className="h-px flex-1 bg-[var(--studio-border)]" />
-                    <span className="shrink-0 max-w-[300px] truncate text-[11px] text-[var(--text-muted)]">
+                    <button
+                      onClick={() => setExpandedBatchId(expandedBatchId === batch.batchId ? null : batch.batchId)}
+                      className={`shrink-0 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors text-center ${
+                        expandedBatchId === batch.batchId ? "max-w-md" : "max-w-[300px] truncate"
+                      }`}
+                    >
                       {batch.prompt}
-                    </span>
+                    </button>
                     <div className="h-px flex-1 bg-[var(--studio-border)]" />
                   </div>
                 )}
@@ -675,6 +695,12 @@ export function ExplorerCanvas({
                   ))}
                 </div>
               </>
+            )}
+
+            {isGenerating && variants.length > 0 && (
+              <div className="flex items-center gap-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2.5">
+                <span className="text-xs text-[var(--text-muted)]">Images will generate after all variants complete.</span>
+              </div>
             )}
 
             {isProcessingImages && (

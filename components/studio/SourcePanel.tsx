@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, BookMarked, Loader2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -26,12 +27,18 @@ interface SourcePanelProps {
 
 type TabId = "tokens" | "components" | "screenshots" | "quality" | "saved";
 
-export function SourcePanel({
+const VALID_TABS: TabId[] = ["tokens", "components", "screenshots", "quality", "saved"];
+
+function SourcePanelInner({
   extractionData,
   designMd,
   projectId,
 }: SourcePanelProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("tokens");
+  const searchParams = useSearchParams();
+  const initialTab = VALID_TABS.includes(searchParams.get("tab") as TabId)
+    ? (searchParams.get("tab") as TabId)
+    : "tokens";
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const syncTokensFromDesignMd = useProjectStore((s) => s.syncTokensFromDesignMd);
   const [syncResult, setSyncResult] = useState<{ count: number } | null>(null);
 
@@ -136,6 +143,14 @@ export function SourcePanel({
         {activeTab === "saved" && <SavedTab />}
       </div>
     </div>
+  );
+}
+
+export function SourcePanel(props: SourcePanelProps) {
+  return (
+    <Suspense fallback={null}>
+      <SourcePanelInner {...props} />
+    </Suspense>
   );
 }
 
