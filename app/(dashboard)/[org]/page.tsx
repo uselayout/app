@@ -9,6 +9,7 @@ import { useOnboardingStore } from "@/lib/store/onboarding";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { NewExtractionModal } from "@/components/studio/NewExtractionModal";
 import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
+import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
@@ -41,6 +42,7 @@ export default function OrgProjectsPage() {
   const markStep = useOnboardingStore((s) => s.markStep);
 
   const [showNewExtraction, setShowNewExtraction] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
     name: string;
@@ -71,7 +73,7 @@ export default function OrgProjectsPage() {
       <div className="mb-6">
         <OnboardingChecklist
           onOpenExtraction={() => setShowNewExtraction(true)}
-          onOpenApiKeyModal={() => {}}
+          onOpenApiKeyModal={() => setShowApiKeyModal(true)}
           firstProjectId={projects[0]?.id}
           orgSlug={orgSlug}
         />
@@ -138,6 +140,10 @@ export default function OrgProjectsPage() {
 
       {showNewExtraction && (
         <NewExtractionModal onClose={() => setShowNewExtraction(false)} />
+      )}
+
+      {showApiKeyModal && (
+        <ApiKeyModal onClose={() => setShowApiKeyModal(false)} />
       )}
 
       {deleteTarget && (
