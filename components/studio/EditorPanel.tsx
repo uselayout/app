@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import type { OnMount } from "@monaco-editor/react";
 import type * as monacoType from "monaco-editor";
 import { ArrowUp, Undo2, Loader2 } from "lucide-react";
+import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -256,9 +257,13 @@ function EditorChatBar({
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
 
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const apiKey = getStoredApiKey();
+      if (apiKey) headers["X-Api-Key"] = apiKey;
+
       const res = await fetch("/api/generate/edit-design-md", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ instruction: instruction.trim(), designMd: value }),
       });
 

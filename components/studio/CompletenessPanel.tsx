@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Check, X, ChevronDown, ChevronRight, Lightbulb, FileText } from 'lucide-react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { Check, X, ChevronDown, ChevronRight, Lightbulb, FileText, Wand2, Loader2 } from 'lucide-react';
 import { analyseCompleteness } from '@/lib/health/completeness';
+import { getStoredApiKey } from '@/lib/hooks/use-api-key';
+import { toast } from 'sonner';
 import type { CompletenessReport, SectionScore } from '@/lib/health/completeness';
 
 interface CompletenessPanelProps {
   designMd: string;
+  onDesignMdChange?: (value: string) => void;
   className?: string;
 }
 
@@ -138,8 +141,26 @@ function SectionRow({ section }: SectionRowProps) {
   );
 }
 
-export function CompletenessPanel({ designMd, className = '' }: CompletenessPanelProps) {
+function buildFixInstruction(report: CompletenessReport): string {
+  const issues: string[] = [];
+  for (const section of report.sections) {
+    for (const missing of section.missing) {
+      issues.push(`- ${section.section}: ${missing}`);
+    }
+  }
+  const parts: string[] = [];
+  if (issues.length > 0) {
+    parts.push(`Fix these missing items:\n${issues.join("\n")}`);
+  }
+  if (report.suggestions.length > 0) {
+    parts.push(`Also address these suggestions:\n${report.suggestions.map(s => `- ${s}`).join("\n")}`);
+  }
+  return `Improve the DESIGN.md to increase its quality score. ${parts.join("\n\n")}`;
+}
+
+export function CompletenessPanel({ designMd, onDesignMdChange, className = '' }: CompletenessPanelProps) {
   const [report, setReport] = useState<CompletenessReport | null>(null);
+  const [isFixing, setIsFixing] = useState(false);
 
   const trimmed = useMemo(() => designMd.trim(), [designMd]);
 
@@ -151,6 +172,53 @@ export function CompletenessPanel({ designMd, className = '' }: CompletenessPane
     const result = analyseCompleteness(trimmed);
     setReport(result);
   }, [trimmed]);
+
+  const handleAutoFix = useCallback(async () => {
+    if (!report || !onDesignMdChange) return;
+    setIsFixing(true);
+
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const apiKey = getStoredApiKey();
+      if (apiKey) headers["X-Api-Key"] = apiKey;
+
+      const instruction = buildFixInstruction(report);
+      const res = await fetch("/api/generate/edit-design-md", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ instruction, designMd }),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({ error: "Request failed" }));
+        throw new Error(errBody.error || `Request failed (${res.status})`);
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+      }
+
+      if (accumulated.startsWith("\n\n[Error:")) {
+        throw new Error(accumulated);
+      }
+
+      onDesignMdChange(accumulated);
+      toast.success("DESIGN.md improved automatically");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Auto-fix failed";
+      toast.error(msg);
+    } finally {
+      setIsFixing(false);
+    }
+  }, [report, designMd, onDesignMdChange]);
 
   if (!trimmed) {
     return (
@@ -208,6 +276,28 @@ export function CompletenessPanel({ designMd, className = '' }: CompletenessPane
             ))}
           </div>
         </div>
+      )}
+
+      {/* Auto-fix button */}
+      {report.totalScore < 100 && onDesignMdChange && (
+        <button
+          type="button"
+          onClick={handleAutoFix}
+          disabled={isFixing}
+          className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-md bg-[var(--studio-accent)] text-[var(--text-on-accent)] text-xs font-semibold hover:bg-[var(--studio-accent-hover)] transition-all duration-[150ms] ease-[cubic-bezier(0,0,0.2,1)] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isFixing ? (
+            <>
+              <Loader2 size={13} className="animate-spin" />
+              Improving…
+            </>
+          ) : (
+            <>
+              <Wand2 size={13} />
+              Fix all issues
+            </>
+          )}
+        </button>
       )}
     </div>
   );

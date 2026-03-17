@@ -73,6 +73,9 @@ Images (MANDATORY — read carefully)
 - NEVER use placeholder services (placehold.co, placeholder.com, via.placeholder.com, unsplash, picsum, dummyimage, or ANY external image URL).
 - NEVER use empty src, data: URIs, or inline SVG placeholders for images. Omit the src attribute entirely — the pipeline adds it.
 - If a section has testimonials, team members, or any people — each person MUST have a data-generate-image headshot.
+- For data tables, team directories, user lists, or any rows showing people: EVERY row MUST have an <img data-generate-image="professional headshot of [name/role description]" data-image-style="photo" data-image-ratio="1:1" alt="[name]" className="w-8 h-8 rounded-full object-cover" /> avatar. NEVER use initials, SVG placeholders, or coloured circles as avatar substitutes.
+- For product tables, file lists, or non-person data: use relevant thumbnails with data-generate-image.
+- Rule: if ANY cell or card would benefit from a visual (avatar, thumbnail, logo, icon), use data-generate-image. When in doubt, generate an image.
 
 IMPORTANT: Each component must be fully self-contained. No shared imports between variants. No prose outside the variant blocks.`;
 
@@ -118,6 +121,8 @@ export default function Variant1() {
 Images (MANDATORY)
 - ALL images MUST use: <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." className="..." />
 - This includes avatars, headshots, thumbnails — use data-image-ratio="1:1" for small square images.
+- For data tables, team directories, user lists, or any rows showing people: EVERY row MUST have an <img data-generate-image="professional headshot of [name/role description]" data-image-style="photo" data-image-ratio="1:1" alt="[name]" className="w-8 h-8 rounded-full object-cover" /> avatar. NEVER use initials, SVG placeholders, or coloured circles.
+- For product tables, file lists, or non-person data: use relevant thumbnails with data-generate-image.
 - NEVER use placeholder services (placehold.co, placeholder.com, unsplash, etc.) or empty src attributes.
 
 IMPORTANT: Each component must be fully self-contained. No shared imports between variants. No prose outside the variant blocks.`;

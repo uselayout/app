@@ -136,6 +136,14 @@ export interface HealthIssue {
 
 // ─── Design Explorer ──────────────────────────────────────────────────────────
 
+export interface ComparisonResult {
+  id: string;
+  prompt: string;
+  withDs: DesignVariant;
+  withoutDs: DesignVariant;
+  createdAt: string;
+}
+
 export interface ExplorationSession {
   id: string;
   projectId: string;
@@ -145,6 +153,7 @@ export interface ExplorationSession {
   selectedVariantId?: string;
   referenceImage?: string;
   contextFiles?: ContextFile[];
+  comparisons?: ComparisonResult[];
   createdAt: string;
 }
 
