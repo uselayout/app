@@ -126,7 +126,7 @@ export default function OrgProjectsPage() {
                 onClick={() =>
                   setDeleteTarget({ id: project.id, name: project.name })
                 }
-                className="absolute right-3 top-3 rounded p-1.5 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 hover:bg-[var(--bg-active)] hover:text-red-400 transition-all"
+                className="absolute right-3 top-3 rounded p-1.5 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 hover:bg-[var(--bg-hover)] hover:text-red-400 transition-all"
                 aria-label={`Delete ${project.name}`}
               >
                 <Trash2 className="h-3.5 w-3.5" />
