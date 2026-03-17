@@ -43,6 +43,8 @@ Responsive Design (Mandatory)
 - Grid columns adapt: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3".
 - Hide/show elements per breakpoint when it improves the layout: "hidden md:block".
 - The component will be previewed at 375px, 768px, and 1280px — it must look intentional at ALL three.
+- Navigation: MUST use a hamburger/mobile menu on mobile. On base (mobile): show logo + hamburger icon only, nav links hidden behind a toggle using React useState. On md: and up: show full horizontal nav. Never show all nav items inline at 375px.
+- Header CTAs: stack vertically or reduce to icon on mobile. Never let buttons overflow or get clipped.
 
 OUTPUT FORMAT:
 For each variant, output EXACTLY this format:
@@ -99,6 +101,8 @@ Responsive Design (Mandatory)
 - Spacing adapts: "p-4 md:p-6 lg:p-8", "gap-3 md:gap-4 lg:gap-6".
 - Grid columns adapt: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3".
 - The component will be previewed at 375px, 768px, and 1280px — it must look intentional at ALL three.
+- Navigation: MUST use a hamburger/mobile menu on mobile. On base (mobile): show logo + hamburger icon only, nav links hidden behind a toggle using React useState. On md: and up: show full horizontal nav. Never show all nav items inline at 375px.
+- Header CTAs: stack vertically or reduce to icon on mobile. Never let buttons overflow or get clipped.
 
 OUTPUT FORMAT:
 For each variant, output EXACTLY this format:
