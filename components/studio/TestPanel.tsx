@@ -131,11 +131,11 @@ export const TestPanel = forwardRef<TestPanelHandle, TestPanelProps>(function Te
       });
 
       // Process image placeholders (non-blocking — updates output in place)
-      const processedOutput = await processCodeImages(output);
-      if (processedOutput !== output) {
+      const imageResult = await processCodeImages(output);
+      if (imageResult.code !== output) {
         setResults((prev) => {
           const next = prev.map((r) =>
-            r.id === resultId ? { ...r, output: processedOutput } : r
+            r.id === resultId ? { ...r, output: imageResult.code } : r
           );
           resultsRef.current = next;
           return next;
