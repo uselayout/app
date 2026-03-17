@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireOrgAuth } from "@/lib/api/auth-context";
 import { getApiKeyById, revokeApiKey } from "@/lib/supabase/api-keys";
-import { logAuditEvent } from "@/lib/supabase/audit";
+
 
 export async function DELETE(
   request: Request,
@@ -24,16 +24,6 @@ export async function DELETE(
   }
 
   await revokeApiKey(keyId, authResult.userId);
-
-  void logAuditEvent({
-    orgId,
-    actorId: authResult.userId,
-    actorName: authResult.session?.user?.name ?? undefined,
-    action: "api_key.revoked",
-    resourceType: "api_key",
-    resourceId: keyId,
-    resourceName: key.name,
-  });
 
   return NextResponse.json({ success: true });
 }

@@ -11,7 +11,6 @@ import { StudioLayout } from "@/components/studio/StudioLayout";
 import { ExtractionProgress } from "@/components/studio/ExtractionProgress";
 import { EditorPanel } from "@/components/studio/EditorPanel";
 import { SourcePanel } from "@/components/studio/SourcePanel";
-import { TestPanel, type TestPanelHandle } from "@/components/studio/TestPanel";
 import { ExplorerCanvas } from "@/components/studio/ExplorerCanvas";
 import { ExportModal } from "@/components/studio/ExportModal";
 import { ExtractionDiffModal } from "@/components/studio/ExtractionDiffModal";
@@ -69,9 +68,6 @@ export default function StudioPage({
   const [centreView, setCentreView] = useState<"editor" | "canvas">(
     tabParam === "explorer" ? "canvas" : "editor"
   );
-  const [showTestPanel, setShowTestPanel] = useState(true);
-  const [includeContext, setIncludeContext] = useState(true);
-  const testPanelRef = useRef<TestPanelHandle>(null);
 
   // Figma push-to-canvas: pre-load screenshot as reference image
   const pendingFigmaImage = useRef<string | null>(
@@ -257,8 +253,6 @@ export default function StudioPage({
     );
   }
 
-  const componentNames =
-    project.extractionData?.components.map((c) => c.name) ?? [];
   const extractedFonts =
     project.extractionData?.fonts.map((f) => f.family) ?? [];
 
@@ -291,8 +285,6 @@ export default function StudioPage({
         project={project}
         onNameChange={(name) => updateProjectName(id, name)}
         onReExtract={handleReExtract}
-        onTest={() => setShowTestPanel((prev) => !prev)}
-        testPanelOpen={showTestPanel}
         onExport={() => setShowExport(true)}
         centreView={centreView}
         onCentreViewChange={setCentreView}
@@ -300,7 +292,6 @@ export default function StudioPage({
       <div className="flex-1 overflow-hidden">
         <StudioLayout
           centreView={centreView}
-          showTestPanel={showTestPanel}
           sourcePanel={
             <SourcePanel
               extractionData={project.extractionData}
@@ -326,18 +317,7 @@ export default function StudioPage({
               onPushToFigma={handlePushToFigma}
               onDesignMdUpdate={handleDesignMdChange}
               initialImage={pendingFigmaImage.current ?? undefined}
-            />
-          }
-          testPanel={
-            <TestPanel
-              ref={testPanelRef}
-              projectId={id}
-              designMd={project.designMd}
-              components={componentNames}
               extractedFonts={extractedFonts}
-              initialResults={project.testResults ?? []}
-              includeContext={includeContext}
-              onToggleContext={() => setIncludeContext((v) => !v)}
             />
           }
         />

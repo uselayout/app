@@ -1,5 +1,5 @@
 export type ComponentStatus = "draft" | "approved" | "deprecated";
-export type ComponentSource = "manual" | "explorer" | "extraction" | "figma" | "candidate";
+export type ComponentSource = "manual" | "explorer" | "extraction" | "figma";
 
 export interface ComponentProp {
   name: string;
@@ -20,6 +20,8 @@ export interface ComponentState {
   description?: string;
 }
 
+export type DesignType = "component" | "page";
+
 export interface Component {
   id: string;
   orgId: string;
@@ -39,6 +41,7 @@ export interface Component {
   version: number;
   createdBy: string | null;
   source: ComponentSource | null;
+  designType: DesignType;
   createdAt: string;
   updatedAt: string;
 }

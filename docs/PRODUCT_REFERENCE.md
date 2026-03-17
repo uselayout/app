@@ -44,8 +44,8 @@ The pain: AI generates generic-looking UI. It doesn't know your design system. Y
 1. **Paste a URL** - Figma file link or any website URL
 2. **Extraction runs** - AI pulls colours, typography, spacing, components, design tokens (under 2 minutes)
 3. **DESIGN.md generated** - Claude synthesises a structured context file from the raw extraction data
-4. **Edit in Studio** - three-panel editor: source tokens (left), markdown editor (centre), AI test panel (right)
-5. **Test with/without context** - toggle DESIGN.md on/off, ask Claude to build components, see the difference side-by-side with live preview
+4. **Edit in Studio** - two-panel editor: source tokens + saved components (left), Monaco markdown editor (right)
+5. **Explore with AI** - open the Explorer Canvas, prompt Claude to generate component variants with/without DESIGN.md context, compare side-by-side with live preview
 6. **Export bundle** - download a ZIP with CLAUDE.md, AGENTS.md, .cursorrules, tokens.css, tokens.json, tailwind.config.js
 7. **Drop into your project** - your AI coding tool now builds on-brand
 
@@ -228,9 +228,8 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 
 ## Studio Features (for detailed tweets)
 
-- **Three-panel editor:** source tokens (left), Monaco markdown editor (centre), AI test panel (right)
-- **Context toggle:** test AI output with and without DESIGN.md - see the quality difference instantly
-- **Live component preview:** TSX transpiled server-side, rendered in sandboxed iframe with React + Tailwind
+- **Two-panel editor:** source tokens + saved components (left), Monaco markdown editor (right)
+- **Explorer Canvas:** AI-powered design exploration — generate 2–6 component variants, compare with/without DESIGN.md context, live preview in sandboxed iframe with React + Tailwind
 - **Health scoring:** automatic 0-100 score measuring token faithfulness, component accuracy, anti-pattern violations
 - **Quick prompts:** preset component requests + dynamic prompts from extracted Figma components
 - **Token autocomplete:** type `--` in the editor, get autocomplete suggestions from extracted tokens
@@ -239,14 +238,11 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 
 ### Dashboard and Team Features
 
-Layout includes a full team dashboard for managing design systems at scale:
+Layout includes a team dashboard for managing design systems:
 
 - **Projects** - List all projects with creation, deletion, and direct navigation to Studio
-- **Component Library** - Create, version, and manage reusable components per organisation with AI-assisted code editing
-- **Candidates Review** - Team members submit Explorer Canvas variants for review; reviewers can approve or reject
-- **Drift Detection** - Automated monitoring of component compliance against design system tokens
-- **Analytics** - Track design system adoption: token usage frequency, component coverage, quality score trends
-- **Settings** - API key management, audit log, template publishing, webhook configuration
+- **Studio** - Two-panel editor with Explorer Canvas for AI-powered design exploration
+- **Settings** - API key management, billing, team members, webhook configuration
 
 ### Organisation Model
 
@@ -256,16 +252,13 @@ Layout includes a full team dashboard for managing design systems at scale:
 - Role-based permissions on all API routes via `requireOrgAuth`
 
 ### Explorer Canvas
-AI-powered design exploration that generates 2–6 component variants simultaneously. Supports reference image upload, variant refinement, A/B comparison (with/without design system context), and direct promotion to the component library.
+AI-powered design exploration that generates 2–6 component variants simultaneously. Supports reference image upload, variant refinement, A/B comparison (with/without design system context), and saving to the component library via "Add to Library" (with name, type — component or page — category, and tags). Saved components appear in the SourcePanel "Saved" tab.
 
 ### Quality Scoring
 Automated DESIGN.md completeness analysis across 6 weighted categories. Scores from 0–100 with actionable suggestions for improvement.
 
 ### Webhook Automation
-Figma webhook integration that triggers automatic re-extraction when designers publish changes. Combined with GitHub integration, this creates a fully automated design-to-code pipeline with auto-generated PRs.
-
-### Template Marketplace
-Publish design systems as reusable templates. Other teams can browse and install templates to bootstrap their projects with pre-configured design tokens, components, and documentation.
+Figma webhook integration that triggers automatic re-extraction when designers publish changes.
 
 ### Figma Plugin
 Native Figma plugin for one-click AI Kit export, live token inspector, component sync, and push-to-canvas for AI variant generation — all without leaving Figma. Reads local (unpublished) styles on all Figma plans, no access token needed. Full Variables API access requires an Enterprise plan; on other plans, the plugin syncs Local Styles instead.

@@ -65,43 +65,36 @@ app/
   globals.css                   # Design tokens + Tailwind config
   studio/
     [id]/
-      page.tsx                  # Three-panel Studio
+      page.tsx                  # Two-panel Studio (Editor/Canvas toggle)
       loading.tsx               # Loading skeleton
   (dashboard)/
     [org]/
       page.tsx                  # Projects list
-      library/                  # Component library pages
-      candidates/               # Design variant review
-      drift/                    # Drift detection
-      analytics/                # Usage analytics
-      settings/                 # Org settings (API keys, webhooks, audit, templates)
+      settings/                 # Org settings (API keys, billing, members, webhooks)
   api/
     extract/figma/route.ts      # Figma extraction → SSE stream
     extract/website/route.ts    # Website extraction → SSE stream
     generate/design-md/route.ts # Claude DESIGN.md synthesis → stream
-    generate/test/route.ts      # Test panel Claude calls → stream
+    generate/explore/route.ts   # Explorer Canvas AI generation → stream
     export/bundle/route.ts      # ZIP bundle generation
     webhooks/figma/route.ts     # Figma webhook receiver
     health/completeness/route.ts # DESIGN.md quality analysis
-    organizations/[orgId]/      # Org-scoped API routes
-    templates/                  # Template CRUD + publishing
+    organizations/[orgId]/      # Org-scoped API routes (components, members, etc.)
     transpile/route.ts          # TSX transpilation for preview
 
 components/
   studio/
-    StudioLayout.tsx            # Three-panel resize layout
-    SourcePanel.tsx             # Left panel (tokens, components, screenshots)
+    StudioLayout.tsx            # Two-panel resize layout (source + editor/canvas)
+    SourcePanel.tsx             # Left panel (tokens, components, screenshots, quality, saved)
     EditorPanel.tsx             # Centre panel (Monaco)
-    TestPanel.tsx               # Right panel (AI test)
-    ExtractionProgress.tsx      # Full-screen progress overlay
-    ExportModal.tsx             # Export format selection + download
-    ExplorerCanvas.tsx          # AI-powered design exploration canvas
+    ExplorerCanvas.tsx          # AI-powered design exploration + validation canvas
     ExplorerToolbar.tsx         # Explorer toolbar (prompts, image upload)
-    ExplorerVariantCard.tsx     # Individual variant display + actions
+    VariantCard.tsx             # Individual variant display + actions
     CompletenessPanel.tsx       # DESIGN.md quality score + suggestions
     ExtractionDiffModal.tsx     # Token/component diff on re-extraction
-  dashboard/
-    CreateComponentModal.tsx    # Component editor with AI chat
+    ExtractionProgress.tsx      # Full-screen progress overlay
+    ExportModal.tsx             # Export format selection + download
+    PromoteToLibraryModal.tsx   # Save variant to component library
   shared/
     TopBar.tsx                  # Studio top bar
   ui/
@@ -120,7 +113,6 @@ lib/
     css-extract.ts              # page.evaluate() CSS extraction scripts
   claude/
     synthesise.ts               # DESIGN.md generation from extraction data
-    test.ts                     # Test panel prompt handling
   export/
     bundle.ts                   # ZIP bundle orchestrator
     claude-md.ts                # CLAUDE.md section generator
@@ -132,59 +124,54 @@ lib/
   auth-client.ts                # Better Auth client
   health/
     completeness.ts             # DESIGN.md quality scorer
+    score.ts                    # Per-variant health scoring
   extraction/
     diff.ts                     # Extraction diff engine
-  integrations/
-    github.ts                   # GitHub Git Data API (PR creation)
   store/
     project.ts                  # Zustand: project state + localStorage
     extraction.ts               # Zustand: extraction progress state
     organization.ts             # Org state store
+  supabase/
+    components.ts               # Component CRUD (used by MCP + saved variants)
   api/
     auth-context.ts             # API route auth guards
   types/
     index.ts                    # All shared TypeScript interfaces
+    component.ts                # Component, DesignType, ComponentSource types
+    organization.ts             # Org roles and permissions
 ```
 
 ### Dashboard & Settings Pages
-
-The app has a full dashboard at `app/(dashboard)/[org]/`:
 
 ```
 app/(dashboard)/
   [org]/
     page.tsx                    # Projects list with New Project button
-    library/
-      page.tsx                  # Component library (create, edit, version)
-      [slug]/page.tsx           # Component detail + code editor + preview
-    candidates/page.tsx         # Review submitted design variants
-    drift/page.tsx              # Design drift detection reports
-    analytics/page.tsx          # Usage analytics dashboard
-    icons/page.tsx              # Icon library management
-    typography/page.tsx         # Typography token explorer
-    tokens/page.tsx             # Token browser and editor
+    projects/[projectId]/
+      studio/page.tsx           # Studio (org-scoped route)
     settings/
       page.tsx                  # Settings index
       api-keys/page.tsx         # API key management
-      audit/page.tsx            # Audit log viewer
-      templates/page.tsx        # Template publishing dashboard
-      webhooks/page.tsx         # Figma webhook + GitHub auto-PR config
+      billing/page.tsx          # Subscription and credits
+      members/page.tsx          # Team member management
+      profile/page.tsx          # User profile
+      webhooks/page.tsx         # Figma webhook configuration
 ```
 
 ### Explorer Canvas
 
-The Explorer Canvas (`components/studio/ExplorerCanvas.tsx`) enables AI-powered design exploration:
+The Explorer Canvas (`components/studio/ExplorerCanvas.tsx`) is the AI generation surface:
 
 - **Multi-variant generation:** Prompt AI to generate 2-6 component variants simultaneously
 - **Image upload:** Attach reference images (paste, drag-drop, or file picker) for AI to interpret
 - **Refinement:** Select a variant and refine with follow-up prompts (amber-highlighted input)
-- **Comparison view:** A/B compare results with vs without design system context
-- **Promote to library:** Save any variant as a component in the org's component library
-- **Submit candidate:** Submit variants for team review (appears in candidates dashboard)
+- **Comparison/validation:** A/B compare results with vs without design system context
+- **Health scoring:** Each variant gets a health score based on design system compliance
+- **Promote to library:** Save any variant as a component or page in the org's library
 - **Push to Figma:** Export selected variant to Figma via push modal
 - **Responsive preview:** Preview variants at different viewport sizes
 
-Key files: `ExplorerCanvas.tsx`, `ExplorerToolbar.tsx`, `ExplorerVariantCard.tsx`
+Key files: `ExplorerCanvas.tsx`, `ExplorerToolbar.tsx`, `VariantCard.tsx`
 
 ### Quality & Health
 
@@ -202,9 +189,8 @@ Key files: `ExplorerCanvas.tsx`, `ExplorerToolbar.tsx`, `ExplorerVariantCard.tsx
 ### Webhook System
 
 - **Figma webhook receiver** (`app/api/webhooks/figma/route.ts`): Handles FILE_UPDATE events, verifies passcode (per-org Supabase config or env var fallback), looks up project by file key
-- **GitHub auto-PR** (`lib/integrations/github.ts`): Creates PRs via Git Data API (blobs → tree → commit → ref → PR) without local clone
 - **Webhook config API** (`app/api/organizations/[orgId]/webhook-config/route.ts`): CRUD for per-org webhook settings
-- **Settings UI** (`app/(dashboard)/[org]/settings/webhooks/page.tsx`): Configure endpoint URL, passcode, GitHub repo details
+- **Settings UI** (`app/(dashboard)/[org]/settings/webhooks/page.tsx`): Configure endpoint URL and passcode
 
 ### MCP Server (7 Tools)
 
@@ -220,19 +206,12 @@ The MCP endpoint at `app/api/mcp/route.ts` exposes 7 tools for AI coding agents:
 | `list_components` | All components with metadata, tags, token usage |
 | `check_compliance` | Validate code against design system rules |
 
-### Template System
+### Saved Components
 
-- **Publishing:** Org admins can publish their design system as a reusable template
-- **Browse:** Public template gallery at `/templates` with search/filter
-- **Install:** One-click install of templates into new projects
-- **API:** `app/api/templates/` routes for CRUD + publishing
-
-### Component Library
-
-- **Per-org component library** with categories, tags, and versioning
-- **Create components** via code editor with live preview and AI chat assistance
-- **API:** `app/api/organizations/[orgId]/components/` routes
-- **Store:** Components fetched per-org, displayed in dashboard library page
+- **Per-org component library** with categories, tags, and component/page type split
+- **Save from Explorer Canvas** via PromoteToLibraryModal (name, type, category, tags)
+- **Browse in SourcePanel** "Saved" tab with component/page filter and category grouping
+- **API:** `app/api/organizations/[orgId]/components/` routes (also used by MCP server)
 
 ### Planned Features
 

@@ -2,17 +2,19 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, BookMarked, Loader2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
 import { useProjectStore } from "@/lib/store/project";
+import { useOrgStore } from "@/lib/store/organization";
 import type {
   ExtractionResult,
   ExtractedToken,
   ExtractedComponent,
   SourceType,
 } from "@/lib/types";
+import type { Component } from "@/lib/types/component";
 
 interface SourcePanelProps {
   extractionData?: ExtractionResult;
@@ -22,7 +24,7 @@ interface SourcePanelProps {
   projectId?: string;
 }
 
-type TabId = "tokens" | "components" | "screenshots" | "quality";
+type TabId = "tokens" | "components" | "screenshots" | "quality" | "saved";
 
 export function SourcePanel({
   extractionData,
@@ -73,6 +75,7 @@ export function SourcePanel({
     { id: "components", label: "Components", icon: LayoutGrid },
     { id: "screenshots", label: "Screenshots", icon: Image },
     { id: "quality", label: "Quality", icon: Gauge },
+    { id: "saved", label: "Saved", icon: BookMarked },
   ];
 
   return (
@@ -130,6 +133,7 @@ export function SourcePanel({
         {activeTab === "quality" && (
           <CompletenessPanel designMd={designMd ?? ""} />
         )}
+        {activeTab === "saved" && <SavedTab />}
       </div>
     </div>
   );
@@ -492,5 +496,136 @@ function ScreenshotsTab({ screenshots }: { screenshots: string[] }) {
         </div>
       )}
     </>
+  );
+}
+
+function SavedTab() {
+  const orgId = useOrgStore((s) => s.currentOrgId);
+  const [components, setComponents] = useState<Component[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "component" | "page">("all");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!orgId) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/organizations/${orgId}/components`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: Component[]) => {
+        if (!cancelled) setComponents(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
+
+  const handleCopyCode = useCallback(async (comp: Component) => {
+    const ok = await copyToClipboard(comp.code);
+    if (ok) {
+      setCopiedId(comp.id);
+      setTimeout(() => setCopiedId(null), 1500);
+    }
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-4 w-4 animate-spin text-[var(--text-muted)]" />
+      </div>
+    );
+  }
+
+  if (!orgId) {
+    return (
+      <div className="p-4 text-xs text-[var(--text-muted)]">
+        Sign in to view saved components.
+      </div>
+    );
+  }
+
+  if (components.length === 0) {
+    return (
+      <div className="p-4 text-xs text-[var(--text-muted)]">
+        No saved components yet. Promote variants from the Explorer Canvas to see them here.
+      </div>
+    );
+  }
+
+  const filtered =
+    filter === "all"
+      ? components
+      : components.filter((c) => c.designType === filter);
+
+  const grouped = filtered.reduce<Record<string, Component[]>>((acc, comp) => {
+    const cat = comp.category || "Uncategorised";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(comp);
+    return acc;
+  }, {});
+
+  const sortedCategories = Object.keys(grouped).sort();
+
+  return (
+    <div className="p-2">
+      {/* Filter pills */}
+      <div className="mb-2 flex items-center gap-1">
+        {(["all", "component", "page"] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
+              filter === f
+                ? "bg-[rgba(255,255,255,0.1)] text-white"
+                : "text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-secondary)]"
+            }`}
+          >
+            {f === "all" ? "All" : f === "component" ? "Components" : "Pages"}
+          </button>
+        ))}
+        <span className="ml-auto text-[10px] text-[var(--text-muted)]">
+          {filtered.length}
+        </span>
+      </div>
+
+      {sortedCategories.map((cat) => (
+        <div key={cat} className="mb-2">
+          <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+            {cat}
+          </div>
+          <div className="space-y-0.5">
+            {grouped[cat].map((comp) => (
+              <button
+                key={comp.id}
+                onClick={() => handleCopyCode(comp)}
+                className="group flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-[var(--bg-hover)]"
+              >
+                <span className="min-w-0 flex-1 truncate text-xs text-[var(--text-primary)]">
+                  {comp.name}
+                </span>
+                {comp.tags.length > 0 && (
+                  <span className="shrink-0 truncate max-w-[80px] text-[10px] text-[var(--text-muted)]">
+                    {comp.tags[0]}
+                  </span>
+                )}
+                <span className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
+                  {copiedId === comp.id ? (
+                    <Check className="h-3 w-3 text-emerald-400" />
+                  ) : (
+                    <Copy className="h-3 w-3 text-[var(--text-muted)]" />
+                  )}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

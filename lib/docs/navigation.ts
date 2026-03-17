@@ -48,7 +48,6 @@ export const docsNavigation: DocNavSection[] = [
     items: [
       { title: "Organisations", href: "/docs/organisations" },
       { title: "Dashboard & Settings", href: "/docs/dashboard" },
-      { title: "Templates", href: "/docs/templates" },
       { title: "Webhooks", href: "/docs/webhooks" },
     ],
   },
