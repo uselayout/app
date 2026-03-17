@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { UserMenu } from "./UserMenu";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, BookMarked } from "lucide-react";
 
 interface NavItem {
   label: string;
@@ -51,6 +51,7 @@ export function Sidebar() {
 
   const navItems: NavItem[] = [
     { label: "Studio", href: `${projectBase}/studio`, segment: "studio", icon: <StudioIcon /> },
+    { label: "Saved", href: `${projectBase}/studio?tab=saved`, segment: "saved", icon: <BookMarked size={16} /> },
   ];
 
   function isActive(segment: string): boolean {
