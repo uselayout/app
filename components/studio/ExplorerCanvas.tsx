@@ -17,6 +17,7 @@ import { processCodeImages, type ProcessCodeImagesResult } from "@/lib/image/pro
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { toast } from "sonner";
 import { calculateHealthScore } from "@/lib/health/score";
+import { useOnboardingStore } from "@/lib/store/onboarding";
 import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile } from "@/lib/types";
 
 interface ExplorerCanvasProps {
@@ -56,6 +57,10 @@ export function ExplorerCanvas({
   const scrollRef = useRef<HTMLDivElement>(null);
   const streamingBatchRef = useRef<string | null>(null);
   const pendingBatchCountRef = useRef(0);
+
+  const { steps, markStep } = useOnboardingStore();
+  const stepsRef = useRef(steps);
+  stepsRef.current = steps;
 
   // Warn user before navigating away during generation
   useEffect(() => {
@@ -181,6 +186,11 @@ export function ExplorerCanvas({
       );
       onUpdateExplorations(finalExplorations);
 
+      // Mark onboarding step on first live generation
+      if (!stepsRef.current.generatedVariant && finalNew.length > 0) {
+        markStep("generatedVariant");
+      }
+
       // Process image placeholders in the new batch only
       setIsProcessingImages(true);
       setImageNotice(null);
@@ -234,7 +244,7 @@ export function ExplorerCanvas({
         pendingBatchCountRef.current = 0;
       }
     },
-    [onUpdateExplorations, extractedFonts, designMd]
+    [onUpdateExplorations, extractedFonts, designMd, markStep]
   );
 
   /** Shared fetch + stream logic used by all generation handlers */
