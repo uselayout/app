@@ -23,53 +23,6 @@ const StudioIcon = () => (
   </svg>
 );
 
-const LibraryIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3 2v12M7 2v12M11 2v12M1 3h4M5 13H1M9 3h4M9 13h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const CandidatesIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M10 1H6a1 1 0 00-1 1v1h6V2a1 1 0 00-1-1zM4 3H3a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V4a1 1 0 00-1-1h-1M7 8l1.5 1.5L11 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const TokensIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="5" cy="5" r="3" stroke="currentColor" strokeWidth="1.5"/>
-    <circle cx="11" cy="5" r="3" stroke="currentColor" strokeWidth="1.5"/>
-    <circle cx="8" cy="11" r="3" stroke="currentColor" strokeWidth="1.5"/>
-  </svg>
-);
-
-const TypographyIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2 3h12M5 3v10M11 3v10M3.5 13h3M9.5 13h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const IconsIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-    <rect x="9.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-    <rect x="1.5" y="9.5" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-    <rect x="9.5" y="9.5" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-  </svg>
-);
-
-const DriftIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2 8h3l2-4 2 8 2-4h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const AnalyticsIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2 14V9M6 14V6M10 14V4M14 14V2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
 const DocsIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M2 2.5A1.5 1.5 0 013.5 1H10l4 4v8.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 13.5v-11z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -98,13 +51,6 @@ export function Sidebar() {
 
   const navItems: NavItem[] = [
     { label: "Studio", href: `${projectBase}/studio`, segment: "studio", icon: <StudioIcon /> },
-    { label: "Library", href: `${projectBase}/library`, segment: "library", icon: <LibraryIcon /> },
-    { label: "Tokens", href: `${projectBase}/tokens`, segment: "tokens", icon: <TokensIcon /> },
-    { label: "Typography", href: `${projectBase}/typography`, segment: "typography", icon: <TypographyIcon /> },
-    { label: "Icons", href: `${projectBase}/icons`, segment: "icons", icon: <IconsIcon /> },
-    { label: "Candidates", href: `${projectBase}/candidates`, segment: "candidates", icon: <CandidatesIcon /> },
-    { label: "Drift", href: `${projectBase}/drift`, segment: "drift", icon: <DriftIcon /> },
-    { label: "Analytics", href: `${projectBase}/analytics`, segment: "analytics", icon: <AnalyticsIcon /> },
   ];
 
   function isActive(segment: string): boolean {

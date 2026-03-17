@@ -184,7 +184,7 @@ const config = require("./tailwind.config.js");
 1. **Extract** - Paste a Figma URL or website URL into Layout and run extraction
 2. **Review** - Check the extracted tokens in the Source panel. Re-extract if something looks off
 3. **Generate** - Click "Generate DESIGN.md" to synthesise the context file from extracted data
-4. **Test** - Use the Test panel to generate a few components. Check the health score (aim for 80+)
+4. **Test** - Use the Explorer Canvas to generate a few components. Check the health score (aim for 80+)
 5. **Iterate** - Edit DESIGN.md in the Studio's editor to fix anything the AI misidentified. Re-test
 6. **Export** - Download the ZIP bundle
 7. **Import** - Run `npx @layoutdesign/context import ./layout-export.zip` in your project root
@@ -228,7 +228,7 @@ If you prefer not to use the CLI, you can still drop the exported files into you
 
 ### Health Score
 
-The health score (0–100) in the Test panel measures how closely the generated code follows the design system:
+The health score (0–100) in the Explorer Canvas measures how closely the generated code follows the design system:
 
 - **80–100** - Tokens are being used correctly; ready to export
 - **50–79** - Partial adherence; review the Anti-Patterns section in DESIGN.md
@@ -247,7 +247,7 @@ After extracting your design system, use the Explorer Canvas to generate AI-powe
 5. Review generated variants in the grid view
 6. Select a variant to refine it with follow-up prompts
 7. Use "Compare" to see results with vs without design system context
-8. Promote a variant to your component library or submit it for team review
+8. Use "Add to Library" to save a variant (browse saved components in the Source Panel's "Saved" tab)
 
 ---
 
@@ -289,7 +289,7 @@ claude mcp add --transport http figma https://mcp.figma.com/mcp
 
 ### Push from Studio
 
-In the Test panel, any result with a code block shows a **Push to Figma** button. Click it to copy a structured prompt to your clipboard, then paste it into Claude Code or Cursor. Your AI agent will call the `push_to_figma` MCP tool to send the component to Figma as an editable auto-layout frame.
+In the Explorer Canvas, any result with a code block shows a **Push to Figma** button. Click it to copy a structured prompt to your clipboard, then paste it into Claude Code or Cursor. Your AI agent will call the `push_to_figma` MCP tool to send the component to Figma as an editable auto-layout frame.
 
 ### Design Before Code
 
@@ -320,23 +320,17 @@ To automatically sync design changes from Figma:
 2. Copy the webhook endpoint URL
 3. Paste it into Figma > Admin > Webhooks
 4. Generate or enter a matching passcode in both Figma and Layout
-5. Optionally configure GitHub settings (owner, repo, branch, token) for automatic PR creation
-6. When a designer publishes changes in Figma, Layout re-extracts tokens and opens a PR
+5. When a designer publishes changes in Figma, Layout re-extracts tokens automatically
 
 ---
 
 ## Component Library
 
-Create and manage reusable components for your organisation:
+Save reusable components from the Explorer Canvas:
 
-1. Navigate to Library in the dashboard sidebar
-2. Click "Create Component" to open the editor
-3. Write TSX code in the editor - preview updates live on the right
-4. Use the AI chat bar at the bottom to generate or modify code with AI assistance (Cmd+Enter to send)
-5. Add name, category, description, and tags
-6. Save to add it to your library
-
-Components can also be promoted from the Explorer Canvas.
+1. Generate a component variant in the Explorer Canvas
+2. Click "Add to Library" on any variant you want to keep
+3. Browse saved components in the Source Panel's "Saved" tab
 
 ---
 
@@ -344,5 +338,5 @@ Components can also be promoted from the Explorer Canvas.
 
 - **Narrow the Quick Reference** - If you have a large DESIGN.md, the Quick Reference (Section 0) is the most important part. Keep it focused on the 10–15 tokens your AI uses most.
 - **Commit DESIGN.md to your repo** - Treat it like any other configuration file. Update it when the design system changes.
-- **Use the context toggle** - In the Test panel, toggle "DESIGN.md context: OFF" to see what the AI generates without your design system. The gap shows you exactly what value the context file is providing.
+- **Use the context toggle** - In the Explorer Canvas, toggle "DESIGN.md context: OFF" to see what the AI generates without your design system. The gap shows you exactly what value the context file is providing.
 - **Re-extract periodically** - Design systems evolve. Re-run extraction after major design updates to keep the context file current.

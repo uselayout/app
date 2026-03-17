@@ -6,7 +6,7 @@ import { getComponentBySlug, getComponentsByOrg } from "@/lib/supabase/component
 import { generateTokensCss } from "@/lib/export/tokens-css";
 import { generateTokensJson } from "@/lib/export/tokens-json";
 import { supabase } from "@/lib/supabase/client";
-import { trackEvent } from "@/lib/supabase/analytics";
+
 import type { ExtractionResult } from "@/lib/types";
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
@@ -520,14 +520,6 @@ export async function POST(request: Request) {
       { status: 404 }
     );
   }
-
-  // Fire-and-forget analytics tracking
-  void trackEvent({
-    orgId,
-    eventType: "mcp.tool_call",
-    eventData: { tool },
-    apiKeyId: (authResult as McpAuthResult).keyId,
-  });
 
   return NextResponse.json({ tool, result: toolResult.result });
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { Sparkles, X, Send, ChevronLeft, ChevronRight, Trash2, Plus } from "lucide-react";
+import { Sparkles, X, ChevronLeft, ChevronRight, Trash2, Plus } from "lucide-react";
 import { ExplorerToolbar } from "./ExplorerToolbar";
 import { VariantCard } from "./VariantCard";
 import { FigmaPushModal } from "./FigmaPushModal";
@@ -9,12 +9,12 @@ import { FigmaImportModal } from "./FigmaImportModal";
 import { ResponsivePreview } from "./ResponsivePreview";
 import { ComparisonView } from "./ComparisonView";
 import { PromoteToLibraryModal } from "./PromoteToLibraryModal";
-import { SubmitCandidateModal } from "./SubmitCandidateModal";
 import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-variants";
 import { friendlyError } from "@/lib/explore/friendly-error";
 import { applyChangesToDesignMd } from "@/lib/figma/diff";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { processCodeImages, type ProcessCodeImagesResult } from "@/lib/image/process-code-images";
+import { calculateHealthScore } from "@/lib/health/score";
 import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile } from "@/lib/types";
 
 interface ExplorerCanvasProps {
@@ -25,6 +25,7 @@ interface ExplorerCanvasProps {
   onPushToFigma: (variant: DesignVariant) => void;
   onDesignMdUpdate?: (newMd: string) => void;
   initialImage?: string;
+  extractedFonts?: string[];
 }
 
 export function ExplorerCanvas({
@@ -35,6 +36,7 @@ export function ExplorerCanvas({
   onPushToFigma: _onPushToFigma,
   onDesignMdUpdate,
   initialImage,
+  extractedFonts = [],
 }: ExplorerCanvasProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessingImages, setIsProcessingImages] = useState(false);
@@ -45,7 +47,6 @@ export function ExplorerCanvas({
   const [showImport, setShowImport] = useState(false);
   const [responsiveVariant, setResponsiveVariant] = useState<DesignVariant | null>(null);
   const [promoteVariant, setPromoteVariant] = useState<DesignVariant | null>(null);
-  const [showSubmitCandidate, setShowSubmitCandidate] = useState(false);
   const [comparePrompt, setComparePrompt] = useState<string | null>(null);
   const [activeExplorationIndex, setActiveExplorationIndex] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -213,13 +214,24 @@ export function ExplorerCanvas({
           );
           onUpdateExplorations(imageExplorations);
         }
+        // Compute health scores for newly generated variants
+        const variantsToScore = anyChanged ? newWithImages : finalNew;
+        const scored = variantsToScore.map((v) => ({
+          ...v,
+          healthScore: calculateHealthScore(v.code, extractedFonts, designMd),
+        }));
+        const scoredMerged = [...existingVariants, ...scored];
+        const scoredExplorations = finalExplorations.map((e) =>
+          e.id === sessionId ? { ...e, variants: scoredMerged } : e
+        );
+        onUpdateExplorations(scoredExplorations);
       } finally {
         setIsProcessingImages(false);
         streamingBatchRef.current = null;
         pendingBatchCountRef.current = 0;
       }
     },
-    [onUpdateExplorations]
+    [onUpdateExplorations, extractedFonts, designMd]
   );
 
   /** Shared fetch + stream logic used by all generation handlers */
@@ -596,19 +608,6 @@ export function ExplorerCanvas({
                 </div>
               </div>
             )}
-            {/* Submit all as candidate */}
-            {variants.length > 0 && !isGenerating && (
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setShowSubmitCandidate(true)}
-                  className="flex items-center gap-1.5 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] hover:border-[var(--studio-border-strong)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
-                >
-                  <Send size={12} />
-                  Submit All as Candidate
-                </button>
-              </div>
-            )}
-
             {/* Grouped variant batches */}
             {batches.map((batch, batchIdx) => (
               <div key={batch.batchId}>
@@ -755,13 +754,6 @@ export function ExplorerCanvas({
         />
       )}
 
-      {showSubmitCandidate && currentExploration && (
-        <SubmitCandidateModal
-          variants={variants}
-          prompt={currentExploration.prompt}
-          onClose={() => setShowSubmitCandidate(false)}
-        />
-      )}
     </div>
   );
 }

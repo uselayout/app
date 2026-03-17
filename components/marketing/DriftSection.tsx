@@ -15,8 +15,8 @@ export function DriftSection() {
             className="w-full lg:max-w-[509px]"
           >
             <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Figma changes.</p>
-            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Your AI doesn&apos;t know.</p>
-            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-accent)]">Until now.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Your AI knows.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-accent)]">Instantly.</p>
           </motion.div>
 
           <motion.div
@@ -30,13 +30,13 @@ export function DriftSection() {
               Design tokens don&apos;t stay static. Someone updates the primary colour, renames a component, tightens the spacing scale. Your codebase doesn&apos;t know any of it happened.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Layout watches your Figma file via webhook. When a change lands, it diffs the extraction against your current design system — showing exactly what was added, removed, or modified. Token by token.
+              Layout watches your Figma file via webhook. When a change lands, re-extract to diff the tokens against your current design system — see exactly what was added, removed, or modified. Token by token.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Accept the changes and Layout opens a pull request against your codebase automatically. Your AI agent reads the updated design system on the next prompt. The gap never has time to open.
+              Accept the changes and your DESIGN.md updates immediately. Your AI agent reads the latest design system on the next prompt. The gap never has time to open.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-accent)] tracking-[-0.165px]">
-              Always current. Never manual.
+              Always current. One click.
             </p>
           </motion.div>
         </div>
@@ -63,7 +63,7 @@ export function DriftSection() {
               loop
               playsInline
               className="w-full h-full object-cover"
-              aria-label="Drift detection demo"
+              aria-label="Figma webhook sync demo"
             />
           </div>
         </div>

@@ -32,9 +32,6 @@ function rowToProject(row: ProjectRow): Project {
       : undefined,
     tokenCount: row.token_count ?? undefined,
     healthScore: row.health_score ?? undefined,
-    testResults: row.test_results
-      ? (row.test_results as Project["testResults"])
-      : undefined,
     explorations: row.explorations
       ? (row.explorations as Project["explorations"])
       : undefined,
@@ -60,7 +57,7 @@ function projectToRow(
     extraction_data: extractionData,
     token_count: project.tokenCount ?? null,
     health_score: project.healthScore ?? null,
-    test_results: project.testResults ?? null,
+    test_results: null,
     explorations: project.explorations ?? null,
     user_id: userId,
     updated_at: new Date().toISOString(),

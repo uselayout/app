@@ -27,13 +27,13 @@ export function DesignSystemSection() {
             className="w-full lg:w-[683px] pt-[19px] flex flex-col gap-[10px]"
           >
             <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-              Extraction is the starting point, not the end. Layout gives you a full design system dashboard — tokens, typography, components, and icons, all editable, all versioned.
+              Extraction is the starting point, not the end. Layout gives you a structured design system — tokens, typography, and components, all browsable in the Studio.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Build components in a live code editor with AI assistance. Describe what you need in the chat bar — Layout generates the code, you refine it. Every component gets categorised, tagged, and versioned. Approve it, and your whole team&apos;s AI agents can use it.
+              Generate components in the Explorer Canvas with AI assistance. Describe what you need — Layout generates variants using your design tokens. Save the best ones to your library with categories and tags.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Edit colour tokens with visual swatches. Define type scales with live specimens. Upload and categorise icons. Everything stays in sync with your DESIGN.md.
+              Browse saved components and pages in the Studio. Filter by type, search by category. Everything stays connected to your DESIGN.md.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-accent)] tracking-[-0.165px]">
               Not a static export. A living system.

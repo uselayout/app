@@ -8,7 +8,7 @@ import {
   getComponentsByProject,
   nameToComponentSlug,
 } from "@/lib/supabase/components";
-import { logAuditEvent } from "@/lib/supabase/audit";
+
 import { transpileTsx } from "@/lib/transpile";
 import type { ComponentStatus } from "@/lib/types/component";
 
@@ -19,7 +19,8 @@ const CreateComponentSchema = z.object({
   description: z.string().optional(),
   category: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  source: z.enum(["manual", "explorer", "extraction", "figma", "candidate"]).optional(),
+  source: z.enum(["manual", "explorer", "extraction", "figma"]).optional(),
+  designType: z.enum(["component", "page"]).optional(),
 });
 
 export async function GET(
@@ -107,6 +108,7 @@ export async function POST(
     category: parsed.data.category,
     tags: parsed.data.tags,
     source: parsed.data.source,
+    designType: parsed.data.designType,
     createdBy: authResult.userId,
   });
 
@@ -116,16 +118,6 @@ export async function POST(
       { status: 500 }
     );
   }
-
-  void logAuditEvent({
-    orgId,
-    actorId: authResult.userId,
-    actorName: authResult.session?.user?.name ?? undefined,
-    action: "component.created",
-    resourceType: "component",
-    resourceId: component.id,
-    resourceName: component.name,
-  });
 
   return NextResponse.json(component, { status: 201 });
 }
