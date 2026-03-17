@@ -17,19 +17,31 @@ interface ProcessOptions {
   brandStyle?: string;
 }
 
+export interface ProcessCodeImagesResult {
+  code: string;
+  /** Whether images were skipped because no Google AI API key is configured */
+  skippedNoKey: boolean;
+  /** Number of images found as placeholders */
+  placeholderCount: number;
+  /** Number of images that failed to generate */
+  failedCount: number;
+  /** Specific error messages (e.g. safety policy blocks) */
+  errors: string[];
+}
+
 /**
  * Check if code contains image placeholders and process them via the API.
- * Returns the updated code, or the original if no placeholders or on failure.
+ * Returns the updated code plus status information about what happened.
  */
 export async function processCodeImages(
   code: string,
   options: ProcessOptions = {}
-): Promise<string> {
+): Promise<ProcessCodeImagesResult> {
   const hasPlaceholders = IMAGE_PLACEHOLDER_RE.test(code);
-  console.log(`[process-code-images] Checking code (${code.length} chars), hasPlaceholders=${hasPlaceholders}`);
-  if (!hasPlaceholders) return code;
+  if (!hasPlaceholders) return { code, skippedNoKey: false, placeholderCount: 0, failedCount: 0, errors: [] };
 
-  console.log("[process-code-images] Found image placeholders, calling API...");
+  // Count placeholders for reporting
+  const placeholderCount = (code.match(/data-generate-image=["'][^"']+["']/gi) ?? []).length;
 
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -51,14 +63,14 @@ export async function processCodeImages(
 
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({ error: "Unknown error" }));
-      const errMsg = errBody.error ?? `HTTP ${res.status}`;
-      console.warn(`[process-code-images] API error: ${errMsg}`);
 
       if (errBody.code === "NO_API_KEY") {
-        console.warn("[process-code-images] GOOGLE_AI_API_KEY is not configured on the server. Images will not be generated.");
+        return { code, skippedNoKey: true, placeholderCount, failedCount: 0, errors: [] };
       }
 
-      return code;
+      const apiErr = errBody.error ?? `HTTP ${res.status}`;
+      console.warn(`[process-code-images] API error: ${apiErr}`);
+      return { code, skippedNoKey: false, placeholderCount, failedCount: placeholderCount, errors: [apiErr] };
     }
 
     const data = await res.json();
@@ -70,13 +82,16 @@ export async function processCodeImages(
       );
     }
 
-    if (data.failedCount === 0 && data.totalCount > 0) {
-      console.log(`[process-code-images] All ${data.totalCount} images generated successfully`);
-    }
-
-    return data.html ?? code;
+    return {
+      code: data.html ?? code,
+      skippedNoKey: false,
+      placeholderCount: data.totalCount ?? placeholderCount,
+      failedCount: data.failedCount ?? 0,
+      errors: (data.errors as string[]) ?? [],
+    };
   } catch (err) {
     console.warn("[process-code-images] Failed:", err);
-    return code;
+    const errMsg = err instanceof Error ? err.message : "Image processing failed";
+    return { code, skippedNoKey: false, placeholderCount, failedCount: placeholderCount, errors: [errMsg] };
   }
 }

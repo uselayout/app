@@ -60,6 +60,17 @@ const STYLE_PREFIXES: Record<ImageStyle, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// Errors
+// ---------------------------------------------------------------------------
+
+export class ImageSafetyError extends Error {
+  constructor(public originalPrompt: string) {
+    super(`Image blocked by safety policy: "${originalPrompt}"`);
+    this.name = "ImageSafetyError";
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Core
 // ---------------------------------------------------------------------------
 
@@ -97,15 +108,26 @@ function buildPrompt(options: GenerateImageOptions): string {
 }
 
 /**
- * Generate an image using Gemini 3.1 Flash Image Preview.
- * Returns base64 data and MIME type.
+ * Rephrase a prompt that was safety-blocked to use illustration style instead
+ * of photographic realism. Strips human-likeness triggers.
  */
-export async function generateImageRaw(
-  options: GenerateImageOptions
-): Promise<{ data: string; mimeType: string }> {
-  const apiKey = getApiKey(options.googleApiKey);
-  const prompt = buildPrompt(options);
+function rephraseForSafety(prompt: string): string {
+  return prompt
+    .replace(/\b(headshot|portrait|photo|photograph|selfie|face shot)\b/gi, "avatar")
+    .replace(/\b(realistic|real person|real human|photorealistic)\b/gi, "stylized")
+    .replace(/\b(man|woman|person|people|human|individual)\b/gi, "character")
+    + ", stylized illustration, abstract art style, no real person";
+}
 
+/**
+ * Call Gemini and extract the image. Returns base64 data + MIME type.
+ * Throws ImageSafetyError if blocked by content policy.
+ */
+async function callGemini(
+  prompt: string,
+  options: GenerateImageOptions,
+  apiKey: string,
+): Promise<{ data: string; mimeType: string }> {
   const requestBody = {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
@@ -132,15 +154,24 @@ export async function generateImageRaw(
 
   const result = await res.json();
 
-  // Extract image from response
+  // Check for safety blocks at the prompt level
+  if (result.promptFeedback?.blockReason) {
+    throw new ImageSafetyError(options.prompt);
+  }
+
   const candidates = result.candidates;
   if (!candidates || candidates.length === 0) {
-    throw new Error("No image generated  -  Gemini returned empty candidates");
+    throw new Error("No image generated — Gemini returned empty candidates");
+  }
+
+  // Check for safety blocks at the candidate level
+  if (candidates[0].finishReason === "SAFETY") {
+    throw new ImageSafetyError(options.prompt);
   }
 
   const parts = candidates[0].content?.parts;
   if (!parts || parts.length === 0) {
-    throw new Error("No image data in Gemini response");
+    throw new ImageSafetyError(options.prompt);
   }
 
   const imagePart = parts.find(
@@ -157,8 +188,43 @@ export async function generateImageRaw(
 }
 
 /**
+ * Generate an image using Gemini 3.1 Flash Image Preview.
+ * If safety-blocked, auto-retries once with a rephrased illustration prompt.
+ */
+export async function generateImageRaw(
+  options: GenerateImageOptions
+): Promise<{ data: string; mimeType: string }> {
+  const apiKey = getApiKey(options.googleApiKey);
+  const prompt = buildPrompt(options);
+
+  try {
+    return await callGemini(prompt, options, apiKey);
+  } catch (err) {
+    if (!(err instanceof ImageSafetyError)) throw err;
+
+    // Auto-retry with illustration style and rephrased prompt
+    console.warn(`[image/generate] Safety block on "${options.prompt}", retrying as illustration...`);
+    const safePrompt = rephraseForSafety(options.prompt);
+    const retryOptions: GenerateImageOptions = {
+      ...options,
+      style: "illustration",
+      prompt: safePrompt,
+    };
+    try {
+      return await callGemini(buildPrompt(retryOptions), retryOptions, apiKey);
+    } catch (retryErr) {
+      // If retry also safety-blocked, throw the original error
+      if (retryErr instanceof ImageSafetyError) {
+        throw new ImageSafetyError(options.prompt);
+      }
+      throw retryErr;
+    }
+  }
+}
+
+/**
  * Generate an image and upload it to Supabase Storage.
- * Returns the public URL.
+ * Falls back to inline data URL if storage upload fails.
  */
 export async function generateImage(
   options: GenerateImageOptions
@@ -166,31 +232,35 @@ export async function generateImage(
   const { data, mimeType } = await generateImageRaw(options);
   const prompt = buildPrompt(options);
 
-  // Convert base64 to buffer
-  const buffer = Buffer.from(data, "base64");
+  // Try uploading to Supabase Storage, fall back to data URL
+  try {
+    const buffer = Buffer.from(data, "base64");
+    const ext = mimeType.includes("jpeg") || mimeType.includes("jpg") ? "jpg" : "png";
+    const filename = `generated/${options.orgId ?? "anon"}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-  // Determine file extension
-  const ext = mimeType.includes("jpeg") || mimeType.includes("jpg") ? "jpg" : "png";
-  const filename = `generated/${options.orgId ?? "anon"}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("layout-images")
+      .upload(filename, buffer, {
+        contentType: mimeType,
+        upsert: false,
+      });
 
-  // Upload to Supabase Storage
-  const { error: uploadError } = await supabase.storage
-    .from("layout-images")
-    .upload(filename, buffer, {
-      contentType: mimeType,
-      upsert: false,
-    });
+    if (!uploadError) {
+      const { data: publicUrlData } = supabase.storage
+        .from("layout-images")
+        .getPublicUrl(filename);
 
-  if (uploadError) {
-    throw new Error(`Failed to upload generated image: ${uploadError.message}`);
+      return { url: publicUrlData.publicUrl, mimeType, prompt };
+    }
+
+    console.warn(`[image/generate] Storage upload failed, using data URL: ${uploadError.message}`);
+  } catch (storageErr) {
+    console.warn("[image/generate] Storage upload error, using data URL:", storageErr);
   }
 
-  const { data: publicUrlData } = supabase.storage
-    .from("layout-images")
-    .getPublicUrl(filename);
-
+  // Fallback: return inline data URL (works in iframes without external storage)
   return {
-    url: publicUrlData.publicUrl,
+    url: `data:${mimeType};base64,${data}`,
     mimeType,
     prompt,
   };

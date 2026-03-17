@@ -14,7 +14,7 @@ import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-varian
 import { friendlyError } from "@/lib/explore/friendly-error";
 import { applyChangesToDesignMd } from "@/lib/figma/diff";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
-import { processCodeImages } from "@/lib/image/process-code-images";
+import { processCodeImages, type ProcessCodeImagesResult } from "@/lib/image/process-code-images";
 import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile } from "@/lib/types";
 
 interface ExplorerCanvasProps {
@@ -38,6 +38,7 @@ export function ExplorerCanvas({
 }: ExplorerCanvasProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessingImages, setIsProcessingImages] = useState(false);
+  const [imageNotice, setImageNotice] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [pushVariant, setPushVariant] = useState<DesignVariant | null>(null);
@@ -178,14 +179,32 @@ export function ExplorerCanvas({
 
       // Process image placeholders in the new batch only
       setIsProcessingImages(true);
+      setImageNotice(null);
       try {
-        const newWithImages = await Promise.all(
-          finalNew.map(async (v) => {
-            const processed = await processCodeImages(v.code);
-            return processed !== v.code ? { ...v, code: processed } : v;
-          })
+        const results: ProcessCodeImagesResult[] = await Promise.all(
+          finalNew.map((v) => processCodeImages(v.code))
         );
 
+        // Check for issues
+        const anySkippedNoKey = results.some((r) => r.skippedNoKey);
+        const totalFailed = results.reduce((sum, r) => sum + r.failedCount, 0);
+        const totalPlaceholders = results.reduce((sum, r) => sum + r.placeholderCount, 0);
+
+        // Collect all error messages across variants
+        const allErrors = results.flatMap((r) => r.errors);
+        const hasSafetyErrors = allErrors.some((e) => e.includes("Safety policy"));
+
+        if (anySkippedNoKey && totalPlaceholders > 0) {
+          setImageNotice(`${totalPlaceholders} image(s) skipped — add a Google AI API key in Settings to enable image generation.`);
+        } else if (totalFailed > 0 && hasSafetyErrors) {
+          setImageNotice(`${totalFailed} of ${totalPlaceholders} image(s) blocked by safety policy. Headshots auto-retried as illustrations — try more abstract descriptions if still failing.`);
+        } else if (totalFailed > 0) {
+          setImageNotice(`${totalFailed} of ${totalPlaceholders} image(s) failed to generate.`);
+        }
+
+        const newWithImages = finalNew.map((v, i) =>
+          results[i].code !== v.code ? { ...v, code: results[i].code } : v
+        );
         const anyChanged = newWithImages.some((v, i) => v !== finalNew[i]);
         if (anyChanged) {
           const imageMerged = [...existingVariants, ...newWithImages];
@@ -663,6 +682,18 @@ export function ExplorerCanvas({
               <div className="flex items-center gap-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2.5">
                 <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
                 <span className="text-xs text-[var(--text-secondary)]">Generating images — this may take a moment...</span>
+              </div>
+            )}
+
+            {imageNotice && !isProcessingImages && (
+              <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2.5">
+                <span className="text-xs text-amber-400">{imageNotice}</span>
+                <button
+                  onClick={() => setImageNotice(null)}
+                  className="ml-auto text-amber-400/60 hover:text-amber-400 transition-colors"
+                >
+                  <X size={14} />
+                </button>
               </div>
             )}
           </div>

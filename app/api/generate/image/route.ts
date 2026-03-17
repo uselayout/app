@@ -65,16 +65,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Image generation is BYOK-only for now (no hosted credit system for images).
-  // User must provide their own Google AI API key via the Settings modal.
-  const userGoogleKey = request.headers.get("X-Google-Api-Key") || undefined;
-  if (!userGoogleKey) {
+  // BYOK via header, with env var fallback for self-hosted deployments
+  const googleApiKey = request.headers.get("X-Google-Api-Key") || process.env.GOOGLE_AI_API_KEY || undefined;
+  if (!googleApiKey) {
     return NextResponse.json(
-      { error: "Image generation requires a Google AI API Key. Add yours in the API Keys settings.", code: "NO_API_KEY" },
+      { error: "Image generation requires a Google AI API Key. Add yours in the API Keys settings or set GOOGLE_AI_API_KEY env var.", code: "NO_API_KEY" },
       { status: 503 }
     );
   }
-  const googleApiKey = userGoogleKey;
 
   try {
     if (parsed.data.mode === "batch") {
