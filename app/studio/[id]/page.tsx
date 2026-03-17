@@ -68,6 +68,7 @@ export default function StudioPage({
   const [centreView, setCentreView] = useState<"editor" | "canvas">(
     tabParam === "explorer" ? "canvas" : "editor"
   );
+  const [whatsNextDismissed, setWhatsNextDismissed] = useState(false);
 
   // Figma push-to-canvas: pre-load screenshot as reference image
   const pendingFigmaImage = useRef<string | null>(
@@ -239,8 +240,13 @@ export default function StudioPage({
     );
   }
 
-  // Show progress screen when running, or when failed with no extraction data yet
-  if (extractionStatus === "running" || (extractionStatus === "failed" && !project.extractionData)) {
+  // Show progress screen when running, or when failed with no extraction data yet,
+  // or when complete but the "What's next?" screen hasn't been dismissed yet
+  if (
+    extractionStatus === "running" ||
+    (extractionStatus === "failed" && !project.extractionData) ||
+    (extractionStatus === "complete" && !whatsNextDismissed)
+  ) {
     return (
       <ExtractionProgress
         sourceName={project.name}
@@ -249,6 +255,14 @@ export default function StudioPage({
         steps={extractionSteps}
         error={extractionError}
         streamingContent={project.designMd}
+        onOpenEditor={() => {
+          setCentreView("editor");
+          setWhatsNextDismissed(true);
+        }}
+        onOpenCanvas={() => {
+          setCentreView("canvas");
+          setWhatsNextDismissed(true);
+        }}
       />
     );
   }
