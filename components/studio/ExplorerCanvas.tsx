@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useMemo, Fragment } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Sparkles, X, ChevronLeft, ChevronRight, Trash2, Plus } from "lucide-react";
 import { ExplorerToolbar } from "./ExplorerToolbar";
 import { VariantCard } from "./VariantCard";
