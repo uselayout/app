@@ -1,28 +1,62 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { X, Sparkles, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { X, Sparkles, AlertTriangle, Maximize2, Minimize2, Loader2 } from "lucide-react";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { parseVariants } from "@/lib/explore/parse-variants";
 import { extractComponentName, buildSrcdoc } from "@/lib/explore/preview-helpers";
-import type { DesignVariant, ContextFile } from "@/lib/types";
+import { processCodeImages } from "@/lib/image/process-code-images";
+import type { DesignVariant, ContextFile, ComparisonResult } from "@/lib/types";
 
 interface ComparisonViewProps {
   prompt: string;
   designMd: string;
+  baseCode?: string;
   imageDataUrl?: string;
   contextFiles?: ContextFile[];
+  savedResult?: ComparisonResult;
+  onSave?: (result: ComparisonResult) => void;
   onClose: () => void;
 }
 
-export function ComparisonView({ prompt, designMd, imageDataUrl, contextFiles, onClose }: ComparisonViewProps) {
-  const [withDs, setWithDs] = useState<DesignVariant | null>(null);
-  const [withoutDs, setWithoutDs] = useState<DesignVariant | null>(null);
-  const [loading, setLoading] = useState(true);
+export function ComparisonView({
+  prompt,
+  designMd,
+  baseCode,
+  imageDataUrl,
+  contextFiles,
+  savedResult,
+  onSave,
+  onClose,
+}: ComparisonViewProps) {
+  const [withDs, setWithDs] = useState<DesignVariant | null>(savedResult?.withDs ?? null);
+  const [withoutDs, setWithoutDs] = useState<DesignVariant | null>(savedResult?.withoutDs ?? null);
+  const [loading, setLoading] = useState(!savedResult);
+  const [processingImages, setProcessingImages] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [focusedPanel, setFocusedPanel] = useState<"left" | "right" | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const savedRef = useRef(false);
 
+  // Handle Escape to restore split view or close
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (focusedPanel) {
+          setFocusedPanel(null);
+        } else {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [focusedPanel, onClose]);
+
+  // Generate comparison (skip if savedResult provided)
+  useEffect(() => {
+    if (savedResult) return;
+
     abortRef.current = new AbortController();
     const signal = abortRef.current.signal;
 
@@ -33,18 +67,22 @@ export function ComparisonView({ prompt, designMd, imageDataUrl, contextFiles, o
       };
       if (apiKey) headers["X-Api-Key"] = apiKey;
 
+      const commonBody = {
+        prompt,
+        variantCount: 1,
+        imageDataUrl,
+        contextFiles,
+        ...(baseCode ? { baseCode } : {}),
+      };
+
       try {
-        // Run both in parallel
         const [withRes, withoutRes] = await Promise.all([
           fetch("/api/generate/explore", {
             method: "POST",
             headers,
             body: JSON.stringify({
-              prompt,
+              ...commonBody,
               designMd,
-              variantCount: 1,
-              imageDataUrl,
-              contextFiles,
             }),
             signal,
           }),
@@ -52,11 +90,8 @@ export function ComparisonView({ prompt, designMd, imageDataUrl, contextFiles, o
             method: "POST",
             headers,
             body: JSON.stringify({
-              prompt,
+              ...commonBody,
               designMd: "No design system provided. Use your best judgement for colours, spacing, and typography. Make it look modern and professional.",
-              variantCount: 1,
-              imageDataUrl,
-              contextFiles,
             }),
             signal,
           }),
@@ -66,7 +101,6 @@ export function ComparisonView({ prompt, designMd, imageDataUrl, contextFiles, o
           throw new Error("Generation failed");
         }
 
-        // Read both streams
         const [withText, withoutText] = await Promise.all([
           readStream(withRes, signal),
           readStream(withoutRes, signal),
@@ -75,19 +109,57 @@ export function ComparisonView({ prompt, designMd, imageDataUrl, contextFiles, o
         const withVariants = parseVariants(withText);
         const withoutVariants = parseVariants(withoutText);
 
-        setWithDs(withVariants[0] ?? null);
-        setWithoutDs(withoutVariants[0] ?? null);
+        const withVariant = withVariants[0] ?? null;
+        const withoutVariant = withoutVariants[0] ?? null;
+
+        setWithDs(withVariant);
+        setWithoutDs(withoutVariant);
+        setLoading(false);
+
+        // Process images in parallel for both panels
+        if (withVariant || withoutVariant) {
+          setProcessingImages(true);
+          try {
+            const [withProcessed, withoutProcessed] = await Promise.all([
+              withVariant ? processCodeImages(withVariant.code) : Promise.resolve(null),
+              withoutVariant ? processCodeImages(withoutVariant.code) : Promise.resolve(null),
+            ]);
+
+            const finalWith = withProcessed && withProcessed.code !== withVariant?.code
+              ? { ...withVariant!, code: withProcessed.code }
+              : withVariant;
+            const finalWithout = withoutProcessed && withoutProcessed.code !== withoutVariant?.code
+              ? { ...withoutVariant!, code: withoutProcessed.code }
+              : withoutVariant;
+
+            if (finalWith !== withVariant) setWithDs(finalWith);
+            if (finalWithout !== withoutVariant) setWithoutDs(finalWithout);
+
+            // Auto-save
+            if (onSave && finalWith && finalWithout && !savedRef.current) {
+              savedRef.current = true;
+              onSave({
+                id: crypto.randomUUID(),
+                prompt,
+                withDs: finalWith,
+                withoutDs: finalWithout,
+                createdAt: new Date().toISOString(),
+              });
+            }
+          } finally {
+            setProcessingImages(false);
+          }
+        }
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
         setError(err instanceof Error ? err.message : "Comparison failed");
-      } finally {
         setLoading(false);
       }
     }
 
     generate();
     return () => { abortRef.current?.abort(); };
-  }, [prompt, designMd]);
+  }, [prompt, designMd, baseCode, imageDataUrl, contextFiles, savedResult, onSave]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-sm">
@@ -95,18 +167,26 @@ export function ComparisonView({ prompt, designMd, imageDataUrl, contextFiles, o
       <div className="flex items-center justify-between border-b border-[var(--studio-border)] bg-[var(--bg-panel)] px-5 py-3">
         <div>
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-            Before / After Comparison
+            {savedResult ? "Saved Comparison" : "Before / After Comparison"}
           </h2>
           <p className="text-xs text-[var(--text-secondary)]">
             Same prompt — with and without your design system
           </p>
         </div>
-        <button
-          onClick={onClose}
-          className="rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
-        >
-          <X size={16} />
-        </button>
+        <div className="flex items-center gap-2">
+          {processingImages && (
+            <div className="flex items-center gap-1.5">
+              <Loader2 size={12} className="animate-spin text-[var(--text-muted)]" />
+              <span className="text-xs text-[var(--text-muted)]">Generating images…</span>
+            </div>
+          )}
+          <button
+            onClick={onClose}
+            className="rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Content */}
@@ -126,43 +206,63 @@ export function ComparisonView({ prompt, designMd, imageDataUrl, contextFiles, o
         ) : (
           <>
             {/* Without design system */}
-            <div className="flex flex-1 flex-col border-r border-[var(--studio-border)]">
-              <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-red-500/5 px-4 py-2.5">
-                <span className="h-2 w-2 rounded-full bg-red-400" />
-                <span className="text-xs font-semibold text-red-400">
-                  Without Design System
-                </span>
+            {focusedPanel !== "right" && (
+              <div className={`flex flex-1 flex-col ${focusedPanel !== "left" ? "border-r border-[var(--studio-border)]" : ""}`}>
+                <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-red-500/5 px-4 py-2.5">
+                  <span className="h-2 w-2 rounded-full bg-red-400" />
+                  <span className="text-xs font-semibold text-red-400">
+                    Without Design System
+                  </span>
+                  <div className="flex-1" />
+                  <button
+                    onClick={() => setFocusedPanel(focusedPanel === "left" ? null : "left")}
+                    className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+                    title={focusedPanel === "left" ? "Split view" : "Full screen"}
+                  >
+                    {focusedPanel === "left" ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                  </button>
+                </div>
+                <div className="flex-1 bg-white">
+                  {withoutDs ? (
+                    <PreviewFrame code={withoutDs.code} />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <p className="text-xs text-[var(--text-muted)]">No result</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex-1 bg-white">
-                {withoutDs ? (
-                  <PreviewFrame code={withoutDs.code} />
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <p className="text-xs text-[var(--text-muted)]">No result</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
 
             {/* With design system */}
-            <div className="flex flex-1 flex-col">
-              <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-emerald-500/5 px-4 py-2.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span className="text-xs font-semibold text-emerald-400">
-                  With Design System
-                </span>
-                <Sparkles size={12} className="text-emerald-400" />
+            {focusedPanel !== "left" && (
+              <div className="flex flex-1 flex-col">
+                <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-emerald-500/5 px-4 py-2.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                  <span className="text-xs font-semibold text-emerald-400">
+                    With Design System
+                  </span>
+                  <Sparkles size={12} className="text-emerald-400" />
+                  <div className="flex-1" />
+                  <button
+                    onClick={() => setFocusedPanel(focusedPanel === "right" ? null : "right")}
+                    className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+                    title={focusedPanel === "right" ? "Split view" : "Full screen"}
+                  >
+                    {focusedPanel === "right" ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                  </button>
+                </div>
+                <div className="flex-1 bg-white">
+                  {withDs ? (
+                    <PreviewFrame code={withDs.code} />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <p className="text-xs text-[var(--text-muted)]">No result</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex-1 bg-white">
-                {withDs ? (
-                  <PreviewFrame code={withDs.code} />
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <p className="text-xs text-[var(--text-muted)]">No result</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
           </>
         )}
       </div>
@@ -249,4 +349,3 @@ async function readStream(res: Response, signal: AbortSignal): Promise<string> {
 
   return text;
 }
-
