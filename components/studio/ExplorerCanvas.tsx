@@ -50,7 +50,7 @@ export function ExplorerCanvas({
   const [showImport, setShowImport] = useState(false);
   const [responsiveVariant, setResponsiveVariant] = useState<DesignVariant | null>(null);
   const [promoteVariant, setPromoteVariant] = useState<DesignVariant | null>(null);
-  const [comparePrompt, setComparePrompt] = useState<string | null>(null);
+  const [compareData, setCompareData] = useState<{ prompt: string; image?: string; contextFiles?: ContextFile[] } | null>(null);
   const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null);
   const [activeExplorationIndex, setActiveExplorationIndex] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -319,6 +319,7 @@ export function ExplorerCanvas({
           variantCount,
           variants: [],
           referenceImage: imageDataUrl,
+          contextFiles,
           createdAt: new Date().toISOString(),
         };
         updatedExplorations = [...explorations, newExploration];
@@ -749,7 +750,11 @@ export function ExplorerCanvas({
       <ExplorerToolbar
         onGenerate={handleGenerate}
         onRefine={handleRefine}
-        onCompare={(prompt) => setComparePrompt(prompt)}
+        onCompare={(prompt, image, files) => setCompareData({
+          prompt,
+          image: image ?? currentExploration?.referenceImage,
+          contextFiles: files,
+        })}
         onRegenerate={handleRegenerate}
         onPushToFigma={() => selectedVariant && handlePushToFigma(selectedVariant)}
         onImportFromFigma={() => setShowImport(true)}
@@ -776,11 +781,13 @@ export function ExplorerCanvas({
         />
       )}
 
-      {comparePrompt && (
+      {compareData && (
         <ComparisonView
-          prompt={comparePrompt}
+          prompt={compareData.prompt}
+          imageDataUrl={compareData.image}
+          contextFiles={compareData.contextFiles}
           designMd={designMd}
-          onClose={() => setComparePrompt(null)}
+          onClose={() => setCompareData(null)}
         />
       )}
 
