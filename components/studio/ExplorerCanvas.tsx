@@ -14,6 +14,8 @@ import { friendlyError } from "@/lib/explore/friendly-error";
 import { applyChangesToDesignMd } from "@/lib/figma/diff";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { processCodeImages, type ProcessCodeImagesResult } from "@/lib/image/process-code-images";
+import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
+import { toast } from "sonner";
 import { calculateHealthScore } from "@/lib/health/score";
 import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile } from "@/lib/types";
 
@@ -526,7 +528,14 @@ export function ExplorerCanvas({
             {explorations.map((e, i) => (
               <button
                 key={e.id}
-                onClick={() => { setActiveExplorationIndex(i); setSelectedVariantId(null); }}
+                onClick={() => {
+                  setActiveExplorationIndex(i);
+                  setSelectedVariantId(null);
+                  if (e.prompt) {
+                    copyToClipboard(e.prompt);
+                    toast("Prompt copied to clipboard");
+                  }
+                }}
                 className={`shrink-0 max-w-[200px] truncate rounded-md px-2.5 py-1 text-[11px] transition-colors ${
                   i === explorationIndex
                     ? "bg-[var(--studio-accent-subtle)] text-[var(--text-primary)] font-medium"

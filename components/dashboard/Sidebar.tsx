@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useSearchParams } from "next/navigation";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { UserMenu } from "./UserMenu";
 import { PanelLeftClose, PanelLeftOpen, BookMarked } from "lucide-react";
@@ -31,8 +31,17 @@ const DocsIcon = () => (
 );
 
 export function Sidebar() {
+  return (
+    <Suspense>
+      <SidebarInner />
+    </Suspense>
+  );
+}
+
+function SidebarInner() {
   const params = useParams();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const orgSlug = typeof params?.org === "string" ? params.org : "";
   const projectId = typeof params?.projectId === "string" ? params.projectId : "";
 
@@ -59,6 +68,14 @@ export function Sidebar() {
     const prefix = `/${orgSlug}/projects/${projectId}/`;
     if (pathname.startsWith(prefix)) {
       const current = pathname.slice(prefix.length).split("/")[0];
+      // "Saved" uses studio path + ?tab=saved query param
+      if (segment === "saved") {
+        return current === "studio" && searchParams.get("tab") === "saved";
+      }
+      // "Studio" is active when on studio without the saved tab
+      if (segment === "studio") {
+        return current === "studio" && searchParams.get("tab") !== "saved";
+      }
       return current === segment;
     }
     return false;
