@@ -87,8 +87,8 @@ export function TopBar({
 
   return (
     <div className="flex h-12 items-center justify-between border-b border-[rgba(255,255,255,0.07)] bg-[#0c0c0e] px-4">
-      {/* Left: Source panel toggle + Editor/Canvas toggle */}
-      <div className="flex items-center gap-[17px]">
+      {/* Left: Source panel toggle + Project name + source */}
+      <div className="flex flex-1 items-center gap-[17px]">
         <button
           onClick={onToggleSource}
           className={`flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] transition-colors ${
@@ -101,7 +101,31 @@ export function TopBar({
           <PanelLeft className="h-3.5 w-3.5" />
         </button>
 
-        {/* Editor / Canvas toggle */}
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className="h-7 rounded-sm border border-[rgba(255,255,255,0.22)] bg-[#1A1A20] px-2 text-sm text-[#e8e8f0] outline-none focus:border-[var(--studio-border-focus)]"
+          />
+        ) : (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="text-[14px] font-medium text-[#e8e8f0] transition-colors hover:text-white"
+          >
+            {projectName}
+          </button>
+        )}
+
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-transparent px-[9px] py-[3px] text-[12px] font-medium text-[#e8e8f0] overflow-hidden">
+          {sourceName || sourceType}
+        </span>
+      </div>
+
+      {/* Centre: Editor / Canvas toggle */}
+      <div className="flex flex-1 items-center justify-center">
         {onCentreViewChange && (
           <div className="flex items-center">
             <button
@@ -128,33 +152,8 @@ export function TopBar({
         )}
       </div>
 
-      {/* Centre: Project name + source badge */}
-      <div className="flex items-center gap-3">
-        {isEditing ? (
-          <input
-            ref={inputRef}
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            className="h-7 rounded-sm border border-[rgba(255,255,255,0.22)] bg-[#1A1A20] px-2 text-sm text-[#e8e8f0] outline-none focus:border-[var(--studio-border-focus)]"
-          />
-        ) : (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="text-[14px] font-medium text-[#e8e8f0] transition-colors hover:text-white"
-          >
-            {projectName}
-          </button>
-        )}
-
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-transparent px-[9px] py-[3px] text-[12px] font-medium text-[#e8e8f0] overflow-hidden">
-          {sourceName || sourceType}
-        </span>
-      </div>
-
       {/* Right: Actions */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-1 items-center justify-end gap-1.5">
         <button
           onClick={onReExtract}
           className="flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] bg-[rgba(255,255,255,0.02)] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.06)] transition-colors"

@@ -35,10 +35,18 @@ function SourcePanelInner({
   projectId,
 }: SourcePanelProps) {
   const searchParams = useSearchParams();
-  const initialTab = VALID_TABS.includes(searchParams.get("tab") as TabId)
-    ? (searchParams.get("tab") as TabId)
+  const tabParam = searchParams.get("tab") as TabId | null;
+  const initialTab = VALID_TABS.includes(tabParam as TabId)
+    ? (tabParam as TabId)
     : "tokens";
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+
+  // Sync tab when search param changes (e.g. sidebar "Saved" click)
+  useEffect(() => {
+    if (tabParam && VALID_TABS.includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
   const syncTokensFromDesignMd = useProjectStore((s) => s.syncTokensFromDesignMd);
   const [syncResult, setSyncResult] = useState<{ count: number } | null>(null);
 
