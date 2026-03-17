@@ -14,7 +14,7 @@ const ACCEPTED_TEXT_TYPES = ".md,.txt,.json,.css,.html,.tsx,.ts,.jsx,.js";
 interface ExplorerToolbarProps {
   onGenerate: (prompt: string, variantCount: number, imageDataUrl?: string, contextFiles?: ContextFile[]) => void;
   onRefine: (refinementPrompt: string, variantCount: number, imageDataUrl?: string, contextFiles?: ContextFile[]) => void;
-  onCompare: (prompt: string) => void;
+  onCompare: (prompt: string, imageDataUrl?: string, contextFiles?: ContextFile[]) => void;
   onRegenerate: () => void;
   onPushToFigma: () => void;
   onImportFromFigma: () => void;
@@ -427,7 +427,7 @@ export function ExplorerToolbar({
 
           {/* Compare */}
           <button
-            onClick={() => onCompare(prompt.trim())}
+            onClick={() => onCompare(prompt.trim(), imageDataUrl ?? undefined, contextFiles.length > 0 ? contextFiles : undefined)}
             disabled={!prompt.trim() || isGenerating}
             className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title="Compare with vs without design system"

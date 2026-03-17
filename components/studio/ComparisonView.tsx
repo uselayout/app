@@ -5,15 +5,17 @@ import { X, Sparkles, AlertTriangle } from "lucide-react";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { parseVariants } from "@/lib/explore/parse-variants";
 import { extractComponentName, buildSrcdoc } from "@/lib/explore/preview-helpers";
-import type { DesignVariant } from "@/lib/types";
+import type { DesignVariant, ContextFile } from "@/lib/types";
 
 interface ComparisonViewProps {
   prompt: string;
   designMd: string;
+  imageDataUrl?: string;
+  contextFiles?: ContextFile[];
   onClose: () => void;
 }
 
-export function ComparisonView({ prompt, designMd, onClose }: ComparisonViewProps) {
+export function ComparisonView({ prompt, designMd, imageDataUrl, contextFiles, onClose }: ComparisonViewProps) {
   const [withDs, setWithDs] = useState<DesignVariant | null>(null);
   const [withoutDs, setWithoutDs] = useState<DesignVariant | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +43,8 @@ export function ComparisonView({ prompt, designMd, onClose }: ComparisonViewProp
               prompt,
               designMd,
               variantCount: 1,
+              imageDataUrl,
+              contextFiles,
             }),
             signal,
           }),
@@ -51,6 +55,8 @@ export function ComparisonView({ prompt, designMd, onClose }: ComparisonViewProp
               prompt,
               designMd: "No design system provided. Use your best judgement for colours, spacing, and typography. Make it look modern and professional.",
               variantCount: 1,
+              imageDataUrl,
+              contextFiles,
             }),
             signal,
           }),

@@ -144,6 +144,7 @@ export interface ExplorationSession {
   variants: DesignVariant[];
   selectedVariantId?: string;
   referenceImage?: string;
+  contextFiles?: ContextFile[];
   createdAt: string;
 }
 
