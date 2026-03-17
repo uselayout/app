@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { requireMcpAuth } from "@/lib/api/mcp-auth";
 import { fetchAllProjects } from "@/lib/supabase/db";
+import { getUserOrganizations } from "@/lib/supabase/organization";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -23,7 +24,24 @@ export async function GET(request: Request) {
   }
 
   try {
-    const projects = await fetchAllProjects(auth.orgId);
+    const url = new URL(request.url);
+    const requestedOrgId = url.searchParams.get("orgId");
+
+    // If a different org is requested, verify the user belongs to it
+    let orgId = auth.orgId;
+    if (requestedOrgId && requestedOrgId !== auth.orgId) {
+      const userOrgs = await getUserOrganizations(auth.userId);
+      const hasAccess = userOrgs.some((o) => o.id === requestedOrgId);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: "Access denied to this organisation" },
+          { status: 403, headers: CORS }
+        );
+      }
+      orgId = requestedOrgId;
+    }
+
+    const projects = await fetchAllProjects(orgId);
 
     const result = projects.map((p) => ({
       id: p.id,

@@ -5,6 +5,7 @@ import type { ApiKeyScope } from "@/lib/types/api-key";
 export interface McpAuthResult {
   orgId: string;
   keyId: string;
+  userId: string;
   scopes: ApiKeyScope[];
 }
 
@@ -42,6 +43,7 @@ export async function requireMcpAuth(
   return {
     orgId: result.orgId,
     keyId: result.apiKey.id,
+    userId: result.apiKey.createdBy,
     scopes: result.apiKey.scopes as ApiKeyScope[],
   };
 }
