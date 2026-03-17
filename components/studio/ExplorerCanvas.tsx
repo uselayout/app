@@ -15,6 +15,7 @@ import { applyChangesToDesignMd } from "@/lib/figma/diff";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { processCodeImages, type ProcessCodeImagesResult } from "@/lib/image/process-code-images";
 import { calculateHealthScore } from "@/lib/health/score";
+import { useOnboardingStore } from "@/lib/store/onboarding";
 import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile } from "@/lib/types";
 
 interface ExplorerCanvasProps {
@@ -55,6 +56,8 @@ export function ExplorerCanvas({
   const streamingBatchRef = useRef<string | null>(null);
   const pendingBatchCountRef = useRef(0);
 
+  const { steps, markStep } = useOnboardingStore();
+
   // Warn user before navigating away during generation
   useEffect(() => {
     if (!isGenerating) return;
@@ -71,6 +74,13 @@ export function ExplorerCanvas({
     : explorations.length - 1;
   const currentExploration = explorations.length > 0 ? explorations[explorationIndex] : null;
   const variants = currentExploration?.variants ?? [];
+
+  // Mark onboarding step when the first variant is successfully generated
+  useEffect(() => {
+    if (!steps.generatedVariant && variants.length > 0) {
+      markStep("generatedVariant");
+    }
+  }, [variants.length, steps.generatedVariant, markStep]);
 
   // Auto-scroll to bottom when new variants stream in
   useEffect(() => {
