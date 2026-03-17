@@ -10,6 +10,7 @@ interface OnboardingSteps {
 }
 
 interface OnboardingState {
+  _hasHydrated: boolean;
   dismissed: boolean;
   steps: OnboardingSteps;
   markStep: (key: keyof OnboardingSteps) => void;
@@ -29,6 +30,7 @@ const defaultSteps: OnboardingSteps = {
 export const useOnboardingStore = create<OnboardingState>()(
   persist(
     (set, get) => ({
+      _hasHydrated: false,
       dismissed: false,
       steps: { ...defaultSteps },
 
@@ -57,6 +59,9 @@ export const useOnboardingStore = create<OnboardingState>()(
     }),
     {
       name: "layout-onboarding-v1",
+      onRehydrateStorage: () => () => {
+        useOnboardingStore.setState({ _hasHydrated: true });
+      },
     }
   )
 );
