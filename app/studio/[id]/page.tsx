@@ -4,6 +4,7 @@ import { use, useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { useExtractionStore } from "@/lib/store/extraction";
+import { useOnboardingStore } from "@/lib/store/onboarding";
 import { useExtraction } from "@/lib/hooks/use-extraction";
 import { useKeyboardShortcuts } from "@/lib/hooks/use-keyboard-shortcuts";
 import { TopBar } from "@/components/shared/TopBar";
@@ -32,6 +33,19 @@ export default function StudioPage({
   const updateExplorations = useProjectStore((s) => s.updateExplorations);
   const setCurrentProject = useProjectStore((s) => s.setCurrentProject);
   const project = projects.find((p) => p.id === id);
+
+  const markStep = useOnboardingStore((s) => s.markStep);
+  const onboardingSteps = useOnboardingStore((s) => s.steps);
+
+  const [whatsNextDismissed, setWhatsNextDismissed] = useState(false);
+
+  // Mark viewedDesignMd step when studio is open with non-empty DESIGN.md
+  // and the user has dismissed the "What's next?" screen
+  useEffect(() => {
+    if (project?.designMd && project.designMd.length > 0 && whatsNextDismissed && !onboardingSteps.viewedDesignMd) {
+      markStep("viewedDesignMd");
+    }
+  }, [project?.designMd, whatsNextDismissed, onboardingSteps.viewedDesignMd, markStep]);
 
   // Set currentProjectId so TopBar can resolve the project (e.g. for Push button)
   useEffect(() => {
@@ -239,8 +253,13 @@ export default function StudioPage({
     );
   }
 
-  // Show progress screen when running, or when failed with no extraction data yet
-  if (extractionStatus === "running" || (extractionStatus === "failed" && !project.extractionData)) {
+  // Show progress screen when running, or when failed with no extraction data yet,
+  // or when complete but the "What's next?" screen hasn't been dismissed yet
+  if (
+    extractionStatus === "running" ||
+    (extractionStatus === "failed" && !project.extractionData) ||
+    (extractionStatus === "complete" && !whatsNextDismissed)
+  ) {
     return (
       <ExtractionProgress
         sourceName={project.name}
@@ -249,6 +268,14 @@ export default function StudioPage({
         steps={extractionSteps}
         error={extractionError}
         streamingContent={project.designMd}
+        onOpenEditor={() => {
+          setCentreView("editor");
+          setWhatsNextDismissed(true);
+        }}
+        onOpenCanvas={() => {
+          setCentreView("canvas");
+          setWhatsNextDismissed(true);
+        }}
       />
     );
   }
