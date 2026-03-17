@@ -99,13 +99,17 @@ function WhatsNextScreen({
 }) {
   const [countdown, setCountdown] = useState(AUTO_ADVANCE_SECONDS);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onOpenEditorRef = useRef(onOpenEditor);
+  useEffect(() => {
+    onOpenEditorRef.current = onOpenEditor;
+  }, [onOpenEditor]);
 
   useEffect(() => {
     timerRef.current = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current!);
-          onOpenEditor();
+          onOpenEditorRef.current();
           return 0;
         }
         return prev - 1;
@@ -115,8 +119,6 @@ function WhatsNextScreen({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-    // onOpenEditor is stable from parent — intentionally not in deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleOpenEditor() {
