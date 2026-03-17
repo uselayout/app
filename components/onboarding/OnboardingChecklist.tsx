@@ -21,8 +21,10 @@ export function OnboardingChecklist({
   firstProjectId,
   orgSlug,
 }: OnboardingChecklistProps) {
-  const { dismissed, steps, markStep, dismiss, allStepsComplete } =
+  const { _hasHydrated, dismissed, steps, markStep, dismiss, allStepsComplete } =
     useOnboardingStore();
+
+  if (!_hasHydrated) return null;
 
   const [isByok, setIsByok] = useState(false);
   const [copied, setCopied] = useState(false);
