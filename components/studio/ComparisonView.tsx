@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Sparkles, AlertTriangle, Maximize2, Minimize2, Loader2 } from "lucide-react";
+import { X, Sparkles, AlertTriangle, Maximize2, Minimize2, Loader2, Copy } from "lucide-react";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { parseVariants } from "@/lib/explore/parse-variants";
 import { extractComponentName, buildSrcdoc } from "@/lib/explore/preview-helpers";
 import { processCodeImages } from "@/lib/image/process-code-images";
+import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import type { DesignVariant, ContextFile, ComparisonResult } from "@/lib/types";
 
 interface ComparisonViewProps {
@@ -67,30 +68,32 @@ export function ComparisonView({
       };
       if (apiKey) headers["X-Api-Key"] = apiKey;
 
-      const commonBody = {
+      const sharedBody = {
         prompt,
         variantCount: 1,
         imageDataUrl,
         contextFiles,
-        ...(baseCode ? { baseCode } : {}),
       };
 
       try {
         const [withRes, withoutRes] = await Promise.all([
+          // With design system — refine from existing variant if available
           fetch("/api/generate/explore", {
             method: "POST",
             headers,
             body: JSON.stringify({
-              ...commonBody,
+              ...sharedBody,
+              ...(baseCode ? { baseCode } : {}),
               designMd,
             }),
             signal,
           }),
+          // Without design system — fresh generation, NO baseCode
           fetch("/api/generate/explore", {
             method: "POST",
             headers,
             body: JSON.stringify({
-              ...commonBody,
+              ...sharedBody,
               designMd: "No design system provided. Use your best judgement for colours, spacing, and typography. Make it look modern and professional.",
             }),
             signal,
@@ -268,10 +271,17 @@ export function ComparisonView({
       </div>
 
       {/* Footer with prompt */}
-      <div className="border-t border-[var(--studio-border)] bg-[var(--bg-panel)] px-5 py-3">
-        <p className="text-xs text-[var(--text-muted)]">
+      <div className="flex items-center gap-2 border-t border-[var(--studio-border)] bg-[var(--bg-panel)] px-5 py-3">
+        <p className="flex-1 text-xs text-[var(--text-muted)] truncate">
           Prompt: &ldquo;{prompt}&rdquo;
         </p>
+        <button
+          onClick={() => copyToClipboard(prompt)}
+          className="shrink-0 rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+          title="Copy prompt"
+        >
+          <Copy size={12} />
+        </button>
       </div>
     </div>
   );
