@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Layers, Globe, ArrowRight, KeyRound } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
@@ -22,6 +22,13 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
   const [url, setUrl] = useState("");
   const [pat, setPat] = useState("");
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const urlInputRef = useRef<HTMLInputElement>(null);
+
+  const QUICK_START_EXAMPLES = [
+    { label: "Try Stripe →", url: "https://stripe.com" },
+    { label: "Try Linear →", url: "https://linear.app" },
+    { label: "Try Vercel →", url: "https://vercel.com" },
+  ];
 
   const sourceType = url ? detectSourceType(url) : null;
   const isFigma = sourceType === "figma";
@@ -115,6 +122,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
         <div className="space-y-3">
           <div className="relative">
             <input
+              ref={urlInputRef}
               type="url"
               placeholder="https://figma.com/design/... or https://example.com"
               value={url}
@@ -133,6 +141,30 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
               </div>
             )}
           </div>
+
+          {/* Quick-start chips — only shown when URL input is empty */}
+          {!url && (
+            <div>
+              <p className="text-[var(--text-muted)] text-xs text-center my-2">
+                — or try with an example —
+              </p>
+              <div className="flex gap-2 justify-center flex-wrap">
+                {QUICK_START_EXAMPLES.map((example) => (
+                  <button
+                    key={example.url}
+                    type="button"
+                    onClick={() => {
+                      setUrl(example.url);
+                      urlInputRef.current?.focus();
+                    }}
+                    className="bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] border border-[var(--studio-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs px-3 py-1.5 rounded-md transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)] cursor-pointer"
+                  >
+                    {example.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Figma PAT field */}
           {isFigma && (
