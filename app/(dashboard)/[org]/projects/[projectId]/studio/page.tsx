@@ -28,6 +28,7 @@ export default function StudioPage({
 }) {
   const { projectId: id } = use(params);
   const projects = useProjectStore((s) => s.projects);
+  const hydrating = useProjectStore((s) => s.hydrating);
   const updateProjectName = useProjectStore((s) => s.updateProjectName);
   const updateDesignMd = useProjectStore((s) => s.updateDesignMd);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
@@ -214,6 +215,17 @@ export default function StudioPage({
     },
     [id, updateExplorations]
   );
+
+  if (!project && hydrating) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
+          <p className="text-sm text-[var(--text-secondary)]">Loading project…</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!project) {
     return (
