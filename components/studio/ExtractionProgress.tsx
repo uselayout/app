@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Check, X, AlertTriangle } from "lucide-react";
+import { Loader2, Check, X, AlertTriangle, CheckCircle2 } from "lucide-react";
 import type { ExtractionStep, ExtractionStepStatus } from "@/lib/types";
 
 interface ExtractionProgressProps {
@@ -14,6 +14,10 @@ interface ExtractionProgressProps {
   errorStep?: string | null;
   onRetry?: () => void;
   streamingContent?: string;
+  /** Called when extraction is complete and user picks "Open Editor" (or auto-advance fires) */
+  onOpenEditor?: () => void;
+  /** Called when extraction is complete and user picks "Explore the Canvas" */
+  onOpenCanvas?: () => void;
 }
 
 function StepIcon({ status }: { status: ExtractionStepStatus }) {
@@ -84,6 +88,82 @@ function StreamingPreview({ content }: { content: string }) {
   );
 }
 
+const AUTO_ADVANCE_SECONDS = 8;
+
+function WhatsNextScreen({
+  onOpenEditor,
+  onOpenCanvas,
+}: {
+  onOpenEditor: () => void;
+  onOpenCanvas: () => void;
+}) {
+  const [countdown, setCountdown] = useState(AUTO_ADVANCE_SECONDS);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onOpenEditorRef = useRef(onOpenEditor);
+  useEffect(() => {
+    onOpenEditorRef.current = onOpenEditor;
+  }, [onOpenEditor]);
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          onOpenEditorRef.current();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  function handleOpenEditor() {
+    if (timerRef.current) clearInterval(timerRef.current);
+    onOpenEditor();
+  }
+
+  function handleOpenCanvas() {
+    if (timerRef.current) clearInterval(timerRef.current);
+    onOpenCanvas();
+  }
+
+  return (
+    <div className="flex flex-col items-center py-4">
+      <CheckCircle2
+        className="mx-auto mb-6 h-16 w-16"
+        style={{ color: "#22c55e" }}
+      />
+      <h2 className="text-2xl font-semibold text-[var(--text-primary)] text-center">
+        Your DESIGN.md is ready
+      </h2>
+      <p className="text-sm text-[var(--text-secondary)] text-center mt-2 mb-8">
+        Generate on-brand components using your extracted design system
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleOpenEditor}
+          className="bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] border border-[var(--studio-border)] text-[var(--text-primary)] text-sm px-5 py-2 rounded-lg transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)]"
+        >
+          Open Editor
+        </button>
+        <button
+          onClick={handleOpenCanvas}
+          className="bg-[var(--studio-accent)] hover:bg-[var(--studio-accent-hover)] text-[var(--text-on-accent)] text-sm px-5 py-2 rounded-lg font-medium transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)]"
+        >
+          Explore the Canvas →
+        </button>
+      </div>
+      <p className="text-[var(--text-muted)] text-xs text-center mt-4">
+        Opening editor in {countdown}s…
+      </p>
+    </div>
+  );
+}
+
 export function ExtractionProgress({
   sourceName,
   sourceType,
@@ -92,6 +172,8 @@ export function ExtractionProgress({
   error,
   onRetry,
   streamingContent,
+  onOpenEditor,
+  onOpenCanvas,
 }: ExtractionProgressProps) {
   const startTimeRef = useRef(Date.now());
   const [elapsed, setElapsed] = useState(0);
@@ -106,87 +188,103 @@ export function ExtractionProgress({
   const isGenerating = steps.some((s) => s.id === "generate" && s.status === "running");
   const showPreview = isGenerating && streamingContent && streamingContent.length > 0;
 
+  const allComplete =
+    steps.length > 0 &&
+    steps.every((s) => s.status === "complete") &&
+    !error;
+
+  const showWhatsNext = allComplete && (onOpenEditor != null || onOpenCanvas != null);
+
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="w-full max-w-lg space-y-8 rounded-xl border border-[var(--studio-border)] bg-[var(--bg-panel)] p-8">
-        <div className="space-y-2">
-          <h2 className="text-lg font-medium text-[var(--text-primary)]">
-            Extracting {sourceName} design system
-          </h2>
-          <p className="text-sm text-[var(--text-secondary)]">
-            Source: {sourceType === "figma" ? "Figma" : "Website"}
-          </p>
-        </div>
+        {showWhatsNext ? (
+          <WhatsNextScreen
+            onOpenEditor={onOpenEditor ?? (() => {})}
+            onOpenCanvas={onOpenCanvas ?? (() => {})}
+          />
+        ) : (
+          <>
+            <div className="space-y-2">
+              <h2 className="text-lg font-medium text-[var(--text-primary)]">
+                Extracting {sourceName} design system
+              </h2>
+              <p className="text-sm text-[var(--text-secondary)]">
+                Source: {sourceType === "figma" ? "Figma" : "Website"}
+              </p>
+            </div>
 
-        <div className="space-y-2">
-          <Progress value={progress} className="h-2" />
-          <div className="flex justify-between text-xs text-[var(--text-muted)]">
-            <span>{Math.round(progress)}%</span>
-            {progress < 100 && (
-              <span>{elapsed}s elapsed &middot; typically 30-90s</span>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          {steps.map((step) => (
-            <div key={step.id} className="flex items-start gap-3">
-              <div className="mt-0.5">
-                <StepIcon status={step.status} />
-              </div>
-              <div className="flex-1">
-                <span
-                  className={`text-sm ${
-                    step.status === "running"
-                      ? "text-[var(--text-primary)]"
-                      : step.status === "complete"
-                        ? "text-[var(--text-secondary)]"
-                        : step.status === "failed"
-                          ? "text-[var(--status-error)]"
-                          : "text-[var(--text-muted)]"
-                  }`}
-                >
-                  {step.label}
-                </span>
-                {step.detail && (
-                  <p className="text-xs text-[var(--text-muted)]">{step.detail}</p>
+            <div className="space-y-2">
+              <Progress value={progress} className="h-2" />
+              <div className="flex justify-between text-xs text-[var(--text-muted)]">
+                <span>{Math.round(progress)}%</span>
+                {progress < 100 && (
+                  <span>{elapsed}s elapsed &middot; typically 30-90s</span>
                 )}
               </div>
             </div>
-          ))}
-        </div>
 
-        {showPreview && (
-          <StreamingPreview content={streamingContent} />
-        )}
-
-        {error && (
-          <div className="space-y-3">
-            {(() => {
-              const errorHelp = getErrorHelp(error);
-              return (
-                <div className="flex items-start gap-2 rounded-md border border-[var(--status-error)]/20 bg-[var(--status-error)]/5 p-3">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--status-error)]" />
-                  <div className="space-y-1">
-                    <p className="text-sm text-[var(--text-primary)]">{error}</p>
-                    {errorHelp && (
-                      <p className="text-xs text-[var(--text-muted)]">
-                        {errorHelp}
-                      </p>
+            <div className="space-y-3">
+              {steps.map((step) => (
+                <div key={step.id} className="flex items-start gap-3">
+                  <div className="mt-0.5">
+                    <StepIcon status={step.status} />
+                  </div>
+                  <div className="flex-1">
+                    <span
+                      className={`text-sm ${
+                        step.status === "running"
+                          ? "text-[var(--text-primary)]"
+                          : step.status === "complete"
+                            ? "text-[var(--text-secondary)]"
+                            : step.status === "failed"
+                              ? "text-[var(--status-error)]"
+                              : "text-[var(--text-muted)]"
+                      }`}
+                    >
+                      {step.label}
+                    </span>
+                    {step.detail && (
+                      <p className="text-xs text-[var(--text-muted)]">{step.detail}</p>
                     )}
                   </div>
                 </div>
-              );
-            })()}
-            {onRetry && (
-              <button
-                onClick={onRetry}
-                className="w-full rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)]"
-              >
-                Retry
-              </button>
+              ))}
+            </div>
+
+            {showPreview && (
+              <StreamingPreview content={streamingContent} />
             )}
-          </div>
+
+            {error && (
+              <div className="space-y-3">
+                {(() => {
+                  const errorHelp = getErrorHelp(error);
+                  return (
+                    <div className="flex items-start gap-2 rounded-md border border-[var(--status-error)]/20 bg-[var(--status-error)]/5 p-3">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--status-error)]" />
+                      <div className="space-y-1">
+                        <p className="text-sm text-[var(--text-primary)]">{error}</p>
+                        {errorHelp && (
+                          <p className="text-xs text-[var(--text-muted)]">
+                            {errorHelp}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+                {onRetry && (
+                  <button
+                    onClick={onRetry}
+                    className="w-full rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)]"
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
