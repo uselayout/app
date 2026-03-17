@@ -3,6 +3,7 @@
 import { use, useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useProjectStore } from "@/lib/store/project";
 import { useExtractionStore } from "@/lib/store/extraction";
+import { useOnboardingStore } from "@/lib/store/onboarding";
 import { useExtraction } from "@/lib/hooks/use-extraction";
 import { useKeyboardShortcuts } from "@/lib/hooks/use-keyboard-shortcuts";
 import { TopBar } from "@/components/shared/TopBar";
@@ -49,6 +50,16 @@ export default function StudioPage({
   const orgId = useOrgStore((s) => s.currentOrgId);
   const [showPushModal, setShowPushModal] = useState(false);
   const setCurrentProject = useProjectStore((s) => s.setCurrentProject);
+
+  const markStep = useOnboardingStore((s) => s.markStep);
+  const onboardingSteps = useOnboardingStore((s) => s.steps);
+
+  // Mark viewedDesignMd step when studio is open with non-empty DESIGN.md
+  useEffect(() => {
+    if (project?.designMd && project.designMd.length > 0 && !onboardingSteps.viewedDesignMd) {
+      markStep("viewedDesignMd");
+    }
+  }, [project?.designMd, onboardingSteps.viewedDesignMd, markStep]);
 
   // Set currentProjectId so TopBar can resolve the project (e.g. for Push button)
   useEffect(() => {
