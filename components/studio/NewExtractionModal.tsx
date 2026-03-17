@@ -129,7 +129,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
               autoFocus
-              className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[#010101] px-4 py-3 pr-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+              className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[var(--bg-app)] px-4 py-3 pr-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
             />
             {sourceType && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -174,7 +174,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
               value={pat}
               onChange={(e) => setPat(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
-              className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[#010101] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+              className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[var(--bg-app)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
             />
           )}
         </div>
