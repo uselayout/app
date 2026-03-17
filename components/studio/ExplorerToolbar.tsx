@@ -53,6 +53,14 @@ export function ExplorerToolbar({
   const contextFileInputRef = useRef<HTMLInputElement>(null);
   const promptInputRef = useRef<HTMLInputElement>(null);
 
+  // Pre-fill prompt when switching to an exploration that has one
+  useEffect(() => {
+    if (currentPrompt && !prompt) {
+      setPrompt(currentPrompt);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPrompt]);
+
   // Pre-populate with Figma push-to-canvas image
   useEffect(() => {
     if (initialImage && !imageDataUrl) {
