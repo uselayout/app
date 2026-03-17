@@ -23,6 +23,7 @@ interface SourcePanelProps {
   sourceUrl?: string;
   designMd?: string;
   projectId?: string;
+  onDesignMdChange?: (value: string) => void;
 }
 
 type TabId = "tokens" | "components" | "screenshots" | "quality" | "saved";
@@ -33,6 +34,7 @@ function SourcePanelInner({
   extractionData,
   designMd,
   projectId,
+  onDesignMdChange,
 }: SourcePanelProps) {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab") as TabId | null;
@@ -146,7 +148,7 @@ function SourcePanelInner({
           <ScreenshotsTab screenshots={extractionData.screenshots} />
         )}
         {activeTab === "quality" && (
-          <CompletenessPanel designMd={designMd ?? ""} />
+          <CompletenessPanel designMd={designMd ?? ""} onDesignMdChange={onDesignMdChange} />
         )}
         {activeTab === "saved" && <SavedTab />}
       </div>
