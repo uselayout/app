@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Trash2, Plus } from "lucide-react";
 import { useProjectStore } from "@/lib/store/project";
+import { useOnboardingStore } from "@/lib/store/onboarding";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { NewExtractionModal } from "@/components/studio/NewExtractionModal";
+import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
@@ -36,12 +38,20 @@ export default function OrgProjectsPage() {
   const projects = useProjectStore((s) => s.projects);
   const hydrating = useProjectStore((s) => s.hydrating);
   const deleteProject = useProjectStore((s) => s.deleteProject);
+  const markStep = useOnboardingStore((s) => s.markStep);
 
   const [showNewExtraction, setShowNewExtraction] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
     name: string;
   } | null>(null);
+
+  // Mark 'extracted' step complete whenever at least one project exists
+  useEffect(() => {
+    if (projects.length > 0) {
+      markStep("extracted");
+    }
+  }, [projects.length, markStep]);
 
   return (
     <div className="p-8">
@@ -58,6 +68,15 @@ export default function OrgProjectsPage() {
         </button>
       </div>
 
+      <div className="mb-6">
+        <OnboardingChecklist
+          onOpenExtraction={() => setShowNewExtraction(true)}
+          onOpenApiKeyModal={() => {}}
+          firstProjectId={projects[0]?.id}
+          orgSlug={orgSlug}
+        />
+      </div>
+
       {hydrating ? (
         <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
@@ -65,13 +84,13 @@ export default function OrgProjectsPage() {
         </div>
       ) : projects.length === 0 ? (
         <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4">
-          <p className="text-sm text-[var(--text-muted)]">No projects yet</p>
+          <p className="text-sm text-[var(--text-muted)]">No projects yet — extract your first design system</p>
           <button
             onClick={() => setShowNewExtraction(true)}
             className="flex items-center gap-1.5 rounded-lg border border-[var(--studio-border)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
           >
             <Plus size={14} />
-            Create your first project
+            Extract a design system
           </button>
         </div>
       ) : (
