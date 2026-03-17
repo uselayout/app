@@ -5,9 +5,9 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Component Library - Layout Docs",
+  title: "Saved Components - Layout Docs",
   description:
-    "Create, version, and manage reusable components per organisation with the Layout Component Library.",
+    "Save, browse, and reuse components and pages from the Explorer Canvas in your organisation's library.",
 };
 
 export default function ComponentLibraryPage() {
@@ -17,11 +17,11 @@ export default function ComponentLibraryPage() {
     <div className="space-y-10">
       {/* Header */}
       <div className="space-y-3">
-        <h1 className="text-3xl font-bold text-[#0a0a0a]">Component Library</h1>
+        <h1 className="text-3xl font-bold text-[#0a0a0a]">Saved Components</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Create, version, and manage reusable components per organisation.
-          The library gives your team a shared, living catalogue of on-brand UI
-          components - all backed by your extracted design system tokens.
+          Save reusable components and full-page designs from the Explorer
+          Canvas. Browse them in the Studio&apos;s Source Panel and reuse them
+          across your organisation.
         </p>
       </div>
 
@@ -40,28 +40,28 @@ export default function ComponentLibraryPage() {
             <tbody className="divide-y divide-gray-100">
               {[
                 [
-                  "Create components",
-                  "Write TSX code in a Monaco editor with live preview on the right.",
+                  "Save from Explorer",
+                  "Click \"Add to Library\" on any Explorer Canvas variant to save it as a reusable component or full page.",
                 ],
                 [
-                  "AI-assisted editing",
-                  "Chat bar at the bottom of the editor. Type a prompt and press Cmd+Enter to generate or modify code with AI.",
-                ],
-                [
-                  "Versioning",
-                  "Components are versioned automatically. View the full version history and restore any previous version.",
+                  "Component / Page types",
+                  "Choose whether a saved variant is a component (reusable UI element) or a full page design.",
                 ],
                 [
                   "Metadata",
-                  "Add name, category, description, and tags to each component for easy discovery.",
+                  "Add name, category, description, and tags to each saved variant for easy discovery.",
                 ],
                 [
-                  "Promote from Explorer",
-                  "Variants from the Explorer Canvas can be promoted directly to the library with design tokens already applied.",
+                  "Browse in Source Panel",
+                  "The \"Saved\" tab in the Studio Source Panel shows all saved components and pages, grouped by category.",
+                ],
+                [
+                  "Filter by type",
+                  "Toggle between All, Components, and Pages to find what you need quickly.",
                 ],
                 [
                   "Organisation-scoped",
-                  "Components belong to an organisation. All team members can view and use them.",
+                  "Saved components belong to an organisation. All team members can view and use them.",
                 ],
               ].map(([feature, description]) => (
                 <tr key={feature} className="hover:bg-gray-50">
@@ -83,99 +83,63 @@ export default function ComponentLibraryPage() {
         <div className="space-y-4">
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
-              1. Open the Library
+              1. Generate Variants
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              Navigate to <strong>Library</strong> in the dashboard sidebar. You
-              will see the component grid for your organisation, including any
-              components already in the catalogue.
+              Use the{" "}
+              <Link href="/docs/explorer" className="text-gray-900 hover:underline">
+                Explorer Canvas
+              </Link>{" "}
+              to generate component variants from your design system. Describe
+              what you need, attach reference images, and iterate until the
+              result looks right.
             </p>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
-              2. Create a Component
+              2. Save to Library
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              Click <strong>Create Component</strong> to open the editor. The
-              left side is a Monaco editor with TSX syntax highlighting; the
-              right side is a live preview that updates as you type.
+              Click <strong>Add to Library</strong> on any variant card. Choose
+              whether it&apos;s a component or full page, add a name, category,
+              description, and tags, then save.
             </p>
           </div>
 
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
-              3. Use the AI Chat Bar
+              3. Browse Saved Components
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              At the bottom of the editor is an AI chat bar. Type a plain-language
-              prompt describing what you want - for example,{" "}
-              <em>&quot;add a hover state that lifts the card&quot;</em> - then
-              press <strong>Cmd+Enter</strong>. The AI will generate or modify
-              the code in context, using your design system tokens.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
-            <h3 className="text-lg font-semibold text-[#0a0a0a]">
-              4. Add Metadata
-            </h3>
-            <p className="text-base text-gray-600 leading-relaxed">
-              Fill in the component name, category, description, and tags. Tags
-              are especially useful for filtering the library grid by function -
-              navigation, forms, layout, and so on.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 p-5 space-y-2">
-            <h3 className="text-lg font-semibold text-[#0a0a0a]">
-              5. Save and Manage
-            </h3>
-            <p className="text-base text-gray-600 leading-relaxed">
-              Click <strong>Save</strong> to add the component to your library.
-              Each save creates a new version automatically. To edit an existing
-              component, click it in the library grid to reopen the editor with
-              the full version history available on the right.
+              Open the <strong>Saved</strong> tab in the Studio Source Panel.
+              Components and pages are grouped by category. Use the filter pills
+              to show All, Components only, or Pages only. Click any item to
+              copy its code.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Versioning */}
+      {/* Save from Explorer */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-bold text-[#0a0a0a]">Versioning</h2>
-        <p className="text-base text-gray-600 leading-relaxed">
-          Every save produces a new version. The version history panel lists all
-          versions in reverse chronological order with a timestamp and the first
-          line of the commit diff. Click any version to preview it, then click
-          <strong> Restore</strong> to make it the current working copy.
-        </p>
-
-        <Callout type="info">
-          Restoring a version does not delete newer versions - it creates a new
-          version whose content matches the restored one. Your history is always
-          append-only.
-        </Callout>
-      </section>
-
-      {/* Promote from Explorer */}
-      <section className="space-y-4">
-        <h2 className="text-2xl font-bold text-[#0a0a0a]">Promote from Explorer</h2>
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Save from Explorer</h2>
         <p className="text-base text-gray-600 leading-relaxed">
           The{" "}
           <Link href="/docs/explorer" className="text-gray-900 hover:underline">
             Explorer Canvas
           </Link>{" "}
           generates component variants from your extracted design system. When
-          you find a variant you want to keep, click <strong>Promote to Library</strong>.
-          The component opens in the editor pre-populated with the generated TSX
-          and the design tokens already wired in - ready to name, tag, and save.
+          you find a variant worth keeping, click <strong>Add to Library</strong>.
+          Fill in the name, type (component or page), category, and tags, then
+          save. The variant&apos;s code is stored with your design tokens already
+          applied.
         </p>
 
         <Callout type="tip">
-          Promoting from Explorer is the fastest way to build your library.
-          Start in the Explorer, iterate on variants until they look right, then
-          promote the ones worth keeping.
+          Saving from the Explorer is the fastest way to build your library.
+          Generate multiple variants, pick the best ones, and save them with
+          meaningful categories and tags.
         </Callout>
       </section>
 
@@ -184,18 +148,17 @@ export default function ComponentLibraryPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Tips</h2>
         <ul className="list-disc pl-6 space-y-3 text-gray-600">
           <li>
-            Components promoted from the Explorer Canvas already have design
+            Components saved from the Explorer Canvas already have design
             tokens applied - you rarely need to edit the token references
             manually.
           </li>
           <li>
-            Use tags to organise components by function (navigation, forms,
-            layout, etc.) so the grid stays navigable as your library grows.
+            Use categories to group related components (Cards, Navigation,
+            Forms, etc.) so the Saved tab stays navigable as your library grows.
           </li>
           <li>
-            The AI chat understands your design system context when generating
-            code - describe the behaviour you want in plain language rather than
-            specifying exact CSS values.
+            Separate components from full-page designs using the type toggle
+            when saving. This makes filtering easier later.
           </li>
           <li>
             All team members in your organisation share the same library. Agree

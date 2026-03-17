@@ -30,6 +30,7 @@ interface ComponentRow {
   version: number;
   created_by: string | null;
   source: string | null;
+  design_type: string;
   created_at: string;
   updated_at: string;
 }
@@ -69,6 +70,7 @@ function rowToComponent(row: ComponentRow): Component {
     version: row.version,
     createdBy: row.created_by,
     source: row.source as ComponentSource | null,
+    designType: (row.design_type ?? "component") as Component["designType"],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -203,6 +205,7 @@ export async function createComponent(data: {
   variants?: ComponentVariant[];
   states?: ComponentState[];
   source?: ComponentSource;
+  designType?: "component" | "page";
   createdBy?: string;
   projectId?: string;
 }): Promise<Component | null> {
@@ -231,6 +234,7 @@ export async function createComponent(data: {
       version: 1,
       created_by: data.createdBy ?? null,
       source: data.source ?? null,
+      design_type: data.designType ?? "component",
       created_at: now,
       updated_at: now,
     });

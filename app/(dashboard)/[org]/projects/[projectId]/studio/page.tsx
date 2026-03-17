@@ -10,7 +10,6 @@ import { StudioLayout } from "@/components/studio/StudioLayout";
 import { ExtractionProgress } from "@/components/studio/ExtractionProgress";
 import { EditorPanel } from "@/components/studio/EditorPanel";
 import { SourcePanel } from "@/components/studio/SourcePanel";
-import { TestPanel, type TestPanelHandle } from "@/components/studio/TestPanel";
 import { ExplorerCanvas } from "@/components/studio/ExplorerCanvas";
 import { ExportModal } from "@/components/studio/ExportModal";
 import { ExtractionDiffModal } from "@/components/studio/ExtractionDiffModal";
@@ -44,9 +43,6 @@ export default function StudioPage({
   const [showExport, setShowExport] = useState(false);
   const [centreView, setCentreView] = useState<"editor" | "canvas">("editor");
   const [showSourcePanel, setShowSourcePanel] = useState(true);
-  const [showTestPanel, setShowTestPanel] = useState(true);
-  const [includeContext, setIncludeContext] = useState(true);
-  const testPanelRef = useRef<TestPanelHandle>(null);
 
   // Push to design system state
   const orgId = useOrgStore((s) => s.currentOrgId);
@@ -235,8 +231,6 @@ export default function StudioPage({
     );
   }
 
-  const componentNames =
-    project.extractionData?.components.map((c) => c.name) ?? [];
   const extractedFonts =
     project.extractionData?.fonts.map((f) => f.family) ?? [];
 
@@ -268,8 +262,6 @@ export default function StudioPage({
         onReExtract={handleReExtract}
         onToggleSource={() => setShowSourcePanel((prev) => !prev)}
         sourcePanelOpen={showSourcePanel}
-        onTest={() => setShowTestPanel((prev) => !prev)}
-        testPanelOpen={showTestPanel}
         onExport={() => setShowExport(true)}
         centreView={centreView}
         onCentreViewChange={setCentreView}
@@ -278,7 +270,6 @@ export default function StudioPage({
         <StudioLayout
           centreView={centreView}
           showSourcePanel={showSourcePanel}
-          showTestPanel={showTestPanel}
           sourcePanel={
             <SourcePanel
               extractionData={project.extractionData}
@@ -303,18 +294,7 @@ export default function StudioPage({
               onUpdateExplorations={handleUpdateExplorations}
               onPushToFigma={handlePushToFigma}
               onDesignMdUpdate={handleDesignMdChange}
-            />
-          }
-          testPanel={
-            <TestPanel
-              ref={testPanelRef}
-              projectId={id}
-              designMd={project.designMd}
-              components={componentNames}
               extractedFonts={extractedFonts}
-              initialResults={project.testResults ?? []}
-              includeContext={includeContext}
-              onToggleContext={() => setIncludeContext((v) => !v)}
             />
           }
         />

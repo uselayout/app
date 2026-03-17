@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { upsertProject, removeProject } from "@/lib/supabase/db";
 import { parseTokensFromDesignMd } from "@/lib/tokens/parse-design-md";
-import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, TestResult, ExplorationSession } from "@/lib/types";
+import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession } from "@/lib/types";
 
 /** Merge two token arrays, deduplicating by name (new values overwrite existing). */
 function mergeTokens(existing: ExtractedToken[] | undefined, parsed: ExtractedToken[]): ExtractedToken[] {
@@ -33,7 +33,6 @@ interface ProjectState {
   updateProjectName: (id: string, name: string) => void;
   updateTokenCount: (id: string, count: number) => void;
   updateHealthScore: (id: string, score: number) => void;
-  updateTestResults: (id: string, results: TestResult[]) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
   removeTokens: (id: string, tokenType: keyof ExtractedTokens, tokenNames: string[]) => void;
   syncTokensFromDesignMd: (id: string) => number;
@@ -125,17 +124,6 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === id ? { ...p, healthScore: score } : p
-      ),
-    }));
-    const { projects, userId } = get();
-    const project = projects.find((p) => p.id === id);
-    if (project && userId) void upsertProject(project, userId);
-  },
-
-  updateTestResults: (id, results) => {
-    set((state) => ({
-      projects: state.projects.map((p) =>
-        p.id === id ? { ...p, testResults: results } : p
       ),
     }));
     const { projects, userId } = get();

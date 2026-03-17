@@ -7,7 +7,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Webhooks - Layout Docs",
   description:
-    "Automatic design system sync when Figma files change. Set up webhooks to re-extract tokens and open GitHub pull requests on every publish.",
+    "Automatic design system sync when Figma files change. Set up webhooks to re-extract tokens on every publish.",
 };
 
 export default function WebhooksPage() {
@@ -21,8 +21,7 @@ export default function WebhooksPage() {
         <p className="text-base text-gray-600 leading-relaxed">
           Automatic design system sync when Figma files change. Connect Layout
           to Figma&apos;s webhook system so that every time a designer publishes
-          updates, your tokens are re-extracted and - optionally - a GitHub pull
-          request is opened with the diff.
+          updates, your tokens are re-extracted automatically.
         </p>
       </div>
 
@@ -30,8 +29,8 @@ export default function WebhooksPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">How It Works</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The flow from designer publish to pull request is fully automatic once
-          configured:
+          The flow from designer publish to updated design system is fully
+          automatic once configured:
         </p>
         <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
           {[
@@ -48,12 +47,7 @@ export default function WebhooksPage() {
             {
               step: "3",
               label: "Layout re-extracts the design system",
-              desc: "Layout fetches the updated Figma file and extracts the latest tokens, styles, and components.",
-            },
-            {
-              step: "4",
-              label: "GitHub pull request opened (optional)",
-              desc: "If GitHub is configured, Layout creates a branch and opens a PR with a visual diff of changed tokens.",
+              desc: "Layout fetches the updated Figma file and extracts the latest tokens, styles, and components. A diff shows exactly what changed.",
             },
           ].map(({ step, label, desc }) => (
             <div key={step} className="flex gap-4 px-5 py-4">
@@ -135,33 +129,6 @@ export default function WebhooksPage() {
           </ol>
         </div>
 
-        {/* Step 3 */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-[#0a0a0a]">
-            Step 3 - GitHub Integration (Optional)
-          </h3>
-          <ol className="list-decimal pl-6 space-y-2 text-gray-600 text-base">
-            <li>
-              In{" "}
-              <strong className="font-semibold text-[#0a0a0a]">
-                Layout Settings &gt; Webhooks
-              </strong>
-              , expand the GitHub section.
-            </li>
-            <li>
-              Enter the following: repository owner, repository name, target
-              branch, and a GitHub personal access token with{" "}
-              <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
-                repo
-              </code>{" "}
-              scope.
-            </li>
-            <li>
-              When a webhook triggers re-extraction, Layout creates a branch and
-              opens a pull request with the diff of changed tokens.
-            </li>
-          </ol>
-        </div>
       </section>
 
       {/* Webhook Events */}
@@ -242,17 +209,6 @@ export default function WebhooksPage() {
             Test your webhook setup by making a small change in Figma and
             publishing - you should see a new extraction appear in your Layout
             project within a few seconds.
-          </li>
-          <li>
-            Check the audit log in{" "}
-            <strong className="font-semibold text-[#0a0a0a]">
-              Settings &gt; Webhooks
-            </strong>{" "}
-            to verify events are being received and processed correctly.
-          </li>
-          <li>
-            GitHub pull requests include a visual diff of changed tokens, making
-            it easy to review what a designer changed before merging.
           </li>
           <li>
             If you only want to sync one Figma file, scope your webhook to that
