@@ -37,12 +37,15 @@ export default function StudioPage({
   const markStep = useOnboardingStore((s) => s.markStep);
   const onboardingSteps = useOnboardingStore((s) => s.steps);
 
+  const [whatsNextDismissed, setWhatsNextDismissed] = useState(false);
+
   // Mark viewedDesignMd step when studio is open with non-empty DESIGN.md
+  // and the user has dismissed the "What's next?" screen
   useEffect(() => {
-    if (project?.designMd && project.designMd.length > 0 && !onboardingSteps.viewedDesignMd) {
+    if (project?.designMd && project.designMd.length > 0 && whatsNextDismissed && !onboardingSteps.viewedDesignMd) {
       markStep("viewedDesignMd");
     }
-  }, [project?.designMd, onboardingSteps.viewedDesignMd, markStep]);
+  }, [project?.designMd, whatsNextDismissed, onboardingSteps.viewedDesignMd, markStep]);
 
   // Set currentProjectId so TopBar can resolve the project (e.g. for Push button)
   useEffect(() => {
@@ -79,7 +82,6 @@ export default function StudioPage({
   const [centreView, setCentreView] = useState<"editor" | "canvas">(
     tabParam === "explorer" ? "canvas" : "editor"
   );
-  const [whatsNextDismissed, setWhatsNextDismissed] = useState(false);
 
   // Figma push-to-canvas: pre-load screenshot as reference image
   const pendingFigmaImage = useRef<string | null>(
