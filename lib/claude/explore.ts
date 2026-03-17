@@ -19,6 +19,18 @@ Variant Diversity
 - Do NOT just change colours between variants — the design system tokens stay the same.
 - Think like a senior designer presenting options to a client.
 
+Content & Copy
+- Use generic, industry-neutral placeholder content. Do NOT invent brand names, company narratives, geographic references, or backstories.
+- For headlines/body text, use realistic but generic copy (e.g. "Build better products faster", "Trusted by thousands of teams").
+- For names, use simple diverse placeholders (e.g. "Alex Johnson", "Sarah Chen").
+- NEVER infer a brand identity, culture, or geography from the user's prompt or component name.
+- If context files are provided (--- context: filename --- blocks), treat them as AUTHORITATIVE brand and content guidelines — use their copy, naming, tone, and terminology verbatim. They override generic placeholder content.
+
+Reference Images
+- When a reference image/screenshot is provided, treat it as a CLOSE visual reference — match its layout structure, spacing proportions, typography hierarchy, and visual style as faithfully as possible.
+- Adapt colours and tokens to the design system, but preserve the reference's composition, element placement, and overall feel.
+- Each variant should interpret the reference slightly differently, but all must clearly derive from it.
+
 Interaction States (Mandatory)
 - Every interactive element MUST handle: default, hover, focus-visible, active, disabled states.
 - This is a structural requirement, not optional polish.
@@ -70,6 +82,15 @@ CRITICAL RULES:
 - Follow the design system specification with complete fidelity.
 - If the design system defines CSS custom properties (var(--...)), use them exclusively.
 - Every interactive element MUST handle: default, hover, focus-visible, active, disabled states.
+
+Content & Copy
+- Use generic, industry-neutral placeholder content. Do NOT invent brand names, company narratives, geographic references, or backstories.
+- For names, use simple diverse placeholders (e.g. "Alex Johnson", "Sarah Chen").
+- NEVER infer a brand identity, culture, or geography from the component or prompt.
+- If context files are provided (--- context: filename --- blocks), treat them as AUTHORITATIVE brand and content guidelines — use their copy, naming, tone, and terminology verbatim.
+
+Reference Images
+- When a reference image/screenshot is provided, treat it as a CLOSE visual reference — match its layout structure, spacing proportions, typography hierarchy, and visual style as faithfully as possible while applying the requested refinement.
 
 Responsive Design (Mandatory)
 - Use mobile-first Tailwind: base styles for mobile (375px), then sm: (640px), md: (768px), lg: (1024px), xl: (1280px).
@@ -251,6 +272,7 @@ function buildUserContent(
   const parsed = parseDataUrl(imageDataUrl);
   if (!parsed) return fullPrompt;
   return [
+    { type: "text" as const, text: "REFERENCE IMAGE — Replicate this design's layout, structure, spacing, and visual hierarchy as closely as possible, adapting colours/tokens to the design system:" },
     {
       type: "image" as const,
       source: { type: "base64" as const, media_type: parsed.mediaType, data: parsed.data },

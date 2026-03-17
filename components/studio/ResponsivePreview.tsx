@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Smartphone, Tablet, Monitor } from "lucide-react";
-import { extractComponentName, buildSrcdoc } from "@/lib/explore/preview-helpers";
+import { X, Smartphone, Tablet, Monitor, ExternalLink } from "lucide-react";
+import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import type { DesignVariant } from "@/lib/types";
 
 interface ResponsivePreviewProps {
@@ -19,45 +19,62 @@ const VIEWPORTS = [
 export function ResponsivePreview({ variant, onClose }: ResponsivePreviewProps) {
   const [activeViewport, setActiveViewport] = useState<string>("desktop");
   const active = VIEWPORTS.find((v) => v.key === activeViewport) ?? VIEWPORTS[2];
+  const srcdocRef = useRef<string | null>(null);
+
+  function handleOpenInTab() {
+    if (!srcdocRef.current) return;
+    const blob = new Blob([srcdocRef.current], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-sm">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[var(--studio-border)] bg-[var(--bg-panel)] px-5 py-3">
-        <div className="flex items-center gap-4">
-          <div>
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-              Responsive Preview
-            </h2>
-            <p className="text-xs text-[var(--text-secondary)]">{variant.name}</p>
-          </div>
-
-          {/* Viewport tabs */}
-          <div className="flex items-center rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-0.5">
-            {VIEWPORTS.map(({ key, label, width, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setActiveViewport(key)}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                  activeViewport === key
-                    ? "bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                }`}
-              >
-                <Icon size={12} />
-                {label}
-                <span className="text-[10px] text-[var(--text-muted)]">{width}px</span>
-              </button>
-            ))}
-          </div>
+      <div className="relative flex items-center border-b border-[var(--studio-border)] bg-[var(--bg-panel)] px-5 py-3">
+        {/* Left — title */}
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+            Responsive Preview
+          </h2>
+          <span className="text-xs text-[var(--text-secondary)]">{variant.name}</span>
         </div>
 
-        <button
-          onClick={onClose}
-          className="rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
-        >
-          <X size={16} />
-        </button>
+        {/* Centre — viewport tabs */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-0.5">
+          {VIEWPORTS.map(({ key, label, width, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setActiveViewport(key)}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                activeViewport === key
+                  ? "bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              }`}
+            >
+              <Icon size={12} />
+              {label}
+              <span className="text-[10px] text-[var(--text-muted)]">{width}px</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Right — open in tab + close */}
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            onClick={handleOpenInTab}
+            className="rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+            title="Open in new tab"
+          >
+            <ExternalLink size={15} />
+          </button>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Single viewport preview — centred */}
@@ -67,6 +84,7 @@ export function ResponsivePreview({ variant, onClose }: ResponsivePreviewProps) 
           code={variant.code}
           width={active.width}
           height={active.height}
+          onSrcdocReady={(s) => { srcdocRef.current = s; }}
         />
       </div>
     </div>
@@ -77,10 +95,12 @@ function ViewportFrame({
   code,
   width,
   height,
+  onSrcdocReady,
 }: {
   code: string;
   width: number;
   height: number;
+  onSrcdocReady: (srcdoc: string) => void;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -118,7 +138,7 @@ function ViewportFrame({
         const res = await fetch("/api/transpile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code }),
+          body: JSON.stringify({ code: sanitizeRelativeSrc(code) }),
         });
 
         if (!res.ok) {
@@ -131,6 +151,8 @@ function ViewportFrame({
 
         const componentName = extractComponentName(code);
         const srcdoc = buildSrcdoc(js, componentName);
+
+        onSrcdocReady(srcdoc);
 
         if (iframeRef.current) {
           iframeRef.current.srcdoc = srcdoc;
@@ -147,7 +169,7 @@ function ViewportFrame({
     return () => {
       cancelled = true;
     };
-  }, [code]);
+  }, [code, onSrcdocReady]);
 
   return (
     <div className="flex flex-col items-center gap-3" ref={containerRef}>
