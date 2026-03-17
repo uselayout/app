@@ -3,6 +3,17 @@
  * Used by VariantCard, ResponsivePreview, and ComparisonView.
  */
 
+const PLACEHOLDER_SVG =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'%3E%3Crect fill='%23e5e7eb' width='800' height='400'/%3E%3Ctext x='400' y='200' text-anchor='middle' dy='.3em' fill='%239ca3af' font-family='system-ui' font-size='14'%3EImage placeholder%3C/text%3E%3C/svg%3E";
+
+/**
+ * Replace relative src paths (e.g. /marketing/hero.png) with a grey placeholder.
+ * Prevents broken image icons in previews when AI generates fake paths.
+ */
+export function sanitizeRelativeSrc(code: string): string {
+  return code.replace(/\bsrc=["'](\/[^"'\s>]+)["']/g, `src="${PLACEHOLDER_SVG}"`);
+}
+
 export function extractComponentName(code: string): string {
   const defaultExport = code.match(/export\s+default\s+function\s+(\w+)/);
   if (defaultExport) return defaultExport[1];
