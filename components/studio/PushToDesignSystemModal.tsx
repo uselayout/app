@@ -54,21 +54,6 @@ function collectComponents(project: Project): PushableComponent[] {
     }
   }
 
-  // From test results (only those with code output)
-  if (project.testResults) {
-    for (const result of project.testResults) {
-      if (result.output && result.output.includes("function")) {
-        components.push({
-          id: result.id,
-          name: extractComponentName(result.output),
-          code: result.output,
-          source: "test-panel",
-          healthScore: result.healthScore?.total,
-        });
-      }
-    }
-  }
-
   return components;
 }
 

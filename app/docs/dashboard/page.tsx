@@ -7,7 +7,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Dashboard & Settings - Layout Docs",
   description:
-    "Overview of the organisation dashboard pages and settings - API keys, audit log, webhooks, templates, and members.",
+    "Overview of the organisation dashboard and settings - API keys, webhooks, billing, and members.",
 };
 
 export default function DashboardPage() {
@@ -48,29 +48,8 @@ export default function DashboardPage() {
                   "View and manage all design system projects. Create new extractions, open the Studio.",
                 ],
                 [
-                  "Candidates",
-                  "Review design variants submitted by team members from the Explorer Canvas.",
-                ],
-                [
-                  "Drift",
-                  "Monitor design system compliance. Detect when components deviate from tokens.",
-                ],
-                [
-                  "Analytics",
-                  "View usage metrics - token usage frequency, component adoption rates.",
-                ],
-                ["Icons", "Browse and manage your icon library."],
-                [
-                  "Typography",
-                  "Explore typography tokens with live previews.",
-                ],
-                [
-                  "Tokens",
-                  "Browse, search, and edit all design tokens in one place.",
-                ],
-                [
-                  "Library",
-                  "Create and manage reusable components (see Component Library docs).",
+                  "Studio",
+                  "Two-panel workspace for editing your DESIGN.md and generating components with the Explorer Canvas.",
                 ],
               ].map(([page, purpose]) => (
                 <tr key={page} className="hover:bg-gray-50">
@@ -106,23 +85,6 @@ export default function DashboardPage() {
           </ul>
         </div>
 
-        {/* Audit Log */}
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-[#0a0a0a]">Audit Log</h3>
-          <ul className="list-disc pl-6 space-y-2 text-gray-600">
-            <li>
-              Chronological history of all actions taken within the
-              organisation.
-            </li>
-            <li>
-              Tracks: project creation, extraction, export, member changes,
-              settings updates.
-            </li>
-            <li>Filterable by action type and user.</li>
-            <li>Useful for compliance and debugging.</li>
-          </ul>
-        </div>
-
         {/* Webhooks */}
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-[#0a0a0a]">Webhooks</h3>
@@ -130,10 +92,6 @@ export default function DashboardPage() {
             <li>
               Configure Figma webhooks for automatic re-extraction when designs
               change.
-            </li>
-            <li>
-              Optionally connect a GitHub repository for automatic PR creation
-              with design diffs.
             </li>
             <li>
               See the{" "}
@@ -148,24 +106,11 @@ export default function DashboardPage() {
           </ul>
         </div>
 
-        {/* Templates */}
+        {/* Billing */}
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-[#0a0a0a]">Templates</h3>
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">Billing</h3>
           <ul className="list-disc pl-6 space-y-2 text-gray-600">
-            <li>Publish design systems as reusable templates.</li>
-            <li>
-              Manage published templates - update, unpublish, edit metadata.
-            </li>
-            <li>
-              See the{" "}
-              <Link
-                href="/docs/templates"
-                className="text-gray-900 hover:underline"
-              >
-                Templates docs page
-              </Link>{" "}
-              for full details.
-            </li>
+            <li>Manage your subscription, credits, and usage.</li>
           </ul>
         </div>
 

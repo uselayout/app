@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { RefreshCw, FlaskConical, ArrowUpToLine, PanelLeft, KeyRound } from "lucide-react";
+import { RefreshCw, ArrowUpToLine, PanelLeft, KeyRound } from "lucide-react";
 import { useApiKey } from "@/lib/hooks/use-api-key";
 import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
 import { PushToDesignSystemModal } from "@/components/studio/PushToDesignSystemModal";
@@ -18,8 +18,6 @@ interface TopBarProps {
   onReExtract?: () => void;
   onToggleSource?: () => void;
   sourcePanelOpen?: boolean;
-  onTest?: () => void;
-  testPanelOpen?: boolean;
   onExport?: () => void;
   centreView?: "editor" | "canvas";
   onCentreViewChange?: (view: "editor" | "canvas") => void;
@@ -34,8 +32,6 @@ export function TopBar({
   onReExtract,
   onToggleSource,
   sourcePanelOpen,
-  onTest,
-  testPanelOpen,
   onExport,
   centreView = "editor",
   onCentreViewChange,
@@ -61,7 +57,6 @@ export function TopBar({
     : false;
   const hasPushableData = !!(
     hasTokens ||
-    currentProject?.testResults?.length ||
     currentProject?.explorations?.length
   );
 
@@ -166,17 +161,6 @@ export function TopBar({
           title="Re-extract"
         >
           <RefreshCw className="h-3.5 w-3.5" />
-        </button>
-        <button
-          onClick={onTest}
-          className={`flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] transition-colors ${
-            testPanelOpen
-              ? "bg-[rgba(255,255,255,0.1)] text-white"
-              : "bg-[rgba(255,255,255,0.02)] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.06)]"
-          }`}
-          title="Toggle test panel"
-        >
-          <FlaskConical className="h-3.5 w-3.5" />
         </button>
         {hasPushableData && orgId && (
           <button

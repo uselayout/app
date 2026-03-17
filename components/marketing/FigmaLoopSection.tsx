@@ -44,7 +44,7 @@ export function FigmaLoopSection() {
               Native Figma plugin
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Inspect any element to see which tokens it maps to and spot drift instantly. Export local styles and Variables on any Figma plan — not just Enterprise. Designers trigger AI variant generation without leaving the canvas.
+              Extract tokens directly from Figma. Inspect elements to see which design tokens they map to. Push components to the Explorer Canvas for AI variant generation. Export without leaving the design tool.
             </p>
           </motion.div>
         </div>

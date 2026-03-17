@@ -25,21 +25,17 @@ Your AI agents now generate code that matches your actual design system.
 - **Website extraction** - Playwright scrapes CSS variables, computed styles, fonts, and full-page screenshots
 - **Figma extraction** - REST API pulls styles, components, variables, and metadata
 - **DESIGN.md synthesis** - Claude analyses extracted data and generates a comprehensive, structured design system document
-- **Test panel** - Ask Claude to build components using your design system and preview them live in-browser
+- **Explorer Canvas** - AI-powered design exploration with multi-variant generation, image upload, comparison view, health scoring, and iterative refinement
 - **Push to Figma** - Send generated components to Figma as editable frames with auto-layout via the [Figma MCP server](https://www.figma.com/developers/mcp)
 - **Export bundles** - One-click ZIP with DESIGN.md, CLAUDE.md section, .cursorrules, tokens.css, W3C DTCG tokens.json, and tailwind.config.js
 - **MCP server** - [`@layoutdesign/context`](https://www.npmjs.com/package/@layoutdesign/context) gives AI agents direct access to your design system via 7 MCP tools
 - **BYOK** - Bring Your Own Key for Anthropic API. Free tier costs nothing.
 - **Project management** - Save, switch between, and manage multiple design system projects
-- **Explorer Canvas** - AI-powered design exploration with multi-variant generation, image upload, comparison view, and iterative refinement
-- **Component Library** - Create, version, and manage reusable components per organisation with AI-assisted editing
-- **Quality Scoring** - Automated DESIGN.md completeness analysis across 6 weighted categories
-- **Extraction Diffing** - Visual diff when re-extracting an existing project, with accept/discard workflow per change
-- **Template Marketplace** - Publish and browse reusable design system templates across teams
-- **Design Drift Detection** - Monitor design system compliance across components and flag regressions
-- **Webhook Automation** - Figma webhook receiver triggers automatic re-extraction and opens a GitHub pull request with the diff
-- **Team Dashboard** - Candidate review, analytics, audit log, and organisation settings management
-- **Organisation Model** - Multi-user teams with role-based access (owner, admin, member)
+- **Saved components** - Save variants as components or full-page designs with categories and tags
+- **Quality scoring** - Automated DESIGN.md completeness analysis across 6 weighted categories
+- **Extraction diffing** - Visual diff when re-extracting an existing project, with accept/discard workflow per change
+- **Webhook sync** - Figma webhook receiver detects design changes for re-extraction
+- **Organisation model** - Multi-user teams with role-based access (owner, admin, member)
 
 ## Quick Start
 
@@ -128,11 +124,10 @@ See [`@layoutdesign/context`](https://github.com/uselayout/cli) for the full CLI
 
 A native Figma plugin is in development that will expose Layout features directly inside Figma:
 
-- One-click AI Kit export without leaving Figma
+- One-click token extraction without leaving Figma
 - Live token inspector for selected elements
-- Component sync status between Figma and your exported bundle
-- Push selected frames to Layout Canvas for AI variant generation
-- Webhook management - create and manage Figma webhooks from within the plugin
+- Push selected frames to Layout Explorer Canvas for AI variant generation
+- Export bundles directly from the plugin
 
 ## AI Image Generation (Coming Soon)
 
@@ -143,9 +138,8 @@ Contextual image generation powered by Gemini 3.1 Flash Image Preview will allow
 The Studio works bidirectionally with Figma:
 
 - **Extract from Figma** - Paste a Figma file URL to pull styles, components, and variables
-- **Push to Figma** - Test panel's "Send to Figma" button pushes generated components as editable Figma frames
+- **Push to Figma** - Explorer Canvas "Push to Figma" button sends generated components as editable Figma frames
 - **Design in Figma** - MCP tool lets AI agents create Figma mockups using your design system before writing code
-- **Update tokens** - Change colours or spacing and push updates back across all design system files
 
 Requires the [Figma MCP server](https://www.figma.com/developers/mcp) (OAuth, no API key needed):
 
@@ -155,11 +149,10 @@ claude mcp add --transport http figma https://mcp.figma.com/mcp
 
 ## Studio Layout
 
-The Studio is a three-panel workspace:
+The Studio is a two-panel workspace with an Editor/Canvas toggle:
 
-- **Left - Source Panel**: View extracted tokens, components, and screenshots
-- **Centre - Editor**: Monaco editor with your DESIGN.md (edit freely)
-- **Right - Test Panel**: Ask Claude to build components using your design system and preview them live
+- **Left - Source Panel**: View extracted tokens, components, screenshots, quality scores, and saved components
+- **Centre - Editor / Explorer Canvas**: Toggle between the Monaco DESIGN.md editor and the AI-powered Explorer Canvas for generating and refining component variants
 
 ## Tech Stack
 
@@ -188,38 +181,37 @@ npm run typecheck    # TypeScript type checking
 ```
 app/
   page.tsx                          # Landing page
-  studio/[id]/page.tsx              # Three-panel Studio
-  dashboard/                        # Team dashboard (analytics, audit log)
-  settings/                         # Organisation settings
-  templates/                        # Template marketplace (browse + publish)
-  canvas/                           # Explorer Canvas
+  studio/[id]/page.tsx              # Two-panel Studio
+  (dashboard)/
+    [org]/
+      page.tsx                      # Projects list
+      settings/                     # Org settings (API keys, billing, members, webhooks)
   api/
     extract/figma/route.ts          # Figma extraction (SSE stream)
     extract/website/route.ts        # Website extraction (SSE stream)
-    extract/diff/route.ts           # Extraction diff comparison
     generate/design-md/route.ts     # DESIGN.md synthesis (stream)
-    generate/test/route.ts          # Test panel (stream)
+    generate/explore/route.ts       # Explorer Canvas AI generation (stream)
     export/bundle/route.ts          # ZIP bundle generation
     export/pull/route.ts            # CLI pull endpoint
     webhooks/figma/route.ts         # Figma webhook receiver
-    components/route.ts             # Component library CRUD
-    templates/route.ts              # Template marketplace API
-    drift/route.ts                  # Design drift detection
+    health/completeness/route.ts    # DESIGN.md quality analysis
+    organizations/[orgId]/          # Org-scoped API (components, members, etc.)
+    transpile/route.ts              # TSX transpilation for preview
 
 components/
-  studio/                           # Studio panels and overlays
-  canvas/                           # Explorer Canvas components
-  dashboard/                        # Team dashboard components
-  shared/                           # Shared components
+  studio/                           # Studio panels, Explorer Canvas, variant cards
+  shared/                           # Shared components (TopBar)
   ui/                               # shadcn/ui primitives
+  marketing/                        # Landing page sections
 
 lib/
   figma/                            # Figma API client and parsers
   website/                          # Playwright extraction
-  claude/                           # AI synthesis and test prompts
+  claude/                           # AI synthesis prompts
   export/                           # Bundle generators
-  drift/                            # Drift detection logic
+  health/                           # Quality and health scoring
   store/                            # Zustand stores
+  supabase/                         # Database helpers
   types/                            # TypeScript interfaces
 ```
 

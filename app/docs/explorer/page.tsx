@@ -97,18 +97,6 @@ export default function ExplorerPage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
-            <h3 className="text-lg font-semibold text-[#0a0a0a]">
-              Submit Candidate
-            </h3>
-            <p className="text-base text-gray-600 leading-relaxed">
-              Submit any variant for team review on the Candidates dashboard.
-              Submitted variants enter a review queue where team members can
-              comment, approve, or request changes before the component moves
-              into the library.
-            </p>
-          </div>
-
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
               AI Image Generation
@@ -219,9 +207,8 @@ export default function ExplorerPage() {
               7
             </span>
             <p className="text-base leading-relaxed">
-              Select a variant to refine it with a follow-up prompt, promote it
-              to the component library, or submit it as a candidate for team
-              review.
+              Select a variant to refine it with a follow-up prompt or promote it
+              to the component library.
             </p>
           </li>
         </ol>

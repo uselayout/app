@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect } from "react";
 import { X, BookMarked, Loader2 } from "lucide-react";
 import { extractComponentName } from "@/lib/explore/preview-helpers";
 import { useOrgStore } from "@/lib/store/organization";
-import { toast } from "sonner";
 import type { DesignVariant } from "@/lib/types";
 
 interface PromoteToLibraryModalProps {
@@ -24,8 +23,8 @@ export function PromoteToLibraryModal({
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState(variant.rationale ?? "");
   const [tagsInput, setTagsInput] = useState("");
+  const [designType, setDesignType] = useState<"component" | "page">("component");
   const [saving, setSaving] = useState(false);
-  const [submittingCandidate, setSubmittingCandidate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [existingCategories, setExistingCategories] = useState<string[]>([]);
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
@@ -73,6 +72,7 @@ export function PromoteToLibraryModal({
             category: category.trim() || undefined,
             tags: tags.length > 0 ? tags : undefined,
             source: "explorer" as const,
+            designType,
           }),
         });
 
@@ -89,51 +89,8 @@ export function PromoteToLibraryModal({
         setSaving(false);
       }
     },
-    [orgId, name, category, description, tagsInput, variant.code, onClose, onSuccess]
+    [orgId, name, category, description, tagsInput, designType, variant.code, onClose, onSuccess]
   );
-
-  const handleSubmitAsCandidate = useCallback(async () => {
-    if (!orgId || !name.trim() || submittingCandidate) return;
-
-    setSubmittingCandidate(true);
-    setError(null);
-
-    try {
-      const res = await fetch(`/api/organizations/${orgId}/candidates`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          prompt: "Promoted from Explorer variant",
-          description: description.trim() || undefined,
-          category: category.trim() || undefined,
-          variants: [
-            {
-              name: name.trim(),
-              code: variant.code,
-              rationale: variant.rationale,
-            },
-          ],
-        }),
-      });
-
-      if (!res.ok) {
-        const body = await res
-          .json()
-          .catch(() => ({ error: "Failed to submit candidate" }));
-        throw new Error(
-          (body as { error?: string }).error ?? "Failed to submit candidate"
-        );
-      }
-
-      toast.success("Submitted for review");
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setSubmittingCandidate(false);
-    }
-  }, [orgId, name, description, category, variant.code, variant.rationale, submittingCandidate, onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
@@ -163,6 +120,29 @@ export function PromoteToLibraryModal({
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+          {/* Type toggle */}
+          <div>
+            <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+              Type
+            </label>
+            <div className="flex items-center gap-1">
+              {(["component", "page"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setDesignType(t)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                    designType === t
+                      ? "bg-[rgba(255,255,255,0.1)] text-[var(--text-primary)]"
+                      : "text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-secondary)]"
+                  }`}
+                >
+                  {t === "component" ? "Component" : "Full Page"}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Name */}
           <div>
             <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
@@ -287,16 +267,6 @@ export function PromoteToLibraryModal({
             </button>
           </div>
 
-          <div className="mt-3 text-center">
-            <button
-              type="button"
-              onClick={handleSubmitAsCandidate}
-              disabled={submittingCandidate || !name.trim() || !orgId}
-              className="text-xs text-[var(--text-muted)] hover:text-[var(--studio-accent)] transition-colors underline underline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submittingCandidate ? "Submitting..." : "Submit for review instead"}
-            </button>
-          </div>
         </form>
       </div>
     </div>

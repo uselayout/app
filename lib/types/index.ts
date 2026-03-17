@@ -114,20 +114,9 @@ export interface Project {
   extractionData?: ExtractionResult;
   tokenCount?: number;
   healthScore?: number;
-  testResults?: TestResult[];
   explorations?: ExplorationSession[];
   createdAt: string;
   updatedAt: string;
-}
-
-export interface TestResult {
-  id: string;
-  prompt: string;
-  output: string;
-  includeContext: boolean;
-  healthScore?: HealthScore;
-  rating?: "up" | "down";
-  createdAt: string;
 }
 
 export interface HealthScore {

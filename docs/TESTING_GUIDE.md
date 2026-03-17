@@ -1,6 +1,6 @@
 # Layout V1 Alpha — User Testing Guide
 
-Thank you for testing Layout before our public launch. This guide walks you through 10 key flows. For each one, follow the steps in order, note what you see, and report any issues using the template at the bottom.
+Thank you for testing Layout before our public launch. This guide walks you through 9 key flows. For each one, follow the steps in order, note what you see, and report any issues using the template at the bottom.
 
 **Estimated time:** 45–90 minutes for all flows. You can also pick individual flows.
 
@@ -29,7 +29,7 @@ Thank you for testing Layout before our public launch. This guide walks you thro
 5. You will land on your organisation dashboard — click **New Project**
 6. Enter a name for your project (e.g. "My First Project") and click **Create**
 
-**Expected outcome:** You are taken to the Studio with an empty editor panel. The project name appears in the top bar.
+**Expected outcome:** You are taken to the two-panel Studio with an empty editor panel. The project name appears in the top bar.
 
 **What to report if it fails:**
 - Which step failed (e.g. "Step 3")
@@ -62,7 +62,7 @@ Thank you for testing Layout before our public launch. This guide walks you thro
    - Spacing scale
    - Component inventory
 
-**Expected outcome:** DESIGN.md is populated with your design system content. A health score (0–100) appears in the Source panel.
+**Expected outcome:** DESIGN.md is populated with your design system content.
 
 **What to report if it fails:**
 - Which step failed
@@ -234,31 +234,7 @@ Thank you for testing Layout before our public launch. This guide walks you thro
 
 ---
 
-## Flow 9: Team and Organisation
-
-**Goal:** Confirm that inviting a team member works and they can access projects.
-
-**Prerequisite:** A second email address you can access (could be a Gmail alias).
-
-1. In Layout Studio, click your org name in the top left
-2. Go to **Settings → Members**
-3. Click **Invite Member**
-4. Enter the second email address and select a role (Member)
-5. Click **Send Invite**
-6. Check the inbox of the invited email for an invitation link
-7. Click the link and sign up or sign in with that email
-8. Confirm that the invited user can see the organisation's projects in their dashboard
-
-**Expected outcome:** The invited user sees the same projects you created. They can open projects in Studio but cannot access Settings unless given Admin role.
-
-**What to report if it fails:**
-- Whether the invitation email arrived (check spam)
-- Whether clicking the link showed an error
-- Whether the user could see projects after accepting
-
----
-
-## Flow 10: API Key
+## Flow 9: API Key
 
 **Goal:** Confirm that the API key generates correctly and authenticates against the API.
 
