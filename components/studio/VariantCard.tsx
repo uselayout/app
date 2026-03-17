@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUpToLine, ArrowUp } from "lucide-react";
+import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUpToLine, ArrowUp, ImagePlus, GitCompareArrows } from "lucide-react";
 import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import { usePushToDs } from "@/lib/hooks/use-push-to-ds";
 import type { DesignVariant } from "@/lib/types";
@@ -16,6 +16,10 @@ interface VariantCardProps {
   onRegenerate: (feedback?: string) => void;
   onResponsive?: () => void;
   onPromoteToLibrary?: () => void;
+  onRegenerateImages?: () => void;
+  isProcessingImages?: boolean;
+  onViewComparison?: () => void;
+  comparisonCount?: number;
 }
 
 export function VariantCard({
@@ -28,6 +32,10 @@ export function VariantCard({
   onRegenerate,
   onResponsive,
   onPromoteToLibrary,
+  onRegenerateImages,
+  isProcessingImages,
+  onViewComparison,
+  comparisonCount = 0,
 }: VariantCardProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const refineInputRef = useRef<HTMLInputElement>(null);
@@ -185,6 +193,30 @@ export function VariantCard({
         >
           <Copy size={12} />
         </button>
+        {onViewComparison && comparisonCount > 0 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onViewComparison(); }}
+            className="relative rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+            title={`View comparison${comparisonCount > 1 ? "s" : ""}`}
+          >
+            <GitCompareArrows size={12} />
+            {comparisonCount > 1 && (
+              <span className="absolute -right-1 -top-1 flex h-3 w-3 items-center justify-center rounded-full bg-[var(--studio-accent)] text-[7px] font-bold text-[var(--text-on-accent)]">
+                {comparisonCount}
+              </span>
+            )}
+          </button>
+        )}
+        {onRegenerateImages && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onRegenerateImages(); }}
+            disabled={isProcessingImages}
+            className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50"
+            title="Regenerate images"
+          >
+            <ImagePlus size={12} />
+          </button>
+        )}
         <button
           onClick={(e) => {
             e.stopPropagation();
