@@ -57,6 +57,8 @@ export function ExplorerCanvas({
   const pendingBatchCountRef = useRef(0);
 
   const { steps, markStep } = useOnboardingStore();
+  const stepsRef = useRef(steps);
+  stepsRef.current = steps;
 
   // Warn user before navigating away during generation
   useEffect(() => {
@@ -74,13 +76,6 @@ export function ExplorerCanvas({
     : explorations.length - 1;
   const currentExploration = explorations.length > 0 ? explorations[explorationIndex] : null;
   const variants = currentExploration?.variants ?? [];
-
-  // Mark onboarding step when the first variant is successfully generated
-  useEffect(() => {
-    if (!steps.generatedVariant && variants.length > 0) {
-      markStep("generatedVariant");
-    }
-  }, [variants.length, steps.generatedVariant, markStep]);
 
   // Auto-scroll to bottom when new variants stream in
   useEffect(() => {
@@ -189,6 +184,11 @@ export function ExplorerCanvas({
       );
       onUpdateExplorations(finalExplorations);
 
+      // Mark onboarding step on first live generation
+      if (!stepsRef.current.generatedVariant && finalNew.length > 0) {
+        markStep("generatedVariant");
+      }
+
       // Process image placeholders in the new batch only
       setIsProcessingImages(true);
       setImageNotice(null);
@@ -242,7 +242,7 @@ export function ExplorerCanvas({
         pendingBatchCountRef.current = 0;
       }
     },
-    [onUpdateExplorations, extractedFonts, designMd]
+    [onUpdateExplorations, extractedFonts, designMd, markStep]
   );
 
   /** Shared fetch + stream logic used by all generation handlers */
