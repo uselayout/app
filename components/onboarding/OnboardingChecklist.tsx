@@ -24,8 +24,6 @@ export function OnboardingChecklist({
   const { _hasHydrated, dismissed, steps, markStep, dismiss, allStepsComplete } =
     useOnboardingStore();
 
-  if (!_hasHydrated) return null;
-
   const [isByok, setIsByok] = useState(false);
   const [copied, setCopied] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
@@ -46,6 +44,7 @@ export function OnboardingChecklist({
     }
   }, [steps, allStepsComplete, dismissed, dismiss]);
 
+  if (!_hasHydrated) return null;
   if (dismissed && !celebrating) return null;
 
   const handleCopy = async () => {
