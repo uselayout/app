@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useMemo, Fragment } from "react";
-import { Sparkles, X, ChevronLeft, ChevronRight, Trash2, Plus } from "lucide-react";
+import { Sparkles, X, ChevronLeft, ChevronRight, Trash2, Plus, Copy } from "lucide-react";
 import { ExplorerToolbar } from "./ExplorerToolbar";
 import { VariantCard } from "./VariantCard";
 import { FigmaPushModal } from "./FigmaPushModal";
@@ -682,6 +682,13 @@ export function ExplorerCanvas({
                     >
                       {batch.prompt}
                     </button>
+                    <button
+                      onClick={() => copyToClipboard(batch.prompt)}
+                      className="shrink-0 rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                      title="Copy prompt"
+                    >
+                      <Copy size={10} />
+                    </button>
                     <div className="h-px flex-1 bg-[var(--studio-border)]" />
                   </div>
                 )}
@@ -695,6 +702,13 @@ export function ExplorerCanvas({
                       }`}
                     >
                       {batch.prompt}
+                    </button>
+                    <button
+                      onClick={() => copyToClipboard(batch.prompt)}
+                      className="shrink-0 rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                      title="Copy prompt"
+                    >
+                      <Copy size={10} />
                     </button>
                     <div className="h-px flex-1 bg-[var(--studio-border)]" />
                   </div>
@@ -795,8 +809,8 @@ export function ExplorerCanvas({
       <ExplorerToolbar
         onGenerate={handleGenerate}
         onRefine={handleRefine}
-        onCompare={(prompt, image, files) => setCompareData({
-          prompt,
+        onCompare={(_toolbarPrompt, image, files) => setCompareData({
+          prompt: selectedVariant?.batchPrompt ?? currentExploration?.prompt ?? _toolbarPrompt,
           image: image ?? currentExploration?.referenceImage,
           contextFiles: files,
           baseCode: selectedVariant?.code,
