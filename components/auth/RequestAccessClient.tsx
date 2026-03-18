@@ -104,7 +104,7 @@ export function RequestAccessClient() {
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col gap-[10px]">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                 <input
                   type="text"
                   placeholder="Name"
@@ -115,28 +115,34 @@ export function RequestAccessClient() {
                 />
                 <input
                   type="email"
-                  placeholder="Email"
+                  placeholder="Work email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className={`${inputClass} h-[40px]`}
                 />
-                <textarea
-                  rows={2}
-                  placeholder='e.g. "A SaaS product with a Figma design system I want AI agents to use"'
-                  value={whatBuilding}
-                  onChange={(e) => setWhatBuilding(e.target.value)}
-                  required
-                  className={`${inputClass} py-2 resize-none`}
-                />
-                <input
-                  type="text"
-                  placeholder={`e.g. "From @username's post", "Cursor Discord", "Google"`}
-                  value={howHeard}
-                  onChange={(e) => setHowHeard(e.target.value)}
-                  required
-                  className={`${inputClass} h-[40px]`}
-                />
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] text-[#99a1af] px-0.5">What are you building?</label>
+                  <textarea
+                    rows={2}
+                    placeholder='e.g. "A SaaS dashboard with a Figma design system"'
+                    value={whatBuilding}
+                    onChange={(e) => setWhatBuilding(e.target.value)}
+                    required
+                    className={`${inputClass} py-2 resize-none`}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] text-[#99a1af] px-0.5">How did you hear about us?</label>
+                  <input
+                    type="text"
+                    placeholder='e.g. "Cursor Discord", "@username on X", "Google"'
+                    value={howHeard}
+                    onChange={(e) => setHowHeard(e.target.value)}
+                    required
+                    className={`${inputClass} h-[40px]`}
+                  />
+                </div>
 
                 {error && (
                   <p className="rounded-[6px] bg-red-500/10 border border-red-500/20 px-3 py-2 text-[12px] text-red-400">
