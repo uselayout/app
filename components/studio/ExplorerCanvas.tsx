@@ -754,10 +754,14 @@ export function ExplorerCanvas({
                       onDelete={() => handleDeleteVariant(variant.id)}
                       isProcessingImages={isProcessingImages}
                       onViewComparison={() => {
-                        const comparisons = currentExploration?.comparisons;
+                        const comparisons = currentExploration?.comparisons?.filter(
+                          (c) => c.sourceVariantId === variant.id
+                        );
                         if (comparisons?.length) setViewSavedComparison(comparisons[comparisons.length - 1]);
                       }}
-                      comparisonCount={currentExploration?.comparisons?.length ?? 0}
+                      comparisonCount={currentExploration?.comparisons?.filter(
+                        (c) => c.sourceVariantId === variant.id
+                      ).length ?? 0}
                     />
                   ))}
                 </div>
@@ -865,9 +869,10 @@ export function ExplorerCanvas({
           designMd={designMd}
           onSave={(result) => {
             if (!currentExploration) return;
+            const taggedResult = { ...result, sourceVariantId: selectedVariantId ?? undefined };
             const updated = explorations.map((e) =>
               e.id === currentExploration.id
-                ? { ...e, comparisons: [...(e.comparisons ?? []), result] }
+                ? { ...e, comparisons: [...(e.comparisons ?? []), taggedResult] }
                 : e
             );
             onUpdateExplorations(updated);
