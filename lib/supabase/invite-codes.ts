@@ -112,13 +112,11 @@ function rowToAccessRequest(row: AccessRequestRow): AccessRequest {
 
 // ─── Code Generation ──────────────────────────────────────────────────────────
 
-/** Generates an 8-character lowercase alphanumeric code. */
+/** Generates an 8-character lowercase alphanumeric code using a CSPRNG. */
 export function generateCode(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  return Array.from(
-    { length: 8 },
-    () => chars[Math.floor(Math.random() * chars.length)]
-  ).join("");
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
 }
 
 // ─── Invite Code CRUD ─────────────────────────────────────────────────────────
@@ -198,28 +196,34 @@ export async function redeemInviteCode(
   code: string,
   redeemedBy: string
 ): Promise<void> {
+  // Pre-flight validation for user-friendly error messages (expired vs not found).
   const status = await validateInviteCode(code);
 
-  if (status.alreadyUsed) {
-    throw new Error("Invite code has already been used.");
-  }
   if (status.expired) {
     throw new Error("Invite code has expired.");
   }
-  if (!status.valid) {
+  if (!status.valid && !status.alreadyUsed) {
     throw new Error("Invalid invite code.");
   }
 
-  const { error } = await supabase
+  // Atomic update: only succeeds if redeemed_by is still NULL.
+  // This is the source of truth for the "already used" case and prevents
+  // double-redemption under concurrent requests.
+  const { data, error } = await supabase
     .from("invite_codes")
     .update({
       redeemed_by: redeemedBy,
       redeemed_at: new Date().toISOString(),
     })
-    .eq("code", code);
+    .eq("code", code)
+    .is("redeemed_by", null) // atomic guard
+    .select();
 
   if (error) {
     throw new Error(`Failed to redeem invite code: ${error.message}`);
+  }
+  if (!data || data.length === 0) {
+    throw new Error("Invite code has already been used.");
   }
 }
 
