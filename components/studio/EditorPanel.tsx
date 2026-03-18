@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { OnMount } from "@monaco-editor/react";
 import type * as monacoType from "monaco-editor";
-import { ArrowUp, Undo2, Loader2 } from "lucide-react";
+import { ArrowUp, Undo2, Loader2, History, X } from "lucide-react";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
+import type { DesignMdVersion } from "@/lib/supabase/design-md-versions";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -25,6 +26,8 @@ interface EditorPanelProps {
   value: string;
   onChange: (value: string) => void;
   tokenSuggestions?: TokenSuggestion[];
+  projectId?: string;
+  orgId?: string;
 }
 
 const STUDIO_THEME: monacoType.editor.IStandaloneThemeData = {
@@ -56,10 +59,43 @@ const STUDIO_THEME: monacoType.editor.IStandaloneThemeData = {
   },
 };
 
-export function EditorPanel({ value, onChange, tokenSuggestions = [] }: EditorPanelProps) {
+export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId, orgId }: EditorPanelProps) {
   const editorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "idle">("idle");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [versions, setVersions] = useState<DesignMdVersion[]>([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
+  const [previewVersion, setPreviewVersion] = useState<DesignMdVersion | null>(null);
+
+  const loadVersions = useCallback(async () => {
+    if (!projectId || !orgId) return;
+    setLoadingVersions(true);
+    try {
+      const res = await fetch(`/api/organizations/${orgId}/projects/${projectId}/design-md-versions`);
+      if (res.ok) {
+        const data = await res.json();
+        setVersions(data.versions ?? []);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingVersions(false);
+    }
+  }, [projectId, orgId]);
+
+  const handleOpenHistory = useCallback(() => {
+    setShowHistory(true);
+    setPreviewVersion(null);
+    loadVersions();
+  }, [loadVersions]);
+
+  const handleRestore = useCallback((version: DesignMdVersion) => {
+    editorRef.current?.setValue(version.designMd);
+    onChange(version.designMd);
+    setShowHistory(false);
+    setPreviewVersion(null);
+  }, [onChange]);
 
   const tokenCount = useMemo(() => Math.round(value.length / 4), [value]);
   const tokenColour =
@@ -170,6 +206,16 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [] }: EditorPa
           {saveStatus === "saved" && (
             <span className="text-xs text-emerald-400">Saved</span>
           )}
+          {projectId && orgId && (
+            <button
+              onClick={handleOpenHistory}
+              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]"
+              title="Version history"
+            >
+              <History size={12} />
+              History
+            </button>
+          )}
           <span className={`text-xs ${tokenColour}`}>
             ~{tokenCount.toLocaleString()} tokens
           </span>
@@ -219,6 +265,63 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [] }: EditorPa
           }}
         />
       </div>
+
+      {/* Version History Panel */}
+      {showHistory && (
+        <div className="border-t border-[var(--studio-border)] bg-[var(--bg-panel)]">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--studio-border)]">
+            <span className="text-xs font-medium text-[var(--text-secondary)]">Version History</span>
+            <button
+              onClick={() => { setShowHistory(false); setPreviewVersion(null); }}
+              className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <div className="max-h-48 overflow-y-auto">
+            {loadingVersions ? (
+              <div className="flex items-center gap-2 px-4 py-3 text-xs text-[var(--text-muted)]">
+                <Loader2 size={12} className="animate-spin" /> Loading versions…
+              </div>
+            ) : versions.length === 0 ? (
+              <p className="px-4 py-3 text-xs text-[var(--text-muted)]">No previous versions saved yet.</p>
+            ) : (
+              versions.map((v) => (
+                <div
+                  key={v.id}
+                  className={`flex items-center justify-between px-4 py-2 border-b border-[var(--studio-border)] last:border-b-0 hover:bg-[var(--bg-hover)] transition-colors ${previewVersion?.id === v.id ? "bg-[var(--bg-hover)]" : ""}`}
+                >
+                  <button
+                    onClick={() => setPreviewVersion(previewVersion?.id === v.id ? null : v)}
+                    className="flex-1 text-left"
+                  >
+                    <span className="text-xs text-[var(--text-secondary)]">
+                      {new Date(v.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    <span className="ml-2 text-[10px] text-[var(--text-muted)]">
+                      {v.source} · {Math.round(v.designMd.length / 4)} tokens
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleRestore(v)}
+                    className="shrink-0 rounded px-2 py-1 text-[10px] font-medium text-[var(--studio-accent)] hover:bg-[var(--studio-accent-subtle)] transition-colors"
+                  >
+                    Restore
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+          {previewVersion && (
+            <div className="border-t border-[var(--studio-border)] px-4 py-2">
+              <pre className="max-h-32 overflow-y-auto text-[10px] text-[var(--text-muted)] font-mono whitespace-pre-wrap">
+                {previewVersion.designMd.slice(0, 2000)}
+                {previewVersion.designMd.length > 2000 && "…"}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* AI Edit Chat Bar */}
       <EditorChatBar value={value} onChange={onChange} editorRef={editorRef} />

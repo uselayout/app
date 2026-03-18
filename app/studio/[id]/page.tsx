@@ -80,12 +80,13 @@ export default function StudioPage({
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
-  const [centreView, setCentreView] = useState<"editor" | "canvas">(
+  const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved">(
     tabParam === "explorer" ? "canvas" : "editor"
   );
 
   // Figma push-to-canvas: pre-load screenshot as reference image
-  const pendingFigmaImage = useRef<string | null>(null);
+  // Must be state (not ref) so async update triggers re-render for ExplorerCanvas
+  const [pendingFigmaImage, setPendingFigmaImage] = useState<string | null>(null);
 
   // When opened from extension (source=figma), refresh project from DB
   // so we get the latest screenshot the extension just pushed
@@ -95,7 +96,7 @@ export default function StudioPage({
       sourceConsumed.current = true;
       refreshProject(id).then(() => {
         const fresh = useProjectStore.getState().projects.find((p) => p.id === id);
-        pendingFigmaImage.current = fresh?.extractionData?.screenshots?.at(-1) ?? null;
+        setPendingFigmaImage(fresh?.extractionData?.screenshots?.at(-1) ?? null);
       });
     }
   }, [sourceParam, id, refreshProject]);
@@ -344,6 +345,8 @@ export default function StudioPage({
               value={project.designMd}
               onChange={handleDesignMdChange}
               tokenSuggestions={tokenSuggestions}
+              projectId={project.id}
+              orgId={project.orgId}
             />
           }
           canvasPanel={
@@ -354,7 +357,7 @@ export default function StudioPage({
               onUpdateExplorations={handleUpdateExplorations}
               onPushToFigma={handlePushToFigma}
               onDesignMdUpdate={handleDesignMdChange}
-              initialImage={pendingFigmaImage.current ?? undefined}
+              initialImage={pendingFigmaImage ?? undefined}
               extractedFonts={extractedFonts}
             />
           }
