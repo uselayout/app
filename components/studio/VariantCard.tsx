@@ -4,17 +4,24 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUpToLine, ArrowUp, ImagePlus, GitCompareArrows } from "lucide-react";
 import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import { usePushToDs } from "@/lib/hooks/use-push-to-ds";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { Tooltip as TooltipPrimitive } from "radix-ui";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { DesignVariant } from "@/lib/types";
 
 function Tip({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side="top" sideOffset={4} className="bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--studio-border)] px-2 py-1 text-[10px] [&>svg]:hidden">
-        {label}
-      </TooltipContent>
-    </Tooltip>
+    <TooltipPrimitive.Root>
+      <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
+      <TooltipPrimitive.Portal>
+        <TooltipPrimitive.Content
+          side="top"
+          sideOffset={6}
+          className="z-50 rounded-md bg-[var(--bg-elevated)] border border-[var(--studio-border)] px-2 py-1 text-[10px] text-[var(--text-secondary)] animate-in fade-in-0 zoom-in-95"
+        >
+          {label}
+        </TooltipPrimitive.Content>
+      </TooltipPrimitive.Portal>
+    </TooltipPrimitive.Root>
   );
 }
 
