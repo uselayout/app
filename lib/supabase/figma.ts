@@ -163,3 +163,97 @@ export async function getValidFigmaToken(orgId: string): Promise<string> {
   // Token expired — refresh it
   return refreshFigmaToken(orgId);
 }
+
+// ---------------------------------------------------------------------------
+// Figma Captures — pending push-to-Figma tree payloads
+// ---------------------------------------------------------------------------
+
+export interface FigmaCapture {
+  id: string;
+  tree: unknown;
+  url: string | null;
+  title: string | null;
+  createdAt: string;
+}
+
+interface FigmaCaptureRow {
+  id: string;
+  org_id: string;
+  tree: unknown;
+  url: string | null;
+  title: string | null;
+  consumed: boolean;
+  created_at: string;
+}
+
+/**
+ * Create a pending Figma capture for an org.
+ * Upserts — deletes any existing unconsumed captures first so only one
+ * pending capture exists per org at a time.
+ */
+export async function createFigmaCapture(
+  orgId: string,
+  tree: unknown,
+  url: string | null,
+  title: string | null,
+): Promise<string> {
+  // Remove any existing unconsumed captures for this org
+  await supabase
+    .from("layout_figma_capture")
+    .delete()
+    .eq("org_id", orgId)
+    .eq("consumed", false);
+
+  const { data, error } = await supabase
+    .from("layout_figma_capture")
+    .insert({
+      org_id: orgId,
+      tree,
+      url,
+      title,
+      consumed: false,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    throw new Error(`Failed to create Figma capture: ${error?.message}`);
+  }
+
+  return (data as { id: string }).id;
+}
+
+/**
+ * Get the latest unconsumed capture for an org and mark it as consumed.
+ * Returns null if no pending capture exists.
+ */
+export async function getPendingFigmaCapture(
+  orgId: string,
+): Promise<FigmaCapture | null> {
+  const { data, error } = await supabase
+    .from("layout_figma_capture")
+    .select("*")
+    .eq("org_id", orgId)
+    .eq("consumed", false)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error || !data) return null;
+
+  const row = data as FigmaCaptureRow;
+
+  // Mark as consumed
+  await supabase
+    .from("layout_figma_capture")
+    .update({ consumed: true })
+    .eq("id", row.id);
+
+  return {
+    id: row.id,
+    tree: row.tree,
+    url: row.url,
+    title: row.title,
+    createdAt: row.created_at,
+  };
+}
