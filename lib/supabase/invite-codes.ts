@@ -247,6 +247,11 @@ export async function getUserInviteCodes(
 
 /**
  * Submits a new access request (waitlist / beta application).
+ *
+ * Intentionally silences duplicate email submissions — if a row already exists
+ * for this email address we return early without inserting. This avoids leaking
+ * whether an email is already on the list and keeps the UX clean (user sees the
+ * same success state regardless).
  */
 export async function createAccessRequest(data: {
   name: string;
@@ -254,6 +259,20 @@ export async function createAccessRequest(data: {
   whatBuilding: string;
   howHeard: string;
 }): Promise<void> {
+  // Check for an existing row with the same email before inserting.
+  const { data: existing, error: lookupError } = await supabase
+    .from("access_requests")
+    .select("id")
+    .eq("email", data.email)
+    .maybeSingle();
+
+  if (lookupError) {
+    throw new Error(`Failed to check for existing request: ${lookupError.message}`);
+  }
+
+  // Already submitted — treat as success (intentional, see JSDoc above).
+  if (existing) return;
+
   const { error } = await supabase.from("access_requests").insert({
     id: crypto.randomUUID(),
     name: data.name,

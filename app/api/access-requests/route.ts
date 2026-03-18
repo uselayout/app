@@ -4,11 +4,19 @@ import { createAccessRequest } from "@/lib/supabase/invite-codes";
 import { sendEmail } from "@/lib/email/send";
 
 const bodySchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address"),
-  whatBuilding: z.string().min(1, "Please tell us what you're building"),
-  howHeard: z.string().min(1, "Please tell us how you heard about Layout"),
+  name: z.string().min(1, "Name is required").max(200),
+  email: z.string().email("Invalid email address").max(320),
+  whatBuilding: z.string().min(1, "Please tell us what you're building").max(2000),
+  howHeard: z.string().min(1, "Please tell us how you heard about Layout").max(500),
 });
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 export async function POST(req: NextRequest) {
   let body: unknown;
@@ -44,10 +52,10 @@ export async function POST(req: NextRequest) {
       to: adminEmail,
       subject: `New access request from ${name}`,
       html: `
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>What building:</strong> ${whatBuilding}</p>
-        <p><strong>How heard:</strong> ${howHeard}</p>
+        <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+        <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+        <p><strong>What building:</strong> ${escapeHtml(whatBuilding)}</p>
+        <p><strong>How heard:</strong> ${escapeHtml(howHeard)}</p>
         <p><a href="https://app.supabase.com">View in Supabase →</a></p>
       `,
     });
