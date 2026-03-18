@@ -1,22 +1,18 @@
 "use client";
 
 import { useState, useCallback, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, ChevronDown, Palette, LayoutGrid, Image, Gauge, RefreshCw, BookMarked, Loader2 } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Loader2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
-import { buildSrcdoc, extractComponentName, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
 import { useProjectStore } from "@/lib/store/project";
-import { useOrgStore } from "@/lib/store/organization";
 import type {
   ExtractionResult,
   ExtractedToken,
   ExtractedComponent,
   SourceType,
 } from "@/lib/types";
-import type { Component } from "@/lib/types/component";
 
 interface SourcePanelProps {
   extractionData?: ExtractionResult;
@@ -27,9 +23,9 @@ interface SourcePanelProps {
   onDesignMdChange?: (value: string) => void;
 }
 
-type TabId = "tokens" | "components" | "screenshots" | "quality" | "saved";
+type TabId = "tokens" | "components" | "screenshots" | "quality";
 
-const VALID_TABS: TabId[] = ["tokens", "components", "screenshots", "quality", "saved"];
+const VALID_TABS: TabId[] = ["tokens", "components", "screenshots", "quality"];
 
 function SourcePanelInner({
   extractionData,
@@ -37,19 +33,7 @@ function SourcePanelInner({
   projectId,
   onDesignMdChange,
 }: SourcePanelProps) {
-  const searchParams = useSearchParams();
-  const tabParam = searchParams.get("tab") as TabId | null;
-  const initialTab = VALID_TABS.includes(tabParam as TabId)
-    ? (tabParam as TabId)
-    : "tokens";
-  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
-
-  // Sync tab when search param changes (e.g. sidebar "Saved" click)
-  useEffect(() => {
-    if (tabParam && VALID_TABS.includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [tabParam]);
+  const [activeTab, setActiveTab] = useState<TabId>("tokens");
   const syncTokensFromDesignMd = useProjectStore((s) => s.syncTokensFromDesignMd);
   const [syncResult, setSyncResult] = useState<{ count: number } | null>(null);
 
@@ -67,7 +51,6 @@ function SourcePanelInner({
     { id: "components", label: "Components", icon: LayoutGrid },
     { id: "screenshots", label: "Screenshots", icon: Image },
     { id: "quality", label: "Quality", icon: Gauge },
-    { id: "saved", label: "Saved", icon: BookMarked },
   ];
 
   return (
@@ -113,8 +96,7 @@ function SourcePanelInner({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {activeTab === "saved" && <SavedTab />}
-        {activeTab !== "saved" && !extractionData && (
+        {!extractionData && (
           <div className="flex h-full flex-col items-center justify-center p-6">
             <p className="text-sm text-[var(--text-muted)] text-center">
               No extraction data yet. Extract a design system to see tokens here.
@@ -515,306 +497,3 @@ function ScreenshotsTab({ screenshots }: { screenshots: string[] }) {
   );
 }
 
-function SavedComponentPreview({ comp }: { comp: Component }) {
-  const [srcdoc, setSrcdoc] = useState<string | null>(null);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function prepare() {
-      try {
-        let js = comp.compiledJs;
-        if (!js) {
-          // Transpile on-demand via API
-          const res = await fetch("/api/transpile", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code: comp.code }),
-          });
-          if (!res.ok) { setError(true); return; }
-          const data = await res.json();
-          js = data.js;
-        }
-        if (!cancelled && js) {
-          const name = extractComponentName(comp.code);
-          const sanitised = sanitizeRelativeSrc(js);
-          setSrcdoc(buildSrcdoc(sanitised, name));
-        }
-      } catch {
-        if (!cancelled) setError(true);
-      }
-    }
-    prepare();
-    return () => { cancelled = true; };
-  }, [comp.code, comp.compiledJs]);
-
-  return (
-    <div className="mx-2 mb-2 overflow-hidden rounded-md border border-[var(--studio-border)] bg-white">
-      {error ? (
-        <div className="flex h-[180px] items-center justify-center text-[10px] text-[var(--text-muted)]">
-          Preview unavailable
-        </div>
-      ) : srcdoc ? (
-        <iframe
-          srcDoc={srcdoc}
-          sandbox="allow-scripts"
-          className="h-[180px] w-full border-0"
-          title={`Preview of ${comp.name}`}
-        />
-      ) : (
-        <div className="flex h-[180px] items-center justify-center">
-          <Loader2 className="h-4 w-4 animate-spin text-[var(--text-muted)]" />
-        </div>
-      )}
-      {comp.description && (
-        <div className="border-t border-[var(--studio-border)] bg-[var(--bg-surface)] px-2 py-1.5 text-[10px] text-[var(--text-secondary)] line-clamp-2">
-          {comp.description}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SavedTab() {
-  const orgId = useOrgStore((s) => s.currentOrgId);
-  const [components, setComponents] = useState<Component[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [typeFilter, setTypeFilter] = useState<"component" | "page">("component");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!orgId) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    fetch(`/api/organizations/${orgId}/components`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: Component[]) => {
-        if (!cancelled) setComponents(data);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [orgId]);
-
-  const handleCopyCode = useCallback(async (comp: Component) => {
-    const ok = await copyToClipboard(comp.code);
-    if (ok) {
-      setCopiedId(comp.id);
-      setTimeout(() => setCopiedId(null), 1500);
-    }
-  }, []);
-
-  const handleDelete = useCallback(
-    async (e: React.MouseEvent, comp: Component) => {
-      e.stopPropagation();
-      if (!orgId) return;
-      setDeletingId(comp.id);
-      try {
-        const res = await fetch(
-          `/api/organizations/${orgId}/components/${comp.id}`,
-          { method: "DELETE" }
-        );
-        if (res.ok) {
-          setComponents((prev) => prev.filter((c) => c.id !== comp.id));
-        }
-      } finally {
-        setDeletingId(null);
-      }
-    },
-    [orgId]
-  );
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-4 w-4 animate-spin text-[var(--text-muted)]" />
-      </div>
-    );
-  }
-
-  if (!orgId) {
-    return (
-      <div className="p-4 text-xs text-[var(--text-muted)]">
-        Sign in to view saved components.
-      </div>
-    );
-  }
-
-  // Unique categories across all components of the selected type
-  const allOfType = components.filter((c) => c.designType === typeFilter);
-  const categories = Array.from(
-    new Set(allOfType.map((c) => c.category).filter(Boolean))
-  ).sort() as string[];
-
-  const filtered =
-    categoryFilter === "all"
-      ? allOfType
-      : allOfType.filter((c) => c.category === categoryFilter);
-
-  const grouped = filtered.reduce<Record<string, Component[]>>((acc, comp) => {
-    const cat = comp.category || "Uncategorised";
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(comp);
-    return acc;
-  }, {});
-
-  const sortedCategories = Object.keys(grouped).sort();
-
-  return (
-    <div className="p-2">
-      {/* Type toggle */}
-      <div className="mb-2 flex items-center gap-1">
-        {(["component", "page"] as const).map((f) => (
-          <button
-            key={f}
-            aria-pressed={typeFilter === f}
-            onClick={() => {
-              setTypeFilter(f);
-              setCategoryFilter("all");
-            }}
-            className={`rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
-              typeFilter === f
-                ? "bg-[rgba(255,255,255,0.1)] text-white"
-                : "text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-secondary)]"
-            }`}
-          >
-            {f === "component" ? "Components" : "Pages"}
-          </button>
-        ))}
-        <span className="ml-auto text-[10px] text-[var(--text-muted)]">
-          {filtered.length}
-        </span>
-      </div>
-
-      {/* Category filter */}
-      {categories.length > 0 && (
-        <div className="mb-2">
-          <select
-            aria-label="Filter by category"
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="w-full rounded-md border border-[var(--studio-border)] bg-[var(--bg-elevated)] px-2 py-1 text-[10px] text-[var(--text-secondary)] outline-none transition-colors hover:border-[var(--studio-border-strong)] focus:border-[var(--studio-border-focus)]"
-          >
-            <option value="all">All categories</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {filtered.length === 0 && (
-        <div className="py-6 text-center text-xs text-[var(--text-muted)]">
-          No saved components yet. Generate variants in the Explorer and save them here.
-        </div>
-      )}
-
-      {sortedCategories.map((cat) => (
-        <div key={cat} className="mb-2">
-          {sortedCategories.length > 1 && (
-            <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-              {cat}
-            </div>
-          )}
-          <div className="space-y-0.5">
-            {grouped[cat].map((comp) => {
-              const visibleTags = comp.tags.slice(0, 3);
-              const extraTags = comp.tags.length - 3;
-              const isExpanded = expandedId === comp.id;
-              return (
-                <div key={comp.id}>
-                  <div
-                    className="group flex w-full items-start gap-2 rounded px-2 py-1.5 transition-colors hover:bg-[var(--bg-hover)]"
-                  >
-                    {/* Name + tags */}
-                    <button
-                      onClick={() => setExpandedId(isExpanded ? null : comp.id)}
-                      className="min-w-0 flex-1 text-left"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        {isExpanded ? (
-                          <ChevronDown className="h-3 w-3 shrink-0 text-[var(--text-muted)]" />
-                        ) : (
-                          <ChevronRight className="h-3 w-3 shrink-0 text-[var(--text-muted)]" />
-                        )}
-                        <span className="block truncate text-xs font-medium text-[var(--text-primary)]">
-                          {comp.name}
-                        </span>
-                        {comp.category && (
-                          <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--studio-border)]">
-                            {comp.category}
-                          </span>
-                        )}
-                      </span>
-                      {visibleTags.length > 0 && (
-                        <span className="mt-0.5 flex flex-wrap gap-1 pl-[18px]">
-                          {visibleTags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="rounded bg-[var(--bg-elevated)] px-1 py-0.5 text-[9px] text-[var(--text-muted)]"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                          {extraTags > 0 && (
-                            <span className="rounded bg-[var(--bg-elevated)] px-1 py-0.5 text-[9px] text-[var(--text-muted)]">
-                              +{extraTags} more
-                            </span>
-                          )}
-                        </span>
-                      )}
-                    </button>
-
-                    {/* Actions */}
-                    <div className="flex shrink-0 items-center gap-1 pt-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                      <button
-                        onClick={() => handleCopyCode(comp)}
-                        title="Copy code"
-                        className="rounded p-1 hover:bg-[rgba(255,255,255,0.06)]"
-                      >
-                        {copiedId === comp.id ? (
-                          <Check className="h-3 w-3 text-emerald-400" />
-                        ) : (
-                          <Copy className="h-3 w-3 text-[var(--text-muted)]" />
-                        )}
-                      </button>
-                      <button
-                        onClick={(e) => handleDelete(e, comp)}
-                        title="Delete component"
-                        disabled={deletingId === comp.id}
-                        className="rounded p-1 hover:bg-[rgba(255,255,255,0.06)]"
-                      >
-                        {deletingId === comp.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin text-[var(--text-muted)]" />
-                        ) : (
-                          <X className="h-3 w-3 text-[var(--text-muted)] hover:text-red-400 transition-colors" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Expanded preview */}
-                  {isExpanded && (
-                    <SavedComponentPreview comp={comp} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
