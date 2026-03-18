@@ -48,7 +48,12 @@ export async function GET(request: Request) {
     );
   }
 
-  const origin = new URL(request.url).origin;
+  const headers = new Headers(request.headers);
+  const forwardedHost = headers.get("x-forwarded-host");
+  const forwardedProto = headers.get("x-forwarded-proto") ?? "https";
+  const origin = forwardedHost
+    ? `${forwardedProto}://${forwardedHost}`
+    : new URL(request.url).origin;
   const redirectUri = `${origin}/api/plugin/figma/callback`;
 
   // Exchange code for tokens
