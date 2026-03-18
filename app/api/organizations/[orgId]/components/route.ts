@@ -79,11 +79,11 @@ export async function POST(
 
   let slug = nameToComponentSlug(parsed.data.name);
 
-  // Ensure slug uniqueness
-  const existing = await getComponentBySlug(orgId, slug);
+  // Ensure slug uniqueness (scoped to org + project_id=NULL for org-wide components)
+  const existing = await getComponentBySlug(orgId, slug, null);
   if (existing) {
     let suffix = 2;
-    while (await getComponentBySlug(orgId, `${slug}-${suffix}`)) {
+    while (await getComponentBySlug(orgId, `${slug}-${suffix}`, null)) {
       suffix++;
     }
     slug = `${slug}-${suffix}`;

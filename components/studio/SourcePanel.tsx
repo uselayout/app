@@ -3,9 +3,10 @@
 import { useState, useCallback, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, BookMarked, Loader2 } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, ChevronDown, Palette, LayoutGrid, Image, Gauge, RefreshCw, BookMarked, Loader2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
+import { buildSrcdoc, extractComponentName, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
@@ -514,6 +515,66 @@ function ScreenshotsTab({ screenshots }: { screenshots: string[] }) {
   );
 }
 
+function SavedComponentPreview({ comp }: { comp: Component }) {
+  const [srcdoc, setSrcdoc] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function prepare() {
+      try {
+        let js = comp.compiledJs;
+        if (!js) {
+          // Transpile on-demand via API
+          const res = await fetch("/api/transpile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: comp.code }),
+          });
+          if (!res.ok) { setError(true); return; }
+          const data = await res.json();
+          js = data.js;
+        }
+        if (!cancelled && js) {
+          const name = extractComponentName(comp.code);
+          const sanitised = sanitizeRelativeSrc(js);
+          setSrcdoc(buildSrcdoc(sanitised, name));
+        }
+      } catch {
+        if (!cancelled) setError(true);
+      }
+    }
+    prepare();
+    return () => { cancelled = true; };
+  }, [comp.code, comp.compiledJs]);
+
+  return (
+    <div className="mx-2 mb-2 overflow-hidden rounded-md border border-[var(--studio-border)] bg-white">
+      {error ? (
+        <div className="flex h-[180px] items-center justify-center text-[10px] text-[var(--text-muted)]">
+          Preview unavailable
+        </div>
+      ) : srcdoc ? (
+        <iframe
+          srcDoc={srcdoc}
+          sandbox="allow-scripts"
+          className="h-[180px] w-full border-0"
+          title={`Preview of ${comp.name}`}
+        />
+      ) : (
+        <div className="flex h-[180px] items-center justify-center">
+          <Loader2 className="h-4 w-4 animate-spin text-[var(--text-muted)]" />
+        </div>
+      )}
+      {comp.description && (
+        <div className="border-t border-[var(--studio-border)] bg-[var(--bg-surface)] px-2 py-1.5 text-[10px] text-[var(--text-secondary)] line-clamp-2">
+          {comp.description}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SavedTab() {
   const orgId = useOrgStore((s) => s.currentOrgId);
   const [components, setComponents] = useState<Component[]>([]);
@@ -522,6 +583,7 @@ function SavedTab() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!orgId) {
@@ -670,71 +732,83 @@ function SavedTab() {
             {grouped[cat].map((comp) => {
               const visibleTags = comp.tags.slice(0, 3);
               const extraTags = comp.tags.length - 3;
+              const isExpanded = expandedId === comp.id;
               return (
-                <div
-                  key={comp.id}
-                  className="group flex w-full items-start gap-2 rounded px-2 py-1.5 transition-colors hover:bg-[var(--bg-hover)]"
-                >
-                  {/* Name + tags */}
-                  <button
-                    onClick={() => handleCopyCode(comp)}
-                    className="min-w-0 flex-1 text-left"
+                <div key={comp.id}>
+                  <div
+                    className="group flex w-full items-start gap-2 rounded px-2 py-1.5 transition-colors hover:bg-[var(--bg-hover)]"
                   >
-                    <span className="flex items-center gap-1.5">
-                      <span className="block truncate text-xs font-medium text-[var(--text-primary)]">
-                        {comp.name}
-                      </span>
-                      {comp.category && (
-                        <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--studio-border)]">
-                          {comp.category}
+                    {/* Name + tags */}
+                    <button
+                      onClick={() => setExpandedId(isExpanded ? null : comp.id)}
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        {isExpanded ? (
+                          <ChevronDown className="h-3 w-3 shrink-0 text-[var(--text-muted)]" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3 shrink-0 text-[var(--text-muted)]" />
+                        )}
+                        <span className="block truncate text-xs font-medium text-[var(--text-primary)]">
+                          {comp.name}
                         </span>
-                      )}
-                    </span>
-                    {visibleTags.length > 0 && (
-                      <span className="mt-0.5 flex flex-wrap gap-1">
-                        {visibleTags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded bg-[var(--bg-elevated)] px-1 py-0.5 text-[9px] text-[var(--text-muted)]"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {extraTags > 0 && (
-                          <span className="rounded bg-[var(--bg-elevated)] px-1 py-0.5 text-[9px] text-[var(--text-muted)]">
-                            +{extraTags} more
+                        {comp.category && (
+                          <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--studio-border)]">
+                            {comp.category}
                           </span>
                         )}
                       </span>
-                    )}
-                  </button>
+                      {visibleTags.length > 0 && (
+                        <span className="mt-0.5 flex flex-wrap gap-1 pl-[18px]">
+                          {visibleTags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="rounded bg-[var(--bg-elevated)] px-1 py-0.5 text-[9px] text-[var(--text-muted)]"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {extraTags > 0 && (
+                            <span className="rounded bg-[var(--bg-elevated)] px-1 py-0.5 text-[9px] text-[var(--text-muted)]">
+                              +{extraTags} more
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </button>
 
-                  {/* Actions */}
-                  <div className="flex shrink-0 items-center gap-1 pt-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
-                      onClick={() => handleCopyCode(comp)}
-                      title="Copy code"
-                      className="rounded p-1 hover:bg-[rgba(255,255,255,0.06)]"
-                    >
-                      {copiedId === comp.id ? (
-                        <Check className="h-3 w-3 text-emerald-400" />
-                      ) : (
-                        <Copy className="h-3 w-3 text-[var(--text-muted)]" />
-                      )}
-                    </button>
-                    <button
-                      onClick={(e) => handleDelete(e, comp)}
-                      title="Delete component"
-                      disabled={deletingId === comp.id}
-                      className="rounded p-1 hover:bg-[rgba(255,255,255,0.06)]"
-                    >
-                      {deletingId === comp.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin text-[var(--text-muted)]" />
-                      ) : (
-                        <X className="h-3 w-3 text-[var(--text-muted)] hover:text-red-400 transition-colors" />
-                      )}
-                    </button>
+                    {/* Actions */}
+                    <div className="flex shrink-0 items-center gap-1 pt-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        onClick={() => handleCopyCode(comp)}
+                        title="Copy code"
+                        className="rounded p-1 hover:bg-[rgba(255,255,255,0.06)]"
+                      >
+                        {copiedId === comp.id ? (
+                          <Check className="h-3 w-3 text-emerald-400" />
+                        ) : (
+                          <Copy className="h-3 w-3 text-[var(--text-muted)]" />
+                        )}
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(e, comp)}
+                        title="Delete component"
+                        disabled={deletingId === comp.id}
+                        className="rounded p-1 hover:bg-[rgba(255,255,255,0.06)]"
+                      >
+                        {deletingId === comp.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin text-[var(--text-muted)]" />
+                        ) : (
+                          <X className="h-3 w-3 text-[var(--text-muted)] hover:text-red-400 transition-colors" />
+                        )}
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Expanded preview */}
+                  {isExpanded && (
+                    <SavedComponentPreview comp={comp} />
+                  )}
                 </div>
               );
             })}
