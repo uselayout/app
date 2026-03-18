@@ -113,8 +113,7 @@ export async function POST(request: Request) {
     )
     .catch((err) => console.error("Usage logging failed:", err));
 
-  const origin = new URL(request.url).origin;
-  const url = `${origin}/studio/${projectId}`;
+  const url = `/studio/${projectId}`;
 
   return NextResponse.json(
     { success: true, url },
