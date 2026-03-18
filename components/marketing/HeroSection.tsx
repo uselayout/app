@@ -12,6 +12,8 @@ const TOOL_ICONS: { name: string; src: string }[] = [
   { name: 'GitHub Copilot', src: '/marketing/icons/copilot.svg' },
 ];
 
+const BETA_ACTIVE = process.env.NEXT_PUBLIC_BETA_INVITE_REQUIRED === 'true';
+
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
@@ -58,18 +60,44 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
         >
           {/* Button group */}
           <div className="flex items-center gap-3">
-            <Link
-              href={isLoggedIn ? "/studio" : "/login"}
-              className="inline-flex items-center justify-center bg-[var(--mkt-btn-primary-bg)] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium border border-[#e6e6e6] shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] hover:opacity-90 transition-opacity duration-150"
-            >
-              {isLoggedIn ? "Open Studio →" : "Get started"}
-            </Link>
-            <button
-              onClick={onInstallCLI}
-              className="hidden lg:inline-flex items-center justify-center bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium hover:opacity-80 transition-opacity duration-150"
-            >
-              Install CLI
-            </button>
+            {isLoggedIn ? (
+              <Link
+                href="/studio"
+                className="inline-flex items-center justify-center bg-[var(--mkt-btn-primary-bg)] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium border border-[#e6e6e6] shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] hover:opacity-90 transition-opacity duration-150"
+              >
+                Open Studio →
+              </Link>
+            ) : BETA_ACTIVE ? (
+              <>
+                <Link
+                  href="/request-access"
+                  className="inline-flex items-center justify-center bg-[var(--mkt-btn-primary-bg)] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium border border-[#e6e6e6] shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] hover:opacity-90 transition-opacity duration-150"
+                >
+                  Request Early Access
+                </Link>
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center justify-center bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium hover:opacity-80 transition-opacity duration-150"
+                >
+                  Got an invite code? →
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center bg-[var(--mkt-btn-primary-bg)] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium border border-[#e6e6e6] shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] hover:opacity-90 transition-opacity duration-150"
+                >
+                  Get started
+                </Link>
+                <button
+                  onClick={onInstallCLI}
+                  className="hidden lg:inline-flex items-center justify-center bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium hover:opacity-80 transition-opacity duration-150"
+                >
+                  Install CLI
+                </button>
+              </>
+            )}
           </div>
 
           {/* Works with */}
