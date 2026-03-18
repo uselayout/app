@@ -1,0 +1,141 @@
+# Layout — Full Documentation for LLMs
+
+> The compiler between design systems and AI coding agents.
+
+Layout extracts design systems from Figma files and live websites, then generates structured, LLM-optimised context bundles (DESIGN.md) that help AI coding agents produce on-brand UI code consistently.
+
+## The Problem Layout Solves
+
+AI coding agents (Claude Code, Cursor, Copilot, Windsurf, Codex) generate functional UI code, but without design system context the output drifts off-brand — wrong colours, inconsistent spacing, mismatched typography, missing component patterns. Developers spend time manually correcting AI output to match their design system.
+
+Layout closes this gap by extracting your design system into a structured context file (DESIGN.md) that AI agents consume automatically. The result: every component the AI builds uses your actual tokens, follows your patterns, and stays on-brand.
+
+## How It Works
+
+1. **Extract** — Paste a Figma URL or website URL into Layout. It pulls design tokens (colours, typography, spacing, effects), component inventory, fonts, and screenshots automatically. Figma extraction resolves actual style values via the REST API. Website extraction uses Playwright to analyse computed styles.
+
+2. **Review** — Browse extracted tokens in the Source panel. Check colours, typography, spacing, and components. Re-extract if something looks off.
+
+3. **Generate** — Click "Generate DESIGN.md" to synthesise a structured context file from the extracted data using Claude. The file includes a Quick Reference (50–75 lines, fits tight context budgets), full token definitions, component patterns, and anti-pattern rules.
+
+4. **Test** — Use the Test panel to generate components with and without design context. Compare results. Each variant gets a health score (0–100) measuring design system compliance. Aim for 80+.
+
+5. **Iterate** — Edit DESIGN.md manually or use the AI chat bar to make changes in plain English (e.g. "make buttons square", "add a dark card variant"). Re-test until satisfied.
+
+6. **Export or Serve** — Either download a ZIP bundle or install the MCP server for automatic context serving.
+
+## Core Features
+
+### Design System Extraction
+
+- **Figma extraction**: Paste any Figma file URL. Layout resolves actual style values (not just metadata) by fetching nodes in batches of 50. Supports colours, text styles, effect styles, component inventory, fonts, and page screenshots.
+- **Website extraction**: Enter any URL. Playwright analyses computed CSS across the page — colours, typography, spacing, borders, shadows, and more.
+- **Re-extraction with diff**: When you re-extract, Layout shows what changed (tokens added, removed, modified) with accept/discard options.
+
+### Studio Editor
+
+Three-panel layout:
+- **Source Panel** (left): Browse extracted tokens by category — colours, typography, spacing, components, screenshots. Also shows quality score and saved components.
+- **Editor Panel** (centre): Monaco editor for DESIGN.md with syntax highlighting. Includes an AI chat bar for making edits in natural language.
+- **Test Panel** (right): Generate component variants with live preview, health scoring, and a toggle to compare output with vs without design context.
+
+### Explorer Canvas
+
+AI-powered design exploration surface:
+- Generate 2–6 component variants simultaneously from a single prompt
+- Upload reference images (paste, drag-drop, or file picker) for the AI to interpret
+- Refine any variant with follow-up prompts
+- Compare results with and without design system context
+- Health scoring per variant based on design system compliance
+- Save variants to the organisation's component library
+- Push variants to Figma as real auto-layout frames
+- Preview variants at different viewport sizes
+
+### MCP Server
+
+The open-source `@layoutdesign/context` npm package serves your design system to AI agents via the Model Context Protocol (MCP). Once installed, your AI agent fetches design tokens and checks compliance automatically on every prompt.
+
+**Quick start:**
+```bash
+npx @layoutdesign/context init --kit linear-lite
+npx @layoutdesign/context install
+```
+
+**MCP tools available:**
+- `get_design_system` — Full DESIGN.md content
+- `get_tokens` — CSS tokens by category (colours, typography, spacing)
+- `get_component` — Component code by name
+- `list_components` — All components with metadata and tags
+- `check_compliance` — Validate code against design system rules
+- `preview` — Live preview of components
+- `push_to_figma` — Export components to Figma
+- `url_to_figma` — Convert a URL screenshot to a Figma frame
+- `design_in_figma` — Create Figma mockups using design system context
+
+**Supported AI agents:** Claude Code, Cursor, GitHub Copilot, Windsurf, OpenAI Codex.
+
+### Export Bundle
+
+Download a ZIP containing:
+- `DESIGN.md` — Full design system reference with tokens, components, and anti-patterns
+- `CLAUDE.md-section.md` — Drop-in section for your project's CLAUDE.md
+- `AGENTS.md` — Context for OpenAI Codex, Jules, Factory, Amp
+- `tokens.css` — CSS custom properties for all design tokens
+- `.cursorrules` — Cursor rules file with Quick Reference context
+- `cursor/rules/design-system.mdc` — Cursor v0.43+ MDC rules format
+- `tailwind.config.js` — Tailwind config pre-loaded with extracted token values
+- `tokens.json` — W3C DTCG-compatible token file for Style Dictionary, Theo, etc.
+
+### DESIGN.md Format
+
+The structured context file has these sections:
+- **Section 0 — Quick Reference**: 50–75 line summary of critical tokens and rules. Designed to be copy-pasted standalone into tight context budgets.
+- **Section 1 — Colours**: Full colour system with primitives, semantic tokens, and usage rules.
+- **Section 2 — Typography**: Font families, scale, weight mappings, and code examples.
+- **Section 3 — Spacing & Layout**: Spacing scale, grid system, breakpoints.
+- **Section 4 — Components**: Component patterns with code examples and variant definitions.
+- **Section 5 — Anti-Patterns**: Explicit "NEVER do this" rules that prevent common AI mistakes.
+
+### Figma Integration
+
+- **Extract from Figma**: Pull tokens and components via the Figma REST API
+- **Figma Plugin**: Native plugin for in-Figma token extraction, element inspection, and push to Layout Cloud
+- **Push to Figma**: Send AI-generated components back to Figma as real auto-layout frames
+- **Webhooks**: Configure Figma FILE_UPDATE webhooks for automatic re-extraction
+
+### Compliance Checking
+
+Four built-in rules:
+1. Hardcoded colour values (should use design tokens)
+2. Hardcoded spacing values (should use spacing scale)
+3. Token reference validation (tokens must exist in the design system)
+4. Unknown component detection (components should be defined in the library)
+
+### Free Starter Kits
+
+Get started without a Figma file or website:
+- `linear-lite` — Linear-inspired dark UI kit
+- `stripe-lite` — Stripe-inspired clean design system
+- `notion-lite` — Notion-inspired minimal design system
+
+```bash
+npx @layoutdesign/context init --kit linear-lite
+```
+
+## Organisations & Teams
+
+Layout supports multi-user organisations with roles (owner, admin, member). Each organisation has its own projects, component library, API keys, webhook configuration, and billing.
+
+## Self-Hosting
+
+Layout can be self-hosted on any Docker or VPS deployment. Website extraction requires Playwright, which runs on Docker/VPS but not on Vercel serverless. Figma extraction works everywhere.
+
+## Links
+
+- Website: https://layout.design
+- Documentation: https://layout.design/docs
+- npm: https://www.npmjs.com/package/@layoutdesign/context
+- GitHub: https://github.com/uselayout
+- CLI repo: https://github.com/uselayout/cli
+- Pricing: https://layout.design/pricing
+- Changelog: https://layout.design/changelog
