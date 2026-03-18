@@ -251,7 +251,7 @@ export function createDesignMdStream(
   extractionData: ExtractionResult,
   apiKey?: string
 ): StreamWithUsage {
-  const anthropic = new Anthropic({ apiKey });
+  const anthropic = new Anthropic(apiKey ? { apiKey } : {});
   const userContent = buildUserContent(extractionData);
 
   let resolveUsage: (u: TokenUsageResult) => void;

@@ -4,6 +4,7 @@ import { useCallback, useRef } from "react";
 import { useExtractionStore } from "@/lib/store/extraction";
 import { useProjectStore } from "@/lib/store/project";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
+import { useOrgStore } from "@/lib/store/organization";
 import type { ExtractionResult, Project } from "@/lib/types";
 
 export function useExtraction() {
@@ -14,6 +15,7 @@ export function useExtraction() {
   const completeExtraction = useExtractionStore((s) => s.completeExtraction);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateDesignMd = useProjectStore((s) => s.updateDesignMd);
+  const currentOrgId = useOrgStore((s) => s.currentOrgId);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -85,6 +87,15 @@ export function useExtraction() {
         // Step 2: Generate DESIGN.md
         updateStep("generate", { status: "running" });
 
+        // Save previous DESIGN.md version before overwriting
+        if (project.designMd && project.designMd.length > 0 && currentOrgId) {
+          await fetch(`/api/organizations/${currentOrgId}/projects/${project.id}/design-md-versions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ designMd: project.designMd, source: "generation" }),
+          }).catch(() => {}); // Non-blocking — don't fail extraction if version save fails
+        }
+
         // Pass screenshots through — they're resized server-side before sending to Claude
         const extractionDataForSynthesis = extractionData;
 
@@ -137,6 +148,7 @@ export function useExtraction() {
       completeExtraction,
       updateExtractionData,
       updateDesignMd,
+      currentOrgId,
     ]
   );
 

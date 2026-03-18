@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useEffect, useRef, useCallback, useState, useMemo } from "react";
+import { use, useEffect, useRef, useCallback, useState, useMemo, Suspense } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { useExtractionStore } from "@/lib/store/extraction";
 import { useOnboardingStore } from "@/lib/store/onboarding";
@@ -19,6 +20,7 @@ import type { ExtractionDiff } from "@/lib/extraction/diff";
 import type { DesignVariant, ExtractionResult } from "@/lib/types";
 import { useOrgStore } from "@/lib/store/organization";
 import { PushToDesignSystemModal } from "@/components/studio/PushToDesignSystemModal";
+import { SavedLibraryView } from "@/components/studio/SavedLibraryView";
 import { toast } from "sonner";
 
 export default function StudioPage({
@@ -43,9 +45,37 @@ export default function StudioPage({
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
-  const [centreView, setCentreView] = useState<"editor" | "canvas">("editor");
+  const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved">("editor");
   const [showSourcePanel, setShowSourcePanel] = useState(true);
   const [whatsNextDismissed, setWhatsNextDismissed] = useState(false);
+
+  // Sync centreView with ?view= query param
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const view = searchParams.get("view");
+    if (view === "saved") {
+      setCentreView("saved");
+    } else if (centreView === "saved") {
+      setCentreView("editor");
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Clean up URL when navigating away from saved view via TopBar toggle
+  const handleCentreViewChange = useCallback(
+    (view: "editor" | "canvas" | "saved") => {
+      setCentreView(view);
+      const currentView = searchParams.get("view");
+      if (view === "saved" && currentView !== "saved") {
+        router.replace(`${pathname}?view=saved`, { scroll: false });
+      } else if (view !== "saved" && currentView === "saved") {
+        router.replace(pathname, { scroll: false });
+      }
+    },
+    [searchParams, pathname, router]
+  );
 
   // Push to design system state
   const orgId = useOrgStore((s) => s.currentOrgId);
@@ -302,12 +332,12 @@ export default function StudioPage({
         sourcePanelOpen={showSourcePanel}
         onExport={() => setShowExport(true)}
         centreView={centreView}
-        onCentreViewChange={setCentreView}
+        onCentreViewChange={handleCentreViewChange}
       />
       <div className="flex-1 overflow-hidden">
         <StudioLayout
           centreView={centreView}
-          showSourcePanel={showSourcePanel}
+          showSourcePanel={showSourcePanel && centreView !== "saved"}
           sourcePanel={
             <SourcePanel
               extractionData={project.extractionData}
@@ -323,6 +353,8 @@ export default function StudioPage({
               value={project.designMd}
               onChange={handleDesignMdChange}
               tokenSuggestions={tokenSuggestions}
+              projectId={project.id}
+              orgId={project.orgId}
             />
           }
           canvasPanel={
@@ -334,6 +366,11 @@ export default function StudioPage({
               onPushToFigma={handlePushToFigma}
               onDesignMdUpdate={handleDesignMdChange}
               extractedFonts={extractedFonts}
+            />
+          }
+          savedPanel={
+            <SavedLibraryView
+              onNavigateToCanvas={() => handleCentreViewChange("canvas")}
             />
           }
         />

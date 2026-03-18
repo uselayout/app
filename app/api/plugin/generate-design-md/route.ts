@@ -5,6 +5,7 @@ import { getOrganization } from "@/lib/supabase/organization";
 import { fetchAllProjects, upsertProject } from "@/lib/supabase/db";
 import { createDesignMdStream } from "@/lib/claude/synthesise";
 import { logUsage } from "@/lib/billing/usage";
+import { saveDesignMdVersion } from "@/lib/supabase/design-md-versions";
 import type { Project, ExtractionResult } from "@/lib/types";
 
 export const maxDuration = 120;
@@ -71,6 +72,13 @@ export async function POST(request: Request) {
   const extractionData = project.extractionData as unknown as ExtractionResult;
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "ANTHROPIC_API_KEY not configured on server" },
+      { status: 500, headers: CORS },
+    );
+  }
+
   const { stream, usage } = createDesignMdStream(extractionData, apiKey);
 
   // Collect the full stream into a string
@@ -89,6 +97,19 @@ export async function POST(request: Request) {
     }
   } finally {
     reader.releaseLock();
+  }
+
+  // Don't save error text as DESIGN.md content
+  if (designMd.includes("[Error generating DESIGN.md:")) {
+    return NextResponse.json(
+      { error: designMd.trim() },
+      { status: 500, headers: CORS },
+    );
+  }
+
+  // Save previous version before overwriting
+  if (project.designMd && project.designMd.length > 0) {
+    await saveDesignMdVersion(projectId, auth.orgId, project.designMd, "generation", auth.userId);
   }
 
   // Save to project
