@@ -61,32 +61,6 @@ function SourcePanelInner({
 
   const hasDesignMd = !!designMd && designMd.length > 0;
 
-  if (!extractionData) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center bg-[var(--bg-panel)] p-6">
-        <p className="text-sm text-[var(--text-muted)] text-center">
-          No extraction data yet. Extract a design system to see tokens here.
-        </p>
-        {hasDesignMd && projectId && (
-          <button
-            onClick={handleSyncTokens}
-            className="mt-3 flex items-center gap-1.5 rounded-md bg-[var(--bg-elevated)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-          >
-            <RefreshCw className="h-3 w-3" />
-            Sync tokens from DESIGN.md
-          </button>
-        )}
-        {syncResult && (
-          <p className="mt-2 text-xs text-emerald-400">
-            {syncResult.count > 0
-              ? `Synced ${syncResult.count} tokens from DESIGN.md`
-              : "No tokens found in DESIGN.md"}
-          </p>
-        )}
-      </div>
-    );
-  }
-
   const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
     { id: "tokens", label: "Tokens", icon: Palette },
     { id: "components", label: "Components", icon: LayoutGrid },
@@ -138,19 +112,35 @@ function SourcePanelInner({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {activeTab === "tokens" && (
+        {activeTab === "saved" && <SavedTab />}
+        {activeTab !== "saved" && !extractionData && (
+          <div className="flex h-full flex-col items-center justify-center p-6">
+            <p className="text-sm text-[var(--text-muted)] text-center">
+              No extraction data yet. Extract a design system to see tokens here.
+            </p>
+            {hasDesignMd && projectId && (
+              <button
+                onClick={handleSyncTokens}
+                className="mt-3 flex items-center gap-1.5 rounded-md bg-[var(--bg-elevated)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+              >
+                <RefreshCw className="h-3 w-3" />
+                Sync tokens from DESIGN.md
+              </button>
+            )}
+          </div>
+        )}
+        {activeTab === "tokens" && extractionData && (
           <TokensTab tokens={extractionData.tokens} projectId={projectId} />
         )}
-        {activeTab === "components" && (
+        {activeTab === "components" && extractionData && (
           <ComponentsTab components={extractionData.components} />
         )}
-        {activeTab === "screenshots" && (
+        {activeTab === "screenshots" && extractionData && (
           <ScreenshotsTab screenshots={extractionData.screenshots} />
         )}
-        {activeTab === "quality" && (
+        {activeTab === "quality" && extractionData && (
           <CompletenessPanel designMd={designMd ?? ""} onDesignMdChange={onDesignMdChange} />
         )}
-        {activeTab === "saved" && <SavedTab />}
       </div>
     </div>
   );
@@ -528,8 +518,10 @@ function SavedTab() {
   const orgId = useOrgStore((s) => s.currentOrgId);
   const [components, setComponents] = useState<Component[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "component" | "page">("all");
+  const [typeFilter, setTypeFilter] = useState<"component" | "page">("component");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!orgId) {
@@ -537,6 +529,7 @@ function SavedTab() {
       return;
     }
     let cancelled = false;
+    setLoading(true);
     fetch(`/api/organizations/${orgId}/components`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data: Component[]) => {
@@ -559,6 +552,26 @@ function SavedTab() {
     }
   }, []);
 
+  const handleDelete = useCallback(
+    async (e: React.MouseEvent, comp: Component) => {
+      e.stopPropagation();
+      if (!orgId) return;
+      setDeletingId(comp.id);
+      try {
+        const res = await fetch(
+          `/api/organizations/${orgId}/components/${comp.id}`,
+          { method: "DELETE" }
+        );
+        if (res.ok) {
+          setComponents((prev) => prev.filter((c) => c.id !== comp.id));
+        }
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [orgId]
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -575,18 +588,16 @@ function SavedTab() {
     );
   }
 
-  if (components.length === 0) {
-    return (
-      <div className="p-4 text-xs text-[var(--text-muted)]">
-        No saved components yet. Promote variants from the Explorer Canvas to see them here.
-      </div>
-    );
-  }
+  // Unique categories across all components of the selected type
+  const allOfType = components.filter((c) => c.designType === typeFilter);
+  const categories = Array.from(
+    new Set(allOfType.map((c) => c.category).filter(Boolean))
+  ).sort() as string[];
 
   const filtered =
-    filter === "all"
-      ? components
-      : components.filter((c) => c.designType === filter);
+    categoryFilter === "all"
+      ? allOfType
+      : allOfType.filter((c) => c.category === categoryFilter);
 
   const grouped = filtered.reduce<Record<string, Component[]>>((acc, comp) => {
     const cat = comp.category || "Uncategorised";
@@ -599,19 +610,23 @@ function SavedTab() {
 
   return (
     <div className="p-2">
-      {/* Filter pills */}
+      {/* Type toggle */}
       <div className="mb-2 flex items-center gap-1">
-        {(["all", "component", "page"] as const).map((f) => (
+        {(["component", "page"] as const).map((f) => (
           <button
             key={f}
-            onClick={() => setFilter(f)}
+            aria-pressed={typeFilter === f}
+            onClick={() => {
+              setTypeFilter(f);
+              setCategoryFilter("all");
+            }}
             className={`rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
-              filter === f
+              typeFilter === f
                 ? "bg-[rgba(255,255,255,0.1)] text-white"
                 : "text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-secondary)]"
             }`}
           >
-            {f === "all" ? "All" : f === "component" ? "Components" : "Pages"}
+            {f === "component" ? "Components" : "Pages"}
           </button>
         ))}
         <span className="ml-auto text-[10px] text-[var(--text-muted)]">
@@ -619,35 +634,110 @@ function SavedTab() {
         </span>
       </div>
 
+      {/* Category filter */}
+      {categories.length > 0 && (
+        <div className="mb-2">
+          <select
+            aria-label="Filter by category"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="w-full rounded-md border border-[var(--studio-border)] bg-[var(--bg-elevated)] px-2 py-1 text-[10px] text-[var(--text-secondary)] outline-none transition-colors hover:border-[var(--studio-border-strong)] focus:border-[var(--studio-border-focus)]"
+          >
+            <option value="all">All categories</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {filtered.length === 0 && (
+        <div className="py-6 text-center text-xs text-[var(--text-muted)]">
+          No saved components yet. Generate variants in the Explorer and save them here.
+        </div>
+      )}
+
       {sortedCategories.map((cat) => (
         <div key={cat} className="mb-2">
-          <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-            {cat}
-          </div>
+          {sortedCategories.length > 1 && (
+            <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+              {cat}
+            </div>
+          )}
           <div className="space-y-0.5">
-            {grouped[cat].map((comp) => (
-              <button
-                key={comp.id}
-                onClick={() => handleCopyCode(comp)}
-                className="group flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-[var(--bg-hover)]"
-              >
-                <span className="min-w-0 flex-1 truncate text-xs text-[var(--text-primary)]">
-                  {comp.name}
-                </span>
-                {comp.tags.length > 0 && (
-                  <span className="shrink-0 truncate max-w-[80px] text-[10px] text-[var(--text-muted)]">
-                    {comp.tags[0]}
-                  </span>
-                )}
-                <span className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
-                  {copiedId === comp.id ? (
-                    <Check className="h-3 w-3 text-emerald-400" />
-                  ) : (
-                    <Copy className="h-3 w-3 text-[var(--text-muted)]" />
-                  )}
-                </span>
-              </button>
-            ))}
+            {grouped[cat].map((comp) => {
+              const visibleTags = comp.tags.slice(0, 3);
+              const extraTags = comp.tags.length - 3;
+              return (
+                <div
+                  key={comp.id}
+                  className="group flex w-full items-start gap-2 rounded px-2 py-1.5 transition-colors hover:bg-[var(--bg-hover)]"
+                >
+                  {/* Name + tags */}
+                  <button
+                    onClick={() => handleCopyCode(comp)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className="block truncate text-xs font-medium text-[var(--text-primary)]">
+                        {comp.name}
+                      </span>
+                      {comp.category && (
+                        <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--studio-border)]">
+                          {comp.category}
+                        </span>
+                      )}
+                    </span>
+                    {visibleTags.length > 0 && (
+                      <span className="mt-0.5 flex flex-wrap gap-1">
+                        {visibleTags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded bg-[var(--bg-elevated)] px-1 py-0.5 text-[9px] text-[var(--text-muted)]"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {extraTags > 0 && (
+                          <span className="rounded bg-[var(--bg-elevated)] px-1 py-0.5 text-[9px] text-[var(--text-muted)]">
+                            +{extraTags} more
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Actions */}
+                  <div className="flex shrink-0 items-center gap-1 pt-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button
+                      onClick={() => handleCopyCode(comp)}
+                      title="Copy code"
+                      className="rounded p-1 hover:bg-[rgba(255,255,255,0.06)]"
+                    >
+                      {copiedId === comp.id ? (
+                        <Check className="h-3 w-3 text-emerald-400" />
+                      ) : (
+                        <Copy className="h-3 w-3 text-[var(--text-muted)]" />
+                      )}
+                    </button>
+                    <button
+                      onClick={(e) => handleDelete(e, comp)}
+                      title="Delete component"
+                      disabled={deletingId === comp.id}
+                      className="rounded p-1 hover:bg-[rgba(255,255,255,0.06)]"
+                    >
+                      {deletingId === comp.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin text-[var(--text-muted)]" />
+                      ) : (
+                        <X className="h-3 w-3 text-[var(--text-muted)] hover:text-red-400 transition-colors" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       ))}
