@@ -99,6 +99,9 @@ function SidebarInner() {
             <li key={item.segment} className="relative group">
               <Link
                 href={projectId ? item.href : `/${orgSlug}`}
+                aria-disabled={!projectId}
+                tabIndex={projectId ? undefined : -1}
+                onClick={projectId ? undefined : (e) => e.preventDefault()}
                 className={`flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm transition-all duration-[var(--duration-base)] ${
                   collapsed ? "justify-center" : ""
                 } ${
@@ -106,7 +109,7 @@ function SidebarInner() {
                     ? "bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]"
                     : projectId
                       ? "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-                      : "text-[var(--text-muted)] cursor-default"
+                      : "text-[var(--text-muted)] cursor-default pointer-events-none"
                 }`}
               >
                 <span className="shrink-0">{item.icon}</span>
