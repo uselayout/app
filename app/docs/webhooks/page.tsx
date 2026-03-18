@@ -5,9 +5,9 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Webhooks - Layout Docs",
+  title: "Webhooks | Layout Docs",
   description:
-    "Automatic design system sync when Figma files change. Set up webhooks to re-extract tokens on every publish.",
+    "Receive notifications when Figma files change. Set up webhooks to know when to re-extract your design system.",
 };
 
 export default function WebhooksPage() {
@@ -19,9 +19,9 @@ export default function WebhooksPage() {
       <div className="space-y-3">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Webhooks</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Automatic design system sync when Figma files change. Connect Layout
-          to Figma&apos;s webhook system so that every time a designer publishes
-          updates, your tokens are re-extracted automatically.
+          Get notified when Figma files change. Connect Layout to
+          Figma&apos;s webhook system so that every time a designer publishes
+          updates, you know it&apos;s time to re-extract.
         </p>
       </div>
 
@@ -29,8 +29,7 @@ export default function WebhooksPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">How It Works</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The flow from designer publish to updated design system is fully
-          automatic once configured:
+          The flow from designer publish to webhook notification:
         </p>
         <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
           {[
@@ -46,8 +45,8 @@ export default function WebhooksPage() {
             },
             {
               step: "3",
-              label: "Layout re-extracts the design system",
-              desc: "Layout fetches the updated Figma file and extracts the latest tokens, styles, and components. A diff shows exactly what changed.",
+              label: "Layout receives and logs the event",
+              desc: "The webhook is verified and recorded. You can then click Re-extract in the Studio to pull the latest tokens, styles, and components. A diff shows exactly what changed.",
             },
           ].map(({ step, label, desc }) => (
             <div key={step} className="flex gap-4 px-5 py-4">
@@ -77,7 +76,7 @@ export default function WebhooksPage() {
         {/* Step 1 */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-[#0a0a0a]">
-            Step 1 - Configure in Layout
+            Step 1: Configure in Layout
           </h3>
           <ol className="list-decimal pl-6 space-y-2 text-gray-600 text-base">
             <li>
@@ -88,7 +87,7 @@ export default function WebhooksPage() {
               in your organisation dashboard.
             </li>
             <li>
-              Copy the webhook endpoint URL - for example:{" "}
+              Copy the webhook endpoint URL, for example:{" "}
               <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
                 https://studio.yourdomain.com/api/webhooks/figma
               </code>
@@ -100,7 +99,7 @@ export default function WebhooksPage() {
         {/* Step 2 */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-[#0a0a0a]">
-            Step 2 - Configure in Figma
+            Step 2: Configure in Figma
           </h3>
           <Callout type="info">
             Creating webhooks in Figma requires admin access to the team or
@@ -120,7 +119,7 @@ export default function WebhooksPage() {
               Enter the same passcode you configured in Layout.
             </li>
             <li>
-              Select the event types to listen for -{" "}
+              Select the event types to listen for.{" "}
               <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
                 FILE_UPDATE
               </code>{" "}
@@ -155,8 +154,8 @@ export default function WebhooksPage() {
                   FILE_UPDATE
                 </td>
                 <td className="px-4 py-3 text-gray-600">
-                  Re-extracts tokens from the updated Figma file. Triggered
-                  whenever a file is saved or published.
+                  Logged when a file is saved or published. You can then
+                  manually re-extract to pull the latest tokens.
                 </td>
               </tr>
               <tr className="hover:bg-gray-50 align-top">
@@ -164,7 +163,7 @@ export default function WebhooksPage() {
                   LIBRARY_PUBLISH
                 </td>
                 <td className="px-4 py-3 text-gray-600">
-                  Re-extracts when a team library is published. Useful for
+                  Logged when a team library is published. Useful for
                   shared design systems used across multiple files.
                 </td>
               </tr>
@@ -207,13 +206,14 @@ export default function WebhooksPage() {
         <ul className="list-disc pl-6 space-y-2 text-gray-600 text-base">
           <li>
             Test your webhook setup by making a small change in Figma and
-            publishing - you should see a new extraction appear in your Layout
-            project within a few seconds.
+            publishing. The event should appear in your webhook logs. Then
+            click Re-extract in the Studio to confirm the latest changes
+            are picked up.
           </li>
           <li>
-            If you only want to sync one Figma file, scope your webhook to that
-            file&apos;s ID in the Figma webhook configuration. This avoids
-            triggering unnecessary extractions from unrelated files.
+            If you only want to track one Figma file, scope your webhook to
+            that file&apos;s ID in the Figma webhook configuration. This
+            avoids unnecessary notifications from unrelated files.
           </li>
         </ul>
       </section>

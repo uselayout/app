@@ -5,7 +5,7 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Explorer Canvas - Layout Docs",
+  title: "Explorer Canvas | Layout Docs",
   description:
     "AI-powered design exploration tool for generating multiple component variants from a single prompt, with image upload, refinement, and team review workflows.",
 };
@@ -22,7 +22,7 @@ export default function ExplorerPage() {
           Explorer Canvas is an AI-powered design exploration tool built into
           the Studio. Enter a prompt, set how many variants to generate, and
           the AI produces multiple component options using your extracted design
-          tokens - all in a single pass. Use it to explore directions quickly
+          tokens, all in a single pass. Use it to explore directions quickly
           before committing to an implementation.
         </p>
       </div>
@@ -67,7 +67,7 @@ export default function ExplorerPage() {
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
               Select any generated variant and send a follow-up prompt to refine
-              it. Refinement is iterative - you can repeat the cycle as many
+              it. Refinement is iterative. You can repeat the cycle as many
               times as needed without losing the other variants in the grid.
               Each refinement pass maintains design token adherence.
             </p>
@@ -78,8 +78,8 @@ export default function ExplorerPage() {
               Comparison view
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              The A/B comparison view generates the same component twice - once
-              with your DESIGN.md context active, once without - and displays
+              The A/B comparison view generates the same component twice: once
+              with your DESIGN.md context active, once without. It displays
               them side by side. This is the fastest way to see the concrete
               value your design system context is providing to the AI.
             </p>
@@ -226,7 +226,7 @@ export default function ExplorerPage() {
         </p>
         <p className="text-base text-gray-600 leading-relaxed">
           A strong DESIGN.md will produce a left-pane result with correct token
-          values, consistent typography, and on-brand spacing - while the
+          values, consistent typography, and on-brand spacing, while the
           right-pane result defaults to generic Tailwind utility classes and
           arbitrary colours. If both panes look similar, your DESIGN.md may need
           more specific token examples or stronger anti-pattern guidance.
@@ -308,15 +308,15 @@ export default function ExplorerPage() {
           <li>
             <Link href="/docs/studio" className="text-gray-900 hover:underline">
               Studio Guide
-            </Link>{" "}
-            - learn how to extract design tokens and generate DESIGN.md before
+            </Link>
+            . Learn how to extract design tokens and generate DESIGN.md before
             using the Explorer Canvas.
           </li>
           <li>
             <Link href="/docs/design-md" className="text-gray-900 hover:underline">
               DESIGN.md Spec
-            </Link>{" "}
-            - understand what makes a strong context file so the Explorer
+            </Link>
+            . Understand what makes a strong context file so the Explorer
             generates better output.
           </li>
           <li>
@@ -325,8 +325,8 @@ export default function ExplorerPage() {
               className="text-gray-900 hover:underline"
             >
               Claude Code integration
-            </Link>{" "}
-            - take promoted variants into your codebase with the CLI and MCP
+            </Link>
+            . Take promoted variants into your codebase with the CLI and MCP
             server.
           </li>
         </ul>

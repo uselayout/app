@@ -5,7 +5,7 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "DESIGN.md Specification -  Layout Docs",
+  title: "DESIGN.md Specification | Layout Docs",
   description:
     "Complete reference for the DESIGN.md format: the structured, LLM-optimised context file that Layout generates from your design system.",
 };
@@ -31,7 +31,7 @@ const quickReferenceExample = `## Quick Reference
 - **Headings:** Geist, 24–32px, weight 700
 - **Code/mono:** Geist Mono, 13px/1.6
 
-### Button -  primary variant
+### Button: primary variant
 \`\`\`tsx
 <button className="bg-[var(--color-primary)] text-white px-4 py-2 rounded-lg
   hover:bg-[var(--color-primary-hover)] transition-all duration-150
@@ -42,14 +42,14 @@ const quickReferenceExample = `## Quick Reference
 \`\`\`
 
 ### NEVER rules
-1. NEVER use raw hex values -  always CSS variables
-2. NEVER use box-shadow for elevation -  use background colour difference
+1. NEVER use raw hex values. Always use CSS variables
+2. NEVER use box-shadow for elevation. Use background colour difference
 3. NEVER use font-size below 12px
-4. NEVER use opacity for disabled -  use the disabled token`;
+4. NEVER use opacity for disabled. Use the disabled token`;
 
 const colourSystemExample = `## Colour System
 
-### Tier 1 -  Primitives
+### Tier 1: Primitives
 Raw colour values. Never use directly in components.
 \`\`\`css
 --primitive-indigo-500: #6366F1;
@@ -58,7 +58,7 @@ Raw colour values. Never use directly in components.
 --primitive-gray-900: #111115;
 \`\`\`
 
-### Tier 2 -  Semantic aliases
+### Tier 2: Semantic aliases
 Intent-based names that map to primitives.
 \`\`\`css
 --color-primary: var(--primitive-indigo-500);
@@ -66,7 +66,7 @@ Intent-based names that map to primitives.
 --color-bg-surface: var(--primitive-gray-900);
 \`\`\`
 
-### Tier 3 -  Component tokens
+### Tier 3: Component tokens
 State-specific tokens for individual components.
 \`\`\`css
 --button-primary-bg: var(--color-primary);
@@ -76,7 +76,7 @@ State-specific tokens for individual components.
 
 const typographyExample = `## Typography System
 
-### Token format -  always composites
+### Token format: always composites
 \`\`\`
 body-md:
   font-family: "Geist", system-ui, sans-serif
@@ -94,7 +94,7 @@ heading-lg:
 \`\`\`
 
 ### Pairing rules
-- Use heading-sm through heading-xl for page headings -  never raw font-size values
+- Use heading-sm through heading-xl for page headings. Never use raw font-size values
 - Pair heading tokens with body-md or body-sm for supporting text
 - Mono tokens (code-sm, code-md) for all code, terminal output, and token names`;
 
@@ -149,17 +149,17 @@ export function Button({ variant = "primary", size = "md", loading, disabled, ch
 
 const antiPatternsExample = `## Anti-Patterns & Constraints
 
-### Rule 1 -  No hardcoded colour values
+### Rule 1: No hardcoded colour values
 ❌ NEVER: \`color: #6366F1\`, \`className="text-indigo-500"\`
 ✅ DO: \`color: var(--color-primary)\`, \`className="text-[var(--color-primary)]"\`
 **Why it fails:** Hardcoded values break when the design system updates. Tokens are the single source of truth.
 
-### Rule 2 -  No box-shadow for elevation
+### Rule 2: No box-shadow for elevation
 ❌ NEVER: \`box-shadow: 0 4px 12px rgba(0,0,0,0.3)\`
 ✅ DO: Use a darker/lighter background token from the elevation scale
 **Why it fails:** Shadows look broken on dark backgrounds and are impossible to theme.
 
-### Rule 3 -  No arbitrary spacing
+### Rule 3: No arbitrary spacing
 ❌ NEVER: \`padding: 13px\`, \`margin-top: 7px\`
 ✅ DO: Use spacing tokens from the defined scale (4, 8, 12, 16, 20, 24, 32, 40, 48, 64px)
 **Why it fails:** Off-scale values create visual inconsistency that accumulates across components.`;
@@ -173,7 +173,7 @@ const tokenTypesRows = [
   {
     type: "Typography",
     examples: "body-md: { font-family, size, weight, line-height, letter-spacing }",
-    format: "Composite object -  never individual properties",
+    format: "Composite object, never individual properties",
   },
   {
     type: "Spacing",
@@ -210,7 +210,7 @@ const sections = [
     title: "Design Direction & Philosophy",
     badge: "Prose",
     description:
-      "Personality and aesthetic intent in plain language. Describes what the design system is trying to feel like, what it explicitly rejects, and what category of product it belongs to. This section tells the agent whether to reach for rounded corners or sharp edges, saturated or muted colours, dense or airy layouts -  without giving explicit rules.",
+      "Personality and aesthetic intent in plain language. Describes what the design system is trying to feel like, what it explicitly rejects, and what category of product it belongs to. This section tells the agent whether to reach for rounded corners or sharp edges, saturated or muted colours, dense or airy layouts, without giving explicit rules.",
     callout: {
       type: "info" as const,
       text: 'Example entry: "Dark, precise, developer-focused. Influenced by Linear and Vercel. Rejects: decorative gradients, rounded-pill buttons, bright accent colours. Accepts: monochrome palettes, tight spacing, clear hierarchy."',
@@ -222,7 +222,7 @@ const sections = [
     title: "Colour System",
     badge: "Three tiers",
     description:
-      "Colour tokens are structured across three tiers to enforce correct usage. Agents should only ever reference Tier 2 (semantic) or Tier 3 (component) tokens in generated code -  never Tier 1 primitives directly. This mirrors how professional design systems work and prevents hardcoded values from creeping into components.",
+      "Colour tokens are structured across three tiers to enforce correct usage. Agents should only ever reference Tier 2 (semantic) or Tier 3 (component) tokens in generated code, never Tier 1 primitives directly. This mirrors how professional design systems work and prevents hardcoded values from creeping into components.",
     callout: {
       type: "warning" as const,
       text: "Tier 1 primitive tokens (raw hex values) are listed for reference only. They should never appear in component code. Always use the semantic alias.",
@@ -234,10 +234,10 @@ const sections = [
     title: "Typography System",
     badge: "Composite groups",
     description:
-      "Typography tokens are always defined as composite groups -  a single named token that bundles font-family, size, weight, line-height, and letter-spacing together. Individual properties (font-size: 14px) are not valid tokens. This prevents the common mistake of agents mixing and matching properties from different type scales, which destroys typographic hierarchy.",
+      "Typography tokens are always defined as composite groups: a single named token that bundles font-family, size, weight, line-height, and letter-spacing together. Individual properties (font-size: 14px) are not valid tokens. This prevents the common mistake of agents mixing and matching properties from different type scales, which destroys typographic hierarchy.",
     callout: {
       type: "warning" as const,
-      text: "Typography tokens are always composites. Never list font-size, font-weight, or line-height as standalone tokens -  they must always appear as part of a named composite group like body-md or heading-lg.",
+      text: "Typography tokens are always composites. Never list font-size, font-weight, or line-height as standalone tokens. They must always appear as part of a named composite group like body-md or heading-lg.",
     },
     example: typographyExample,
   },
@@ -258,7 +258,7 @@ const sections = [
     title: "Page Structure & Layout Patterns",
     badge: "From screenshots",
     description:
-      "Derived from the full-page and viewport screenshots captured during extraction. Documents recurring layout patterns -  nav placement, sidebar widths, hero sections, card grids -  with annotated measurements. This gives agents a reference for how full pages are assembled from the available components, not just how individual components look in isolation.",
+      "Derived from the full-page and viewport screenshots captured during extraction. Documents recurring layout patterns: nav placement, sidebar widths, hero sections, card grids, with annotated measurements. This gives agents a reference for how full pages are assembled from the available components, not just how individual components look in isolation.",
     callout: {
       type: "tip" as const,
       text: "This section is only populated when screenshots were captured during extraction (website extraction always includes them; Figma extraction requires explicit screenshot capture in the source file).",
@@ -270,7 +270,7 @@ const sections = [
     title: "Component Patterns",
     badge: "5–10 components",
     description:
-      "The most detailed section. Each component entry includes: anatomy (the DOM structure), token mappings for every state (default, hover, focus, active, disabled, loading, error), and one complete TSX example using the design system tokens. Agents should always call get_component before building a component that exists here -  this section defines the canonical implementation.",
+      "The most detailed section. Each component entry includes: anatomy (the DOM structure), token mappings for every state (default, hover, focus, active, disabled, loading, error), and one complete TSX example using the design system tokens. Agents should always call get_component before building a component that exists here. This section defines the canonical implementation.",
     callout: {
       type: "info" as const,
       text: "Every state must be mapped. Components with unmapped states (e.g. no disabled token defined) are considered incomplete and will be flagged in the compliance check.",
@@ -282,7 +282,7 @@ const sections = [
     title: "Elevation & Depth",
     badge: "Shadow + z-index",
     description:
-      "Defines how depth is expressed without box-shadow. In dark design systems, elevation is almost always achieved through background colour -  darker = lower, lighter = higher. This section documents the elevation scale, the corresponding background tokens, border behaviour at each level, and the z-index scale for layered UI elements like modals, tooltips, and drawers.",
+      "Defines how depth is expressed without box-shadow. In dark design systems, elevation is almost always achieved through background colour, where darker = lower, lighter = higher. This section documents the elevation scale, the corresponding background tokens, border behaviour at each level, and the z-index scale for layered UI elements like modals, tooltips, and drawers.",
     callout: {
       type: "warning" as const,
       text: "Do not use box-shadow to create elevation unless the design system explicitly defines shadow tokens at each elevation level. Most dark design systems do not.",
@@ -324,7 +324,7 @@ export default function DesignMdPage() {
         </h1>
         <p className="text-base text-gray-600 leading-relaxed">
           The DESIGN.md file is the core output of Layout. It follows a
-          strict structure optimised for LLM consumption -  not for humans to
+          strict structure optimised for LLM consumption, not for humans to
           read, but for AI agents to parse reliably and reference consistently
           when generating UI code.
         </p>
@@ -440,19 +440,19 @@ export default function DesignMdPage() {
         {/* Appendices */}
         <div className="space-y-6 pt-4">
           <h3 className="text-lg font-semibold text-[#0a0a0a]">
-            Appendix A -  Complete Token Reference
+            Appendix A: Complete Token Reference
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
             A flat table of every token extracted from the source (Figma file
             or website), with its name, resolved value, type, and the section
-            it belongs to. This is the exhaustive reference -  the main sections
+            it belongs to. This is the exhaustive reference. The main sections
             only document tokens that appear in components, but Appendix A
             includes everything. Useful for agents doing token lookup when the
             section content does not cover an edge case.
           </p>
 
           <h3 className="text-lg font-semibold text-[#0a0a0a]">
-            Appendix B -  Token Source Metadata
+            Appendix B: Token Source Metadata
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
             Records where each token came from and how confident the extraction

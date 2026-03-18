@@ -41,6 +41,7 @@ export const docsNavigation: DocNavSection[] = [
         ],
       },
       { title: "Figma Plugin", href: "/docs/figma-plugin" },
+      { title: "Chrome Extension", href: "/docs/chrome-extension" },
     ],
   },
   {
