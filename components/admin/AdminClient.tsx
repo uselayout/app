@@ -21,11 +21,11 @@ interface AccessRequestRow {
   id: string;
   name: string;
   email: string;
-  what_building: string;
-  how_heard: string;
+  whatBuilding: string;
+  howHeard: string;
   status: "pending" | "approved" | "rejected";
-  invite_code: string | null;
-  created_at: string;
+  inviteCode: string | null;
+  createdAt: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -524,20 +524,20 @@ function AccessRequestsTab({ toast }: { toast: (msg: string, type?: Toast["type"
                   <td
                     className="px-4 py-3 max-w-48 truncate"
                     style={{ color: "var(--text-secondary)" }}
-                    title={row.what_building}
+                    title={row.whatBuilding}
                   >
-                    {row.what_building}
+                    {row.whatBuilding}
                   </td>
                   <td
                     className="px-4 py-3 max-w-36 truncate"
                     style={{ color: "var(--text-secondary)" }}
-                    title={row.how_heard}
+                    title={row.howHeard}
                   >
-                    {row.how_heard}
+                    {row.howHeard}
                   </td>
                   <td className="px-4 py-3">{statusBadge(row.status)}</td>
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
-                    {formatDate(row.created_at)}
+                    {formatDate(row.createdAt)}
                   </td>
                   <td className="px-4 py-3">
                     {row.status === "pending" ? (
