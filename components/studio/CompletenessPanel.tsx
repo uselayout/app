@@ -143,15 +143,17 @@ function SectionRow({ section }: SectionRowProps) {
 
 function buildFixInstruction(report: CompletenessReport): string {
   const lines: string[] = [
+    "You MUST add new sections and content as described below. This overrides any prior instruction about not adding sections.",
     "CRITICAL: Preserve ALL existing sections, headings, content, and formatting exactly as-is.",
     "Only ADD missing content — never remove, rename, or restructure existing sections.",
-    "Keep all existing heading patterns unchanged (e.g. '## 5. Components', '## Anti-patterns').",
+    "Keep all existing heading patterns unchanged.",
+    "Return the complete updated document with the additions.",
     "",
   ];
 
   for (const section of report.sections) {
     if (section.missing.length === 0) continue;
-    lines.push(`## ${section.section} section:`);
+    lines.push(`### Fix: ${section.section} section`);
     for (const missing of section.missing) {
       lines.push(`- ${missing}`);
     }
@@ -159,7 +161,7 @@ function buildFixInstruction(report: CompletenessReport): string {
   }
 
   if (report.suggestions.length > 0) {
-    lines.push("## Additional suggestions:");
+    lines.push("### Additional improvements:");
     for (const s of report.suggestions) {
       lines.push(`- ${s}`);
     }
@@ -220,9 +222,15 @@ export function CompletenessPanel({ designMd, onDesignMdChange, className = '' }
         throw new Error(accumulated);
       }
 
-      onDesignMdChange(accumulated);
-      toast.success("DESIGN.md improved automatically");
+      const cleaned = accumulated.replace(/^```(?:markdown|md)?\n?/, "").replace(/\n?```$/, "").trim();
+      if (!cleaned || cleaned === designMd.trim()) {
+        toast.error("Auto-fix produced no changes. Try editing manually.");
+      } else {
+        onDesignMdChange(cleaned);
+        toast.success("DESIGN.md improved automatically");
+      }
     } catch (err) {
+      console.error("[CompletenessPanel] Auto-fix error:", err);
       const msg = err instanceof Error ? err.message : "Auto-fix failed";
       toast.error(msg);
     } finally {
