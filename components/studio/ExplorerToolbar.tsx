@@ -54,11 +54,11 @@ export function ExplorerToolbar({
   const promptInputRef = useRef<HTMLInputElement>(null);
 
   // Pre-fill prompt when switching to an exploration that has one
+  // prompt intentionally excluded from deps to avoid overwriting user input on re-render
   useEffect(() => {
     if (currentPrompt && !prompt) {
       setPrompt(currentPrompt);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPrompt]);
 
   // Pre-populate with Figma push-to-canvas image
