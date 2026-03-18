@@ -17,6 +17,7 @@ export async function OPTIONS() {
 
 const PushToCanvasSchema = z.object({
   screenshot: z.string(),
+  projectId: z.string().optional(),
   tokens: z.record(z.string(), z.unknown()).optional(),
   componentName: z.string().optional(),
 });
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { screenshot } = parsed.data;
+  const { screenshot, projectId } = parsed.data;
 
   // Get org to obtain the owner's userId (needed for project upsert)
   const org = await getOrganization(auth.orgId);
@@ -59,8 +60,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // Use the most recently updated project (fetchAllProjects orders by updated_at desc)
-  const project = projects[0];
+  // Use specified project if provided, otherwise fall back to most recently updated
+  const project = projectId
+    ? projects.find((p) => p.id === projectId) ?? projects[0]
+    : projects[0];
 
   // Append screenshot to existing array, keeping only the last 10
   const existingScreenshots = project.extractionData?.screenshots ?? [];
