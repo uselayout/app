@@ -39,7 +39,7 @@ export function ExtensionSection() {
               Five tools. One sidebar.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Extract tokens. Capture screenshots. Inspect elements. Check compliance with a score out of 100. Push pages to Figma. All without leaving the tab you&apos;re on.
+              Extract tokens. Capture screenshots. Inspect elements. Check compliance with a score out of 100. Copy a ready-to-paste prompt that sends any page to Figma as pixel-perfect editable frames with auto-layout — powered by Figma&apos;s own capture engine via Claude Code. All without leaving the tab you&apos;re on.
             </p>
           </motion.div>
         </div>
