@@ -53,12 +53,10 @@ export function ExplorerToolbar({
   const contextFileInputRef = useRef<HTMLInputElement>(null);
   const promptInputRef = useRef<HTMLInputElement>(null);
 
-  // Pre-fill prompt when switching to an exploration that has one
-  // prompt intentionally excluded from deps to avoid overwriting user input on re-render
+  // Clear prompt when switching between explorations
+  // (don't pre-fill — Regenerate button handles that explicitly)
   useEffect(() => {
-    if (currentPrompt && !prompt) {
-      setPrompt(currentPrompt);
-    }
+    setPrompt("");
   }, [currentPrompt]);
 
   // Pre-populate with Figma push-to-canvas image
