@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 
+const inputClass =
+  "w-full bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors";
+
 export function RequestAccessClient() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -108,7 +111,7 @@ export function RequestAccessClient() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors"
+                  className={`${inputClass} h-[40px]`}
                 />
                 <input
                   type="email"
@@ -116,15 +119,15 @@ export function RequestAccessClient() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors"
+                  className={`${inputClass} h-[40px]`}
                 />
-                <input
-                  type="text"
+                <textarea
+                  rows={2}
                   placeholder='e.g. "A SaaS product with a Figma design system I want AI agents to use"'
                   value={whatBuilding}
                   onChange={(e) => setWhatBuilding(e.target.value)}
                   required
-                  className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors"
+                  className={`${inputClass} py-2 resize-none`}
                 />
                 <input
                   type="text"
@@ -132,7 +135,7 @@ export function RequestAccessClient() {
                   value={howHeard}
                   onChange={(e) => setHowHeard(e.target.value)}
                   required
-                  className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors"
+                  className={`${inputClass} h-[40px]`}
                 />
 
                 {error && (
