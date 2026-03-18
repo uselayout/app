@@ -38,7 +38,7 @@ export function ConfirmModal({
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-sm rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-app)] p-6 shadow-[0_0_60px_rgba(0,0,0,0.5)]">
+      <div className="relative z-10 w-full max-w-sm rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] p-6 shadow-[0_0_60px_rgba(0,0,0,0.5)]">
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">
           {title}
         </h3>
