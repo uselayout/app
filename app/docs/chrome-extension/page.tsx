@@ -172,6 +172,11 @@ export default function ChromeExtensionPage() {
             </strong>
           </li>
           <li>
+            If you are running a self-hosted Layout instance, change the{" "}
+            <strong className="font-semibold text-[#0a0a0a]">Server URL</strong>{" "}
+            to your instance&apos;s address before entering the API key
+          </li>
+          <li>
             Select your organisation and project from the dropdowns
           </li>
           <li>
@@ -179,8 +184,8 @@ export default function ChromeExtensionPage() {
           </li>
         </ol>
         <Callout type="tip">
-          Your API key is stored locally in Chrome&apos;s extension storage. It
-          is never sent to any third party.
+          Your API key and server URL are stored locally in Chrome&apos;s
+          extension storage. They are never sent to any third party.
         </Callout>
       </section>
 
