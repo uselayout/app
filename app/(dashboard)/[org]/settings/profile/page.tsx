@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { User, Mail, Lock, Loader2, Check } from "lucide-react";
+import { InviteCodesPanel } from "@/components/settings/InviteCodesPanel";
 
 export default function ProfilePage() {
   const { data: session } = useSession();
@@ -214,6 +215,11 @@ export default function ProfilePage() {
           </p>
         )}
       </form>
+
+      {/* Invite Codes */}
+      <div className="mt-8">
+        <InviteCodesPanel />
+      </div>
     </div>
   );
 }
