@@ -111,26 +111,14 @@ export default function ChromeExtensionPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Installation</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          During early access, install the extension in developer mode:
+          During early access, the Layout team will provide the extension build
+          directly. Once published to the Chrome Web Store, installation will be
+          a single click. This page will be updated with the store link when
+          available.
         </p>
         <ol className="list-decimal pl-6 space-y-2 text-gray-600">
           <li>
-            Clone or download the extension from{" "}
-            <a
-              href="https://github.com/uselayout/extension"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-900 hover:underline"
-            >
-              github.com/uselayout/extension
-            </a>
-          </li>
-          <li>
-            Run{" "}
-            <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
-              npm install &amp;&amp; npm run build
-            </code>{" "}
-            in the extension directory
+            Download the extension ZIP provided by the Layout team and unzip it
           </li>
           <li>
             Open Chrome and navigate to{" "}
@@ -150,11 +138,7 @@ export default function ChromeExtensionPage() {
             <strong className="font-semibold text-[#0a0a0a]">
               Load unpacked
             </strong>{" "}
-            and select the{" "}
-            <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
-              dist
-            </code>{" "}
-            folder from the build output
+            and select the unzipped extension folder
           </li>
           <li>
             The Layout icon appears in your Chrome toolbar. Click it to open the
@@ -162,9 +146,9 @@ export default function ChromeExtensionPage() {
           </li>
         </ol>
         <Callout type="info">
-          Once the extension is published to the Chrome Web Store, installation
-          will be a single click. This page will be updated with the store link
-          when available.
+          The extension is not open source. During early access, builds are
+          distributed directly by the Layout team. A Chrome Web Store listing is
+          coming soon.
         </Callout>
       </section>
 
