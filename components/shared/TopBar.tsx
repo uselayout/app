@@ -19,8 +19,8 @@ interface TopBarProps {
   onToggleSource?: () => void;
   sourcePanelOpen?: boolean;
   onExport?: () => void;
-  centreView?: "editor" | "canvas";
-  onCentreViewChange?: (view: "editor" | "canvas") => void;
+  centreView?: "editor" | "canvas" | "saved";
+  onCentreViewChange?: (view: "editor" | "canvas" | "saved") => void;
 }
 
 export function TopBar({
