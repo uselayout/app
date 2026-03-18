@@ -123,17 +123,31 @@ export async function getComponent(id: string): Promise<Component | null> {
   return rowToComponent(data as ComponentRow);
 }
 
+/**
+ * Look up a component by slug. Pass `projectId` to scope the lookup:
+ * - `undefined` (default) — matches any project (first match returned)
+ * - `null` — matches only org-wide components (project_id IS NULL)
+ * - `string` — matches that specific project
+ */
 export async function getComponentBySlug(
   orgId: string,
-  slug: string
+  slug: string,
+  projectId?: string | null
 ): Promise<Component | null> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("layout_component")
     .select("*")
     .eq("org_id", orgId)
-    .eq("slug", slug)
-    .single();
+    .eq("slug", slug);
 
+  if (projectId === null) {
+    query = query.is("project_id", null);
+  } else if (projectId !== undefined) {
+    query = query.eq("project_id", projectId);
+  }
+  // projectId === undefined → no project filter (any project)
+
+  const { data, error } = await query.limit(1).maybeSingle();
   if (error || !data) return null;
   return rowToComponent(data as ComponentRow);
 }
