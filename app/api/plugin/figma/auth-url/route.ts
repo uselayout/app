@@ -33,7 +33,14 @@ export async function GET(request: Request) {
     );
   }
 
-  const origin = new URL(request.url).origin;
+  // Behind a reverse proxy, request.url may have an internal origin.
+  // Use x-forwarded-host / x-forwarded-proto to build the public URL.
+  const headers = new Headers(request.headers);
+  const forwardedHost = headers.get("x-forwarded-host");
+  const forwardedProto = headers.get("x-forwarded-proto") ?? "https";
+  const origin = forwardedHost
+    ? `${forwardedProto}://${forwardedHost}`
+    : new URL(request.url).origin;
   const redirectUri = `${origin}/api/plugin/figma/callback`;
 
   // State encodes the orgId so the callback can associate the token
