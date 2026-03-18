@@ -5,7 +5,7 @@ import { CopyBlock } from "@/components/shared/CopyBlock";
 import { Callout } from "@/components/docs/Callout";
 
 export const metadata: Metadata = {
-  title: "GitHub Copilot -  Layout Docs",
+  title: "GitHub Copilot | Layout Docs",
   description:
     "Persist your Layout design system as Copilot context via .github/copilot-instructions.md.",
 };
@@ -37,7 +37,7 @@ export default function CopilotPage() {
           Persistent instructions via{" "}
           <code className="font-mono text-xs">copilot-instructions.md</code>{" "}
           require Copilot Enterprise or the GitHub.com Copilot integration.
-          Standard Copilot for Individuals uses open-file context only -  see the
+          Standard Copilot for Individuals uses open-file context only. See the
           tip below.
         </Callout>
       </div>
@@ -49,7 +49,7 @@ export default function CopilotPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-[#0a0a0a]">
-                Step 1 -  Create the .github directory
+                Step 1: Create the .github directory
               </h3>
               <p className="text-base text-gray-600 leading-relaxed">
                 If it does not already exist, create the{" "}
@@ -63,7 +63,7 @@ export default function CopilotPage() {
 
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-[#0a0a0a]">
-                Step 2 -  Create copilot-instructions.md
+                Step 2: Create copilot-instructions.md
               </h3>
               <p className="text-base text-gray-600 leading-relaxed">
                 Create{" "}
@@ -91,8 +91,8 @@ export default function CopilotPage() {
           For inline completions (Copilot for Individuals), keep{" "}
           <code className="font-mono text-xs">DESIGN.md</code> or{" "}
           <code className="font-mono text-xs">tokens.css</code> open in a
-          separate editor tab. Copilot picks up context from all open files - 
-          having the token definitions visible significantly improves completion
+          separate editor tab. Copilot picks up context from all open files,
+          and having the token definitions visible significantly improves completion
           quality.
         </Callout>
 

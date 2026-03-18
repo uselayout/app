@@ -6,9 +6,9 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Walkthrough -  Layout Docs",
+  title: "Walkthrough | Layout Docs",
   description:
-    "A complete end-to-end walkthrough of Layout — from extracting a design system to exporting a working AI kit and closing the Figma loop.",
+    "A complete end-to-end walkthrough of Layout, from extracting a design system to exporting a working AI kit and closing the Figma loop.",
 };
 
 export default function WalkthroughPage() {
@@ -22,14 +22,14 @@ export default function WalkthroughPage() {
           End-to-End Walkthrough
         </h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          This walkthrough covers the complete Layout workflow —
+          This walkthrough covers the complete Layout workflow,
           from pasting a URL to having your AI agent automatically generate
           on-brand UI. Each step builds on the previous one, so read it in
           order the first time through.
         </p>
       </div>
 
-      {/* Step 1 -  Extract from Figma */}
+      {/* Step 1: Extract from Figma */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
           1. Extract from Figma
@@ -42,7 +42,7 @@ export default function WalkthroughPage() {
           ) on the Studio home screen and enter your Figma Personal Access
           Token. You can create one at{" "}
           <strong>Figma → Settings → Account → Personal access tokens</strong>.
-          The token is stored only in your browser -  it is never sent to
+          The token is stored only in your browser and is never sent to
           Layout servers.
         </p>
         <p className="text-base text-gray-600 leading-relaxed">
@@ -66,7 +66,7 @@ export default function WalkthroughPage() {
               {[
                 [
                   "Colour styles",
-                  "Actual fill values resolved via node API -  not just metadata",
+                  "Actual fill values resolved via node API, not just metadata",
                 ],
                 [
                   "Typography styles",
@@ -82,7 +82,7 @@ export default function WalkthroughPage() {
                 ],
                 [
                   "Variables",
-                  "Enterprise plans only -  the Variables API returns 403 on free/professional plans, which is treated as non-fatal and skipped automatically",
+                  "Enterprise plans only. The Variables API returns 403 on free/professional plans, which is treated as non-fatal and skipped automatically",
                 ],
               ].map(([what, detail]) => (
                 <tr key={what} className="hover:bg-gray-50">
@@ -97,13 +97,13 @@ export default function WalkthroughPage() {
         </div>
         <Callout type="info">
           The Figma Variables API returns 403 on non-Enterprise plans. This is
-          expected -  Layout treats it as non-fatal and continues extraction
+          expected. Layout treats it as non-fatal and continues extraction
           using colour and typography styles instead. You will still get a
           complete DESIGN.md.
         </Callout>
       </section>
 
-      {/* Step 2 -  Extract from a Website */}
+      {/* Step 2: Extract from a Website */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
           2. Extract from a Website
@@ -112,7 +112,7 @@ export default function WalkthroughPage() {
           No Figma file? Paste any live website URL instead. Layout uses
           Playwright to load the page in a headless browser and extract design
           data directly from the rendered DOM and computed styles. This works
-          on any public website -  your own staging environment, a competitor
+          on any public website, whether it is your own staging environment, a competitor
           site, or a design reference you admire.
         </p>
         <p className="text-base text-gray-600 leading-relaxed">
@@ -174,7 +174,7 @@ export default function WalkthroughPage() {
         </Callout>
       </section>
 
-      {/* Step 3 -  Generate DESIGN.md */}
+      {/* Step 3: Generate DESIGN.md */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
           3. Generate DESIGN.md
@@ -205,7 +205,7 @@ export default function WalkthroughPage() {
               {[
                 [
                   "Quick Reference",
-                  "One-page cheat sheet -  the most important tokens and rules at a glance",
+                  "One-page cheat sheet with the most important tokens and rules at a glance",
                 ],
                 [
                   "1. Colour System",
@@ -237,7 +237,7 @@ export default function WalkthroughPage() {
                 ],
                 [
                   "8. Anti-Patterns",
-                  "Explicit list of what the AI must not do -  hardcoded colours, wrong tokens, off-brand patterns",
+                  "Explicit list of what the AI must not do, including hardcoded colours, wrong tokens, and off-brand patterns",
                 ],
                 [
                   "9. Icons & Assets",
@@ -270,15 +270,15 @@ export default function WalkthroughPage() {
         </Callout>
       </section>
 
-      {/* Step 4 -  The Studio Editor */}
+      {/* Step 4: The Studio */}
       <section className="space-y-5">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
-          4. The Studio Editor
+          4. The Studio
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          After generation completes, the Studio opens a three-panel workspace.
-          All changes auto-save to browser storage with a 2-second debounce - 
-          there is no Save button and no account required.
+          After generation completes, the Studio opens with two modes: Editor
+          mode and Canvas mode. All changes auto-save to browser storage with
+          a 2-second debounce. There is no Save button and no account required.
         </p>
         <div className="space-y-4">
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
@@ -287,7 +287,7 @@ export default function WalkthroughPage() {
               <span className="text-gray-400 font-normal text-sm">(left)</span>
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              Displays the raw extracted data -  colour tokens, typography
+              Displays the raw extracted data: colour tokens, typography
               styles, spacing values, component inventory, and screenshots. Use
               this to verify what was captured before or after generation. If
               something is missing or misidentified, you can re-extract without
@@ -296,56 +296,62 @@ export default function WalkthroughPage() {
           </div>
           <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
-              Editor Panel{" "}
+              Editor Mode{" "}
               <span className="text-gray-400 font-normal text-sm">
-                (centre)
+                (Source Panel + Monaco Editor)
               </span>
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              A Monaco-based markdown editor -  the same editor used in VS Code.
+              A Monaco-based markdown editor, the same editor used in VS Code.
               This is where you refine DESIGN.md: fix misidentified tokens,
               strengthen the anti-patterns section, rewrite component specs, or
               add brand guidance that extraction cannot infer. Section
-              navigation pills let you jump between the 9 sections quickly.
+              navigation pills let you jump between the 9 sections quickly. An
+              AI edit bar below the editor lets you make targeted changes using
+              natural language prompts.
             </p>
           </div>
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
-              Test Panel{" "}
-              <span className="text-gray-400 font-normal text-sm">(right)</span>
+              Canvas Mode{" "}
+              <span className="text-gray-400 font-normal text-sm">
+                (Source Panel + Explorer Canvas)
+              </span>
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              Send prompts to Claude and see the generated TSX rendered live in
-              a sandboxed iframe. Use the context toggle to compare output with
-              and without DESIGN.md, check the health score, and iterate on
-              the context file until the AI reliably produces on-brand output.
+              The Explorer Canvas is the AI generation surface. Generate
+              multiple component variants simultaneously, compare output with
+              and without DESIGN.md in a side-by-side comparison view, check
+              the per-variant health score, and iterate until the AI reliably
+              produces on-brand output. You can also push variants to Figma
+              directly from the canvas.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Step 5 -  Test Your Context */}
+      {/* Step 5: Test Your Context */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
           5. Test Your Context
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          Testing is the most important step before exporting. It tells you
-          whether DESIGN.md actually improves AI output -  and by how much.
+          The Explorer Canvas is the most important step before exporting. It
+          tells you whether DESIGN.md actually improves AI output, and by how
+          much.
         </p>
 
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-[#0a0a0a]">
-            Context Toggle
+            Comparison View
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
-            The toggle switches DESIGN.md in and out of the Claude prompt. Turn
-            it <strong>off</strong>, run a prompt, and note the output. Turn it{" "}
-            <strong>on</strong>, run the same prompt, and compare. A
-            well-written context file produces noticeably better output:
-            correct token usage, proper spacing, on-brand typography, and no
-            hardcoded colours. This A/B comparison is the clearest signal that
-            your DESIGN.md is working.
+            The comparison view generates variants side by side, with and
+            without DESIGN.md context. Run a prompt and compare the two results
+            directly. A well-written context file produces noticeably better
+            output: correct token usage, proper spacing, on-brand typography,
+            and no hardcoded colours. This A/B comparison is the clearest signal
+            that your DESIGN.md is working.
           </p>
         </div>
 
@@ -354,12 +360,12 @@ export default function WalkthroughPage() {
             Quick Prompts
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
-            Preset component requests appear as one-click buttons -  primary
-            button, card, form input, badge, and more. If your extraction
-            included Figma components, the Test panel also generates dynamic
-            prompts for each extracted component name, giving you targeted
-            tests for your specific design system rather than generic UI
-            patterns.
+            Preset component requests appear as one-click buttons in the
+            Explorer Canvas: primary button, card, form input, badge, and more.
+            If your extraction included Figma components, the canvas also
+            generates dynamic prompts for each extracted component name, giving
+            you targeted tests for your specific design system rather than
+            generic UI patterns.
           </p>
         </div>
 
@@ -368,24 +374,24 @@ export default function WalkthroughPage() {
             Health Score
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
-            After each generation, the Test panel shows a 0–100 health score
-            measuring token faithfulness, component accuracy, and anti-pattern
-            violations. The score reflects how closely the generated code
-            follows the rules in DESIGN.md. Aim for 80 or higher before
-            exporting.
+            Each generated variant in the Explorer Canvas shows a 0-100 health
+            score measuring token faithfulness, component accuracy, and
+            anti-pattern violations. The score reflects how closely the
+            generated code follows the rules in DESIGN.md. Aim for 80 or higher
+            before exporting.
           </p>
         </div>
 
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-[#0a0a0a]">
-            Live Component Preview
+            Live Variant Preview
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
-            Generated TSX is transpiled server-side and rendered inside a
-            sandboxed iframe with React and Tailwind CSS loaded. You see the
-            actual component -  not just code -  so visual errors such as wrong
-            colours or broken layouts are immediately obvious without leaving
-            the Studio.
+            Each variant card in the Explorer Canvas renders the generated TSX
+            live in a sandboxed iframe with React and Tailwind CSS loaded. You
+            see the actual component, not just code, so visual errors such as
+            wrong colours or broken layouts are immediately obvious without
+            leaving the Studio.
           </p>
         </div>
 
@@ -393,11 +399,11 @@ export default function WalkthroughPage() {
           If the health score is consistently below 60, check that the Colour
           System and Typography sections of DESIGN.md contain well-formed CSS
           code blocks. The AI needs concrete, parseable examples to reference
-          at generation time -  prose descriptions alone are not enough.
+          at generation time. Prose descriptions alone are not enough.
         </Callout>
       </section>
 
-      {/* Step 6 -  Export Your AI Kit */}
+      {/* Step 6: Export Your AI Kit */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
           6. Export Your AI Kit
@@ -424,31 +430,31 @@ export default function WalkthroughPage() {
               {[
                 [
                   "DESIGN.md",
-                  "All AI agents -  the primary context file",
+                  "All AI agents. The primary context file",
                 ],
                 [
                   "CLAUDE.md",
-                  "Claude Code -  persistent project context injected on every prompt",
+                  "Claude Code. Persistent project context injected on every prompt",
                 ],
                 [
                   "AGENTS.md",
-                  "Codex, Jules, Factory, Amp -  agents following the agents.md convention",
+                  "Codex, Jules, Factory, Amp. Agents following the agents.md convention",
                 ],
                 [
                   ".cursorrules",
-                  "Cursor -  legacy rules format applied across all Composer and Chat sessions",
+                  "Cursor. Legacy rules format applied across all Composer and Chat sessions",
                 ],
                 [
                   "copilot-instructions.md",
-                  "GitHub Copilot -  workspace instructions file read by Copilot Chat",
+                  "GitHub Copilot. Workspace instructions file read by Copilot Chat",
                 ],
                 [
                   ".windsurfrules",
-                  "Windsurf -  global rules applied to all Cascade sessions in the project",
+                  "Windsurf. Global rules applied to all Cascade sessions in the project",
                 ],
                 [
                   "tokens.css",
-                  "Any stylesheet -  CSS custom properties ready to import directly",
+                  "Any stylesheet. CSS custom properties ready to import directly",
                 ],
                 [
                   "tokens.json",
@@ -456,7 +462,7 @@ export default function WalkthroughPage() {
                 ],
                 [
                   "tailwind.config.js",
-                  "Tailwind CSS -  theme extension with extracted colours, spacing, and radii",
+                  "Tailwind CSS. Theme extension with extracted colours, spacing, and radii",
                 ],
               ].map(([file, use]) => (
                 <tr key={file} className="hover:bg-gray-50">
@@ -487,7 +493,7 @@ export default function WalkthroughPage() {
         </Callout>
       </section>
 
-      {/* Step 7 -  Set Up the CLI */}
+      {/* Step 7: Set Up the CLI */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
           7. Set Up the CLI
@@ -520,7 +526,7 @@ npx @layoutdesign/context install`}
             install
           </code>{" "}
           command detects Claude Code, Cursor, and Windsurf and writes the MCP
-          server configuration to whichever are present -  no manual JSON
+          server configuration to whichever are present. No manual JSON
           editing required.
         </p>
         <Callout type="tip">
@@ -534,7 +540,7 @@ npx @layoutdesign/context install`}
         </Callout>
       </section>
 
-      {/* Step 8 -  MCP Tools Reference */}
+      {/* Step 8: MCP Tools Reference */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
           8. MCP Tools Reference
@@ -542,7 +548,7 @@ npx @layoutdesign/context install`}
         <p className="text-base text-gray-600 leading-relaxed">
           Once the MCP server is configured, your AI agent can call 10 tools
           automatically when building UI. You do not need to invoke them
-          manually -  the agent decides when to use them based on the task.
+          manually. The agent decides when to use them based on the task.
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -611,13 +617,13 @@ npx @layoutdesign/context install`}
         </div>
       </section>
 
-      {/* Step 9 -  The Figma Closed Loop */}
+      {/* Step 9: The Figma Closed Loop */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
           9. The Figma Closed Loop
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          Layout closes the loop between code and design -  something
+          Layout closes the loop between code and design, something
           previously requiring separate tools and manual handoffs. Preview
           components locally at{" "}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
@@ -642,7 +648,7 @@ npx @layoutdesign/context install`}
         <p className="text-base text-gray-600 leading-relaxed">
           Each step in the loop uses the same design tokens extracted from the
           source. The AI generates code with the tokens, the preview renders
-          using Tailwind, and the Figma frame uses the same values -  so code
+          using Tailwind, and the Figma frame uses the same values, so code
           and design stay in sync without a separate handoff process.
         </p>
         <Callout type="info">
@@ -668,7 +674,7 @@ npx @layoutdesign/context install`}
         </Callout>
       </section>
 
-      {/* Step 10 -  Tips & Troubleshooting */}
+      {/* Step 10: Tips & Troubleshooting */}
       <section className="space-y-5">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
           10. Tips &amp; Troubleshooting
@@ -693,16 +699,16 @@ npx @layoutdesign/context install`}
               <tbody className="divide-y divide-gray-100">
                 {[
                   [
-                    "80–100",
-                    "Excellent -  DESIGN.md is providing strong, reliable context. Safe to export and ship.",
+                    "80-100",
+                    "Excellent. DESIGN.md is providing strong, reliable context. Safe to export and ship.",
                   ],
                   [
-                    "60–79",
-                    "Good -  context is working but some tokens or anti-patterns may be ignored. Review the weakest sections before exporting.",
+                    "60-79",
+                    "Good. Context is working but some tokens or anti-patterns may be ignored. Review the weakest sections before exporting.",
                   ],
                   [
                     "Below 60",
-                    "Needs work -  the AI is not reliably following your design system. Check that CSS code blocks are well-formed and the anti-patterns section is explicit.",
+                    "Needs work. The AI is not reliably following your design system. Check that CSS code blocks are well-formed and the anti-patterns section is explicit.",
                   ],
                 ].map(([score, meaning]) => (
                   <tr key={score} className="hover:bg-gray-50">
@@ -722,8 +728,8 @@ npx @layoutdesign/context install`}
             Re-Extracting After a Design Update
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
-            When the design system changes -  new brand colours, updated type
-            scale, redesigned components -  paste the URL again on the home
+            When the design system changes (new brand colours, updated type
+            scale, redesigned components), paste the URL again on the home
             screen and re-extract. The Studio loads the updated data into the
             Source panel. You can then re-generate DESIGN.md or manually update
             only the changed sections in the editor.
@@ -732,14 +738,15 @@ npx @layoutdesign/context install`}
 
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-[#0a0a0a]">
-            Context Toggle A/B Comparison
+            Comparison View A/B Testing
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
-            The context toggle is the fastest way to validate whether DESIGN.md
-            is providing value. Run the same prompt with context off, then on.
-            If the output looks identical, the context file is not doing its job
-            and needs strengthening. Focus on the Quick Reference section and
-            the anti-patterns list first.
+            The comparison view in the Explorer Canvas is the fastest way to
+            validate whether DESIGN.md is providing value. Generate variants
+            with and without context side by side using the same prompt. If the
+            output looks identical, the context file is not doing its job and
+            needs strengthening. Focus on the Quick Reference section and the
+            anti-patterns list first.
           </p>
         </div>
 
@@ -751,7 +758,7 @@ npx @layoutdesign/context install`}
             If you want to try the CLI without extracting a design system first,
             three free starter kits are bundled with the package. Each was
             extracted from a live website using Playwright and includes a Quick
-            Reference, core tokens, and 5 component specs -  enough to get
+            Reference, core tokens, and 5 component specs, enough to get
             meaningful on-brand output immediately.
           </p>
           <div className="overflow-x-auto rounded-xl border border-gray-200">
@@ -810,15 +817,15 @@ npx @layoutdesign/context init --kit notion-lite`}
               className="text-gray-900 hover:underline"
             >
               Studio Guide
-            </Link>{" "}
- -  deeper reference for the three-panel editor and all extraction
+            </Link>
+            . Deeper reference for the editor, canvas, and all extraction
             options.
           </li>
           <li>
             <Link href="/docs/cli" className="text-gray-900 hover:underline">
               CLI Guide
-            </Link>{" "}
- -  full CLI command reference including kit management and
+            </Link>
+            . Full CLI command reference including kit management and
             auto-configure options.
           </li>
           <li>
@@ -827,8 +834,8 @@ npx @layoutdesign/context init --kit notion-lite`}
               className="text-gray-900 hover:underline"
             >
               DESIGN.md Spec
-            </Link>{" "}
- -  the formal specification for each section of the context file.
+            </Link>
+            . The formal specification for each section of the context file.
           </li>
           <li>
             <Link
@@ -836,8 +843,8 @@ npx @layoutdesign/context init --kit notion-lite`}
               className="text-gray-900 hover:underline"
             >
               Claude Code Integration
-            </Link>{" "}
- -  add the export files to your project for persistent on-brand
+            </Link>
+            . Add the export files to your project for persistent on-brand
             context.
           </li>
           <li>
@@ -846,8 +853,8 @@ npx @layoutdesign/context init --kit notion-lite`}
               className="text-gray-900 hover:underline"
             >
               Cursor Integration
-            </Link>{" "}
- -  set up MDC rules files for Cursor 0.43+.
+            </Link>
+            . Set up MDC rules files for Cursor 0.43+.
           </li>
         </ul>
       </section>

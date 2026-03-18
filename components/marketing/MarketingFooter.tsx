@@ -7,12 +7,13 @@ const LAYOUT_LINKS = [
 
 const TOOLS_LINKS = [
   { label: "Studio", href: "/studio" },
-  { label: "Layout CLI", href: "/docs/cli" },
-  { label: "AI Kits", href: "/docs/kits" },
+  { label: "CLI & MCP Server", href: "https://github.com/uselayout/cli" },
+  { label: "Chrome Extension", href: "https://github.com/uselayout/extension" },
+  { label: "Figma Plugin", href: "https://github.com/uselayout/figma" },
 ];
 
 const SOCIALS_LINKS = [
-  { label: "GitHub", href: "https://github.com/uselayout/cli" },
+  { label: "GitHub", href: "https://github.com/uselayout" },
   { label: "Discord", href: "/discord" },
   { label: "X / Twitter", href: "https://x.com/uselayout" },
 ];

@@ -5,7 +5,7 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Organisations - Layout Docs",
+  title: "Organisations | Layout Docs",
   description:
     "Multi-user teams with role-based access control in Layout.",
 };
@@ -14,7 +14,7 @@ const roles = [
   {
     role: "Owner",
     permissions:
-      "Full access - manage billing, delete org, manage all settings",
+      "Full access. Manage billing, delete org, manage all settings",
   },
   {
     role: "Admin",
@@ -122,7 +122,7 @@ export default function OrganisationsPage() {
             { step: "3", label: "Enter an email address and select a role" },
             {
               step: "4",
-              label: "Click Invite - the user receives an email invitation",
+              label: "Click Invite. The user receives an email invitation",
             },
           ].map(({ step, label }) => (
             <div key={step} className="flex gap-4 px-5 py-4">
@@ -146,7 +146,7 @@ export default function OrganisationsPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Scoping</h2>
         <p className="text-base text-gray-600 leading-relaxed">
           All data in Layout is scoped to an organisation. Nothing crosses
-          organisational boundaries - a project created in one org is not
+          organisational boundaries. A project created in one org is not
           visible in another.
         </p>
         <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 space-y-2">
@@ -174,7 +174,7 @@ export default function OrganisationsPage() {
         <p className="text-base text-gray-600 leading-relaxed">
           Use the organisation switcher in the sidebar to move between orgs.
           Each org has its own dashboard, projects, and settings. Switching orgs
-          does not affect your session - you remain signed in throughout.
+          does not affect your session. You remain signed in throughout.
         </p>
       </section>
 
