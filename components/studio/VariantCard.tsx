@@ -11,7 +11,7 @@ function Tip({ label, children }: { label: string; children: React.ReactNode }) 
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side="top" sideOffset={4} className="bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--studio-border)] px-2 py-1 text-[10px]">
+      <TooltipContent side="top" sideOffset={4} className="bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--studio-border)] px-2 py-1 text-[10px] [&>svg]:hidden">
         {label}
       </TooltipContent>
     </Tooltip>
