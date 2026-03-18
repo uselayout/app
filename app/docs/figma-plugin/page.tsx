@@ -5,9 +5,9 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Figma Plugin - Layout Docs",
+  title: "Figma Plugin | Layout Docs",
   description:
-    "Native Figma plugin for extracting design systems, inspecting tokens, and pushing to Layout Cloud - all without leaving Figma.",
+    "Native Figma plugin for extracting design systems, inspecting tokens, and pushing to Layout Cloud. All without leaving Figma.",
 };
 
 export default function FigmaPluginPage() {
@@ -20,7 +20,7 @@ export default function FigmaPluginPage() {
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Figma Plugin</h1>
         <p className="text-base text-gray-600 leading-relaxed">
           Native Figma plugin for extracting design systems, inspecting tokens,
-          and pushing to Layout Cloud - all without leaving Figma.
+          and pushing to Layout Cloud. All without leaving Figma.
         </p>
       </div>
 
@@ -119,7 +119,7 @@ export default function FigmaPluginPage() {
               Capture a component or frame as a screenshot with token context.
               Push it to Layout&apos;s Explorer Canvas where AI rebuilds it
               using your design system tokens and generates multiple variants.
-              Requires at least one existing project in Layout Studio — create a
+              Requires at least one existing project in Layout Studio. Create a
               project first if you have not already.
             </p>
           </div>
@@ -170,7 +170,7 @@ export default function FigmaPluginPage() {
         </ol>
         <Callout type="info">
           Once published to the Figma Community, a separate &quot;Install from Figma
-          Community&quot; method will be available — no manifest import needed.
+          Community&quot; method will be available. No manifest import needed.
         </Callout>
       </section>
 
@@ -193,9 +193,9 @@ export default function FigmaPluginPage() {
             Click{" "}
             <strong className="font-semibold text-[#0a0a0a]">Generate New Key</strong>
           </li>
-          <li>Give it a name — for example, &quot;Figma Plugin&quot;</li>
+          <li>Give it a name, for example &quot;Figma Plugin&quot;</li>
           <li>
-            Copy the key immediately — it is only shown once. Store it somewhere
+            Copy the key immediately. It is only shown once. Store it somewhere
             safe (a password manager is ideal).
           </li>
           <li>
@@ -206,7 +206,7 @@ export default function FigmaPluginPage() {
           </li>
         </ol>
         <Callout type="tip">
-          The plugin stores your API key in Figma&apos;s client storage — it never
+          The plugin stores your API key in Figma&apos;s client storage. It never
           leaves your machine and is not sent to any third party.
         </Callout>
       </section>
@@ -218,7 +218,7 @@ export default function FigmaPluginPage() {
           {[
             {
               problem: "Settings tab shows \"Not connected\"",
-              fix: "Double-check that the API key was copied correctly — it is only shown once at generation time. If unsure, generate a new key in Layout → Settings → API Keys and try again.",
+              fix: "Double-check that the API key was copied correctly. It is only shown once at generation time. If unsure, generate a new key in Layout → Settings → API Keys and try again.",
             },
             {
               problem: "Extraction returns no tokens",
@@ -226,7 +226,7 @@ export default function FigmaPluginPage() {
             },
             {
               problem: "Variables sync fails or shows an error",
-              fix: "On Professional and Starter Figma plans, the Variables API is unavailable (Figma restriction). The plugin automatically falls back to syncing Local Styles — this is expected behaviour, not a bug.",
+              fix: "On Professional and Starter Figma plans, the Variables API is unavailable (Figma restriction). The plugin automatically falls back to syncing Local Styles. This is expected behaviour, not a bug.",
             },
             {
               problem: "Canvas push returns an error",
@@ -257,13 +257,13 @@ export default function FigmaPluginPage() {
             leaving Figma
           </li>
           <li>
-            The plugin stores your API key in Figma&apos;s client storage - it
+            The plugin stores your API key in Figma&apos;s client storage. It
             never leaves your machine
           </li>
         </ul>
 
         <Callout type="info">
-          The plugin reads local (unpublished) styles on all Figma plans — a
+          The plugin reads local (unpublished) styles on all Figma plans, a
           significant advantage over the REST API approach used by Web Studio.
           Full Figma Variables API access requires an Enterprise plan; on other
           plans, the plugin syncs Local Styles instead.

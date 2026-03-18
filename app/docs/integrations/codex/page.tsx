@@ -5,7 +5,7 @@ import { CopyBlock } from "@/components/shared/CopyBlock";
 import { Callout } from "@/components/docs/Callout";
 
 export const metadata: Metadata = {
-  title: "OpenAI Codex -  Layout Docs",
+  title: "OpenAI Codex | Layout Docs",
   description:
     "Add AGENTS.md to your repo so OpenAI Codex follows your design system on every task.",
 };
@@ -33,8 +33,8 @@ export default function CodexPage() {
           Codex reads{" "}
           <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
             AGENTS.md
-          </code>{" "}
- -  an open standard context file supported by Codex, Cursor, Google
+          </code>
+            , an open standard context file supported by Codex, Cursor, Google
           Jules, Factory, Amp, and other agents that follow the{" "}
           <a
             href="https://agents.md"
@@ -55,7 +55,7 @@ export default function CodexPage() {
           <div className="space-y-5">
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-[#0a0a0a]">
-                Step 1 -  Copy AGENTS.md to your project root
+                Step 1: Copy AGENTS.md to your project root
               </h3>
               <p className="text-base text-gray-600 leading-relaxed">
                 Copy{" "}
@@ -69,11 +69,11 @@ export default function CodexPage() {
 
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-[#0a0a0a]">
-                Step 2 -  Commit to your repo
+                Step 2: Commit to your repo
               </h3>
               <p className="text-base text-gray-600 leading-relaxed">
-                Commit the file. Codex reads it automatically on every task - 
-                no further configuration required.
+                Commit the file. Codex reads it automatically on every task,
+                with no further configuration required.
               </p>
             </div>
           </div>
@@ -81,7 +81,7 @@ export default function CodexPage() {
           <Callout type="tip">
             That&apos;s it. Codex will follow the design system rules in every
             UI component it generates. The same file is also read by Cursor,
-            Google Jules, Factory, and Amp -  one file covers all of them.
+            Google Jules, Factory, and Amp. One file covers all of them.
           </Callout>
         </div>
 
@@ -105,7 +105,7 @@ export default function CodexPage() {
           <p className="text-base text-gray-600 leading-relaxed">
             This lets you set global design system rules at the root while
             overriding specific behaviour for packages that have different
-            conventions -  for example, a mobile package using React Native
+            conventions. For example, a mobile package using React Native
             styling instead of CSS custom properties.
           </p>
         </div>

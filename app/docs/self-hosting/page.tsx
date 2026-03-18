@@ -6,7 +6,7 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Self-Hosting -  Layout Docs",
+  title: "Self-Hosting | Layout Docs",
   description:
     "Deploy Layout on your own infrastructure using Docker, Coolify, Railway, or any VPS.",
 };
@@ -21,8 +21,8 @@ export default function SelfHostingPage() {
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Self-Hosting</h1>
         <p className="text-base text-gray-600 leading-relaxed">
           Layout is fully open source and designed to run on your
-          own infrastructure. This guide covers everything you need to deploy it
- -  from environment variables to Docker builds to platform-specific
+          own infrastructure. This guide covers everything you need to deploy it,
+          from environment variables to Docker builds to platform-specific
           notes.
         </p>
       </div>
@@ -41,7 +41,7 @@ export default function SelfHostingPage() {
             },
             {
               label: "PostgreSQL database",
-              desc: "Used by Better Auth for user accounts. Any PostgreSQL 14+ instance works -  Supabase, Neon, Railway, or self-hosted.",
+              desc: "Used by Better Auth for user accounts. Any PostgreSQL 14+ instance works: Supabase, Neon, Railway, or self-hosted.",
             },
             {
               label: "Supabase instance",
@@ -106,7 +106,7 @@ cp .env.example .env.local`}
                 [
                   "ANTHROPIC_API_KEY",
                   "Yes",
-                  "Anthropic API key for Claude -  used for DESIGN.md generation and the test panel.",
+                  "Anthropic API key for Claude, used for DESIGN.md generation and the test panel.",
                 ],
                 [
                   "BETTER_AUTH_SECRET",
@@ -189,7 +189,7 @@ cp .env.example .env.local`}
         <h3 className="text-lg font-semibold text-[#0a0a0a]">Better Auth (PostgreSQL)</h3>
         <p className="text-base text-gray-600 leading-relaxed">
           Better Auth manages user accounts and sessions. It creates its own
-          tables on first run -  no migration command needed. The four tables it
+          tables on first run, with no migration command needed. The four tables it
           creates are:
         </p>
         <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 space-y-1">
@@ -210,7 +210,7 @@ cp .env.example .env.local`}
             DATABASE_URL
           </code>{" "}
           must point to a PostgreSQL database that the app has permission to
-          create tables in. A fresh database is fine -  no manual schema setup is
+          create tables in. A fresh database is fine, and no manual schema setup is
           required.
         </p>
         <Callout type="warning">
@@ -226,7 +226,7 @@ cp .env.example .env.local`}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             projects
           </code>{" "}
-          table -  run the migration from{" "}
+          table. Run the migration from{" "}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             supabase/migrations/
           </code>{" "}
@@ -333,7 +333,7 @@ docker run -d \\
         <div className="rounded-xl border border-gray-200 p-5 space-y-3">
           <h3 className="text-base font-semibold text-[#0a0a0a]">Railway</h3>
           <p className="text-sm text-gray-600 leading-relaxed">
-            Connect the GitHub repo -  Railway detects the Dockerfile
+            Connect the GitHub repo. Railway detects the Dockerfile
             automatically. Add all environment variables in the{" "}
             <strong className="font-medium text-[#0a0a0a]">Variables</strong>{" "}
             tab. The{" "}
@@ -447,7 +447,7 @@ export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             STRIPE_*
           </code>{" "}
-          environment variables unset -  the app starts and runs normally without
+          environment variables unset. The app starts and runs normally without
           them.
         </p>
         <p className="text-base text-gray-600 leading-relaxed">
@@ -516,7 +516,7 @@ export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`}
             {
               step: "2",
               label: "Auth is working",
-              desc: 'Visit /api/auth -  Better Auth should return a JSON response. A 404 means the auth route is not registered.',
+              desc: 'Visit /api/auth. Better Auth should return a JSON response. A 404 means the auth route is not registered.',
             },
             {
               step: "3",
