@@ -60,7 +60,7 @@ function SidebarInner() {
 
   const navItems: NavItem[] = [
     { label: "Studio", href: `${projectBase}/studio`, segment: "studio", icon: <StudioIcon /> },
-    { label: "Saved", href: `${projectBase}/studio?tab=saved`, segment: "saved", icon: <BookMarked size={16} /> },
+    { label: "Saved", href: `${projectBase}/studio?view=saved`, segment: "saved", icon: <BookMarked size={16} /> },
   ];
 
   function isActive(segment: string): boolean {
@@ -70,11 +70,11 @@ function SidebarInner() {
       const current = pathname.slice(prefix.length).split("/")[0];
       // "Saved" uses studio path + ?tab=saved query param
       if (segment === "saved") {
-        return current === "studio" && searchParams.get("tab") === "saved";
+        return current === "studio" && searchParams.get("view") === "saved";
       }
-      // "Studio" is active when on studio without the saved tab
+      // "Studio" is active when on studio without the saved view
       if (segment === "studio") {
-        return current === "studio" && searchParams.get("tab") !== "saved";
+        return current === "studio" && searchParams.get("view") !== "saved";
       }
       return current === segment;
     }
