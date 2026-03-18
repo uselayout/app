@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { FigmaClient } from "@/lib/figma/client";
 import { extractFromFigma } from "@/lib/figma/extractor";
-import { extractLimiter } from "@/lib/rate-limit-instances";
+import { extractLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
+import { auth } from "@/lib/auth";
 
 const RequestSchema = z.object({
   figmaUrl: z.string().url(),
@@ -18,6 +19,15 @@ export async function POST(request: NextRequest) {
       { error: "Too many requests. Please try again later." },
       { status: 429, headers: { "Retry-After": "60" } }
     );
+  }
+
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
+  }
+  const { success: allowed, reset } = checkUserRateLimit(session.user.id);
+  if (!allowed) {
+    return rateLimitResponse(reset);
   }
 
   let body: unknown;

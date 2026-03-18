@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { signIn, signUp } from "@/lib/auth-client";
+import { signIn } from "@/lib/auth-client";
 
 export function LoginPageClient() {
   return (
@@ -18,10 +18,8 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/studio";
 
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,17 +29,8 @@ function LoginContent() {
     setIsLoading(true);
 
     try {
-      if (mode === "signup") {
-        const { error: err } = await signUp.email({
-          email,
-          password,
-          name: name || email.split("@")[0],
-        });
-        if (err) throw new Error(err.message);
-      } else {
-        const { error: err } = await signIn.email({ email, password });
-        if (err) throw new Error(err.message);
-      }
+      const { error: err } = await signIn.email({ email, password });
+      if (err) throw new Error(err.message);
       router.refresh();
       router.push(next);
     } catch (err) {
@@ -81,7 +70,7 @@ function LoginContent() {
                   Welcome to Layout
                 </span>
                 <span className="text-[12px] leading-[16px] text-[#99a1af]">
-                  {mode === "signin" ? "Sign in to your account" : "Sign in or sign up"}
+                  Sign in to your account
                 </span>
               </div>
             </div>
@@ -134,20 +123,6 @@ function LoginContent() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="flex flex-col gap-[10px]">
-              {mode === "signup" && (
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-[rgba(237,237,244,0.24)]">
-                    Optional
-                  </span>
-                </div>
-              )}
               <input
                 type="email"
                 placeholder="Email"
@@ -177,37 +152,16 @@ function LoginContent() {
                 disabled={isLoading}
                 className="mt-[14px] w-full h-[40px] bg-[#3c3c3c] border border-[#4a4343] rounded-[6px] text-[12px] font-medium text-white hover:bg-[#444] transition-colors disabled:opacity-50"
               >
-                {isLoading
-                  ? mode === "signin" ? "Signing in..." : "Creating account..."
-                  : mode === "signin" ? "Sign In" : "Sign Up"}
+                {isLoading ? "Signing in..." : "Sign In"}
               </button>
             </form>
 
-            {/* Mode toggle */}
+            {/* Signup link */}
             <p className="text-center text-[12px] text-[#99a1af]">
-              {mode === "signin" ? (
-                <>
-                  No account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => { setMode("signup"); setError(null); }}
-                    className="text-white hover:underline"
-                  >
-                    Sign up free
-                  </button>
-                </>
-              ) : (
-                <>
-                  Already have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => { setMode("signin"); setError(null); }}
-                    className="text-white hover:underline"
-                  >
-                    Sign in
-                  </button>
-                </>
-              )}
+              New to Layout?{" "}
+              <Link href="/signup" className="text-white hover:underline">
+                Get an invite →
+              </Link>
             </p>
           </div>
 
