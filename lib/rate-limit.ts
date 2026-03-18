@@ -12,18 +12,18 @@ const rateLimit = (options: { interval: number; uniqueTokenPerInterval: number }
   }, options.interval);
 
   return {
-    check: (limit: number, token: string): { success: boolean; remaining: number } => {
+    check: (limit: number, token: string): { success: boolean; remaining: number; oldestTimestamp: number | null } => {
       const now = Date.now();
       const timestamps = tokenCache.get(token) ?? [];
       const valid = timestamps.filter(t => now - t < options.interval);
 
       if (valid.length >= limit) {
-        return { success: false, remaining: 0 };
+        return { success: false, remaining: 0, oldestTimestamp: valid[0] ?? null };
       }
 
       valid.push(now);
       tokenCache.set(token, valid);
-      return { success: true, remaining: limit - valid.length };
+      return { success: true, remaining: limit - valid.length, oldestTimestamp: valid[0] ?? null };
     }
   };
 };
