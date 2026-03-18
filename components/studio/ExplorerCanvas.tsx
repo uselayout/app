@@ -465,6 +465,20 @@ export function ExplorerCanvas({
     [currentExploration, explorations, onUpdateExplorations]
   );
 
+  const handleDeleteVariant = useCallback(
+    (variantId: string) => {
+      if (!currentExploration) return;
+      const updated = explorations.map((e) =>
+        e.id === currentExploration.id
+          ? { ...e, variants: e.variants.filter((v) => v.id !== variantId) }
+          : e
+      );
+      onUpdateExplorations(updated);
+      if (selectedVariantId === variantId) setSelectedVariantId(null);
+    },
+    [currentExploration, explorations, onUpdateExplorations, selectedVariantId]
+  );
+
   const handlePushToFigma = useCallback((variant: DesignVariant) => {
     setPushVariant(variant);
   }, []);
@@ -737,6 +751,7 @@ export function ExplorerCanvas({
                       onResponsive={() => setResponsiveVariant(variant)}
                       onPromoteToLibrary={() => setPromoteVariant(variant)}
                       onRegenerateImages={() => handleRegenerateImages(variant.id)}
+                      onDelete={() => handleDeleteVariant(variant.id)}
                       isProcessingImages={isProcessingImages}
                       onViewComparison={() => {
                         const comparisons = currentExploration?.comparisons;
