@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion';
 import { useSession } from '@/lib/auth-client';
 
+const BETA_ACTIVE = process.env.NEXT_PUBLIC_BETA_INVITE_REQUIRED === 'true';
+
 export function EarlyAccessCTA({ onInstallCLI }: { onInstallCLI?: () => void }) {
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
@@ -48,18 +50,44 @@ export function EarlyAccessCTA({ onInstallCLI }: { onInstallCLI?: () => void }) 
             </div>
 
             <div className="flex gap-[12px]">
-              <a
-                href={isLoggedIn ? "/studio" : "/login"}
-                className="bg-[var(--mkt-btn-primary-bg)] border border-[#e6e6e6] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] inline-flex items-center justify-center"
-              >
-                {isLoggedIn ? "Open Studio →" : "Join early access →"}
-              </a>
-              <button
-                onClick={onInstallCLI}
-                className="hidden lg:inline-flex bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium items-center justify-center"
-              >
-                Install the free CLI
-              </button>
+              {isLoggedIn ? (
+                <a
+                  href="/studio"
+                  className="bg-[var(--mkt-btn-primary-bg)] border border-[#e6e6e6] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] inline-flex items-center justify-center"
+                >
+                  Open Studio →
+                </a>
+              ) : BETA_ACTIVE ? (
+                <>
+                  <a
+                    href="/request-access"
+                    className="bg-[var(--mkt-btn-primary-bg)] border border-[#e6e6e6] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] inline-flex items-center justify-center"
+                  >
+                    Request Early Access →
+                  </a>
+                  <a
+                    href="/signup"
+                    className="inline-flex bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium items-center justify-center"
+                  >
+                    Got an invite code? →
+                  </a>
+                </>
+              ) : (
+                <>
+                  <a
+                    href="/login"
+                    className="bg-[var(--mkt-btn-primary-bg)] border border-[#e6e6e6] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] inline-flex items-center justify-center"
+                  >
+                    Join early access →
+                  </a>
+                  <button
+                    onClick={onInstallCLI}
+                    className="hidden lg:inline-flex bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium items-center justify-center"
+                  >
+                    Install the free CLI
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </motion.div>
