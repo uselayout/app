@@ -5,7 +5,7 @@ import { CopyBlock } from "@/components/shared/CopyBlock";
 import { Callout } from "@/components/docs/Callout";
 
 export const metadata: Metadata = {
-  title: "Windsurf -  Layout Docs",
+  title: "Windsurf | Layout Docs",
   description:
     "Configure Windsurf rules and import tokens.css so Cascade suggestions follow your design system.",
 };
@@ -44,7 +44,7 @@ export default function WindsurfPage() {
           <div className="space-y-5">
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-[#0a0a0a]">
-                Step 1 -  Create the rules file
+                Step 1: Create the rules file
               </h3>
               <p className="text-base text-gray-600 leading-relaxed">
                 Add a{" "}
@@ -71,7 +71,7 @@ export default function WindsurfPage() {
 
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-[#0a0a0a]">
-                Step 2 -  Copy tokens.css into your project
+                Step 2: Copy tokens.css into your project
               </h3>
               <p className="text-base text-gray-600 leading-relaxed">
                 Copy{" "}
@@ -85,7 +85,7 @@ export default function WindsurfPage() {
 
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-[#0a0a0a]">
-                Step 3 -  Import tokens.css in your global stylesheet
+                Step 3: Import tokens.css in your global stylesheet
               </h3>
               <p className="text-base text-gray-600 leading-relaxed">
                 Import the file at the top of your global CSS to make all design
@@ -116,7 +116,7 @@ export default function WindsurfPage() {
             Why tokens.css matters
           </h2>
           <p className="text-base text-gray-600 leading-relaxed">
-            The rules file tells Windsurf what design system to follow -  the
+            The rules file tells Windsurf what design system to follow. The
             token file makes those values available as concrete CSS custom
             properties. When Cascade generates a component that uses{" "}
             <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
@@ -125,8 +125,8 @@ export default function WindsurfPage() {
             , the actual value is defined in{" "}
             <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
               tokens.css
-            </code>{" "}
- -  there is no guesswork and no magic strings.
+            </code>
+            , so there is no guesswork and no magic strings.
           </p>
         </div>
       </div>

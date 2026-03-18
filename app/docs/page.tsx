@@ -11,12 +11,13 @@ import {
   Figma,
   Puzzle,
   ArrowUpRight,
+  Chrome,
 } from "lucide-react";
 import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "What is Layout? - Layout Docs",
+  title: "What is Layout? | Layout Docs",
   description:
     "Layout is the compiler between design systems and AI coding agents. Extract from Figma or websites, refine in a studio editor, serve to AI agents via MCP.",
 };
@@ -26,14 +27,14 @@ const capabilities = [
     icon: Scan,
     title: "Extract",
     description:
-      "Pull design tokens, components, fonts, and screenshots from Figma files or live websites. Layout resolves actual style values automatically — no manual mapping.",
+      "Pull design tokens, components, fonts, and screenshots from Figma files or live websites. Layout resolves actual style values automatically with no manual mapping.",
     href: "/docs/walkthrough",
   },
   {
     icon: Columns3,
     title: "Studio",
     description:
-      "Three-panel editor: browse extracted tokens on the left, edit DESIGN.md in the centre with an AI chat bar for inline edits, and test components with live preview on the right.",
+      "Two-mode workspace: browse extracted tokens on the left, edit DESIGN.md in the centre with an AI edit bar, then switch to the Explorer Canvas to generate and test component variants.",
     href: "/docs/studio",
   },
   {
@@ -47,8 +48,15 @@ const capabilities = [
     icon: Server,
     title: "MCP Server",
     description:
-      "Install @layoutdesign/context and your AI agent fetches design tokens and checks compliance in real-time. Works with Claude Code, Cursor, Copilot, and Windsurf — no copy-paste needed.",
+      "Install @layoutdesign/context and your AI agent fetches design tokens and checks compliance in real-time. Works with Claude Code, Cursor, Copilot, and Windsurf with no copy-paste needed.",
     href: "/docs/cli",
+  },
+  {
+    icon: Chrome,
+    title: "Chrome Extension",
+    description:
+      "Extract design tokens from any webpage, inspect elements against your design system, check compliance scores, capture screenshots, and push pages to Figma. All from a browser sidebar.",
+    href: "/docs/chrome-extension",
   },
   {
     icon: Download,
@@ -72,7 +80,7 @@ export default function GettingStartedPage() {
           It extracts your tokens, components, and visual patterns from Figma
           or a live website, lets you refine them in a studio editor with AI
           assistance, then serves the result directly to your coding agent via
-          MCP — so every component it builds is on-brand, every time.
+          MCP so every component it builds is on-brand, every time.
         </p>
       </div>
 
@@ -125,7 +133,7 @@ export default function GettingStartedPage() {
             },
             {
               step: "Test",
-              desc: "Use the Test panel to generate a few components. Check the health score — aim for 80+.",
+              desc: "Switch to the Explorer Canvas and generate a few component variants. Check the health score and aim for 80+.",
             },
             {
               step: "Iterate",
@@ -146,14 +154,14 @@ export default function GettingStartedPage() {
               </span>
               <div>
                 <span className="font-semibold text-[#0a0a0a]">{step}</span>
-                <span className="text-gray-600"> — {desc}</span>
+                <span className="text-gray-600">: {desc}</span>
               </div>
             </li>
           ))}
         </ol>
         <Callout type="tip">
           Using the MCP server? You can skip steps 6–7. Your AI agent fetches
-          design context automatically — see the{" "}
+          design context automatically. See the{" "}
           <Link
             href="/docs/cli"
             className="text-gray-900 font-medium hover:underline"
@@ -180,21 +188,21 @@ export default function GettingStartedPage() {
               icon: Figma,
               title: "Extract from Figma",
               description:
-                "Paste any Figma file URL and Layout pulls tokens, components, fonts, and screenshots via the REST API. It resolves actual style values automatically — colours, typography, spacing, effects — in two passes. You just need a Personal Access Token.",
+                "Paste any Figma file URL and Layout pulls tokens, components, fonts, and screenshots via the REST API. It resolves actual style values (colours, typography, spacing, effects) in two passes. You just need a Personal Access Token.",
               href: "/docs/walkthrough",
             },
             {
               icon: Puzzle,
               title: "Figma Plugin",
               description:
-                "The native Figma plugin extracts tokens, inspects elements against your design system, and pushes to Layout Cloud — all without leaving Figma. Key advantage: it reads local (unpublished) styles on all plans, no access token needed.",
+                "The native Figma plugin extracts tokens, inspects elements against your design system, and pushes to Layout Cloud without leaving Figma. Key advantage: it reads local (unpublished) styles on all plans, no access token needed.",
               href: "/docs/figma-plugin",
             },
             {
               icon: ArrowUpRight,
               title: "Push to Figma",
               description:
-                "Generate component variants in the Explorer Canvas, then push your favourite back to Figma as a real auto-layout frame. Designers review AI output in their native tool — closing the loop between code and design.",
+                "Generate component variants in the Explorer Canvas, then push your favourite back to Figma as a real auto-layout frame. Designers review AI output in their native tool, closing the loop between code and design.",
               href: "/docs/explorer",
             },
           ].map(({ icon: Icon, title, description, href }) => (
@@ -220,7 +228,7 @@ export default function GettingStartedPage() {
           ))}
         </div>
         <Callout type="tip">
-          Figma extraction works on Vercel — no Playwright needed. Website
+          Figma extraction works on Vercel with no Playwright needed. Website
           extraction requires a Docker or VPS deployment.
         </Callout>
       </section>
@@ -261,7 +269,7 @@ export default function GettingStartedPage() {
                 {range}
               </span>
               <div className="text-sm">
-                <span className="font-semibold">{label}</span> — {desc}
+                <span className="font-semibold">{label}</span>. {desc}
               </div>
             </div>
           ))}
@@ -291,7 +299,7 @@ export default function GettingStartedPage() {
                 {
                   file: "DESIGN.md",
                   purpose:
-                    "Full design system reference — tokens, components, anti-patterns",
+                    "Full design system reference: tokens, components, anti-patterns",
                 },
                 {
                   file: "CLAUDE.md-section.md",
@@ -344,14 +352,14 @@ export default function GettingStartedPage() {
             MCP server
           </Link>{" "}
           makes manual export optional. Once installed, your AI agent fetches
-          tokens and checks compliance on every prompt — no files to manage.
+          tokens and checks compliance on every prompt with no files to manage.
         </Callout>
         <Callout type="info">
           The <strong>Quick Reference</strong> inside{" "}
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
             DESIGN.md
           </code>{" "}
-          (Section 0) is designed to be copy-pasted standalone — it fits within
+          (Section 0) is designed to be copy-pasted standalone. It fits within
           tight context budgets and summarises the most critical tokens and
           rules in 50–75 lines.
         </Callout>
@@ -362,22 +370,22 @@ export default function GettingStartedPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Tips</h2>
         <div className="space-y-3">
           <Callout type="tip">
-            <strong>Narrow the Quick Reference</strong> — If you have a large
+            <strong>Narrow the Quick Reference.</strong> If you have a large
             DESIGN.md, Section 0 is the most important part. Keep it focused on
             the 10–15 tokens your AI uses most.
           </Callout>
           <Callout type="tip">
-            <strong>Commit DESIGN.md to your repo</strong> — Treat it like any
+            <strong>Commit DESIGN.md to your repo.</strong> Treat it like any
             other configuration file. Update it when the design system changes.
           </Callout>
           <Callout type="tip">
-            <strong>Use the context toggle</strong> — In the Test panel, toggle
-            &ldquo;DESIGN.md context: OFF&rdquo; to see what the AI generates
-            without your design system. The gap shows you exactly what value the
-            context file is providing.
+            <strong>Use the comparison view.</strong> In the Explorer Canvas,
+            generate the same component with and without DESIGN.md context
+            side by side. The gap shows you exactly what value the context file
+            is providing.
           </Callout>
           <Callout type="tip">
-            <strong>Re-extract periodically</strong> — Design systems evolve.
+            <strong>Re-extract periodically.</strong> Design systems evolve.
             Re-run extraction after major design updates to keep the context file
             current.
           </Callout>
@@ -392,14 +400,14 @@ export default function GettingStartedPage() {
             <Link href="/docs/studio" className="text-gray-900 hover:underline">
               Studio Guide
             </Link>{" "}
-            — learn the three-panel editor, extraction options, and test panel in
-            depth.
+            for the full workspace reference, extraction options, and Explorer
+            Canvas.
           </li>
           <li>
             <Link href="/docs/cli" className="text-gray-900 hover:underline">
               CLI Guide
             </Link>{" "}
-            — set up the MCP server so your AI agent fetches design context
+            to set up the MCP server so your AI agent fetches design context
             automatically.
           </li>
           <li>
@@ -409,7 +417,17 @@ export default function GettingStartedPage() {
             >
               Figma Plugin
             </Link>{" "}
-            — extract tokens and inspect elements without leaving Figma.
+            to extract tokens and inspect elements without leaving Figma.
+          </li>
+          <li>
+            <Link
+              href="/docs/chrome-extension"
+              className="text-gray-900 hover:underline"
+            >
+              Chrome Extension
+            </Link>{" "}
+            to extract tokens, inspect elements, and check compliance from any
+            browser tab.
           </li>
         </ul>
       </section>

@@ -5,7 +5,7 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Saved Components - Layout Docs",
+  title: "Saved Components | Layout Docs",
   description:
     "Save, browse, and reuse components and pages from the Explorer Canvas in your organisation's library.",
 };
@@ -149,7 +149,7 @@ export default function ComponentLibraryPage() {
         <ul className="list-disc pl-6 space-y-3 text-gray-600">
           <li>
             Components saved from the Explorer Canvas already have design
-            tokens applied - you rarely need to edit the token references
+            tokens applied, so you rarely need to edit the token references
             manually.
           </li>
           <li>

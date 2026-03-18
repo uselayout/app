@@ -5,9 +5,9 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Dashboard & Settings - Layout Docs",
+  title: "Dashboard & Settings | Layout Docs",
   description:
-    "Overview of the organisation dashboard and settings - API keys, webhooks, billing, and members.",
+    "Overview of the organisation dashboard and settings: API keys, webhooks, billing, and members.",
 };
 
 export default function DashboardPage() {

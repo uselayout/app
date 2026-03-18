@@ -6,7 +6,7 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "CLI Guide -  Layout Docs",
+  title: "CLI Guide | Layout Docs",
   description:
     "Install the @layoutdesign/context MCP server, import your Studio export, and give your AI agent automatic access to your design system.",
 };
@@ -29,7 +29,7 @@ export default function CliPage() {
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             get_design_system
           </code>{" "}
-          automatically whenever it builds UI -  no manual context pasting
+          automatically whenever it builds UI. No manual context pasting
           required.
         </p>
       </div>
@@ -39,13 +39,13 @@ export default function CliPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Prerequisites</h2>
         <ul className="list-disc pl-6 space-y-2 text-gray-600">
           <li>
-            <strong className="font-semibold text-[#0a0a0a]">Node.js 18 or later</strong> — run{" "}
+            <strong className="font-semibold text-[#0a0a0a]">Node.js 18 or later</strong>. Run{" "}
             <code className="text-xs bg-gray-100 rounded px-1 py-0.5">node --version</code> to check.
             Download from{" "}
             <a href="https://nodejs.org" target="_blank" rel="noopener noreferrer" className="text-gray-900 hover:underline">nodejs.org</a>.
           </li>
           <li>
-            <strong className="font-semibold text-[#0a0a0a]">npm 7+ or npx</strong> — included with Node.js.
+            <strong className="font-semibold text-[#0a0a0a]">npm 7+ or npx</strong>, included with Node.js.
             Run <code className="text-xs bg-gray-100 rounded px-1 py-0.5">npm --version</code> to confirm.
           </li>
         </ul>
@@ -80,7 +80,7 @@ export default function CliPage() {
         <Callout type="tip">
           After <code className="text-xs bg-gray-100 rounded px-1 py-0.5">init</code>, run{" "}
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">npx @layoutdesign/context install</code> to
-          auto-configure your AI agent&apos;s MCP settings -  no manual JSON editing required.
+          auto-configure your AI agent&apos;s MCP settings. No manual JSON editing required.
         </Callout>
       </section>
 
@@ -89,7 +89,7 @@ export default function CliPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Importing from Studio</h2>
         <p className="text-base text-gray-600 leading-relaxed">
           If you have already exported a ZIP bundle from Layout,
-          import it directly -  no need to use a starter kit.
+          import it directly. No need to use a starter kit.
         </p>
         <CopyBlock
           code="npx @layoutdesign/context import ./export.zip"
@@ -117,13 +117,13 @@ export default function CliPage() {
         />
         <p className="text-base text-gray-600 leading-relaxed">
           The server runs on stdio and responds to MCP tool calls from your
-          configured AI agent. No port is opened -  communication is via
-          standard input/output, which is the MCP convention for local tools.
+          configured AI agent. No port is opened. Communication is via
+          standard input/output, the MCP convention for local tools.
         </p>
         <Callout type="info">
           Add the MCP server to your agent config once. After that, every
           session in that project directory automatically has access to the
-          design system tools -  no flags, no manual context injection.
+          design system tools. No flags, no manual context injection.
         </Callout>
       </section>
 
@@ -232,7 +232,7 @@ npx @layoutdesign/context install
                 ],
                 [
                   "design_in_figma",
-                  "Designs UI directly in Figma using your extracted tokens -  from a natural language prompt",
+                  "Designs UI directly in Figma using your extracted tokens, from a natural language prompt",
                 ],
                 [
                   "update_tokens",
@@ -257,7 +257,7 @@ npx @layoutdesign/context install
         <p className="text-base text-gray-600 leading-relaxed">
           Three starter kits are bundled with the package. Each was extracted
           from a live website using Playwright and includes a Quick Reference,
-          core tokens, and 5 component specs -  enough to get meaningful on-brand
+          core tokens, and 5 component specs. That is enough to get meaningful on-brand
           output immediately.
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
@@ -315,8 +315,8 @@ npx @layoutdesign/context init --kit notion-lite`}
         <Callout type="tip">
           Run <code className="text-xs bg-gray-100 rounded px-1 py-0.5">doctor</code> first if{" "}
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">push_to_figma</code> or{" "}
-          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">url_to_figma</code> are not working —
-          those tools require the Figma MCP and Playwright MCP to be configured separately.
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">url_to_figma</code> are not working.
+          Those tools require the Figma MCP and Playwright MCP to be configured separately.
         </Callout>
       </section>
 
@@ -357,7 +357,7 @@ npx @layoutdesign/context init --kit notion-lite`}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             push_to_figma
           </code>{" "}
-          tools close the full loop between code and design -  something no other
+          tools close the full loop between code and design, something no other
           open-source tool currently does:
         </p>
         <CopyBlock
@@ -429,7 +429,7 @@ npx @layoutdesign/context init --kit notion-lite`}
             },
             {
               problem: "ZIP import fails",
-              fix: "Ensure the file ends in .zip and was downloaded directly from Layout Studio — browser-zipped or re-archived files may have a different structure. Try re-downloading from Studio.",
+              fix: "Ensure the file ends in .zip and was downloaded directly from Layout Studio. Browser-zipped or re-archived files may have a different structure. Try re-downloading from Studio.",
             },
           ].map(({ problem, fix }) => (
             <div key={problem} className="px-5 py-4 space-y-1">
@@ -453,8 +453,8 @@ npx @layoutdesign/context init --kit notion-lite`}
               className="text-gray-900 hover:underline"
             >
               Claude Code
-            </Link>{" "}
- -  add to CLAUDE.md for persistent context on every prompt
+            </Link>
+            : add to CLAUDE.md for persistent context on every prompt
           </li>
           <li>
             <Link
@@ -462,8 +462,8 @@ npx @layoutdesign/context init --kit notion-lite`}
               className="text-gray-900 hover:underline"
             >
               Cursor
-            </Link>{" "}
- -  .cursorrules or MDC rules for Composer and Chat
+            </Link>
+            : .cursorrules or MDC rules for Composer and Chat
           </li>
           <li>
             <Link
@@ -471,8 +471,8 @@ npx @layoutdesign/context init --kit notion-lite`}
               className="text-gray-900 hover:underline"
             >
               GitHub Copilot
-            </Link>{" "}
- -  copilot-instructions.md setup
+            </Link>
+            : copilot-instructions.md setup
           </li>
           <li>
             <Link
@@ -480,8 +480,8 @@ npx @layoutdesign/context init --kit notion-lite`}
               className="text-gray-900 hover:underline"
             >
               Windsurf
-            </Link>{" "}
- -  .windsurfrules and tokens.css import
+            </Link>
+            : .windsurfrules and tokens.css import
           </li>
           <li>
             <Link
@@ -489,8 +489,8 @@ npx @layoutdesign/context init --kit notion-lite`}
               className="text-gray-900 hover:underline"
             >
               OpenAI Codex
-            </Link>{" "}
- -  AGENTS.md placement and subdirectory overrides
+            </Link>
+            : AGENTS.md placement and subdirectory overrides
           </li>
         </ul>
       </section>

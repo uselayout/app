@@ -5,9 +5,9 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Studio Guide -  Layout Docs",
+  title: "Studio Guide | Layout Docs",
   description:
-    "How to use the Studio — Layout's three-panel editor for extraction, DESIGN.md generation, testing, and exporting.",
+    "How to use the Studio: Layout's browser-based workspace for extraction, DESIGN.md generation, AI exploration, and exporting.",
 };
 
 export default function StudioPage() {
@@ -19,10 +19,10 @@ export default function StudioPage() {
       <div className="space-y-3">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Studio</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          The Studio is Layout&apos;s browser-based tool for extracting design
-          systems, synthesising LLM-optimised context files, and testing them
-          against real AI output -  all in one place. Paste a URL, get a complete
-          AI kit in under 2 minutes.
+          The Studio is Layout&apos;s browser-based workspace for extracting
+          design systems, synthesising LLM-optimised context files, and
+          exploring AI-generated components. Paste a URL, get a complete AI kit
+          in under 2 minutes.
         </p>
       </div>
 
@@ -46,7 +46,7 @@ export default function StudioPage() {
                 https://www.figma.com/file/...
               </code>
               ) and provide your Figma personal access token. The Studio calls
-              the Figma REST API to resolve actual token values -  not just
+              the Figma REST API to resolve actual token values, not just
               metadata.
             </p>
             <div className="overflow-x-auto rounded-xl border border-gray-200">
@@ -67,7 +67,7 @@ export default function StudioPage() {
                     ["Typography styles", "Font family, size, weight, line-height, letter-spacing as composites"],
                     ["Effect styles", "Shadows, blur"],
                     ["Component inventory", "Name, description, variant count, property definitions"],
-                    ["Variables", "Enterprise plans only -  gracefully skipped otherwise"],
+                    ["Variables", "Enterprise plans only. Gracefully skipped otherwise"],
                   ].map(([what, detail]) => (
                     <tr key={what} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium text-[#0a0a0a] whitespace-nowrap">
@@ -87,7 +87,7 @@ export default function StudioPage() {
             <p className="text-base text-gray-600 leading-relaxed">
               Paste any live website URL. Playwright loads the page in a
               headless browser and extracts design data from the rendered DOM and
-              computed styles -  no Figma access required.
+              computed styles. No Figma access required.
             </p>
             <div className="overflow-x-auto rounded-xl border border-gray-200">
               <table className="w-full text-sm">
@@ -130,11 +130,14 @@ export default function StudioPage() {
         </Callout>
       </section>
 
-      {/* Three-Panel Editor */}
+      {/* Studio Workspace */}
       <section className="space-y-5">
-        <h2 className="text-2xl font-bold text-[#0a0a0a]">The Three-Panel Editor</h2>
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">The Studio Workspace</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          After extraction completes, the Studio opens a three-panel workspace.
+          After extraction completes, the Studio opens a two-panel workspace
+          with a mode toggle in the top bar. The Source Panel stays visible on
+          the left in both modes. The right panel switches between the Editor
+          and the Explorer Canvas.
         </p>
 
         <div className="space-y-4">
@@ -143,16 +146,17 @@ export default function StudioPage() {
               Source Panel <span className="text-gray-400 font-normal text-sm">(left)</span>
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              Shows the raw extracted data -  colour tokens, typography styles,
-              spacing values, component inventory, and screenshots. Use this to
-              verify what was extracted before generating DESIGN.md. If
-              something looks wrong, you can re-extract with different options.
+              Shows the raw extracted data: colour tokens, typography styles,
+              spacing values, component inventory, screenshots, quality score,
+              and saved components. Use this to verify what was extracted before
+              generating DESIGN.md. If something looks wrong, you can re-extract
+              with different options.
             </p>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
-              Editor Panel <span className="text-gray-400 font-normal text-sm">(centre)</span>
+              Editor Mode <span className="text-gray-400 font-normal text-sm">(right panel)</span>
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
               A Monaco-based markdown editor for DESIGN.md. Once you generate
@@ -162,7 +166,7 @@ export default function StudioPage() {
               you jump between the 9 sections of DESIGN.md quickly.
             </p>
             <p className="text-base text-gray-600 leading-relaxed">
-              An <strong>AI edit bar</strong> sits below the editor — type
+              An <strong>AI edit bar</strong> sits below the editor. Type
               natural-language instructions like{" "}
               <em>&quot;make buttons square instead of rounded&quot;</em> or{" "}
               <em>&quot;add a smaller button size variant&quot;</em> and Layout
@@ -173,15 +177,19 @@ export default function StudioPage() {
 
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
-              Test Panel <span className="text-gray-400 font-normal text-sm">(right)</span>
+              Canvas Mode <span className="text-gray-400 font-normal text-sm">(right panel)</span>
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              Ask Claude to generate components using your design system. Renders
-              live TSX output in a sandboxed iframe with React and Tailwind. Use
-              the health score to measure context adherence and the context
-              toggle to compare output with and without DESIGN.md. Push any
-              result directly to Figma, or generate AI images automatically
-              when prompting for layouts with imagery.
+              The Explorer Canvas is an AI-powered design exploration surface.
+              Enter a prompt, set the variant count (2 to 6), and generate
+              multiple component options using your design tokens. Compare
+              output with and without DESIGN.md context, refine variants with
+              follow-up prompts, push results to Figma, or save them to your
+              component library. See the{" "}
+              <Link href="/docs/explorer" className="text-gray-900 hover:underline">
+                Explorer Canvas
+              </Link>{" "}
+              guide for full details.
             </p>
           </div>
         </div>
@@ -191,45 +199,34 @@ export default function StudioPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Testing Your Design System</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The Test panel is the most important step before exporting. It lets
-          you verify that DESIGN.md actually improves AI output.
+          The Explorer Canvas is the best way to verify that DESIGN.md actually
+          improves AI output before exporting.
         </p>
 
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-[#0a0a0a]">Context Toggle</h3>
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">Comparison View</h3>
           <p className="text-base text-gray-600 leading-relaxed">
-            Toggle <strong>DESIGN.md context: OFF</strong> to see what Claude
-            generates with no design system context. Then toggle it back{" "}
-            <strong>ON</strong> and run the same prompt. The visual difference
-            shows you exactly what value DESIGN.md is providing. A good context
-            file produces noticeably better output -  correct token usage, proper
-            spacing, on-brand typography.
+            The comparison view generates the same component twice: once with
+            your DESIGN.md context active, once without. The side-by-side
+            result shows you exactly what value your design system context is
+            providing. A good context file produces noticeably better output
+            with correct token usage, proper spacing, and on-brand typography.
           </p>
         </div>
 
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-[#0a0a0a]">Health Score</h3>
           <p className="text-base text-gray-600 leading-relaxed">
-            After each test generation, the panel shows a 0–100 health score
-            measuring token faithfulness, component accuracy, and anti-pattern
-            violations. Aim for 80+ before exporting.
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-[#0a0a0a]">Quick Prompts</h3>
-          <p className="text-base text-gray-600 leading-relaxed">
-            Preset component requests appear as buttons (primary button, card,
-            form input, etc.). If your extraction included Figma components, the
-            panel also generates dynamic prompts for each extracted component
-            name -  giving you targeted tests for your specific design system.
+            Each generated variant shows a 0 to 100 health score measuring
+            token faithfulness, component accuracy, and anti-pattern violations.
+            Aim for 80+ before exporting.
           </p>
         </div>
 
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-[#0a0a0a]">Push to Figma</h3>
           <p className="text-base text-gray-600 leading-relaxed">
-            Click the Figma icon on any test result to open the Push to Figma
+            Click the Figma icon on any variant to open the Push to Figma
             modal. Choose viewport sizes (mobile, tablet, desktop), optionally
             target an existing Figma file, and copy a ready-to-paste command for
             Claude Code or other AI agents with the Figma MCP server installed.
@@ -301,7 +298,7 @@ export default function StudioPage() {
             >
               <span className="shrink-0 font-mono text-sm font-bold pt-0.5">{range}</span>
               <div className="text-sm">
-                <span className="font-semibold">{label}</span> - {desc}
+                <span className="font-semibold">{label}</span>. {desc}
               </div>
             </div>
           ))}
@@ -358,7 +355,7 @@ export default function StudioPage() {
             <tbody className="divide-y divide-gray-100">
               {[
                 ["CLAUDE.md", "CLAUDE.md-section.md", "Persistent context in Claude Code projects"],
-                ["AGENTS.md", "AGENTS.md", "Codex, Jules, Factory, Amp -  any agent following agents.md spec"],
+                ["AGENTS.md", "AGENTS.md", "Codex, Jules, Factory, Amp. Any agent following agents.md spec"],
                 ["Cursor Rules", ".cursor/rules/design-system.mdc", "Auto-applied rules in Cursor 0.43+"],
                 ["CSS Tokens", "tokens.css", "Import directly into any stylesheet"],
                 ["JSON Tokens", "tokens.json", "W3C DTCG format for Style Dictionary, Theo, etc."],
@@ -380,7 +377,7 @@ export default function StudioPage() {
 
         <Callout type="info">
           The Tailwind config and tokens.css are ready to drop into your project
-          as-is -  no manual editing required. The Tailwind config uses{" "}
+          with no manual editing required. The Tailwind config uses{" "}
           <code className="text-xs bg-white rounded px-1 py-0.5 border border-gray-200">
             theme.extend
           </code>{" "}
@@ -393,11 +390,16 @@ export default function StudioPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Next Steps</h2>
         <ul className="list-disc pl-6 space-y-2 text-gray-600">
           <li>
+            <Link href="/docs/explorer" className="text-gray-900 hover:underline">
+              Explorer Canvas
+            </Link>{" "}
+            for multi-variant generation, comparison view, and pushing to Figma.
+          </li>
+          <li>
             <Link href="/docs/cli" className="text-gray-900 hover:underline">
               CLI Guide
             </Link>{" "}
- -  set up the MCP server to serve design context automatically to
-            your AI agent.
+            to set up the MCP server for automatic design context in your AI agent.
           </li>
           <li>
             <Link
@@ -406,8 +408,7 @@ export default function StudioPage() {
             >
               Claude Code integration
             </Link>{" "}
- -  add the export files to your project for persistent on-brand
-            context.
+            to add the export files for persistent on-brand context.
           </li>
           <li>
             <Link
@@ -416,7 +417,7 @@ export default function StudioPage() {
             >
               Cursor integration
             </Link>{" "}
- -  set up .cursorrules or MDC rules files.
+            to set up .cursorrules or MDC rules files.
           </li>
         </ul>
       </section>
