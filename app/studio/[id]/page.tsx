@@ -32,6 +32,7 @@ export default function StudioPage({
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateExplorations = useProjectStore((s) => s.updateExplorations);
   const setCurrentProject = useProjectStore((s) => s.setCurrentProject);
+  const refreshProject = useProjectStore((s) => s.refreshProject);
   const project = projects.find((p) => p.id === id);
 
   const markStep = useOnboardingStore((s) => s.markStep);
@@ -84,11 +85,20 @@ export default function StudioPage({
   );
 
   // Figma push-to-canvas: pre-load screenshot as reference image
-  const pendingFigmaImage = useRef<string | null>(
-    sourceParam === "figma"
-      ? project?.extractionData?.screenshots?.at(-1) ?? null
-      : null
-  );
+  const pendingFigmaImage = useRef<string | null>(null);
+
+  // When opened from extension (source=figma), refresh project from DB
+  // so we get the latest screenshot the extension just pushed
+  const sourceConsumed = useRef(false);
+  useEffect(() => {
+    if (sourceParam === "figma" && !sourceConsumed.current) {
+      sourceConsumed.current = true;
+      refreshProject(id).then(() => {
+        const fresh = useProjectStore.getState().projects.find((p) => p.id === id);
+        pendingFigmaImage.current = fresh?.extractionData?.screenshots?.at(-1) ?? null;
+      });
+    }
+  }, [sourceParam, id, refreshProject]);
 
   // Clear URL params after consuming so refresh doesn't re-trigger
   useEffect(() => {
