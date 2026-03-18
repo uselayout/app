@@ -13,8 +13,12 @@ export async function requireAdmin(
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
 
-  const adminEmail = process.env.ADMIN_USER_EMAIL;
-  if (!adminEmail || session.user.email !== adminEmail) {
+  const adminEmails = (process.env.ADMIN_USER_EMAIL ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (adminEmails.length === 0 || !adminEmails.includes(session.user.email.toLowerCase())) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
