@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { upsertProject, removeProject } from "@/lib/supabase/db";
+import { upsertProject, removeProject, fetchProjectById } from "@/lib/supabase/db";
 import { parseTokensFromDesignMd } from "@/lib/tokens/parse-design-md";
 import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession } from "@/lib/types";
 
@@ -36,6 +36,7 @@ interface ProjectState {
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
   removeTokens: (id: string, tokenType: keyof ExtractedTokens, tokenNames: string[]) => void;
   syncTokensFromDesignMd: (id: string) => number;
+  refreshProject: (id: string) => Promise<void>;
   deleteProject: (id: string) => void;
   clearProjects: () => void;
 }
@@ -234,6 +235,14 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (updated && userId) void upsertProject(updated, userId);
 
     return totalParsed;
+  },
+
+  refreshProject: async (id) => {
+    const fresh = await fetchProjectById(id);
+    if (!fresh) return;
+    set((state) => ({
+      projects: state.projects.map((p) => (p.id === id ? fresh : p)),
+    }));
   },
 
   deleteProject: (id) => {
