@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUpToLine, ArrowUp, ImagePlus, GitCompareArrows } from "lucide-react";
+import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUpToLine, ArrowUp, ImagePlus, GitCompareArrows, Trash2 } from "lucide-react";
 import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import { usePushToDs } from "@/lib/hooks/use-push-to-ds";
 import { Tooltip as TooltipPrimitive } from "radix-ui";
@@ -39,6 +39,7 @@ interface VariantCardProps {
   isProcessingImages?: boolean;
   onViewComparison?: () => void;
   comparisonCount?: number;
+  onDelete?: () => void;
 }
 
 export function VariantCard({
@@ -55,6 +56,7 @@ export function VariantCard({
   isProcessingImages,
   onViewComparison,
   comparisonCount = 0,
+  onDelete,
 }: VariantCardProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const refineInputRef = useRef<HTMLInputElement>(null);
@@ -207,6 +209,16 @@ export function VariantCard({
           <ThumbsDown size={12} />
         </button>
         </Tip>
+        {onDelete && isSelected && (
+          <Tip label="Delete variant">
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="rounded p-1 text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          >
+            <Trash2 size={12} />
+          </button>
+          </Tip>
+        )}
         <div className="flex-1" />
         <Tip label="Copy code">
         <button
