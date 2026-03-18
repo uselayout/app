@@ -209,7 +209,7 @@ export function ExplorerToolbar({
 
   return (
     <div
-      className="mx-3 mb-3 flex flex-col rounded-lg border border-[rgba(255,255,255,0.05)] bg-[#161718]"
+      className="mx-3 mb-3 flex flex-col rounded-lg border border-[rgba(255,255,255,0.12)] bg-[var(--bg-surface)]"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
@@ -344,7 +344,7 @@ export function ExplorerToolbar({
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
                 disabled={isGenerating}
-                className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[#898d94] outline-none disabled:opacity-50"
+                className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none disabled:opacity-50"
               />
             </div>
 

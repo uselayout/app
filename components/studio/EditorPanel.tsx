@@ -329,7 +329,7 @@ function EditorChatBar({
 
   return (
     <div className="border-t border-[var(--studio-border)]">
-      <div className="mx-3 mb-3 mt-3 flex flex-col rounded-lg border border-[rgba(255,255,255,0.05)] bg-[#161718]">
+      <div className="mx-3 mb-3 mt-3 flex flex-col rounded-lg border border-[rgba(255,255,255,0.12)] bg-[var(--bg-surface)]">
         <div className="relative p-2.5">
           <div className="flex min-h-[68px] items-start rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.08)] px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
             <input
@@ -340,7 +340,7 @@ function EditorChatBar({
               onKeyDown={handleKeyDown}
               placeholder="Ask Layout to edit your design system..."
               disabled={isStreaming}
-              className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[#898d94] outline-none disabled:opacity-50"
+              className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none disabled:opacity-50"
             />
           </div>
           <div className="absolute bottom-5 right-5 flex items-center gap-1.5">

@@ -635,7 +635,7 @@ export function ExplorerCanvas({
       )}
 
       {/* Canvas area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto bg-[var(--bg-canvas)] p-4">
         {variants.length === 0 && !isGenerating ? (
           <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
             <div className="rounded-xl bg-[var(--bg-surface)] p-4">
