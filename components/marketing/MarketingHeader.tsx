@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from '@/lib/auth-client';
 
+const BETA_ACTIVE = process.env.NEXT_PUBLIC_BETA_INVITE_REQUIRED === 'true';
+
 const NAV_LINKS = [
   { label: 'Products', href: '#products' },
   { label: 'How it Works', href: '#how-it-works' },
@@ -92,10 +94,10 @@ export function MarketingHeader() {
               </Link>
               <div className="w-px h-[16px] bg-[#23252a]" aria-hidden="true" />
               <Link
-                href="/login"
+                href={BETA_ACTIVE ? "/request-access" : "/login"}
                 className="inline-flex items-center justify-center bg-[var(--mkt-btn-primary-bg)] text-[var(--mkt-btn-primary-text)] text-[13px] h-[32px] px-[13px] rounded-[4px] font-medium shadow-[0px_1px_2px_0px_rgba(0,0,0,0.12)] hover:opacity-90 transition-opacity duration-150"
               >
-                Get started →
+                {BETA_ACTIVE ? "Request Access →" : "Get started →"}
               </Link>
             </>
           )}
@@ -161,11 +163,11 @@ export function MarketingHeader() {
                   Log in
                 </Link>
                 <Link
-                  href="/login"
+                  href={BETA_ACTIVE ? "/request-access" : "/login"}
                   onClick={() => setMenuOpen(false)}
                   className="inline-flex items-center justify-center bg-[var(--mkt-btn-primary-bg)] text-[var(--mkt-btn-primary-text)] text-[15px] h-[40px] px-[17px] rounded-[4px] font-medium shadow-[0px_1px_2px_0px_rgba(0,0,0,0.12)] hover:opacity-90 transition-opacity duration-150"
                 >
-                  Get started →
+                  {BETA_ACTIVE ? "Request Access →" : "Get started →"}
                 </Link>
               </>
             )}
