@@ -37,7 +37,7 @@ const PLANS = [
       "Everything in Free",
       "Unlimited DESIGN.md generations",
       "Unlimited test panel queries",
-      "Priority Slack support",
+      "Priority Discord support",
       "BYOK always included",
     ],
     cta: "Upgrade to Pro",

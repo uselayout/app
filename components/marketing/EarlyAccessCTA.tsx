@@ -35,7 +35,7 @@ export function EarlyAccessCTA({ onInstallCLI }: { onInstallCLI?: () => void }) 
               </p>
               <div className="flex flex-col gap-0">
                 <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-                  → Direct founder access via Slack
+                  → Direct founder access via Discord
                 </p>
                 <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
                   → First look at every feature before public release

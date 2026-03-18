@@ -13,7 +13,7 @@ const TOOLS_LINKS = [
 
 const SOCIALS_LINKS = [
   { label: "GitHub", href: "https://github.com/uselayout/cli" },
-  { label: "Slack", href: "/slack" },
+  { label: "Discord", href: "/discord" },
   { label: "X / Twitter", href: "https://x.com/uselayout" },
 ];
 
