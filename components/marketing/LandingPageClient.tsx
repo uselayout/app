@@ -9,7 +9,7 @@ import { ExtractSection } from "@/components/marketing/ExtractSection";
 import { CompletenessSection } from "@/components/marketing/CompletenessSection";
 import { ServeSection } from "@/components/marketing/ServeSection";
 import { FigmaLoopSection } from "@/components/marketing/FigmaLoopSection";
-import { DriftSection } from "@/components/marketing/DriftSection";
+import { ExtensionSection } from "@/components/marketing/ExtensionSection";
 import { ExplorerSection } from "@/components/marketing/ExplorerSection";
 import { DesignSystemSection } from "@/components/marketing/DesignSystemSection";
 import { ComparisonSection } from "@/components/marketing/ComparisonSection";
@@ -37,7 +37,7 @@ export function LandingPageClient() {
           <CompletenessSection />
           <ServeSection />
           <FigmaLoopSection />
-          <DriftSection />
+          <ExtensionSection />
           <ExplorerSection />
           <DesignSystemSection />
           <ComparisonSection />

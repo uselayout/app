@@ -1,0 +1,77 @@
+'use client';
+
+import { motion } from 'framer-motion';
+
+export function ExtensionSection() {
+  return (
+    <section className="bg-[var(--mkt-bg)] pt-[100px] lg:pt-[180px] flex flex-col items-center gap-[70px]">
+      <div className="max-w-[1280px] w-full px-6">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between w-full">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="w-full lg:max-w-[509px]"
+          >
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Browse any site.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Extract its design system.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-accent)]">In the sidebar.</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="w-full lg:w-[683px] pt-[19px] flex flex-col gap-[10px]"
+          >
+            <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
+              You see a component you love on a competitor&apos;s site. You need to audit a client&apos;s live product. You want to match an existing app&apos;s design language. You shouldn&apos;t have to copy-paste a URL every time.
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+              The Layout Chrome extension lives in your browser sidebar. Click any page to extract its design tokens — colours, typography, spacing, radius — and push them straight to your Layout project. No tab-switching. No copy-paste.
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+              Pick any element to inspect its computed styles and see which values match your design system tokens. Green means on-system. Red means off-brand. One click copies the element&apos;s HTML and styles, formatted for your AI agent.
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-accent)] tracking-[-0.165px]">
+              Five tools. One sidebar.
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+              Extract tokens. Capture screenshots. Inspect elements. Check compliance with a score out of 100. Push pages to Figma. All without leaving the tab you&apos;re on.
+            </p>
+          </motion.div>
+        </div>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        viewport={{ once: true }}
+        className="w-[1424px] max-w-full mx-auto aspect-[1424/768] relative overflow-hidden rounded-[6px]"
+      >
+        <img
+          src="/marketing/aurora-drift.webp"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        />
+        <div className="absolute left-0 top-0 w-full overflow-hidden px-4 lg:px-[60px] h-[93.75%]">
+          <div className="bg-white w-full h-full overflow-hidden relative">
+            <video
+              src="/marketing/videos/extension.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover"
+              aria-label="Chrome extension demo"
+            />
+          </div>
+        </div>
+      </motion.div>
+    </section>
+  );
+}
