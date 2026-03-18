@@ -48,6 +48,42 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  name: "Layout",
+                  url: "https://layout.design",
+                  logo: "https://layout.design/marketing/logo-mark.svg",
+                  sameAs: [
+                    "https://github.com/uselayout",
+                    "https://www.npmjs.com/package/@layoutdesign/context",
+                  ],
+                },
+                {
+                  "@type": "WebApplication",
+                  name: "Layout",
+                  url: "https://layout.design",
+                  applicationCategory: "DeveloperApplication",
+                  operatingSystem: "Web",
+                  description:
+                    "Extract design systems from Figma and websites. Generate LLM-optimised context bundles for AI coding agents.",
+                  offers: {
+                    "@type": "Offer",
+                    price: "0",
+                    priceCurrency: "USD",
+                  },
+                },
+              ],
+            }),
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
