@@ -4,7 +4,19 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUpToLine, ArrowUp, ImagePlus, GitCompareArrows } from "lucide-react";
 import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import { usePushToDs } from "@/lib/hooks/use-push-to-ds";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import type { DesignVariant } from "@/lib/types";
+
+function Tip({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="top" sideOffset={4} className="bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--studio-border)] px-2 py-1 text-[10px]">
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 interface VariantCardProps {
   variant: DesignVariant;
@@ -162,7 +174,9 @@ export function VariantCard({
       </div>
 
       {/* Actions — visible on hover */}
+      <TooltipProvider>
       <div className="flex items-center gap-1 border-t border-[var(--studio-border)] px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Tip label="Good">
         <button
           onClick={(e) => { e.stopPropagation(); onRate("up"); }}
           className={`rounded p-1 transition-colors ${
@@ -170,10 +184,11 @@ export function VariantCard({
               ? "text-emerald-400 bg-emerald-500/10"
               : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
           }`}
-          title="Good"
         >
           <ThumbsUp size={12} />
         </button>
+        </Tip>
+        <Tip label="Bad">
         <button
           onClick={(e) => { e.stopPropagation(); onRate("down"); }}
           className={`rounded p-1 transition-colors ${
@@ -181,23 +196,24 @@ export function VariantCard({
               ? "text-red-400 bg-red-500/10"
               : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
           }`}
-          title="Bad"
         >
           <ThumbsDown size={12} />
         </button>
+        </Tip>
         <div className="flex-1" />
+        <Tip label="Copy code">
         <button
           onClick={(e) => { e.stopPropagation(); handleCopy(); }}
           className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-          title="Copy code"
         >
           <Copy size={12} />
         </button>
+        </Tip>
         {onViewComparison && comparisonCount > 0 && (
+          <Tip label={`View comparison${comparisonCount > 1 ? "s" : ""}`}>
           <button
             onClick={(e) => { e.stopPropagation(); onViewComparison(); }}
             className="relative rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-            title={`View comparison${comparisonCount > 1 ? "s" : ""}`}
           >
             <GitCompareArrows size={12} />
             {comparisonCount > 1 && (
@@ -206,17 +222,20 @@ export function VariantCard({
               </span>
             )}
           </button>
+          </Tip>
         )}
         {onRegenerateImages && (
+          <Tip label="Regenerate images">
           <button
             onClick={(e) => { e.stopPropagation(); onRegenerateImages(); }}
             disabled={isProcessingImages}
             className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50"
-            title="Regenerate images"
           >
             <ImagePlus size={12} />
           </button>
+          </Tip>
         )}
+        <Tip label="Regenerate with feedback">
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -229,36 +248,40 @@ export function VariantCard({
               ? "text-amber-400 bg-amber-500/10"
               : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
           }`}
-          title="Regenerate with feedback"
         >
           <RotateCw size={12} />
         </button>
+        </Tip>
         {onResponsive && (
+          <Tip label="Responsive preview">
           <button
             onClick={(e) => { e.stopPropagation(); onResponsive(); }}
             className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-            title="Responsive preview"
           >
             <Monitor size={12} />
           </button>
+          </Tip>
         )}
+        <Tip label="Push to Figma">
         <button
           onClick={(e) => { e.stopPropagation(); onPushToFigma(); }}
           className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-          title="Push to Figma"
         >
           <Figma size={12} />
         </button>
+        </Tip>
         {onPromoteToLibrary && (
+          <Tip label="Add to Library">
           <button
             onClick={(e) => { e.stopPropagation(); onPromoteToLibrary(); }}
             className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-            title="Add to Library"
           >
             <BookMarked size={12} />
           </button>
+          </Tip>
         )}
         {canPush && (
+          <Tip label="Push to Design System">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -271,12 +294,13 @@ export function VariantCard({
             }}
             disabled={pushingToDs}
             className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50"
-            title="Push to Design System"
           >
             <ArrowUpToLine size={12} />
           </button>
+          </Tip>
         )}
       </div>
+      </TooltipProvider>
 
       {/* Inline refine input */}
       {showRefineInput && (
