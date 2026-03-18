@@ -29,7 +29,7 @@ export function FigmaLoopSection() {
               Figma to code is a solved problem. Code back to Figma isn&apos;t. Until now.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Push AI-generated components to Figma as editable frames — three responsive breakpoints, real auto-layout, real styles. Not a screenshot.
+              Push AI-generated components to Figma as editable frames — three responsive breakpoints, real auto-layout, real styles. Not a screenshot. The Chrome extension triggers the same loop: browse any site, copy a prompt, paste into Claude Code, and the page lands in Figma as editable frames.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
               Designers refine in Figma. Your AI reads the changes via MCP. Code updates in seconds. Nobody leaves their tool.

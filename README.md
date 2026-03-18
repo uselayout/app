@@ -120,14 +120,30 @@ Once connected, your AI agent has access to 7 MCP tools:
 
 See [`@layoutdesign/context`](https://github.com/uselayout/cli) for the full CLI and MCP server documentation.
 
-## Figma Plugin (Coming Soon)
+## Figma Plugin
 
-A native Figma plugin is in development that will expose Layout features directly inside Figma:
+A native Figma plugin that exposes Layout features directly inside Figma:
 
-- One-click token extraction without leaving Figma
+- One-click token extraction from Figma files
 - Live token inspector for selected elements
-- Push selected frames to Layout Explorer Canvas for AI variant generation
-- Export bundles directly from the plugin
+- Bidirectional Figma Variables sync
+- Push components to Explorer Canvas for AI variant generation
+- Variant assembly into interactive Figma component sets with hover states
+- Design system health scoring
+
+See [github.com/uselayout/figma](https://github.com/uselayout/figma) for installation.
+
+## Chrome Extension
+
+A browser sidebar that extracts design systems from any live website:
+
+- **Extract** — Pull design tokens (colours, typography, spacing, radius) from any page
+- **Capture** — Screenshot viewport, full page, or selected region; push to Layout Canvas
+- **Inspect** — Click any element to see computed styles matched against your design tokens
+- **Comply** — Run compliance checks with a score out of 100
+- **Figma** — Copy a prompt for Claude Code to push any page to Figma as editable auto-layout frames
+
+See [github.com/uselayout/extension](https://github.com/uselayout/extension) for installation.
 
 ## AI Image Generation (Coming Soon)
 
@@ -140,6 +156,7 @@ The Studio works bidirectionally with Figma:
 - **Extract from Figma** - Paste a Figma file URL to pull styles, components, and variables
 - **Push to Figma** - Explorer Canvas "Push to Figma" button sends generated components as editable Figma frames
 - **Design in Figma** - MCP tool lets AI agents create Figma mockups using your design system before writing code
+- **Browser to Figma** — Chrome extension copies a prompt for Claude Code to capture any website as editable Figma frames
 
 Requires the [Figma MCP server](https://www.figma.com/developers/mcp) (OAuth, no API key needed):
 
