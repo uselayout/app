@@ -139,6 +139,7 @@ export interface HealthIssue {
 export interface ComparisonResult {
   id: string;
   prompt: string;
+  sourceVariantId?: string;
   withDs: DesignVariant;
   withoutDs: DesignVariant;
   createdAt: string;
