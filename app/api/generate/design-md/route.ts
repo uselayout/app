@@ -5,7 +5,7 @@ import { resizeScreenshot } from "@/lib/util/resize-screenshot";
 import { auth } from "@/lib/auth";
 import { checkQuota, deductCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
-import { generateLimiter } from "@/lib/rate-limit-instances";
+import { generateLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
 import type { ExtractionResult } from "@/lib/types";
 import type { AiMode } from "@/lib/types/billing";
@@ -69,6 +69,12 @@ export async function POST(request: NextRequest) {
   }
 
   const userId = session.user.id;
+
+  const { success: withinLimit, reset } = checkUserRateLimit(userId);
+  if (!withinLimit) {
+    return rateLimitResponse(reset);
+  }
+
   const userApiKey = request.headers.get("X-Api-Key") || undefined;
 
   // Determine AI mode: BYOK (user's key) or hosted (platform key)
