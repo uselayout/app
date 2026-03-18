@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { redeemInviteCode, createInviteCodes } from "@/lib/supabase/invite-codes";
+import { auth } from "@/lib/auth";
 
 // POST /api/invite/redeem
-// Body: { code: string, userId: string }
-// Called immediately after account creation
+// Body: { code: string }
+// Requires authentication — userId is taken from the session, not the request body
 const schema = z.object({
   code: z.string().min(1),
-  userId: z.string().min(1),
 });
 
 export async function POST(request: NextRequest) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -26,7 +31,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { code, userId } = parsed.data;
+  const { code } = parsed.data;
+  const userId = session.user.id;
 
   try {
     await redeemInviteCode(code, userId);

@@ -90,12 +90,18 @@ function SignupContent() {
       }
 
       // Redeem invite code and generate 3 codes for the new user
-      if (trimmedCode && result.data?.user?.id) {
-        await fetch("/api/invite/redeem", {
+      if (trimmedCode) {
+        const redeemRes = await fetch("/api/invite/redeem", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: trimmedCode, userId: result.data.user.id }),
+          body: JSON.stringify({ code: trimmedCode }),
         });
+        if (!redeemRes.ok) {
+          setError(
+            "Account created but invite code could not be redeemed. Please contact support."
+          );
+          return;
+        }
       }
 
       router.push("/");
@@ -136,7 +142,7 @@ function SignupContent() {
                   Join Layout
                 </span>
                 <span className="text-[12px] leading-[16px] text-[#99a1af]">
-                  Private beta — invite required
+                  {BETA_ACTIVE ? "Private beta — invite required" : "Create your account"}
                 </span>
               </div>
             </div>
@@ -238,12 +244,14 @@ function SignupContent() {
                   Sign in →
                 </Link>
               </p>
-              <p className="text-[12px] text-[#99a1af]">
-                Don&apos;t have a code?{" "}
-                <Link href="/request-access" className="text-white hover:underline">
-                  Request early access →
-                </Link>
-              </p>
+              {BETA_ACTIVE && (
+                <p className="text-[12px] text-[#99a1af]">
+                  Don&apos;t have a code?{" "}
+                  <Link href="/request-access" className="text-white hover:underline">
+                    Request early access →
+                  </Link>
+                </p>
+              )}
             </div>
           </div>
 
