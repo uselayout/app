@@ -89,15 +89,29 @@ export default function StudioPage({
   const [pendingFigmaImage, setPendingFigmaImage] = useState<string | null>(null);
 
   // When opened from extension (source=figma), refresh project from DB
-  // so we get the latest screenshot the extension just pushed
+  // to get the pendingCanvasImage the extension just pushed
   const sourceConsumed = useRef(false);
   useEffect(() => {
     if (sourceParam === "figma" && !sourceConsumed.current) {
       sourceConsumed.current = true;
-      refreshProject(id).then(() => {
+
+      const tryLoadScreenshot = async (attempts = 0): Promise<void> => {
+        await refreshProject(id);
         const fresh = useProjectStore.getState().projects.find((p) => p.id === id);
-        setPendingFigmaImage(fresh?.extractionData?.screenshots?.at(-1) ?? null);
-      });
+        const screenshot = fresh?.pendingCanvasImage ?? null;
+
+        if (screenshot) {
+          setPendingFigmaImage(screenshot);
+          // Clear pendingCanvasImage so it doesn't re-trigger on next visit
+          fetch(`/api/projects/${id}/clear-canvas-image`, { method: "POST" }).catch(() => {});
+        } else if (attempts < 3) {
+          // DB write may not have settled — retry after delay
+          await new Promise((r) => setTimeout(r, 1000));
+          return tryLoadScreenshot(attempts + 1);
+        }
+      };
+
+      tryLoadScreenshot();
     }
   }, [sourceParam, id, refreshProject]);
 
@@ -320,7 +334,6 @@ export default function StudioPage({
             ? new URL(project.sourceUrl).hostname
             : undefined
         }
-        project={project}
         onNameChange={(name) => updateProjectName(id, name)}
         onReExtract={handleReExtract}
         onExport={() => setShowExport(true)}

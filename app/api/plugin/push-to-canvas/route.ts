@@ -65,31 +65,12 @@ export async function POST(request: Request) {
     ? projects.find((p) => p.id === projectId) ?? projects[0]
     : projects[0];
 
-  // Append screenshot to existing array, keeping only the last 10
-  const existingScreenshots = project.extractionData?.screenshots ?? [];
-  const updatedScreenshots = [...existingScreenshots, screenshot].slice(-10);
-
+  // Store screenshot as pending canvas image (NOT in extractionData.screenshots)
+  // extractionData.screenshots are extraction screenshots used for DESIGN.md generation
+  // pendingCanvasImage is a temporary image for Canvas variant generation
   const updatedProject: Project = {
     ...project,
-    extractionData: {
-      sourceType: project.extractionData?.sourceType ?? "figma",
-      sourceName: project.extractionData?.sourceName ?? project.name,
-      sourceUrl: project.extractionData?.sourceUrl,
-      tokens: project.extractionData?.tokens ?? {
-        colors: [],
-        typography: [],
-        spacing: [],
-        radius: [],
-        effects: [],
-      },
-      components: project.extractionData?.components ?? [],
-      screenshots: updatedScreenshots,
-      fonts: project.extractionData?.fonts ?? [],
-      animations: project.extractionData?.animations ?? [],
-      librariesDetected: project.extractionData?.librariesDetected ?? {},
-      cssVariables: project.extractionData?.cssVariables ?? {},
-      computedStyles: project.extractionData?.computedStyles ?? {},
-    },
+    pendingCanvasImage: screenshot,
     updatedAt: new Date().toISOString(),
   };
 

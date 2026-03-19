@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Loader2 } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Loader2, Plus, Trash2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
@@ -35,7 +35,26 @@ function SourcePanelInner({
 }: SourcePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("tokens");
   const syncTokensFromDesignMd = useProjectStore((s) => s.syncTokensFromDesignMd);
+  const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const [syncResult, setSyncResult] = useState<{ count: number } | null>(null);
+
+  const handleDeleteScreenshot = useCallback(
+    (index: number) => {
+      if (!projectId || !extractionData) return;
+      const updated = { ...extractionData, screenshots: extractionData.screenshots.filter((_, i) => i !== index) };
+      updateExtractionData(projectId, updated);
+    },
+    [projectId, extractionData, updateExtractionData],
+  );
+
+  const handleAddScreenshot = useCallback(
+    (dataUrl: string) => {
+      if (!projectId || !extractionData) return;
+      const updated = { ...extractionData, screenshots: [...extractionData.screenshots, dataUrl] };
+      updateExtractionData(projectId, updated);
+    },
+    [projectId, extractionData, updateExtractionData],
+  );
 
   const handleSyncTokens = useCallback(() => {
     if (!projectId) return;
@@ -119,7 +138,7 @@ function SourcePanelInner({
           <ComponentsTab components={extractionData.components} />
         )}
         {activeTab === "screenshots" && extractionData && (
-          <ScreenshotsTab screenshots={extractionData.screenshots} />
+          <ScreenshotsTab screenshots={extractionData.screenshots} onDelete={handleDeleteScreenshot} onAdd={handleAddScreenshot} />
         )}
         {activeTab === "quality" && extractionData && (
           <CompletenessPanel designMd={designMd ?? ""} onDesignMdChange={onDesignMdChange} />
@@ -432,8 +451,19 @@ function ComponentsTab({
   );
 }
 
-function ScreenshotsTab({ screenshots }: { screenshots: string[] }) {
+function ScreenshotsTab({
+  screenshots,
+  onDelete,
+  onAdd,
+}: {
+  screenshots: string[];
+  onDelete?: (index: number) => void;
+  onAdd?: (dataUrl: string) => void;
+}) {
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const fileInputRef = useCallback((node: HTMLInputElement | null) => {
+    if (node) node.value = "";
+  }, []);
 
   useEffect(() => {
     if (lightboxIdx === null) return;
@@ -444,31 +474,70 @@ function ScreenshotsTab({ screenshots }: { screenshots: string[] }) {
     return () => window.removeEventListener("keydown", handler);
   }, [lightboxIdx]);
 
-  if (screenshots.length === 0) {
-    return (
-      <div className="p-4 text-xs text-[var(--text-muted)]">
-        No screenshots captured. Screenshots are only available for website extractions.
-      </div>
-    );
-  }
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file || !onAdd) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") onAdd(reader.result);
+      };
+      reader.readAsDataURL(file);
+      e.target.value = "";
+    },
+    [onAdd],
+  );
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2 p-2">
-        {screenshots.map((src, i) => (
-          <button
-            key={i}
-            onClick={() => setLightboxIdx(i)}
-            className="overflow-hidden rounded border border-[var(--studio-border)] transition-colors hover:border-[var(--studio-border-strong)]"
-          >
-            <img
-              src={src.startsWith("data:") || src.startsWith("http") ? src : `data:image/png;base64,${src}`}
-              alt={`Screenshot ${i + 1}`}
-              className="h-auto w-full"
+      {/* Add screenshot button */}
+      {onAdd && (
+        <div className="border-b border-[var(--studio-border)] p-2">
+          <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-md border border-dashed border-[var(--studio-border)] px-3 py-2 text-xs text-[var(--text-muted)] transition-colors hover:border-[var(--studio-border-strong)] hover:text-[var(--text-secondary)]">
+            <Plus className="h-3.5 w-3.5" />
+            Add screenshot
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
             />
-          </button>
-        ))}
-      </div>
+          </label>
+        </div>
+      )}
+
+      {screenshots.length === 0 ? (
+        <div className="p-4 text-xs text-[var(--text-muted)]">
+          No screenshots captured. Add screenshots or extract from a website.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2 p-2">
+          {screenshots.map((src, i) => (
+            <div key={i} className="group relative">
+              <button
+                onClick={() => setLightboxIdx(i)}
+                className="w-full overflow-hidden rounded border border-[var(--studio-border)] transition-colors hover:border-[var(--studio-border-strong)]"
+              >
+                <img
+                  src={src.startsWith("data:") || src.startsWith("http") ? src : `data:image/png;base64,${src}`}
+                  alt={`Screenshot ${i + 1}`}
+                  className="h-auto w-full"
+                />
+              </button>
+              {onDelete && (
+                <button
+                  onClick={() => onDelete(i)}
+                  className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-[var(--text-muted)] opacity-0 transition-opacity hover:bg-red-600/90 hover:text-white group-hover:opacity-100"
+                  title="Remove screenshot"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {lightboxIdx !== null && (
         <div
