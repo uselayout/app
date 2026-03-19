@@ -25,13 +25,10 @@ export function ComparisonSection() {
 
           <div className="w-full lg:w-[575px] pt-[19px] flex flex-col gap-[18px]">
             <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-              Some tools ask designers to learn a new canvas. Others render components only inside the IDE. Both require adoption. Both create friction. Both ignore the tool your team already knows.
+              Some tools ask designers to learn a new canvas. Others lock previews inside the IDE. Both create friction. Both ignore the tool your team already knows.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              <span className="text-[var(--mkt-accent)]">Layout</span> is a compiler, not a canvas. It reads your existing Figma files, extracts the design system, and serves structured context to your existing AI tools. Nobody changes anything. The AI just starts building correctly.
-            </p>
-            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Other tools ask designers to learn new software. Some lock previews inside the IDE. Layout Explorer generates real components, pushes real Figma frames, and lets everyone stay where they're productive.
+              <span className="text-[var(--mkt-accent)]">Layout</span> is a compiler, not a canvas. It reads your existing Figma files, extracts the design system, and serves structured context to your AI tools. It generates real components, pushes real Figma frames, and nobody has to change a thing.
             </p>
             <blockquote className="border-l-4 border-[var(--mkt-accent)] pl-[33px]">
               <p className="text-[18px] leading-[1.4] text-[#e5e7eb] italic">
