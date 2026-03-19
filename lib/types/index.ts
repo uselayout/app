@@ -1,3 +1,35 @@
+// ─── AI Provider / Model ─────────────────────────────────────────────────────
+
+export type AiProvider = "claude" | "gemini";
+
+export interface AiModelDef {
+  id: string;
+  label: string;
+  provider: AiProvider;
+  maxOutputTokens: number;
+}
+
+export const AI_MODELS = {
+  "claude-sonnet-4-6": {
+    id: "claude-sonnet-4-6",
+    label: "Claude Sonnet 4.6",
+    provider: "claude",
+    maxOutputTokens: 64_000,
+  },
+  "gemini-3.1-pro-preview": {
+    id: "gemini-3.1-pro-preview",
+    label: "Gemini 3.1 Pro",
+    provider: "gemini",
+    maxOutputTokens: 65_536,
+  },
+} as const satisfies Record<string, AiModelDef>;
+
+export type AiModelId = keyof typeof AI_MODELS;
+
+export const DEFAULT_EXPLORE_MODEL: AiModelId = "claude-sonnet-4-6";
+
+// ─── Source / Token ──────────────────────────────────────────────────────────
+
 export type SourceType = "figma" | "website" | "manual";
 
 export type TokenType = "color" | "typography" | "spacing" | "radius" | "effect";
