@@ -9,6 +9,10 @@ CRITICAL RULES:
 Token Usage (Highest Priority)
 - Build ACTUAL UI components that render in a browser. Never build token tables, spec viewers, or documentation.
 - Output TypeScript + React + Tailwind CSS.
+- AVAILABLE LIBRARIES: React 18, ReactDOM 18, Tailwind CSS (via CDN). Nothing else is available.
+- DO NOT import or use framer-motion, lucide-react, @heroicons, recharts, or any other third-party library. They will cause runtime errors.
+- For animations, use CSS transitions/animations and Tailwind classes (animate-*, transition-*).
+- For icons, use inline SVGs or Unicode characters.
 - Follow the design system specification below with complete fidelity.
 - If the design system defines CSS custom properties (var(--...)), use them exclusively — never hardcode colour, spacing, or typography values.
 - If the design system does NOT define CSS custom properties, use the exact extracted values directly.
@@ -85,6 +89,8 @@ CRITICAL RULES:
 - Start from the provided base component — preserve its core structure and intent.
 - Apply the requested refinement to create distinct variations of the improvement.
 - Follow the design system specification with complete fidelity.
+- AVAILABLE LIBRARIES: React 18, ReactDOM 18, Tailwind CSS (via CDN). Nothing else is available.
+- DO NOT import or use framer-motion, lucide-react, @heroicons, recharts, or any other third-party library. For animations use CSS/Tailwind. For icons use inline SVGs.
 - If the design system defines CSS custom properties (var(--...)), use them exclusively.
 - Every interactive element MUST handle: default, hover, focus-visible, active, disabled states.
 

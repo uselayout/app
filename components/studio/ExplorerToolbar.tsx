@@ -69,13 +69,13 @@ export function ExplorerToolbar({
     setPrompt("");
   }, [currentPrompt]);
 
-  // Pre-populate with Figma push-to-canvas image
+  // Pre-populate with push-to-canvas image (always accept new images)
   useEffect(() => {
-    if (initialImage && !imageDataUrl) {
+    if (initialImage) {
       setImageDataUrl(initialImage);
-      setImageName("Figma design");
+      setImageName("Captured screenshot");
     }
-  }, [initialImage]); // imageDataUrl intentionally excluded to avoid re-triggering
+  }, [initialImage]);
 
   const processFile = useCallback(async (file: File) => {
     if (!ACCEPTED_TYPES.includes(file.type)) return;

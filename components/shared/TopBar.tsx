@@ -1,19 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { RefreshCw, ArrowUpToLine, PanelLeft, KeyRound } from "lucide-react";
+import { RefreshCw, PanelLeft, KeyRound } from "lucide-react";
 import { useApiKey } from "@/lib/hooks/use-api-key";
 import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
-import { PushToDesignSystemModal } from "@/components/studio/PushToDesignSystemModal";
-import { useProjectStore } from "@/lib/store/project";
-import { useOrgStore } from "@/lib/store/organization";
-import type { Project, SourceType } from "@/lib/types";
+import type { SourceType } from "@/lib/types";
 
 interface TopBarProps {
   projectName: string;
   sourceType: SourceType;
   sourceName?: string;
-  project?: Project;
   onNameChange?: (name: string) => void;
   onReExtract?: () => void;
   onToggleSource?: () => void;
@@ -27,7 +23,6 @@ export function TopBar({
   projectName,
   sourceType,
   sourceName,
-  project: projectProp,
   onNameChange,
   onReExtract,
   onToggleSource,
@@ -39,26 +34,8 @@ export function TopBar({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(projectName);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [showPushModal, setShowPushModal] = useState(false);
   const { key: apiKey } = useApiKey();
   const inputRef = useRef<HTMLInputElement>(null);
-  const currentProjectId = useProjectStore((s) => s.currentProjectId);
-  const projects = useProjectStore((s) => s.projects);
-  const storeProject = projects.find((p) => p.id === currentProjectId);
-  const currentProject = projectProp ?? storeProject;
-  const orgId = useOrgStore((s) => s.currentOrgId);
-  const tokens = currentProject?.extractionData?.tokens;
-  const hasTokens = tokens
-    ? tokens.colors.length > 0 ||
-      tokens.typography.length > 0 ||
-      tokens.spacing.length > 0 ||
-      tokens.radius.length > 0 ||
-      tokens.effects.length > 0
-    : false;
-  const hasPushableData = !!(
-    hasTokens ||
-    currentProject?.explorations?.length
-  );
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -161,16 +138,6 @@ export function TopBar({
         >
           <RefreshCw className="h-3.5 w-3.5" />
         </button>
-        {hasPushableData && orgId && (
-          <button
-            onClick={() => setShowPushModal(true)}
-            className="flex items-center gap-1.5 h-7 px-3 rounded-[4px] border border-[var(--studio-accent)] text-[12px] font-medium text-[var(--studio-accent)] hover:bg-[var(--studio-accent-subtle)] transition-colors"
-            title="Push to design system"
-          >
-            <ArrowUpToLine className="h-3.5 w-3.5" />
-            Push
-          </button>
-        )}
         <button
           onClick={onExport}
           className="flex items-center justify-center h-7 px-[13px] rounded-[4px] bg-[#e6e6e6] border border-[#e6e6e6] text-[12px] font-medium text-[#08090a] shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] hover:bg-[#d9d9d9] transition-colors"
@@ -191,13 +158,6 @@ export function TopBar({
 
       {showApiKeyModal && (
         <ApiKeyModal onClose={() => setShowApiKeyModal(false)} />
-      )}
-      {showPushModal && currentProject && orgId && (
-        <PushToDesignSystemModal
-          project={currentProject}
-          orgId={orgId}
-          onClose={() => setShowPushModal(false)}
-        />
       )}
     </div>
   );
