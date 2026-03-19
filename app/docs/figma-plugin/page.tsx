@@ -127,9 +127,9 @@ export default function FigmaPluginPage() {
           <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">Variables</h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              Bidirectional sync between Layout tokens and Figma Variables. Pull
+              Push and pull tokens between Layout and Figma Variables. Import
               tokens from Layout into Figma&apos;s native Variables system, or
-              push Figma Variables back to Layout.
+              export Figma Variables back to Layout.
             </p>
           </div>
 
