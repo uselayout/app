@@ -2,11 +2,14 @@
 
 import { useState, useCallback, useEffect, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Loader2, Plus, Trash2 } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Loader2, Plus, Trash2, Globe, Layers, ArrowRight, KeyRound } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
 import { useProjectStore } from "@/lib/store/project";
+import { detectSourceType } from "@/lib/util/detect-source";
+import { getStoredApiKey } from "@/lib/hooks/use-api-key";
+import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
 import type {
   ExtractionResult,
   ExtractedToken,
@@ -21,17 +24,131 @@ interface SourcePanelProps {
   designMd?: string;
   projectId?: string;
   onDesignMdChange?: (value: string) => void;
+  onExtract?: (url: string, sourceType: SourceType, pat?: string) => void;
 }
 
 type TabId = "tokens" | "components" | "screenshots" | "quality";
 
 const VALID_TABS: TabId[] = ["tokens", "components", "screenshots", "quality"];
 
+function SourcePanelEmptyState({
+  projectId,
+  hasDesignMd,
+  onSyncTokens,
+  onExtract,
+}: {
+  projectId?: string;
+  hasDesignMd: boolean;
+  onSyncTokens: () => void;
+  onExtract?: (url: string, sourceType: SourceType, pat?: string) => void;
+}) {
+  const [url, setUrl] = useState("");
+  const [pat, setPat] = useState("");
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+
+  const sourceType = url ? detectSourceType(url) : null;
+  const isFigma = sourceType === "figma";
+  const isValid = sourceType !== null && (!isFigma || pat.length > 0);
+
+  const handleExtract = () => {
+    if (!getStoredApiKey()) {
+      setShowApiKeyModal(true);
+      return;
+    }
+    if (!isValid || !sourceType || !onExtract) return;
+    onExtract(url, sourceType, isFigma ? pat : undefined);
+  };
+
+  if (showApiKeyModal) {
+    return (
+      <ApiKeyModal
+        onClose={() => {
+          setShowApiKeyModal(false);
+          if (getStoredApiKey() && isValid && sourceType && onExtract) {
+            onExtract(url, sourceType, isFigma ? pat : undefined);
+          }
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-col items-center justify-center p-6 gap-4">
+      <div className="w-full max-w-xs space-y-3">
+        <p className="text-sm text-[var(--text-muted)] text-center">
+          Add a source to extract your design system
+        </p>
+
+        <div className="relative">
+          <input
+            type="url"
+            placeholder="figma.com/... or website URL"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
+            className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[var(--bg-app)] px-3 py-2 pr-8 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+          />
+          {sourceType && (
+            <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+              {isFigma ? (
+                <Layers className="h-3.5 w-3.5 text-[var(--studio-accent)]" />
+              ) : (
+                <Globe className="h-3.5 w-3.5 text-emerald-400" />
+              )}
+            </div>
+          )}
+        </div>
+
+        {isFigma && (
+          <input
+            type="password"
+            placeholder="Figma Personal Access Token"
+            value={pat}
+            onChange={(e) => setPat(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
+            className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[var(--bg-app)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+          />
+        )}
+
+        {!getStoredApiKey() && (
+          <button
+            onClick={() => setShowApiKeyModal(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-2.5 py-1.5 text-[10px] text-amber-400 hover:bg-amber-500/10 transition-colors w-full"
+          >
+            <KeyRound className="h-3 w-3 shrink-0" />
+            Claude API key required
+          </button>
+        )}
+
+        <button
+          onClick={handleExtract}
+          disabled={!isValid || !onExtract}
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--studio-accent)] px-3 py-2 text-xs font-medium text-[var(--text-on-accent)] disabled:opacity-30 transition-colors hover:bg-[var(--studio-accent-hover)]"
+        >
+          Extract design system
+          <ArrowRight className="h-3 w-3" />
+        </button>
+      </div>
+
+      {hasDesignMd && projectId && (
+        <button
+          onClick={onSyncTokens}
+          className="flex items-center gap-1.5 rounded-md bg-[var(--bg-elevated)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+        >
+          <RefreshCw className="h-3 w-3" />
+          Or sync tokens from DESIGN.md
+        </button>
+      )}
+    </div>
+  );
+}
+
 function SourcePanelInner({
   extractionData,
   designMd,
   projectId,
   onDesignMdChange,
+  onExtract,
 }: SourcePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("tokens");
   const syncTokensFromDesignMd = useProjectStore((s) => s.syncTokensFromDesignMd);
@@ -116,20 +233,12 @@ function SourcePanelInner({
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         {!extractionData && (
-          <div className="flex h-full flex-col items-center justify-center p-6">
-            <p className="text-sm text-[var(--text-muted)] text-center">
-              No extraction data yet. Extract a design system to see tokens here.
-            </p>
-            {hasDesignMd && projectId && (
-              <button
-                onClick={handleSyncTokens}
-                className="mt-3 flex items-center gap-1.5 rounded-md bg-[var(--bg-elevated)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-              >
-                <RefreshCw className="h-3 w-3" />
-                Sync tokens from DESIGN.md
-              </button>
-            )}
-          </div>
+          <SourcePanelEmptyState
+            projectId={projectId}
+            hasDesignMd={hasDesignMd}
+            onSyncTokens={handleSyncTokens}
+            onExtract={onExtract}
+          />
         )}
         {activeTab === "tokens" && extractionData && (
           <TokensTab tokens={extractionData.tokens} projectId={projectId} />
