@@ -9,10 +9,10 @@ export function AnnouncementBanner() {
 
   return (
     <div className="w-full bg-[var(--mkt-accent)] py-[10px] px-4 flex items-center justify-center relative">
-      <p className="text-[14px] text-[#08090a] font-sans text-center">
+      <p className="text-[14px] text-[#08090a] font-sans text-center pr-10">
         We&apos;re looking for 50 teams shipping UI with AI agents.{' '}
         <a
-          href="/login"
+          href="/request-access"
           className="underline underline-offset-2 hover:opacity-80 transition-opacity"
         >
           Join early access →
