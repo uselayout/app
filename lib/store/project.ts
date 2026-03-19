@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { upsertProject, removeProject, fetchProjectById } from "@/lib/supabase/db";
 import { parseTokensFromDesignMd } from "@/lib/tokens/parse-design-md";
-import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession } from "@/lib/types";
+import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType } from "@/lib/types";
 
 /** Merge two token arrays, deduplicating by name (new values overwrite existing). */
 function mergeTokens(existing: ExtractedToken[] | undefined, parsed: ExtractedToken[]): ExtractedToken[] {
@@ -31,6 +31,7 @@ interface ProjectState {
   updateDesignMd: (id: string, designMd: string) => void;
   updateExtractionData: (id: string, data: ExtractionResult) => void;
   updateProjectName: (id: string, name: string) => void;
+  updateProjectSource: (id: string, sourceUrl: string, sourceType: SourceType) => void;
   updateTokenCount: (id: string, count: number) => void;
   updateHealthScore: (id: string, score: number) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
@@ -102,6 +103,19 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       projects: state.projects.map((p) =>
         p.id === id
           ? { ...p, name, updatedAt: new Date().toISOString() }
+          : p
+      ),
+    }));
+    const { projects, userId } = get();
+    const project = projects.find((p) => p.id === id);
+    if (project && userId) void upsertProject(project, userId);
+  },
+
+  updateProjectSource: (id, sourceUrl, sourceType) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id
+          ? { ...p, sourceUrl, sourceType, updatedAt: new Date().toISOString() }
           : p
       ),
     }));

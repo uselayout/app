@@ -17,7 +17,7 @@ import { ExportModal } from "@/components/studio/ExportModal";
 import { ExtractionDiffModal } from "@/components/studio/ExtractionDiffModal";
 import { diffExtractions } from "@/lib/extraction/diff";
 import type { ExtractionDiff } from "@/lib/extraction/diff";
-import type { DesignVariant, ExtractionResult } from "@/lib/types";
+import type { DesignVariant, ExtractionResult, SourceType } from "@/lib/types";
 
 export default function StudioPage({
   params,
@@ -28,6 +28,7 @@ export default function StudioPage({
   const projects = useProjectStore((s) => s.projects);
   const hydrating = useProjectStore((s) => s.hydrating);
   const updateProjectName = useProjectStore((s) => s.updateProjectName);
+  const updateProjectSource = useProjectStore((s) => s.updateProjectSource);
   const updateDesignMd = useProjectStore((s) => s.updateDesignMd);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateExplorations = useProjectStore((s) => s.updateExplorations);
@@ -154,6 +155,29 @@ export default function StudioPage({
     const pat = sessionStorage.getItem(`pat-${id}`);
     runExtraction(project, pat ?? undefined);
   }, [id, project, runExtraction]);
+
+  const handleExtractFromPanel = useCallback(
+    (url: string, sourceType: SourceType, pat?: string) => {
+      if (!project) return;
+
+      updateProjectSource(project.id, url, sourceType);
+
+      // Auto-rename if project has no source yet (e.g. created via plugin)
+      const isDefaultName = !project.sourceUrl || project.name === "New Project";
+      if (isDefaultName) {
+        const newName = sourceType === "figma"
+          ? "Figma Extraction"
+          : new URL(url).hostname.replace("www.", "");
+        updateProjectName(project.id, newName);
+      }
+
+      if (pat) sessionStorage.setItem(`pat-${id}`, pat);
+      const updatedProject = { ...project, sourceUrl: url, sourceType };
+      extractionStarted.current = false;
+      runExtraction(updatedProject, pat);
+    },
+    [id, project, updateProjectSource, updateProjectName, runExtraction]
+  );
 
   // Show diff modal when re-extraction completes
   useEffect(() => {
@@ -351,6 +375,7 @@ export default function StudioPage({
               designMd={project.designMd}
               projectId={project.id}
               onDesignMdChange={handleDesignMdChange}
+              onExtract={handleExtractFromPanel}
             />
           }
           editorPanel={
