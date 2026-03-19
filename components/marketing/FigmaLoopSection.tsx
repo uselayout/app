@@ -14,8 +14,8 @@ export function FigmaLoopSection() {
             viewport={{ once: true }}
             className="w-full lg:w-[667px]"
           >
-            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Code to Figma and back.</p>
-            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-accent)]">The loop that actually closes.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Code to Figma.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-accent)]">Figma to code. One design system.</p>
           </motion.div>
 
           <motion.div
@@ -26,25 +26,22 @@ export function FigmaLoopSection() {
             className="w-full lg:w-[575px] pt-[19px] flex flex-col gap-[10px]"
           >
             <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-              Figma to code is a solved problem. Code back to Figma isn&apos;t. Until now.
+              Your design system lives in both tools. Keep them in sync.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Push AI-generated components to Figma as editable frames — three responsive breakpoints, real auto-layout, real styles. Not a screenshot. The Chrome extension triggers the same loop: browse any site, copy a prompt, paste into Claude Code, and the page lands in Figma as editable frames.
-            </p>
-            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Designers refine in Figma. Your AI reads the changes via MCP. Code updates in seconds. Nobody leaves their tool.
+              Push AI-generated components to Figma via the MCP server — three responsive viewports rendered and placed as frames. The Chrome extension lets you browse any site, capture it, and push directly to the Explorer Canvas where AI rebuilds it using your design tokens.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-accent)] tracking-[-0.165px]">
               Design in Figma with your tokens
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              AI creates Figma mockups using your actual design tokens. New screens start correct — designers refine instead of recreating from scratch.
+              The design-in-figma MCP tool gives AI agents your actual token values — colours, typography, spacing — so new Figma screens start on-brand. Designers refine instead of recreating from scratch.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-accent)] tracking-[-0.165px]">
               Native Figma plugin
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Extract tokens directly from Figma. Inspect elements to see which design tokens they map to. Push components to the Explorer Canvas for AI variant generation. Export without leaving the design tool.
+              Extract tokens directly from Figma. Inspect elements to see which design tokens they map to. Push components to the Explorer Canvas for AI variant generation. Assemble variant frames into Figma component sets with hover interactions.
             </p>
           </motion.div>
         </div>

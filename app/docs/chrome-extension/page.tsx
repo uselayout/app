@@ -78,7 +78,7 @@ export default function ChromeExtensionPage() {
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">Figma</h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              Send the current webpage to Figma as editable auto-layout frames.
+              Send the current webpage to Figma as rendered frames.
               Select which viewports to capture (desktop, tablet, mobile) and
               optionally provide a Figma file URL to add to an existing file.
               Click{" "}
@@ -89,8 +89,8 @@ export default function ChromeExtensionPage() {
               <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
                 url-to-figma
               </code>{" "}
-              MCP tool, which uses Figma&apos;s own capture engine to create
-              pixel-perfect editable frames with real auto-layout.
+              MCP tool, which uses Figma MCP and Playwright to capture and
+              place the page as frames in your Figma file.
             </p>
             <p className="text-sm text-gray-500 leading-relaxed">
               Requires three MCP servers: Layout MCP (
