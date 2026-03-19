@@ -3,16 +3,6 @@ import { upsertProject, removeProject, fetchProjectById } from "@/lib/supabase/d
 import { parseTokensFromDesignMd } from "@/lib/tokens/parse-design-md";
 import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType } from "@/lib/types";
 
-/** Debounced Supabase persist for designMd — prevents flooding during streaming */
-let designMdPersistTimer: ReturnType<typeof setTimeout> | null = null;
-function debouncedPersistDesignMd(project: Project, userId: string) {
-  if (designMdPersistTimer) clearTimeout(designMdPersistTimer);
-  designMdPersistTimer = setTimeout(() => {
-    designMdPersistTimer = null;
-    void upsertProject(project, userId);
-  }, 1000);
-}
-
 /** Merge two token arrays, deduplicating by name (new values overwrite existing). */
 function mergeTokens(existing: ExtractedToken[] | undefined, parsed: ExtractedToken[]): ExtractedToken[] {
   const map = new Map<string, ExtractedToken>();
@@ -92,7 +82,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }));
     const { projects, userId } = get();
     const project = projects.find((p) => p.id === id);
-    if (project && userId) debouncedPersistDesignMd(project, userId);
+    if (project && userId) void upsertProject(project, userId);
   },
 
   updateExtractionData: (id, data) => {
