@@ -122,21 +122,30 @@ export function useExtraction() {
           );
         }
 
-        // Stream DESIGN.md text
+        // Stream DESIGN.md text (throttled to avoid overwhelming React + Supabase)
         const reader = genRes.body?.getReader();
         if (!reader) throw new Error("No response body");
 
         const decoder = new TextDecoder();
         let designMd = "";
+        let lastFlush = 0;
+        const FLUSH_INTERVAL = 150; // ms between state updates
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           designMd += decoder.decode(value, { stream: true });
-          updateDesignMd(project.id, designMd);
-          setProgress(Math.min(100, 70 + Math.round((designMd.length / 8000) * 30)));
+
+          const now = Date.now();
+          if (now - lastFlush >= FLUSH_INTERVAL) {
+            lastFlush = now;
+            updateDesignMd(project.id, designMd);
+            setProgress(Math.min(99, 70 + Math.round((designMd.length / 8000) * 29)));
+          }
         }
 
+        // Final flush with complete content
+        updateDesignMd(project.id, designMd);
         updateStep("generate", { status: "complete" });
         setProgress(100);
         completeExtraction();
