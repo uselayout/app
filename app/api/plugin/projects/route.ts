@@ -64,6 +64,7 @@ export async function GET(request: Request) {
 
 const CreateProjectSchema = z.object({
   name: z.string().min(1).max(200),
+  orgId: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -88,7 +89,21 @@ export async function POST(request: Request) {
     );
   }
 
-  const org = await getOrganization(auth.orgId);
+  // If a different org is requested, verify the user belongs to it
+  let orgId = auth.orgId;
+  if (parsed.data.orgId && parsed.data.orgId !== auth.orgId) {
+    const userOrgs = await getUserOrganizations(auth.userId);
+    const hasAccess = userOrgs.some((o) => o.id === parsed.data.orgId);
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: "Access denied to this organisation" },
+        { status: 403, headers: CORS },
+      );
+    }
+    orgId = parsed.data.orgId;
+  }
+
+  const org = await getOrganization(orgId);
   if (!org) {
     return NextResponse.json({ error: "Organisation not found" }, { status: 404, headers: CORS });
   }
@@ -100,7 +115,7 @@ export async function POST(request: Request) {
   const now = new Date().toISOString();
   const project: Project = {
     id: projectId,
-    orgId: auth.orgId,
+    orgId,
     name: parsed.data.name,
     sourceType: "website",
     designMd: "",
