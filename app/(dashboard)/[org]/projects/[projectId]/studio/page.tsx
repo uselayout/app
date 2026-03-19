@@ -18,10 +18,7 @@ import { ExtractionDiffModal } from "@/components/studio/ExtractionDiffModal";
 import { diffExtractions } from "@/lib/extraction/diff";
 import type { ExtractionDiff } from "@/lib/extraction/diff";
 import type { DesignVariant, ExtractionResult } from "@/lib/types";
-import { useOrgStore } from "@/lib/store/organization";
-import { PushToDesignSystemModal } from "@/components/studio/PushToDesignSystemModal";
 import { SavedLibraryView } from "@/components/studio/SavedLibraryView";
-import { toast } from "sonner";
 
 export default function StudioPage({
   params,
@@ -77,11 +74,6 @@ export default function StudioPage({
     [searchParams, pathname, router]
   );
 
-  // Push to design system state
-  const orgId = useOrgStore((s) => s.currentOrgId);
-  const [showPushModal, setShowPushModal] = useState(false);
-  const setCurrentProject = useProjectStore((s) => s.setCurrentProject);
-
   const markStep = useOnboardingStore((s) => s.markStep);
   const onboardingSteps = useOnboardingStore((s) => s.steps);
 
@@ -92,11 +84,6 @@ export default function StudioPage({
       markStep("viewedDesignMd");
     }
   }, [project?.designMd, whatsNextDismissed, onboardingSteps.viewedDesignMd, markStep]);
-
-  // Set currentProjectId so TopBar can resolve the project (e.g. for Push button)
-  useEffect(() => {
-    setCurrentProject(id);
-  }, [id, setCurrentProject]);
 
   // Extraction diff state
   const previousExtractionRef = useRef<ExtractionResult | null>(null);
@@ -154,32 +141,6 @@ export default function StudioPage({
       }
     }
   }, [extractionStatus, project?.extractionData]);
-
-  // Prompt to push tokens after extraction completes
-  const pushToastShown = useRef(false);
-  useEffect(() => {
-    if (extractionStatus !== "complete" || pushToastShown.current) return;
-    if (!orgId || !project?.extractionData?.tokens) return;
-
-    const tokens = project.extractionData.tokens;
-    const hasTokens =
-      tokens.colors.length > 0 ||
-      tokens.typography.length > 0 ||
-      tokens.spacing.length > 0 ||
-      tokens.radius.length > 0 ||
-      tokens.effects.length > 0;
-
-    if (!hasTokens) return;
-
-    pushToastShown.current = true;
-    toast("Extraction complete - push tokens to your design system?", {
-      action: {
-        label: "Push",
-        onClick: () => setShowPushModal(true),
-      },
-      duration: 8000,
-    });
-  }, [extractionStatus, orgId, project?.extractionData?.tokens]);
 
   const handleAcceptDiff = useCallback(() => {
     previousExtractionRef.current = null;
@@ -325,7 +286,6 @@ export default function StudioPage({
             ? new URL(project.sourceUrl).hostname
             : undefined
         }
-        project={project}
         onNameChange={(name) => updateProjectName(id, name)}
         onReExtract={handleReExtract}
         onToggleSource={() => setShowSourcePanel((prev) => !prev)}
@@ -377,13 +337,6 @@ export default function StudioPage({
       </div>
       {showExport && (
         <ExportModal project={project} onClose={() => setShowExport(false)} />
-      )}
-      {showPushModal && orgId && (
-        <PushToDesignSystemModal
-          orgId={orgId}
-          project={project}
-          onClose={() => setShowPushModal(false)}
-        />
       )}
       {pendingDiff && (
         <ExtractionDiffModal
