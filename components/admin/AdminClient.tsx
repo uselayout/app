@@ -25,6 +25,7 @@ interface AccessRequestRow {
   howHeard: string;
   status: "pending" | "approved" | "rejected";
   inviteCode: string | null;
+  signedUp: boolean;
   createdAt: string;
 }
 
@@ -535,7 +536,23 @@ function AccessRequestsTab({ toast }: { toast: (msg: string, type?: Toast["type"
                   >
                     {row.howHeard}
                   </td>
-                  <td className="px-4 py-3">{statusBadge(row.status)}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      {statusBadge(row.status)}
+                      {row.status === "approved" && row.signedUp && (
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                          style={{
+                            background: "rgba(96,165,250,0.1)",
+                            color: "#60a5fa",
+                            border: "1px solid rgba(96,165,250,0.2)",
+                          }}
+                        >
+                          Signed up
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
                     {formatDate(row.createdAt)}
                   </td>
@@ -571,6 +588,23 @@ function AccessRequestsTab({ toast }: { toast: (msg: string, type?: Toast["type"
                           Reject
                         </button>
                       </div>
+                    ) : row.inviteCode ? (
+                      <button
+                        onClick={() => {
+                          copyToClipboard(row.inviteCode!);
+                          toast(`Copied ${row.inviteCode}`);
+                        }}
+                        className="flex items-center gap-2 px-3 py-1 rounded-md text-xs font-mono transition-all"
+                        style={{
+                          background: "var(--bg-elevated)",
+                          color: "var(--text-secondary)",
+                          border: "1px solid var(--studio-border)",
+                        }}
+                        title="Click to copy invite code"
+                      >
+                        {row.inviteCode}
+                        <span style={{ color: "var(--text-muted)" }}>⧉</span>
+                      </button>
                     ) : (
                       <span style={{ color: "var(--text-muted)" }}>—</span>
                     )}
