@@ -11,6 +11,7 @@ export function useExtraction() {
   const startExtraction = useExtractionStore((s) => s.startExtraction);
   const updateStep = useExtractionStore((s) => s.updateStep);
   const setProgress = useExtractionStore((s) => s.setProgress);
+  const setStreamingContent = useExtractionStore((s) => s.setStreamingContent);
   const setError = useExtractionStore((s) => s.setError);
   const completeExtraction = useExtractionStore((s) => s.completeExtraction);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
@@ -122,14 +123,14 @@ export function useExtraction() {
           );
         }
 
-        // Stream DESIGN.md text (throttled to avoid overwhelming React + Supabase)
+        // Stream DESIGN.md text into lightweight extraction store (no Supabase persist)
         const reader = genRes.body?.getReader();
         if (!reader) throw new Error("No response body");
 
         const decoder = new TextDecoder();
         let designMd = "";
         let lastFlush = 0;
-        const FLUSH_INTERVAL = 150; // ms between state updates
+        const FLUSH_INTERVAL = 200; // ms between UI updates
 
         while (true) {
           const { done, value } = await reader.read();
@@ -139,13 +140,14 @@ export function useExtraction() {
           const now = Date.now();
           if (now - lastFlush >= FLUSH_INTERVAL) {
             lastFlush = now;
-            updateDesignMd(project.id, designMd);
+            setStreamingContent(designMd);
             setProgress(Math.min(99, 70 + Math.round((designMd.length / 8000) * 29)));
           }
         }
 
-        // Final flush with complete content
+        // Write final content to project store (single Supabase persist)
         updateDesignMd(project.id, designMd);
+        setStreamingContent(null);
         updateStep("generate", { status: "complete" });
         setProgress(100);
         completeExtraction();
@@ -159,6 +161,7 @@ export function useExtraction() {
       startExtraction,
       updateStep,
       setProgress,
+      setStreamingContent,
       setError,
       completeExtraction,
       updateExtractionData,
