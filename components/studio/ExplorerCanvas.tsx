@@ -822,7 +822,7 @@ export function ExplorerCanvas({
               </>
             )}
 
-            {isGenerating && variants.length > 0 && (
+            {isGenerating && variants.length > 0 && !isProcessingImages && (
               <div className="flex items-center gap-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2.5">
                 <span className="text-xs text-[var(--text-muted)]">Images will generate after all variants complete.</span>
               </div>
