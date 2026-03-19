@@ -6,7 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
-import { detectSourceType } from "@/lib/util/detect-source";
+import { detectSourceType, normaliseUrl } from "@/lib/util/detect-source";
 import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
 
 interface NewExtractionModalProps {
@@ -53,19 +53,20 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
     }
     if (!isValid || !sourceType) return;
 
+    const fullUrl = normaliseUrl(url);
     const projectId =
       crypto.randomUUID?.() ??
       Math.random().toString(36).slice(2) + Date.now().toString(36);
     const projectName = isFigma
       ? "Figma Extraction"
-      : new URL(url).hostname.replace("www.", "");
+      : new URL(fullUrl).hostname.replace("www.", "");
 
     createProject({
       id: projectId,
       orgId: currentOrgId ?? "",
       name: projectName,
       sourceType,
-      sourceUrl: url,
+      sourceUrl: fullUrl,
       designMd: "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
