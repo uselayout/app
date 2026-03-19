@@ -57,6 +57,7 @@ export interface AccessRequest {
   howHeard: string;
   status: "pending" | "approved" | "rejected";
   inviteCode: string | null;
+  signedUp: boolean;
   createdAt: string;
 }
 
@@ -81,6 +82,7 @@ interface AccessRequestRow {
   status: string;
   invite_code: string | null;
   created_at: string;
+  invite_codes?: { redeemed_by: string | null } | null;
 }
 
 // ─── Row Mappers ──────────────────────────────────────────────────────────────
@@ -106,6 +108,7 @@ function rowToAccessRequest(row: AccessRequestRow): AccessRequest {
     howHeard: row.how_heard,
     status: row.status as AccessRequest["status"],
     inviteCode: row.invite_code,
+    signedUp: row.invite_codes?.redeemed_by != null,
     createdAt: row.created_at,
   };
 }
@@ -297,7 +300,7 @@ export async function getAccessRequests(opts?: {
 }): Promise<AccessRequest[]> {
   let query = supabase
     .from("access_requests")
-    .select("*")
+    .select("*, invite_codes(redeemed_by)")
     .order("created_at", { ascending: false });
 
   if (opts?.status) {
