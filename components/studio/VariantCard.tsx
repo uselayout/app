@@ -125,6 +125,7 @@ export function VariantCard({
   ) : null;
 
   return (
+    <TooltipProvider>
     <div
       onClick={onSelect}
       className={`group relative flex flex-col rounded-xl border transition-all cursor-pointer ${
@@ -182,7 +183,6 @@ export function VariantCard({
       </div>
 
       {/* Actions — visible on hover */}
-      <TooltipProvider>
       <div className="flex items-center gap-1 border-t border-[var(--studio-border)] px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <Tip label="Good">
         <button
@@ -299,7 +299,6 @@ export function VariantCard({
           </Tip>
         )}
       </div>
-      </TooltipProvider>
 
       {/* Inline refine input */}
       {showRefineInput && (
@@ -340,6 +339,7 @@ export function VariantCard({
         </div>
       )}
     </div>
+    </TooltipProvider>
   );
 }
 
