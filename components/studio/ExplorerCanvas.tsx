@@ -18,7 +18,9 @@ import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { toast } from "sonner";
 import { calculateHealthScore } from "@/lib/health/score";
 import { useOnboardingStore } from "@/lib/store/onboarding";
-import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile } from "@/lib/types";
+import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
+import { AI_MODELS, DEFAULT_EXPLORE_MODEL } from "@/lib/types";
+import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId } from "@/lib/types";
 
 interface ExplorerCanvasProps {
   projectId: string;
@@ -41,6 +43,7 @@ export function ExplorerCanvas({
   initialImage,
   extractedFonts = [],
 }: ExplorerCanvasProps) {
+  const [modelId, setModelId] = useState<AiModelId>(DEFAULT_EXPLORE_MODEL);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessingImages, setIsProcessingImages] = useState(false);
   const [imageNotice, setImageNotice] = useState<string | null>(null);
@@ -265,13 +268,15 @@ export function ExplorerCanvas({
       pendingBatchCountRef.current = variantCount;
 
       const apiKey = getStoredApiKey();
+      const googleKey = getStoredGoogleApiKey();
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (apiKey) headers["X-Api-Key"] = apiKey;
+      if (googleKey) headers["X-Google-Api-Key"] = googleKey;
 
       const res = await fetch("/api/generate/explore", {
         method: "POST",
         headers,
-        body: JSON.stringify(fetchBody),
+        body: JSON.stringify({ ...fetchBody, modelId }),
         signal: abortRef.current!.signal,
       });
 
@@ -282,7 +287,7 @@ export function ExplorerCanvas({
 
       await streamVariants(res, sessionId, latestExplorations, existingVariants, batchId, batchPrompt);
     },
-    [streamVariants]
+    [streamVariants, modelId]
   );
 
   const handleGenerate = useCallback(
@@ -559,6 +564,11 @@ export function ExplorerCanvas({
   const skeletonCount = isGenerating && streamingBatchRef.current
     ? Math.max(0, pendingBatchCountRef.current - variants.filter((v) => v.batchId === streamingBatchRef.current).length)
     : 0;
+
+  const hasGoogleKey = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return !!getStoredGoogleApiKey();
+  }, []);
 
   const gridClassName = "grid grid-cols-2 gap-4";
 
@@ -843,6 +853,9 @@ export function ExplorerCanvas({
         selectedVariantName={selectedVariant?.name}
         currentPrompt={currentExploration?.prompt}
         initialImage={initialImage}
+        modelId={modelId}
+        onModelChange={setModelId}
+        hasGoogleKey={hasGoogleKey}
       />
 
       {pushVariant && (
