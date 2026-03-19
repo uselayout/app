@@ -7,7 +7,7 @@ import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
 import { useProjectStore } from "@/lib/store/project";
-import { detectSourceType } from "@/lib/util/detect-source";
+import { detectSourceType, normaliseUrl } from "@/lib/util/detect-source";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
 import type {
@@ -56,7 +56,7 @@ function SourcePanelEmptyState({
       return;
     }
     if (!isValid || !sourceType || !onExtract) return;
-    onExtract(url, sourceType, isFigma ? pat : undefined);
+    onExtract(normaliseUrl(url), sourceType, isFigma ? pat : undefined);
   };
 
   if (showApiKeyModal) {
@@ -65,7 +65,7 @@ function SourcePanelEmptyState({
         onClose={() => {
           setShowApiKeyModal(false);
           if (getStoredApiKey() && isValid && sourceType && onExtract) {
-            onExtract(url, sourceType, isFigma ? pat : undefined);
+            onExtract(normaliseUrl(url), sourceType, isFigma ? pat : undefined);
           }
         }}
       />
