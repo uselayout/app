@@ -6,10 +6,10 @@ const LAYOUT_LINKS = [
 ];
 
 const TOOLS_LINKS = [
-  { label: "Studio", href: "/studio" },
+  { label: "Studio", href: "https://github.com/uselayout/app" },
   { label: "CLI & MCP Server", href: "https://github.com/uselayout/cli" },
-  { label: "Chrome Extension", href: "https://github.com/uselayout/extension" },
-  { label: "Figma Plugin", href: "https://github.com/uselayout/figma" },
+  { label: "Chrome Extension", href: "/docs/chrome-extension" },
+  { label: "Figma Plugin", href: "/docs/figma-plugin" },
 ];
 
 const SOCIALS_LINKS = [

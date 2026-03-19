@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { ContentBlockParam } from "@anthropic-ai/sdk/resources/messages";
 import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
 
-const EXPLORE_SYSTEM = `You are an expert design explorer. You generate multiple distinct UI component variations that all faithfully follow a provided design system.
+export const EXPLORE_SYSTEM = `You are an expert design explorer. You generate multiple distinct UI component variations that all faithfully follow a provided design system.
 
 CRITICAL RULES:
 
@@ -79,7 +79,7 @@ Images (MANDATORY — read carefully)
 
 IMPORTANT: Each component must be fully self-contained. No shared imports between variants. No prose outside the variant blocks.`;
 
-const REFINE_SYSTEM = `You are an expert design refiner. You take an existing UI component and generate refined variations based on specific feedback, while staying faithful to the design system.
+export const REFINE_SYSTEM = `You are an expert design refiner. You take an existing UI component and generate refined variations based on specific feedback, while staying faithful to the design system.
 
 CRITICAL RULES:
 - Start from the provided base component — preserve its core structure and intent.
