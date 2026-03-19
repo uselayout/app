@@ -4,16 +4,18 @@ import { requireMcpAuth } from "@/lib/api/mcp-auth";
 import { getOrganization } from "@/lib/supabase/organization";
 import { fetchAllProjects, upsertProject } from "@/lib/supabase/db";
 import { createDesignMdStream } from "@/lib/claude/synthesise";
+import { checkQuota, deductCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
 import { saveDesignMdVersion } from "@/lib/supabase/design-md-versions";
 import type { Project, ExtractionResult } from "@/lib/types";
+import type { AiMode } from "@/lib/types/billing";
 
 export const maxDuration = 120;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Authorization, Content-Type",
+  "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Anthropic-Key",
 };
 
 export async function OPTIONS() {
@@ -70,7 +72,35 @@ export async function POST(request: Request) {
   }
 
   const extractionData = project.extractionData as unknown as ExtractionResult;
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+
+  // Determine AI mode: BYOK (user's own Anthropic key) or hosted (platform key)
+  const userAnthropicKey = request.headers.get("X-Anthropic-Key") || undefined;
+  let mode: AiMode;
+  let apiKey: string | undefined;
+
+  if (userAnthropicKey) {
+    mode = "byok";
+    apiKey = userAnthropicKey;
+  } else {
+    const quota = await checkQuota(auth.userId, "design-md");
+    if (!quota.allowed) {
+      return NextResponse.json(
+        { error: quota.reason, code: "QUOTA_EXCEEDED", remaining: quota.remaining },
+        { status: 402, headers: CORS },
+      );
+    }
+
+    const deducted = await deductCredit(auth.userId, "design-md");
+    if (!deducted) {
+      return NextResponse.json(
+        { error: "No credits remaining. Top up or use your own Anthropic API key.", code: "QUOTA_EXCEEDED" },
+        { status: 402, headers: CORS },
+      );
+    }
+
+    mode = "hosted";
+    apiKey = process.env.ANTHROPIC_API_KEY;
+  }
 
   if (!apiKey) {
     return NextResponse.json(
@@ -127,7 +157,7 @@ export async function POST(request: Request) {
         userId: auth.userId,
         projectId,
         endpoint: "design-md",
-        mode: "hosted",
+        mode,
         usage: u,
         model: "claude-sonnet-4-6",
       }),
