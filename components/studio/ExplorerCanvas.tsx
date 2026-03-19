@@ -407,22 +407,27 @@ export function ExplorerCanvas({
     handleGenerate(currentExploration.prompt, currentExploration.variantCount);
   }, [currentExploration, handleGenerate]);
 
-  // Auto-trigger generation when push-to-canvas screenshot is loaded
-  const autoGenerateTriggered = useRef(false);
+  // Create a new exploration tab when push-to-canvas screenshot arrives
+  const pushTabCreated = useRef(false);
   useEffect(() => {
-    if (initialImage && !autoGenerateTriggered.current && !isGenerating) {
-      autoGenerateTriggered.current = true;
-      const timer = setTimeout(() => {
-        handleGenerate(
-          "Recreate this design faithfully using the design system",
-          2,
-          initialImage,
-          [],
-        );
-      }, 300);
-      return () => clearTimeout(timer);
+    if (initialImage && !pushTabCreated.current) {
+      pushTabCreated.current = true;
+      const sessionId = crypto.randomUUID();
+      const newExploration: ExplorationSession = {
+        id: sessionId,
+        projectId,
+        prompt: "",
+        variantCount: 0,
+        variants: [],
+        referenceImage: initialImage,
+        createdAt: new Date().toISOString(),
+      };
+      const updated = [...explorations, newExploration];
+      onUpdateExplorations(updated);
+      setActiveExplorationIndex(updated.length - 1);
+      setSelectedVariantId(null);
     }
-  }, [initialImage, isGenerating, handleGenerate]);
+  }, [initialImage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRefineVariant = useCallback(
     async (variant: DesignVariant, feedback: string) => {
@@ -577,6 +582,27 @@ export function ExplorerCanvas({
     [currentExploration, explorations, onUpdateExplorations]
   );
 
+  const handleRemoveReferenceImage = useCallback(() => {
+    if (!currentExploration) return;
+    const updated = explorations.map((e) =>
+      e.id === currentExploration.id ? { ...e, referenceImage: undefined } : e
+    );
+    onUpdateExplorations(updated);
+  }, [explorations, currentExploration, onUpdateExplorations]);
+
+  const copyImageToClipboard = useCallback(async (dataUrl: string) => {
+    try {
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ [blob.type]: blob }),
+      ]);
+    } catch {
+      // Fallback: copy the data URL as text
+      await copyToClipboard(dataUrl);
+    }
+  }, []);
+
   // Calculate skeleton count for the current streaming batch
   const skeletonCount = isGenerating && streamingBatchRef.current
     ? Math.max(0, pendingBatchCountRef.current - variants.filter((v) => v.batchId === streamingBatchRef.current).length)
@@ -694,17 +720,36 @@ export function ExplorerCanvas({
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Reference image card */}
+            {/* Reference image card — VariantCard-style scrollable card */}
             {currentExploration?.referenceImage && (
-              <div className="flex items-center gap-3 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-3">
-                <img
-                  src={currentExploration.referenceImage}
-                  alt="Reference"
-                  className="h-16 w-16 rounded-md object-cover border border-[var(--studio-border)]"
-                />
-                <div>
-                  <p className="text-xs font-medium text-[var(--text-primary)]">Reference image</p>
-                  <p className="text-[11px] text-[var(--text-muted)]">{currentExploration.prompt}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)]">
+                  <div className="relative aspect-[4/3] overflow-y-auto rounded-t-xl bg-white">
+                    <img
+                      src={currentExploration.referenceImage}
+                      alt="Reference"
+                      className="w-full object-contain"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-3">
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">Reference image</p>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); void copyImageToClipboard(currentExploration.referenceImage!); }}
+                        title="Copy image to clipboard"
+                        className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+                      >
+                        <Copy size={14} />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleRemoveReferenceImage(); }}
+                        title="Remove reference"
+                        className="rounded p-1 text-[var(--text-muted)] hover:text-red-400 hover:bg-[var(--bg-hover)] transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
