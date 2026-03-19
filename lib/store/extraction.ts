@@ -8,6 +8,7 @@ interface ExtractionState {
   currentStep: string | null;
   error: string | null;
   errorStep: string | null;
+  streamingContent: string | null;
 
   // Actions
   startExtraction: (steps: ExtractionStep[]) => void;
@@ -16,6 +17,7 @@ interface ExtractionState {
     update: Partial<ExtractionStep>
   ) => void;
   setProgress: (progress: number) => void;
+  setStreamingContent: (content: string | null) => void;
   setError: (error: string, step?: string) => void;
   completeExtraction: () => void;
   resetExtraction: () => void;
@@ -28,6 +30,7 @@ export const useExtractionStore = create<ExtractionState>()((set) => ({
   currentStep: null,
   error: null,
   errorStep: null,
+  streamingContent: null,
 
   startExtraction: (steps) =>
     set({
@@ -37,6 +40,7 @@ export const useExtractionStore = create<ExtractionState>()((set) => ({
       currentStep: steps[0]?.id ?? null,
       error: null,
       errorStep: null,
+      streamingContent: null,
     }),
 
   updateStep: (stepId, update) =>
@@ -50,6 +54,8 @@ export const useExtractionStore = create<ExtractionState>()((set) => ({
     }),
 
   setProgress: (progress) => set({ progress }),
+
+  setStreamingContent: (content) => set({ streamingContent: content }),
 
   setError: (error, step) =>
     set({
@@ -73,5 +79,6 @@ export const useExtractionStore = create<ExtractionState>()((set) => ({
       currentStep: null,
       error: null,
       errorStep: null,
+      streamingContent: null,
     }),
 }));
