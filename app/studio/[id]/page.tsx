@@ -396,6 +396,7 @@ export default function StudioPage({
               onPushToFigma={handlePushToFigma}
               onDesignMdUpdate={handleDesignMdChange}
               initialImage={pendingFigmaImage ?? undefined}
+              onInitialImageConsumed={() => setPendingFigmaImage(null)}
               extractedFonts={extractedFonts}
             />
           }

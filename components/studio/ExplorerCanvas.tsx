@@ -30,6 +30,7 @@ interface ExplorerCanvasProps {
   onPushToFigma: (variant: DesignVariant) => void;
   onDesignMdUpdate?: (newMd: string) => void;
   initialImage?: string;
+  onInitialImageConsumed?: () => void;
   extractedFonts?: string[];
 }
 
@@ -41,6 +42,7 @@ export function ExplorerCanvas({
   onPushToFigma: _onPushToFigma,
   onDesignMdUpdate,
   initialImage,
+  onInitialImageConsumed,
   extractedFonts = [],
 }: ExplorerCanvasProps) {
   const [modelId, setModelId] = useState<AiModelId>(DEFAULT_EXPLORE_MODEL);
@@ -426,6 +428,7 @@ export function ExplorerCanvas({
       onUpdateExplorations(updated);
       setActiveExplorationIndex(updated.length - 1);
       setSelectedVariantId(null);
+      onInitialImageConsumed?.();
     }
   }, [initialImage]); // eslint-disable-line react-hooks/exhaustive-deps
 
