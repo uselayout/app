@@ -224,11 +224,11 @@ npx @layoutdesign/context install
                 ],
                 [
                   "push_to_figma",
-                  "Sends a rendered component to Figma as editable frames (via Figma MCP)",
+                  "Renders a component at multiple viewports and pushes the frames to Figma (via Figma MCP)",
                 ],
                 [
                   "url_to_figma",
-                  "Captures a public URL as editable Figma frames with auto-layout (via Figma MCP + Playwright)",
+                  "Captures a public URL at multiple viewports and places the frames in Figma (via Figma MCP + Playwright)",
                 ],
                 [
                   "design_in_figma",
