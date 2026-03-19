@@ -8,7 +8,7 @@ export function friendlyError(err: { error?: string; type?: string }): string {
     return "Rate limit reached. Please wait a moment and try again.";
   if (msg.includes("authentication") || msg.includes("401"))
     return "Authentication failed. Check your API key in Settings.";
-  if (msg.includes("NO_API_KEY") || msg.includes("402"))
+  if (msg.includes("NO_API_KEY") || msg.includes("402") || type === "QUOTA_EXCEEDED" || msg.includes("credits"))
     return msg; // Already user-friendly from our backend
 
   return msg || "Something went wrong. Please try again.";

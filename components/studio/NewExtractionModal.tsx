@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Layers, Globe, ArrowRight, KeyRound } from "lucide-react";
+import { X, Layers, Globe, ArrowRight } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
-import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { detectSourceType, normaliseUrl } from "@/lib/util/detect-source";
-import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
 
 interface NewExtractionModalProps {
   onClose: () => void;
@@ -21,7 +19,6 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
   const [url, setUrl] = useState("");
   const [pat, setPat] = useState("");
-  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const urlInputRef = useRef<HTMLInputElement>(null);
 
   const QUICK_START_EXAMPLES = [
@@ -47,10 +44,6 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
   }, [onClose]);
 
   const handleExtract = () => {
-    if (!getStoredApiKey()) {
-      setShowApiKeyModal(true);
-      return;
-    }
     if (!isValid || !sourceType) return;
 
     const fullUrl = normaliseUrl(url);
@@ -79,20 +72,6 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
 
     router.push(`/${orgSlug}/projects/${projectId}/studio`);
   };
-
-  if (showApiKeyModal) {
-    return (
-      <ApiKeyModal
-        onClose={() => {
-          setShowApiKeyModal(false);
-          // If they now have a key, auto-retry extraction
-          if (getStoredApiKey() && isValid && sourceType) {
-            handleExtract();
-          }
-        }}
-      />
-    );
-  }
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center">
@@ -179,17 +158,6 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
             />
           )}
         </div>
-
-        {/* API key hint */}
-        {!getStoredApiKey() && (
-          <button
-            onClick={() => setShowApiKeyModal(true)}
-            className="mt-3 flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-400 hover:bg-amber-500/10 transition-colors w-full"
-          >
-            <KeyRound className="h-3.5 w-3.5 shrink-0" />
-            Claude API key required for extraction — click to add
-          </button>
-        )}
 
         {/* Actions */}
         <div className="mt-5 flex items-center justify-end gap-3">

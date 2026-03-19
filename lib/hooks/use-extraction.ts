@@ -111,6 +111,12 @@ export function useExtraction() {
         });
 
         if (!genRes.ok) {
+          if (genRes.status === 402) {
+            const body = await genRes.json().catch(() => null);
+            throw new Error(
+              body?.error ?? "No credits remaining. Top up or add your own API key in the top bar."
+            );
+          }
           throw new Error(
             `DESIGN.md generation failed: ${genRes.status} ${genRes.statusText}`
           );
