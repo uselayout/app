@@ -14,6 +14,7 @@ interface ProjectRow {
   health_score: number | null;
   test_results: unknown | null;
   explorations: unknown | null;
+  pending_canvas_image: string | null;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -35,6 +36,7 @@ function rowToProject(row: ProjectRow): Project {
     explorations: row.explorations
       ? (row.explorations as Project["explorations"])
       : undefined,
+    pendingCanvasImage: row.pending_canvas_image ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -59,6 +61,7 @@ function projectToRow(
     health_score: project.healthScore ?? null,
     test_results: null,
     explorations: project.explorations ?? null,
+    pending_canvas_image: project.pendingCanvasImage ?? null,
     user_id: userId,
     updated_at: new Date().toISOString(),
   };

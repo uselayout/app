@@ -147,6 +147,7 @@ export interface Project {
   tokenCount?: number;
   healthScore?: number;
   explorations?: ExplorationSession[];
+  pendingCanvasImage?: string | null;
   createdAt: string;
   updatedAt: string;
 }

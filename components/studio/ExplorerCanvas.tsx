@@ -407,6 +407,23 @@ export function ExplorerCanvas({
     handleGenerate(currentExploration.prompt, currentExploration.variantCount);
   }, [currentExploration, handleGenerate]);
 
+  // Auto-trigger generation when push-to-canvas screenshot is loaded
+  const autoGenerateTriggered = useRef(false);
+  useEffect(() => {
+    if (initialImage && !autoGenerateTriggered.current && !isGenerating) {
+      autoGenerateTriggered.current = true;
+      const timer = setTimeout(() => {
+        handleGenerate(
+          "Recreate this design faithfully using the design system",
+          2,
+          initialImage,
+          [],
+        );
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [initialImage, isGenerating, handleGenerate]);
+
   const handleRefineVariant = useCallback(
     async (variant: DesignVariant, feedback: string) => {
       if (isGenerating || !currentExploration) return;
