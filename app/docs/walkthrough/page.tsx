@@ -620,18 +620,16 @@ npx @layoutdesign/context install`}
       {/* Step 9: The Figma Closed Loop */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
-          9. The Figma Closed Loop
+          9. The Figma Workflow
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          Layout closes the loop between code and design, something
-          previously requiring separate tools and manual handoffs. Preview
+          Layout bridges the gap between code and design. Preview
           components locally at{" "}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             localhost:4321
           </code>
-          , push them to Figma for designer review, design directly in Figma
-          using the extracted tokens, then pull changes back via the Figma MCP.
-          The full cycle looks like this:
+          , push them to Figma for designer review, and design directly in Figma
+          using the extracted tokens. A typical workflow looks like this:
         </p>
         <CopyBlock
           code={`Developer prompts Claude
@@ -639,17 +637,16 @@ npx @layoutdesign/context install`}
   -> Claude generates on-brand TSX
   -> Claude calls preview -> renders at localhost:4321
   -> Developer reviews, requests changes
-  -> Claude calls push_to_figma -> editable frame in Figma
-  -> Designer tweaks directly in Figma using the extracted tokens
-  -> Developer asks Claude to read Figma changes (via Figma MCP)
-  -> Claude updates the code to match`}
+  -> Claude calls push_to_figma -> frames placed in Figma
+  -> Designer reviews and refines using the same tokens
+  -> Developer uses Figma MCP to read designer feedback`}
           language="text"
         />
         <p className="text-base text-gray-600 leading-relaxed">
-          Each step in the loop uses the same design tokens extracted from the
+          Each step uses the same design tokens extracted from the
           source. The AI generates code with the tokens, the preview renders
-          using Tailwind, and the Figma frame uses the same values, so code
-          and design stay in sync without a separate handoff process.
+          using Tailwind, and the Figma frames reference the same values,
+          keeping code and design aligned.
         </p>
         <Callout type="info">
           The{" "}

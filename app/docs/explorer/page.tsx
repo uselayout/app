@@ -125,17 +125,6 @@ export default function ExplorerPage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-gray-200 p-5 space-y-2">
-            <h3 className="text-lg font-semibold text-[#0a0a0a]">
-              Push to Design System
-            </h3>
-            <p className="text-base text-gray-600 leading-relaxed">
-              Batch-update your design tokens and component definitions directly
-              from Explorer variants. Use this when exploration has surfaced new
-              token values or component patterns you want to formalise into the
-              design system.
-            </p>
-          </div>
         </div>
       </section>
 
