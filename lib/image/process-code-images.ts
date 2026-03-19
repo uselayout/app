@@ -10,6 +10,7 @@
 import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 
 const IMAGE_PLACEHOLDER_RE = /data-generate-image=["'][^"']+["']/i;
+const PLACEHOLDER_URL_RE = /src=["']https?:\/\/(?:placehold\.co|via\.placeholder\.com|placeholder\.com|images\.unsplash\.com|source\.unsplash\.com|picsum\.photos|dummyimage\.com)/i;
 
 interface ProcessOptions {
   orgId?: string;
@@ -37,7 +38,7 @@ export async function processCodeImages(
   code: string,
   options: ProcessOptions = {}
 ): Promise<ProcessCodeImagesResult> {
-  const hasPlaceholders = IMAGE_PLACEHOLDER_RE.test(code);
+  const hasPlaceholders = IMAGE_PLACEHOLDER_RE.test(code) || PLACEHOLDER_URL_RE.test(code);
   if (!hasPlaceholders) return { code, skippedNoKey: false, placeholderCount: 0, failedCount: 0, errors: [] };
 
   // Count placeholders for reporting
