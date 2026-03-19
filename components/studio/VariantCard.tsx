@@ -1,22 +1,21 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUpToLine, ArrowUp, ImagePlus, GitCompareArrows, Trash2 } from "lucide-react";
+import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUp, ImagePlus, GitCompareArrows, Trash2 } from "lucide-react";
 import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
-import { usePushToDs } from "@/lib/hooks/use-push-to-ds";
 import { Tooltip as TooltipPrimitive } from "radix-ui";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { DesignVariant } from "@/lib/types";
 
-function Tip({ label, children }: { label: string; children: React.ReactNode }) {
+function Tip({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
   return (
-    <TooltipPrimitive.Root>
+    <TooltipPrimitive.Root delayDuration={wide ? 300 : undefined}>
       <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
       <TooltipPrimitive.Portal>
         <TooltipPrimitive.Content
           side="top"
           sideOffset={6}
-          className="z-50 rounded-md bg-[var(--bg-elevated)] border border-[var(--studio-border)] px-2 py-1 text-[10px] text-[var(--text-secondary)] animate-in fade-in-0 zoom-in-95"
+          className={`z-50 rounded-md bg-[var(--bg-elevated)] border border-[var(--studio-border)] px-2 py-1 text-[10px] text-[var(--text-secondary)] animate-in fade-in-0 zoom-in-95 ${wide ? "max-w-xs whitespace-normal leading-relaxed" : ""}`}
         >
           {label}
         </TooltipPrimitive.Content>
@@ -64,8 +63,6 @@ export function VariantCard({
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [showRefineInput, setShowRefineInput] = useState(false);
   const [refineText, setRefineText] = useState("");
-  const { pushComponent, pushing: pushingToDs, canPush } = usePushToDs();
-
   // Transpile and render
   useEffect(() => {
     if (!variant.code) return;
@@ -176,9 +173,11 @@ export function VariantCard({
           {healthBadge}
         </div>
         {variant.rationale && (
-          <p className="text-xs text-[var(--text-secondary)] line-clamp-2">
-            {variant.rationale}
-          </p>
+          <Tip label={variant.rationale} wide>
+            <p className="text-xs text-[var(--text-secondary)] line-clamp-2 cursor-default">
+              {variant.rationale}
+            </p>
+          </Tip>
         )}
       </div>
 
@@ -296,25 +295,6 @@ export function VariantCard({
             className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
           >
             <BookMarked size={12} />
-          </button>
-          </Tip>
-        )}
-        {canPush && (
-          <Tip label="Push to Design System">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              pushComponent({
-                name: extractComponentName(variant.code),
-                code: variant.code,
-                source: "explorer",
-                description: variant.rationale,
-              });
-            }}
-            disabled={pushingToDs}
-            className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50"
-          >
-            <ArrowUpToLine size={12} />
           </button>
           </Tip>
         )}

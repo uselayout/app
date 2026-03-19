@@ -66,7 +66,11 @@ window.addEventListener('load',function(){
     var s=document.createElement('script');
     s.textContent=[
       'var _exp={};',
-      'var require=function(n){return n==="react"?React:n==="react-dom"?ReactDOM:n==="react-dom/client"?ReactDOM:{};};',
+      'var _motionProxy=new Proxy({},{get:function(_,tag){return function(props){return React.createElement(tag,props)}}});',
+      'var _framerShim={motion:_motionProxy,AnimatePresence:function(p){return React.createElement(React.Fragment,null,p.children)}};',
+      'var _iconStub=function(p){return React.createElement("svg",Object.assign({xmlns:"http://www.w3.org/2000/svg",width:p&&p.size||24,height:p&&p.size||24,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"},p))};',
+      'var _lucideShim=new Proxy({},{get:function(){return _iconStub}});',
+      'var require=function(n){return n==="react"?React:n==="react-dom"?ReactDOM:n==="react-dom/client"?ReactDOM:n==="framer-motion"?_framerShim:n==="lucide-react"?_lucideShim:{};};',
       'var exports=_exp,module={exports:_exp};',
       moduleCode,
       '(function(){',

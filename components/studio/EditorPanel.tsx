@@ -340,6 +340,7 @@ function EditorChatBar({
 }) {
   const [instruction, setInstruction] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [streamStatus, setStreamStatus] = useState<string | null>(null);
   const [previousValue, setPreviousValue] = useState<string | null>(null);
   const [showUndo, setShowUndo] = useState(false);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -356,6 +357,7 @@ function EditorChatBar({
 
     setPreviousValue(value);
     setIsStreaming(true);
+    setStreamStatus("Thinking...");
     setShowUndo(false);
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
 
@@ -380,19 +382,25 @@ function EditorChatBar({
 
       const decoder = new TextDecoder();
       let accumulated = "";
+      let lineCount = 0;
 
       while (true) {
         const { done, value: chunk } = await reader.read();
         if (done) break;
         accumulated += decoder.decode(chunk, { stream: true });
+        lineCount = accumulated.split("\n").length;
+        setStreamStatus(`Writing... ${lineCount} lines`);
+
+        // Stream into editor progressively
+        editorRef.current?.setValue(accumulated);
       }
 
       if (accumulated.startsWith("\n\n[Error:")) {
+        // Restore on error
+        editorRef.current?.setValue(value);
         throw new Error(accumulated);
       }
 
-      // Apply the updated DESIGN.md
-      editorRef.current?.setValue(accumulated);
       onChange(accumulated);
       setInstruction("");
 
@@ -408,6 +416,7 @@ function EditorChatBar({
       setPreviousValue(null);
     } finally {
       setIsStreaming(false);
+      setStreamStatus(null);
     }
   }, [instruction, isStreaming, value, onChange, editorRef]);
 
@@ -448,8 +457,15 @@ function EditorChatBar({
           </div>
           <div className="absolute bottom-5 right-5 flex items-center gap-1.5">
             {isStreaming ? (
-              <div className="flex items-center justify-center size-6">
-                <Loader2 size={14} className="animate-spin text-[var(--text-muted)]" />
+              <div className="flex items-center gap-2">
+                {streamStatus && (
+                  <span className="text-[11px] text-[var(--text-muted)] animate-pulse">
+                    {streamStatus}
+                  </span>
+                )}
+                <div className="flex items-center justify-center size-6">
+                  <Loader2 size={14} className="animate-spin text-[var(--text-muted)]" />
+                </div>
               </div>
             ) : instruction.trim() ? (
               <button
