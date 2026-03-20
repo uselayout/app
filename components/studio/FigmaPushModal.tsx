@@ -409,27 +409,23 @@ export function toFrameName(raw: string): string {
 
 function buildMcpCommand(variant: DesignVariant, viewports: string[], figmaUrl?: string): string {
   const frameName = toFrameName(variant.name);
-  const vpList = viewports.join(", ");
 
   const inputs = [
     `- code: the TSX below`,
-    `- name: "${frameName}" (this becomes the Figma frame label)`,
+    `- name: "${frameName}"`,
     `- viewports: [${viewports.map((v) => `"${v}"`).join(", ")}]`,
   ];
   if (figmaUrl) {
-    inputs.push(`- figmaUrl: "${figmaUrl}" (push into this existing file)`);
+    inputs.push(`- figmaUrl: "${figmaUrl}"`);
   }
 
-  return `Call the layout MCP server's push_to_figma tool with the following inputs:
+  return `Call the layout MCP server's push_to_figma tool once with these inputs:
 ${inputs.join("\n")}
-
-Push for viewport(s): ${vpList}.
-Call push_to_figma once per viewport with the name suffixed — e.g. "${frameName} (mobile)".
 
 \`\`\`tsx
 ${variant.code}
 \`\`\`
 
-Do NOT create temp HTML files or start HTTP servers. The push_to_figma tool handles everything.`;
+The tool handles all viewports in a single call. Do NOT create temp HTML files or start HTTP servers.`;
 }
 
