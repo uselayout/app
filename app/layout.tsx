@@ -23,11 +23,11 @@ export const metadata: Metadata = {
     template: "%s | Layout",
   },
   description:
-    "Extract design systems from Figma and websites. Generate LLM-optimised context bundles for AI coding agents.",
+    "Extract your design system from Figma or any website. Layout generates structured context bundles that make Claude Code, Cursor, and Codex build on-brand UI automatically.",
   openGraph: {
-    title: "Layout",
+    title: "Layout — The compiler between design systems and AI coding agents",
     description:
-      "Extract design systems from Figma and websites. Generate LLM-optimised context bundles for AI coding agents.",
+      "Extract your design system from Figma or any website. Layout generates structured context bundles that make Claude Code, Cursor, and Codex build on-brand UI automatically.",
     siteName: "Layout",
     locale: "en_GB",
     type: "website",
