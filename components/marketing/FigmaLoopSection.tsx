@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { MarketingVideo } from '@/components/marketing/MarketingVideo';
 
 export function FigmaLoopSection() {
   return (
@@ -61,17 +62,8 @@ export function FigmaLoopSection() {
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
-        <div className="absolute left-0 top-0 w-full overflow-hidden px-4 lg:px-[60px] h-[93.75%]">
-          <div className="bg-white w-full h-full overflow-hidden relative">
-            <video
-              src="/marketing/videos/figma-loop.mp4"
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            />
-          </div>
+        <div className="absolute inset-0 overflow-hidden rounded-[6px]">
+          <MarketingVideo src="/marketing/videos/figma-loop.mp4" />
         </div>
       </motion.div>
     </section>
