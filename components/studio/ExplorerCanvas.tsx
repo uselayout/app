@@ -50,6 +50,7 @@ export function ExplorerCanvas({
   const [isProcessingImages, setIsProcessingImages] = useState(false);
   const [imageNotice, setImageNotice] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generationStatus, setGenerationStatus] = useState<string | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [pushVariant, setPushVariant] = useState<DesignVariant | null>(null);
   const [showImport, setShowImport] = useState(false);
@@ -63,6 +64,7 @@ export function ExplorerCanvas({
   const scrollRef = useRef<HTMLDivElement>(null);
   const streamingBatchRef = useRef<string | null>(null);
   const pendingBatchCountRef = useRef(0);
+  const generatingSessionRef = useRef<string | null>(null);
 
   const { steps, markStep } = useOnboardingStore();
   const stepsRef = useRef(steps);
@@ -290,6 +292,53 @@ export function ExplorerCanvas({
     [streamVariants, modelId]
   );
 
+  /** Detect URLs in prompt, fetch their content server-side, and merge into contextFiles */
+  const fetchUrlsFromPrompt = useCallback(
+    async (
+      prompt: string,
+      existingContextFiles?: ContextFile[],
+    ): Promise<{ prompt: string; contextFiles: ContextFile[] | undefined }> => {
+      const urlMatches = prompt.match(/https?:\/\/[^\s)]+/g);
+      if (!urlMatches || urlMatches.length === 0) {
+        return { prompt, contextFiles: existingContextFiles };
+      }
+
+      const urls = urlMatches.slice(0, 2); // Max 2 URLs
+      setGenerationStatus("Fetching reference sites…");
+
+      const fetched: ContextFile[] = [];
+      let updatedPrompt = prompt;
+
+      await Promise.all(
+        urls.map(async (url) => {
+          try {
+            const res = await fetch("/api/fetch-url", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ url }),
+            });
+            if (!res.ok) return;
+            const data = (await res.json()) as { name: string; content: string };
+            fetched.push({ name: data.name, content: data.content });
+            const hostname = new URL(url).hostname.replace("www.", "");
+            updatedPrompt = updatedPrompt.replace(url, `[see context: ${hostname}]`);
+          } catch {
+            // Silently skip failed URL fetches
+          }
+        })
+      );
+
+      setGenerationStatus(null);
+
+      const merged = [...(existingContextFiles ?? []), ...fetched].slice(0, 3); // API max 3
+      return {
+        prompt: updatedPrompt,
+        contextFiles: merged.length > 0 ? merged : existingContextFiles,
+      };
+    },
+    []
+  );
+
   const handleGenerate = useCallback(
     async (prompt: string, variantCount: number, imageDataUrl?: string, contextFiles?: ContextFile[]) => {
       if (isGenerating) return;
@@ -298,6 +347,10 @@ export function ExplorerCanvas({
       setGenerationError(null);
       setSelectedVariantId(null);
       abortRef.current = new AbortController();
+
+      // Fetch any URLs in the prompt before generation
+      const { prompt: resolvedPrompt, contextFiles: resolvedContextFiles } =
+        await fetchUrlsFromPrompt(prompt, contextFiles);
 
       const batchId = crypto.randomUUID();
       const batchPrompt = prompt;
@@ -327,7 +380,7 @@ export function ExplorerCanvas({
           variantCount,
           variants: [],
           referenceImage: imageDataUrl,
-          contextFiles,
+          contextFiles: resolvedContextFiles,
           createdAt: new Date().toISOString(),
         };
         updatedExplorations = [...explorations, newExploration];
@@ -335,6 +388,7 @@ export function ExplorerCanvas({
         setActiveExplorationIndex(updatedExplorations.length - 1);
       }
 
+      generatingSessionRef.current = sessionId;
       try {
         await runGeneration(
           sessionId,
@@ -342,7 +396,7 @@ export function ExplorerCanvas({
           batchId,
           batchPrompt,
           updatedExplorations,
-          { prompt, layoutMd, variantCount, projectId, imageDataUrl, contextFiles },
+          { prompt: resolvedPrompt, layoutMd, variantCount, projectId, imageDataUrl, contextFiles: resolvedContextFiles },
           variantCount,
         );
       } catch (err) {
@@ -351,10 +405,12 @@ export function ExplorerCanvas({
         setGenerationError(message);
       } finally {
         setIsGenerating(false);
+        setGenerationStatus(null);
         abortRef.current = null;
+        generatingSessionRef.current = null;
       }
     },
-    [isGenerating, projectId, layoutMd, explorations, currentExploration, onUpdateExplorations, runGeneration]
+    [isGenerating, projectId, layoutMd, explorations, currentExploration, onUpdateExplorations, runGeneration, fetchUrlsFromPrompt]
   );
 
   const handleRefine = useCallback(
@@ -365,12 +421,17 @@ export function ExplorerCanvas({
       setGenerationError(null);
       abortRef.current = new AbortController();
 
+      // Fetch any URLs in the refinement prompt
+      const { prompt: resolvedPrompt, contextFiles: resolvedContextFiles } =
+        await fetchUrlsFromPrompt(refinementPrompt, contextFiles);
+
       const batchId = crypto.randomUUID();
       const batchPrompt = `Refine "${selectedVariant.name}": ${refinementPrompt}`;
       const sessionId = currentExploration.id;
       const existingVariants = currentExploration.variants;
 
       setSelectedVariantId(null);
+      generatingSessionRef.current = sessionId;
 
       try {
         await runGeneration(
@@ -380,13 +441,13 @@ export function ExplorerCanvas({
           batchPrompt,
           explorations,
           {
-            prompt: refinementPrompt,
+            prompt: resolvedPrompt,
             layoutMd,
             variantCount,
             projectId,
             baseCode: selectedVariant.code,
             imageDataUrl,
-            contextFiles,
+            contextFiles: resolvedContextFiles,
           },
           variantCount,
         );
@@ -396,10 +457,12 @@ export function ExplorerCanvas({
         setGenerationError(message);
       } finally {
         setIsGenerating(false);
+        setGenerationStatus(null);
         abortRef.current = null;
+        generatingSessionRef.current = null;
       }
     },
-    [isGenerating, selectedVariant, currentExploration, projectId, layoutMd, explorations, runGeneration]
+    [isGenerating, selectedVariant, currentExploration, projectId, layoutMd, explorations, runGeneration, fetchUrlsFromPrompt]
   );
 
   const handleRegenerate = useCallback(() => {
@@ -605,7 +668,7 @@ export function ExplorerCanvas({
   }, []);
 
   // Calculate skeleton count for the current streaming batch
-  const skeletonCount = isGenerating && streamingBatchRef.current
+  const skeletonCount = isGenerating && streamingBatchRef.current && generatingSessionRef.current === currentExploration?.id
     ? Math.max(0, pendingBatchCountRef.current - variants.filter((v) => v.batchId === streamingBatchRef.current).length)
     : 0;
 
@@ -841,6 +904,14 @@ export function ExplorerCanvas({
               </div>
             ))}
 
+            {/* URL fetch status */}
+            {generationStatus && skeletonCount === 0 && (
+              <div className="flex items-center gap-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2.5">
+                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
+                <span className="text-xs text-[var(--text-secondary)]">{generationStatus}</span>
+              </div>
+            )}
+
             {/* Skeleton loaders for in-progress batch */}
             {skeletonCount > 0 && (
               <>
@@ -848,7 +919,7 @@ export function ExplorerCanvas({
                   <div className="flex items-center gap-3 py-3">
                     <div className="h-px flex-1 bg-[var(--studio-border)]" />
                     <span className="shrink-0 text-[11px] text-[var(--text-muted)] animate-pulse">
-                      Generating…
+                      {generationStatus ?? "Generating…"}
                     </span>
                     <div className="h-px flex-1 bg-[var(--studio-border)]" />
                   </div>
@@ -899,6 +970,7 @@ export function ExplorerCanvas({
 
       {/* Prompt bar — pinned to bottom */}
       <ExplorerToolbar
+        key={currentExploration?.id ?? "empty"}
         onGenerate={handleGenerate}
         onRefine={handleRefine}
         onCompare={(_toolbarPrompt, image, files) => setCompareData({
