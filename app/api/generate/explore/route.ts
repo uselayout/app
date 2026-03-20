@@ -12,7 +12,7 @@ const validModelIds = Object.keys(AI_MODELS) as [string, ...string[]];
 
 const RequestSchema = z.object({
   prompt: z.string().min(1),
-  designMd: z.string(),
+  layoutMd: z.string(),
   variantCount: z.number().int().min(1).max(6),
   projectId: z.string().optional(),
   baseCode: z.string().optional(),
@@ -47,10 +47,10 @@ export async function POST(request: NextRequest) {
   }
 
   const userId = session.user.id;
-  const { prompt, designMd, variantCount, baseCode, imageDataUrl, contextFiles } = parsed.data;
+  const { prompt, layoutMd, variantCount, baseCode, imageDataUrl, contextFiles } = parsed.data;
   const modelId = (parsed.data.modelId ?? DEFAULT_EXPLORE_MODEL) as AiModelId;
   const model = AI_MODELS[modelId];
-  const effectiveDesignMd = designMd || "No design system provided. Use sensible defaults with a clean, modern aesthetic.";
+  const effectiveLayoutMd = layoutMd || "No design system provided. Use sensible defaults with a clean, modern aesthetic.";
 
   // Resolve API key + billing mode based on provider
   let mode: AiMode;
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     ? createRefineStreamForModel(modelId, {
         baseCode,
         refinementPrompt: prompt,
-        designMd: effectiveDesignMd,
+        layoutMd: effectiveLayoutMd,
         variantCount,
         apiKey: effectiveApiKey,
         contextFiles,
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       })
     : createExploreStreamForModel(modelId, {
         prompt,
-        designMd: effectiveDesignMd,
+        layoutMd: effectiveLayoutMd,
         variantCount,
         apiKey: effectiveApiKey,
         imageDataUrl,

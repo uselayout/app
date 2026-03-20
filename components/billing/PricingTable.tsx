@@ -42,7 +42,7 @@ const tiers = [
       { text: "Unlimited projects", included: true },
       { text: "3 starter kits", included: true },
       { text: "BYOK — use your own API key", included: true },
-      { text: "50 DESIGN.md + 300 test queries/mo", included: true },
+      { text: "50 layout.md + 300 test queries/mo", included: true },
       { text: "Drift monitoring", included: true },
       { text: "All premium kits", included: true },
       { text: "Priority extraction queue", included: true },
@@ -57,7 +57,7 @@ const tiers = [
     cta: "Start Team Plan",
     features: [
       { text: "Everything in Pro", included: true },
-      { text: "50 DESIGN.md + 300 queries per seat", included: true },
+      { text: "50 layout.md + 300 queries per seat", included: true },
       { text: "Shared design system library", included: true },
       { text: "Team management", included: true },
       { text: "Centralised API key management", included: true },

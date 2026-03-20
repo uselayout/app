@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireOrgAuth } from "@/lib/api/auth-context";
 import {
-  listDesignMdVersions,
-  saveDesignMdVersion,
-} from "@/lib/supabase/design-md-versions";
+  listLayoutMdVersions,
+  saveLayoutMdVersion,
+} from "@/lib/supabase/layout-md-versions";
 
 type RouteContext = {
   params: Promise<{ orgId: string; projectId: string }>;
@@ -16,12 +16,12 @@ export async function GET(_request: Request, ctx: RouteContext) {
   const auth = await requireOrgAuth(orgId, "viewProject");
   if (auth instanceof NextResponse) return auth;
 
-  const versions = await listDesignMdVersions(projectId, orgId);
+  const versions = await listLayoutMdVersions(projectId, orgId);
   return NextResponse.json({ versions });
 }
 
 const SaveVersionSchema = z.object({
-  designMd: z.string().min(1),
+  layoutMd: z.string().min(1),
   source: z.enum(["manual", "generation", "extraction"]),
 });
 
@@ -44,10 +44,10 @@ export async function POST(request: Request, ctx: RouteContext) {
     );
   }
 
-  await saveDesignMdVersion(
+  await saveLayoutMdVersion(
     projectId,
     orgId,
-    parsed.data.designMd,
+    parsed.data.layoutMd,
     parsed.data.source,
     auth.userId,
   );

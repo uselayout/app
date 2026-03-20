@@ -2,7 +2,7 @@
 
 ## Overview
 
-Browser-based tool that extracts design systems from Figma files and live websites, then transforms them into structured, LLM-optimised context bundles (DESIGN.md) that enable AI coding agents to produce on-brand UI code consistently.
+Browser-based tool that extracts design systems from Figma files and live websites, then transforms them into structured, LLM-optimised context bundles (layout.md) that enable AI coding agents to produce on-brand UI code consistently.
 
 **Tagline:** The compiler between design systems and AI coding agents.
 
@@ -74,11 +74,11 @@ app/
   api/
     extract/figma/route.ts      # Figma extraction → SSE stream
     extract/website/route.ts    # Website extraction → SSE stream
-    generate/design-md/route.ts # Claude DESIGN.md synthesis → stream
+    generate/layout-md/route.ts # Claude layout.md synthesis → stream
     generate/explore/route.ts   # Explorer Canvas AI generation → stream
     export/bundle/route.ts      # ZIP bundle generation
     webhooks/figma/route.ts     # Figma webhook receiver
-    health/completeness/route.ts # DESIGN.md quality analysis
+    health/completeness/route.ts # layout.md quality analysis
     organizations/[orgId]/      # Org-scoped API routes (components, members, etc.)
     transpile/route.ts          # TSX transpilation for preview
 
@@ -90,7 +90,7 @@ components/
     ExplorerCanvas.tsx          # AI-powered design exploration + validation canvas
     ExplorerToolbar.tsx         # Explorer toolbar (prompts, image upload)
     VariantCard.tsx             # Individual variant display + actions
-    CompletenessPanel.tsx       # DESIGN.md quality score + suggestions
+    CompletenessPanel.tsx       # layout.md quality score + suggestions
     ExtractionDiffModal.tsx     # Token/component diff on re-extraction
     ExtractionProgress.tsx      # Full-screen progress overlay
     ExportModal.tsx             # Export format selection + download
@@ -112,7 +112,7 @@ lib/
     extractor.ts                # Playwright orchestrator
     css-extract.ts              # page.evaluate() CSS extraction scripts
   claude/
-    synthesise.ts               # DESIGN.md generation from extraction data
+    synthesise.ts               # layout.md generation from extraction data
   export/
     bundle.ts                   # ZIP bundle orchestrator
     claude-md.ts                # CLAUDE.md section generator
@@ -123,7 +123,7 @@ lib/
   auth.ts                       # Better Auth server config
   auth-client.ts                # Better Auth client
   health/
-    completeness.ts             # DESIGN.md quality scorer
+    completeness.ts             # layout.md quality scorer
     score.ts                    # Per-variant health scoring
   extraction/
     diff.ts                     # Extraction diff engine
@@ -175,8 +175,8 @@ Key files: `ExplorerCanvas.tsx`, `ExplorerToolbar.tsx`, `VariantCard.tsx`
 
 ### Quality & Health
 
-- **Completeness Panel** (`components/studio/CompletenessPanel.tsx`): Analyses DESIGN.md quality across 6 weighted sections (Quick Reference, Colours, Typography, Spacing, Components, Anti-patterns). Shows score 0-100 with suggestions. Accessed via "Quality" tab in SourcePanel.
-- **Extraction Diff** (`components/studio/ExtractionDiffModal.tsx`): On re-extraction, shows token/component/font changes (added, removed, modified) with accept/discard options. Reverts both extraction data and DESIGN.md on discard.
+- **Completeness Panel** (`components/studio/CompletenessPanel.tsx`): Analyses layout.md quality across 6 weighted sections (Quick Reference, Colours, Typography, Spacing, Components, Anti-patterns). Shows score 0-100 with suggestions. Accessed via "Quality" tab in SourcePanel.
+- **Extraction Diff** (`components/studio/ExtractionDiffModal.tsx`): On re-extraction, shows token/component/font changes (added, removed, modified) with accept/discard options. Reverts both extraction data and layout.md on discard.
 - **Health Score** stored per project, visible in project cards.
 
 ### Authentication & Organisation Model
@@ -198,7 +198,7 @@ The MCP endpoint at `app/api/mcp/route.ts` exposes 7 tools for AI coding agents:
 
 | Tool | Purpose |
 |------|---------|
-| `get_design_system` | Full DESIGN.md content |
+| `get_design_system` | Full layout.md content |
 | `get_design_section` | Single section (colours, typography, spacing, etc.) |
 | `get_tokens` | CSS tokens by category |
 | `get_component` | Component code by name |

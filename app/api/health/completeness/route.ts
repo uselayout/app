@@ -3,7 +3,7 @@ import { z } from "zod";
 import { analyseCompleteness } from "@/lib/health/completeness";
 
 const BodySchema = z.object({
-  designMd: z.string().min(1),
+  layoutMd: z.string().min(1),
 });
 
 export async function POST(request: Request) {
@@ -22,6 +22,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const report = analyseCompleteness(parsed.data.designMd);
+  const report = analyseCompleteness(parsed.data.layoutMd);
   return NextResponse.json(report);
 }

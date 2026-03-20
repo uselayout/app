@@ -3,10 +3,10 @@ import { z } from "zod";
 import { requireMcpAuth } from "@/lib/api/mcp-auth";
 import { getOrganization } from "@/lib/supabase/organization";
 import { fetchAllProjects, upsertProject } from "@/lib/supabase/db";
-import { createDesignMdStream } from "@/lib/claude/synthesise";
+import { createLayoutMdStream } from "@/lib/claude/synthesise";
 import { checkQuota, deductCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
-import { saveDesignMdVersion } from "@/lib/supabase/design-md-versions";
+import { saveLayoutMdVersion } from "@/lib/supabase/layout-md-versions";
 import type { Project, ExtractionResult } from "@/lib/types";
 import type { AiMode } from "@/lib/types/billing";
 
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     mode = "byok";
     apiKey = userAnthropicKey;
   } else {
-    const quota = await checkQuota(auth.userId, "design-md");
+    const quota = await checkQuota(auth.userId, "layout-md");
     if (!quota.allowed) {
       return NextResponse.json(
         { error: quota.reason, code: "QUOTA_EXCEEDED", remaining: quota.remaining },
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const deducted = await deductCredit(auth.userId, "design-md");
+    const deducted = await deductCredit(auth.userId, "layout-md");
     if (!deducted) {
       return NextResponse.json(
         { error: "No credits remaining. Top up or use your own Anthropic API key.", code: "QUOTA_EXCEEDED" },
@@ -109,12 +109,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const { stream, usage } = createDesignMdStream(extractionData, apiKey);
+  const { stream, usage } = createLayoutMdStream(extractionData, apiKey);
 
   // Collect the full stream into a string
   const reader = stream.getReader();
   const decoder = new TextDecoder();
-  let designMd = "";
+  let layoutMd = "";
 
   try {
     let done = false;
@@ -122,30 +122,30 @@ export async function POST(request: Request) {
       const result = await reader.read();
       done = result.done;
       if (result.value) {
-        designMd += decoder.decode(result.value, { stream: !done });
+        layoutMd += decoder.decode(result.value, { stream: !done });
       }
     }
   } finally {
     reader.releaseLock();
   }
 
-  // Don't save error text as DESIGN.md content
-  if (designMd.includes("[Error generating DESIGN.md:")) {
+  // Don't save error text as layout.md content
+  if (layoutMd.includes("[Error generating layout.md:")) {
     return NextResponse.json(
-      { error: designMd.trim() },
+      { error: layoutMd.trim() },
       { status: 500, headers: CORS },
     );
   }
 
   // Save previous version before overwriting
-  if (project.designMd && project.designMd.length > 0) {
-    await saveDesignMdVersion(projectId, auth.orgId, project.designMd, "generation", auth.userId);
+  if (project.layoutMd && project.layoutMd.length > 0) {
+    await saveLayoutMdVersion(projectId, auth.orgId, project.layoutMd, "generation", auth.userId);
   }
 
   // Save to project
   const updatedProject: Project = {
     ...project,
-    designMd,
+    layoutMd,
     updatedAt: new Date().toISOString(),
   };
   await upsertProject(updatedProject, org.ownerId);
@@ -156,7 +156,7 @@ export async function POST(request: Request) {
       logUsage({
         userId: auth.userId,
         projectId,
-        endpoint: "design-md",
+        endpoint: "layout-md",
         mode,
         usage: u,
         model: "claude-sonnet-4-6",

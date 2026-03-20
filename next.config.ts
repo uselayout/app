@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  // Allow large request bodies for screenshot data in design-md generation
+  // Allow large request bodies for screenshot data in layout-md generation
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",

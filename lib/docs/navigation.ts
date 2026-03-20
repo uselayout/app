@@ -56,7 +56,7 @@ export const docsNavigation: DocNavSection[] = [
     label: "Reference",
     items: [
       { title: "API Reference", href: "/docs/api-reference" },
-      { title: "DESIGN.md Spec", href: "/docs/design-md" },
+      { title: "layout.md Spec", href: "/docs/layout-md" },
       { title: "Self-Hosting", href: "/docs/self-hosting" },
     ],
   },

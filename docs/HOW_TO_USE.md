@@ -10,7 +10,7 @@ When you click **Export** in the Studio, you download a ZIP containing:
 
 | File | Purpose |
 |------|---------|
-| `DESIGN.md` | Full design system reference (tokens, components, anti-patterns) |
+| `layout.md` | Full design system reference (tokens, components, anti-patterns) |
 | `CLAUDE.md-section.md` | Drop-in section for your project's `CLAUDE.md` |
 | `AGENTS.md` | Context for OpenAI Codex, Jules, Factory, Amp (agents.md standard) |
 | `tokens.css` | CSS custom properties for all design tokens |
@@ -19,7 +19,7 @@ When you click **Export** in the Studio, you download a ZIP containing:
 | `tailwind.config.js` | Tailwind config pre-loaded with the extracted token values |
 | `tokens.json` | W3C DTCG-compatible token file for Theo, Style Dictionary, etc. |
 
-The **Quick Reference** inside `DESIGN.md` (Section 0) is designed to be copy-pasted standalone - it fits within tight context budgets and summarises the most critical tokens and rules in 50–75 lines.
+The **Quick Reference** inside `layout.md` (Section 0) is designed to be copy-pasted standalone - it fits within tight context budgets and summarises the most critical tokens and rules in 50–75 lines.
 
 ---
 
@@ -37,11 +37,11 @@ Claude Code reads your project's `CLAUDE.md` as persistent context on every prom
 <!-- Paste CLAUDE.md-section.md contents here -->
 ```
 
-**Step 3:** For the full DESIGN.md, you can either:
-- Add it to the repo and reference it: `See DESIGN.md for full design system`
-- Use `claude --context DESIGN.md` to inject it per-session
+**Step 3:** For the full layout.md, you can either:
+- Add it to the repo and reference it: `See layout.md for full design system`
+- Use `claude --context layout.md` to inject it per-session
 
-**Tip:** The Quick Reference (Section 0) is designed for `CLAUDE.md` - it's concise enough to not blow your context budget on every message. Add the full `DESIGN.md` only when you need deep token or component reference.
+**Tip:** The Quick Reference (Section 0) is designed for `CLAUDE.md` - it's concise enough to not blow your context budget on every message. Add the full `layout.md` only when you need deep token or component reference.
 
 ---
 
@@ -90,16 +90,16 @@ Copilot reads `.github/copilot-instructions.md` as persistent project context (r
 mkdir -p .github
 ```
 
-**Step 2:** Paste the Quick Reference section from `DESIGN.md` into the file:
+**Step 2:** Paste the Quick Reference section from `layout.md` into the file:
 
 ```markdown
 # Copilot Instructions
 
 ## Design System
-<!-- Paste Section 0 from DESIGN.md here -->
+<!-- Paste Section 0 from layout.md here -->
 ```
 
-For inline completions, Copilot also picks up context from open files - keeping `DESIGN.md` or `tokens.css` open in a tab improves completion quality.
+For inline completions, Copilot also picks up context from open files - keeping `layout.md` or `tokens.css` open in a tab improves completion quality.
 
 ---
 
@@ -183,9 +183,9 @@ const config = require("./tailwind.config.js");
 
 1. **Extract** - Paste a Figma URL or website URL into Layout and run extraction
 2. **Review** - Check the extracted tokens in the Source panel. Re-extract if something looks off
-3. **Generate** - Click "Generate DESIGN.md" to synthesise the context file from extracted data
+3. **Generate** - Click "Generate layout.md" to synthesise the context file from extracted data
 4. **Test** - Use the Explorer Canvas to generate a few components. Check the health score (aim for 80+)
-5. **Iterate** - Edit DESIGN.md in the Studio's editor to fix anything the AI misidentified. Re-test
+5. **Iterate** - Edit layout.md in the Studio's editor to fix anything the AI misidentified. Re-test
 6. **Export** - Download the ZIP bundle
 7. **Import** - Run `npx @layoutdesign/context import ./layout-export.zip` in your project root
 8. **Install** - Run `npx @layoutdesign/context install` to auto-configure your AI tool's MCP settings
@@ -231,8 +231,8 @@ If you prefer not to use the CLI, you can still drop the exported files into you
 The health score (0–100) in the Explorer Canvas measures how closely the generated code follows the design system:
 
 - **80–100** - Tokens are being used correctly; ready to export
-- **50–79** - Partial adherence; review the Anti-Patterns section in DESIGN.md
-- **0–49** - AI is not picking up the design system; check that DESIGN.md has well-formed CSS code blocks
+- **50–79** - Partial adherence; review the Anti-Patterns section in layout.md
+- **0–49** - AI is not picking up the design system; check that layout.md has well-formed CSS code blocks
 
 ---
 
@@ -253,7 +253,7 @@ After extracting your design system, use the Explorer Canvas to generate AI-powe
 
 ## Quality Score
 
-The Quality tab in the Source Panel shows your DESIGN.md completeness score:
+The Quality tab in the Source Panel shows your layout.md completeness score:
 
 - **90–100:** Production-ready - comprehensive coverage across all sections
 - **70–89:** Good - covers most areas, minor gaps in documentation
@@ -304,8 +304,8 @@ The tool extracts your kit's colour palette, typography, spacing tokens, compone
 ### The Closed Loop
 
 ```
-Extract design system → Generate DESIGN.md → Test components
-    → Push to Figma → Designer reviews → Update DESIGN.md → Repeat
+Extract design system → Generate layout.md → Test components
+    → Push to Figma → Designer reviews → Update layout.md → Repeat
 ```
 
 No other open-source tool closes this loop.
@@ -336,7 +336,7 @@ Save reusable components from the Explorer Canvas:
 
 ## Tips
 
-- **Narrow the Quick Reference** - If you have a large DESIGN.md, the Quick Reference (Section 0) is the most important part. Keep it focused on the 10–15 tokens your AI uses most.
-- **Commit DESIGN.md to your repo** - Treat it like any other configuration file. Update it when the design system changes.
-- **Use the context toggle** - In the Explorer Canvas, toggle "DESIGN.md context: OFF" to see what the AI generates without your design system. The gap shows you exactly what value the context file is providing.
+- **Narrow the Quick Reference** - If you have a large layout.md, the Quick Reference (Section 0) is the most important part. Keep it focused on the 10–15 tokens your AI uses most.
+- **Commit layout.md to your repo** - Treat it like any other configuration file. Update it when the design system changes.
+- **Use the context toggle** - In the Explorer Canvas, toggle "layout.md context: OFF" to see what the AI generates without your design system. The gap shows you exactly what value the context file is providing.
 - **Re-extract periodically** - Design systems evolve. Re-run extraction after major design updates to keep the context file current.

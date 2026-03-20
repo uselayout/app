@@ -10,7 +10,7 @@ import type { AiMode } from "@/lib/types/billing";
 
 const RequestSchema = z.object({
   instruction: z.string().min(1),
-  designMd: z.string().min(1),
+  layoutMd: z.string().min(1),
 });
 
 export async function POST(request: NextRequest) {
@@ -74,8 +74,8 @@ export async function POST(request: NextRequest) {
     apiKey = process.env.ANTHROPIC_API_KEY;
   }
 
-  const { instruction, designMd } = parsed.data;
-  const { stream, usage } = createEditStream(instruction, designMd, apiKey);
+  const { instruction, layoutMd } = parsed.data;
+  const { stream, usage } = createEditStream(instruction, layoutMd, apiKey);
 
   void usage
     .then((u) =>

@@ -14,11 +14,11 @@ const claudeMdSnippet = `## Design System
 
 <!-- Paste CLAUDE.md-section.md contents here -->`;
 
-const contextFlagSnippet = `claude --context DESIGN.md`;
+const contextFlagSnippet = `claude --context layout.md`;
 
 const repoReferenceSnippet = `## Design System
 
-See DESIGN.md for full design system reference.`;
+See layout.md for full design system reference.`;
 
 export default function ClaudeCodePage() {
   const { prev, next } = getAdjacentPages("/docs/integrations/claude-code");
@@ -77,12 +77,12 @@ export default function ClaudeCodePage() {
 
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-[#0a0a0a]">
-                Step 3: Reference or inject the full DESIGN.md
+                Step 3: Reference or inject the full layout.md
               </h3>
               <p className="text-base text-gray-600 leading-relaxed">
                 For the full{" "}
                 <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                  DESIGN.md
+                  layout.md
                 </code>
                 , you have two options:
               </p>
@@ -111,12 +111,12 @@ export default function ClaudeCodePage() {
         </div>
 
         <Callout type="tip">
-          The <strong>Quick Reference</strong> (Section 0 of DESIGN.md) is
+          The <strong>Quick Reference</strong> (Section 0 of layout.md) is
           designed specifically for{" "}
           <code className="font-mono text-xs">CLAUDE.md</code>. It summarises
           the most critical tokens and rules in 50–75 lines, keeping it concise
           enough to not exhaust your context budget on every message. Add the
-          full <code className="font-mono text-xs">DESIGN.md</code> only when
+          full <code className="font-mono text-xs">layout.md</code> only when
           you need deep token or component reference.
         </Callout>
 
@@ -138,7 +138,7 @@ export default function ClaudeCodePage() {
           <Callout type="info">
             Commit{" "}
             <code className="font-mono text-xs">CLAUDE.md</code> and{" "}
-            <code className="font-mono text-xs">DESIGN.md</code> to your repo.
+            <code className="font-mono text-xs">layout.md</code> to your repo.
             Treat them like any other configuration file. Update them when your
             design system changes.
           </Callout>

@@ -31,7 +31,7 @@ app/
   api/
     extract/figma/route.ts      # Figma API extraction → SSE stream
     extract/website/route.ts    # Playwright extraction → SSE stream
-    generate/design-md/route.ts # Claude DESIGN.md synthesis → stream
+    generate/layout-md/route.ts # Claude layout.md synthesis → stream
     generate/test/route.ts      # Test panel Claude calls → stream
     export/bundle/route.ts      # ZIP bundle generation
     transpile/route.ts          # Server-side TSX→JS transpilation
@@ -71,7 +71,7 @@ lib/
     css-extract.ts              # page.evaluate() CSS extraction scripts
     validate-url.ts             # SSRF protection + URL validation
   claude/
-    synthesise.ts               # DESIGN.md generation prompt + streaming
+    synthesise.ts               # layout.md generation prompt + streaming
     test.ts                     # Test panel prompt handling
   export/
     bundle.ts                   # ZIP bundle orchestrator

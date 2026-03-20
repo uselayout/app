@@ -323,7 +323,7 @@ export default function ChromeExtensionPage() {
           </li>
           <li>
             The extension works alongside Layout Studio. Extract tokens from a
-            live site in the extension, then generate DESIGN.md from them in the
+            live site in the extension, then generate layout.md from them in the
             Studio
           </li>
         </ul>

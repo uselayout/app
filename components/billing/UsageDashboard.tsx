@@ -54,9 +54,9 @@ export function UsageDashboard() {
       .catch(() => {});
   }, []);
 
-  const totalDesignMd = tier === "pro" || tier === "team" ? 50 : 0;
+  const totalLayoutMd = tier === "pro" || tier === "team" ? 50 : 0;
   const totalTestQuery = tier === "pro" || tier === "team" ? 300 : 0;
-  const usedDesignMd = totalDesignMd - (credits?.designMdRemaining ?? 0);
+  const usedLayoutMd = totalLayoutMd - (credits?.layoutMdRemaining ?? 0);
   const usedTestQuery = totalTestQuery - (credits?.testQueryRemaining ?? 0);
 
   return (
@@ -71,9 +71,9 @@ export function UsageDashboard() {
       {(tier === "pro" || tier === "team") && (
         <div className="grid grid-cols-2 gap-4">
           <CreditGauge
-            label="DESIGN.md generations"
-            used={Math.max(usedDesignMd, 0)}
-            total={totalDesignMd + (credits?.topupDesignMd ?? 0)}
+            label="layout.md generations"
+            used={Math.max(usedLayoutMd, 0)}
+            total={totalLayoutMd + (credits?.topupLayoutMd ?? 0)}
             icon={FileText}
           />
           <CreditGauge
@@ -126,7 +126,7 @@ export function UsageDashboard() {
                     {entry.mode}
                   </span>
                   <span className="text-[var(--text-primary)]">
-                    {entry.endpoint === "design-md" ? "DESIGN.md" : "Test query"}
+                    {entry.endpoint === "layout-md" ? "layout.md" : "Test query"}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-[var(--text-muted)]">

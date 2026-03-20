@@ -1,10 +1,10 @@
 import type { ExtractedToken, ExtractedTokens, TokenType } from "@/lib/types";
 
 /**
- * Parse CSS custom property declarations from fenced CSS blocks in a DESIGN.md file.
+ * Parse CSS custom property declarations from fenced CSS blocks in a layout.md file.
  * Returns structured tokens compatible with ExtractionResult.tokens.
  */
-export function parseTokensFromDesignMd(markdown: string): ExtractedTokens {
+export function parseTokensFromLayoutMd(markdown: string): ExtractedTokens {
   const declarations = extractCSSDeclarations(markdown);
   const seen = new Map<string, ExtractedToken>();
 

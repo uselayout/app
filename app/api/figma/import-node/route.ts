@@ -2,12 +2,12 @@ import { NextRequest } from "next/server";
 import { z } from "zod/v4";
 import { auth } from "@/lib/auth";
 import { importFigmaNode } from "@/lib/figma/import";
-import { diffFigmaAgainstDesignMd } from "@/lib/figma/diff";
+import { diffFigmaAgainstLayoutMd } from "@/lib/figma/diff";
 
 const RequestSchema = z.object({
   fileKey: z.string().min(1),
   nodeId: z.string().min(1),
-  designMd: z.string().optional(),
+  layoutMd: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -36,12 +36,12 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Figma token required (X-Figma-Token header)" }, { status: 400 });
   }
 
-  const { fileKey, nodeId, designMd } = parsed.data;
+  const { fileKey, nodeId, layoutMd } = parsed.data;
 
   try {
     const imported = await importFigmaNode(fileKey, nodeId, pat);
-    const changes = designMd
-      ? diffFigmaAgainstDesignMd(imported, designMd)
+    const changes = layoutMd
+      ? diffFigmaAgainstLayoutMd(imported, layoutMd)
       : [];
 
     return Response.json({

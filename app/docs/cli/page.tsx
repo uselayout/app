@@ -70,7 +70,7 @@ export default function CliPage() {
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             .layout/
           </code>{" "}
-          directory containing DESIGN.md and the token files for the chosen
+          directory containing layout.md and the token files for the chosen
           starter kit. See the{" "}
           <a href="#starter-kits" className="text-gray-900 hover:underline">
             Free Starter Kits
@@ -100,7 +100,7 @@ export default function CliPage() {
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             .layout/
           </code>{" "}
-          and makes your extracted DESIGN.md and tokens available to the MCP
+          and makes your extracted layout.md and tokens available to the MCP
           server immediately.
         </p>
       </section>
@@ -200,7 +200,7 @@ npx @layoutdesign/context install
               {[
                 [
                   "get_design_system",
-                  "Returns the full DESIGN.md, or a specific section by number",
+                  "Returns the full layout.md, or a specific section by number",
                 ],
                 [
                   "get_tokens",

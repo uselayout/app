@@ -85,7 +85,7 @@ export function StudioIndexClient() {
       name: projectName,
       sourceType,
       sourceUrl: url,
-      designMd: "",
+      layoutMd: "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });

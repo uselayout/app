@@ -34,7 +34,7 @@ const capabilities = [
     icon: Columns3,
     title: "Studio",
     description:
-      "Two-mode workspace: browse extracted tokens on the left, edit DESIGN.md in the centre with an AI edit bar, then switch to the Explorer Canvas to generate and test component variants.",
+      "Two-mode workspace: browse extracted tokens on the left, edit layout.md in the centre with an AI edit bar, then switch to the Explorer Canvas to generate and test component variants.",
     href: "/docs/studio",
   },
   {
@@ -62,7 +62,7 @@ const capabilities = [
     icon: Download,
     title: "Export",
     description:
-      "Download a ZIP bundle with DESIGN.md, tokens.css, tokens.json, tailwind.config.js, AGENTS.md, and Cursor rules. Or skip the export entirely and use MCP.",
+      "Download a ZIP bundle with layout.md, tokens.css, tokens.json, tailwind.config.js, AGENTS.md, and Cursor rules. Or skip the export entirely and use MCP.",
     href: "#export-bundle",
   },
 ] as const;
@@ -129,7 +129,7 @@ export default function GettingStartedPage() {
             },
             {
               step: "Generate",
-              desc: 'Click "Generate DESIGN.md" to synthesise the context file from extracted data.',
+              desc: 'Click "Generate layout.md" to synthesise the context file from extracted data.',
             },
             {
               step: "Test",
@@ -137,7 +137,7 @@ export default function GettingStartedPage() {
             },
             {
               step: "Iterate",
-              desc: 'Edit DESIGN.md manually or use the AI chat bar to make changes in plain English (e.g. "make buttons square"). Re-test.',
+              desc: 'Edit layout.md manually or use the AI chat bar to make changes in plain English (e.g. "make buttons square"). Re-test.',
             },
             {
               step: "Export",
@@ -252,13 +252,13 @@ export default function GettingStartedPage() {
               range: "50–79",
               colour: "bg-gray-100 text-gray-800 border-gray-200",
               label: "Partial adherence",
-              desc: "Review the Anti-Patterns section in DESIGN.md.",
+              desc: "Review the Anti-Patterns section in layout.md.",
             },
             {
               range: "0–49",
               colour: "bg-gray-100 text-gray-800 border-gray-200",
               label: "Low adherence",
-              desc: "Check that DESIGN.md has well-formed CSS code blocks.",
+              desc: "Check that layout.md has well-formed CSS code blocks.",
             },
           ].map(({ range, colour, label, desc }) => (
             <div
@@ -297,7 +297,7 @@ export default function GettingStartedPage() {
             <tbody className="divide-y divide-gray-100">
               {[
                 {
-                  file: "DESIGN.md",
+                  file: "layout.md",
                   purpose:
                     "Full design system reference: tokens, components, anti-patterns",
                 },
@@ -357,7 +357,7 @@ export default function GettingStartedPage() {
         <Callout type="info">
           The <strong>Quick Reference</strong> inside{" "}
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
-            DESIGN.md
+            layout.md
           </code>{" "}
           (Section 0) is designed to be copy-pasted standalone. It fits within
           tight context budgets and summarises the most critical tokens and
@@ -371,16 +371,16 @@ export default function GettingStartedPage() {
         <div className="space-y-3">
           <Callout type="tip">
             <strong>Narrow the Quick Reference.</strong> If you have a large
-            DESIGN.md, Section 0 is the most important part. Keep it focused on
+            layout.md, Section 0 is the most important part. Keep it focused on
             the 10–15 tokens your AI uses most.
           </Callout>
           <Callout type="tip">
-            <strong>Commit DESIGN.md to your repo.</strong> Treat it like any
+            <strong>Commit layout.md to your repo.</strong> Treat it like any
             other configuration file. Update it when the design system changes.
           </Callout>
           <Callout type="tip">
             <strong>Use the comparison view.</strong> In the Explorer Canvas,
-            generate the same component with and without DESIGN.md context
+            generate the same component with and without layout.md context
             side by side. The gap shows you exactly what value the context file
             is providing.
           </Callout>

@@ -8,7 +8,7 @@ interface ProjectRow {
   name: string;
   source_type: string;
   source_url: string | null;
-  design_md: string;
+  layout_md: string;
   extraction_data: unknown | null;
   token_count: number | null;
   health_score: number | null;
@@ -27,7 +27,7 @@ function rowToProject(row: ProjectRow): Project {
     name: row.name,
     sourceType: row.source_type as Project["sourceType"],
     sourceUrl: row.source_url ?? undefined,
-    designMd: row.design_md,
+    layoutMd: row.layout_md,
     extractionData: row.extraction_data
       ? (row.extraction_data as Project["extractionData"])
       : undefined,
@@ -55,7 +55,7 @@ function projectToRow(
     name: project.name,
     source_type: project.sourceType,
     source_url: project.sourceUrl ?? null,
-    design_md: project.designMd,
+    layout_md: project.layoutMd,
     extraction_data: extractionData,
     token_count: project.tokenCount ?? null,
     health_score: project.healthScore ?? null,

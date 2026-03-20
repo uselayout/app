@@ -15,7 +15,7 @@ const RequestSchema = z.object({
     name: z.string(),
     sourceType: z.enum(["figma", "website", "manual"]),
     sourceUrl: z.string().optional(),
-    designMd: z.string(),
+    layoutMd: z.string(),
     extractionData: z.unknown().optional(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
   const { project, formats } = parsed.data;
   const zip = new JSZip();
 
-  // Always include DESIGN.md
-  zip.file("DESIGN.md", project.designMd);
+  // Always include layout.md
+  zip.file("layout.md", project.layoutMd);
 
   const proj = project as Project;
 

@@ -35,7 +35,7 @@ async function handleGetDesignSystem(
   if (projectId) {
     const { data, error } = await supabase
       .from("layout_projects")
-      .select("id, name, design_md")
+      .select("id, name, layout_md")
       .eq("id", projectId)
       .eq("org_id", orgId)
       .single();
@@ -46,7 +46,7 @@ async function handleGetDesignSystem(
 
     return {
       result: {
-        designMd: data.design_md as string,
+        layoutMd: data.layout_md as string,
         projectName: data.name as string,
         projectId: data.id as string,
       },
@@ -55,7 +55,7 @@ async function handleGetDesignSystem(
 
   const { data, error } = await supabase
     .from("layout_projects")
-    .select("id, name, design_md")
+    .select("id, name, layout_md")
     .eq("org_id", orgId)
     .order("updated_at", { ascending: false })
     .limit(1)
@@ -67,7 +67,7 @@ async function handleGetDesignSystem(
 
   return {
     result: {
-      designMd: data.design_md as string,
+      layoutMd: data.layout_md as string,
       projectName: data.name as string,
       projectId: data.id as string,
     },
@@ -125,9 +125,9 @@ async function handleGetDesignSection(
 
   let query = supabase
     .from("layout_projects")
-    .select("id, name, design_md")
+    .select("id, name, layout_md")
     .eq("org_id", orgId)
-    .not("design_md", "is", null);
+    .not("layout_md", "is", null);
 
   if (projectId) {
     query = query.eq("id", projectId);
@@ -137,15 +137,15 @@ async function handleGetDesignSection(
 
   const { data, error } = await query.single();
   if (error || !data) {
-    return { error: "No project with DESIGN.md found" };
+    return { error: "No project with layout.md found" };
   }
 
-  const designMd = data.design_md as string;
-  const sectionContent = extractSection(designMd, pattern);
+  const layoutMd = data.layout_md as string;
+  const sectionContent = extractSection(layoutMd, pattern);
 
   if (!sectionContent) {
     return {
-      error: `Section "${sectionName}" not found in DESIGN.md for project "${data.name as string}"`,
+      error: `Section "${sectionName}" not found in layout.md for project "${data.name as string}"`,
     };
   }
 
@@ -178,7 +178,7 @@ async function handleGetComponentWithContext(
   // Fetch design tokens from latest project to cross-reference
   const { data: projectData } = await supabase
     .from("layout_projects")
-    .select("extraction_data, design_md")
+    .select("extraction_data, layout_md")
     .eq("org_id", orgId)
     .not("extraction_data", "is", null)
     .order("updated_at", { ascending: false })
@@ -211,16 +211,16 @@ async function handleGetComponentWithContext(
     }
   }
 
-  // Extract relevant design guidelines from DESIGN.md
+  // Extract relevant design guidelines from layout.md
   let usageGuidelines: string | null = null;
-  if (projectData?.design_md) {
-    const designMd = projectData.design_md as string;
-    // Search for component name mentions in DESIGN.md
+  if (projectData?.layout_md) {
+    const layoutMd = projectData.layout_md as string;
+    // Search for component name mentions in layout.md
     const componentPattern = new RegExp(
       `(?:^|\\n).*${component.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}.*(?:\\n|$)`,
       "gi"
     );
-    const mentions = designMd.match(componentPattern);
+    const mentions = layoutMd.match(componentPattern);
     if (mentions && mentions.length > 0) {
       usageGuidelines = mentions.join("\n").trim();
     }

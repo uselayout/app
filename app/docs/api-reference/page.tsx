@@ -14,7 +14,7 @@ const tools = [
   {
     name: "get_design_system",
     description:
-      "Returns the full DESIGN.md file, or a specific named section of it. Use this as the first call when starting any UI task. It gives the agent the complete design context it needs to produce on-brand code.",
+      "Returns the full layout.md file, or a specific named section of it. Use this as the first call when starting any UI task. It gives the agent the complete design context it needs to produce on-brand code.",
     parameters: [
       {
         name: "section",
@@ -100,7 +100,7 @@ const components = await mcp.call("list_components");
   {
     name: "check_compliance",
     description:
-      "Validates a code snippet against the design system rules defined in the Anti-Patterns section of DESIGN.md. Returns a compliance score, a list of violations with line references, and suggested fixes. Run this before submitting any UI code.",
+      "Validates a code snippet against the design system rules defined in the Anti-Patterns section of layout.md. Returns a compliance score, a list of violations with line references, and suggested fixes. Run this before submitting any UI code.",
     parameters: [
       {
         name: "code",

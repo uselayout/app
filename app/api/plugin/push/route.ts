@@ -111,7 +111,7 @@ export async function POST(request: Request) {
         name,
         sourceType: "figma",
         sourceUrl: fileKey,
-        designMd: "",
+        layoutMd: "",
         tokenCount,
         createdAt: now,
         updatedAt: now,
