@@ -116,8 +116,9 @@ export default function StudioPage({
     }
     extractionStarted.current = false;
     sessionStorage.setItem(`extract-${id}`, "true");
-    const pat = sessionStorage.getItem(`pat-${id}`);
-    runExtraction(project, pat ?? undefined);
+    // Clear stale sessionStorage PAT — persistent localStorage PAT is now preferred
+    sessionStorage.removeItem(`pat-${id}`);
+    runExtraction(project);
   }, [id, project, runExtraction]);
 
   const handleExtractFromPanel = useCallback(
