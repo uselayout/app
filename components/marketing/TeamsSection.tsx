@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 export function TeamsSection() {
   return (
-    <section className="bg-[var(--mkt-bg)] pt-[100px] lg:pt-[180px] flex flex-col items-center gap-[70px]">
+    <section className="bg-[var(--mkt-bg)] pt-[100px] lg:pt-[180px] flex flex-col items-center ">
       <div className="max-w-[1280px] w-full px-6">
         <motion.div
           className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between w-full"
@@ -33,32 +33,6 @@ export function TeamsSection() {
         </motion.div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        viewport={{ once: true }}
-        className="w-[1424px] max-w-full mx-auto aspect-[1424/768] relative overflow-hidden rounded-[6px]"
-      >
-        <img
-          src="/marketing/aurora-teams.webp"
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        />
-        <div className="absolute left-0 top-0 w-full overflow-hidden px-4 lg:px-[60px] h-[93.75%]">
-          <div className="bg-white w-full h-full overflow-hidden relative">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-              aria-label="Teams collaboration demo"
-            />
-          </div>
-        </div>
-      </motion.div>
     </section>
   );
 }
