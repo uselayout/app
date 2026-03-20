@@ -98,26 +98,32 @@ export async function POST(
     }
   }
 
-  const component = await createComponent({
-    orgId,
-    name: parsed.data.name,
-    slug,
-    code: parsed.data.code,
-    compiledJs,
-    description: parsed.data.description,
-    category: parsed.data.category,
-    tags: parsed.data.tags,
-    source: parsed.data.source,
-    designType: parsed.data.designType,
-    createdBy: authResult.userId,
-  });
+  try {
+    const component = await createComponent({
+      orgId,
+      name: parsed.data.name,
+      slug,
+      code: parsed.data.code,
+      compiledJs,
+      description: parsed.data.description,
+      category: parsed.data.category,
+      tags: parsed.data.tags,
+      source: parsed.data.source,
+      designType: parsed.data.designType,
+      createdBy: authResult.userId,
+    });
 
-  if (!component) {
-    return NextResponse.json(
-      { error: "Failed to create component" },
-      { status: 500 }
-    );
+    if (!component) {
+      return NextResponse.json(
+        { error: "Failed to create component" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(component, { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Component creation error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return NextResponse.json(component, { status: 201 });
 }

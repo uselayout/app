@@ -128,6 +128,34 @@ function replacePlaceholderUrls(html: string): string {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Relative path replacement — catches fake paths like /avatars/alex.jpg
+// ---------------------------------------------------------------------------
+
+const RELATIVE_SRC_REGEX =
+  /(<img\s[^>]*?)src=["'](\/[^"'\s>]+)["']([^>]*?)\/?>/gi;
+
+/**
+ * Replace relative src paths (e.g. /images/hero.jpg) with data-generate-image
+ * attributes. AI models generate these fake paths; they need real images.
+ */
+function replaceRelativeSrcUrls(html: string): string {
+  RELATIVE_SRC_REGEX.lastIndex = 0;
+  return html.replace(RELATIVE_SRC_REGEX, (fullMatch, before, _url, after) => {
+    if (fullMatch.includes("data-generate-image")) return fullMatch;
+
+    const altMatch = (before + after).match(ALT_ATTR_REGEX);
+    const prompt = altMatch?.[1] || "professional photograph for a modern website";
+
+    const isSmall = /(?:w-(?:8|10|12|14|16)|h-(?:8|10|12|14|16)|rounded-full|avatar)/i.test(before + after);
+    const ratio = isSmall ? "1:1" : "16:9";
+    const style = isSmall ? "photo" : "photo";
+
+    const cleaned = (before + after).replace(/src=["'][^"']*["']\s*/gi, "");
+    return `${cleaned} data-generate-image="${prompt}" data-image-style="${style}" data-image-ratio="${ratio}" />`;
+  });
+}
+
 // Fallback SVG for failed image generation
 const FALLBACK_SVG = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><rect fill="%23f3f4f6" width="800" height="450"/><text x="400" y="210" text-anchor="middle" fill="%239ca3af" font-family="system-ui,sans-serif" font-size="16">Image generation failed</text><text x="400" y="240" text-anchor="middle" fill="%23d1d5db" font-family="system-ui,sans-serif" font-size="13">Check GOOGLE_AI_API_KEY is configured</text></svg>')}`;
 
@@ -139,8 +167,8 @@ export async function processImagePlaceholders(
   html: string,
   options: PipelineOptions = {}
 ): Promise<PipelineResult> {
-  // First, convert any placeholder URLs to data-generate-image attributes
-  const preprocessed = replacePlaceholderUrls(html);
+  // First, convert placeholder URLs and relative paths to data-generate-image attributes
+  const preprocessed = replaceRelativeSrcUrls(replacePlaceholderUrls(html));
   const placeholders = findPlaceholders(preprocessed);
 
   if (placeholders.length === 0) return { html, totalCount: 0, failedCount: 0, errors: [] };
