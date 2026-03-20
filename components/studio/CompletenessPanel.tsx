@@ -172,7 +172,7 @@ function buildFixInstruction(report: CompletenessReport): string {
 
 export function CompletenessPanel({ layoutMd, onLayoutMdChange, className = '' }: CompletenessPanelProps) {
   const [report, setReport] = useState<CompletenessReport | null>(null);
-  const [isFixing, setIsFixing] = useState(false);
+  const [fixStatus, setFixStatus] = useState<string | null>(null);
 
   const trimmed = useMemo(() => layoutMd.trim(), [layoutMd]);
 
@@ -187,7 +187,7 @@ export function CompletenessPanel({ layoutMd, onLayoutMdChange, className = '' }
 
   const handleAutoFix = useCallback(async () => {
     if (!report || !onLayoutMdChange) return;
-    setIsFixing(true);
+    setFixStatus("Connecting...");
 
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -216,6 +216,8 @@ export function CompletenessPanel({ layoutMd, onLayoutMdChange, className = '' }
         const { done, value } = await reader.read();
         if (done) break;
         accumulated += decoder.decode(value, { stream: true });
+        const lineCount = accumulated.split("\n").length;
+        setFixStatus(`Writing... ${lineCount} lines`);
       }
 
       if (accumulated.startsWith("\n\n[Error:")) {
@@ -234,7 +236,7 @@ export function CompletenessPanel({ layoutMd, onLayoutMdChange, className = '' }
       const msg = err instanceof Error ? err.message : "Auto-fix failed";
       toast.error(msg);
     } finally {
-      setIsFixing(false);
+      setFixStatus(null);
     }
   }, [report, layoutMd, onLayoutMdChange]);
 
@@ -301,13 +303,13 @@ export function CompletenessPanel({ layoutMd, onLayoutMdChange, className = '' }
         <button
           type="button"
           onClick={handleAutoFix}
-          disabled={isFixing}
+          disabled={fixStatus !== null}
           className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-md bg-[var(--studio-accent)] text-[var(--text-on-accent)] text-xs font-semibold hover:bg-[var(--studio-accent-hover)] transition-all duration-[150ms] ease-[cubic-bezier(0,0,0.2,1)] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isFixing ? (
+          {fixStatus ? (
             <>
               <Loader2 size={13} className="animate-spin" />
-              Improving…
+              {fixStatus}
             </>
           ) : (
             <>

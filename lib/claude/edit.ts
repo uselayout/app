@@ -10,7 +10,7 @@ RULES:
 - Never remove sections, tokens, or content unless the user explicitly asks you to.
 - Maintain consistent formatting: same heading levels, same table structures, same code block styles.
 - If the instruction is ambiguous, make the most conservative reasonable interpretation.
-- Do not add new sections unless the user asks for them.
+- Add new sections when the user asks for them — place them in the logical position within the document structure.
 - Keep token names consistent with existing naming conventions in the document.`;
 
 export function createEditStream(
@@ -32,7 +32,7 @@ export function createEditStream(
       try {
         const msgStream = anthropic.messages.stream({
           model: "claude-sonnet-4-6",
-          max_tokens: 16384,
+          max_tokens: 32768,
           system: SYSTEM_PROMPT,
           messages: [
             {
