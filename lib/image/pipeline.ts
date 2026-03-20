@@ -102,7 +102,7 @@ export interface PipelineResult {
 // ---------------------------------------------------------------------------
 
 const PLACEHOLDER_URL_REGEX =
-  /(<img\s[^>]*?)src=["'](https?:\/\/(?:placehold\.co|via\.placeholder\.com|placeholder\.com|images\.unsplash\.com|source\.unsplash\.com|picsum\.photos|dummyimage\.com)[^"']*)["']([^>]*?)\/?>/gi;
+  /(<img\s[^>]*?)src=["']((?:https?:)?\/\/(?:placehold\.co|via\.placeholder\.com|placeholder\.com|images\.unsplash\.com|source\.unsplash\.com|picsum\.photos|dummyimage\.com|lorempixel\.com|loremflickr\.com|fakeimg\.pl|placekitten\.com|placebear\.com|(?:i\.)?pravatar\.cc|randomuser\.me|robohash\.org|ui-avatars\.com)[^"']*)["']([^>]*?)\/?>/gi;
 
 /**
  * Replace common placeholder image URLs with data-generate-image attributes,

@@ -18,8 +18,8 @@ export function useBilling() {
   const tier = subscription?.tier ?? "free";
   const isHosted = tier === "pro" || tier === "team";
 
-  const designMdRemaining = credits
-    ? credits.designMdRemaining + credits.topupDesignMd
+  const layoutMdRemaining = credits
+    ? credits.layoutMdRemaining + credits.topupLayoutMd
     : 0;
   const testQueryRemaining = credits
     ? credits.testQueryRemaining + credits.topupTestQuery
@@ -30,7 +30,7 @@ export function useBilling() {
     credits,
     tier,
     isHosted,
-    designMdRemaining,
+    layoutMdRemaining,
     testQueryRemaining,
     loading,
     error,

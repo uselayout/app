@@ -106,7 +106,7 @@ export async function getUsageStats(
   if (error || !data) {
     console.error("Failed to fetch usage stats:", error?.message);
     return {
-      totalDesignMd: 0,
+      totalLayoutMd: 0,
       totalTestQueries: 0,
       totalInputTokens: 0,
       totalOutputTokens: 0,
@@ -118,7 +118,7 @@ export async function getUsageStats(
 
   const rows = data as UsageRow[];
   return {
-    totalDesignMd: rows.filter((r) => r.endpoint === "design-md").length,
+    totalLayoutMd: rows.filter((r) => r.endpoint === "layout-md").length,
     totalTestQueries: rows.filter((r) => r.endpoint === "test").length,
     totalInputTokens: rows.reduce((sum, r) => sum + r.input_tokens, 0),
     totalOutputTokens: rows.reduce((sum, r) => sum + r.output_tokens, 0),

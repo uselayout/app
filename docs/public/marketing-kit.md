@@ -3,7 +3,7 @@
 ## Brand Messaging
 
 ### Elevator Pitch (30 seconds)
-Layout is a design system compiler that extracts tokens from Figma files and live websites, then generates structured context bundles for AI coding agents. Unlike manually maintaining design documentation, AI Studio automates the entire pipeline — paste a URL, get a DESIGN.md that makes Claude, Cursor, and Codex generate on-brand UI every time.
+Layout is a design system compiler that extracts tokens from Figma files and live websites, then generates structured context bundles for AI coding agents. Unlike manually maintaining design documentation, AI Studio automates the entire pipeline — paste a URL, get a layout.md that makes Claude, Cursor, and Codex generate on-brand UI every time.
 
 ### One-Liner
 The compiler between design systems and AI coding agents.
@@ -60,7 +60,7 @@ The compiler between design systems and AI coding agents.
 - **Role**: Design system owner at a mid-size tech company
 - **Pain Points**: Developers don't read design documentation. AI tools ignore the design system entirely. Token updates don't reach the engineering team.
 - **Goals**: Bridge the gap between design documentation and developer tooling. Ensure AI-generated code follows the design system.
-- **How We Help**: DESIGN.md lives in the repo alongside the code. AI agents read it on every prompt. Drift detection (coming soon) alerts when tokens change.
+- **How We Help**: layout.md lives in the repo alongside the code. AI agents read it on every prompt. Drift detection (coming soon) alerts when tokens change.
 
 ---
 
@@ -74,7 +74,7 @@ Design system tooling for AI-assisted development.
 |---|---|
 | Extracts from Figma AND live websites | Figma-only or manual documentation |
 | Outputs context for 5+ AI tools in one export | Single-tool integrations |
-| Structured DESIGN.md with Quick Reference section | Raw token dumps or verbose docs |
+| Structured layout.md with Quick Reference section | Raw token dumps or verbose docs |
 | 2-minute automated pipeline | Hours of manual documentation |
 | Live component preview to verify output quality | No verification before use |
 | Open-source MCP server (MIT) with 9 tools | Closed-source, paid integrations |
@@ -83,7 +83,7 @@ Design system tooling for AI-assisted development.
 ### Objection Handling
 - **"Figma MCP already does this"**: Figma MCP gives your AI raw Figma data — layer names, coordinates, nested groups. AI Studio gives it *structured design tokens* — semantic colour names, typography scales, usage guidance, and anti-patterns. The output quality is significantly better.
 - **"I can just paste my tokens into CLAUDE.md myself"**: You can. But will you update it every time the design system changes? Will you format it for optimal LLM consumption? Will you generate .cursorrules, AGENTS.md, tokens.css, and tailwind.config.js too? AI Studio does all of this in one click.
-- **"Is this just another documentation tool?"**: No. Documentation tools create human-readable docs. AI Studio creates machine-readable context. The DESIGN.md is structured specifically for LLM consumption — Quick Reference section under 75 lines, semantic token names, anti-pattern warnings, component usage patterns.
+- **"Is this just another documentation tool?"**: No. Documentation tools create human-readable docs. AI Studio creates machine-readable context. The layout.md is structured specifically for LLM consumption — Quick Reference section under 75 lines, semantic token names, anti-pattern warnings, component usage patterns.
 
 ---
 
@@ -99,7 +99,7 @@ AI coding agents generate generic UI. They don't know your colour palette, typog
 Design systems live in Figma. AI agents read markdown. Nothing connects the two — until now.
 
 ### Slide 4: Solution
-Paste a Figma URL or website. AI Studio extracts the design system and compiles it into a structured DESIGN.md. Drop it in your repo. Every AI prompt now has full design context.
+Paste a Figma URL or website. AI Studio extracts the design system and compiles it into a structured layout.md. Drop it in your repo. Every AI prompt now has full design context.
 
 ### Slide 5: How It Works
 1. Paste URL (Figma or website)
@@ -107,7 +107,7 @@ Paste a Figma URL or website. AI Studio extracts the design system and compiles 
 3. Export AI kit (CLAUDE.md, AGENTS.md, tokens.css, tailwind.config.js)
 
 ### Slide 6: Demo
-Before/after comparison: AI output without DESIGN.md vs with DESIGN.md.
+Before/after comparison: AI output without layout.md vs with layout.md.
 
 ### Slide 7: Every AI Tool Covered
 Claude Code, Cursor, GitHub Copilot, Windsurf, OpenAI Codex — one export, one workflow.
@@ -131,7 +131,7 @@ Built in 3 days. [X] extractions completed. Live at layout.design. Backed by lay
 ### Case Study Outline
 1. **Client**: [Company] — [size] engineering team, [design tool] for design
 2. **Challenge**: AI-generated UI didn't match the design system. Developers spent 30+ minutes per project setting up AI context.
-3. **Solution**: Extracted design system with AI Studio. Distributed DESIGN.md to all developers.
+3. **Solution**: Extracted design system with AI Studio. Distributed layout.md to all developers.
 4. **Result**: [X]% reduction in design review comments. [Y] hours saved per developer per week.
 
 ### Slide 10.5: Open Source + Figma Loop
@@ -154,12 +154,12 @@ Built in 3 days. [X] extractions completed. Live at layout.design. Backed by lay
 - **Day 2**: Feature highlight — Website extraction ("Extract any design system from a live URL")
 - **Day 3**: Build story — "How we built AI Studio in 3 days with Claude Code"
 - **Day 4**: Feature highlight — Export bundle ("One ZIP, every AI tool covered")
-- **Day 5**: Clone Hall of Fame — publish Linear's DESIGN.md teardown
+- **Day 5**: Clone Hall of Fame — publish Linear's layout.md teardown
 
 ### Ongoing Content Ideas
 - [ ] Weekly design system teardown (Stripe, Notion, Vercel, Spotify, etc.)
-- [ ] "Before/After" posts showing AI output quality with vs without DESIGN.md
-- [ ] Tutorial: "Set up DESIGN.md in your project in 5 minutes"
+- [ ] "Before/After" posts showing AI output quality with vs without layout.md
+- [ ] Tutorial: "Set up layout.md in your project in 5 minutes"
 - [ ] Comparison: "AI Studio vs manually maintaining design documentation"
 - [ ] Technical deep-dive: "How we extract CSS from live websites with Playwright"
 

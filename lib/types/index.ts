@@ -142,7 +142,7 @@ export interface Project {
   name: string;
   sourceType: SourceType;
   sourceUrl?: string;
-  designMd: string;
+  layoutMd: string;
   extractionData?: ExtractionResult;
   tokenCount?: number;
   healthScore?: number;

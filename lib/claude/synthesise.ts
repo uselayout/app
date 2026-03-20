@@ -6,7 +6,7 @@ import type {
 import type { ExtractionResult } from "@/lib/types";
 import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
 
-const SYSTEM_PROMPT = `You are a design system architect synthesizing extracted design data into a DESIGN.md context file. This file will be consumed by AI coding agents (Claude Code, Cursor, Copilot) to generate pixel-accurate UI components.
+const SYSTEM_PROMPT = `You are a design system architect synthesizing extracted design data into a layout.md context file. This file will be consumed by AI coding agents (Claude Code, Cursor, Copilot) to generate pixel-accurate UI components.
 
 CRITICAL PRINCIPLES:
 1. Format tokens as CSS custom properties in fenced code blocks — this is the format AI agents will generate code with, so zero translation is needed.
@@ -18,13 +18,14 @@ CRITICAL PRINCIPLES:
 7. For sparse or reconstructed token data, annotate confidence level inline: /* extracted: high confidence */ vs /* reconstructed: moderate confidence, inferred from 3 elements */
 8. Keep Section 0 (Quick Reference) to exactly 50-75 lines — it must be copy-pasteable as standalone context into CLAUDE.md or .cursorrules.
 9. Name colours by PURPOSE (--color-action-primary), not appearance (--color-blue-button).
+NOTE: The output file is called layout.md (not layout.md). References within the content should use "layout.md".
 10. Write anti-patterns as "failure narratives": explain WHY the AI fails in that specific way, not just that it fails. Format: **Rule → Why it fails → What to do instead.**
 11. Write rules with extreme specificity — "16px" not "medium spacing", exact hex values, exact font names.
 12. If you genuinely lack data for a value, write "[TBD - extract manually]" — never fabricate values.
 
 HANDLING SPARSE OR RECONSTRUCTED TOKEN DATA:
 If the extracted design system has few/no CSS custom properties:
-- Do NOT scatter literal hex values through the DESIGN.md — always create a CSS variable token system first
+- Do NOT scatter literal hex values through the layout.md — always create a CSS variable token system first
 - Synthesise tokens from computed styles by clustering: group colours by hue family, spacing by multiples (4px grid? 8px?)
 - Map clusters to semantic intent: dominant background colour → --color-surface, primary accent → --color-primary, body text colour → --color-text
 - Annotate each synthetic token with confidence level inline in the comment
@@ -34,11 +35,11 @@ OUTPUT FORMAT RULES:
 - Colour palettes, spacing scales, state tables: markdown tables
 - Bold 1-3 critical values or rules per section for quick scanning
 
-The DESIGN.md section structure:
+The layout.md section structure:
 
 ## 0. Quick Reference
 50-75 lines. Standalone injectable — copy-pasteable into CLAUDE.md or .cursorrules.
-Structure: [1] Stack & styling approach + token source [2] Core tokens in ONE fenced CSS code block [3] ONE real component example in a tsx code block [4] 5-8 critical prohibitions as NEVER rules [5] "Full design system → see DESIGN.md" link.
+Structure: [1] Stack & styling approach + token source [2] Core tokens in ONE fenced CSS code block [3] ONE real component example in a tsx code block [4] 5-8 critical prohibitions as NEVER rules [5] "Full design system → see layout.md" link.
 This section alone must produce significantly better AI output than no context at all.
 
 ## 1. Design Direction & Philosophy
@@ -185,7 +186,7 @@ function buildUserContent(
       .map((t) => `  ${t.name}: ${t.value}${t.description ? ` /* ${t.description} */` : ""}`)
       .join("\n");
     sections.push(
-      `--- TYPOGRAPHY TOKENS (group these as composites in the DESIGN.md — never list individually) ---\n${typo}`
+      `--- TYPOGRAPHY TOKENS (group these as composites in the layout.md — never list individually) ---\n${typo}`
     );
   }
 
@@ -202,7 +203,7 @@ function buildUserContent(
   const hasScreenshots = data.screenshots.length > 0;
 
   sections.push(
-    `Generate a complete DESIGN.md following the Layout specification:\n` +
+    `Generate a complete layout.md following the Layout specification:\n` +
     `0. Quick Reference (50-75 lines, standalone injectable)\n` +
     `1. Design Direction & Philosophy\n` +
     `2. Colour System (three-tier: primitives → semantic → component)\n` +
@@ -247,7 +248,7 @@ function buildUserContent(
   return contentBlocks;
 }
 
-export function createDesignMdStream(
+export function createLayoutMdStream(
   extractionData: ExtractionResult,
   apiKey?: string
 ): StreamWithUsage {
@@ -287,7 +288,7 @@ export function createDesignMdStream(
         });
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Unknown error";
-        controller.enqueue(encoder.encode(`\n\n[Error generating DESIGN.md: ${msg}]`));
+        controller.enqueue(encoder.encode(`\n\n[Error generating layout.md: ${msg}]`));
         resolveUsage({ inputTokens: 0, outputTokens: 0 });
       } finally {
         controller.close();

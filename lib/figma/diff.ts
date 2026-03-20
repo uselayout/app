@@ -8,14 +8,14 @@ interface DesignTokens {
 }
 
 /**
- * Compare imported Figma node data against the tokens defined in DESIGN.md.
+ * Compare imported Figma node data against the tokens defined in layout.md.
  * Returns a list of changes where the Figma values differ from the design system.
  */
-export function diffFigmaAgainstDesignMd(
+export function diffFigmaAgainstLayoutMd(
   imported: ImportedNodeData,
-  designMd: string
+  layoutMd: string
 ): FigmaChange[] {
-  const tokens = parseDesignMdTokens(designMd);
+  const tokens = parseLayoutMdTokens(layoutMd);
   const changes: FigmaChange[] = [];
 
   for (const colour of imported.colours) {
@@ -70,9 +70,9 @@ export function diffFigmaAgainstDesignMd(
   return changes;
 }
 
-// ─── Token parsing from DESIGN.md ────────────────────────────────────────────
+// ─── Token parsing from layout.md ────────────────────────────────────────────
 
-function parseDesignMdTokens(designMd: string): DesignTokens {
+function parseLayoutMdTokens(layoutMd: string): DesignTokens {
   const colours = new Map<string, string>();
   const spacing = new Map<string, number>();
   const typography = new Map<string, { family: string; size: number; weight: number }>();
@@ -80,7 +80,7 @@ function parseDesignMdTokens(designMd: string): DesignTokens {
   const cssVarPattern = /(--.+?):\s*(.+?)(?:;|\n|$)/g;
   let match: RegExpExecArray | null;
 
-  while ((match = cssVarPattern.exec(designMd)) !== null) {
+  while ((match = cssVarPattern.exec(layoutMd)) !== null) {
     const [, tokenName, rawValue] = match;
     const value = rawValue.trim();
 
@@ -111,7 +111,7 @@ function parseDesignMdTokens(designMd: string): DesignTokens {
   }
 
   const fontPattern = /font-family:\s*["']?([^"';\n]+)/gi;
-  while ((match = fontPattern.exec(designMd)) !== null) {
+  while ((match = fontPattern.exec(layoutMd)) !== null) {
     const family = match[1].trim().split(",")[0].trim();
     typography.set(`--font-${family.toLowerCase().replace(/\s+/g, "-")}`, {
       family,
@@ -209,13 +209,13 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
 }
 
 /**
- * Apply accepted changes back to the DESIGN.md content.
+ * Apply accepted changes back to the layout.md content.
  */
-export function applyChangesToDesignMd(
-  designMd: string,
+export function applyChangesToLayoutMd(
+  layoutMd: string,
   changes: FigmaChange[]
 ): string {
-  let updated = designMd;
+  let updated = layoutMd;
 
   for (const change of changes) {
     if (!change.accepted || !change.designTokenMatch) continue;

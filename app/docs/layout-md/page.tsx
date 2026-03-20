@@ -5,9 +5,9 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "DESIGN.md Specification | Layout Docs",
+  title: "layout.md Specification | Layout Docs",
   description:
-    "Complete reference for the DESIGN.md format: the structured, LLM-optimised context file that Layout generates from your design system.",
+    "Complete reference for the layout.md format: the structured, LLM-optimised context file that Layout generates from your design system.",
 };
 
 const quickReferenceExample = `## Quick Reference
@@ -198,7 +198,7 @@ const sections = [
     title: "Quick Reference",
     badge: "50–75 lines",
     description:
-      "A dense, copy-pasteable summary of the entire design system. Structured so an agent can drop it directly into CLAUDE.md or .cursorrules without including the full file. Contains: the top 8–12 colour tokens, the primary typography group, one complete component example with all states, and the critical NEVER rules.",
+      "A dense, copy-pasteable summary of the entire design system. Structured so an agent can drop it directly into CLAUDE.md or .cursorrules without including the full file. Contains: the top 8-12 colour tokens, the primary typography group, one complete component example with all states, and the critical NEVER rules.",
     callout: {
       type: "tip" as const,
       text: "This section is what the agent uses most. Keep it under 75 lines so it fits comfortably within a system prompt without eating too much of the context window.",
@@ -312,31 +312,31 @@ const sections = [
   },
 ];
 
-export default function DesignMdPage() {
-  const { prev, next } = getAdjacentPages("/docs/design-md");
+export default function LayoutMdPage() {
+  const { prev, next } = getAdjacentPages("/docs/layout-md");
 
   return (
     <div className="space-y-12">
       {/* Header */}
       <div className="space-y-4">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">
-          DESIGN.md Specification
+          layout.md Specification
         </h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          The DESIGN.md file is the core output of Layout. It follows a
+          The layout.md file is the core output of Layout. It follows a
           strict structure optimised for LLM consumption, not for humans to
           read, but for AI agents to parse reliably and reference consistently
           when generating UI code.
         </p>
         <p className="text-base text-gray-600 leading-relaxed">
-          Every DESIGN.md produced by Layout follows the same
+          Every layout.md produced by Layout follows the same
           9-section + 2-appendix format. This predictability means agents
           always know where to find what they need, and the MCP tools can
           return specific sections on demand without the agent having to search
           for them.
         </p>
         <Callout type="info">
-          DESIGN.md is always included in every export bundle from AI Studio,
+          layout.md is always included in every export bundle from AI Studio,
           regardless of which other formats you select. It is the canonical
           source of truth that all other export formats (CLAUDE.md,
           .cursorrules, tokens.css) are derived from.
@@ -347,7 +347,7 @@ export default function DesignMdPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Token Types</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          DESIGN.md works with five categories of design token. Understanding
+          layout.md works with five categories of design token. Understanding
           the format for each type prevents the most common agent errors.
         </p>
         <div className="rounded-lg border border-gray-200 overflow-hidden">

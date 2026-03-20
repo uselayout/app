@@ -15,7 +15,7 @@ const mkdirSnippet = `mkdir -p .github`;
 const copilotInstructionsSnippet = `# Copilot Instructions
 
 ## Design System
-<!-- Paste Section 0 (Quick Reference) from DESIGN.md here -->`;
+<!-- Paste Section 0 (Quick Reference) from layout.md here -->`;
 
 export default function CopilotPage() {
   const { prev, next } = getAdjacentPages("/docs/integrations/copilot");
@@ -73,7 +73,7 @@ export default function CopilotPage() {
                 and paste the Quick Reference section (Section 0) from your
                 exported{" "}
                 <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                  DESIGN.md
+                  layout.md
                 </code>{" "}
                 into it:
               </p>
@@ -89,7 +89,7 @@ export default function CopilotPage() {
 
         <Callout type="tip">
           For inline completions (Copilot for Individuals), keep{" "}
-          <code className="font-mono text-xs">DESIGN.md</code> or{" "}
+          <code className="font-mono text-xs">layout.md</code> or{" "}
           <code className="font-mono text-xs">tokens.css</code> open in a
           separate editor tab. Copilot picks up context from all open files,
           and having the token definitions visible significantly improves completion
@@ -101,7 +101,7 @@ export default function CopilotPage() {
             What goes in the file
           </h2>
           <p className="text-base text-gray-600 leading-relaxed">
-            The Quick Reference (Section 0 of DESIGN.md) is the right content
+            The Quick Reference (Section 0 of layout.md) is the right content
             for this file. It covers:
           </p>
           <ul className="list-disc pl-6 space-y-2 text-gray-600">
@@ -113,7 +113,7 @@ export default function CopilotPage() {
           <p className="text-base text-gray-600 leading-relaxed">
             The full{" "}
             <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-              DESIGN.md
+              layout.md
             </code>{" "}
             is also worth committing to your repo. Reference it from your
             instructions file for the complete token inventory.

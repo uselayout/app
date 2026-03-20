@@ -19,9 +19,9 @@ interface SourcePanelProps {
   extractionData?: ExtractionResult;
   sourceType: SourceType;
   sourceUrl?: string;
-  designMd?: string;
+  layoutMd?: string;
   projectId?: string;
-  onDesignMdChange?: (value: string) => void;
+  onLayoutMdChange?: (value: string) => void;
   onExtract?: (url: string, sourceType: SourceType, pat?: string) => void;
 }
 
@@ -31,12 +31,12 @@ const VALID_TABS: TabId[] = ["tokens", "components", "screenshots", "quality"];
 
 function SourcePanelEmptyState({
   projectId,
-  hasDesignMd,
+  hasLayoutMd,
   onSyncTokens,
   onExtract,
 }: {
   projectId?: string;
-  hasDesignMd: boolean;
+  hasLayoutMd: boolean;
   onSyncTokens: () => void;
   onExtract?: (url: string, sourceType: SourceType, pat?: string) => void;
 }) {
@@ -100,13 +100,13 @@ function SourcePanelEmptyState({
         </button>
       </div>
 
-      {hasDesignMd && projectId && (
+      {hasLayoutMd && projectId && (
         <button
           onClick={onSyncTokens}
           className="flex items-center gap-1.5 rounded-md bg-[var(--bg-elevated)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
         >
           <RefreshCw className="h-3 w-3" />
-          Or sync tokens from DESIGN.md
+          Or sync tokens from layout.md
         </button>
       )}
     </div>
@@ -115,13 +115,13 @@ function SourcePanelEmptyState({
 
 function SourcePanelInner({
   extractionData,
-  designMd,
+  layoutMd,
   projectId,
-  onDesignMdChange,
+  onLayoutMdChange,
   onExtract,
 }: SourcePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("tokens");
-  const syncTokensFromDesignMd = useProjectStore((s) => s.syncTokensFromDesignMd);
+  const syncTokensFromLayoutMd = useProjectStore((s) => s.syncTokensFromLayoutMd);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const [syncResult, setSyncResult] = useState<{ count: number } | null>(null);
 
@@ -145,12 +145,12 @@ function SourcePanelInner({
 
   const handleSyncTokens = useCallback(() => {
     if (!projectId) return;
-    const count = syncTokensFromDesignMd(projectId);
+    const count = syncTokensFromLayoutMd(projectId);
     setSyncResult({ count });
     setTimeout(() => setSyncResult(null), 3000);
-  }, [projectId, syncTokensFromDesignMd]);
+  }, [projectId, syncTokensFromLayoutMd]);
 
-  const hasDesignMd = !!designMd && designMd.length > 0;
+  const hasLayoutMd = !!layoutMd && layoutMd.length > 0;
 
   const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
     { id: "tokens", label: "Tokens", icon: Palette },
@@ -181,10 +181,10 @@ function SourcePanelInner({
           );
         })}
         <div className="flex-1" />
-        {hasDesignMd && projectId && activeTab === "tokens" && (
+        {hasLayoutMd && projectId && activeTab === "tokens" && (
           <button
             onClick={handleSyncTokens}
-            title="Sync tokens from DESIGN.md"
+            title="Sync tokens from layout.md"
             className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] text-[var(--text-muted)] transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-secondary)]"
           >
             <RefreshCw className="h-3 w-3" />
@@ -195,8 +195,8 @@ function SourcePanelInner({
       {syncResult && (
         <div className={`px-2 py-1.5 text-xs ${syncResult.count > 0 ? "text-emerald-400 bg-emerald-500/5" : "text-[var(--text-muted)] bg-[var(--bg-surface)]"}`}>
           {syncResult.count > 0
-            ? `Synced ${syncResult.count} tokens from DESIGN.md`
-            : "No tokens found in DESIGN.md"}
+            ? `Synced ${syncResult.count} tokens from layout.md`
+            : "No tokens found in layout.md"}
         </div>
       )}
 
@@ -205,7 +205,7 @@ function SourcePanelInner({
         {!extractionData && (
           <SourcePanelEmptyState
             projectId={projectId}
-            hasDesignMd={hasDesignMd}
+            hasLayoutMd={hasLayoutMd}
             onSyncTokens={handleSyncTokens}
             onExtract={onExtract}
           />
@@ -220,7 +220,7 @@ function SourcePanelInner({
           <ScreenshotsTab screenshots={extractionData.screenshots} onDelete={handleDeleteScreenshot} onAdd={handleAddScreenshot} />
         )}
         {activeTab === "quality" && extractionData && (
-          <CompletenessPanel designMd={designMd ?? ""} onDesignMdChange={onDesignMdChange} />
+          <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} />
         )}
       </div>
     </div>

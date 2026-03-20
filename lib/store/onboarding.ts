@@ -4,7 +4,7 @@ import { persist } from "zustand/middleware";
 interface OnboardingSteps {
   apiKeyAdded: boolean; // step 0 — only shown for BYOK users
   extracted: boolean; // step 1 — first project created
-  viewedDesignMd: boolean; // step 2 — visited studio with non-empty designMd
+  viewedLayoutMd: boolean; // step 2 — visited studio with non-empty layoutMd
   installedMcp: boolean; // step 3 — manual check (user clicks to confirm)
   generatedVariant: boolean; // step 4 — first variant generated in ExplorerCanvas
 }
@@ -22,7 +22,7 @@ interface OnboardingState {
 const defaultSteps: OnboardingSteps = {
   apiKeyAdded: false,
   extracted: false,
-  viewedDesignMd: false,
+  viewedLayoutMd: false,
   installedMcp: false,
   generatedVariant: false,
 };
@@ -51,7 +51,7 @@ export const useOnboardingStore = create<OnboardingState>()(
         const { steps } = get();
         return (
           steps.extracted &&
-          steps.viewedDesignMd &&
+          steps.viewedLayoutMd &&
           steps.installedMcp &&
           steps.generatedVariant
         );

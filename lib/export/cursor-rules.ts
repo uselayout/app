@@ -4,8 +4,8 @@ export function generateCursorRules(project: Project): {
   designSystem: string;
   components: string;
 } {
-  const quickRef = extractSection(project.designMd, "0. Quick Reference");
-  const componentsSection = extractSection(project.designMd, "5. Components");
+  const quickRef = extractSection(project.layoutMd, "0. Quick Reference");
+  const componentsSection = extractSection(project.layoutMd, "5. Components");
 
   const designSystem = `---
 description: Core design system rules - always active
@@ -15,9 +15,9 @@ alwaysApply: true
 # ${project.name} Design System
 
 ## Critical rules
-${quickRef || "- Follow DESIGN.md for all design decisions\n- Never hardcode colour values"}
+${quickRef || "- Follow layout.md for all design decisions\n- Never hardcode colour values"}
 
-See full spec: @DESIGN.md
+See full spec: @layout.md
 `;
 
   const components = `---
@@ -27,17 +27,17 @@ globs: ["**/*.tsx", "**/*.jsx"]
 
 # ${project.name} Components
 
-${componentsSection || "See DESIGN.md Section 5 for component specifications."}
+${componentsSection || "See layout.md Section 5 for component specifications."}
 `;
 
   return { designSystem, components };
 }
 
-function extractSection(designMd: string, sectionTitle: string): string | null {
+function extractSection(layoutMd: string, sectionTitle: string): string | null {
   const escaped = sectionTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const regex = new RegExp(
     `## ${escaped}\\s*\\n([\\s\\S]*?)(?=\\n## \\d|$)`
   );
-  const match = designMd.match(regex);
+  const match = layoutMd.match(regex);
   return match ? match[1].trim() : null;
 }

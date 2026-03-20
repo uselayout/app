@@ -3,16 +3,16 @@ import type { HealthScore, HealthIssue } from "@/lib/types";
 export function calculateHealthScore(
   output: string,
   extractedFonts: string[] = [],
-  designMd?: string
+  layoutMd?: string
 ): HealthScore {
   const issues: HealthIssue[] = [];
   let score = 60; // Base score
 
   // True only if the design system actually defines CSS vars as CSS declarations (ending with ;)
   // Documentation mentions like "--color: #value" without semicolons don't count
-  const hasCssVars = /--[\w-]+:\s*[#\w0-9][^;\n]*;/.test(designMd ?? "");
+  const hasCssVars = /--[\w-]+:\s*[#\w0-9][^;\n]*;/.test(layoutMd ?? "");
   const approvedHex = new Set(
-    (designMd ?? "").match(/#[0-9a-fA-F]{3,8}\b/gi)?.map((h) => h.toLowerCase()) ?? []
+    (layoutMd ?? "").match(/#[0-9a-fA-F]{3,8}\b/gi)?.map((h) => h.toLowerCase()) ?? []
   );
 
   // Check for hardcoded hex values.

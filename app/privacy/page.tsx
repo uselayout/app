@@ -64,7 +64,7 @@ export default function PrivacyPage() {
               Project Data
             </h3>
             <p>
-              Design system extractions, DESIGN.md files, context bundles, and
+              Design system extractions, layout.md files, context bundles, and
               related project data you create within Layout. This data is stored
               in our self-hosted database and is scoped to your account — no
               other user can access it.

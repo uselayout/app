@@ -1,7 +1,7 @@
 export type SubscriptionTier = "free" | "pro" | "team";
 export type SubscriptionStatus = "active" | "past_due" | "cancelled" | "trialing";
 export type AiMode = "byok" | "hosted";
-export type AiEndpoint = "design-md" | "test" | "explore";
+export type AiEndpoint = "layout-md" | "test" | "explore";
 
 export interface Subscription {
   id: string;
@@ -23,11 +23,11 @@ export interface Subscription {
 export interface CreditBalance {
   userId: string;
   orgId: string;
-  designMdRemaining: number;
+  layoutMdRemaining: number;
   testQueryRemaining: number;
   periodStart: string;
   periodEnd: string;
-  topupDesignMd: number;
+  topupLayoutMd: number;
   topupTestQuery: number;
 }
 
@@ -57,11 +57,11 @@ export interface StreamWithUsage {
 export interface QuotaCheck {
   allowed: boolean;
   reason?: string;
-  remaining?: { designMd: number; testQuery: number };
+  remaining?: { layoutMd: number; testQuery: number };
 }
 
 export interface UsageStats {
-  totalDesignMd: number;
+  totalLayoutMd: number;
   totalTestQueries: number;
   totalInputTokens: number;
   totalOutputTokens: number;
@@ -72,10 +72,10 @@ export interface UsageStats {
 
 /** Monthly credit allocations per tier */
 export const TIER_CREDITS = {
-  free: { designMd: 2, testQuery: 5 },
-  pro: { designMd: 50, testQuery: 100 },
-  team: { designMd: 50, testQuery: 100 }, // per seat
-  topup: { designMd: 30, testQuery: 80 },
+  free: { layoutMd: 2, testQuery: 5 },
+  pro: { layoutMd: 50, testQuery: 100 },
+  team: { layoutMd: 50, testQuery: 100 }, // per seat
+  topup: { layoutMd: 30, testQuery: 80 },
 } as const;
 
 /** Claude Sonnet 4.6 pricing per token in GBP */

@@ -30,7 +30,7 @@ export function CompletenessSection() {
               A half-complete design system gives your AI half the context. It fills the gaps with guesses — and you&apos;re back to the wrong colours, the wrong spacing, the wrong type scale.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Every DESIGN.md gets a completeness score across six weighted sections: Quick Reference, Colours, Typography, Spacing, Components, Anti-patterns. You see exactly where the gaps are before the AI does.
+              Every layout.md gets a completeness score across six weighted sections: Quick Reference, Colours, Typography, Spacing, Components, Anti-patterns. You see exactly where the gaps are before the AI does.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
               Layout surfaces specific suggestions — not vague warnings. &quot;Your component inventory is missing interactive states.&quot; &quot;No spacing scale defined.&quot; Fix them in the editor, or re-extract from a more complete source.

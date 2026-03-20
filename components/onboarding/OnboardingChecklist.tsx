@@ -102,10 +102,10 @@ export function OnboardingChecklist({
         ) : null,
     },
     {
-      key: "viewedDesignMd",
-      label: "Review your DESIGN.md",
+      key: "viewedLayoutMd",
+      label: "Review your layout.md",
       renderCta: () =>
-        !steps.viewedDesignMd && firstProjectId ? (
+        !steps.viewedLayoutMd && firstProjectId ? (
           <Link
             href={`/${orgSlug}/projects/${firstProjectId}/studio`}
             className="self-start text-xs px-2.5 py-1 rounded-md bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--studio-border)] transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)] mt-1 inline-block"

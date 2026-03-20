@@ -33,7 +33,7 @@ export function DriftSection() {
               Layout watches your Figma file via webhook. When a change lands, re-extract to diff the tokens against your current design system — see exactly what was added, removed, or modified. Token by token.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Accept the changes and your DESIGN.md updates immediately. Your AI agent reads the latest design system on the next prompt. The gap never has time to open.
+              Accept the changes and your layout.md updates immediately. Your AI agent reads the latest design system on the next prompt. The gap never has time to open.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-accent)] tracking-[-0.165px]">
               Always current. One click.

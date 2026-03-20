@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 const windsurfRulesSnippet = `# Design System Rules
 
-<!-- Paste Quick Reference from DESIGN.md here -->`;
+<!-- Paste Quick Reference from layout.md here -->`;
 
 const tokensCssImportSnippet = `/* In your globals.css or app.css */
 @import "./tokens.css";`;
@@ -58,7 +58,7 @@ export default function WindsurfPage() {
                 file to your project root. Paste the Quick Reference (Section 0)
                 from your exported{" "}
                 <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                  DESIGN.md
+                  layout.md
                 </code>{" "}
                 into it:
               </p>
@@ -105,7 +105,7 @@ export default function WindsurfPage() {
         <Callout type="tip">
           Windsurf&apos;s Cascade also picks up context from files open in the
           editor. Keeping{" "}
-          <code className="font-mono text-xs">DESIGN.md</code> or{" "}
+          <code className="font-mono text-xs">layout.md</code> or{" "}
           <code className="font-mono text-xs">tokens.css</code> open in a tab
           during UI generation sessions gives Cascade the full token inventory
           to draw from.

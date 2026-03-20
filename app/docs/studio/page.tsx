@@ -7,7 +7,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Studio Guide | Layout Docs",
   description:
-    "How to use the Studio: Layout's browser-based workspace for extraction, DESIGN.md generation, AI exploration, and exporting.",
+    "How to use the Studio: Layout's browser-based workspace for extraction, layout.md generation, AI exploration, and exporting.",
 };
 
 export default function StudioPage() {
@@ -149,7 +149,7 @@ export default function StudioPage() {
               Shows the raw extracted data: colour tokens, typography styles,
               spacing values, component inventory, screenshots, quality score,
               and saved components. Use this to verify what was extracted before
-              generating DESIGN.md. If something looks wrong, you can re-extract
+              generating layout.md. If something looks wrong, you can re-extract
               with different options.
             </p>
           </div>
@@ -159,18 +159,18 @@ export default function StudioPage() {
               Editor Mode <span className="text-gray-400 font-normal text-sm">(right panel)</span>
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              A Monaco-based markdown editor for DESIGN.md. Once you generate
+              A Monaco-based markdown editor for layout.md. Once you generate
               the context file, edit it here to fix misidentified tokens,
               strengthen the anti-patterns section, or rewrite component specs.
               Auto-saves with a 2-second debounce. Section navigation pills let
-              you jump between the 9 sections of DESIGN.md quickly.
+              you jump between the 9 sections of layout.md quickly.
             </p>
             <p className="text-base text-gray-600 leading-relaxed">
               An <strong>AI edit bar</strong> sits below the editor. Type
               natural-language instructions like{" "}
               <em>&quot;make buttons square instead of rounded&quot;</em> or{" "}
               <em>&quot;add a smaller button size variant&quot;</em> and Layout
-              will apply the changes directly to your DESIGN.md. An undo button
+              will apply the changes directly to your layout.md. An undo button
               appears after each edit so you can revert instantly if needed.
             </p>
           </div>
@@ -183,7 +183,7 @@ export default function StudioPage() {
               The Explorer Canvas is an AI-powered design exploration surface.
               Enter a prompt, set the variant count (2 to 6), and generate
               multiple component options using your design tokens. Compare
-              output with and without DESIGN.md context, refine variants with
+              output with and without layout.md context, refine variants with
               follow-up prompts, push results to Figma, or save them to your
               component library. See the{" "}
               <Link href="/docs/explorer" className="text-gray-900 hover:underline">
@@ -199,7 +199,7 @@ export default function StudioPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Testing Your Design System</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The Explorer Canvas is the best way to verify that DESIGN.md actually
+          The Explorer Canvas is the best way to verify that layout.md actually
           improves AI output before exporting.
         </p>
 
@@ -207,7 +207,7 @@ export default function StudioPage() {
           <h3 className="text-lg font-semibold text-[#0a0a0a]">Comparison View</h3>
           <p className="text-base text-gray-600 leading-relaxed">
             The comparison view generates the same component twice: once with
-            your DESIGN.md context active, once without. The side-by-side
+            your layout.md context active, once without. The side-by-side
             result shows you exactly what value your design system context is
             providing. A good context file produces noticeably better output
             with correct token usage, proper spacing, and on-brand typography.
@@ -247,7 +247,7 @@ export default function StudioPage() {
         </div>
 
         <Callout type="tip">
-          If the health score is below 50, check that DESIGN.md has well-formed
+          If the health score is below 50, check that layout.md has well-formed
           CSS code blocks in the token sections. The AI needs parseable examples
           to reference at generation time.
         </Callout>
@@ -257,7 +257,7 @@ export default function StudioPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Quality Score</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The Quality tab in the Source Panel shows your DESIGN.md completeness
+          The Quality tab in the Source Panel shows your layout.md completeness
           score across 6 weighted categories:
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
@@ -340,7 +340,7 @@ export default function StudioPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Exporting</h2>
         <p className="text-base text-gray-600 leading-relaxed">
           Click <strong>Export</strong> in the top bar to open the export modal.
-          DESIGN.md is always included. Choose which additional formats to
+          layout.md is always included. Choose which additional formats to
           include in the ZIP:
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
