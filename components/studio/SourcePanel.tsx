@@ -8,6 +8,7 @@ import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
 import { useProjectStore } from "@/lib/store/project";
 import { detectSourceType, normaliseUrl } from "@/lib/util/detect-source";
+import { getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
 import type {
   ExtractionResult,
   ExtractedToken,
@@ -41,7 +42,8 @@ function SourcePanelEmptyState({
   onExtract?: (url: string, sourceType: SourceType, pat?: string) => void;
 }) {
   const [url, setUrl] = useState("");
-  const [pat, setPat] = useState("");
+  const storedFigmaPat = getStoredFigmaApiKey();
+  const [pat, setPat] = useState(storedFigmaPat);
 
   const sourceType = url ? detectSourceType(url) : null;
   const isFigma = sourceType === "figma";
@@ -79,7 +81,7 @@ function SourcePanelEmptyState({
           )}
         </div>
 
-        {isFigma && (
+        {isFigma && !storedFigmaPat && (
           <input
             type="password"
             placeholder="Figma Personal Access Token"
@@ -88,6 +90,11 @@ function SourcePanelEmptyState({
             onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
             className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[var(--bg-app)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
           />
+        )}
+        {isFigma && storedFigmaPat && (
+          <p className="text-[10px] text-[var(--text-muted)]">
+            Using Figma token from Settings.
+          </p>
         )}
 
         <button
