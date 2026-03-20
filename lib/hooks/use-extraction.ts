@@ -35,6 +35,11 @@ export function useExtraction() {
       ]);
 
       try {
+        // Guard: website extraction requires a source URL
+        if (!isFigma && !project.sourceUrl) {
+          throw new Error("No source URL set for this project. Please set the website URL before re-extracting.");
+        }
+
         // Step 1: Run extraction
         updateStep("connect", { status: "complete" });
         updateStep("extract", { status: "running" });

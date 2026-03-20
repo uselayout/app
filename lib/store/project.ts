@@ -254,9 +254,14 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   refreshProject: async (id) => {
     const fresh = await fetchProjectById(id);
     if (!fresh) return;
-    set((state) => ({
-      projects: state.projects.map((p) => (p.id === id ? fresh : p)),
-    }));
+    set((state) => {
+      const exists = state.projects.some((p) => p.id === id);
+      return {
+        projects: exists
+          ? state.projects.map((p) => (p.id === id ? fresh : p))
+          : [...state.projects, fresh],
+      };
+    });
   },
 
   deleteProject: (id) => {
