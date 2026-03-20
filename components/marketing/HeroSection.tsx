@@ -125,7 +125,7 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
       </div>
 
       {/* Video placeholder */}
-      <div className="relative w-full max-w-[1424px] px-6">
+      <div className="relative w-full max-w-[1280px] px-6">
         {/* Aurora background */}
         <img
           src="/marketing/aurora-hero.webp"
@@ -136,7 +136,7 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
         />
 
         {/* Video container */}
-        <div className="relative z-10 aspect-[1424/768] rounded-[6px] bg-white overflow-hidden w-full">
+        <div className="relative z-10 aspect-[1280/810] rounded-[6px] bg-white overflow-hidden w-full">
           <video
             src="/marketing/videos/hero-demo.mp4"
             autoPlay
