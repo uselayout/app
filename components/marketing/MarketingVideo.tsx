@@ -19,6 +19,9 @@ export function MarketingVideo({ src, ariaLabel, className }: MarketingVideoProp
     const container = containerRef.current;
     if (!video || !container) return;
 
+    // Force load on mobile Safari
+    video.load();
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -27,11 +30,22 @@ export function MarketingVideo({ src, ariaLabel, className }: MarketingVideoProp
           video.pause();
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.15 }
     );
 
     observer.observe(container);
-    return () => observer.disconnect();
+
+    // Mobile Safari fallback: play on first touch anywhere on page
+    const handleTouch = () => {
+      video.play().catch(() => {});
+      document.removeEventListener('touchstart', handleTouch);
+    };
+    document.addEventListener('touchstart', handleTouch, { once: true });
+
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('touchstart', handleTouch);
+    };
   }, []);
 
   const handleRestart = useCallback(() => {
@@ -48,18 +62,21 @@ export function MarketingVideo({ src, ariaLabel, className }: MarketingVideoProp
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <video
         ref={videoRef}
         src={src}
         muted
+        autoPlay
         loop
         playsInline
-        className="w-full h-full object-cover"
+        preload="auto"
+        className="absolute inset-0 w-full h-full object-cover"
         aria-label={ariaLabel}
       />
       <button
         onClick={handleRestart}
-        className={`absolute bottom-3 right-3 p-1.5 rounded-full bg-black/60 text-white/80 hover:text-white hover:bg-black/80 transition-all duration-150 cursor-pointer ${
+        className={`absolute bottom-3 right-3 z-10 p-1.5 rounded-full bg-black/60 text-white/80 hover:text-white hover:bg-black/80 transition-all duration-150 cursor-pointer ${
           hovering ? 'opacity-100' : 'opacity-0'
         }`}
         aria-label="Restart video"
