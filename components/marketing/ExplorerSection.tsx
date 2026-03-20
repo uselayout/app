@@ -58,7 +58,7 @@ export function ExplorerSection() {
           className="object-cover"
           aria-hidden="true"
         />
-        <div className="absolute inset-0 overflow-hidden rounded-[6px]">
+        <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
           <MarketingVideo src="/marketing/videos/explorer.mp4" ariaLabel="Explorer section demo" />
         </div>
       </motion.div>
