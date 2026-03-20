@@ -206,11 +206,8 @@ export async function processImagePlaceholders(
             : String(genResult.reason);
         errors.push(errMsg);
 
-        // Replace with fallback placeholder image
+        // Replace with fallback image but KEEP data-generate-image for retry
         const fallback = placeholder.match
-          .replace(/data-generate-image=["'][^"']*["']\s*/i, "")
-          .replace(/data-image-style=["'][^"']*["']\s*/i, "")
-          .replace(/data-image-ratio=["'][^"']*["']\s*/i, "")
           .replace(
             /src=["'][^"']*["']/i,
             `src="${FALLBACK_SVG}"`
