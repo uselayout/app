@@ -40,7 +40,7 @@ Thank you for testing Layout before our public launch. This guide walks you thro
 
 ## Flow 2: Extract a Design System from Figma
 
-**Goal:** Confirm that Figma extraction produces a complete DESIGN.md.
+**Goal:** Confirm that Figma extraction produces a complete layout.md.
 
 **Before you start:** You need a Figma file that has local styles (paint, text, or effect styles) set up. A public Figma Community file with a design system works well.
 
@@ -54,7 +54,7 @@ Thank you for testing Layout before our public launch. This guide walks you thro
 4. Paste your token into the **Figma token** field in Studio
 5. Click **Extract**
 6. Watch the progress bar — extraction takes 30–90 seconds
-7. When complete, the editor panel will populate with a DESIGN.md document
+7. When complete, the editor panel will populate with a layout.md document
 8. Scroll through the generated document. It should contain sections for:
    - Quick Reference
    - Colour palette (hex values, token names)
@@ -62,7 +62,7 @@ Thank you for testing Layout before our public launch. This guide walks you thro
    - Spacing scale
    - Component inventory
 
-**Expected outcome:** DESIGN.md is populated with your design system content.
+**Expected outcome:** layout.md is populated with your design system content.
 
 **What to report if it fails:**
 - Which step failed
@@ -83,9 +83,9 @@ Thank you for testing Layout before our public launch. This guide walks you thro
 3. Paste a public URL into the field — for example: `https://stripe.com`
 4. Click **Extract**
 5. Wait 1–2 minutes — Playwright takes a screenshot and reads the computed CSS
-6. Review the DESIGN.md when it appears
+6. Review the layout.md when it appears
 
-**Expected outcome:** Colours, font families, and spacing values are extracted from the live site. DESIGN.md is generated with at least a colour palette and typography section.
+**Expected outcome:** Colours, font families, and spacing values are extracted from the live site. layout.md is generated with at least a colour palette and typography section.
 
 **What to report if it fails:**
 - The URL you tried
@@ -104,13 +104,13 @@ Thank you for testing Layout before our public launch. This guide walks you thro
 2. Select **Download ZIP** from the modal
 3. The ZIP will download — open it in your file manager
 4. Verify the archive contains all of the following files:
-   - `DESIGN.md` — the human and AI readable design system document
+   - `layout.md` — the human and AI readable design system document
    - `tokens.css` — CSS custom properties for all design tokens
    - `tokens.json` — W3C DTCG format token file
    - `tailwind.config.js` — Tailwind theme extending your tokens
    - `CLAUDE.md` — Claude Code context snippet
 
-**Expected outcome:** All 5 files present. Open `tokens.css` and confirm it contains CSS variables (e.g. `--color-primary: #...`). Open `DESIGN.md` and confirm it matches what you saw in the Studio editor.
+**Expected outcome:** All 5 files present. Open `tokens.css` and confirm it contains CSS variables (e.g. `--color-primary: #...`). Open `layout.md` and confirm it matches what you saw in the Studio editor.
 
 **What to report if it fails:**
 - Which files were missing
@@ -147,12 +147,12 @@ Thank you for testing Layout before our public launch. This guide walks you thro
    ```
 
 5. Ask Claude: **"What colours are in my design system?"**
-   Claude should call the `get_design_system` MCP tool and return the colour palette from your DESIGN.md.
+   Claude should call the `get_design_system` MCP tool and return the colour palette from your layout.md.
 
 6. Ask Claude: **"Check this code for design system compliance: `<div style={{ color: '#ff0000' }}>Hello</div>`"**
    Claude should call `check_compliance` and flag the hardcoded hex colour.
 
-**Expected outcome:** Claude answers both questions using information from your design system, not from its general training data. The colour answer should match what is in your DESIGN.md.
+**Expected outcome:** Claude answers both questions using information from your design system, not from its general training data. The colour answer should match what is in your layout.md.
 
 **What to report if it fails:**
 - Which step failed

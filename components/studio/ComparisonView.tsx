@@ -11,7 +11,7 @@ import type { DesignVariant, ContextFile, ComparisonResult } from "@/lib/types";
 
 interface ComparisonViewProps {
   prompt: string;
-  designMd: string;
+  layoutMd: string;
   baseCode?: string;
   imageDataUrl?: string;
   contextFiles?: ContextFile[];
@@ -22,7 +22,7 @@ interface ComparisonViewProps {
 
 export function ComparisonView({
   prompt,
-  designMd,
+  layoutMd,
   baseCode,
   imageDataUrl,
   contextFiles,
@@ -84,7 +84,7 @@ export function ComparisonView({
             body: JSON.stringify({
               ...sharedBody,
               ...(baseCode ? { baseCode } : {}),
-              designMd,
+              layoutMd,
             }),
             signal,
           }),
@@ -94,7 +94,7 @@ export function ComparisonView({
             headers,
             body: JSON.stringify({
               ...sharedBody,
-              designMd: "No design system provided. Use your best judgement for colours, spacing, and typography. Make it look modern and professional.",
+              layoutMd: "No design system provided. Use your best judgement for colours, spacing, and typography. Make it look modern and professional.",
             }),
             signal,
           }),
@@ -162,7 +162,7 @@ export function ComparisonView({
 
     generate();
     return () => { abortRef.current?.abort(); };
-  }, [prompt, designMd, baseCode, imageDataUrl, contextFiles, savedResult, onSave]);
+  }, [prompt, layoutMd, baseCode, imageDataUrl, contextFiles, savedResult, onSave]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-sm">

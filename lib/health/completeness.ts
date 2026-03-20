@@ -1,7 +1,7 @@
 /**
- * DESIGN.md completeness and quality checker.
+ * layout.md completeness and quality checker.
  *
- * Analyses a DESIGN.md string against the expected section structure
+ * Analyses a layout.md string against the expected section structure
  * and returns a weighted score with actionable gaps.
  */
 
@@ -344,12 +344,12 @@ function checkAntiPatternsGlobally(md: string): { found: boolean; locations: str
 // Main analysis function
 // ---------------------------------------------------------------------------
 
-export function analyseCompleteness(designMd: string): CompletenessReport {
+export function analyseCompleteness(layoutMd: string): CompletenessReport {
   const sections: SectionScore[] = [];
   const suggestions: string[] = [];
 
   for (const sectionDef of SECTION_CHECKS) {
-    const body = extractSectionBody(designMd, sectionDef.headingPatterns);
+    const body = extractSectionBody(layoutMd, sectionDef.headingPatterns);
     const found: string[] = [];
     const missing: string[] = [];
 
@@ -362,7 +362,7 @@ export function analyseCompleteness(designMd: string): CompletenessReport {
 
       // Special case: anti-patterns may be scattered throughout the doc
       if (sectionDef.name === "Anti-patterns") {
-        const global = checkAntiPatternsGlobally(designMd);
+        const global = checkAntiPatternsGlobally(layoutMd);
         if (global.found) {
           found.push(...global.locations);
         }
@@ -370,7 +370,7 @@ export function analyseCompleteness(designMd: string): CompletenessReport {
 
       const sectionScore = found.length > 0 ? 10 : 0;
       sections.push({ section: sectionDef.name, score: sectionScore, found, missing });
-      suggestions.push(`Add a "${sectionDef.name}" section to your DESIGN.md.`);
+      suggestions.push(`Add a "${sectionDef.name}" section to your layout.md.`);
       continue;
     }
 
@@ -407,10 +407,10 @@ export function analyseCompleteness(designMd: string): CompletenessReport {
   );
 
   // General suggestions
-  if (designMd.length < 500) {
-    suggestions.push("DESIGN.md is very short — aim for at least 200 lines of structured content.");
+  if (layoutMd.length < 500) {
+    suggestions.push("layout.md is very short — aim for at least 200 lines of structured content.");
   }
-  if (!codeBlockPattern.test(designMd)) {
+  if (!codeBlockPattern.test(layoutMd)) {
     suggestions.push("No code blocks found — include fenced code blocks with CSS tokens and component examples.");
   }
 

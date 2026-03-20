@@ -15,7 +15,7 @@ import {
 
 export interface ExploreOptions {
   prompt: string;
-  designMd: string;
+  layoutMd: string;
   variantCount: number;
   apiKey?: string;
   imageDataUrl?: string;
@@ -25,7 +25,7 @@ export interface ExploreOptions {
 export interface RefineOptions {
   baseCode: string;
   refinementPrompt: string;
-  designMd: string;
+  layoutMd: string;
   variantCount: number;
   apiKey?: string;
   contextFiles?: Array<{ name: string; content: string }>;
@@ -41,7 +41,7 @@ export function createExploreStreamForModel(
   if (model.provider === "gemini") {
     return createGeminiExploreStream(
       options.prompt,
-      options.designMd,
+      options.layoutMd,
       options.variantCount,
       options.apiKey,
       options.imageDataUrl,
@@ -52,7 +52,7 @@ export function createExploreStreamForModel(
   // Default: Claude
   return createExploreStream(
     options.prompt,
-    options.designMd,
+    options.layoutMd,
     options.variantCount,
     options.apiKey,
     options.imageDataUrl,
@@ -70,7 +70,7 @@ export function createRefineStreamForModel(
     return createGeminiRefineStream(
       options.baseCode,
       options.refinementPrompt,
-      options.designMd,
+      options.layoutMd,
       options.variantCount,
       options.apiKey,
       options.contextFiles,
@@ -82,7 +82,7 @@ export function createRefineStreamForModel(
   return createRefineStream(
     options.baseCode,
     options.refinementPrompt,
-    options.designMd,
+    options.layoutMd,
     options.variantCount,
     options.apiKey,
     options.contextFiles,

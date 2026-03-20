@@ -22,7 +22,7 @@
 - **Progress**: Complete backend in a single session
   - Figma extraction via REST API with rate-limited batch calls (50 node IDs per request)
   - Website extraction via Playwright — `page.evaluate()` scrapes computed CSS from the live DOM
-  - Claude synthesis endpoint — streams DESIGN.md generation via SSE
+  - Claude synthesis endpoint — streams layout.md generation via SSE
   - Export bundle generator — JSZip creates ZIP with CLAUDE.md, .cursorrules, tokens.css, tokens.json, tailwind.config.js
 - **Key Learning**: Figma's `/v1/files/{key}/styles` endpoint returns metadata only — you must call `/v1/files/{key}/nodes?ids=` separately to get actual values. This isn't documented well.
 
@@ -75,7 +75,7 @@
   - Fixed preview panel "Generating..." message bug
 
 ### 8 March
-- **Documentation**: Created HOW_TO_USE.md — complete guide for using DESIGN.md with Claude Code, Cursor, GitHub Copilot, Windsurf, and OpenAI Codex
+- **Documentation**: Created HOW_TO_USE.md — complete guide for using layout.md with Claude Code, Cursor, GitHub Copilot, Windsurf, and OpenAI Codex
 - **AGENTS.md Export**: Added AGENTS.md generator and export format for OpenAI Codex compatibility
 - **Marketing Page**: Built `/ai-studio` page on layout.design (staging, not linked in nav yet)
 - **Product Strategy**: Documented competitive landscape, pricing model, GTM plan
@@ -108,7 +108,7 @@
 ### Performance
 - Figma extraction: 5–15 seconds depending on file size
 - Website extraction: 8–20 seconds (Playwright cold start + page load + CSS scrape)
-- DESIGN.md synthesis: 10–30 seconds (Claude streaming)
+- layout.md synthesis: 10–30 seconds (Claude streaming)
 - Full pipeline: under 2 minutes from URL paste to downloadable ZIP
 
 ---
@@ -118,7 +118,7 @@
 - **Commits**: 22
 - **Components built**: 19
 - **API endpoints**: 7
-- **Export formats**: 7 (DESIGN.md, CLAUDE.md, AGENTS.md, .cursorrules, tokens.css, tokens.json, tailwind.config.js)
+- **Export formats**: 7 (layout.md, CLAUDE.md, AGENTS.md, .cursorrules, tokens.css, tokens.json, tailwind.config.js)
 - **Build duration**: 3 days (foundation → production-ready)
 
 ---
@@ -129,7 +129,7 @@ After the initial 3-day build, significant features were added over the followin
 
 ### Billing & Subscriptions
 - Full Stripe integration: checkout sessions, customer portal, webhook handling
-- Credit-based usage tracking — per-operation cost logging for DESIGN.md generation and test queries
+- Credit-based usage tracking — per-operation cost logging for layout.md generation and test queries
 - Subscription tiers: Free (BYOK), Pro (£29/mo), Team (£29/mo + £15/seat)
 - 5 new billing API endpoints + Stripe webhook handler
 - Zustand billing store with subscription, credits, and usage state

@@ -11,9 +11,9 @@ export async function GET(request: Request) {
 
   return Response.json({
     credits: balance ?? {
-      designMdRemaining: 0,
+      layoutMdRemaining: 0,
       testQueryRemaining: 0,
-      topupDesignMd: 0,
+      topupLayoutMd: 0,
       topupTestQuery: 0,
       periodStart: null,
       periodEnd: null,

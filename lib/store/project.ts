@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { upsertProject, removeProject, fetchProjectById } from "@/lib/supabase/db";
-import { parseTokensFromDesignMd } from "@/lib/tokens/parse-design-md";
+import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType } from "@/lib/types";
 
 /** Merge two token arrays, deduplicating by name (new values overwrite existing). */
@@ -28,7 +28,7 @@ interface ProjectState {
   setHydrationError: (error: string | null) => void;
   createProject: (project: Project) => void;
   setCurrentProject: (id: string) => void;
-  updateDesignMd: (id: string, designMd: string) => void;
+  updateLayoutMd: (id: string, layoutMd: string) => void;
   updateExtractionData: (id: string, data: ExtractionResult) => void;
   updateProjectName: (id: string, name: string) => void;
   updateProjectSource: (id: string, sourceUrl: string, sourceType: SourceType) => void;
@@ -36,7 +36,7 @@ interface ProjectState {
   updateHealthScore: (id: string, score: number) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
   removeTokens: (id: string, tokenType: keyof ExtractedTokens, tokenNames: string[]) => void;
-  syncTokensFromDesignMd: (id: string) => number;
+  syncTokensFromLayoutMd: (id: string) => number;
   refreshProject: (id: string) => Promise<void>;
   deleteProject: (id: string) => void;
   clearProjects: () => void;
@@ -72,11 +72,11 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
 
   setCurrentProject: (id) => set({ currentProjectId: id }),
 
-  updateDesignMd: (id, designMd) => {
+  updateLayoutMd: (id, layoutMd) => {
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === id
-          ? { ...p, designMd, updatedAt: new Date().toISOString() }
+          ? { ...p, layoutMd, updatedAt: new Date().toISOString() }
           : p
       ),
     }));
@@ -185,11 +185,11 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (project && userId) void upsertProject(project, userId);
   },
 
-  syncTokensFromDesignMd: (id) => {
+  syncTokensFromLayoutMd: (id) => {
     const project = get().projects.find((p) => p.id === id);
-    if (!project?.designMd) return 0;
+    if (!project?.layoutMd) return 0;
 
-    const parsed = parseTokensFromDesignMd(project.designMd);
+    const parsed = parseTokensFromLayoutMd(project.layoutMd);
     const totalParsed =
       parsed.colors.length +
       parsed.typography.length +
@@ -213,7 +213,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       ? { ...existing, tokens: mergedTokens }
       : {
           sourceType: "manual",
-          sourceName: "DESIGN.md",
+          sourceName: "layout.md",
           tokens: mergedTokens,
           components: [],
           screenshots: [],

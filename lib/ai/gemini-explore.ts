@@ -17,13 +17,13 @@ import { EXPLORE_SYSTEM, REFINE_SYSTEM } from "@/lib/claude/explore";
 
 export function createGeminiExploreStream(
   prompt: string,
-  designMd: string,
+  layoutMd: string,
   variantCount: number,
   apiKey?: string,
   imageDataUrl?: string,
   contextFiles?: Array<{ name: string; content: string }>,
 ): StreamWithUsage {
-  const systemPrompt = `${EXPLORE_SYSTEM}\n\nGenerate exactly ${variantCount} variants.\n\n${designMd}`;
+  const systemPrompt = `${EXPLORE_SYSTEM}\n\nGenerate exactly ${variantCount} variants.\n\n${layoutMd}`;
   const userContent = buildGeminiContent(prompt, imageDataUrl, contextFiles);
 
   return runGeminiStream(systemPrompt, userContent, apiKey);
@@ -32,13 +32,13 @@ export function createGeminiExploreStream(
 export function createGeminiRefineStream(
   baseCode: string,
   refinementPrompt: string,
-  designMd: string,
+  layoutMd: string,
   variantCount: number,
   apiKey?: string,
   contextFiles?: Array<{ name: string; content: string }>,
   imageDataUrl?: string,
 ): StreamWithUsage {
-  const systemPrompt = `${REFINE_SYSTEM}\n\nGenerate exactly ${variantCount} refined variants.\n\n${designMd}`;
+  const systemPrompt = `${REFINE_SYSTEM}\n\nGenerate exactly ${variantCount} refined variants.\n\n${layoutMd}`;
 
   const contextBlock = contextFiles?.length
     ? contextFiles.map((f) => `--- context: ${f.name} ---\n${f.content}\n--- end ---`).join("\n\n") + "\n\n"

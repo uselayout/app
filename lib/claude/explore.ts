@@ -13,6 +13,7 @@ Token Usage (Highest Priority)
 - DO NOT import or use framer-motion, lucide-react, @heroicons, recharts, or any other third-party library. They will cause runtime errors.
 - For animations, use CSS transitions/animations and Tailwind classes (animate-*, transition-*).
 - For icons, use inline SVGs or Unicode characters.
+- ALL images use data-generate-image attributes (NOT src URLs) — see Images section below.
 - Follow the design system specification below with complete fidelity.
 - If the design system defines CSS custom properties (var(--...)), use them exclusively — never hardcode colour, spacing, or typography values.
 - If the design system does NOT define CSS custom properties, use the exact extracted values directly.
@@ -50,6 +51,24 @@ Responsive Design (Mandatory)
 - Navigation: MUST use a hamburger/mobile menu on mobile. On base (mobile): show logo + hamburger icon only, nav links hidden behind a toggle using React useState. On md: and up: show full horizontal nav. Never show all nav items inline at 375px.
 - Header CTAs: stack vertically or reduce to icon on mobile. Never let buttons overflow or get clipped.
 
+Images (MANDATORY — read carefully)
+- ALL images — hero photos, product shots, team photos, avatars, headshots, thumbnails, icons — MUST use this exact format:
+  <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." className="..." />
+- data-image-style options: "photo", "illustration", "icon", "abstract"
+- data-image-ratio options: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9"
+- For small images like avatars/headshots, use data-image-ratio="1:1": <img data-generate-image="professional headshot of a smiling woman in her 30s" data-image-style="photo" data-image-ratio="1:1" alt="Sarah Chen" className="w-10 h-10 rounded-full object-cover" />
+- Write detailed, specific prompts — e.g. "A diverse team collaborating in a modern sunlit office with plants" not "team photo".
+- NEVER use placeholder services (placehold.co, placeholder.com, via.placeholder.com, unsplash, picsum, dummyimage, or ANY external image URL).
+- NEVER use empty src, data: URIs, or inline SVG placeholders for images. Omit the src attribute entirely — the pipeline adds it.
+- If a section has testimonials, team members, or any people — each person MUST have a data-generate-image headshot.
+- For data tables, team directories, user lists, or any rows showing people: EVERY row MUST have an <img data-generate-image="professional headshot of [name/role description]" data-image-style="photo" data-image-ratio="1:1" alt="[name]" className="w-8 h-8 rounded-full object-cover" /> avatar. NEVER use initials, SVG placeholders, or coloured circles as avatar substitutes.
+- For product tables, file lists, or non-person data: use relevant thumbnails with data-generate-image.
+- Rule: if ANY cell or card would benefit from a visual (avatar, thumbnail, logo, icon), use data-generate-image. When in doubt, generate an image.
+- WRONG: <img src="https://placehold.co/800x600" />
+- WRONG: <img src="https://via.placeholder.com/150" />
+- WRONG: <img src="" />
+- RIGHT: <img data-generate-image="modern office workspace with natural lighting" data-image-style="photo" data-image-ratio="16:9" alt="Office" className="w-full h-64 object-cover" />
+
 OUTPUT FORMAT:
 For each variant, output EXACTLY this format:
 
@@ -67,20 +86,6 @@ export default function Variant1() {
 export default function Variant2() { ... }
 \`\`\`
 
-Images (MANDATORY — read carefully)
-- ALL images — hero photos, product shots, team photos, avatars, headshots, thumbnails, icons — MUST use this exact format:
-  <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." className="..." />
-- data-image-style options: "photo", "illustration", "icon", "abstract"
-- data-image-ratio options: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9"
-- For small images like avatars/headshots, use data-image-ratio="1:1": <img data-generate-image="professional headshot of a smiling woman in her 30s" data-image-style="photo" data-image-ratio="1:1" alt="Sarah Chen" className="w-10 h-10 rounded-full object-cover" />
-- Write detailed, specific prompts — e.g. "A diverse team collaborating in a modern sunlit office with plants" not "team photo".
-- NEVER use placeholder services (placehold.co, placeholder.com, via.placeholder.com, unsplash, picsum, dummyimage, or ANY external image URL).
-- NEVER use empty src, data: URIs, or inline SVG placeholders for images. Omit the src attribute entirely — the pipeline adds it.
-- If a section has testimonials, team members, or any people — each person MUST have a data-generate-image headshot.
-- For data tables, team directories, user lists, or any rows showing people: EVERY row MUST have an <img data-generate-image="professional headshot of [name/role description]" data-image-style="photo" data-image-ratio="1:1" alt="[name]" className="w-8 h-8 rounded-full object-cover" /> avatar. NEVER use initials, SVG placeholders, or coloured circles as avatar substitutes.
-- For product tables, file lists, or non-person data: use relevant thumbnails with data-generate-image.
-- Rule: if ANY cell or card would benefit from a visual (avatar, thumbnail, logo, icon), use data-generate-image. When in doubt, generate an image.
-
 IMPORTANT: Each component must be fully self-contained. No shared imports between variants. No prose outside the variant blocks.`;
 
 export const REFINE_SYSTEM = `You are an expert design refiner. You take an existing UI component and generate refined variations based on specific feedback, while staying faithful to the design system.
@@ -91,6 +96,7 @@ CRITICAL RULES:
 - Follow the design system specification with complete fidelity.
 - AVAILABLE LIBRARIES: React 18, ReactDOM 18, Tailwind CSS (via CDN). Nothing else is available.
 - DO NOT import or use framer-motion, lucide-react, @heroicons, recharts, or any other third-party library. For animations use CSS/Tailwind. For icons use inline SVGs.
+- ALL images use data-generate-image attributes (NOT src URLs) — see Images section below.
 - If the design system defines CSS custom properties (var(--...)), use them exclusively.
 - Every interactive element MUST handle: default, hover, focus-visible, active, disabled states.
 
@@ -113,6 +119,24 @@ Responsive Design (Mandatory)
 - Navigation: MUST use a hamburger/mobile menu on mobile. On base (mobile): show logo + hamburger icon only, nav links hidden behind a toggle using React useState. On md: and up: show full horizontal nav. Never show all nav items inline at 375px.
 - Header CTAs: stack vertically or reduce to icon on mobile. Never let buttons overflow or get clipped.
 
+Images (MANDATORY — read carefully)
+- ALL images — hero photos, product shots, team photos, avatars, headshots, thumbnails, icons — MUST use this exact format:
+  <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." className="..." />
+- data-image-style options: "photo", "illustration", "icon", "abstract"
+- data-image-ratio options: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9"
+- For small images like avatars/headshots, use data-image-ratio="1:1": <img data-generate-image="professional headshot of a smiling woman in her 30s" data-image-style="photo" data-image-ratio="1:1" alt="Sarah Chen" className="w-10 h-10 rounded-full object-cover" />
+- Write detailed, specific prompts — e.g. "A diverse team collaborating in a modern sunlit office with plants" not "team photo".
+- NEVER use placeholder services (placehold.co, placeholder.com, via.placeholder.com, unsplash, picsum, dummyimage, or ANY external image URL).
+- NEVER use empty src, data: URIs, or inline SVG placeholders for images. Omit the src attribute entirely — the pipeline adds it.
+- If a section has testimonials, team members, or any people — each person MUST have a data-generate-image headshot.
+- For data tables, team directories, user lists, or any rows showing people: EVERY row MUST have an <img data-generate-image="professional headshot of [name/role description]" data-image-style="photo" data-image-ratio="1:1" alt="[name]" className="w-8 h-8 rounded-full object-cover" /> avatar. NEVER use initials, SVG placeholders, or coloured circles as avatar substitutes.
+- For product tables, file lists, or non-person data: use relevant thumbnails with data-generate-image.
+- Rule: if ANY cell or card would benefit from a visual (avatar, thumbnail, logo, icon), use data-generate-image. When in doubt, generate an image.
+- WRONG: <img src="https://placehold.co/800x600" />
+- WRONG: <img src="https://via.placeholder.com/150" />
+- WRONG: <img src="" />
+- RIGHT: <img data-generate-image="modern office workspace with natural lighting" data-image-style="photo" data-image-ratio="16:9" alt="Office" className="w-full h-64 object-cover" />
+
 OUTPUT FORMAT:
 For each variant, output EXACTLY this format:
 
@@ -124,25 +148,18 @@ export default function Variant1() {
 }
 \`\`\`
 
-Images (MANDATORY)
-- ALL images MUST use: <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." className="..." />
-- This includes avatars, headshots, thumbnails — use data-image-ratio="1:1" for small square images.
-- For data tables, team directories, user lists, or any rows showing people: EVERY row MUST have an <img data-generate-image="professional headshot of [name/role description]" data-image-style="photo" data-image-ratio="1:1" alt="[name]" className="w-8 h-8 rounded-full object-cover" /> avatar. NEVER use initials, SVG placeholders, or coloured circles.
-- For product tables, file lists, or non-person data: use relevant thumbnails with data-generate-image.
-- NEVER use placeholder services (placehold.co, placeholder.com, unsplash, etc.) or empty src attributes.
-
 IMPORTANT: Each component must be fully self-contained. No shared imports between variants. No prose outside the variant blocks.`;
 
 export function createExploreStream(
   prompt: string,
-  designMd: string,
+  layoutMd: string,
   variantCount: number,
   apiKey?: string,
   imageDataUrl?: string,
   contextFiles?: Array<{ name: string; content: string }>,
 ): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
-  const systemPrompt = `${EXPLORE_SYSTEM}\n\nGenerate exactly ${variantCount} variants.\n\n${designMd}`;
+  const systemPrompt = `${EXPLORE_SYSTEM}\n\nGenerate exactly ${variantCount} variants.\n\n${layoutMd}`;
 
   // Build user message — text-only or multi-content with image + context files
   const userContent = buildUserContent(prompt, imageDataUrl, contextFiles);
@@ -198,14 +215,14 @@ export function createExploreStream(
 export function createRefineStream(
   baseCode: string,
   refinementPrompt: string,
-  designMd: string,
+  layoutMd: string,
   variantCount: number,
   apiKey?: string,
   contextFiles?: Array<{ name: string; content: string }>,
   imageDataUrl?: string,
 ): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
-  const systemPrompt = `${REFINE_SYSTEM}\n\nGenerate exactly ${variantCount} refined variants.\n\n${designMd}`;
+  const systemPrompt = `${REFINE_SYSTEM}\n\nGenerate exactly ${variantCount} refined variants.\n\n${layoutMd}`;
 
   let resolveUsage: (u: TokenUsageResult) => void;
   const usage = new Promise<TokenUsageResult>((resolve) => {

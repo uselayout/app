@@ -17,7 +17,7 @@ const PLANS = [
     description:
       "Get started with managed hosting and limited monthly credits.",
     features: [
-      "2 DESIGN.md generations / month",
+      "2 layout.md generations / month",
       "5 test panel queries / month",
       "Unlimited Figma & website extractions",
       "All 6 export formats",
@@ -35,7 +35,7 @@ const PLANS = [
       "Unlimited AI — no API key needed, no credit limits.",
     features: [
       "Everything in Free",
-      "Unlimited DESIGN.md generations",
+      "Unlimited layout.md generations",
       "Unlimited test panel queries",
       "Priority Discord support",
       "BYOK always included",
@@ -67,7 +67,7 @@ const PLANS = [
 const FAQS = [
   {
     q: "What's included in the free tier?",
-    a: "The free tier includes 2 DESIGN.md generations and 5 test panel queries per month using our hosted AI. You also get unlimited extractions from Figma and websites, all 6 export formats, 3 starter design kits, and the open-source CLI & MCP server. Credits reset monthly.",
+    a: "The free tier includes 2 layout.md generations and 5 test panel queries per month using our hosted AI. You also get unlimited extractions from Figma and websites, all 6 export formats, 3 starter design kits, and the open-source CLI & MCP server. Credits reset monthly.",
   },
   {
     q: "What is BYOK?",
@@ -154,7 +154,7 @@ function PricingContent() {
                     Every plan includes managed hosting with AI credits. Bring your own API key or self-host for free — always.
                   </p>
                   <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-                    Extract design systems, generate DESIGN.md, test with AI —{" "}
+                    Extract design systems, generate layout.md, test with AI —{" "}
                     <span className="text-[var(--mkt-accent)]">
                       all included
                     </span>
@@ -335,7 +335,7 @@ function PricingContent() {
                   <ul className="flex flex-col gap-3">
                     {[
                       "Works on every plan",
-                      "Unlimited DESIGN.md generations",
+                      "Unlimited layout.md generations",
                       "Unlimited test panel queries",
                       "Your API key, your billing",
                       "No hosted credits consumed",

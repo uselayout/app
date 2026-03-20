@@ -108,7 +108,7 @@ export default function CursorPage() {
             <code className="font-mono text-xs">tokens.css</code> to your
             project and import it in your global stylesheet. Cursor picks up
             context from open files, so keeping{" "}
-            <code className="font-mono text-xs">DESIGN.md</code> open in a tab
+            <code className="font-mono text-xs">layout.md</code> open in a tab
             further improves output quality.
           </Callout>
         </div>

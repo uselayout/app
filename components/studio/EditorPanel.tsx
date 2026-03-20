@@ -6,7 +6,7 @@ import type { OnMount } from "@monaco-editor/react";
 import type * as monacoType from "monaco-editor";
 import { ArrowUp, Undo2, Loader2, History, X } from "lucide-react";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
-import type { DesignMdVersion } from "@/lib/supabase/design-md-versions";
+import type { LayoutMdVersion } from "@/lib/supabase/layout-md-versions";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -64,15 +64,15 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "idle">("idle");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [versions, setVersions] = useState<DesignMdVersion[]>([]);
+  const [versions, setVersions] = useState<LayoutMdVersion[]>([]);
   const [loadingVersions, setLoadingVersions] = useState(false);
-  const [previewVersion, setPreviewVersion] = useState<DesignMdVersion | null>(null);
+  const [previewVersion, setPreviewVersion] = useState<LayoutMdVersion | null>(null);
 
   const loadVersions = useCallback(async () => {
     if (!projectId || !orgId) return;
     setLoadingVersions(true);
     try {
-      const res = await fetch(`/api/organizations/${orgId}/projects/${projectId}/design-md-versions`);
+      const res = await fetch(`/api/organizations/${orgId}/projects/${projectId}/layout-md-versions`);
       if (res.ok) {
         const data = await res.json();
         setVersions(data.versions ?? []);
@@ -90,9 +90,9 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
     loadVersions();
   }, [loadVersions]);
 
-  const handleRestore = useCallback((version: DesignMdVersion) => {
-    editorRef.current?.setValue(version.designMd);
-    onChange(version.designMd);
+  const handleRestore = useCallback((version: LayoutMdVersion) => {
+    editorRef.current?.setValue(version.layoutMd);
+    onChange(version.layoutMd);
     setShowHistory(false);
     setPreviewVersion(null);
   }, [onChange]);
@@ -197,7 +197,7 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
       {/* Status bar */}
       <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-4 py-2">
         <span className="text-xs font-medium text-[var(--text-muted)]">
-          DESIGN.md
+          layout.md
         </span>
         <div className="flex items-center gap-3">
           {saveStatus === "saving" && (
@@ -299,7 +299,7 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
                       {new Date(v.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </span>
                     <span className="ml-2 text-[10px] text-[var(--text-muted)]">
-                      {v.source} · {Math.round(v.designMd.length / 4)} tokens
+                      {v.source} · {Math.round(v.layoutMd.length / 4)} tokens
                     </span>
                   </button>
                   <button
@@ -315,8 +315,8 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
           {previewVersion && (
             <div className="border-t border-[var(--studio-border)] px-4 py-2">
               <pre className="max-h-32 overflow-y-auto text-[10px] text-[var(--text-muted)] font-mono whitespace-pre-wrap">
-                {previewVersion.designMd.slice(0, 2000)}
-                {previewVersion.designMd.length > 2000 && "…"}
+                {previewVersion.layoutMd.slice(0, 2000)}
+                {previewVersion.layoutMd.length > 2000 && "…"}
               </pre>
             </div>
           )}
@@ -366,10 +366,10 @@ function EditorChatBar({
       const apiKey = getStoredApiKey();
       if (apiKey) headers["X-Api-Key"] = apiKey;
 
-      const res = await fetch("/api/generate/edit-design-md", {
+      const res = await fetch("/api/generate/edit-layout-md", {
         method: "POST",
         headers,
-        body: JSON.stringify({ instruction: instruction.trim(), designMd: value }),
+        body: JSON.stringify({ instruction: instruction.trim(), layoutMd: value }),
       });
 
       if (!res.ok) {

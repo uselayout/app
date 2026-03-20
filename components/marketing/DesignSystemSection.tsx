@@ -33,7 +33,7 @@ export function DesignSystemSection() {
               Generate components in the Explorer Canvas with AI assistance. Describe what you need — Layout generates variants using your design tokens. Save the best ones to your library with categories and tags.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Browse saved components and pages in the Studio. Filter by type, search by category. Everything stays connected to your DESIGN.md.
+              Browse saved components and pages in the Studio. Filter by type, search by category. Everything stays connected to your layout.md.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-accent)] tracking-[-0.165px]">
               Not a static export. A living system.

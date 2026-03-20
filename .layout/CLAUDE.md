@@ -77,21 +77,21 @@ Violations will produce inconsistent, off-brand output.
 6. NEVER use `font-weight` integers not in the defined scale (300/400/510/590/680)
 7. NEVER construct z-index values manually — use `var(--layer-*)` tokens
 
-**Full design system → see DESIGN.md**
+**Full design system → see layout.md**
 
 ---
 
 ### Design System Context
 
 If the **layout** MCP server is connected, use these tools:
-- `get-design-system` — full DESIGN.md or a specific section (colours, typography, spacing, components)
+- `get-design-system` — full layout.md or a specific section (colours, typography, spacing, components)
 - `get-tokens` — design tokens in CSS or JSON format
 - `list-components` / `get-component` — component inventory and specs
 - `check-compliance` — validate code against design system rules
 - `design-in-figma` — create Figma mockups using the design system (requires Figma MCP)
 
 Otherwise, read the local files in `.layout/`:
-- `.layout/DESIGN.md` — complete design system specification
+- `.layout/layout.md` — complete design system specification
 - `.layout/tokens.css` — CSS custom properties
 - `.layout/tokens.json` — W3C DTCG token format
 

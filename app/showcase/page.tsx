@@ -34,7 +34,7 @@ const PLACEHOLDER_CARDS: PlaceholderCardData[] = [
   {
     id: 3,
     name: "Your project here",
-    description: "Ship faster with DESIGN.md context that keeps AI agents on-brand.",
+    description: "Ship faster with layout.md context that keeps AI agents on-brand.",
     tag: "Coming soon",
     author: "Be the first →",
   },

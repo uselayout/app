@@ -15,7 +15,7 @@ export function useExtraction() {
   const setError = useExtractionStore((s) => s.setError);
   const completeExtraction = useExtractionStore((s) => s.completeExtraction);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
-  const updateDesignMd = useProjectStore((s) => s.updateDesignMd);
+  const updateLayoutMd = useProjectStore((s) => s.updateLayoutMd);
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -31,7 +31,7 @@ export function useExtraction() {
       startExtraction([
         { id: "connect", label: "Connecting to source", status: "running" },
         { id: "extract", label: "Extracting design data", status: "pending" },
-        { id: "generate", label: "Generating DESIGN.md", status: "pending" },
+        { id: "generate", label: "Generating layout.md", status: "pending" },
       ]);
 
       try {
@@ -85,15 +85,15 @@ export function useExtraction() {
         setProgress(70);
         updateExtractionData(project.id, extractionData);
 
-        // Step 2: Generate DESIGN.md
+        // Step 2: Generate layout.md
         updateStep("generate", { status: "running" });
 
-        // Save previous DESIGN.md version before overwriting
-        if (project.designMd && project.designMd.length > 0 && currentOrgId) {
-          await fetch(`/api/organizations/${currentOrgId}/projects/${project.id}/design-md-versions`, {
+        // Save previous layout.md version before overwriting
+        if (project.layoutMd && project.layoutMd.length > 0 && currentOrgId) {
+          await fetch(`/api/organizations/${currentOrgId}/projects/${project.id}/layout-md-versions`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ designMd: project.designMd, source: "generation" }),
+            body: JSON.stringify({ layoutMd: project.layoutMd, source: "generation" }),
           }).catch(() => {}); // Non-blocking — don't fail extraction if version save fails
         }
 
@@ -101,7 +101,7 @@ export function useExtraction() {
         const extractionDataForSynthesis = extractionData;
 
         const apiKey = getStoredApiKey();
-        const genRes = await fetch("/api/generate/design-md", {
+        const genRes = await fetch("/api/generate/layout-md", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -119,34 +119,34 @@ export function useExtraction() {
             );
           }
           throw new Error(
-            `DESIGN.md generation failed: ${genRes.status} ${genRes.statusText}`
+            `layout.md generation failed: ${genRes.status} ${genRes.statusText}`
           );
         }
 
-        // Stream DESIGN.md text into lightweight extraction store (no Supabase persist)
+        // Stream layout.md text into lightweight extraction store (no Supabase persist)
         const reader = genRes.body?.getReader();
         if (!reader) throw new Error("No response body");
 
         const decoder = new TextDecoder();
-        let designMd = "";
+        let layoutMd = "";
         let lastFlush = 0;
         const FLUSH_INTERVAL = 200; // ms between UI updates
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          designMd += decoder.decode(value, { stream: true });
+          layoutMd += decoder.decode(value, { stream: true });
 
           const now = Date.now();
           if (now - lastFlush >= FLUSH_INTERVAL) {
             lastFlush = now;
-            setStreamingContent(designMd);
-            setProgress(Math.min(99, 70 + Math.round((designMd.length / 8000) * 29)));
+            setStreamingContent(layoutMd);
+            setProgress(Math.min(99, 70 + Math.round((layoutMd.length / 8000) * 29)));
           }
         }
 
         // Write final content to project store (single Supabase persist)
-        updateDesignMd(project.id, designMd);
+        updateLayoutMd(project.id, layoutMd);
         setStreamingContent(null);
         updateStep("generate", { status: "complete" });
         setProgress(100);
@@ -165,7 +165,7 @@ export function useExtraction() {
       setError,
       completeExtraction,
       updateExtractionData,
-      updateDesignMd,
+      updateLayoutMd,
       currentOrgId,
     ]
   );

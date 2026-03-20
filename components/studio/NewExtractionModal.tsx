@@ -60,7 +60,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
       name: projectName,
       sourceType,
       sourceUrl: fullUrl,
-      designMd: "",
+      layoutMd: "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });

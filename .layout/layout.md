@@ -1,4 +1,4 @@
-# DESIGN.md — Linear.app Design System
+# layout.md — Linear.app Design System
 
 ---
 
@@ -76,7 +76,7 @@
 6. NEVER use `font-weight` integers not in the defined scale (300/400/510/590/680)
 7. NEVER construct z-index values manually — use `var(--layer-*)` tokens
 
-**Full design system → see DESIGN.md**
+**Full design system → see layout.md**
 
 ---
 

@@ -67,7 +67,7 @@ function StreamingPreview({ content }: { content: string }) {
   return (
     <div className="space-y-1.5">
       <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
-        DESIGN.md
+        layout.md
       </p>
       <div className="relative overflow-hidden rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)]">
         <div
@@ -138,7 +138,7 @@ function WhatsNextScreen({
         style={{ color: "#22c55e" }}
       />
       <h2 className="text-2xl font-semibold text-[var(--text-primary)] text-center">
-        Your DESIGN.md is ready
+        Your layout.md is ready
       </h2>
       <p className="text-sm text-[var(--text-secondary)] text-center mt-2 mb-8">
         Generate on-brand components using your extracted design system

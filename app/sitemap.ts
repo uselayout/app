@@ -18,7 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/docs/integrations/windsurf`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${baseUrl}/docs/integrations/codex`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${baseUrl}/docs/api-reference`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${baseUrl}/docs/design-md`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${baseUrl}/docs/layout-md`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${baseUrl}/docs/self-hosting`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${baseUrl}/changelog`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
   ];

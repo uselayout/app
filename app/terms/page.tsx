@@ -119,7 +119,7 @@ export default function TermsPage() {
             </h2>
             <p>
               <strong className="text-white">Your data is yours.</strong> You
-              retain full ownership of all design system data, DESIGN.md files,
+              retain full ownership of all design system data, layout.md files,
               context bundles, and any other content you create or extract using
               Layout. We claim no intellectual property rights over your content.
             </p>

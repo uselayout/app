@@ -34,7 +34,7 @@ body:
       options:
         - Website
         - Figma
-        - DESIGN.md Generation
+        - layout.md Generation
         - Test Panel
         - Export
         - Other

@@ -118,7 +118,7 @@ export async function POST(request: Request) {
     orgId,
     name: parsed.data.name,
     sourceType: "website",
-    designMd: "",
+    layoutMd: "",
     createdAt: now,
     updatedAt: now,
   };

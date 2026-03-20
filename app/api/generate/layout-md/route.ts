@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
-import { createDesignMdStream } from "@/lib/claude/synthesise";
+import { createLayoutMdStream } from "@/lib/claude/synthesise";
 import { resizeScreenshot } from "@/lib/util/resize-screenshot";
 import { auth } from "@/lib/auth";
 import { checkQuota, deductCredit } from "@/lib/billing/credits";
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     mode = "byok";
     apiKey = userApiKey;
   } else {
-    const quota = await checkQuota(userId, "design-md");
+    const quota = await checkQuota(userId, "layout-md");
     if (!quota.allowed) {
       return Response.json(
         { error: quota.reason, code: "QUOTA_EXCEEDED", remaining: quota.remaining },
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const deducted = await deductCredit(userId, "design-md");
+    const deducted = await deductCredit(userId, "layout-md");
     if (!deducted) {
       return Response.json(
         { error: "No credits remaining. Top up or use your own API key.", code: "QUOTA_EXCEEDED" },
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { stream, usage } = createDesignMdStream(extractionData, apiKey);
+  const { stream, usage } = createLayoutMdStream(extractionData, apiKey);
 
   // Fire-and-forget: log usage after stream completes
   void usage
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       logUsage({
         userId,
         projectId: parsed.data.projectId,
-        endpoint: "design-md",
+        endpoint: "layout-md",
         mode,
         usage: u,
         model: "claude-sonnet-4-6",

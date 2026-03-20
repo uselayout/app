@@ -81,13 +81,13 @@ All UI code MUST follow the rules below. Violations produce off-brand, inconsist
 6. NEVER use `font-weight` integers not in the defined scale (300/400/510/590/680)
 7. NEVER construct z-index values manually — use `var(--layer-*)` tokens
 
-**Full design system → see DESIGN.md**
+**Full design system → see layout.md**
 
 ---
 
 ## Full Reference
 
-The complete design system is in `DESIGN.md` (included in this bundle).
+The complete design system is in `layout.md` (included in this bundle).
 Read it before generating any UI component — it contains token definitions,
 component patterns, anti-patterns, and confidence annotations.
 
@@ -95,7 +95,7 @@ component patterns, anti-patterns, and confidence annotations.
 
 | File | Purpose |
 |------|---------|
-| `DESIGN.md` | Full design system specification |
+| `layout.md` | Full design system specification |
 | `AGENTS.md` | This file — agent context (Codex, Jules, etc.) |
 | `CLAUDE.md` | Claude Code context section |
 | `.cursor/rules/` | Cursor MDC rules |
