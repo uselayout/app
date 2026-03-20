@@ -23,23 +23,54 @@ export async function extractFromFigma({
   onProgress?.("metadata", 5, "Fetching file metadata...");
   const file = await client.getFile(fileKey, 1);
 
-  // Step 2: Styles extraction
-  onProgress?.("styles", 15, "Extracting styles...");
-  const { colors, typography, effects } = await parseStyles(
-    fileKey,
-    client,
-    (msg) => onProgress?.("styles", 30, msg)
-  );
-  onProgress?.("styles", 40, `Found ${colors.length} colours, ${typography.length} typography styles, ${effects.length} effects`);
+  // Step 2: Styles extraction (requires library_content:read scope — non-fatal if missing)
+  let colors: ExtractionResult["tokens"]["colors"] = [];
+  let typography: ExtractionResult["tokens"]["typography"] = [];
+  let effects: ExtractionResult["tokens"]["effects"] = [];
+  try {
+    onProgress?.("styles", 15, "Extracting styles...");
+    const parsed = await parseStyles(
+      fileKey,
+      client,
+      (msg) => onProgress?.("styles", 30, msg)
+    );
+    colors = parsed.colors;
+    typography = parsed.typography;
+    effects = parsed.effects;
+    onProgress?.("styles", 40, `Found ${colors.length} colours, ${typography.length} typography styles, ${effects.length} effects`);
+  } catch (err) {
+    if (err instanceof FigmaApiError && err.statusCode === 403) {
+      onProgress?.(
+        "styles",
+        40,
+        "Styles endpoint requires library_content:read scope — add it to your Figma token in Settings"
+      );
+    } else {
+      throw err;
+    }
+  }
 
-  // Step 3: Components extraction
-  onProgress?.("components", 45, "Extracting components...");
-  const components = await parseComponents(
-    fileKey,
-    client,
-    (msg) => onProgress?.("components", 55, msg)
-  );
-  onProgress?.("components", 60, `Found ${components.length} components`);
+  // Step 3: Components extraction (requires file_content:read — non-fatal if missing scope)
+  let components: ExtractionResult["components"] = [];
+  try {
+    onProgress?.("components", 45, "Extracting components...");
+    components = await parseComponents(
+      fileKey,
+      client,
+      (msg) => onProgress?.("components", 55, msg)
+    );
+    onProgress?.("components", 60, `Found ${components.length} components`);
+  } catch (err) {
+    if (err instanceof FigmaApiError && err.statusCode === 403) {
+      onProgress?.(
+        "components",
+        60,
+        "Components endpoint requires additional scopes — add library_assets:read to your Figma token"
+      );
+    } else {
+      throw err;
+    }
+  }
 
   // Step 4: Variables (Enterprise only - non-fatal)
   let cssVariables: Record<string, string> = {};
