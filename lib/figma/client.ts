@@ -35,7 +35,7 @@ export class FigmaClient {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       const response = await fetch(`${FIGMA_API_BASE}${path}`, {
         headers: {
-          Authorization: `Bearer ${this.accessToken}`,
+          "X-FIGMA-TOKEN": this.accessToken,
         },
       });
 
