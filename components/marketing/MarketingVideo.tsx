@@ -13,40 +13,29 @@ export function MarketingVideo({ src, ariaLabel, className }: MarketingVideoProp
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [hovering, setHovering] = useState(false);
+  const [activeSrc, setActiveSrc] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    const video = videoRef.current;
     const container = containerRef.current;
-    if (!video || !container) return;
-
-    // Force load on mobile Safari
-    video.load();
+    if (!container) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
+        const video = videoRef.current;
         if (entry.isIntersecting) {
-          video.play().catch(() => {});
+          // Lazy-load: only set src when scrolled into view
+          if (!activeSrc) setActiveSrc(src);
+          if (video) video.play().catch(() => {});
         } else {
-          video.pause();
+          if (video) video.pause();
         }
       },
-      { threshold: 0.15 }
+      { threshold: 0.1 }
     );
 
     observer.observe(container);
-
-    // Mobile Safari fallback: play on first touch anywhere on page
-    const handleTouch = () => {
-      video.play().catch(() => {});
-      document.removeEventListener('touchstart', handleTouch);
-    };
-    document.addEventListener('touchstart', handleTouch, { once: true });
-
-    return () => {
-      observer.disconnect();
-      document.removeEventListener('touchstart', handleTouch);
-    };
-  }, []);
+    return () => observer.disconnect();
+  }, [src, activeSrc]);
 
   const handleRestart = useCallback(() => {
     const video = videoRef.current;
@@ -65,12 +54,11 @@ export function MarketingVideo({ src, ariaLabel, className }: MarketingVideoProp
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <video
         ref={videoRef}
-        src={src}
+        src={activeSrc}
         muted
-        autoPlay
         loop
         playsInline
-        preload="auto"
+        preload="none"
         className="absolute inset-0 w-full h-full object-cover"
         aria-label={ariaLabel}
       />
