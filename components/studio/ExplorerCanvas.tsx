@@ -667,8 +667,11 @@ export function ExplorerCanvas({
     }
   }, []);
 
+  // Is the CURRENT tab the one that's generating?
+  const isGeneratingThisTab = isGenerating && generatingSessionRef.current === currentExploration?.id;
+
   // Calculate skeleton count for the current streaming batch
-  const skeletonCount = isGenerating && streamingBatchRef.current && generatingSessionRef.current === currentExploration?.id
+  const skeletonCount = isGeneratingThisTab && streamingBatchRef.current
     ? Math.max(0, pendingBatchCountRef.current - variants.filter((v) => v.batchId === streamingBatchRef.current).length)
     : 0;
 
@@ -711,10 +714,6 @@ export function ExplorerCanvas({
                 onClick={() => {
                   setActiveExplorationIndex(i);
                   setSelectedVariantId(null);
-                  if (e.prompt) {
-                    copyToClipboard(e.prompt);
-                    toast("Prompt copied to clipboard");
-                  }
                 }}
                 className={`shrink-0 max-w-[200px] truncate rounded-md px-2.5 py-1 text-[11px] transition-colors ${
                   i === explorationIndex
@@ -905,7 +904,7 @@ export function ExplorerCanvas({
             ))}
 
             {/* URL fetch status */}
-            {generationStatus && skeletonCount === 0 && (
+            {generationStatus && isGeneratingThisTab && skeletonCount === 0 && (
               <div className="flex items-center gap-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2.5">
                 <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
                 <span className="text-xs text-[var(--text-secondary)]">{generationStatus}</span>
@@ -939,7 +938,7 @@ export function ExplorerCanvas({
               </>
             )}
 
-            {isGenerating && variants.length > 0 && !isProcessingImages && (
+            {isGeneratingThisTab && variants.length > 0 && !isProcessingImages && (
               <div className="flex items-center gap-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2.5">
                 <span className="text-xs text-[var(--text-muted)]">Images will generate after all variants complete.</span>
               </div>
@@ -982,7 +981,7 @@ export function ExplorerCanvas({
         onRegenerate={handleRegenerate}
         onPushToFigma={() => selectedVariant && handlePushToFigma(selectedVariant)}
         onImportFromFigma={() => setShowImport(true)}
-        isGenerating={isGenerating}
+        isGenerating={isGeneratingThisTab}
         hasVariants={variants.length > 0}
         hasSelection={!!selectedVariant}
         selectedVariantName={selectedVariant?.name}
