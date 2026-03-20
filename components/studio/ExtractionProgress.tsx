@@ -35,10 +35,10 @@ function StepIcon({ status }: { status: ExtractionStepStatus }) {
 
 function getErrorHelp(error: string): string | null {
   if (error.includes("401") || error.includes("Unauthorized")) {
-    return "No API key set. Click the key icon in the top bar to add your Anthropic API key, then re-extract.";
+    return "No API key set. Add your Anthropic API key in Settings → API Keys, then re-extract.";
   }
   if (error.includes("403") || error.includes("Forbidden")) {
-    return "The access token may be invalid or expired. Generate a new one at figma.com/settings → Personal Access Tokens.";
+    return "Check your Figma PAT has the required scopes: file_content:read, library_content:read, library_assets:read. Generate a new token at figma.com/settings → Personal Access Tokens.";
   }
   if (error.includes("404") || error.includes("Not Found")) {
     return "The file was not found. Check the URL and ensure the file is shared with your account.";
