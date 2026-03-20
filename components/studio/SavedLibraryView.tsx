@@ -5,10 +5,13 @@ import { Copy, Check, Trash2, Loader2, Sparkles } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { buildSrcdoc, extractComponentName, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import { useOrgStore } from "@/lib/store/organization";
+import { SavedComponentDetail } from "./SavedComponentDetail";
 import type { Component } from "@/lib/types/component";
 
 interface SavedLibraryViewProps {
   onNavigateToCanvas?: () => void;
+  onOpenInCanvas?: (code: string, name: string) => void;
+  onPushToFigma?: (code: string, name: string) => void;
 }
 
 function SavedCardPreview({ comp }: { comp: Component }) {
@@ -75,17 +78,22 @@ function SavedCard({
   comp,
   onCopy,
   onDelete,
+  onClick,
   copiedId,
   deletingId,
 }: {
   comp: Component;
   onCopy: (comp: Component) => void;
   onDelete: (comp: Component) => void;
+  onClick: (comp: Component) => void;
   copiedId: string | null;
   deletingId: string | null;
 }) {
   return (
-    <div className="group flex flex-col rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] transition-colors hover:border-[var(--studio-border-strong)]">
+    <div
+      onClick={() => onClick(comp)}
+      className="group flex flex-col rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] transition-colors hover:border-[var(--studio-border-strong)] cursor-pointer"
+    >
       <SavedCardPreview comp={comp} />
 
       <div className="flex flex-1 flex-col gap-1.5 border-t border-[var(--studio-border)] p-3">
@@ -126,7 +134,8 @@ function SavedCard({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-1 border-t border-[var(--studio-border)] px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+      <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 border-t border-[var(--studio-border)] px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={() => onCopy(comp)}
           className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
@@ -160,7 +169,7 @@ function SavedCard({
   );
 }
 
-export function SavedLibraryView({ onNavigateToCanvas }: SavedLibraryViewProps) {
+export function SavedLibraryView({ onNavigateToCanvas, onOpenInCanvas, onPushToFigma }: SavedLibraryViewProps) {
   const orgId = useOrgStore((s) => s.currentOrgId);
   const [components, setComponents] = useState<Component[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,6 +177,7 @@ export function SavedLibraryView({ onNavigateToCanvas }: SavedLibraryViewProps) 
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
 
   useEffect(() => {
     if (!orgId) {
@@ -320,6 +330,7 @@ export function SavedLibraryView({ onNavigateToCanvas }: SavedLibraryViewProps) 
                 comp={comp}
                 onCopy={handleCopyCode}
                 onDelete={handleDelete}
+                onClick={setSelectedComponent}
                 copiedId={copiedId}
                 deletingId={deletingId}
               />
@@ -327,6 +338,27 @@ export function SavedLibraryView({ onNavigateToCanvas }: SavedLibraryViewProps) 
           </div>
         )}
       </div>
+
+      {selectedComponent && orgId && (
+        <SavedComponentDetail
+          component={selectedComponent}
+          orgId={orgId}
+          onClose={() => setSelectedComponent(null)}
+          onUpdate={(updated) => {
+            setComponents((prev) => prev.map((c) => c.id === updated.id ? updated : c));
+            setSelectedComponent(updated);
+          }}
+          onDelete={(id) => {
+            setComponents((prev) => prev.filter((c) => c.id !== id));
+            setSelectedComponent(null);
+          }}
+          onPushToFigma={onPushToFigma ? (comp) => onPushToFigma(comp.code, comp.name) : undefined}
+          onOpenInCanvas={onOpenInCanvas ? (comp) => {
+            onOpenInCanvas(comp.code, comp.name);
+            setSelectedComponent(null);
+          } : undefined}
+        />
+      )}
     </div>
   );
 }
