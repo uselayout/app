@@ -68,3 +68,70 @@ export function createEditStream(
 
   return { stream, usage };
 }
+
+const FIX_SYSTEM_PROMPT = `You are an expert design system editor. You receive a layout.md file and a list of missing content that needs to be added.
+
+RULES:
+- Return ONLY the new content to append — do NOT return the existing document.
+- No explanation, no commentary, no code fences wrapping the output.
+- Match the heading levels, formatting conventions, and naming style of the existing document.
+- Generate complete, high-quality sections with real design system content based on what's already in the document.
+- Use the same CSS custom property naming conventions found in the existing document.
+- For anti-patterns: use failure narrative format (Rule → Why it fails → What to do instead).
+- For missing sub-items within existing sections: output only the additional content with a comment like "<!-- Add to [Section Name] section -->" above it.`;
+
+export function createFixStream(
+  instruction: string,
+  layoutMd: string,
+  apiKey?: string
+): StreamWithUsage {
+  const anthropic = new Anthropic({ apiKey });
+
+  let resolveUsage: (u: TokenUsageResult) => void;
+  const usage = new Promise<TokenUsageResult>((resolve) => {
+    resolveUsage = resolve;
+  });
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const encoder = new TextEncoder();
+
+      try {
+        const msgStream = anthropic.messages.stream({
+          model: "claude-sonnet-4-6",
+          max_tokens: 8192,
+          system: FIX_SYSTEM_PROMPT,
+          messages: [
+            {
+              role: "user",
+              content: `Here is the current layout.md:\n\n${layoutMd}\n\n---\n\nGenerate ONLY the following missing content to append:\n\n${instruction}`,
+            },
+          ],
+        });
+
+        for await (const event of msgStream) {
+          if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "text_delta"
+          ) {
+            controller.enqueue(encoder.encode(event.delta.text));
+          }
+        }
+
+        const finalMessage = await msgStream.finalMessage();
+        resolveUsage({
+          inputTokens: finalMessage.usage.input_tokens,
+          outputTokens: finalMessage.usage.output_tokens,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        controller.enqueue(encoder.encode(`\n\n[Error: ${msg}]`));
+        resolveUsage({ inputTokens: 0, outputTokens: 0 });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return { stream, usage };
+}

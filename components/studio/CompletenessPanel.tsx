@@ -144,29 +144,24 @@ function SectionRow({ section }: SectionRowProps) {
 }
 
 function buildFixInstruction(report: CompletenessReport): string {
-  const lines: string[] = [
-    "You MUST add new sections and content as described below. This overrides any prior instruction about not adding sections.",
-    "CRITICAL: Preserve ALL existing sections, headings, content, and formatting exactly as-is.",
-    "Only ADD missing content — never remove, rename, or restructure existing sections.",
-    "Keep all existing heading patterns unchanged.",
-    "Return the complete updated document with the additions.",
-    "",
-  ];
+  const lines: string[] = [];
 
   for (const section of report.sections) {
     if (section.missing.length === 0) continue;
-    lines.push(`### Fix: ${section.section} section`);
+
+    const isMissing = section.missing[0]?.startsWith(`Section "${section.section}" not found`);
+    if (isMissing) {
+      lines.push(`Generate a complete "${section.section}" section with:`);
+    } else {
+      lines.push(`Add missing content for the "${section.section}" section:`);
+    }
+
     for (const missing of section.missing) {
-      lines.push(`- ${missing}`);
+      if (!missing.startsWith("Section ")) {
+        lines.push(`- ${missing}`);
+      }
     }
     lines.push("");
-  }
-
-  if (report.suggestions.length > 0) {
-    lines.push("### Additional improvements:");
-    for (const s of report.suggestions) {
-      lines.push(`- ${s}`);
-    }
   }
 
   return lines.join("\n");
@@ -206,7 +201,7 @@ export function CompletenessPanel({ layoutMd, onLayoutMdChange, projectId, orgId
       if (apiKey) headers["X-Api-Key"] = apiKey;
 
       const instruction = buildFixInstruction(report);
-      const res = await fetch("/api/generate/edit-layout-md", {
+      const res = await fetch("/api/generate/fix-layout-md", {
         method: "POST",
         headers,
         body: JSON.stringify({ instruction, layoutMd }),
@@ -228,19 +223,20 @@ export function CompletenessPanel({ layoutMd, onLayoutMdChange, projectId, orgId
         if (done) break;
         accumulated += decoder.decode(value, { stream: true });
         const lineCount = accumulated.split("\n").length;
-        setFixStatus(`Writing... ${lineCount} lines`);
+        setFixStatus(`Adding... ${lineCount} lines`);
       }
 
       if (accumulated.startsWith("\n\n[Error:")) {
         throw new Error(accumulated);
       }
 
-      const cleaned = accumulated.replace(/^```(?:markdown|md)?\n?/, "").replace(/\n?```$/, "").trim();
-      if (!cleaned || cleaned === layoutMd.trim()) {
+      const newContent = accumulated.replace(/^```(?:markdown|md)?\n?/, "").replace(/\n?```$/, "").trim();
+      if (!newContent) {
         toast.error("Auto-fix produced no changes. Try editing manually.");
       } else {
-        onLayoutMdChange(cleaned);
-        toast.success("layout.md improved automatically");
+        // Append new content to existing layout.md
+        onLayoutMdChange(layoutMd.trimEnd() + "\n\n" + newContent);
+        toast.success("layout.md improved — new content added");
       }
     } catch (err) {
       console.error("[CompletenessPanel] Auto-fix error:", err);
