@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { RefreshCw, PanelLeft, KeyRound } from "lucide-react";
-import { useApiKey } from "@/lib/hooks/use-api-key";
-import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
+import { RefreshCw, PanelLeft } from "lucide-react";
 import type { SourceType } from "@/lib/types";
 
 interface TopBarProps {
@@ -33,8 +31,6 @@ export function TopBar({
 }: TopBarProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(projectName);
-  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const { key: apiKey } = useApiKey();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -144,21 +140,7 @@ export function TopBar({
         >
           Export
         </button>
-        <button
-          onClick={() => setShowApiKeyModal(true)}
-          className="relative flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] bg-[rgba(255,255,255,0.02)] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
-          title="API Key settings"
-        >
-          <KeyRound className="h-3.5 w-3.5" />
-          {apiKey && (
-            <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          )}
-        </button>
       </div>
-
-      {showApiKeyModal && (
-        <ApiKeyModal onClose={() => setShowApiKeyModal(false)} />
-      )}
     </div>
   );
 }
