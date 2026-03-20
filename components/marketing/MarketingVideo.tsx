@@ -14,21 +14,17 @@ export function MarketingVideo({ src, ariaLabel, className }: MarketingVideoProp
   const containerRef = useRef<HTMLDivElement>(null);
   const [hovering, setHovering] = useState(false);
   const [activeSrc, setActiveSrc] = useState<string | undefined>(undefined);
+  const [isVisible, setIsVisible] = useState(false);
 
+  // Observer only tracks visibility and lazy-loads src
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        const video = videoRef.current;
-        if (entry.isIntersecting) {
-          // Lazy-load: only set src when scrolled into view
-          if (!activeSrc) setActiveSrc(src);
-          if (video) video.play().catch(() => {});
-        } else {
-          if (video) video.pause();
-        }
+        setIsVisible(entry.isIntersecting);
+        if (entry.isIntersecting && !activeSrc) setActiveSrc(src);
       },
       { threshold: 0.1 }
     );
@@ -36,6 +32,18 @@ export function MarketingVideo({ src, ariaLabel, className }: MarketingVideoProp
     observer.observe(container);
     return () => observer.disconnect();
   }, [src, activeSrc]);
+
+  // Play/pause based on visibility — only after video has data
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !activeSrc) return;
+
+    if (isVisible) {
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  }, [isVisible, activeSrc]);
 
   const handleRestart = useCallback(() => {
     const video = videoRef.current;
@@ -51,14 +59,17 @@ export function MarketingVideo({ src, ariaLabel, className }: MarketingVideoProp
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <video
         ref={videoRef}
         src={activeSrc}
         muted
+        autoPlay
         loop
         playsInline
         preload="none"
+        onLoadedData={() => {
+          if (isVisible) videoRef.current?.play().catch(() => {});
+        }}
         className="absolute inset-0 w-full h-full object-cover"
         aria-label={ariaLabel}
       />
