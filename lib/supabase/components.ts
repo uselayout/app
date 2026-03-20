@@ -254,8 +254,8 @@ export async function createComponent(data: {
     });
 
   if (insertError) {
-    console.error("Failed to create component:", insertError.message);
-    return null;
+    console.error("Failed to create component:", insertError.message, insertError.details, insertError.hint);
+    throw new Error(`DB insert failed: ${insertError.message}`);
   }
 
   // Insert version 1

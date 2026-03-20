@@ -57,6 +57,9 @@ function showError(msg){
   document.getElementById('root').appendChild(el);
 }
 window.onerror=function(msg,src,line,col,err){
+  if(err&&err.name==='SecurityError')return true;
+  if(typeof src==='string'&&src.indexOf('extension')!==-1)return true;
+  if(typeof msg==='string'&&msg.indexOf('SecurityError')!==-1)return true;
   showError(err?err.stack||err.message:msg);
   return true;
 };
