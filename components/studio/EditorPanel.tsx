@@ -324,7 +324,7 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
       )}
 
       {/* AI Edit Chat Bar */}
-      <EditorChatBar value={value} onChange={onChange} editorRef={editorRef} />
+      <EditorChatBar value={value} onChange={onChange} editorRef={editorRef} projectId={projectId} orgId={orgId} />
     </div>
   );
 }
@@ -333,10 +333,14 @@ function EditorChatBar({
   value,
   onChange,
   editorRef,
+  projectId,
+  orgId,
 }: {
   value: string;
   onChange: (value: string) => void;
   editorRef: React.RefObject<monacoType.editor.IStandaloneCodeEditor | null>;
+  projectId?: string;
+  orgId?: string;
 }) {
   const [instruction, setInstruction] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -360,6 +364,15 @@ function EditorChatBar({
     setStreamStatus("Thinking...");
     setShowUndo(false);
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+
+    // Save current version before AI overwrites it
+    if (projectId && orgId && value.trim()) {
+      fetch(`/api/organizations/${orgId}/projects/${projectId}/layout-md-versions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ layoutMd: value, source: "manual" }),
+      }).catch(() => {});
+    }
 
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
