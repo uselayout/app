@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { MarketingVideo } from '@/components/marketing/MarketingVideo';
 
 export function CompletenessSection() {
   return (
@@ -55,18 +56,8 @@ export function CompletenessSection() {
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
-        <div className="absolute left-0 top-0 w-full overflow-hidden px-4 lg:px-[60px] h-[93.75%]">
-          <div className="bg-white w-full h-full overflow-hidden relative">
-            <video
-              src="/marketing/videos/completeness.mp4"
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-              aria-label="Completeness scoring demo"
-            />
-          </div>
+        <div className="absolute inset-0 overflow-hidden rounded-[6px]">
+          <MarketingVideo src="/marketing/videos/completeness.mp4" ariaLabel="Completeness scoring demo" />
         </div>
       </motion.div>
     </section>

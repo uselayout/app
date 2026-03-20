@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { MarketingVideo } from '@/components/marketing/MarketingVideo';
 
 export function ExplorerSection() {
   return (
@@ -57,18 +58,8 @@ export function ExplorerSection() {
           className="object-cover"
           aria-hidden="true"
         />
-        <div className="absolute left-0 top-0 w-full overflow-hidden px-4 lg:px-[60px] h-[93.75%]">
-          <div className="bg-white w-full h-full overflow-hidden relative">
-            <video
-              src="/marketing/videos/explorer.mp4"
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-              aria-label="Explorer section demo"
-            />
-          </div>
+        <div className="absolute inset-0 overflow-hidden rounded-[6px]">
+          <MarketingVideo src="/marketing/videos/explorer.mp4" ariaLabel="Explorer section demo" />
         </div>
       </motion.div>
     </section>

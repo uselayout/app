@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSession } from '@/lib/auth-client';
+import { MarketingVideo } from '@/components/marketing/MarketingVideo';
 
 const TOOL_ICONS: { name: string; src: string }[] = [
   { name: 'Claude', src: '/marketing/icons/claude.svg' },
@@ -137,14 +138,7 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
 
         {/* Video container */}
         <div className="relative z-10 aspect-[1280/810] rounded-[6px] bg-white overflow-hidden w-full">
-          <video
-            src="/marketing/videos/hero-demo.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-          />
+          <MarketingVideo src="/marketing/videos/hero-demo.mp4" />
         </div>
       </div>
     </section>
