@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { MarketingVideo } from '@/components/marketing/MarketingVideo';
 
 export function DesignSystemSection() {
   return (
@@ -47,7 +48,7 @@ export function DesignSystemSection() {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="w-[1424px] max-w-full mx-auto aspect-[1424/768] relative overflow-hidden rounded-[6px]"
+        className="w-[1280px] max-w-full mx-auto aspect-[1280/810] relative overflow-hidden rounded-[6px]"
       >
         <img
           src="/marketing/aurora-design-system.webp"
@@ -55,17 +56,8 @@ export function DesignSystemSection() {
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
-        <div className="absolute left-0 top-0 w-full overflow-hidden px-4 lg:px-[60px] h-[93.75%]">
-          <div className="bg-white w-full h-full overflow-hidden relative">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-              aria-label="Design system dashboard demo"
-            />
-          </div>
+        <div className="absolute inset-0 overflow-hidden rounded-[6px]">
+          <MarketingVideo src="/marketing/videos/design-system.mp4" ariaLabel="Design system dashboard demo" />
         </div>
       </motion.div>
     </section>
