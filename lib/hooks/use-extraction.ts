@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 import { useExtractionStore } from "@/lib/store/extraction";
 import { useProjectStore } from "@/lib/store/project";
-import { getStoredApiKey } from "@/lib/hooks/use-api-key";
+import { getStoredApiKey, getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
 import { useOrgStore } from "@/lib/store/organization";
 import type { ExtractionResult, Project } from "@/lib/types";
 
@@ -43,8 +43,9 @@ export function useExtraction() {
         const extractUrl = isFigma
           ? "/api/extract/figma"
           : "/api/extract/website";
+        const figmaToken = accessToken || (isFigma ? getStoredFigmaApiKey() : "");
         const extractBody = isFigma
-          ? { figmaUrl: project.sourceUrl, accessToken }
+          ? { figmaUrl: project.sourceUrl, accessToken: figmaToken }
           : { url: project.sourceUrl, projectId: project.id };
 
         const extractRes = await fetch(extractUrl, {

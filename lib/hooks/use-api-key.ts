@@ -54,3 +54,29 @@ export function getStoredGoogleApiKey(): string {
   if (typeof window === "undefined") return "";
   return localStorage.getItem(GOOGLE_STORAGE_KEY) ?? "";
 }
+
+const FIGMA_STORAGE_KEY = "sd_figma_pat";
+
+export function useFigmaApiKey() {
+  const [key, setKeyState] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem(FIGMA_STORAGE_KEY) ?? "";
+  });
+
+  const setKey = (k: string) => {
+    localStorage.setItem(FIGMA_STORAGE_KEY, k);
+    setKeyState(k);
+  };
+
+  const clearKey = () => {
+    localStorage.removeItem(FIGMA_STORAGE_KEY);
+    setKeyState("");
+  };
+
+  return { key, setKey, clearKey };
+}
+
+export function getStoredFigmaApiKey(): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem(FIGMA_STORAGE_KEY) ?? "";
+}

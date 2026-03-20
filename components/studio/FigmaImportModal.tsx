@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { X, Download, Loader2, ArrowRight, Check, AlertTriangle } from "lucide-react";
 import { parseFigmaUrl } from "@/lib/figma/parse-url";
+import { getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
 import type { FigmaChange } from "@/lib/types";
 import type { ImportedNodeData } from "@/lib/figma/import";
 
@@ -30,10 +31,11 @@ export function FigmaImportModal({
   const [figmaUrl, setFigmaUrl] = useState("");
   const [pat, setPat] = useState(() => {
     if (typeof window === "undefined") return "";
-    // Check import-specific key first, then extraction key for this project
-    return sessionStorage.getItem("figma-pat")
-      ?? (projectId ? sessionStorage.getItem(`pat-${projectId}`) : null)
-      ?? "";
+    // Check persistent localStorage key first, then session-specific fallbacks
+    return getStoredFigmaApiKey()
+      || sessionStorage.getItem("figma-pat")
+      || (projectId ? sessionStorage.getItem(`pat-${projectId}`) : null)
+      || "";
   });
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
