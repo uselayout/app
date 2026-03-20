@@ -44,7 +44,7 @@ export function ExplorerSection() {
       </div>
 
       <motion.div
-        className="w-[1424px] max-w-full mx-auto aspect-[1424/768] relative overflow-hidden rounded-[6px]"
+        className="w-[1280px] max-w-full mx-auto aspect-[1280/810] relative overflow-hidden rounded-[6px]"
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -60,6 +60,7 @@ export function ExplorerSection() {
         <div className="absolute left-0 top-0 w-full overflow-hidden px-4 lg:px-[60px] h-[93.75%]">
           <div className="bg-white w-full h-full overflow-hidden relative">
             <video
+              src="/marketing/videos/explorer.mp4"
               autoPlay
               muted
               loop
