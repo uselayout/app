@@ -10,6 +10,7 @@ interface FigmaImportModalProps {
   onClose: () => void;
   layoutMd: string;
   onUpdateLayoutMd: (changes: FigmaChange[]) => void;
+  projectId?: string;
 }
 
 type ImportStep = "input" | "loading" | "diff" | "done";
@@ -23,12 +24,17 @@ export function FigmaImportModal({
   onClose,
   layoutMd,
   onUpdateLayoutMd,
+  projectId,
 }: FigmaImportModalProps) {
   const [step, setStep] = useState<ImportStep>("input");
   const [figmaUrl, setFigmaUrl] = useState("");
-  const [pat, setPat] = useState(() =>
-    typeof window !== "undefined" ? sessionStorage.getItem("figma-pat") ?? "" : ""
-  );
+  const [pat, setPat] = useState(() => {
+    if (typeof window === "undefined") return "";
+    // Check import-specific key first, then extraction key for this project
+    return sessionStorage.getItem("figma-pat")
+      ?? (projectId ? sessionStorage.getItem(`pat-${projectId}`) : null)
+      ?? "";
+  });
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [changes, setChanges] = useState<FigmaChange[]>([]);
