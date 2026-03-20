@@ -228,6 +228,30 @@ export default function StudioPage({
     [id, updateExplorations]
   );
 
+  const handleOpenSavedInCanvas = useCallback(
+    (code: string, name: string) => {
+      const sessionId = crypto.randomUUID();
+      const variant: DesignVariant = {
+        id: crypto.randomUUID(),
+        name,
+        rationale: "Loaded from saved library",
+        code,
+      };
+      const newExploration: import("@/lib/types").ExplorationSession = {
+        id: sessionId,
+        projectId: id,
+        prompt: `Refine: ${name}`,
+        variantCount: 1,
+        variants: [variant],
+        createdAt: new Date().toISOString(),
+      };
+      const existing = project?.explorations ?? [];
+      updateExplorations(id, [...existing, newExploration]);
+      handleCentreViewChange("canvas");
+    },
+    [id, project?.explorations, updateExplorations, handleCentreViewChange]
+  );
+
   if (!project && hydrating) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -353,6 +377,7 @@ export default function StudioPage({
           savedPanel={
             <SavedLibraryView
               onNavigateToCanvas={() => handleCentreViewChange("canvas")}
+              onOpenInCanvas={handleOpenSavedInCanvas}
             />
           }
         />
