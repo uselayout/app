@@ -14,9 +14,9 @@ import {
 import { getStoredApiKey, getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 
 interface CreditBalance {
-  designMdRemaining: number;
+  layoutMdRemaining: number;
   testQueryRemaining: number;
-  topupDesignMd: number;
+  topupLayoutMd: number;
   topupTestQuery: number;
   periodStart: string | null;
   periodEnd: string | null;
@@ -36,10 +36,10 @@ const TIER_LABELS: Record<string, string> = {
   team: "Team",
 };
 
-const TIER_ALLOCATIONS: Record<string, { designMd: number; testQuery: number }> = {
-  free: { designMd: 2, testQuery: 5 },
-  pro: { designMd: 50, testQuery: 100 },
-  team: { designMd: 50, testQuery: 100 },
+const TIER_ALLOCATIONS: Record<string, { layoutMd: number; testQuery: number }> = {
+  free: { layoutMd: 2, testQuery: 5 },
+  pro: { layoutMd: 50, testQuery: 100 },
+  team: { layoutMd: 50, testQuery: 100 },
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -127,8 +127,8 @@ export default function BillingPage() {
   const isFree = tier === "free";
   const isPaid = tier === "pro" || tier === "team";
 
-  const designMdTotal =
-    (credits?.designMdRemaining ?? 0) + (credits?.topupDesignMd ?? 0);
+  const layoutMdTotal =
+    (credits?.layoutMdRemaining ?? 0) + (credits?.topupLayoutMd ?? 0);
   const testQueryTotal =
     (credits?.testQueryRemaining ?? 0) + (credits?.topupTestQuery ?? 0);
 
@@ -225,7 +225,7 @@ export default function BillingPage() {
                 <div className="mt-4 grid grid-cols-2 gap-4">
                   <div className="rounded-md bg-[var(--bg-panel)] p-3">
                     <p className="text-xs text-[var(--text-muted)]">
-                      DESIGN.md credits
+                      layout.md credits
                     </p>
                     <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
                       Design system extractions
@@ -235,23 +235,23 @@ export default function BillingPage() {
                         <>
                           <span
                             className={
-                              designMdTotal === 0 ? "text-red-400" : ""
+                              layoutMdTotal === 0 ? "text-red-400" : ""
                             }
                           >
-                            {designMdTotal}
+                            {layoutMdTotal}
                           </span>
                           <span className="text-[var(--text-muted)]">
                             {" "}
-                            / {allocation.designMd} monthly
+                            / {allocation.layoutMd} monthly
                           </span>
                         </>
                       ) : (
-                        `${allocation.designMd} / month`
+                        `${allocation.layoutMd} / month`
                       )}
                     </p>
-                    {(credits?.topupDesignMd ?? 0) > 0 && (
+                    {(credits?.topupLayoutMd ?? 0) > 0 && (
                       <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
-                        incl. {credits!.topupDesignMd} top-up
+                        incl. {credits!.topupLayoutMd} top-up
                       </p>
                     )}
                   </div>
@@ -260,7 +260,7 @@ export default function BillingPage() {
                       AI query credits
                     </p>
                     <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
-                      Test panel · Explorer · DESIGN.md edits
+                      Test panel · Explorer · layout.md edits
                     </p>
                     <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">
                       {credits ? (
@@ -324,7 +324,7 @@ export default function BillingPage() {
                     Buy more credits
                   </p>
                   <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                    Top up with 30 DESIGN.md extractions and 80 AI queries.
+                    Top up with 30 layout.md extractions and 80 AI queries.
                     Top-up credits never expire and carry over between billing
                     periods.
                   </p>
@@ -355,7 +355,7 @@ export default function BillingPage() {
                     Upgrade to Pro
                   </p>
                   <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                    Get 50 DESIGN.md extractions and 100 AI queries per month,
+                    Get 50 layout.md extractions and 100 AI queries per month,
                     plus priority support.
                   </p>
                   <button

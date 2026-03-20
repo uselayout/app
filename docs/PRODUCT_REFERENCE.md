@@ -16,7 +16,7 @@ Use this document when writing tweets, threads, blog posts, or any marketing con
 
 ## What It Is
 
-A browser-based tool that extracts design systems from **Figma files** and **live websites**, then transforms them into structured, LLM-optimised context bundles (DESIGN.md) that enable AI coding agents to produce on-brand UI code consistently.
+A browser-based tool that extracts design systems from **Figma files** and **live websites**, then transforms them into structured, LLM-optimised context bundles (layout.md) that enable AI coding agents to produce on-brand UI code consistently.
 
 Two products:
 
@@ -43,9 +43,9 @@ The pain: AI generates generic-looking UI. It doesn't know your design system. Y
 ### AI Studio (web app)
 1. **Paste a URL** - Figma file link or any website URL
 2. **Extraction runs** - AI pulls colours, typography, spacing, components, design tokens (under 2 minutes)
-3. **DESIGN.md generated** - Claude synthesises a structured context file from the raw extraction data
+3. **layout.md generated** - Claude synthesises a structured context file from the raw extraction data
 4. **Edit in Studio** - two-panel editor: source tokens + saved components (left), Monaco markdown editor (right)
-5. **Explore with AI** - open the Explorer Canvas, prompt Claude to generate component variants with/without DESIGN.md context, compare side-by-side with live preview
+5. **Explore with AI** - open the Explorer Canvas, prompt Claude to generate component variants with/without layout.md context, compare side-by-side with live preview
 6. **Export bundle** - download a ZIP with CLAUDE.md, AGENTS.md, .cursorrules, tokens.css, tokens.json, tailwind.config.js
 7. **Drop into your project** - your AI coding tool now builds on-brand
 
@@ -57,7 +57,7 @@ The pain: AI generates generic-looking UI. It doesn't know your design system. Y
 5. Use `push_to_figma` to send generated components to Figma as editable frames
 
 Or start from a free kit without the Studio:
-1. `npx @layoutdesign/context init --kit linear-lite` - creates `.layout/` with DESIGN.md + tokens
+1. `npx @layoutdesign/context init --kit linear-lite` - creates `.layout/` with layout.md + tokens
 2. `npx @layoutdesign/context install` - done
 
 Other CLI commands:
@@ -96,7 +96,7 @@ Other CLI commands:
 
 ---
 
-## DESIGN.md Structure (What Gets Generated)
+## layout.md Structure (What Gets Generated)
 
 The AI-synthesised context file follows a strict 9-section + 2-appendix format:
 
@@ -125,7 +125,7 @@ The AI-synthesised context file follows a strict 9-section + 2-appendix format:
 | **JSON Tokens** | tokens.json | W3C DTCG format for design token exchange |
 | **Tailwind Config** | tailwind.config.js | Theme extension with extracted colours, spacing, radii |
 
-DESIGN.md is always included in every export.
+layout.md is always included in every export.
 
 ---
 
@@ -133,7 +133,7 @@ DESIGN.md is always included in every export.
 
 | Tool | Description |
 |------|-------------|
-| `get_design_system` | Returns full DESIGN.md content for a project |
+| `get_design_system` | Returns full layout.md content for a project |
 | `get_design_section` | Returns a specific section (colours, typography, spacing, components, etc.) |
 | `get_tokens` | Returns CSS tokens filtered by category |
 | `get_component` | Returns component code by name |
@@ -184,7 +184,7 @@ Each includes: Quick Reference, core tokens, 5 component specs.
 | Vercel | £79 | Minimal, monochrome |
 | Apple iOS | £129 | HIG-compliant, light-first |
 
-Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell many times. Premium kits are bundled in the Studio Pro tier.
+Full layout.md, all tokens, all components, tailwind config. Extract once, sell many times. Premium kits are bundled in the Studio Pro tier.
 
 ---
 
@@ -197,7 +197,7 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 5. **Open-source MCP server** - MIT licensed, 9 tools, 60-second install-to-value.
 6. **Figma closed loop** - bidirectional code ↔ Figma workflow. Push, design, pull back. No other OSS tool closes this loop.
 7. **Zero behavioural change** - designers stay in Figma, developers stay in their IDE. Paper requires migration. Pencil requires a new canvas.
-8. **Plain-text portability** - DESIGN.md is markdown, readable forever. No proprietary format lock-in.
+8. **Plain-text portability** - layout.md is markdown, readable forever. No proprietary format lock-in.
 
 ---
 
@@ -205,7 +205,7 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 
 | Competitor | What They Do | Our Edge |
 |---|---|---|
-| **Figma MCP Server** (free) | Connects Claude directly to Figma - AI reads raw layer data | We extract from websites too. Figma MCP gives raw data, not structured tokens. We synthesise semantic DESIGN.md with anti-patterns and component usage. |
+| **Figma MCP Server** (free) | Connects Claude directly to Figma - AI reads raw layer data | We extract from websites too. Figma MCP gives raw data, not structured tokens. We synthesise semantic layout.md with anti-patterns and component usage. |
 | **Paper.design** ($4.2M seed, Accel) | New AI-native design canvas replacing Figma. 24 MCP tools, code export, $20/user/mo | Requires full team migration from Figma. Code export is one-directional; our loop is bidirectional. Proprietary format. No website extraction. We're MIT open source. |
 | **Pencil.dev** (free early access) | IDE-embedded design canvas (.pen files in Git). MCP integration | Proprietary .pen binary format. IDE-only (VS Code/Cursor). No design system extraction - tokens defined manually. No website extraction. |
 | **Anima / Locofy** | Figma-to-code plugins (Anima powers Bolt.new & Replit) | They generate code. We generate context. Different job. Figma-only, proprietary format. |
@@ -229,11 +229,11 @@ Full DESIGN.md, all tokens, all components, tailwind config. Extract once, sell 
 ## Studio Features (for detailed tweets)
 
 - **Two-panel editor:** source tokens + saved components (left), Monaco markdown editor (right)
-- **Explorer Canvas:** AI-powered design exploration — generate 2–6 component variants, compare with/without DESIGN.md context, live preview in sandboxed iframe with React + Tailwind
+- **Explorer Canvas:** AI-powered design exploration — generate 2–6 component variants, compare with/without layout.md context, live preview in sandboxed iframe with React + Tailwind
 - **Health scoring:** automatic 0-100 score measuring token faithfulness, component accuracy, anti-pattern violations
 - **Quick prompts:** preset component requests + dynamic prompts from extracted Figma components
 - **Token autocomplete:** type `--` in the editor, get autocomplete suggestions from extracted tokens
-- **Section navigation:** pill buttons to jump between DESIGN.md sections
+- **Section navigation:** pill buttons to jump between layout.md sections
 - **Auto-save:** 2-second debounce, save indicator in editor
 
 ### Dashboard and Team Features
@@ -255,7 +255,7 @@ Layout includes a team dashboard for managing design systems:
 AI-powered design exploration that generates 2–6 component variants simultaneously. Supports reference image upload, variant refinement, A/B comparison (with/without design system context), and saving to the component library via "Add to Library" (with name, type — component or page — category, and tags). Saved components appear in the SourcePanel "Saved" tab.
 
 ### Quality Scoring
-Automated DESIGN.md completeness analysis across 6 weighted categories. Scores from 0–100 with actionable suggestions for improvement.
+Automated layout.md completeness analysis across 6 weighted categories. Scores from 0–100 with actionable suggestions for improvement.
 
 ### Webhook Automation
 Figma webhook integration that triggers automatic re-extraction when designers publish changes.
@@ -288,7 +288,7 @@ Gemini 3.1 Flash Image Preview integration for generating contextual images (her
 |---|---|---|
 | **Open Source** | Free forever | CLI, MCP server, 3 starter kits, self-host Studio |
 | **Studio Free** | £0 (BYOK) | Bring your own API key. Unlimited extractions. All export formats. |
-| **Studio Pro** | £29/mo | Hosted AI (50 DESIGN.md + 100 test queries), premium kits, drift monitoring, version history |
+| **Studio Pro** | £29/mo | Hosted AI (50 layout.md + 100 test queries), premium kits, drift monitoring, version history |
 | **Studio Team** | £29/mo + £15/seat | Shared library, team management, centralised billing, SSO |
 | **Enterprise** | Custom | Self-hosted, unlimited, custom integrations, SLA |
 
@@ -303,11 +303,11 @@ Gemini 3.1 Flash Image Preview integration for generating contextual images (her
 
 ### Before/After
 - Show identical prompt with context OFF vs ON - the visual difference is dramatic
-- "Left: Claude without design context. Right: Claude with DESIGN.md. Same prompt."
+- "Left: Claude without design context. Right: Claude with layout.md. Same prompt."
 
 ### Technical Credibility
 - "We extract 500+ design tokens from a single URL in under 2 minutes"
-- "DESIGN.md isn't a style guide - it's a compiler target. Structured for LLM consumption."
+- "layout.md isn't a style guide - it's a compiler target. Structured for LLM consumption."
 - "9 MCP tools, 3 free kits, MIT licensed. `npx @layoutdesign/context init` and your AI has taste."
 
 ### Use Cases

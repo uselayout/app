@@ -8,8 +8,8 @@ import { toast } from 'sonner';
 import type { CompletenessReport, SectionScore } from '@/lib/health/completeness';
 
 interface CompletenessPanelProps {
-  designMd: string;
-  onDesignMdChange?: (value: string) => void;
+  layoutMd: string;
+  onLayoutMdChange?: (value: string) => void;
   className?: string;
 }
 
@@ -170,11 +170,11 @@ function buildFixInstruction(report: CompletenessReport): string {
   return lines.join("\n");
 }
 
-export function CompletenessPanel({ designMd, onDesignMdChange, className = '' }: CompletenessPanelProps) {
+export function CompletenessPanel({ layoutMd, onLayoutMdChange, className = '' }: CompletenessPanelProps) {
   const [report, setReport] = useState<CompletenessReport | null>(null);
   const [isFixing, setIsFixing] = useState(false);
 
-  const trimmed = useMemo(() => designMd.trim(), [designMd]);
+  const trimmed = useMemo(() => layoutMd.trim(), [layoutMd]);
 
   useEffect(() => {
     if (!trimmed) {
@@ -186,7 +186,7 @@ export function CompletenessPanel({ designMd, onDesignMdChange, className = '' }
   }, [trimmed]);
 
   const handleAutoFix = useCallback(async () => {
-    if (!report || !onDesignMdChange) return;
+    if (!report || !onLayoutMdChange) return;
     setIsFixing(true);
 
     try {
@@ -195,10 +195,10 @@ export function CompletenessPanel({ designMd, onDesignMdChange, className = '' }
       if (apiKey) headers["X-Api-Key"] = apiKey;
 
       const instruction = buildFixInstruction(report);
-      const res = await fetch("/api/generate/edit-design-md", {
+      const res = await fetch("/api/generate/edit-layout-md", {
         method: "POST",
         headers,
-        body: JSON.stringify({ instruction, designMd }),
+        body: JSON.stringify({ instruction, layoutMd }),
       });
 
       if (!res.ok) {
@@ -223,11 +223,11 @@ export function CompletenessPanel({ designMd, onDesignMdChange, className = '' }
       }
 
       const cleaned = accumulated.replace(/^```(?:markdown|md)?\n?/, "").replace(/\n?```$/, "").trim();
-      if (!cleaned || cleaned === designMd.trim()) {
+      if (!cleaned || cleaned === layoutMd.trim()) {
         toast.error("Auto-fix produced no changes. Try editing manually.");
       } else {
-        onDesignMdChange(cleaned);
-        toast.success("DESIGN.md improved automatically");
+        onLayoutMdChange(cleaned);
+        toast.success("layout.md improved automatically");
       }
     } catch (err) {
       console.error("[CompletenessPanel] Auto-fix error:", err);
@@ -236,17 +236,17 @@ export function CompletenessPanel({ designMd, onDesignMdChange, className = '' }
     } finally {
       setIsFixing(false);
     }
-  }, [report, designMd, onDesignMdChange]);
+  }, [report, layoutMd, onLayoutMdChange]);
 
   if (!trimmed) {
     return (
       <div className={`flex flex-col items-center justify-center gap-3 py-12 px-4 ${className}`}>
         <FileText size={32} className="text-[var(--text-muted)]" />
         <p className="text-sm text-[var(--text-muted)] text-center">
-          No DESIGN.md generated yet
+          No layout.md generated yet
         </p>
         <p className="text-xs text-[var(--text-muted)] text-center max-w-[200px]">
-          Generate a DESIGN.md to see the quality score and improvement suggestions.
+          Generate a layout.md to see the quality score and improvement suggestions.
         </p>
       </div>
     );
@@ -297,7 +297,7 @@ export function CompletenessPanel({ designMd, onDesignMdChange, className = '' }
       )}
 
       {/* Auto-fix button */}
-      {report.totalScore < 100 && onDesignMdChange && (
+      {report.totalScore < 100 && onLayoutMdChange && (
         <button
           type="button"
           onClick={handleAutoFix}

@@ -108,7 +108,7 @@ export default function FigmaPluginPage() {
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">Health</h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              Run a DESIGN.md completeness check from within Figma. See scores
+              Run a layout.md completeness check from within Figma. See scores
               per category with actionable suggestions for improving coverage.
             </p>
           </div>

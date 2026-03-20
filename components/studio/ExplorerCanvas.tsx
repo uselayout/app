@@ -11,7 +11,7 @@ import { ComparisonView } from "./ComparisonView";
 import { PromoteToLibraryModal } from "./PromoteToLibraryModal";
 import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-variants";
 import { friendlyError } from "@/lib/explore/friendly-error";
-import { applyChangesToDesignMd } from "@/lib/figma/diff";
+import { applyChangesToLayoutMd } from "@/lib/figma/diff";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { processCodeImages, type ProcessCodeImagesResult } from "@/lib/image/process-code-images";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
@@ -24,11 +24,11 @@ import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiMod
 
 interface ExplorerCanvasProps {
   projectId: string;
-  designMd: string;
+  layoutMd: string;
   explorations: ExplorationSession[];
   onUpdateExplorations: (explorations: ExplorationSession[]) => void;
   onPushToFigma: (variant: DesignVariant) => void;
-  onDesignMdUpdate?: (newMd: string) => void;
+  onLayoutMdUpdate?: (newMd: string) => void;
   initialImage?: string;
   onInitialImageConsumed?: () => void;
   extractedFonts?: string[];
@@ -36,11 +36,11 @@ interface ExplorerCanvasProps {
 
 export function ExplorerCanvas({
   projectId,
-  designMd,
+  layoutMd,
   explorations,
   onUpdateExplorations,
   onPushToFigma: _onPushToFigma,
-  onDesignMdUpdate,
+  onLayoutMdUpdate,
   initialImage,
   onInitialImageConsumed,
   extractedFonts = [],
@@ -237,7 +237,7 @@ export function ExplorerCanvas({
         const variantsToScore = anyChanged ? newWithImages : finalNew;
         const scored = variantsToScore.map((v) => ({
           ...v,
-          healthScore: calculateHealthScore(v.code, extractedFonts, designMd),
+          healthScore: calculateHealthScore(v.code, extractedFonts, layoutMd),
         }));
         const scoredMerged = [...existingVariants, ...scored];
         const scoredExplorations = finalExplorations.map((e) =>
@@ -250,7 +250,7 @@ export function ExplorerCanvas({
         pendingBatchCountRef.current = 0;
       }
     },
-    [onUpdateExplorations, extractedFonts, designMd, markStep]
+    [onUpdateExplorations, extractedFonts, layoutMd, markStep]
   );
 
   /** Shared fetch + stream logic used by all generation handlers */
@@ -342,7 +342,7 @@ export function ExplorerCanvas({
           batchId,
           batchPrompt,
           updatedExplorations,
-          { prompt, designMd, variantCount, projectId, imageDataUrl, contextFiles },
+          { prompt, layoutMd, variantCount, projectId, imageDataUrl, contextFiles },
           variantCount,
         );
       } catch (err) {
@@ -354,7 +354,7 @@ export function ExplorerCanvas({
         abortRef.current = null;
       }
     },
-    [isGenerating, projectId, designMd, explorations, currentExploration, onUpdateExplorations, runGeneration]
+    [isGenerating, projectId, layoutMd, explorations, currentExploration, onUpdateExplorations, runGeneration]
   );
 
   const handleRefine = useCallback(
@@ -381,7 +381,7 @@ export function ExplorerCanvas({
           explorations,
           {
             prompt: refinementPrompt,
-            designMd,
+            layoutMd,
             variantCount,
             projectId,
             baseCode: selectedVariant.code,
@@ -399,7 +399,7 @@ export function ExplorerCanvas({
         abortRef.current = null;
       }
     },
-    [isGenerating, selectedVariant, currentExploration, projectId, designMd, explorations, runGeneration]
+    [isGenerating, selectedVariant, currentExploration, projectId, layoutMd, explorations, runGeneration]
   );
 
   const handleRegenerate = useCallback(() => {
@@ -454,7 +454,7 @@ export function ExplorerCanvas({
           explorations,
           {
             prompt: feedback,
-            designMd,
+            layoutMd,
             variantCount: 1,
             projectId,
             baseCode: variant.code,
@@ -470,7 +470,7 @@ export function ExplorerCanvas({
         abortRef.current = null;
       }
     },
-    [isGenerating, currentExploration, projectId, designMd, explorations, runGeneration]
+    [isGenerating, currentExploration, projectId, layoutMd, explorations, runGeneration]
   );
 
   const handleRateVariant = useCallback(
@@ -539,13 +539,13 @@ export function ExplorerCanvas({
     [pushVariant, currentExploration, explorations, onUpdateExplorations]
   );
 
-  const handleUpdateDesignMdFromImport = useCallback(
+  const handleUpdateLayoutMdFromImport = useCallback(
     (acceptedChanges: FigmaChange[]) => {
-      if (!onDesignMdUpdate) return;
-      const updated = applyChangesToDesignMd(designMd, acceptedChanges);
-      onDesignMdUpdate(updated);
+      if (!onLayoutMdUpdate) return;
+      const updated = applyChangesToLayoutMd(layoutMd, acceptedChanges);
+      onLayoutMdUpdate(updated);
     },
-    [designMd, onDesignMdUpdate]
+    [layoutMd, onLayoutMdUpdate]
   );
 
   const handleRegenerateImages = useCallback(
@@ -942,7 +942,7 @@ export function ExplorerCanvas({
           baseCode={compareData.baseCode}
           imageDataUrl={compareData.image}
           contextFiles={compareData.contextFiles}
-          designMd={designMd}
+          layoutMd={layoutMd}
           onSave={(result) => {
             if (!currentExploration) return;
             const taggedResult = { ...result, sourceVariantId: selectedVariantId ?? undefined };
@@ -959,7 +959,7 @@ export function ExplorerCanvas({
       {viewSavedComparison && (
         <ComparisonView
           prompt={viewSavedComparison.prompt}
-          designMd={designMd}
+          layoutMd={layoutMd}
           savedResult={viewSavedComparison}
           onClose={() => setViewSavedComparison(null)}
         />
@@ -968,8 +968,8 @@ export function ExplorerCanvas({
       {showImport && (
         <FigmaImportModal
           onClose={() => setShowImport(false)}
-          designMd={designMd}
-          onUpdateDesignMd={handleUpdateDesignMdFromImport}
+          layoutMd={layoutMd}
+          onUpdateLayoutMd={handleUpdateLayoutMdFromImport}
         />
       )}
 

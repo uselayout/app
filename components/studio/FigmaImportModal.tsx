@@ -8,8 +8,8 @@ import type { ImportedNodeData } from "@/lib/figma/import";
 
 interface FigmaImportModalProps {
   onClose: () => void;
-  designMd: string;
-  onUpdateDesignMd: (changes: FigmaChange[]) => void;
+  layoutMd: string;
+  onUpdateLayoutMd: (changes: FigmaChange[]) => void;
 }
 
 type ImportStep = "input" | "loading" | "diff" | "done";
@@ -21,8 +21,8 @@ interface ImportResult {
 
 export function FigmaImportModal({
   onClose,
-  designMd,
-  onUpdateDesignMd,
+  layoutMd,
+  onUpdateLayoutMd,
 }: FigmaImportModalProps) {
   const [step, setStep] = useState<ImportStep>("input");
   const [figmaUrl, setFigmaUrl] = useState("");
@@ -61,7 +61,7 @@ export function FigmaImportModal({
         body: JSON.stringify({
           fileKey: parsed.fileKey,
           nodeId: parsed.nodeId,
-          designMd,
+          layoutMd,
         }),
       });
 
@@ -78,7 +78,7 @@ export function FigmaImportModal({
       setError(err instanceof Error ? err.message : "Import failed");
       setStep("input");
     }
-  }, [figmaUrl, pat, designMd]);
+  }, [figmaUrl, pat, layoutMd]);
 
   const toggleChange = useCallback((index: number) => {
     setChanges((prev) =>
@@ -93,10 +93,10 @@ export function FigmaImportModal({
   const handleApply = useCallback(() => {
     const accepted = changes.filter((c) => c.accepted);
     if (accepted.length > 0) {
-      onUpdateDesignMd(accepted);
+      onUpdateLayoutMd(accepted);
     }
     setStep("done");
-  }, [changes, onUpdateDesignMd]);
+  }, [changes, onUpdateLayoutMd]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
@@ -201,7 +201,7 @@ export function FigmaImportModal({
                 <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
                   {changes.length === 0
                     ? "No differences found between Figma and your design system."
-                    : `${changes.length} change${changes.length === 1 ? "" : "s"} detected. Select which to apply to DESIGN.md.`}
+                    : `${changes.length} change${changes.length === 1 ? "" : "s"} detected. Select which to apply to layout.md.`}
                 </p>
               </div>
 
@@ -231,7 +231,7 @@ export function FigmaImportModal({
                 </p>
                 <p className="mt-1 text-xs text-[var(--text-secondary)]">
                   {acceptedCount > 0
-                    ? `${acceptedCount} change${acceptedCount === 1 ? "" : "s"} applied to DESIGN.md.`
+                    ? `${acceptedCount} change${acceptedCount === 1 ? "" : "s"} applied to layout.md.`
                     : "No changes applied."}
                 </p>
               </div>

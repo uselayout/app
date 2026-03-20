@@ -5,4 +5,4 @@ globs: ["**/*.tsx", "**/*.jsx"]
 
 # linear.app Components
 
-See DESIGN.md Section 5 for component specifications.
+See layout.md Section 5 for component specifications.

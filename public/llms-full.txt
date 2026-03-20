@@ -2,13 +2,13 @@
 
 > The compiler between design systems and AI coding agents.
 
-Layout extracts design systems from Figma files and live websites, then generates structured, LLM-optimised context bundles (DESIGN.md) that help AI coding agents produce on-brand UI code consistently.
+Layout extracts design systems from Figma files and live websites, then generates structured, LLM-optimised context bundles (layout.md) that help AI coding agents produce on-brand UI code consistently.
 
 ## The Problem Layout Solves
 
 AI coding agents (Claude Code, Cursor, Copilot, Windsurf, Codex) generate functional UI code, but without design system context the output drifts off-brand — wrong colours, inconsistent spacing, mismatched typography, missing component patterns. Developers spend time manually correcting AI output to match their design system.
 
-Layout closes this gap by extracting your design system into a structured context file (DESIGN.md) that AI agents consume automatically. The result: every component the AI builds uses your actual tokens, follows your patterns, and stays on-brand.
+Layout closes this gap by extracting your design system into a structured context file (layout.md) that AI agents consume automatically. The result: every component the AI builds uses your actual tokens, follows your patterns, and stays on-brand.
 
 ## How It Works
 
@@ -16,11 +16,11 @@ Layout closes this gap by extracting your design system into a structured contex
 
 2. **Review** — Browse extracted tokens in the Source panel. Check colours, typography, spacing, and components. Re-extract if something looks off.
 
-3. **Generate** — Click "Generate DESIGN.md" to synthesise a structured context file from the extracted data using Claude. The file includes a Quick Reference (50–75 lines, fits tight context budgets), full token definitions, component patterns, and anti-pattern rules.
+3. **Generate** — Click "Generate layout.md" to synthesise a structured context file from the extracted data using Claude. The file includes a Quick Reference (50–75 lines, fits tight context budgets), full token definitions, component patterns, and anti-pattern rules.
 
 4. **Test** — Use the Test panel to generate components with and without design context. Compare results. Each variant gets a health score (0–100) measuring design system compliance. Aim for 80+.
 
-5. **Iterate** — Edit DESIGN.md manually or use the AI chat bar to make changes in plain English (e.g. "make buttons square", "add a dark card variant"). Re-test until satisfied.
+5. **Iterate** — Edit layout.md manually or use the AI chat bar to make changes in plain English (e.g. "make buttons square", "add a dark card variant"). Re-test until satisfied.
 
 6. **Export or Serve** — Either download a ZIP bundle or install the MCP server for automatic context serving.
 
@@ -36,7 +36,7 @@ Layout closes this gap by extracting your design system into a structured contex
 
 Three-panel layout:
 - **Source Panel** (left): Browse extracted tokens by category — colours, typography, spacing, components, screenshots. Also shows quality score and saved components.
-- **Editor Panel** (centre): Monaco editor for DESIGN.md with syntax highlighting. Includes an AI chat bar for making edits in natural language.
+- **Editor Panel** (centre): Monaco editor for layout.md with syntax highlighting. Includes an AI chat bar for making edits in natural language.
 - **Test Panel** (right): Generate component variants with live preview, health scoring, and a toggle to compare output with vs without design context.
 
 ### Explorer Canvas
@@ -62,7 +62,7 @@ npx @layoutdesign/context install
 ```
 
 **MCP tools available:**
-- `get_design_system` — Full DESIGN.md content
+- `get_design_system` — Full layout.md content
 - `get_tokens` — CSS tokens by category (colours, typography, spacing)
 - `get_component` — Component code by name
 - `list_components` — All components with metadata and tags
@@ -77,7 +77,7 @@ npx @layoutdesign/context install
 ### Export Bundle
 
 Download a ZIP containing:
-- `DESIGN.md` — Full design system reference with tokens, components, and anti-patterns
+- `layout.md` — Full design system reference with tokens, components, and anti-patterns
 - `CLAUDE.md-section.md` — Drop-in section for your project's CLAUDE.md
 - `AGENTS.md` — Context for OpenAI Codex, Jules, Factory, Amp
 - `tokens.css` — CSS custom properties for all design tokens
@@ -86,7 +86,7 @@ Download a ZIP containing:
 - `tailwind.config.js` — Tailwind config pre-loaded with extracted token values
 - `tokens.json` — W3C DTCG-compatible token file for Style Dictionary, Theo, etc.
 
-### DESIGN.md Format
+### layout.md Format
 
 The structured context file has these sections:
 - **Section 0 — Quick Reference**: 50–75 line summary of critical tokens and rules. Designed to be copy-pasted standalone into tight context budgets.

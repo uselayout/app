@@ -90,7 +90,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
             name: project.name,
             sourceType: project.sourceType,
             sourceUrl: project.sourceUrl,
-            designMd: project.designMd,
+            layoutMd: project.layoutMd,
             extractionData: project.extractionData,
           },
           formats: Array.from(selectedFormats),
@@ -247,10 +247,10 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
               })}
             </div>
 
-            {/* DESIGN.md always included note */}
+            {/* layout.md always included note */}
             <div className="border-t border-[var(--studio-border)] px-5 py-3">
               <p className="text-[10px] text-[var(--text-muted)]">
-                DESIGN.md is always included in the bundle.
+                layout.md is always included in the bundle.
               </p>
             </div>
 

@@ -45,11 +45,11 @@ export default function SelfHostingPage() {
             },
             {
               label: "Supabase instance",
-              desc: "Used for project data storage (extractions and DESIGN.md content). Can be self-hosted or Supabase Cloud.",
+              desc: "Used for project data storage (extractions and layout.md content). Can be self-hosted or Supabase Cloud.",
             },
             {
               label: "Anthropic API key",
-              desc: "Required for DESIGN.md generation and the test panel. Get one at console.anthropic.com.",
+              desc: "Required for layout.md generation and the test panel. Get one at console.anthropic.com.",
             },
             {
               label: "Figma Personal Access Token",
@@ -106,7 +106,7 @@ cp .env.example .env.local`}
                 [
                   "ANTHROPIC_API_KEY",
                   "Yes",
-                  "Anthropic API key for Claude, used for DESIGN.md generation and the test panel.",
+                  "Anthropic API key for Claude, used for layout.md generation and the test panel.",
                 ],
                 [
                   "BETTER_AUTH_SECRET",
@@ -221,7 +221,7 @@ cp .env.example .env.local`}
 
         <h3 className="text-lg font-semibold text-[#0a0a0a]">Supabase (project data)</h3>
         <p className="text-base text-gray-600 leading-relaxed">
-          Supabase stores extraction results and DESIGN.md content per project.
+          Supabase stores extraction results and layout.md content per project.
           You need a{" "}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             projects
@@ -400,7 +400,7 @@ docker run -d \\
           <strong className="font-semibold text-[#0a0a0a]">
             website extraction only
           </strong>
-          . Figma extraction, DESIGN.md generation, and the test panel all work
+          . Figma extraction, layout.md generation, and the test panel all work
           without it.
         </p>
         <Callout type="warning">
@@ -525,8 +525,8 @@ export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`}
             },
             {
               step: "4",
-              label: "DESIGN.md generates",
-              desc: "After extraction completes, click Generate. The editor panel should stream in the DESIGN.md content.",
+              label: "layout.md generates",
+              desc: "After extraction completes, click Generate. The editor panel should stream in the layout.md content.",
             },
             {
               step: "5",

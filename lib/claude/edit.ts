@@ -1,10 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
 
-const SYSTEM_PROMPT = `You are an expert design system editor. You receive a DESIGN.md file (a structured design system specification) and a user instruction describing what to change.
+const SYSTEM_PROMPT = `You are an expert design system editor. You receive a layout.md file (a structured design system specification) and a user instruction describing what to change.
 
 RULES:
-- Return ONLY the complete updated DESIGN.md — no explanation, no commentary, no code fences.
+- Return ONLY the complete updated layout.md — no explanation, no commentary, no code fences.
 - Preserve ALL existing structure, sections, and formatting exactly as-is.
 - Only modify what the user's instruction explicitly asks for.
 - Never remove sections, tokens, or content unless the user explicitly asks you to.
@@ -15,7 +15,7 @@ RULES:
 
 export function createEditStream(
   instruction: string,
-  designMd: string,
+  layoutMd: string,
   apiKey?: string
 ): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
@@ -37,7 +37,7 @@ export function createEditStream(
           messages: [
             {
               role: "user",
-              content: `Here is the current DESIGN.md:\n\n${designMd}\n\n---\n\nInstruction: ${instruction}`,
+              content: `Here is the current layout.md:\n\n${layoutMd}\n\n---\n\nInstruction: ${instruction}`,
             },
           ],
         });

@@ -18,7 +18,7 @@ const QuerySchema = z.object({
       v
         ? v.split(",").filter(Boolean)
         : [
-            "design-md",
+            "layout-md",
             "claude-md",
             "agents-md",
             "cursor-rules",
@@ -73,9 +73,9 @@ export async function GET(request: Request) {
 
   const files: Record<string, string> = {};
 
-  // Always include DESIGN.md if requested
-  if (formats.includes("design-md")) {
-    files["DESIGN.md"] = project.designMd;
+  // Always include layout.md if requested
+  if (formats.includes("layout-md")) {
+    files["layout.md"] = project.layoutMd;
   }
 
   if (formats.includes("claude-md")) {

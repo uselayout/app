@@ -79,7 +79,7 @@ export default function ExplorerPage() {
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
               The A/B comparison view generates the same component twice: once
-              with your DESIGN.md context active, once without. It displays
+              with your layout.md context active, once without. It displays
               them side by side. This is the fastest way to see the concrete
               value your design system context is providing to the AI.
             </p>
@@ -138,7 +138,7 @@ export default function ExplorerPage() {
             </span>
             <p className="text-base leading-relaxed">
               Navigate to a project in the Studio that has already completed
-              extraction and has a generated DESIGN.md.
+              extraction and has a generated layout.md.
             </p>
           </li>
           <li className="flex gap-3">
@@ -210,19 +210,19 @@ export default function ExplorerPage() {
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
           The comparison view runs two parallel generation requests from the
-          same prompt. The left pane uses your full DESIGN.md context. The right
+          same prompt. The left pane uses your full layout.md context. The right
           pane sends the prompt with no design system context at all.
         </p>
         <p className="text-base text-gray-600 leading-relaxed">
-          A strong DESIGN.md will produce a left-pane result with correct token
+          A strong layout.md will produce a left-pane result with correct token
           values, consistent typography, and on-brand spacing, while the
           right-pane result defaults to generic Tailwind utility classes and
-          arbitrary colours. If both panes look similar, your DESIGN.md may need
+          arbitrary colours. If both panes look similar, your layout.md may need
           more specific token examples or stronger anti-pattern guidance.
         </p>
         <Callout type="tip">
           The comparison view is the fastest way to see how much value your
-          DESIGN.md provides. Run it before sharing your context bundle with the
+          layout.md provides. Run it before sharing your context bundle with the
           team.
         </Callout>
       </section>
@@ -279,8 +279,8 @@ export default function ExplorerPage() {
 
         <Callout type="info">
           Explorer Canvas requires a project with a completed extraction and a
-          generated DESIGN.md. If the Canvas view toggle is disabled, generate
-          DESIGN.md in the Editor panel first.
+          generated layout.md. If the Canvas view toggle is disabled, generate
+          layout.md in the Editor panel first.
         </Callout>
 
         <Callout type="warning">
@@ -298,12 +298,12 @@ export default function ExplorerPage() {
             <Link href="/docs/studio" className="text-gray-900 hover:underline">
               Studio Guide
             </Link>
-            . Learn how to extract design tokens and generate DESIGN.md before
+            . Learn how to extract design tokens and generate layout.md before
             using the Explorer Canvas.
           </li>
           <li>
-            <Link href="/docs/design-md" className="text-gray-900 hover:underline">
-              DESIGN.md Spec
+            <Link href="/docs/layout-md" className="text-gray-900 hover:underline">
+              layout.md Spec
             </Link>
             . Understand what makes a strong context file so the Explorer
             generates better output.

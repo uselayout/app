@@ -107,7 +107,7 @@ refactor: extract token parser into separate module
 1. User submits a URL (website) or Figma file key
 2. Server streams extraction progress via SSE
 3. Extracted data stored in Zustand (client-side)
-4. User triggers DESIGN.md generation → Claude synthesises from extracted data
+4. User triggers layout.md generation → Claude synthesises from extracted data
 5. User exports a ZIP bundle with multiple format outputs
 
 ### Key Patterns

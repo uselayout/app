@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     : projects[0];
 
   // Store screenshot as pending canvas image (NOT in extractionData.screenshots)
-  // extractionData.screenshots are extraction screenshots used for DESIGN.md generation
+  // extractionData.screenshots are extraction screenshots used for layout.md generation
   // pendingCanvasImage is a temporary image for Canvas variant generation
   const updatedProject: Project = {
     ...project,

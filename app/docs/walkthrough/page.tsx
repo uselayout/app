@@ -99,7 +99,7 @@ export default function WalkthroughPage() {
           The Figma Variables API returns 403 on non-Enterprise plans. This is
           expected. Layout treats it as non-fatal and continues extraction
           using colour and typography styles instead. You will still get a
-          complete DESIGN.md.
+          complete layout.md.
         </Callout>
       </section>
 
@@ -174,14 +174,14 @@ export default function WalkthroughPage() {
         </Callout>
       </section>
 
-      {/* Step 3: Generate DESIGN.md */}
+      {/* Step 3: Generate layout.md */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
-          3. Generate DESIGN.md
+          3. Generate layout.md
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
           Once extraction completes, click{" "}
-          <strong>Generate DESIGN.md</strong> in the Studio. Claude Sonnet
+          <strong>Generate layout.md</strong> in the Studio. Claude Sonnet
           analyses the raw extracted data and synthesises a structured,
           LLM-optimised context file. Generation typically finishes in under 2
           minutes and streams into the editor in real time.
@@ -263,10 +263,10 @@ export default function WalkthroughPage() {
           </table>
         </div>
         <Callout type="tip">
-          The Quick Reference section is the highest-value part of DESIGN.md.
+          The Quick Reference section is the highest-value part of layout.md.
           It is placed at the top because most AI agents read context
           top-to-bottom and may truncate long files. If you manually edit
-          DESIGN.md, prioritise keeping the Quick Reference accurate.
+          layout.md, prioritise keeping the Quick Reference accurate.
         </Callout>
       </section>
 
@@ -303,7 +303,7 @@ export default function WalkthroughPage() {
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
               A Monaco-based markdown editor, the same editor used in VS Code.
-              This is where you refine DESIGN.md: fix misidentified tokens,
+              This is where you refine layout.md: fix misidentified tokens,
               strengthen the anti-patterns section, rewrite component specs, or
               add brand guidance that extraction cannot infer. Section
               navigation pills let you jump between the 9 sections quickly. An
@@ -321,7 +321,7 @@ export default function WalkthroughPage() {
             <p className="text-base text-gray-600 leading-relaxed">
               The Explorer Canvas is the AI generation surface. Generate
               multiple component variants simultaneously, compare output with
-              and without DESIGN.md in a side-by-side comparison view, check
+              and without layout.md in a side-by-side comparison view, check
               the per-variant health score, and iterate until the AI reliably
               produces on-brand output. You can also push variants to Figma
               directly from the canvas.
@@ -337,7 +337,7 @@ export default function WalkthroughPage() {
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
           The Explorer Canvas is the most important step before exporting. It
-          tells you whether DESIGN.md actually improves AI output, and by how
+          tells you whether layout.md actually improves AI output, and by how
           much.
         </p>
 
@@ -347,11 +347,11 @@ export default function WalkthroughPage() {
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
             The comparison view generates variants side by side, with and
-            without DESIGN.md context. Run a prompt and compare the two results
+            without layout.md context. Run a prompt and compare the two results
             directly. A well-written context file produces noticeably better
             output: correct token usage, proper spacing, on-brand typography,
             and no hardcoded colours. This A/B comparison is the clearest signal
-            that your DESIGN.md is working.
+            that your layout.md is working.
           </p>
         </div>
 
@@ -377,7 +377,7 @@ export default function WalkthroughPage() {
             Each generated variant in the Explorer Canvas shows a 0-100 health
             score measuring token faithfulness, component accuracy, and
             anti-pattern violations. The score reflects how closely the
-            generated code follows the rules in DESIGN.md. Aim for 80 or higher
+            generated code follows the rules in layout.md. Aim for 80 or higher
             before exporting.
           </p>
         </div>
@@ -397,7 +397,7 @@ export default function WalkthroughPage() {
 
         <Callout type="tip">
           If the health score is consistently below 60, check that the Colour
-          System and Typography sections of DESIGN.md contain well-formed CSS
+          System and Typography sections of layout.md contain well-formed CSS
           code blocks. The AI needs concrete, parseable examples to reference
           at generation time. Prose descriptions alone are not enough.
         </Callout>
@@ -410,7 +410,7 @@ export default function WalkthroughPage() {
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
           Click <strong>Export</strong> in the top bar to open the export
-          modal. DESIGN.md is always included. The ZIP bundle can contain up
+          modal. layout.md is always included. The ZIP bundle can contain up
           to 8 additional files, each optimised for a different AI tool or
           framework:
         </p>
@@ -429,7 +429,7 @@ export default function WalkthroughPage() {
             <tbody className="divide-y divide-gray-100">
               {[
                 [
-                  "DESIGN.md",
+                  "layout.md",
                   "All AI agents. The primary context file",
                 ],
                 [
@@ -566,7 +566,7 @@ npx @layoutdesign/context install`}
               {[
                 [
                   "get_design_system",
-                  "Returns the full DESIGN.md, or a specific section by number",
+                  "Returns the full layout.md, or a specific section by number",
                 ],
                 [
                   "get_tokens",
@@ -697,7 +697,7 @@ npx @layoutdesign/context install`}
                 {[
                   [
                     "80-100",
-                    "Excellent. DESIGN.md is providing strong, reliable context. Safe to export and ship.",
+                    "Excellent. layout.md is providing strong, reliable context. Safe to export and ship.",
                   ],
                   [
                     "60-79",
@@ -728,7 +728,7 @@ npx @layoutdesign/context install`}
             When the design system changes (new brand colours, updated type
             scale, redesigned components), paste the URL again on the home
             screen and re-extract. The Studio loads the updated data into the
-            Source panel. You can then re-generate DESIGN.md or manually update
+            Source panel. You can then re-generate layout.md or manually update
             only the changed sections in the editor.
           </p>
         </div>
@@ -739,7 +739,7 @@ npx @layoutdesign/context install`}
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
             The comparison view in the Explorer Canvas is the fastest way to
-            validate whether DESIGN.md is providing value. Generate variants
+            validate whether layout.md is providing value. Generate variants
             with and without context side by side using the same prompt. If the
             output looks identical, the context file is not doing its job and
             needs strengthening. Focus on the Quick Reference section and the
@@ -827,10 +827,10 @@ npx @layoutdesign/context init --kit notion-lite`}
           </li>
           <li>
             <Link
-              href="/docs/design-md"
+              href="/docs/layout-md"
               className="text-gray-900 hover:underline"
             >
-              DESIGN.md Spec
+              layout.md Spec
             </Link>
             . The formal specification for each section of the context file.
           </li>

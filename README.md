@@ -2,7 +2,7 @@
 
 **The compiler between design systems and AI coding agents.**
 
-Extract design systems from Figma files and live websites, then transform them into structured, LLM-optimised context bundles (DESIGN.md) that enable AI coding agents to produce on-brand UI code consistently.
+Extract design systems from Figma files and live websites, then transform them into structured, LLM-optimised context bundles (layout.md) that enable AI coding agents to produce on-brand UI code consistently.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)
@@ -15,7 +15,7 @@ AI coding agents (Claude Code, Cursor, Windsurf, GitHub Copilot) generate beauti
 Layout solves this by giving agents the design context they need:
 
 1. **Extract** your design system from a Figma file or live website
-2. **Synthesise** it into a structured DESIGN.md using Claude
+2. **Synthesise** it into a structured layout.md using Claude
 3. **Export** bundles ready for CLAUDE.md, .cursorrules, tokens.css, tokens.json, and tailwind.config.js
 
 Your AI agents now generate code that matches your actual design system.
@@ -24,15 +24,15 @@ Your AI agents now generate code that matches your actual design system.
 
 - **Website extraction** - Playwright scrapes CSS variables, computed styles, fonts, and full-page screenshots
 - **Figma extraction** - REST API pulls styles, components, variables, and metadata
-- **DESIGN.md synthesis** - Claude analyses extracted data and generates a comprehensive, structured design system document
+- **layout.md synthesis** - Claude analyses extracted data and generates a comprehensive, structured design system document
 - **Explorer Canvas** - AI-powered design exploration with multi-variant generation, image upload, comparison view, health scoring, and iterative refinement
 - **Push to Figma** - Send generated components to Figma as editable frames with auto-layout via the [Figma MCP server](https://www.figma.com/developers/mcp)
-- **Export bundles** - One-click ZIP with DESIGN.md, CLAUDE.md section, .cursorrules, tokens.css, W3C DTCG tokens.json, and tailwind.config.js
+- **Export bundles** - One-click ZIP with layout.md, CLAUDE.md section, .cursorrules, tokens.css, W3C DTCG tokens.json, and tailwind.config.js
 - **MCP server** - [`@layoutdesign/context`](https://www.npmjs.com/package/@layoutdesign/context) gives AI agents direct access to your design system via 7 MCP tools
 - **BYOK** - Bring Your Own Key for Anthropic API. Free tier costs nothing.
 - **Project management** - Save, switch between, and manage multiple design system projects
 - **Saved components** - Save variants as components or full-page designs with categories and tags
-- **Quality scoring** - Automated DESIGN.md completeness analysis across 6 weighted categories
+- **Quality scoring** - Automated layout.md completeness analysis across 6 weighted categories
 - **Extraction diffing** - Visual diff when re-extracting an existing project, with accept/discard workflow per change
 - **Webhook sync** - Figma webhook receiver detects design changes for re-extraction
 - **Organisation model** - Multi-user teams with role-based access (owner, admin, member)
@@ -73,14 +73,14 @@ Open [http://localhost:3000](http://localhost:3000) and paste a website URL or F
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │  Figma File or   │────▶│  Extract tokens,  │────▶│  Claude synthe-  │
-│  Live Website    │     │  styles, comps    │     │  sises DESIGN.md │
+│  Live Website    │     │  styles, comps    │     │  sises layout.md │
 └─────────────────┘     └──────────────────┘     └────────┬────────┘
                                                           │
                     ┌─────────────────────────────────────┘
                     ▼
         ┌───────────────────────┐
         │  Export bundle:       │
-        │  • DESIGN.md          │
+        │  • layout.md          │
         │  • CLAUDE.md section  │
         │  • .cursorrules       │
         │  • tokens.css         │
@@ -110,7 +110,7 @@ Once connected, your AI agent has access to 7 MCP tools:
 
 | Tool | Description |
 |------|-------------|
-| `get_design_system` | Full DESIGN.md content for the active project |
+| `get_design_system` | Full layout.md content for the active project |
 | `get_design_section` | A specific section of the design system |
 | `get_tokens` | Design tokens as structured JSON |
 | `get_component` | Component definition and usage guidance |
@@ -169,7 +169,7 @@ claude mcp add --transport http figma https://mcp.figma.com/mcp
 The Studio is a two-panel workspace with an Editor/Canvas toggle:
 
 - **Left - Source Panel**: View extracted tokens, components, screenshots, quality scores, and saved components
-- **Centre - Editor / Explorer Canvas**: Toggle between the Monaco DESIGN.md editor and the AI-powered Explorer Canvas for generating and refining component variants
+- **Centre - Editor / Explorer Canvas**: Toggle between the Monaco layout.md editor and the AI-powered Explorer Canvas for generating and refining component variants
 
 ## Tech Stack
 
@@ -206,12 +206,12 @@ app/
   api/
     extract/figma/route.ts          # Figma extraction (SSE stream)
     extract/website/route.ts        # Website extraction (SSE stream)
-    generate/design-md/route.ts     # DESIGN.md synthesis (stream)
+    generate/layout-md/route.ts     # layout.md synthesis (stream)
     generate/explore/route.ts       # Explorer Canvas AI generation (stream)
     export/bundle/route.ts          # ZIP bundle generation
     export/pull/route.ts            # CLI pull endpoint
     webhooks/figma/route.ts         # Figma webhook receiver
-    health/completeness/route.ts    # DESIGN.md quality analysis
+    health/completeness/route.ts    # layout.md quality analysis
     organizations/[orgId]/          # Org-scoped API (components, members, etc.)
     transpile/route.ts              # TSX transpilation for preview
 

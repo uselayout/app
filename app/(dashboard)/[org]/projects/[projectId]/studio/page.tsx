@@ -30,7 +30,7 @@ export default function StudioPage({
   const hydrating = useProjectStore((s) => s.hydrating);
   const updateProjectName = useProjectStore((s) => s.updateProjectName);
   const updateProjectSource = useProjectStore((s) => s.updateProjectSource);
-  const updateDesignMd = useProjectStore((s) => s.updateDesignMd);
+  const updateLayoutMd = useProjectStore((s) => s.updateLayoutMd);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateExplorations = useProjectStore((s) => s.updateExplorations);
   const project = projects.find((p) => p.id === id);
@@ -79,17 +79,17 @@ export default function StudioPage({
   const markStep = useOnboardingStore((s) => s.markStep);
   const onboardingSteps = useOnboardingStore((s) => s.steps);
 
-  // Mark viewedDesignMd step when studio is open with non-empty DESIGN.md
+  // Mark viewedLayoutMd step when studio is open with non-empty layout.md
   // and the user has dismissed the "What's next?" screen
   useEffect(() => {
-    if (project?.designMd && project.designMd.length > 0 && whatsNextDismissed && !onboardingSteps.viewedDesignMd) {
-      markStep("viewedDesignMd");
+    if (project?.layoutMd && project.layoutMd.length > 0 && whatsNextDismissed && !onboardingSteps.viewedLayoutMd) {
+      markStep("viewedLayoutMd");
     }
-  }, [project?.designMd, whatsNextDismissed, onboardingSteps.viewedDesignMd, markStep]);
+  }, [project?.layoutMd, whatsNextDismissed, onboardingSteps.viewedLayoutMd, markStep]);
 
   // Extraction diff state
   const previousExtractionRef = useRef<ExtractionResult | null>(null);
-  const previousDesignMdRef = useRef<string | null>(null);
+  const previousLayoutMdRef = useRef<string | null>(null);
   const [pendingDiff, setPendingDiff] = useState<ExtractionDiff | null>(null);
 
   useEffect(() => {
@@ -112,7 +112,7 @@ export default function StudioPage({
     // Capture previous state for diff comparison
     if (project.extractionData) {
       previousExtractionRef.current = project.extractionData;
-      previousDesignMdRef.current = project.designMd;
+      previousLayoutMdRef.current = project.layoutMd;
     }
     extractionStarted.current = false;
     sessionStorage.setItem(`extract-${id}`, "true");
@@ -158,45 +158,45 @@ export default function StudioPage({
         setPendingDiff(diff);
       } else {
         previousExtractionRef.current = null;
-        previousDesignMdRef.current = null;
+        previousLayoutMdRef.current = null;
       }
     }
   }, [extractionStatus, project?.extractionData]);
 
   const handleAcceptDiff = useCallback(() => {
     previousExtractionRef.current = null;
-    previousDesignMdRef.current = null;
+    previousLayoutMdRef.current = null;
     setPendingDiff(null);
   }, []);
 
   const handleDiscardDiff = useCallback(() => {
-    // Revert to previous extraction data and DESIGN.md
+    // Revert to previous extraction data and layout.md
     if (previousExtractionRef.current) {
       updateExtractionData(id, previousExtractionRef.current);
     }
-    if (previousDesignMdRef.current !== null) {
-      updateDesignMd(id, previousDesignMdRef.current);
+    if (previousLayoutMdRef.current !== null) {
+      updateLayoutMd(id, previousLayoutMdRef.current);
     }
     previousExtractionRef.current = null;
-    previousDesignMdRef.current = null;
+    previousLayoutMdRef.current = null;
     setPendingDiff(null);
-  }, [id, updateExtractionData, updateDesignMd]);
+  }, [id, updateExtractionData, updateLayoutMd]);
 
-  const handleDesignMdChange = useCallback(
+  const handleLayoutMdChange = useCallback(
     (value: string) => {
-      updateDesignMd(id, value);
+      updateLayoutMd(id, value);
     },
-    [id, updateDesignMd]
+    [id, updateLayoutMd]
   );
 
   const shortcutHandlers = useMemo(
     () => ({
       onSave: () => {
-        if (project) updateDesignMd(id, project.designMd);
+        if (project) updateLayoutMd(id, project.layoutMd);
       },
       onExport: () => setShowExport(true),
     }),
-    [id, project, updateDesignMd]
+    [id, project, updateLayoutMd]
   );
 
   useKeyboardShortcuts(shortcutHandlers);
@@ -268,7 +268,7 @@ export default function StudioPage({
         progress={extractionProgress}
         steps={extractionSteps}
         error={extractionError}
-        streamingContent={streamingContent ?? project.designMd}
+        streamingContent={streamingContent ?? project.layoutMd}
         onOpenEditor={() => {
           setCentreView("editor");
           setWhatsNextDismissed(true);
@@ -324,16 +324,16 @@ export default function StudioPage({
               extractionData={project.extractionData}
               sourceType={project.sourceType}
               sourceUrl={project.sourceUrl}
-              designMd={project.designMd}
+              layoutMd={project.layoutMd}
               projectId={project.id}
-              onDesignMdChange={handleDesignMdChange}
+              onLayoutMdChange={handleLayoutMdChange}
               onExtract={handleExtractFromPanel}
             />
           }
           editorPanel={
             <EditorPanel
-              value={project.designMd}
-              onChange={handleDesignMdChange}
+              value={project.layoutMd}
+              onChange={handleLayoutMdChange}
               tokenSuggestions={tokenSuggestions}
               projectId={project.id}
               orgId={project.orgId}
@@ -342,11 +342,11 @@ export default function StudioPage({
           canvasPanel={
             <ExplorerCanvas
               projectId={id}
-              designMd={project.designMd}
+              layoutMd={project.layoutMd}
               explorations={project.explorations ?? []}
               onUpdateExplorations={handleUpdateExplorations}
               onPushToFigma={handlePushToFigma}
-              onDesignMdUpdate={handleDesignMdChange}
+              onLayoutMdUpdate={handleLayoutMdChange}
               extractedFonts={extractedFonts}
             />
           }
