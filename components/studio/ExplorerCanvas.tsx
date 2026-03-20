@@ -1041,6 +1041,7 @@ export function ExplorerCanvas({
           onClose={() => setShowImport(false)}
           layoutMd={layoutMd}
           onUpdateLayoutMd={handleUpdateLayoutMdFromImport}
+          projectId={projectId}
         />
       )}
 
