@@ -41,7 +41,7 @@ export function ServeSection() {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="w-[1424px] max-w-full mx-auto aspect-[1424/768] relative overflow-hidden rounded-[6px]"
+        className="w-[1280px] max-w-full mx-auto aspect-[1280/808] relative overflow-hidden rounded-[6px]"
       >
         <img
           src="/marketing/aurora-serve.webp"
