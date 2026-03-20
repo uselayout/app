@@ -56,7 +56,7 @@ export function CompletenessSection() {
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
-        <div className="absolute inset-0 overflow-hidden rounded-[6px]">
+        <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
           <MarketingVideo src="/marketing/videos/completeness.mp4" ariaLabel="Completeness scoring demo" />
         </div>
       </motion.div>
