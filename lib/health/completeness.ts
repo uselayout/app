@@ -104,7 +104,7 @@ const SECTION_CHECKS: SectionCheck[] = [
     name: "Colours",
     weight: 0.2,
     headingPatterns: [
-      /^#{1,3}\s*(?:\d[.)]?\s*)?colou?r/im,
+      /^#{1,3}\s*(?:\d+[.)]?\s*)?colou?r/im,
     ],
     checks: [
       {
@@ -139,7 +139,7 @@ const SECTION_CHECKS: SectionCheck[] = [
     name: "Typography",
     weight: 0.15,
     headingPatterns: [
-      /^#{1,3}\s*(?:\d[.)]?\s*)?typography/im,
+      /^#{1,3}\s*(?:\d+[.)]?\s*)?typography/im,
     ],
     checks: [
       {
@@ -183,8 +183,8 @@ const SECTION_CHECKS: SectionCheck[] = [
     name: "Spacing",
     weight: 0.1,
     headingPatterns: [
-      /^#{1,3}\s*(?:\d[.)]?\s*)?spacing/im,
-      /^#{1,3}\s*(?:\d[.)]?\s*)?spacing\s*(?:&|and)\s*layout/im,
+      /^#{1,3}\s*(?:\d+[.)]?\s*)?spacing/im,
+      /^#{1,3}\s*(?:\d+[.)]?\s*)?spacing\s*(?:&|and)\s*layout/im,
     ],
     checks: [
       {
@@ -217,7 +217,7 @@ const SECTION_CHECKS: SectionCheck[] = [
     name: "Components",
     weight: 0.25,
     headingPatterns: [
-      /^#{1,3}\s*(?:\d[.)]?\s*)?component/im,
+      /^#{1,3}\s*(?:\d+[.)]?\s*)?component/im,
     ],
     checks: [
       {
@@ -260,8 +260,8 @@ const SECTION_CHECKS: SectionCheck[] = [
     name: "Anti-patterns",
     weight: 0.15,
     headingPatterns: [
-      /^#{1,3}\s*(?:\d[.)]?\s*)?anti.?pattern/im,
-      /^#{1,3}\s*(?:\d[.)]?\s*)?constraint/im,
+      /^#{1,3}\s*(?:\d+[.)]?\s*)?anti.?pattern/im,
+      /^#{1,3}\s*(?:\d+[.)]?\s*)?constraint/im,
     ],
     checks: [
       {

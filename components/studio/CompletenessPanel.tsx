@@ -10,6 +10,8 @@ import type { CompletenessReport, SectionScore } from '@/lib/health/completeness
 interface CompletenessPanelProps {
   layoutMd: string;
   onLayoutMdChange?: (value: string) => void;
+  projectId?: string;
+  orgId?: string;
   className?: string;
 }
 
@@ -170,7 +172,7 @@ function buildFixInstruction(report: CompletenessReport): string {
   return lines.join("\n");
 }
 
-export function CompletenessPanel({ layoutMd, onLayoutMdChange, className = '' }: CompletenessPanelProps) {
+export function CompletenessPanel({ layoutMd, onLayoutMdChange, projectId, orgId, className = '' }: CompletenessPanelProps) {
   const [report, setReport] = useState<CompletenessReport | null>(null);
   const [fixStatus, setFixStatus] = useState<string | null>(null);
 
@@ -188,6 +190,15 @@ export function CompletenessPanel({ layoutMd, onLayoutMdChange, className = '' }
   const handleAutoFix = useCallback(async () => {
     if (!report || !onLayoutMdChange) return;
     setFixStatus("Connecting...");
+
+    // Save current version before AI overwrites it
+    if (projectId && orgId && layoutMd.trim()) {
+      fetch(`/api/organizations/${orgId}/projects/${projectId}/layout-md-versions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ layoutMd, source: "manual" }),
+      }).catch(() => {});
+    }
 
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };

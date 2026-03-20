@@ -7,6 +7,7 @@ import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
 import { useProjectStore } from "@/lib/store/project";
+import { useOrgStore } from "@/lib/store/organization";
 import { detectSourceType, normaliseUrl } from "@/lib/util/detect-source";
 import { getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
 import type {
@@ -130,6 +131,7 @@ function SourcePanelInner({
   const [activeTab, setActiveTab] = useState<TabId>("tokens");
   const syncTokensFromLayoutMd = useProjectStore((s) => s.syncTokensFromLayoutMd);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
+  const currentOrgId = useOrgStore((s) => s.currentOrgId);
   const [syncResult, setSyncResult] = useState<{ count: number } | null>(null);
 
   const handleDeleteScreenshot = useCallback(
@@ -227,7 +229,7 @@ function SourcePanelInner({
           <ScreenshotsTab screenshots={extractionData.screenshots} onDelete={handleDeleteScreenshot} onAdd={handleAddScreenshot} />
         )}
         {activeTab === "quality" && extractionData && (
-          <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} />
+          <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} projectId={projectId} orgId={currentOrgId ?? undefined} />
         )}
       </div>
     </div>
