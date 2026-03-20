@@ -400,8 +400,8 @@ export function ExplorerToolbar({
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-[var(--text-primary)]">Variants:</span>
             <button
-              onClick={() => setVariantCount((c) => Math.max(2, c - 1))}
-              disabled={variantCount <= 2 || isGenerating}
+              onClick={() => setVariantCount((c) => Math.max(1, c - 1))}
+              disabled={variantCount <= 1 || isGenerating}
               className="rounded p-0.5 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-30"
             >
               <Minus size={12} />
