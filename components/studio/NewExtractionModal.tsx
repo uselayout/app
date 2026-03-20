@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
 import { detectSourceType, normaliseUrl } from "@/lib/util/detect-source";
+import { getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
 
 interface NewExtractionModalProps {
   onClose: () => void;
@@ -18,7 +19,8 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
   const createProject = useProjectStore((s) => s.createProject);
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
   const [url, setUrl] = useState("");
-  const [pat, setPat] = useState("");
+  const storedFigmaPat = getStoredFigmaApiKey();
+  const [pat, setPat] = useState(storedFigmaPat);
   const urlInputRef = useRef<HTMLInputElement>(null);
 
   const QUICK_START_EXAMPLES = [
@@ -146,8 +148,8 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
             </div>
           )}
 
-          {/* Figma PAT field */}
-          {isFigma && (
+          {/* Figma PAT field — hidden when already stored in Settings */}
+          {isFigma && !storedFigmaPat && (
             <input
               type="password"
               placeholder="Figma Personal Access Token"
@@ -156,6 +158,11 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
               onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
               className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[var(--bg-app)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
             />
+          )}
+          {isFigma && storedFigmaPat && (
+            <p className="text-xs text-[var(--text-muted)]">
+              Using Figma token from Settings.
+            </p>
           )}
         </div>
 
