@@ -1,7 +1,29 @@
 import { create } from "zustand";
-import { upsertProject, removeProject, fetchProjectById } from "@/lib/supabase/db";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType } from "@/lib/types";
+
+/** Save a project via the server-side API (bypasses RLS). */
+function apiUpsertProject(project: Project): void {
+  void fetch(`/api/organizations/${project.orgId}/projects/${project.id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(project),
+  }).catch((err) => console.error("Failed to save project:", err));
+}
+
+/** Delete a project via the server-side API. */
+function apiDeleteProject(id: string, orgId: string): void {
+  void fetch(`/api/organizations/${orgId}/projects/${id}`, {
+    method: "DELETE",
+  }).catch((err) => console.error("Failed to delete project:", err));
+}
+
+/** Fetch a single project via the server-side API. */
+async function apiFetchProject(id: string, orgId: string): Promise<Project | null> {
+  const res = await fetch(`/api/organizations/${orgId}/projects/${id}`);
+  if (!res.ok) return null;
+  return res.json() as Promise<Project>;
+}
 
 /** Merge two token arrays, deduplicating by name (new values overwrite existing). */
 function mergeTokens(existing: ExtractedToken[] | undefined, parsed: ExtractedToken[]): ExtractedToken[] {
@@ -66,8 +88,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       projects: [...state.projects, project],
       currentProjectId: project.id,
     }));
-    const { userId } = get();
-    if (userId) void upsertProject(project, userId);
+    apiUpsertProject(project);
   },
 
   setCurrentProject: (id) => set({ currentProjectId: id }),
@@ -80,9 +101,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           : p
       ),
     }));
-    const { projects, userId } = get();
-    const project = projects.find((p) => p.id === id);
-    if (project && userId) void upsertProject(project, userId);
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project);
   },
 
   updateExtractionData: (id, data) => {
@@ -93,9 +113,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           : p
       ),
     }));
-    const { projects, userId } = get();
-    const project = projects.find((p) => p.id === id);
-    if (project && userId) void upsertProject(project, userId);
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project);
   },
 
   updateProjectName: (id, name) => {
@@ -106,9 +125,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           : p
       ),
     }));
-    const { projects, userId } = get();
-    const project = projects.find((p) => p.id === id);
-    if (project && userId) void upsertProject(project, userId);
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project);
   },
 
   updateProjectSource: (id, sourceUrl, sourceType) => {
@@ -119,9 +137,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           : p
       ),
     }));
-    const { projects, userId } = get();
-    const project = projects.find((p) => p.id === id);
-    if (project && userId) void upsertProject(project, userId);
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project);
   },
 
   updateTokenCount: (id, count) => {
@@ -130,9 +147,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
         p.id === id ? { ...p, tokenCount: count } : p
       ),
     }));
-    const { projects, userId } = get();
-    const project = projects.find((p) => p.id === id);
-    if (project && userId) void upsertProject(project, userId);
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project);
   },
 
   updateHealthScore: (id, score) => {
@@ -141,9 +157,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
         p.id === id ? { ...p, healthScore: score } : p
       ),
     }));
-    const { projects, userId } = get();
-    const project = projects.find((p) => p.id === id);
-    if (project && userId) void upsertProject(project, userId);
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project);
   },
 
   updateExplorations: (id, explorations) => {
@@ -154,9 +169,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           : p
       ),
     }));
-    const { projects, userId } = get();
-    const project = projects.find((p) => p.id === id);
-    if (project && userId) void upsertProject(project, userId);
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project);
   },
 
   removeTokens: (id, tokenType, tokenNames) => {
@@ -180,9 +194,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
         };
       }),
     }));
-    const { projects, userId } = get();
-    const project = projects.find((p) => p.id === id);
-    if (project && userId) void upsertProject(project, userId);
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project);
   },
 
   syncTokensFromLayoutMd: (id) => {
@@ -244,15 +257,16 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       ),
     }));
 
-    const { projects, userId } = get();
-    const updated = projects.find((p) => p.id === id);
-    if (updated && userId) void upsertProject(updated, userId);
+    const updated = get().projects.find((p) => p.id === id);
+    if (updated) apiUpsertProject(updated);
 
     return totalParsed;
   },
 
   refreshProject: async (id) => {
-    const fresh = await fetchProjectById(id);
+    const { orgId } = get();
+    if (!orgId) return;
+    const fresh = await apiFetchProject(id, orgId);
     if (!fresh) return;
     set((state) => {
       const exists = state.projects.some((p) => p.id === id);
@@ -271,7 +285,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       currentProjectId:
         state.currentProjectId === id ? null : state.currentProjectId,
     }));
-    if (orgId) void removeProject(id, orgId);
+    if (orgId) apiDeleteProject(id, orgId);
   },
 
   clearProjects: () => set({ projects: [], currentProjectId: null, userId: null, orgId: null, hydrating: false }),
