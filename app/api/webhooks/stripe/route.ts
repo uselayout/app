@@ -6,6 +6,7 @@ import {
 } from "@/lib/billing/subscription";
 import { resetMonthlyCreditsByOrg, addTopupCredits } from "@/lib/billing/credits";
 import { getPersonalOrg } from "@/lib/supabase/organization";
+import { supabase } from "@/lib/supabase/client";
 import type Stripe from "stripe";
 
 // Stripe v20: period dates live on SubscriptionItem, not Subscription
@@ -54,6 +55,17 @@ export async function POST(request: Request) {
     return Response.json({ error: `Webhook Error: ${msg}` }, { status: 400 });
   }
 
+  // Idempotency: skip already-processed events (Stripe retries)
+  const { data: existing } = await supabase
+    .from("layout_webhook_events")
+    .select("id")
+    .eq("stripe_event_id", event.id)
+    .single();
+
+  if (existing) {
+    return Response.json({ received: true, duplicate: true });
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -83,6 +95,13 @@ export async function POST(request: Request) {
     console.error(`Error processing webhook ${event.type}:`, err);
     return Response.json({ error: "Webhook processing failed" }, { status: 500 });
   }
+
+  // Record processed event for idempotency
+  await supabase.from("layout_webhook_events").insert({
+    stripe_event_id: event.id,
+    event_type: event.type,
+    processed_at: new Date().toISOString(),
+  });
 
   return Response.json({ received: true });
 }

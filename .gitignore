@@ -54,6 +54,7 @@ screenshot*.png
 
 # Internal docs — business strategy, plans, PRDs, session notes (not for public repo)
 docs/BUSINESS_MODEL_ANALYSIS.md
+docs/STRIPE_SETUP.md
 docs/DEVELOPMENT_PLAN.md
 docs/ENTERPRISE_STRATEGY.md
 docs/MARKETING_PLAYBOOK.md

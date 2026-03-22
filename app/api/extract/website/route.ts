@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   const { url, projectId } = parsed.data;
 
   try {
-    await validateExtractionUrl(url);
+    await validateExtractionUrl(url); // Throws SsrfError for private/internal IPs
   } catch (err) {
     if (err instanceof SsrfError) {
       return Response.json({ error: err.message }, { status: 400 });

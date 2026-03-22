@@ -208,6 +208,7 @@ export interface DesignVariant {
   figmaImport?: FigmaImportRecord;
   batchId?: string;
   batchPrompt?: string;
+  editHistory?: EditHistory;
 }
 
 export interface FigmaPushRecord {
@@ -231,3 +232,37 @@ export interface FigmaChange {
   designTokenMatch?: string;
   accepted: boolean;
 }
+
+// ─── Visual Editor (Element Inspector) ──────────────────────────────────────
+
+export interface StyleEdit {
+  elementId: string;
+  elementTag: string;
+  elementClasses: string;
+  property: string;
+  before: string;
+  after: string;
+  tokenMatch?: string;
+}
+
+export interface ElementAnnotation {
+  elementId: string;
+  elementTag: string;
+  note: string;
+  rect: { x: number; y: number; width: number; height: number };
+}
+
+export type EditEntryType = "manual" | "ai-annotation" | "ai-refine" | "rollback";
+
+export interface EditEntry {
+  id: string;
+  timestamp: string;
+  type: EditEntryType;
+  description: string;
+  codeBefore: string;
+  codeAfter: string;
+  styleChanges?: StyleEdit[];
+  annotations?: ElementAnnotation[];
+}
+
+export type EditHistory = EditEntry[];
