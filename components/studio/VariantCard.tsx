@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUp, ImagePlus, GitCompareArrows, Trash2, MousePointer2 } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUp, ImagePlus, GitCompareArrows, Trash2, MousePointer2, X } from "lucide-react";
 import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import { getInspectorScript } from "@/lib/explore/inspector-script";
 import { pushManualEdit, pushAiEdit, pushRollback, undoLastEdit } from "@/lib/explore/edit-history";
@@ -69,6 +70,7 @@ export function VariantCard({
 }: VariantCardProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
+  const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   const refineInputRef = useRef<HTMLInputElement>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -317,10 +319,13 @@ export function VariantCard({
           <iframe
             ref={iframeRef}
             sandbox="allow-scripts"
-            className={`h-full w-full origin-top-left scale-50 border-0 transition-opacity ${
-              previewReady ? "opacity-100" : "opacity-0"
-            }`}
-            style={{ width: "200%", height: "200%", pointerEvents: inspectMode ? "auto" : "none" }}
+            className={`h-full w-full origin-top-left border-0 transition-opacity ${
+              inspectMode ? "" : "scale-50"
+            } ${previewReady ? "opacity-100" : "opacity-0"}`}
+            style={inspectMode
+              ? { width: "100%", height: "100%", pointerEvents: "auto" }
+              : { width: "200%", height: "200%", pointerEvents: "none" }
+            }
             title={`Preview: ${variant.name}`}
           />
         )}
@@ -329,19 +334,78 @@ export function VariantCard({
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
           </div>
         )}
-
-        {/* Element Inspector popover — rendered inside the preview area */}
-        <ElementInspector
-          iframeRef={iframeRef}
-          containerRef={previewContainerRef}
-          isActive={inspectMode}
-          onStyleEdits={handleStyleEdits}
-          onAnnotationsSubmit={handleAnnotationsSubmit}
-          onDeselect={() => {}}
-          designTokens={designTokens}
-          iframeScale={0.5}
-        />
       </div>
+
+      {/* Full-screen inspector overlay — portalled to document body */}
+      {inspectMode && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-50 flex bg-[var(--bg-app)]">
+          {/* Main preview area */}
+          <div ref={fullscreenContainerRef} className="relative flex-1">
+            <iframe
+              ref={iframeRef}
+              sandbox="allow-scripts"
+              className="h-full w-full border-0"
+              style={{ pointerEvents: "auto" }}
+              title={`Inspector: ${variant.name}`}
+            />
+
+            {/* Inspector popover */}
+            <ElementInspector
+              iframeRef={iframeRef}
+              containerRef={fullscreenContainerRef}
+              isActive={inspectMode}
+              onStyleEdits={handleStyleEdits}
+              onAnnotationsSubmit={handleAnnotationsSubmit}
+              onDeselect={() => {}}
+              designTokens={designTokens}
+              iframeScale={1}
+            />
+
+            {/* Applying overlay */}
+            {isApplying && (
+              <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40">
+                <div className="flex items-center gap-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--studio-border)] px-4 py-3">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
+                  <span className="text-xs text-[var(--text-secondary)]">Applying changes...</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Top bar */}
+          <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between border-b border-[var(--studio-border)] bg-[var(--bg-panel)]/95 backdrop-blur-sm px-4 py-2">
+            <div className="flex items-center gap-2">
+              <MousePointer2 size={14} className="text-indigo-400" />
+              <span className="text-xs font-medium text-[var(--text-primary)]">
+                Inspector — {variant.name}
+              </span>
+              <span className="text-[10px] text-[var(--text-muted)]">
+                Click any element to inspect and edit
+              </span>
+            </div>
+            <button
+              onClick={toggleInspectMode}
+              className="flex items-center gap-1.5 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+            >
+              <X size={12} />
+              Exit Inspector
+            </button>
+          </div>
+
+          {/* Edit history sidebar */}
+          {editHistory.length > 0 && (
+            <div className="w-[240px] border-l border-[var(--studio-border)] bg-[var(--bg-panel)] overflow-y-auto pt-12">
+              <EditHistoryPanel
+                history={editHistory}
+                onRestore={handleHistoryRestore}
+                onPreview={handleHistoryPreview}
+                currentPreviewId={previewEntryId}
+              />
+            </div>
+          )}
+        </div>,
+        document.body
+      )}
 
       {/* Info */}
       <div className="flex flex-1 flex-col gap-1.5 p-3">
