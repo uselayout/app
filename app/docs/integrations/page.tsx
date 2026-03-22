@@ -7,7 +7,7 @@ import { Callout } from "@/components/docs/Callout";
 export const metadata: Metadata = {
   title: "Integrations | Layout Docs",
   description:
-    "Use Layout with Claude Code, Cursor, GitHub Copilot, Windsurf, and OpenAI Codex.",
+    "Use Layout with Claude Code, Cursor, GitHub Copilot, Windsurf, Google Antigravity, and OpenAI Codex.",
 };
 
 const integrations = [
@@ -34,6 +34,12 @@ const integrations = [
     href: "/docs/integrations/windsurf",
     description:
       "Configure windsurf.rules and import tokens.css so Cascade suggestions naturally use the correct token values.",
+  },
+  {
+    name: "Google Antigravity",
+    href: "/docs/integrations/antigravity",
+    description:
+      "Add the Layout MCP server via the MCP Store or manual config. Antigravity agents get full design system context on every prompt.",
   },
   {
     name: "OpenAI Codex",
