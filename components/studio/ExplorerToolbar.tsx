@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { ArrowUp, RotateCw, Figma, Minus, Plus, Download, Wand2, Split, ImagePlus, Paperclip, X, ChevronDown } from "lucide-react";
 import type { ContextFile, AiModelId } from "@/lib/types";
-import { AI_MODELS, DEFAULT_EXPLORE_MODEL } from "@/lib/types";
+import { AI_MODELS } from "@/lib/types";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_DIMENSION = 1600;

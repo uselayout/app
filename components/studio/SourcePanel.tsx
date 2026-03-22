@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Loader2, Plus, Trash2, Globe, Layers, ArrowRight } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
@@ -28,8 +28,6 @@ interface SourcePanelProps {
 }
 
 type TabId = "tokens" | "components" | "screenshots" | "quality";
-
-const VALID_TABS: TabId[] = ["tokens", "components", "screenshots", "quality"];
 
 function SourcePanelEmptyState({
   projectId,
