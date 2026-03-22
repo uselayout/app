@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { History, RotateCcw, Eye, Pencil, Bot, Undo2 } from "lucide-react";
+import { History, RotateCcw, Eye, Pencil, Bot, Undo2, GitCompareArrows, X } from "lucide-react";
 import type { EditEntry, EditHistory } from "@/lib/types";
 
 interface EditHistoryPanelProps {
@@ -40,6 +40,56 @@ function formatTime(iso: string): string {
   return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
+function DiffView({ before, after, onClose }: { before: string; after: string; onClose: () => void }) {
+  const beforeLines = before.split("\n");
+  const afterLines = after.split("\n");
+
+  // Simple line-by-line diff
+  const maxLen = Math.max(beforeLines.length, afterLines.length);
+  const diffLines: Array<{ type: "same" | "removed" | "added"; text: string }> = [];
+
+  for (let i = 0; i < maxLen; i++) {
+    const bLine = beforeLines[i];
+    const aLine = afterLines[i];
+    if (bLine === aLine) {
+      if (bLine !== undefined) diffLines.push({ type: "same", text: bLine });
+    } else {
+      if (bLine !== undefined) diffLines.push({ type: "removed", text: bLine });
+      if (aLine !== undefined) diffLines.push({ type: "added", text: aLine });
+    }
+  }
+
+  return (
+    <div className="border-t border-[var(--studio-border)]">
+      <div className="flex items-center justify-between px-3 py-1 bg-[var(--bg-surface)]">
+        <span className="text-[9px] text-[var(--text-muted)]">Diff</span>
+        <button onClick={onClose} className="rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+          <X size={10} />
+        </button>
+      </div>
+      <div className="max-h-[180px] overflow-auto bg-[var(--bg-app)] font-mono text-[9px] leading-relaxed">
+        {diffLines.map((line, i) => (
+          <div
+            key={i}
+            className={`px-3 py-px whitespace-pre ${
+              line.type === "removed"
+                ? "bg-red-500/10 text-red-400"
+                : line.type === "added"
+                  ? "bg-emerald-500/10 text-emerald-400"
+                  : "text-[var(--text-muted)]"
+            }`}
+          >
+            <span className="inline-block w-3 text-right mr-2 opacity-50">
+              {line.type === "removed" ? "−" : line.type === "added" ? "+" : " "}
+            </span>
+            {line.text}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function EditHistoryPanel({
   history,
   onRestore,
@@ -47,6 +97,7 @@ export function EditHistoryPanel({
   currentPreviewId,
 }: EditHistoryPanelProps) {
   const [expanded, setExpanded] = useState(true);
+  const [compareEntry, setCompareEntry] = useState<EditEntry | null>(null);
 
   if (history.length === 0) return null;
 
@@ -62,6 +113,14 @@ export function EditHistoryPanel({
         <span>History ({history.length})</span>
         <span className="ml-auto text-[var(--text-muted)]">{expanded ? "▾" : "▸"}</span>
       </button>
+
+      {compareEntry && (
+        <DiffView
+          before={compareEntry.codeBefore}
+          after={compareEntry.codeAfter}
+          onClose={() => setCompareEntry(null)}
+        />
+      )}
 
       {expanded && (
         <div className="max-h-[200px] overflow-y-auto">
@@ -92,6 +151,17 @@ export function EditHistoryPanel({
                   title="Preview this version"
                 >
                   <Eye size={10} />
+                </button>
+                <button
+                  onClick={() => setCompareEntry(compareEntry?.id === entry.id ? null : entry)}
+                  className={`rounded p-0.5 transition-colors ${
+                    compareEntry?.id === entry.id
+                      ? "text-indigo-400 bg-indigo-500/10"
+                      : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
+                  }`}
+                  title="Compare before/after"
+                >
+                  <GitCompareArrows size={10} />
                 </button>
                 <button
                   onClick={() => onRestore(entry)}

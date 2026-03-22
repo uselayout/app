@@ -4,12 +4,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUp, ImagePlus, GitCompareArrows, Trash2, MousePointer2 } from "lucide-react";
 import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import { getInspectorScript } from "@/lib/explore/inspector-script";
-import { pushManualEdit, pushRollback, undoLastEdit } from "@/lib/explore/edit-history";
+import { pushManualEdit, pushAiEdit, pushRollback, undoLastEdit } from "@/lib/explore/edit-history";
 import { Tooltip as TooltipPrimitive } from "radix-ui";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ElementInspector } from "@/components/studio/ElementInspector";
 import { EditHistoryPanel } from "@/components/studio/EditHistoryPanel";
-import type { DesignVariant, StyleEdit, EditEntry, EditHistory } from "@/lib/types";
+import type { DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotation, ExtractedToken } from "@/lib/types";
 
 function Tip({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
   return (
@@ -45,6 +45,7 @@ interface VariantCardProps {
   onDelete?: () => void;
   onCodeUpdate?: (code: string, editHistory: EditHistory) => void;
   layoutMd?: string;
+  designTokens?: ExtractedToken[];
 }
 
 export function VariantCard({
@@ -64,6 +65,7 @@ export function VariantCard({
   onDelete,
   onCodeUpdate,
   layoutMd,
+  designTokens,
 }: VariantCardProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -186,6 +188,43 @@ export function VariantCard({
     }
   }, [variant.code, editHistory, onCodeUpdate, layoutMd]);
 
+  const handleAnnotationsSubmit = useCallback(async (anns: ElementAnnotation[]) => {
+    if (!onCodeUpdate || anns.length === 0) return;
+    setIsApplying(true);
+
+    try {
+      const res = await fetch("/api/generate/apply-edits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: variant.code,
+          annotations: anns,
+          layoutMd,
+        }),
+      });
+
+      if (!res.ok) {
+        console.error("Annotation edit failed:", await res.text());
+        return;
+      }
+
+      const { code: updatedCode } = await res.json();
+      const description = anns.map((a) => `${a.elementTag}: "${a.note}"`).join("; ");
+      const newHistory = pushAiEdit(
+        editHistory,
+        variant.code,
+        updatedCode,
+        anns,
+        description
+      );
+      onCodeUpdate(updatedCode, newHistory);
+    } catch (err) {
+      console.error("Annotation edit error:", err);
+    } finally {
+      setIsApplying(false);
+    }
+  }, [variant.code, editHistory, onCodeUpdate, layoutMd]);
+
   const handleHistoryRestore = useCallback((entry: EditEntry) => {
     if (!onCodeUpdate) return;
     const newHistory = pushRollback(editHistory, variant.code, entry);
@@ -297,7 +336,9 @@ export function VariantCard({
           containerRef={previewContainerRef}
           isActive={inspectMode}
           onStyleEdits={handleStyleEdits}
+          onAnnotationsSubmit={handleAnnotationsSubmit}
           onDeselect={() => {}}
+          designTokens={designTokens}
           iframeScale={0.5}
         />
       </div>
