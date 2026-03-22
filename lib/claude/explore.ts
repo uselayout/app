@@ -159,6 +159,7 @@ export function createExploreStream(
   apiKey?: string,
   imageDataUrl?: string,
   contextFiles?: Array<{ name: string; content: string }>,
+  modelId: string = "claude-sonnet-4-6",
 ): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
   const systemPrompt = `${EXPLORE_SYSTEM}\n\nGenerate exactly ${variantCount} variants.\n\n${layoutMd}`;
@@ -177,7 +178,7 @@ export function createExploreStream(
 
       try {
         const msgStream = anthropic.messages.stream({
-          model: "claude-sonnet-4-6",
+          model: modelId,
           max_tokens: 64000,
           system: systemPrompt,
           messages: [{ role: "user", content: userContent }],
@@ -222,6 +223,7 @@ export function createRefineStream(
   apiKey?: string,
   contextFiles?: Array<{ name: string; content: string }>,
   imageDataUrl?: string,
+  modelId: string = "claude-sonnet-4-6",
 ): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
   const systemPrompt = `${REFINE_SYSTEM}\n\nGenerate exactly ${variantCount} refined variants.\n\n${layoutMd}`;
@@ -251,7 +253,7 @@ Refinement request: ${refinementPrompt}`;
 
       try {
         const msgStream = anthropic.messages.stream({
-          model: "claude-sonnet-4-6",
+          model: modelId,
           max_tokens: 64000,
           system: systemPrompt,
           messages: [{ role: "user", content: userContent }],

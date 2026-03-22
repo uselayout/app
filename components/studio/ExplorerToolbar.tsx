@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { ArrowUp, RotateCw, Figma, Minus, Plus, Download, Wand2, Split, ImagePlus, Paperclip, X, ChevronDown } from "lucide-react";
 import type { ContextFile, AiModelId } from "@/lib/types";
-import { AI_MODELS } from "@/lib/types";
+import { AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_DIMENSION = 1600;
@@ -33,6 +33,8 @@ interface ExplorerToolbarProps {
   onModelChange: (modelId: AiModelId) => void;
   /** Whether the user has a Google API key configured */
   hasGoogleKey: boolean;
+  /** Whether the user has an Anthropic API key configured */
+  hasAnthropicKey: boolean;
 }
 
 export function ExplorerToolbar({
@@ -51,6 +53,7 @@ export function ExplorerToolbar({
   modelId,
   onModelChange,
   hasGoogleKey,
+  hasAnthropicKey,
 }: ExplorerToolbarProps) {
   const [prompt, setPrompt] = useState("");
   const [refinePrompt, setRefinePrompt] = useState("");
@@ -428,15 +431,21 @@ export function ExplorerToolbar({
                 disabled={isGenerating}
                 className="appearance-none rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.05)] pl-2 pr-6 py-0.5 text-xs text-[var(--text-primary)] outline-none transition-colors hover:bg-[var(--bg-hover)] disabled:opacity-40 cursor-pointer"
               >
-                {Object.values(AI_MODELS).map((m) => (
-                  <option
-                    key={m.id}
-                    value={m.id}
-                    disabled={m.provider === "gemini" && !hasGoogleKey}
-                  >
-                    {m.label}{m.provider === "gemini" && !hasGoogleKey ? " (no key)" : ""}
-                  </option>
-                ))}
+                {Object.values(AI_MODELS).map((m) => {
+                  const isByokOnly = BYOK_ONLY_MODELS.has(m.id as AiModelId);
+                  const needsKey = m.provider === "gemini"
+                    ? !hasGoogleKey
+                    : isByokOnly && !hasAnthropicKey;
+                  return (
+                    <option
+                      key={m.id}
+                      value={m.id}
+                      disabled={needsKey}
+                    >
+                      {m.label}{needsKey ? " (own key)" : ""}
+                    </option>
+                  );
+                })}
               </select>
               <ChevronDown size={10} className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
             </div>

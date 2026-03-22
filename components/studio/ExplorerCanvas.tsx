@@ -706,6 +706,11 @@ export function ExplorerCanvas({
     return !!getStoredGoogleApiKey();
   }, []);
 
+  const hasAnthropicKey = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return !!getStoredApiKey();
+  }, []);
+
   const gridClassName = "grid grid-cols-2 gap-4";
 
   return (
@@ -1019,6 +1024,7 @@ export function ExplorerCanvas({
         modelId={modelId}
         onModelChange={setModelId}
         hasGoogleKey={hasGoogleKey}
+        hasAnthropicKey={hasAnthropicKey}
       />
 
       {pushVariant && (

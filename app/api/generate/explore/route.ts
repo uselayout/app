@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { checkQuota, deductCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
 import type { AiMode } from "@/lib/types/billing";
-import { AI_MODELS, DEFAULT_EXPLORE_MODEL } from "@/lib/types";
+import { AI_MODELS, BYOK_ONLY_MODELS, DEFAULT_EXPLORE_MODEL } from "@/lib/types";
 import type { AiModelId } from "@/lib/types";
 
 const validModelIds = Object.keys(AI_MODELS) as [string, ...string[]];
@@ -73,6 +73,11 @@ export async function POST(request: NextRequest) {
     if (userApiKey && userApiKey.startsWith("sk-ant-")) {
       mode = "byok";
       effectiveApiKey = userApiKey;
+    } else if (BYOK_ONLY_MODELS.has(modelId)) {
+      return Response.json(
+        { error: `${model.label} requires your own API key. Add one in Settings.`, code: "BYOK_REQUIRED" },
+        { status: 402 }
+      );
     } else {
       const quota = await checkQuota(userId, "explore");
       if (!quota.allowed) {
@@ -104,6 +109,7 @@ export async function POST(request: NextRequest) {
         apiKey: effectiveApiKey,
         contextFiles,
         imageDataUrl,
+        modelId,
       })
     : createExploreStreamForModel(modelId, {
         prompt,
@@ -112,6 +118,7 @@ export async function POST(request: NextRequest) {
         apiKey: effectiveApiKey,
         imageDataUrl,
         contextFiles,
+        modelId,
       });
 
   void usage
