@@ -20,7 +20,8 @@ import { calculateHealthScore } from "@/lib/health/score";
 import { useOnboardingStore } from "@/lib/store/onboarding";
 import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 import { DEFAULT_EXPLORE_MODEL } from "@/lib/types";
-import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId } from "@/lib/types";
+import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
+import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken } from "@/lib/types";
 
 interface ExplorerCanvasProps {
   projectId: string;
@@ -45,6 +46,13 @@ export function ExplorerCanvas({
   onInitialImageConsumed,
   extractedFonts = [],
 }: ExplorerCanvasProps) {
+  // Parse design tokens from layoutMd for the inspector's token suggestions
+  const allDesignTokens: ExtractedToken[] = useMemo(() => {
+    if (!layoutMd) return [];
+    const parsed = parseTokensFromLayoutMd(layoutMd);
+    return [...parsed.colors, ...parsed.typography, ...parsed.spacing, ...parsed.radius, ...parsed.effects];
+  }, [layoutMd]);
+
   const [modelId, setModelId] = useState<AiModelId>(DEFAULT_EXPLORE_MODEL);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessingImages, setIsProcessingImages] = useState(false);
@@ -907,6 +915,7 @@ export function ExplorerCanvas({
                       onDelete={() => handleDeleteVariant(variant.id)}
                       onCodeUpdate={(code, editHistory) => handleCodeUpdate(variant.id, code, editHistory)}
                       layoutMd={layoutMd}
+                      designTokens={allDesignTokens}
                       isProcessingImages={isProcessingImages}
                       onViewComparison={() => {
                         const comparisons = currentExploration?.comparisons?.filter(

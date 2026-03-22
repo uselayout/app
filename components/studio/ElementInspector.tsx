@@ -452,9 +452,9 @@ export function ElementInspector({
 
         {activeSection === "size" && (
           <>
-            <PropertyRow label="Width" value={cs.width ?? ""} cssProp="width" onApply={applyStyle} />
-            <PropertyRow label="Height" value={cs.height ?? ""} cssProp="height" onApply={applyStyle} />
-            <PropertyRow label="Max Width" value={cs.maxWidth ?? ""} cssProp="maxWidth" onApply={applyStyle} />
+            <PropertyRow label="Width" value={cs.width ?? ""} cssProp="width" onApply={applyStyle} tokenSuggestions={spacingTokens} />
+            <PropertyRow label="Height" value={cs.height ?? ""} cssProp="height" onApply={applyStyle} tokenSuggestions={spacingTokens} />
+            <PropertyRow label="Max Width" value={cs.maxWidth ?? ""} cssProp="maxWidth" onApply={applyStyle} tokenSuggestions={spacingTokens} />
             <PropertyRow label="Radius" value={cs.borderRadius ?? ""} cssProp="borderRadius" onApply={applyStyle} />
             <PropertyRow label="Border Width" value={cs.borderWidth ?? ""} cssProp="borderWidth" onApply={applyStyle} />
             <PropertyRow label="Display" value={cs.display ?? ""} cssProp="display" onApply={applyStyle} type="select" options={["block", "flex", "grid", "inline", "inline-flex", "inline-block", "none"]} />
@@ -463,17 +463,72 @@ export function ElementInspector({
             <PropertyRow label="Justify" value={cs.justifyContent ?? ""} cssProp="justifyContent" onApply={applyStyle} type="select" options={["flex-start", "flex-end", "center", "space-between", "space-around", "space-evenly"]} />
           </>
         )}
+
+        {activeSection === "annotate" && (
+          <>
+            <div className="text-[9px] text-[var(--text-muted)] mb-2">
+              Add a note about what to change on this &lt;{selected.elementTag}&gt;
+            </div>
+            <div className="flex gap-1">
+              <input
+                type="text"
+                value={annotationText}
+                onChange={(e) => setAnnotationText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddAnnotation(); } }}
+                placeholder="e.g. make this bigger, use brand colour..."
+                className="flex-1 rounded bg-[var(--bg-surface)] border border-[var(--studio-border)] px-1.5 py-1 text-[10px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)]"
+              />
+              <button
+                onClick={handleAddAnnotation}
+                disabled={!annotationText.trim()}
+                className="rounded bg-purple-500/20 p-1 text-purple-400 hover:bg-purple-500/30 transition-colors disabled:opacity-30"
+              >
+                <MessageSquarePlus size={12} />
+              </button>
+            </div>
+            {annotations.length > 0 && (
+              <div className="mt-2 space-y-1">
+                <div className="text-[8px] uppercase tracking-wider text-[var(--text-muted)]">
+                  {annotations.length} note{annotations.length !== 1 ? "s" : ""} queued
+                </div>
+                {annotations.map((ann, i) => (
+                  <div key={i} className="flex items-start gap-1.5 rounded bg-purple-500/5 px-1.5 py-1">
+                    <span className="text-[9px] text-purple-400 shrink-0">&lt;{ann.elementTag}&gt;</span>
+                    <span className="text-[9px] text-[var(--text-secondary)] flex-1">{ann.note}</span>
+                    <button
+                      onClick={() => setAnnotations((prev) => prev.filter((_, j) => j !== i))}
+                      className="shrink-0 text-[var(--text-muted)] hover:text-red-400"
+                    >
+                      <X size={8} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
 
-      {/* Apply button */}
-      {pendingEdits.length > 0 && (
-        <div className="border-t border-[var(--studio-border)] px-2.5 py-2">
-          <button
-            onClick={handleApplyAll}
-            className="w-full rounded-md bg-[var(--studio-accent)] px-3 py-1.5 text-[10px] font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors"
-          >
-            Apply {pendingEdits.length} change{pendingEdits.length !== 1 ? "s" : ""}
-          </button>
+      {/* Apply / Submit buttons */}
+      {(pendingEdits.length > 0 || annotations.length > 0) && (
+        <div className="flex gap-1.5 border-t border-[var(--studio-border)] px-2.5 py-2">
+          {pendingEdits.length > 0 && (
+            <button
+              onClick={handleApplyAll}
+              className="flex-1 rounded-md bg-[var(--studio-accent)] px-3 py-1.5 text-[10px] font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors"
+            >
+              Apply {pendingEdits.length} change{pendingEdits.length !== 1 ? "s" : ""}
+            </button>
+          )}
+          {annotations.length > 0 && onAnnotationsSubmit && (
+            <button
+              onClick={handleSubmitAnnotations}
+              className="flex-1 flex items-center justify-center gap-1 rounded-md bg-purple-500/20 px-3 py-1.5 text-[10px] font-medium text-purple-400 hover:bg-purple-500/30 transition-colors"
+            >
+              <Send size={10} />
+              Push {annotations.length} to AI
+            </button>
+          )}
         </div>
       )}
     </div>

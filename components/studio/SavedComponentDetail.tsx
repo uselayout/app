@@ -12,10 +12,14 @@ import {
   ChevronUp,
   Figma,
   Sparkles,
+  MousePointer2,
 } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { buildSrcdoc, extractComponentName, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
+import { getInspectorScript } from "@/lib/explore/inspector-script";
+import { ElementInspector } from "@/components/studio/ElementInspector";
 import type { Component } from "@/lib/types/component";
+import type { StyleEdit } from "@/lib/types";
 
 interface SavedComponentDetailProps {
   component: Component;
@@ -193,7 +197,17 @@ function TagsEdit({
 // Preview
 // ---------------------------------------------------------------------------
 
-function DetailPreview({ component }: { component: Component }) {
+function DetailPreview({
+  component,
+  inspectMode,
+  onStyleEdits,
+}: {
+  component: Component;
+  inspectMode: boolean;
+  onStyleEdits: (edits: StyleEdit[]) => void;
+}) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [srcdoc, setSrcdoc] = useState<string | null>(null);
   const [error, setError] = useState(false);
 
@@ -215,7 +229,7 @@ function DetailPreview({ component }: { component: Component }) {
         if (!cancelled && js) {
           const name = extractComponentName(component.code);
           const sanitised = sanitizeRelativeSrc(js);
-          setSrcdoc(buildSrcdoc(sanitised, name));
+          setSrcdoc(buildSrcdoc(sanitised, name, inspectMode ? getInspectorScript() : undefined));
         }
       } catch {
         if (!cancelled) setError(true);
@@ -223,7 +237,7 @@ function DetailPreview({ component }: { component: Component }) {
     }
     prepare();
     return () => { cancelled = true; };
-  }, [component.code, component.compiledJs]);
+  }, [component.code, component.compiledJs, inspectMode]);
 
   if (error) {
     return (
@@ -242,12 +256,22 @@ function DetailPreview({ component }: { component: Component }) {
   }
 
   return (
-    <div className="relative h-[400px] overflow-hidden bg-white">
+    <div ref={containerRef} className="relative h-[400px] overflow-hidden bg-white">
       <iframe
+        ref={iframeRef}
         srcDoc={srcdoc}
         sandbox="allow-scripts"
         className="h-[800px] w-[200%] origin-top-left scale-50 border-0"
+        style={{ pointerEvents: inspectMode ? "auto" : "none" }}
         title={`Preview of ${component.name}`}
+      />
+      <ElementInspector
+        iframeRef={iframeRef}
+        containerRef={containerRef}
+        isActive={inspectMode}
+        onStyleEdits={onStyleEdits}
+        onDeselect={() => {}}
+        iframeScale={0.5}
       />
     </div>
   );
@@ -270,6 +294,8 @@ export function SavedComponentDetail({
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showCode, setShowCode] = useState(false);
+  const [inspectMode, setInspectMode] = useState(false);
+  const [isApplyingEdits, setIsApplyingEdits] = useState(false);
 
   const handleSave = useCallback(
     async (field: string, value: unknown) => {
@@ -315,6 +341,37 @@ export function SavedComponentDetail({
     }
   }, [component.code]);
 
+  const handleStyleEdits = useCallback(async (edits: StyleEdit[]) => {
+    if (edits.length === 0) return;
+    setIsApplyingEdits(true);
+    try {
+      const res = await fetch("/api/generate/apply-edits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: component.code, styleEdits: edits }),
+      });
+      if (!res.ok) return;
+      const { code: updatedCode } = await res.json();
+      // Save updated code via the component update API
+      const patchRes = await fetch(
+        `/api/organizations/${orgId}/components/${component.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: updatedCode }),
+        }
+      );
+      if (patchRes.ok) {
+        const updated = await patchRes.json();
+        onUpdate(updated);
+      }
+    } catch (err) {
+      console.error("Style edit error:", err);
+    } finally {
+      setIsApplyingEdits(false);
+    }
+  }, [component.code, component.id, orgId, onUpdate]);
+
   return (
     <div className="fixed inset-0 z-50 flex">
       {/* Backdrop */}
@@ -349,7 +406,17 @@ export function SavedComponentDetail({
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           {/* Preview */}
-          <DetailPreview component={component} />
+          <div className="relative">
+            <DetailPreview component={component} inspectMode={inspectMode} onStyleEdits={handleStyleEdits} />
+            {isApplyingEdits && (
+              <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40">
+                <div className="flex items-center gap-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--studio-border)] px-3 py-2">
+                  <Loader2 size={14} className="animate-spin text-[var(--text-secondary)]" />
+                  <span className="text-[10px] text-[var(--text-secondary)]">Applying changes...</span>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Metadata */}
           <div className="space-y-3 border-t border-[var(--studio-border)] px-4 py-4">
@@ -391,6 +458,17 @@ export function SavedComponentDetail({
 
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-2 border-t border-[var(--studio-border)] px-4 py-3">
+            <button
+              onClick={() => setInspectMode(!inspectMode)}
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                inspectMode
+                  ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-400"
+                  : "border-[var(--studio-border)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              <MousePointer2 size={12} />
+              {inspectMode ? "Exit Inspect" : "Inspect & Edit"}
+            </button>
             <button
               onClick={handleCopy}
               className="flex items-center gap-1.5 rounded-lg border border-[var(--studio-border)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
