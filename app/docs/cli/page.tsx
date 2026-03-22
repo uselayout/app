@@ -139,7 +139,7 @@ export default function CliPage() {
           language="bash"
         />
         <p className="text-base text-gray-600 leading-relaxed">
-          This detects Claude Code, Cursor, and Windsurf and configures whichever are present. To target a specific tool:
+          This detects Claude Code, Cursor, Antigravity, and Windsurf and configures whichever are present. To target a specific tool:
         </p>
         <CopyBlock
           code={`npx @layoutdesign/context install --target claude
@@ -482,6 +482,15 @@ npx @layoutdesign/context init --kit notion-lite`}
               Windsurf
             </Link>
             : .windsurfrules and tokens.css import
+          </li>
+          <li>
+            <Link
+              href="/docs/integrations/antigravity"
+              className="text-gray-900 hover:underline"
+            >
+              Google Antigravity
+            </Link>
+            : MCP server via MCP Store or manual config
           </li>
           <li>
             <Link

@@ -48,7 +48,7 @@ const capabilities = [
     icon: Server,
     title: "MCP Server",
     description:
-      "Install @layoutdesign/context and your AI agent fetches design tokens and checks compliance in real-time. Works with Claude Code, Cursor, Copilot, and Windsurf with no copy-paste needed.",
+      "Install @layoutdesign/context and your AI agent fetches design tokens and checks compliance in real-time. Works with Claude Code, Cursor, Copilot, Antigravity, and Windsurf with no copy-paste needed.",
     href: "/docs/cli",
   },
   {

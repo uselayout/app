@@ -15,7 +15,7 @@ const STEPS = [
   },
   {
     title: 'Your AI gets design context',
-    desc: 'Claude Code, Cursor, and Copilot automatically use your design system',
+    desc: 'Claude Code, Cursor, Antigravity, and Copilot automatically use your design system',
   },
 ];
 
