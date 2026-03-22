@@ -6,7 +6,7 @@ import type {
   SubscriptionTier,
 } from "@/lib/types/billing";
 import { TIER_CREDITS as CREDITS } from "@/lib/types/billing";
-import { getUserTier } from "@/lib/billing/subscription";
+import { getUserTier, getSubscriptionByOrg } from "@/lib/billing/subscription";
 
 interface CreditRow {
   id: string;
@@ -80,6 +80,18 @@ export async function checkQuota(
     }
   }
 
+  // Auto-reset credits when period has expired (covers free tier + lapsed paid)
+  if (new Date(balance.periodEnd) < new Date()) {
+    const tier = await getUserTier(userId);
+    const now = new Date();
+    const newEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    await resetMonthlyCredits(userId, tier, 1, now.toISOString(), newEnd.toISOString());
+    balance = await getCreditBalance(userId);
+    if (!balance) {
+      return { allowed: false, reason: "Failed to reset credits. Please try again." };
+    }
+  }
+
   const creditType = endpoint === "layout-md" ? "layoutMd" : "testQuery";
   const monthly = endpoint === "layout-md"
     ? balance.layoutMdRemaining
@@ -115,9 +127,23 @@ export async function checkQuotaByOrg(
   orgId: string,
   endpoint: AiEndpoint
 ): Promise<QuotaCheck> {
-  const balance = await getCreditBalanceByOrg(orgId);
+  let balance = await getCreditBalanceByOrg(orgId);
   if (!balance) {
     return { allowed: false, reason: "No credit balance found. Please subscribe to a plan." };
+  }
+
+  // Auto-reset credits when period has expired
+  if (new Date(balance.periodEnd) < new Date()) {
+    const sub = await getSubscriptionByOrg(orgId);
+    if (sub && sub.status !== "cancelled") {
+      const now = new Date();
+      const newEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      await resetMonthlyCreditsByOrg(orgId, sub.tier, sub.seatCount, now.toISOString(), newEnd.toISOString());
+      balance = await getCreditBalanceByOrg(orgId);
+      if (!balance) {
+        return { allowed: false, reason: "Failed to reset credits. Please try again." };
+      }
+    }
   }
 
   const creditType = endpoint === "layout-md" ? "layoutMd" : "testQuery";
