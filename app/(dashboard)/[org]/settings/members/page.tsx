@@ -49,6 +49,8 @@ export default function MembersPage() {
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [invitations, setInvitations] = useState<OrgInvitation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [seatCount, setSeatCount] = useState<number | null>(null);
+  const [isTeam, setIsTeam] = useState(false);
 
   // Invite form
   const [email, setEmail] = useState("");
@@ -69,11 +71,12 @@ export default function MembersPage() {
     if (!orgId) return;
     setLoading(true);
 
-    const [membersRes, invitationsRes] = await Promise.all([
+    const [membersRes, invitationsRes, subRes] = await Promise.all([
       fetch(`/api/organizations/${orgId}/members`),
       canManage
         ? fetch(`/api/organizations/${orgId}/invitations`)
         : Promise.resolve(null),
+      fetch("/api/billing/subscription"),
     ]);
 
     if (membersRes.ok) {
@@ -84,6 +87,14 @@ export default function MembersPage() {
     if (invitationsRes?.ok) {
       const data = await invitationsRes.json();
       setInvitations(data);
+    }
+
+    if (subRes.ok) {
+      const data = await subRes.json();
+      if (data.subscription) {
+        setSeatCount(data.subscription.seatCount);
+        setIsTeam(data.subscription.tier === "team");
+      }
     }
 
     setLoading(false);
@@ -193,6 +204,7 @@ export default function MembersPage() {
 
   const isMe = (member: OrgMember) => member.userId === session?.user?.id;
   const isOwner = (member: OrgMember) => member.role === "owner";
+  const atSeatLimit = isTeam && seatCount !== null && (members.length + invitations.length) >= seatCount;
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
@@ -205,6 +217,31 @@ export default function MembersPage() {
       <p className="mt-1 text-sm text-[var(--text-secondary)]">
         Invite team members and manage roles
       </p>
+
+      {/* Seat indicator for team plans */}
+      {isTeam && seatCount !== null && !loading && (
+        <div className="mt-4 flex items-center gap-2 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2.5">
+          <Users size={14} className="text-[var(--text-muted)]" />
+          <span className="text-xs text-[var(--text-secondary)]">
+            <span className="font-medium text-[var(--text-primary)]">
+              {members.length}
+            </span>{" "}
+            of{" "}
+            <span className="font-medium text-[var(--text-primary)]">
+              {seatCount}
+            </span>{" "}
+            seats used
+          </span>
+          {members.length >= seatCount && (
+            <a
+              href={`/${activeOrg?.slug || ""}/settings/billing`}
+              className="ml-auto text-[10px] text-[var(--studio-accent)] hover:text-[var(--studio-accent-hover)] transition-colors"
+            >
+              Add more seats
+            </a>
+          )}
+        </div>
+      )}
 
       {/* Invite form — only if user can manage members */}
       {canManage && (
@@ -240,7 +277,7 @@ export default function MembersPage() {
             </select>
             <button
               type="submit"
-              disabled={inviting || !email.trim()}
+              disabled={inviting || !email.trim() || atSeatLimit}
               className="flex items-center gap-1.5 rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm font-medium text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {inviting ? (
@@ -251,6 +288,18 @@ export default function MembersPage() {
               {inviteSuccess ? "Sent" : "Invite"}
             </button>
           </div>
+          {atSeatLimit && (
+            <p className="mt-2 text-xs text-amber-400">
+              All seats are in use.{" "}
+              <a
+                href={`/${activeOrg?.slug || ""}/settings/billing`}
+                className="underline hover:text-amber-300"
+              >
+                Add more seats
+              </a>{" "}
+              to invite new members.
+            </p>
+          )}
           {inviteError && (
             <p className="mt-2 text-xs text-red-400">{inviteError}</p>
           )}

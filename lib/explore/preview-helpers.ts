@@ -27,7 +27,7 @@ export function extractComponentName(code: string): string {
   return lastFn?.[1] ?? "App";
 }
 
-export function buildSrcdoc(js: string, componentName: string): string {
+export function buildSrcdoc(js: string, componentName: string, inspectorScript?: string): string {
   // Embed transpiled JS as a JSON-encoded string literal. This safely handles
   // ALL special characters (quotes, backslashes, angle brackets, non-ASCII)
   // without base64/eval. Matches the proven approach used in TestPanel.
@@ -90,5 +90,6 @@ window.addEventListener('load',function(){
   }
 });
 </${"script"}>
+${inspectorScript ? `<${"script"}>${inspectorScript}</${"script"}>` : ""}
 </body></html>`;
 }

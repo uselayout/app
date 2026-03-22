@@ -322,6 +322,29 @@ export async function removeMember(
   return true;
 }
 
+// ─── Counts ──────────────────────────────────────────────────────────────────
+
+export async function getOrgMemberCount(orgId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from("layout_organization_member")
+    .select("*", { count: "exact", head: true })
+    .eq("org_id", orgId);
+
+  if (error) return 0;
+  return count ?? 0;
+}
+
+export async function getPendingInviteCount(orgId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from("layout_invitation")
+    .select("*", { count: "exact", head: true })
+    .eq("org_id", orgId)
+    .gt("expires_at", new Date().toISOString());
+
+  if (error) return 0;
+  return count ?? 0;
+}
+
 // ─── Invitation CRUD ──────────────────────────────────────────────────────────
 
 export async function createInvitation(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { auth } from "@/lib/auth";
+import { validateExtractionUrl, SsrfError } from "@/lib/website/validate-url";
 
 const RequestSchema = z.object({
   url: z.string().url(),
@@ -32,6 +33,16 @@ export async function POST(request: NextRequest) {
   }
 
   const { url } = parsed.data;
+
+  // SSRF protection: reject private/internal IP addresses
+  try {
+    await validateExtractionUrl(url);
+  } catch (err) {
+    if (err instanceof SsrfError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    return NextResponse.json({ error: "URL validation failed" }, { status: 400 });
+  }
 
   try {
     const controller = new AbortController();

@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
   let mode: AiMode;
   let apiKey: string | undefined;
 
-  if (userApiKey) {
+  if (userApiKey && userApiKey.startsWith("sk-ant-")) {
     mode = "byok";
     apiKey = userApiKey;
   } else {

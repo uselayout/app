@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod/v4";
 import JSZip from "jszip";
+import { auth } from "@/lib/auth";
 import { generateClaudeMd } from "@/lib/export/claude-md";
 import { generateAgentsMd } from "@/lib/export/agents-md";
 import { generateCursorRules } from "@/lib/export/cursor-rules";
@@ -35,6 +36,11 @@ const RequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session) {
+    return Response.json({ error: "Authentication required" }, { status: 401 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
