@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { fetchAllProjects } from "@/lib/supabase/db";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
 import { useSession } from "@/lib/auth-client";
+import type { Project } from "@/lib/types";
 
 export function ProjectHydrator() {
   const { data: session } = useSession();
@@ -23,10 +23,14 @@ export function ProjectHydrator() {
 
     const userId = session.user.id;
     setHydrating(true);
-    fetchAllProjects(currentOrgId)
+    fetch(`/api/organizations/${currentOrgId}/projects`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to fetch projects: ${res.status}`);
+        return res.json() as Promise<Project[]>;
+      })
       .then((projects) => loadProjects(projects, userId, currentOrgId))
       .catch((err: unknown) => {
-        console.error("Failed to hydrate projects from Supabase:", err);
+        console.error("Failed to hydrate projects:", err);
         setHydrating(false);
         setHydrationError("Failed to load projects. Please refresh the page.");
       });
