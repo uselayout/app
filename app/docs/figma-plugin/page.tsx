@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download } from "lucide-react";
 import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
@@ -17,12 +17,32 @@ export default function FigmaPluginPage() {
     <div className="space-y-10">
       {/* Header */}
       <div className="space-y-3">
-        <h1 className="text-3xl font-bold text-[#0a0a0a]">Figma Plugin</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-[#0a0a0a]">Figma Plugin</h1>
+          <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+            Alpha
+          </span>
+        </div>
         <p className="text-base text-gray-600 leading-relaxed">
           Native Figma plugin for extracting design systems, inspecting tokens,
           and pushing to Layout Cloud. All without leaving Figma.
         </p>
       </div>
+
+      {/* Download */}
+      <section className="space-y-3">
+        <a
+          href="/downloads/layout-figma-plugin-alpha.zip"
+          download
+          className="inline-flex items-center gap-2 rounded-lg bg-[#0a0a0a] px-5 py-3 text-sm font-medium text-white transition-opacity hover:opacity-80"
+        >
+          <Download size={16} />
+          Download Figma Plugin (Alpha)
+        </a>
+        <p className="text-sm text-gray-500">
+          v0.1.0 &middot; 145 KB &middot; Requires Figma desktop app
+        </p>
+      </section>
 
       {/* Key Differences */}
       <section className="space-y-5">
@@ -148,20 +168,29 @@ export default function FigmaPluginPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Installation</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          During alpha, install the plugin as a development plugin using the
-          downloaded plugin folder provided by the Layout team. Once the plugin
-          has passed Figma Community review, a one-click install method will be
-          available and documented here.
+          The plugin is currently in alpha and installed as a development plugin
+          in Figma. It will be published to the Figma Community once it passes
+          review.
         </p>
         <ol className="list-decimal pl-6 space-y-2 text-gray-600">
           <li>
-            In Figma, click{" "}
+            <a
+              href="/downloads/layout-figma-plugin-alpha.zip"
+              download
+              className="text-gray-900 underline hover:no-underline"
+            >
+              Download the plugin ZIP
+            </a>{" "}
+            and unzip it
+          </li>
+          <li>
+            Open the Figma desktop app and click{" "}
             <strong className="font-semibold text-[#0a0a0a]">
               Plugins &gt; Development &gt; Import plugin from manifest
             </strong>
           </li>
           <li>
-            Navigate to the downloaded plugin folder and select{" "}
+            Navigate to the unzipped folder and select{" "}
             <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
               manifest.json
             </code>
@@ -178,8 +207,9 @@ export default function FigmaPluginPage() {
           </li>
         </ol>
         <Callout type="info">
-          Once published to the Figma Community, a separate &quot;Install from Figma
-          Community&quot; method will be available. No manifest import needed.
+          This is an alpha release. The plugin will be published to the Figma
+          Community soon, at which point installation will be a single click. No
+          manifest import will be needed.
         </Callout>
       </section>
 
