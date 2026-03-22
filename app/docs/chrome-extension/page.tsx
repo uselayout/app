@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download } from "lucide-react";
 import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
@@ -17,9 +17,14 @@ export default function ChromeExtensionPage() {
     <div className="space-y-10">
       {/* Header */}
       <div className="space-y-3">
-        <h1 className="text-3xl font-bold text-[#0a0a0a]">
-          Chrome Extension
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-[#0a0a0a]">
+            Chrome Extension
+          </h1>
+          <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+            Alpha
+          </span>
+        </div>
         <p className="text-base text-gray-600 leading-relaxed">
           The Layout Chrome extension lives in your browser sidebar. Extract
           design tokens from any webpage, inspect elements against your design
@@ -27,6 +32,21 @@ export default function ChromeExtensionPage() {
           to Figma. All without leaving the tab you are on.
         </p>
       </div>
+
+      {/* Download */}
+      <section className="space-y-3">
+        <a
+          href="/downloads/layout-chrome-extension-alpha.zip"
+          download
+          className="inline-flex items-center gap-2 rounded-lg bg-[#0a0a0a] px-5 py-3 text-sm font-medium text-white transition-opacity hover:opacity-80"
+        >
+          <Download size={16} />
+          Download Chrome Extension (Alpha)
+        </a>
+        <p className="text-sm text-gray-500">
+          v0.1.0 &middot; 94 KB &middot; Chrome or Chromium-based browsers
+        </p>
+      </section>
 
       {/* Overview */}
       <section className="space-y-5">
@@ -111,14 +131,20 @@ export default function ChromeExtensionPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Installation</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          During early access, the Layout team will provide the extension build
-          directly. Once published to the Chrome Web Store, installation will be
-          a single click. This page will be updated with the store link when
-          available.
+          The extension is currently in alpha and installed manually via
+          Chrome&apos;s developer mode. It will be published to the Chrome Web
+          Store soon.
         </p>
         <ol className="list-decimal pl-6 space-y-2 text-gray-600">
           <li>
-            Download the extension ZIP provided by the Layout team and unzip it
+            <a
+              href="/downloads/layout-chrome-extension-alpha.zip"
+              download
+              className="text-gray-900 underline hover:no-underline"
+            >
+              Download the extension ZIP
+            </a>{" "}
+            and unzip it
           </li>
           <li>
             Open Chrome and navigate to{" "}
@@ -138,7 +164,11 @@ export default function ChromeExtensionPage() {
             <strong className="font-semibold text-[#0a0a0a]">
               Load unpacked
             </strong>{" "}
-            and select the unzipped extension folder
+            and select the{" "}
+            <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+              dist
+            </code>{" "}
+            folder inside the unzipped directory
           </li>
           <li>
             The Layout icon appears in your Chrome toolbar. Click it to open the
@@ -146,9 +176,8 @@ export default function ChromeExtensionPage() {
           </li>
         </ol>
         <Callout type="info">
-          The extension is not open source. During early access, builds are
-          distributed directly by the Layout team. A Chrome Web Store listing is
-          coming soon.
+          This is an alpha release. The extension will be published to the Chrome
+          Web Store soon, at which point installation will be a single click.
         </Callout>
       </section>
 
