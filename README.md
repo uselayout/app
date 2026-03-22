@@ -10,7 +10,7 @@ Extract design systems from Figma files and live websites, then transform them i
 
 ## Why?
 
-AI coding agents (Claude Code, Cursor, Windsurf, GitHub Copilot) generate beautiful UI - but it never matches your brand. They default to Inter, rounded corners, and generic blue buttons.
+AI coding agents (Claude Code, Cursor, Windsurf, Google Antigravity, GitHub Copilot) generate beautiful UI - but it never matches your brand. They default to Inter, rounded corners, and generic blue buttons.
 
 Layout solves this by giving agents the design context they need:
 
@@ -97,7 +97,7 @@ After exporting a bundle from the Studio, use the open-source CLI to connect it 
 # Import the bundle into your project
 npx @layoutdesign/context import ~/Downloads/my-design-system.zip
 
-# Auto-configure Claude Code, Cursor, or Windsurf
+# Auto-configure Claude Code, Cursor, Antigravity, or Windsurf
 npx @layoutdesign/context install
 ```
 

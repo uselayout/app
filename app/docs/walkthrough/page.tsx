@@ -525,7 +525,7 @@ npx @layoutdesign/context install`}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             install
           </code>{" "}
-          command detects Claude Code, Cursor, and Windsurf and writes the MCP
+          command detects Claude Code, Cursor, Antigravity, and Windsurf and writes the MCP
           server configuration to whichever are present. No manual JSON
           editing required.
         </p>

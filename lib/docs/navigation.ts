@@ -37,6 +37,7 @@ export const docsNavigation: DocNavSection[] = [
           { title: "Cursor", href: "/docs/integrations/cursor" },
           { title: "GitHub Copilot", href: "/docs/integrations/copilot" },
           { title: "Windsurf", href: "/docs/integrations/windsurf" },
+          { title: "Google Antigravity", href: "/docs/integrations/antigravity" },
           { title: "OpenAI Codex", href: "/docs/integrations/codex" },
         ],
       },
