@@ -11,6 +11,7 @@ const TOOL_ICONS: { name: string; src: string }[] = [
   { name: 'OpenAI', src: '/marketing/icons/openai.svg' },
   { name: 'Windsurf', src: '/marketing/icons/windsurf.svg' },
   { name: 'GitHub Copilot', src: '/marketing/icons/copilot.svg' },
+  { name: 'Google Antigravity', src: '/marketing/icons/antigravity.svg' },
 ];
 
 const BETA_ACTIVE = process.env.NEXT_PUBLIC_BETA_INVITE_REQUIRED === 'true';
@@ -48,7 +49,7 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
           className="text-[15px] leading-[24px] tracking-[-0.165px] text-[var(--mkt-text-secondary)] max-w-full lg:max-w-[862px]"
         >
           Your AI agent writes working code but gets the design wrong. Layout extracts your design
-          system from Figma or any website and serves it to Claude Code, Cursor, and Codex
+          system from Figma or any website and serves it to Claude Code, Cursor, Antigravity, and Codex
           automatically.
         </motion.p>
 

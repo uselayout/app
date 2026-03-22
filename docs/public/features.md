@@ -2,7 +2,7 @@
 
 ## Product Overview
 
-Layout is a browser-based tool that extracts design systems from Figma files and live websites, then compiles them into structured, LLM-optimised context bundles. The output — a layout.md file and supporting token files — gives AI coding agents (Claude Code, Cursor, GitHub Copilot, Windsurf, OpenAI Codex) the design context they need to generate on-brand UI code consistently.
+Layout is a browser-based tool that extracts design systems from Figma files and live websites, then compiles them into structured, LLM-optimised context bundles. The output — a layout.md file and supporting token files — gives AI coding agents (Claude Code, Cursor, GitHub Copilot, Windsurf, Google Antigravity, OpenAI Codex) the design context they need to generate on-brand UI code consistently.
 
 Think of it as a compiler: design system in, AI-ready context out. No manual token extraction, no copy-pasting hex values, no maintaining separate documentation that drifts from the source.
 
@@ -250,6 +250,7 @@ No other open-source tool closes this loop.
 - Cursor (AGENTS.md or .cursorrules)
 - GitHub Copilot (paste layout.md into copilot-instructions.md)
 - Windsurf (paste into .windsurfrules)
+- Google Antigravity (MCP server via MCP Store or manual config)
 - OpenAI Codex (AGENTS.md)
 - Any tool that accepts markdown context
 
@@ -280,7 +281,7 @@ Yes. The Studio includes a full Monaco editor. You can edit any section, add cus
 The layout.md and tokens.css work with any CSS approach. The tailwind.config.js is optional — only include it in your export if you use Tailwind.
 
 ### Is there an API or CLI?
-Yes. The open-source **@layoutdesign/context** package (MIT licensed) provides both a CLI and an MCP server with 9 tools. Install via `npx @layoutdesign/context install` to auto-configure Claude Code, Cursor, or Windsurf. The MCP server gives AI agents direct access to your design system via tools like `get_design_system`, `get_tokens`, `check_compliance`, `preview`, and `push_to_figma`.
+Yes. The open-source **@layoutdesign/context** package (MIT licensed) provides both a CLI and an MCP server with 9 tools. Install via `npx @layoutdesign/context install` to auto-configure Claude Code, Cursor, Antigravity, or Windsurf. The MCP server gives AI agents direct access to your design system via tools like `get_design_system`, `get_tokens`, `check_compliance`, `preview`, and `push_to_figma`.
 
 ### How does billing work?
 Free users bring their own Anthropic API key (BYOK) — unlimited extractions, all export formats. Pro users (£29/mo) get hosted AI credits so no API key management is needed. Credits are deducted per layout.md generation and test query.
