@@ -332,6 +332,26 @@ export function ElementInspector({
     onDeselect();
   }, [iframeRef, onDeselect]);
 
+  const handleAddAnnotation = useCallback(() => {
+    const sel = selectedRef.current;
+    if (!sel || !annotationText.trim()) return;
+    const ann: ElementAnnotation = {
+      elementId: sel.elementId,
+      elementTag: sel.elementTag,
+      note: annotationText.trim(),
+      rect: sel.rect,
+    };
+    setAnnotations((prev) => [...prev, ann]);
+    setAnnotationText("");
+  }, [annotationText]);
+
+  const handleSubmitAnnotations = useCallback(() => {
+    if (annotations.length > 0 && onAnnotationsSubmit) {
+      onAnnotationsSubmit(annotations);
+      setAnnotations([]);
+    }
+  }, [annotations, onAnnotationsSubmit]);
+
   if (!isActive || !selected) return null;
 
   // Calculate popover position relative to the container
@@ -346,25 +366,6 @@ export function ElementInspector({
   const finalY = Math.max(0, Math.min(popoverY, maxY));
 
   const cs = selected.computedStyles;
-
-  const handleAddAnnotation = useCallback(() => {
-    if (!selected || !annotationText.trim()) return;
-    const ann: ElementAnnotation = {
-      elementId: selected.elementId,
-      elementTag: selected.elementTag,
-      note: annotationText.trim(),
-      rect: selected.rect,
-    };
-    setAnnotations((prev) => [...prev, ann]);
-    setAnnotationText("");
-  }, [selected, annotationText]);
-
-  const handleSubmitAnnotations = useCallback(() => {
-    if (annotations.length > 0 && onAnnotationsSubmit) {
-      onAnnotationsSubmit(annotations);
-      setAnnotations([]);
-    }
-  }, [annotations, onAnnotationsSubmit]);
 
   const sections: { id: PropertySection; icon: React.ReactNode; label: string }[] = [
     { id: "text", icon: <Type size={11} />, label: "Text" },
