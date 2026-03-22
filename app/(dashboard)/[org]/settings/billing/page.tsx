@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import {
   CreditCard,
   Zap,
@@ -10,6 +11,9 @@ import {
   ExternalLink,
   Check,
   Key,
+  Users,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { getStoredApiKey, getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 
@@ -49,11 +53,19 @@ const STATUS_STYLES: Record<string, string> = {
   trialing: "bg-blue-500/10 text-blue-400",
 };
 
+interface SeatInfo {
+  memberCount: number;
+  pendingInvites: number;
+}
+
 export default function BillingPage() {
+  const params = useParams<{ org: string }>();
   const [credits, setCredits] = useState<CreditBalance | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [seatInfo, setSeatInfo] = useState<SeatInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [seatLoading, setSeatLoading] = useState(false);
   const [hasClaudeKey, setHasClaudeKey] = useState(false);
   const [hasGoogleKey, setHasGoogleKey] = useState(false);
 
@@ -64,27 +76,32 @@ export default function BillingPage() {
 
   const isByok = hasClaudeKey;
 
-  useEffect(() => {
-    async function fetchData() {
-      const [creditsRes, subRes] = await Promise.all([
-        fetch("/api/billing/credits"),
-        fetch("/api/billing/subscription"),
-      ]);
+  const fetchData = useCallback(async () => {
+    const [creditsRes, subRes, membersRes] = await Promise.all([
+      fetch("/api/billing/credits"),
+      fetch("/api/billing/subscription"),
+      fetch(`/api/organizations/${params.org}/members`),
+    ]);
 
-      if (creditsRes.ok) {
-        const data = await creditsRes.json();
-        setCredits(data.credits);
-      }
-      if (subRes.ok) {
-        const data = await subRes.json();
-        setSubscription(data.subscription);
-      }
-
-      setLoading(false);
+    if (creditsRes.ok) {
+      const data = await creditsRes.json();
+      setCredits(data.credits);
+    }
+    if (subRes.ok) {
+      const data = await subRes.json();
+      setSubscription(data.subscription);
+    }
+    if (membersRes.ok) {
+      const members = await membersRes.json();
+      setSeatInfo({ memberCount: members.length, pendingInvites: 0 });
     }
 
+    setLoading(false);
+  }, [params.org]);
+
+  useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   async function handleCheckout(type: "pro" | "team" | "topup") {
     setCheckoutLoading(type);
@@ -120,6 +137,24 @@ export default function BillingPage() {
         window.location.href = data.url;
       }
     }
+  }
+
+  async function handleSeatChange(delta: number) {
+    if (!subscription || seatLoading) return;
+    const newCount = subscription.seatCount + delta;
+    if (newCount < 1) return;
+
+    setSeatLoading(true);
+    const res = await fetch("/api/billing/seats", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seatCount: newCount }),
+    });
+
+    if (res.ok) {
+      setSubscription((prev) => prev ? { ...prev, seatCount: newCount } : prev);
+    }
+    setSeatLoading(false);
   }
 
   const tier = subscription?.tier || "free";
@@ -300,6 +335,54 @@ export default function BillingPage() {
                   </p>
                 )}
               </>
+            )}
+
+            {/* Team seat management */}
+            {tier === "team" && subscription && (
+              <div className="mt-4 rounded-md bg-[var(--bg-panel)] p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users size={14} className="text-[var(--text-muted)]" />
+                    <span className="text-xs text-[var(--text-muted)]">
+                      Team seats
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-[var(--text-primary)]">
+                      {seatInfo?.memberCount ?? "–"}{" "}
+                      <span className="text-[var(--text-muted)]">
+                        / {subscription.seatCount} used
+                      </span>
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleSeatChange(-1)}
+                        disabled={seatLoading || subscription.seatCount <= (seatInfo?.memberCount ?? 1)}
+                        className="flex h-6 w-6 items-center justify-center rounded border border-[var(--studio-border)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <button
+                        onClick={() => handleSeatChange(1)}
+                        disabled={seatLoading}
+                        className="flex h-6 w-6 items-center justify-center rounded border border-[var(--studio-border)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        {seatLoading ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <Plus size={12} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <p className="mt-2 text-[10px] text-[var(--text-muted)]">
+                  {allocation.layoutMd} layout.md + {allocation.testQuery} queries per seat/month
+                  {subscription.seatCount > 1 && (
+                    <> = {allocation.layoutMd * subscription.seatCount} layout.md + {allocation.testQuery * subscription.seatCount} queries total</>
+                  )}
+                </p>
+              </div>
             )}
 
             {/* Manage subscription (paid users) */}

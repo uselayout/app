@@ -4,7 +4,10 @@ import { requireOrgAuth } from "@/lib/api/auth-context";
 import {
   createInvitation,
   getOrganization,
+  getOrgMemberCount,
+  getPendingInviteCount,
 } from "@/lib/supabase/organization";
+import { getSubscriptionByOrg } from "@/lib/billing/subscription";
 import { sendEmail } from "@/lib/email/send";
 import {
   inviteEmailHtml,
@@ -38,6 +41,19 @@ export async function POST(
   }
 
   const { email, role } = parsed.data;
+
+  // Enforce seat limit for team subscriptions
+  const sub = await getSubscriptionByOrg(orgId);
+  if (sub?.tier === "team" && sub.status === "active") {
+    const memberCount = await getOrgMemberCount(orgId);
+    const pendingInvites = await getPendingInviteCount(orgId);
+    if (memberCount + pendingInvites >= sub.seatCount) {
+      return NextResponse.json(
+        { error: "Seat limit reached. Add more seats in billing settings." },
+        { status: 403 }
+      );
+    }
+  }
 
   const invitation = await createInvitation(orgId, email, role, userId);
 

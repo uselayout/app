@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
+import { createHash, timingSafeEqual } from "crypto";
 import { supabase } from "@/lib/supabase/client";
 
 /**
@@ -61,6 +62,13 @@ type FigmaWebhookPayload = z.infer<typeof FigmaWebhookPayloadSchema>;
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Constant-time string comparison (prevents timing attacks). */
+function safeEqual(a: string, b: string): boolean {
+  const hashA = createHash("sha256").update(a).digest();
+  const hashB = createHash("sha256").update(b).digest();
+  return timingSafeEqual(hashA, hashB);
+}
+
 /**
  * Verify the passcode from the payload against:
  *  1. A matching row in `layout_webhook_config` (per-org)
@@ -80,13 +88,13 @@ async function verifyPasscode(
     .limit(1)
     .maybeSingle();
 
-  if (config?.passcode && config.passcode === passcode) {
+  if (config?.passcode && safeEqual(config.passcode, passcode)) {
     return true;
   }
 
   // 2. Fallback to env var
   const envPasscode = process.env.FIGMA_WEBHOOK_PASSCODE;
-  if (envPasscode && envPasscode === passcode) {
+  if (envPasscode && safeEqual(envPasscode, passcode)) {
     return true;
   }
 

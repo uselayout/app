@@ -1,4 +1,18 @@
 import { supabase } from "./client";
+import { encrypt, decrypt, isEncrypted } from "@/lib/util/crypto";
+
+/** Decrypt a token if ENCRYPTION_KEY is available, otherwise return as-is (migration compat). */
+function decryptToken(token: string): string {
+  if (!process.env.ENCRYPTION_KEY) return token;
+  if (!isEncrypted(token)) return token; // Plaintext legacy token
+  return decrypt(token);
+}
+
+/** Encrypt a token if ENCRYPTION_KEY is available, otherwise store plaintext. */
+function encryptToken(token: string): string {
+  if (!process.env.ENCRYPTION_KEY) return token;
+  return encrypt(token);
+}
 
 export interface FigmaConnection {
   id: string;
@@ -32,8 +46,8 @@ function rowToConnection(row: FigmaConnectionRow): FigmaConnection {
     orgId: row.org_id,
     figmaUserId: row.figma_user_id,
     figmaUserName: row.figma_user_name,
-    accessToken: row.access_token,
-    refreshToken: row.refresh_token,
+    accessToken: decryptToken(row.access_token),
+    refreshToken: row.refresh_token ? decryptToken(row.refresh_token) : null,
     expiresAt: row.expires_at,
     scopes: row.scopes,
     createdAt: row.created_at,
@@ -67,8 +81,8 @@ export async function upsertFigmaConnection(
     .upsert(
       {
         org_id: orgId,
-        access_token: accessToken,
-        refresh_token: refreshToken,
+        access_token: encryptToken(accessToken),
+        refresh_token: refreshToken ? encryptToken(refreshToken) : null,
         expires_at: expiresAt,
         figma_user_id: figmaUserId ?? null,
         figma_user_name: figmaUserName ?? null,

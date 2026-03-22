@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
   } else {
     // Claude: BYOK or hosted with quota
     const userApiKey = request.headers.get("X-Api-Key") || undefined;
-    if (userApiKey) {
+    if (userApiKey && userApiKey.startsWith("sk-ant-")) {
       mode = "byok";
       effectiveApiKey = userApiKey;
     } else {

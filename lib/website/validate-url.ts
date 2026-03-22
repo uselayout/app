@@ -15,6 +15,13 @@ const BLOCKED_CIDRS = [
   // Unique local (IPv6 private)
   /^fc/i,
   /^fd/i,
+  // IPv4-mapped IPv6 addresses (e.g. ::ffff:127.0.0.1)
+  /^::ffff:127\./i,
+  /^::ffff:10\./i,
+  /^::ffff:172\.(1[6-9]|2[0-9]|3[01])\./i,
+  /^::ffff:192\.168\./i,
+  /^::ffff:169\.254\./i,
+  /^::ffff:0\.0\.0\.0/i,
 ];
 
 function isPrivateIp(ip: string): boolean {
@@ -28,7 +35,13 @@ export class SsrfError extends Error {
   }
 }
 
-export async function validateExtractionUrl(rawUrl: string): Promise<URL> {
+/**
+ * Validate a URL for SSRF safety and return the resolved IP address.
+ * The caller should use the returned IP to connect, avoiding DNS rebinding.
+ */
+export async function validateExtractionUrl(
+  rawUrl: string
+): Promise<{ url: URL; resolvedIp: string }> {
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);
@@ -52,8 +65,10 @@ export async function validateExtractionUrl(rawUrl: string): Promise<URL> {
   }
 
   // Resolve hostname and check resulting IPs
+  let resolvedIp: string;
   try {
     const { address } = await dns.lookup(hostname);
+    resolvedIp = address;
     if (isPrivateIp(address)) {
       throw new SsrfError(
         "Requests to private/internal IP addresses are not allowed"
@@ -64,5 +79,5 @@ export async function validateExtractionUrl(rawUrl: string): Promise<URL> {
     throw new SsrfError(`Could not resolve hostname: ${hostname}`);
   }
 
-  return parsed;
+  return { url: parsed, resolvedIp };
 }
