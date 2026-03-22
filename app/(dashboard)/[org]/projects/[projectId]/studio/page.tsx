@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef, useCallback, useState, useMemo, Suspense } from "react";
+import { use, useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { useExtractionStore } from "@/lib/store/extraction";
@@ -60,7 +60,7 @@ export default function StudioPage({
     } else if (centreView === "saved") {
       setCentreView("editor");
     }
-  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Clean up URL when navigating away from saved view via TopBar toggle
   const handleCentreViewChange = useCallback(

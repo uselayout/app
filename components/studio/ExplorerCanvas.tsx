@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { calculateHealthScore } from "@/lib/health/score";
 import { useOnboardingStore } from "@/lib/store/onboarding";
 import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
-import { AI_MODELS, DEFAULT_EXPLORE_MODEL } from "@/lib/types";
+import { DEFAULT_EXPLORE_MODEL } from "@/lib/types";
 import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId } from "@/lib/types";
 
 interface ExplorerCanvasProps {
@@ -491,7 +491,7 @@ export function ExplorerCanvas({
       setSelectedVariantId(null);
       onInitialImageConsumed?.();
     }
-  }, [initialImage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [initialImage]);
 
   const handleRefineVariant = useCallback(
     async (variant: DesignVariant, feedback: string) => {
@@ -568,6 +568,24 @@ export function ExplorerCanvas({
       if (selectedVariantId === variantId) setSelectedVariantId(null);
     },
     [currentExploration, explorations, onUpdateExplorations, selectedVariantId]
+  );
+
+  const handleCodeUpdate = useCallback(
+    (variantId: string, code: string, editHistory: import("@/lib/types").EditHistory) => {
+      if (!currentExploration) return;
+      const updated = explorations.map((e) =>
+        e.id === currentExploration.id
+          ? {
+              ...e,
+              variants: e.variants.map((v) =>
+                v.id === variantId ? { ...v, code, editHistory } : v
+              ),
+            }
+          : e
+      );
+      onUpdateExplorations(updated);
+    },
+    [currentExploration, explorations, onUpdateExplorations]
   );
 
   const handlePushToFigma = useCallback((variant: DesignVariant) => {
@@ -887,6 +905,8 @@ export function ExplorerCanvas({
                       onPromoteToLibrary={() => setPromoteVariant(variant)}
                       onRegenerateImages={() => handleRegenerateImages(variant.id)}
                       onDelete={() => handleDeleteVariant(variant.id)}
+                      onCodeUpdate={(code, editHistory) => handleCodeUpdate(variant.id, code, editHistory)}
+                      layoutMd={layoutMd}
                       isProcessingImages={isProcessingImages}
                       onViewComparison={() => {
                         const comparisons = currentExploration?.comparisons?.filter(
