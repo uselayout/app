@@ -235,6 +235,10 @@ export function ElementInspector({
   const [annotations, setAnnotations] = useState<ElementAnnotation[]>([]);
   const [annotationText, setAnnotationText] = useState("");
   const popoverRef = useRef<HTMLDivElement>(null);
+  const selectedRef = useRef<SelectedElement | null>(null);
+
+  // Keep ref in sync so message listener can read without re-triggering effect
+  useEffect(() => { selectedRef.current = selected; }, [selected]);
 
   // Build token suggestions from design tokens
   const tokenSuggestions: TokenSuggestion[] = (designTokens ?? []).map((t) => ({
@@ -269,7 +273,7 @@ export function ElementInspector({
         setPendingEdits([]);
       }
 
-      if (msg.type === "layout-inspector-style-updated" && selected) {
+      if (msg.type === "layout-inspector-style-updated" && selectedRef.current) {
         setSelected((prev) =>
           prev ? { ...prev, computedStyles: msg.computedStyles, rect: msg.rect } : null
         );
@@ -278,24 +282,25 @@ export function ElementInspector({
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [isActive, selected]);
+  }, [isActive]);
 
   const applyStyle = useCallback(
     (property: string, value: string) => {
-      if (!selected || !iframeRef.current?.contentWindow) return;
+      const sel = selectedRef.current;
+      if (!sel || !iframeRef.current?.contentWindow) return;
 
-      const before = selected.computedStyles[property as keyof ComputedStyles] ?? "";
+      const before = sel.computedStyles[property as keyof ComputedStyles] ?? "";
       iframeRef.current.contentWindow.postMessage(
         { type: "layout-inspector-apply-style", property, value },
         "*"
       );
 
       setPendingEdits((prev) => {
-        const existing = prev.findIndex((e) => e.property === property && e.elementId === selected.elementId);
+        const existing = prev.findIndex((e) => e.property === property && e.elementId === sel.elementId);
         const edit: StyleEdit = {
-          elementId: selected.elementId,
-          elementTag: selected.elementTag,
-          elementClasses: selected.elementClasses,
+          elementId: sel.elementId,
+          elementTag: sel.elementTag,
+          elementClasses: sel.elementClasses,
           property,
           before,
           after: value,
@@ -308,7 +313,7 @@ export function ElementInspector({
         return [...prev, edit];
       });
     },
-    [selected, iframeRef]
+    [iframeRef]
   );
 
   const handleApplyAll = useCallback(() => {
