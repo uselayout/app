@@ -16,6 +16,12 @@ export const AI_MODELS = {
     provider: "claude",
     maxOutputTokens: 64_000,
   },
+  "claude-opus-4-5": {
+    id: "claude-opus-4-5",
+    label: "Claude Opus 4.5",
+    provider: "claude",
+    maxOutputTokens: 32_000,
+  },
   "gemini-3.1-pro-preview": {
     id: "gemini-3.1-pro-preview",
     label: "Gemini 3.1 Pro",
@@ -23,6 +29,12 @@ export const AI_MODELS = {
     maxOutputTokens: 65_536,
   },
 } as const satisfies Record<string, AiModelDef>;
+
+/** Models that require the user to provide their own API key (BYOK) */
+export const BYOK_ONLY_MODELS: ReadonlySet<AiModelId> = new Set([
+  "claude-opus-4-5",
+  "gemini-3.1-pro-preview",
+]);
 
 export type AiModelId = keyof typeof AI_MODELS;
 
