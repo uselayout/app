@@ -50,11 +50,11 @@ export async function POST(request: NextRequest) {
   let mode: AiMode;
   let apiKey: string | undefined;
 
-  if (userApiKey) {
+  if (userApiKey && userApiKey.startsWith("sk-ant-")) {
     mode = "byok";
     apiKey = userApiKey;
   } else {
-    const quota = await checkQuota(userId, "test");
+    const quota = await checkQuota(userId, "edit");
     if (!quota.allowed) {
       return Response.json(
         { error: quota.reason, code: "QUOTA_EXCEEDED", remaining: quota.remaining },
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const deducted = await deductCredit(userId, "test");
+    const deducted = await deductCredit(userId, "edit");
     if (!deducted) {
       return Response.json(
         { error: "No credits remaining. Top up or use your own API key.", code: "QUOTA_EXCEEDED" },
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     .then((u) =>
       logUsage({
         userId,
-        endpoint: "test",
+        endpoint: "edit",
         mode,
         usage: u,
         model: "claude-sonnet-4-6",

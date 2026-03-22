@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { auth } from "@/lib/auth";
 import { analyseCompleteness } from "@/lib/health/completeness";
 
 const BodySchema = z.object({
@@ -7,6 +8,10 @@ const BodySchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
   let body: unknown;
   try {
     body = await request.json();

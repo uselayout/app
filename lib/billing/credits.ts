@@ -249,7 +249,7 @@ export async function resetMonthlyCredits(
     );
 
   if (error) {
-    console.error("Failed to reset monthly credits:", error.message);
+    throw new Error(`Failed to reset monthly credits: ${error.message}`);
   }
 }
 
@@ -281,7 +281,7 @@ export async function resetMonthlyCreditsByOrg(
     );
 
   if (error) {
-    console.error("Failed to reset monthly org credits:", error.message);
+    throw new Error(`Failed to reset monthly org credits: ${error.message}`);
   }
 }
 

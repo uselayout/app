@@ -10,6 +10,9 @@ export const generateLimiter = rateLimit({ interval: 60_000, uniqueTokenPerInter
 // 60 requests per minute for transpile
 export const transpileLimiter = rateLimit({ interval: 60_000, uniqueTokenPerInterval: 500 });
 
+// 10 requests per minute for invite code validation (prevents brute-force)
+export const inviteValidateLimiter = rateLimit({ interval: 60_000, uniqueTokenPerInterval: 500 });
+
 // 10 requests per hour per user (across extraction + generation routes combined)
 export const userHourlyLimiter = rateLimit({ interval: 3_600_000, uniqueTokenPerInterval: 1000 });
 

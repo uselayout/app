@@ -1,7 +1,7 @@
 export type SubscriptionTier = "free" | "pro" | "team";
 export type SubscriptionStatus = "active" | "past_due" | "cancelled" | "trialing";
 export type AiMode = "byok" | "hosted";
-export type AiEndpoint = "layout-md" | "test" | "explore";
+export type AiEndpoint = "layout-md" | "test" | "explore" | "edit";
 
 export interface Subscription {
   id: string;
