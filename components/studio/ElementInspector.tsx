@@ -364,6 +364,26 @@ export function ElementInspector({
           prev ? { ...prev, computedStyles: msg.computedStyles, rect: msg.rect } : null
         );
       }
+
+      if (msg.type === "layout-inspector-text-changed") {
+        const edit: StyleEdit = {
+          elementId: msg.elementId,
+          elementTag: msg.elementTag,
+          elementClasses: msg.elementClasses,
+          property: "textContent",
+          before: selectedRef.current?.computedStyles.textContent ?? "",
+          after: msg.textContent,
+        };
+        setPendingEdits((prev) => {
+          const existing = prev.findIndex((e) => e.property === "textContent" && e.elementId === msg.elementId);
+          if (existing >= 0) {
+            const updated = [...prev];
+            updated[existing] = edit;
+            return updated;
+          }
+          return [...prev, edit];
+        });
+      }
     }
 
     window.addEventListener("message", handleMessage);
@@ -502,9 +522,6 @@ export function ElementInspector({
       <div className="max-h-[360px] overflow-y-auto px-2.5 py-1.5">
         {activeSection === "text" && (
           <>
-            {cs.textContent && (
-              <PropertyRow label="Content" value={cs.textContent} cssProp="textContent" onApply={applyStyle} />
-            )}
             <PropertyRow label="Font Family" value={cs.fontFamily ?? ""} cssProp="fontFamily" onApply={applyStyle} type="select" options={[cs.fontFamily ?? "", ...[...fontFamilySet].filter((f) => f !== cs.fontFamily)]} />
             <PropertyRow label="Weight" value={cs.fontWeight ?? ""} cssProp="fontWeight" onApply={applyStyle} type="select" options={["100", "200", "300", "400", "500", "600", "700", "800", "900"]} />
             <PropertyRow label="Size" value={cs.fontSize ?? ""} cssProp="fontSize" onApply={applyStyle} tokenSuggestions={spacingTokens} />
