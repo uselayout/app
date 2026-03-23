@@ -153,17 +153,23 @@ export function VariantCard({
 
   // Measure iframe content height directly after load (allow-same-origin enables this).
   // Shrinks iframe to 1px first so scrollHeight reflects content, not viewport.
+  // Only constrains height when scaled content exceeds the container — short content
+  // keeps the default 200% iframe height so component-internal centering still works.
   const measureContentHeight = useCallback(() => {
     setTimeout(() => {
       try {
         const iframe = iframeRef.current;
+        const container = previewContainerRef.current;
         const doc = iframe?.contentDocument;
-        if (!iframe || !doc) return;
+        if (!iframe || !doc || !container) return;
         const prev = iframe.style.height;
         iframe.style.height = "1px";
         const h = doc.documentElement.scrollHeight;
         iframe.style.height = prev;
-        if (h > 0) setContentHeight(h);
+        const containerHeight = container.clientHeight;
+        if (h > 0 && h * 0.5 > containerHeight) {
+          setContentHeight(h);
+        }
       } catch { /* ignore */ }
     }, 300);
   }, []);
@@ -367,7 +373,7 @@ export function VariantCard({
             title={`Preview: ${variant.name}`}
           />
         ) : (
-          <div style={{ minHeight: "100%", height: contentHeight != null ? contentHeight * 0.5 : "100%", overflow: "hidden" }}>
+          <div style={{ height: contentHeight != null ? contentHeight * 0.5 : "100%", overflow: "hidden" }}>
             <iframe
               ref={iframeRef}
               sandbox="allow-scripts allow-same-origin"
