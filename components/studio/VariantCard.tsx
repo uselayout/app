@@ -355,11 +355,11 @@ export function VariantCard({
             sandbox="allow-scripts allow-same-origin"
             onLoad={measureContentHeight}
             className={`w-full origin-top-left border-0 transition-opacity ${
-              inspectMode ? "" : "scale-50"
-            } ${previewReady ? "opacity-100" : "opacity-0"}`}
+              previewReady ? "opacity-100" : "opacity-0"
+            }`}
             style={inspectMode
               ? { width: "100%", height: "100%", pointerEvents: "auto" }
-              : { width: "200%", height: contentHeight != null ? `${contentHeight}px` : "200%", pointerEvents: "none" }
+              : { width: "200%", height: contentHeight != null ? `${contentHeight}px` : "200%", zoom: 0.5, pointerEvents: "none" }
             }
             title={`Preview: ${variant.name}`}
           />
