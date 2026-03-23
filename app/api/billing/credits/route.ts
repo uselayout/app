@@ -12,9 +12,9 @@ export async function GET(request: Request) {
   return Response.json({
     credits: balance ?? {
       layoutMdRemaining: 0,
-      testQueryRemaining: 0,
+      aiQueryRemaining: 0,
       topupLayoutMd: 0,
-      topupTestQuery: 0,
+      topupAiQuery: 0,
       periodStart: null,
       periodEnd: null,
     },
