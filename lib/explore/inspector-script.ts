@@ -125,7 +125,11 @@ export function getInspectorScript(): string {
     if (msg.type === 'layout-inspector-apply-style' && selected) {
       var prop = msg.property;
       var val = msg.value;
-      selected.style[prop] = val;
+      if (prop === 'textContent') {
+        selected.textContent = val;
+      } else {
+        selected.style[prop] = val;
+      }
 
       var rect = selected.getBoundingClientRect();
       positionOverlay(overlay, rect);
