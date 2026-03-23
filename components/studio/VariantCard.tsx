@@ -82,6 +82,7 @@ export function VariantCard({
   const [inspectMode, setInspectMode] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [previewEntryId, setPreviewEntryId] = useState<string | undefined>();
+  const [contentHeight, setContentHeight] = useState<number | null>(null);
 
   const editHistory = variant.editHistory ?? [];
 
@@ -90,6 +91,7 @@ export function VariantCard({
     if (!variant.code) return;
     setPreviewReady(false);
     setPreviewError(null);
+    setContentHeight(null);
 
     let cancelled = false;
 
@@ -139,6 +141,17 @@ export function VariantCard({
       fullscreenIframeRef.current.srcdoc = srcdoc;
     }
   }, [inspectMode]);
+
+  // Listen for content height from iframe
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.data?.type === "__preview_height__" && e.source === iframeRef.current?.contentWindow) {
+        setContentHeight(e.data.height as number);
+      }
+    }
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   // Keyboard shortcut: Cmd+Z for undo
   useEffect(() => {
@@ -322,7 +335,11 @@ export function VariantCard({
       )}
 
       {/* Preview area */}
-      <div ref={previewContainerRef} className="relative aspect-[4/3] overflow-y-auto overflow-x-hidden rounded-t-xl bg-white">
+      <div
+        ref={previewContainerRef}
+        className={`relative overflow-y-auto overflow-x-hidden rounded-t-xl bg-white ${contentHeight == null ? "aspect-[4/3]" : ""}`}
+        style={contentHeight != null ? { height: Math.min(contentHeight * 0.5, 400) } : undefined}
+      >
         {previewError ? (
           <div className="flex h-full items-center justify-center p-4">
             <p className="text-xs text-red-400">{previewError}</p>
@@ -331,12 +348,12 @@ export function VariantCard({
           <iframe
             ref={iframeRef}
             sandbox="allow-scripts"
-            className={`h-full w-full origin-top-left border-0 transition-opacity ${
+            className={`w-full origin-top-left border-0 transition-opacity ${
               inspectMode ? "" : "scale-50"
             } ${previewReady ? "opacity-100" : "opacity-0"}`}
             style={inspectMode
               ? { width: "100%", height: "100%", pointerEvents: "auto" }
-              : { width: "200%", height: "200%", pointerEvents: "none" }
+              : { width: "200%", height: contentHeight != null ? `${contentHeight}px` : "200%", pointerEvents: "none" }
             }
             title={`Preview: ${variant.name}`}
           />

@@ -121,10 +121,18 @@ function PropertyRow({ label, value, cssProp, onApply, type = "text", options, t
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               onBlur={commit}
-              onFocus={() => matchingTokens.length > 0 && setShowTokens(true)}
               onKeyDown={(e) => { if (e.key === "Enter") commit(); }}
-              className="w-[72px] rounded bg-[var(--bg-surface)] border border-[var(--studio-border)] px-1.5 py-0.5 text-[10px] text-[var(--text-primary)] outline-none focus:border-[var(--studio-border-focus)]"
+              className="w-[90px] rounded bg-[var(--bg-surface)] border border-[var(--studio-border)] px-1.5 py-0.5 text-[10px] text-[var(--text-primary)] outline-none focus:border-[var(--studio-border-focus)]"
             />
+            {matchingTokens.length > 0 && (
+              <button
+                onClick={() => setShowTokens(!showTokens)}
+                className="shrink-0 rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+                title="Design system colours"
+              >
+                <Paintbrush size={10} />
+              </button>
+            )}
           </div>
         </div>
         {showTokens && matchingTokens.length > 0 && (
@@ -144,7 +152,7 @@ function PropertyRow({ label, value, cssProp, onApply, type = "text", options, t
             setEditValue(e.target.value);
             onApply(cssProp, e.target.value);
           }}
-          className="w-[100px] rounded bg-[var(--bg-surface)] border border-[var(--studio-border)] px-1 py-0.5 text-[10px] text-[var(--text-primary)] outline-none"
+          className="min-w-0 flex-1 max-w-[120px] rounded bg-[var(--bg-surface)] border border-[var(--studio-border)] px-1 py-0.5 text-[10px] text-[var(--text-primary)] outline-none"
         >
           {options.map((opt) => (
             <option key={opt} value={opt}>{opt}</option>
@@ -313,6 +321,20 @@ export function ElementInspector({
 
   const colorTokens = tokenSuggestions.filter((t) => t.value.startsWith("#") || t.value.startsWith("rgb"));
   const spacingTokens = tokenSuggestions.filter((t) => t.value.match(/^\d+px$|^\d+rem$/));
+  const fontTokens = tokenSuggestions.filter((t) => t.name.toLowerCase().includes("font") || t.name.toLowerCase().includes("type"));
+
+  // Build font family options from design tokens + common web fonts
+  const fontFamilyOptions: string[] = [
+    ...fontTokens.map((t) => t.value),
+    ...(designTokens ?? [])
+      .filter((t) => t.name.toLowerCase().includes("font") && !t.value.match(/^\d/))
+      .map((t) => t.value),
+  ];
+  // Deduplicate and add common fallbacks
+  const fontFamilySet = new Set(fontFamilyOptions);
+  for (const f of ["system-ui, sans-serif", "Georgia, serif", "'Courier New', monospace", "inherit"]) {
+    fontFamilySet.add(f);
+  }
 
   // Listen for messages from the iframe
   useEffect(() => {
@@ -480,7 +502,10 @@ export function ElementInspector({
       <div className="max-h-[360px] overflow-y-auto px-2.5 py-1.5">
         {activeSection === "text" && (
           <>
-            <PropertyRow label="Font Family" value={cs.fontFamily ?? ""} cssProp="fontFamily" onApply={applyStyle} />
+            {cs.textContent && (
+              <PropertyRow label="Content" value={cs.textContent} cssProp="textContent" onApply={applyStyle} />
+            )}
+            <PropertyRow label="Font Family" value={cs.fontFamily ?? ""} cssProp="fontFamily" onApply={applyStyle} type="select" options={[cs.fontFamily ?? "", ...[...fontFamilySet].filter((f) => f !== cs.fontFamily)]} />
             <PropertyRow label="Weight" value={cs.fontWeight ?? ""} cssProp="fontWeight" onApply={applyStyle} type="select" options={["100", "200", "300", "400", "500", "600", "700", "800", "900"]} />
             <PropertyRow label="Size" value={cs.fontSize ?? ""} cssProp="fontSize" onApply={applyStyle} tokenSuggestions={spacingTokens} />
             <PropertyRow label="Line Height" value={cs.lineHeight ?? ""} cssProp="lineHeight" onApply={applyStyle} />
@@ -502,19 +527,15 @@ export function ElementInspector({
         {activeSection === "spacing" && (
           <>
             <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Padding</div>
-            <div className="grid grid-cols-2 gap-x-2">
-              <PropertyRow label="Top" value={cs.paddingTop ?? ""} cssProp="paddingTop" onApply={applyStyle} tokenSuggestions={spacingTokens} />
-              <PropertyRow label="Right" value={cs.paddingRight ?? ""} cssProp="paddingRight" onApply={applyStyle} tokenSuggestions={spacingTokens} />
-              <PropertyRow label="Bottom" value={cs.paddingBottom ?? ""} cssProp="paddingBottom" onApply={applyStyle} tokenSuggestions={spacingTokens} />
-              <PropertyRow label="Left" value={cs.paddingLeft ?? ""} cssProp="paddingLeft" onApply={applyStyle} tokenSuggestions={spacingTokens} />
-            </div>
+            <PropertyRow label="Top" value={cs.paddingTop ?? ""} cssProp="paddingTop" onApply={applyStyle} tokenSuggestions={spacingTokens} />
+            <PropertyRow label="Right" value={cs.paddingRight ?? ""} cssProp="paddingRight" onApply={applyStyle} tokenSuggestions={spacingTokens} />
+            <PropertyRow label="Bottom" value={cs.paddingBottom ?? ""} cssProp="paddingBottom" onApply={applyStyle} tokenSuggestions={spacingTokens} />
+            <PropertyRow label="Left" value={cs.paddingLeft ?? ""} cssProp="paddingLeft" onApply={applyStyle} tokenSuggestions={spacingTokens} />
             <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1 mt-2">Margin</div>
-            <div className="grid grid-cols-2 gap-x-2">
-              <PropertyRow label="Top" value={cs.marginTop ?? ""} cssProp="marginTop" onApply={applyStyle} tokenSuggestions={spacingTokens} />
-              <PropertyRow label="Right" value={cs.marginRight ?? ""} cssProp="marginRight" onApply={applyStyle} tokenSuggestions={spacingTokens} />
-              <PropertyRow label="Bottom" value={cs.marginBottom ?? ""} cssProp="marginBottom" onApply={applyStyle} tokenSuggestions={spacingTokens} />
-              <PropertyRow label="Left" value={cs.marginLeft ?? ""} cssProp="marginLeft" onApply={applyStyle} tokenSuggestions={spacingTokens} />
-            </div>
+            <PropertyRow label="Top" value={cs.marginTop ?? ""} cssProp="marginTop" onApply={applyStyle} tokenSuggestions={spacingTokens} />
+            <PropertyRow label="Right" value={cs.marginRight ?? ""} cssProp="marginRight" onApply={applyStyle} tokenSuggestions={spacingTokens} />
+            <PropertyRow label="Bottom" value={cs.marginBottom ?? ""} cssProp="marginBottom" onApply={applyStyle} tokenSuggestions={spacingTokens} />
+            <PropertyRow label="Left" value={cs.marginLeft ?? ""} cssProp="marginLeft" onApply={applyStyle} tokenSuggestions={spacingTokens} />
             <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1 mt-2">Layout</div>
             <GapSelect value={cs.gap ?? ""} spacingTokens={spacingTokens} onApply={applyStyle} />
           </>
@@ -536,7 +557,7 @@ export function ElementInspector({
 
         {activeSection === "annotate" && (
           <>
-            <div className="text-[10px] text-[var(--text-muted)] mb-2">
+            <div className="text-[11px] text-[var(--text-secondary)] mb-2">
               Add a note about what to change on this &lt;{selected.elementTag}&gt;
             </div>
             <div className="flex gap-1.5">
@@ -545,15 +566,15 @@ export function ElementInspector({
                 onChange={(e) => setAnnotationText(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddAnnotation(); } }}
                 placeholder="e.g. make this bigger, use brand colour..."
-                rows={2}
-                className="flex-1 rounded bg-[var(--bg-surface)] border border-[var(--studio-border)] px-2 py-1.5 text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] resize-none"
+                rows={4}
+                className="flex-1 rounded bg-[var(--bg-surface)] border border-[var(--studio-border)] px-2.5 py-2 text-[12px] leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] resize-none"
               />
               <button
                 onClick={handleAddAnnotation}
                 disabled={!annotationText.trim()}
-                className="self-end rounded bg-purple-500/20 p-1.5 text-purple-400 hover:bg-purple-500/30 transition-colors disabled:opacity-30"
+                className="self-end rounded bg-purple-500/20 p-2 text-purple-400 hover:bg-purple-500/30 transition-colors disabled:opacity-30"
               >
-                <MessageSquarePlus size={14} />
+                <MessageSquarePlus size={16} />
               </button>
             </div>
             {annotations.length > 0 && (
