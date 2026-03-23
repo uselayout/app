@@ -386,6 +386,12 @@ export function VariantCard({
               onStyleEdits={handleStyleEdits}
               onAnnotationsSubmit={handleAnnotationsSubmit}
               onDeselect={() => {}}
+              onReset={() => {
+                const js = transpiledJsRef.current;
+                if (!js) return;
+                const srcdoc = buildSrcdoc(js, componentNameRef.current, getInspectorScript());
+                if (fullscreenIframeRef.current) fullscreenIframeRef.current.srcdoc = srcdoc;
+              }}
               designTokens={designTokens}
               iframeScale={1}
             />
