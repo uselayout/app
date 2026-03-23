@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireOrgAuth } from "@/lib/api/auth-context";
-import { fetchAllProjects } from "@/lib/supabase/db";
+import { fetchAllProjectsSummary } from "@/lib/supabase/db";
 
 export async function GET(
   _request: Request,
@@ -11,6 +11,6 @@ export async function GET(
   const authResult = await requireOrgAuth(orgId, "viewProject");
   if (authResult instanceof NextResponse) return authResult;
 
-  const projects = await fetchAllProjects(orgId);
+  const projects = await fetchAllProjectsSummary(orgId);
   return NextResponse.json(projects);
 }
