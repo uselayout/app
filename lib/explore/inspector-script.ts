@@ -105,8 +105,13 @@ export function getInspectorScript(): string {
     // If we're editing text, allow clicks inside the editable element
     if (editingText) {
       if (editingText.contains(e.target)) return;
-      // Clicked outside — exit text edit
+      // Clicked outside — exit text edit and stop here so the pending
+      // text change isn't cleared by selecting a new element
       exitTextEdit();
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      return;
     }
 
     e.preventDefault();

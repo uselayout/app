@@ -115,7 +115,7 @@ export function VariantCard({
         transpiledJsRef.current = js;
         componentNameRef.current = name;
 
-        const srcdoc = buildSrcdoc(js, name);
+        const srcdoc = buildSrcdoc(js, name, undefined, variant.id);
         if (iframeRef.current) {
           iframeRef.current.srcdoc = srcdoc;
           setPreviewReady(true);
@@ -142,16 +142,17 @@ export function VariantCard({
     }
   }, [inspectMode]);
 
-  // Listen for content height from iframe
+  // Listen for content height from iframe (filter by variantId, not event.source —
+  // sandboxed iframes without allow-same-origin break the source check)
   useEffect(() => {
     function handleMessage(e: MessageEvent) {
-      if (e.data?.type === "__preview_height__" && e.source === iframeRef.current?.contentWindow) {
-        setContentHeight(e.data.height as number);
+      if (e.data?.type === "__preview_height__" && e.data.variantId === variant.id && typeof e.data.height === "number") {
+        setContentHeight(e.data.height);
       }
     }
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [variant.id]);
 
   // Keyboard shortcut: Cmd+Z for undo
   useEffect(() => {
