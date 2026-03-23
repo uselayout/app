@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, useCallback, useEffect, Suspense } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Pencil } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
+import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
 import { detectSourceType, normaliseUrl } from "@/lib/util/detect-source";
 import { getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
+import { findTokenReferences, flattenTokens } from "@/lib/tokens/token-references";
 import type {
   ExtractionResult,
   ExtractedToken,
+  ExtractedTokens,
   ExtractedComponent,
   SourceType,
 } from "@/lib/types";
@@ -312,6 +315,9 @@ function TokensTab({
 }) {
   const removeTokens = useProjectStore((s) => s.removeTokens);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
+  const updateToken = useProjectStore((s) => s.updateToken);
+
+  const allTokensFlat = useMemo(() => flattenTokens(tokens), [tokens]);
 
   const [undoState, setUndoState] = useState<{
     tokenType: keyof import("@/lib/types").ExtractedTokens;
@@ -414,6 +420,10 @@ function TokensTab({
                 <TokenRow
                   key={token.name}
                   token={token}
+                  tokenType={SECTION_TYPE_MAP[section.label]}
+                  projectId={projectId}
+                  allTokens={allTokensFlat}
+                  onUpdate={updateToken}
                   onDelete={() => handleDelete(section.label, token)}
                 />
               ))}
@@ -436,8 +446,34 @@ function TokensTab({
   );
 }
 
-function TokenRow({ token, onDelete }: { token: ExtractedToken; onDelete?: () => void }) {
+function TokenRow({
+  token,
+  tokenType,
+  projectId,
+  allTokens,
+  onUpdate,
+  onDelete,
+}: {
+  token: ExtractedToken;
+  tokenType: keyof ExtractedTokens;
+  projectId?: string;
+  allTokens: ExtractedToken[];
+  onUpdate?: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string) => void;
+  onDelete?: () => void;
+}) {
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(token.value);
+  const [justSaved, setJustSaved] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const isColor = token.type === "color";
+  const canEdit = !!projectId && !!onUpdate;
+
+  const references = useMemo(
+    () => findTokenReferences(allTokens, token.name),
+    [allTokens, token.name]
+  );
 
   const handleCopy = useCallback(async () => {
     const varName = token.cssVariable ?? `--${token.name}`;
@@ -448,45 +484,126 @@ function TokenRow({ token, onDelete }: { token: ExtractedToken; onDelete?: () =>
     }
   }, [token]);
 
-  const isColor = token.type === "color";
+  const handleColorChange = useCallback(
+    (newValue: string) => {
+      if (canEdit) {
+        onUpdate(projectId, tokenType, token.name, newValue);
+      }
+    },
+    [canEdit, onUpdate, projectId, tokenType, token.name]
+  );
+
+  const handleStartEdit = useCallback(
+    (e: React.MouseEvent) => {
+      if (!canEdit) return;
+      e.stopPropagation();
+      setEditValue(token.value);
+      setEditing(true);
+      setTimeout(() => inputRef.current?.select(), 0);
+    },
+    [canEdit, token.value]
+  );
+
+  const handleCommitEdit = useCallback(() => {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== token.value && canEdit) {
+      onUpdate(projectId, tokenType, token.name, trimmed);
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 1200);
+    }
+    setEditing(false);
+  }, [editValue, token.value, canEdit, onUpdate, projectId, tokenType, token.name]);
+
+  const handleEditKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") handleCommitEdit();
+      if (e.key === "Escape") setEditing(false);
+    },
+    [handleCommitEdit]
+  );
 
   return (
-    <button
-      onClick={handleCopy}
-      className="group flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-[var(--bg-hover)]"
-    >
-      {isColor && (
-        <span
-          className="h-4 w-4 shrink-0 rounded-full border border-[var(--studio-border)]"
-          style={{ backgroundColor: token.value }}
-        />
-      )}
-      <span className="min-w-0 flex-1 truncate text-xs text-[var(--text-primary)]">
-        {token.cssVariable ?? token.name}
-      </span>
-      <span className="shrink-0 text-xs text-[var(--text-muted)]">
-        {token.value}
-      </span>
-      <span className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
-        {copied ? (
-          <Check className="h-3 w-3 text-emerald-400" />
-        ) : (
-          <Copy className="h-3 w-3 text-[var(--text-muted)]" />
-        )}
-      </span>
-      {onDelete && (
-        <span
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="shrink-0 rounded p-0.5 opacity-0 transition-opacity hover:bg-[rgba(255,255,255,0.06)] group-hover:opacity-100"
-          title="Remove token"
-        >
-          <X className="h-3 w-3 text-[var(--text-muted)] hover:text-red-400 transition-colors" />
+    <div className="group relative">
+      <div
+        onClick={handleCopy}
+        className={`flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-[var(--bg-hover)] ${
+          editing ? "bg-[var(--bg-elevated)] border-l-2 border-l-[var(--studio-border-focus)]" : ""
+        } ${justSaved ? "bg-emerald-500/5" : ""}`}
+      >
+        {isColor && canEdit ? (
+          <ColorPickerPopover value={token.value} onChange={handleColorChange}>
+            <span
+              onClick={(e) => e.stopPropagation()}
+              className="h-4 w-4 shrink-0 cursor-pointer rounded-full border border-[var(--studio-border)] transition-all hover:ring-2 hover:ring-[var(--studio-border-focus)] hover:ring-offset-1 hover:ring-offset-[var(--bg-panel)]"
+              style={{ backgroundColor: token.value }}
+              title="Click to edit colour"
+            />
+          </ColorPickerPopover>
+        ) : isColor ? (
+          <span
+            className="h-4 w-4 shrink-0 rounded-full border border-[var(--studio-border)]"
+            style={{ backgroundColor: token.value }}
+          />
+        ) : null}
+
+        <span className="min-w-0 flex-1 truncate text-xs text-[var(--text-primary)]">
+          {token.cssVariable ?? token.name}
         </span>
+
+        {editing ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={handleCommitEdit}
+            onKeyDown={handleEditKeyDown}
+            onClick={(e) => e.stopPropagation()}
+            spellCheck={false}
+            className="w-24 shrink-0 rounded border border-[var(--studio-border-focus)] bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-xs text-[var(--text-primary)] outline-none"
+          />
+        ) : (
+          <span
+            onClick={!isColor && canEdit ? handleStartEdit : undefined}
+            className={`shrink-0 text-xs text-[var(--text-muted)] ${
+              !isColor && canEdit ? "cursor-text hover:text-[var(--text-primary)] hover:underline hover:decoration-dotted" : ""
+            }`}
+            title={!isColor && canEdit ? "Click to edit value" : undefined}
+          >
+            {token.value}
+          </span>
+        )}
+
+        <span className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
+          {copied ? (
+            <Check className="h-3 w-3 text-emerald-400" />
+          ) : justSaved ? (
+            <Check className="h-3 w-3 text-emerald-400" />
+          ) : (
+            <Copy className="h-3 w-3 text-[var(--text-muted)]" />
+          )}
+        </span>
+
+        {onDelete && (
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="shrink-0 rounded p-0.5 opacity-0 transition-opacity hover:bg-[rgba(255,255,255,0.06)] group-hover:opacity-100"
+            title="Remove token"
+          >
+            <X className="h-3 w-3 text-[var(--text-muted)] hover:text-red-400 transition-colors" />
+          </span>
+        )}
+      </div>
+
+      {references.length > 0 && (
+        <div className="px-2 pb-1 pl-8 text-[10px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity">
+          Referenced by: {references.map((r) => r.name).join(", ")}
+        </div>
       )}
-    </button>
+    </div>
   );
 }
 
