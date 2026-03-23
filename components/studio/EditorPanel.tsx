@@ -148,6 +148,47 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
     monaco.editor.defineTheme("studio-dark", STUDIO_THEME);
     monaco.editor.setTheme("studio-dark");
 
+    // Register colour provider — shows inline swatches with a picker in CSS blocks
+    monaco.languages.registerColorProvider("markdown", {
+      provideDocumentColors: (model: monacoType.editor.ITextModel) => {
+        const colors: monacoType.languages.IColorInformation[] = [];
+        const hexRegex = /#([0-9a-fA-F]{6})\b/g;
+        const lineCount = model.getLineCount();
+
+        for (let i = 1; i <= lineCount; i++) {
+          const lineContent = model.getLineContent(i);
+          let match: RegExpExecArray | null;
+          hexRegex.lastIndex = 0;
+          while ((match = hexRegex.exec(lineContent)) !== null) {
+            const hex = match[1];
+            const r = parseInt(hex.substring(0, 2), 16) / 255;
+            const g = parseInt(hex.substring(2, 4), 16) / 255;
+            const b = parseInt(hex.substring(4, 6), 16) / 255;
+            colors.push({
+              color: { red: r, green: g, blue: b, alpha: 1 },
+              range: {
+                startLineNumber: i,
+                startColumn: match.index + 1,
+                endLineNumber: i,
+                endColumn: match.index + 1 + match[0].length,
+              },
+            });
+          }
+        }
+
+        return { colors, dispose: () => {} };
+      },
+      provideColorPresentations: (
+        _model: monacoType.editor.ITextModel,
+        colorInfo: monacoType.languages.IColorInformation
+      ) => {
+        const { red, green, blue } = colorInfo.color;
+        const toHex = (v: number) => Math.round(v * 255).toString(16).padStart(2, "0");
+        const hex = `#${toHex(red)}${toHex(green)}${toHex(blue)}`;
+        return [{ label: hex }];
+      },
+    });
+
     // Register token autocomplete
     monaco.languages.registerCompletionItemProvider("markdown", {
       triggerCharacters: ["-"],
