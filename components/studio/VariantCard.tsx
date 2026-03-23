@@ -142,17 +142,18 @@ export function VariantCard({
     }
   }, [inspectMode]);
 
-  // Listen for content height from iframe (filter by variantId, not event.source —
-  // sandboxed iframes without allow-same-origin break the source check)
-  useEffect(() => {
-    function handleMessage(e: MessageEvent) {
-      if (e.data?.type === "__preview_height__" && e.data.variantId === variant.id && typeof e.data.height === "number") {
-        setContentHeight(e.data.height);
-      }
-    }
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [variant.id]);
+  // Measure iframe content height directly after load (allow-same-origin enables this)
+  const measureContentHeight = useCallback(() => {
+    setTimeout(() => {
+      try {
+        const doc = iframeRef.current?.contentDocument;
+        if (doc) {
+          const h = doc.body.scrollHeight;
+          if (h > 0) setContentHeight(h);
+        }
+      } catch { /* ignore */ }
+    }, 300);
+  }, []);
 
   // Keyboard shortcut: Cmd+Z for undo
   useEffect(() => {
@@ -348,7 +349,8 @@ export function VariantCard({
         ) : (
           <iframe
             ref={iframeRef}
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-same-origin"
+            onLoad={measureContentHeight}
             className={`w-full origin-top-left border-0 transition-opacity ${
               inspectMode ? "" : "scale-50"
             } ${previewReady ? "opacity-100" : "opacity-0"}`}
@@ -373,7 +375,7 @@ export function VariantCard({
           <div ref={fullscreenContainerRef} className="relative flex-1">
             <iframe
               ref={fullscreenIframeRef}
-              sandbox="allow-scripts"
+              sandbox="allow-scripts allow-same-origin"
               className="h-full w-full border-0"
               style={{ pointerEvents: "auto" }}
               title={`Inspector: ${variant.name}`}
