@@ -6,7 +6,7 @@ import type {
   UsageStats,
   TokenUsageResult,
 } from "@/lib/types/billing";
-import { TOKEN_COSTS_GBP as COSTS } from "@/lib/types/billing";
+import { TOKEN_COSTS_USD as COSTS } from "@/lib/types/billing";
 
 interface UsageRow {
   id: string;
@@ -31,7 +31,7 @@ function rowToEntry(row: UsageRow): UsageLogEntry {
     inputTokens: row.input_tokens,
     outputTokens: row.output_tokens,
     model: row.model,
-    costEstimateGbp: row.cost_estimate_gbp,
+    costEstimateUsd: row.cost_estimate_gbp,
     createdAt: row.created_at,
   };
 }
@@ -107,10 +107,10 @@ export async function getUsageStats(
     console.error("Failed to fetch usage stats:", error?.message);
     return {
       totalLayoutMd: 0,
-      totalTestQueries: 0,
+      totalAiQueries: 0,
       totalInputTokens: 0,
       totalOutputTokens: 0,
-      totalCostGbp: 0,
+      totalCostUsd: 0,
       periodStart,
       periodEnd,
     };
@@ -119,10 +119,10 @@ export async function getUsageStats(
   const rows = data as UsageRow[];
   return {
     totalLayoutMd: rows.filter((r) => r.endpoint === "layout-md").length,
-    totalTestQueries: rows.filter((r) => r.endpoint === "test").length,
+    totalAiQueries: rows.filter((r) => r.endpoint !== "layout-md").length,
     totalInputTokens: rows.reduce((sum, r) => sum + r.input_tokens, 0),
     totalOutputTokens: rows.reduce((sum, r) => sum + r.output_tokens, 0),
-    totalCostGbp: rows.reduce((sum, r) => sum + Number(r.cost_estimate_gbp), 0),
+    totalCostUsd: rows.reduce((sum, r) => sum + Number(r.cost_estimate_gbp), 0),
     periodStart,
     periodEnd,
   };

@@ -55,9 +55,9 @@ export function UsageDashboard() {
   }, []);
 
   const totalLayoutMd = tier === "pro" || tier === "team" ? 50 : 0;
-  const totalTestQuery = tier === "pro" || tier === "team" ? 300 : 0;
+  const totalAiQuery = tier === "pro" || tier === "team" ? 100 : 0;
   const usedLayoutMd = totalLayoutMd - (credits?.layoutMdRemaining ?? 0);
-  const usedTestQuery = totalTestQuery - (credits?.testQueryRemaining ?? 0);
+  const usedAiQuery = totalAiQuery - (credits?.aiQueryRemaining ?? 0);
 
   return (
     <div className="space-y-6">
@@ -77,9 +77,9 @@ export function UsageDashboard() {
             icon={FileText}
           />
           <CreditGauge
-            label="Test queries"
-            used={Math.max(usedTestQuery, 0)}
-            total={totalTestQuery + (credits?.topupTestQuery ?? 0)}
+            label="AI queries"
+            used={Math.max(usedAiQuery, 0)}
+            total={totalAiQuery + (credits?.topupAiQuery ?? 0)}
             icon={MessageSquare}
           />
         </div>
@@ -102,7 +102,7 @@ export function UsageDashboard() {
               <span className="text-xs text-[var(--text-secondary)]">Est. cost</span>
             </div>
             <span className="text-lg font-bold text-[var(--text-primary)]">
-              £{stats.totalCostGbp.toFixed(2)}
+              ${stats.totalCostUsd.toFixed(2)}
             </span>
           </div>
         </div>
@@ -126,12 +126,12 @@ export function UsageDashboard() {
                     {entry.mode}
                   </span>
                   <span className="text-[var(--text-primary)]">
-                    {entry.endpoint === "layout-md" ? "layout.md" : "Test query"}
+                    {entry.endpoint === "layout-md" ? "layout.md" : "AI query"}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-[var(--text-muted)]">
                   <span>{((entry.inputTokens + entry.outputTokens) / 1000).toFixed(1)}k tok</span>
-                  <span>£{entry.costEstimateGbp.toFixed(3)}</span>
+                  <span>${entry.costEstimateUsd.toFixed(3)}</span>
                 </div>
               </div>
             ))}

@@ -19,9 +19,9 @@ import { getStoredApiKey, getStoredGoogleApiKey } from "@/lib/hooks/use-api-key"
 
 interface CreditBalance {
   layoutMdRemaining: number;
-  testQueryRemaining: number;
+  aiQueryRemaining: number;
   topupLayoutMd: number;
-  topupTestQuery: number;
+  topupAiQuery: number;
   periodStart: string | null;
   periodEnd: string | null;
 }
@@ -40,10 +40,10 @@ const TIER_LABELS: Record<string, string> = {
   team: "Team",
 };
 
-const TIER_ALLOCATIONS: Record<string, { layoutMd: number; testQuery: number }> = {
-  free: { layoutMd: 2, testQuery: 5 },
-  pro: { layoutMd: 50, testQuery: 100 },
-  team: { layoutMd: 50, testQuery: 100 },
+const TIER_ALLOCATIONS: Record<string, { layoutMd: number; aiQuery: number }> = {
+  free: { layoutMd: 2, aiQuery: 5 },
+  pro: { layoutMd: 50, aiQuery: 100 },
+  team: { layoutMd: 50, aiQuery: 100 },
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -164,8 +164,8 @@ export default function BillingPage() {
 
   const layoutMdTotal =
     (credits?.layoutMdRemaining ?? 0) + (credits?.topupLayoutMd ?? 0);
-  const testQueryTotal =
-    (credits?.testQueryRemaining ?? 0) + (credits?.topupTestQuery ?? 0);
+  const aiQueryTotal =
+    (credits?.aiQueryRemaining ?? 0) + (credits?.topupAiQuery ?? 0);
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
@@ -302,23 +302,23 @@ export default function BillingPage() {
                         <>
                           <span
                             className={
-                              testQueryTotal === 0 ? "text-red-400" : ""
+                              aiQueryTotal === 0 ? "text-red-400" : ""
                             }
                           >
-                            {testQueryTotal}
+                            {aiQueryTotal}
                           </span>
                           <span className="text-[var(--text-muted)]">
                             {" "}
-                            / {allocation.testQuery} monthly
+                            / {allocation.aiQuery} monthly
                           </span>
                         </>
                       ) : (
-                        `${allocation.testQuery} / month`
+                        `${allocation.aiQuery} / month`
                       )}
                     </p>
-                    {(credits?.topupTestQuery ?? 0) > 0 && (
+                    {(credits?.topupAiQuery ?? 0) > 0 && (
                       <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
-                        incl. {credits!.topupTestQuery} top-up
+                        incl. {credits!.topupAiQuery} top-up
                       </p>
                     )}
                   </div>
@@ -377,9 +377,9 @@ export default function BillingPage() {
                   </div>
                 </div>
                 <p className="mt-2 text-[10px] text-[var(--text-muted)]">
-                  {allocation.layoutMd} layout.md + {allocation.testQuery} queries per seat/month
+                  {allocation.layoutMd} layout.md + {allocation.aiQuery} AI queries per seat/month
                   {subscription.seatCount > 1 && (
-                    <> = {allocation.layoutMd * subscription.seatCount} layout.md + {allocation.testQuery * subscription.seatCount} queries total</>
+                    <> = {allocation.layoutMd * subscription.seatCount} layout.md + {allocation.aiQuery * subscription.seatCount} AI queries total</>
                   )}
                 </p>
               </div>

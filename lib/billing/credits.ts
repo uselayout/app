@@ -25,11 +25,11 @@ function rowToBalance(row: CreditRow): CreditBalance {
     userId: row.user_id,
     orgId: row.org_id,
     layoutMdRemaining: row.layout_md_remaining,
-    testQueryRemaining: row.test_query_remaining,
+    aiQueryRemaining: row.test_query_remaining,
     periodStart: row.period_start,
     periodEnd: row.period_end,
     topupLayoutMd: row.topup_layout_md,
-    topupTestQuery: row.topup_test_query,
+    topupAiQuery: row.topup_test_query,
   };
 }
 
@@ -92,21 +92,21 @@ export async function checkQuota(
     }
   }
 
-  const creditType = endpoint === "layout-md" ? "layoutMd" : "testQuery";
+  const creditType = endpoint === "layout-md" ? "layoutMd" : "aiQuery";
   const monthly = endpoint === "layout-md"
     ? balance.layoutMdRemaining
-    : balance.testQueryRemaining;
+    : balance.aiQueryRemaining;
   const topup = endpoint === "layout-md"
     ? balance.topupLayoutMd
-    : balance.topupTestQuery;
+    : balance.topupAiQuery;
 
   if (monthly <= 0 && topup <= 0) {
     return {
       allowed: false,
-      reason: `No ${creditType === "layoutMd" ? "layout.md" : "test query"} credits remaining. Top up or switch to your own API key.`,
+      reason: `No ${creditType === "layoutMd" ? "layout.md" : "AI query"} credits remaining. Top up or switch to your own API key.`,
       remaining: {
         layoutMd: balance.layoutMdRemaining + balance.topupLayoutMd,
-        testQuery: balance.testQueryRemaining + balance.topupTestQuery,
+        aiQuery: balance.aiQueryRemaining + balance.topupAiQuery,
       },
     };
   }
@@ -115,7 +115,7 @@ export async function checkQuota(
     allowed: true,
     remaining: {
       layoutMd: balance.layoutMdRemaining + balance.topupLayoutMd,
-      testQuery: balance.testQueryRemaining + balance.topupTestQuery,
+      aiQuery: balance.aiQueryRemaining + balance.topupAiQuery,
     },
   };
 }
@@ -146,21 +146,21 @@ export async function checkQuotaByOrg(
     }
   }
 
-  const creditType = endpoint === "layout-md" ? "layoutMd" : "testQuery";
+  const creditType = endpoint === "layout-md" ? "layoutMd" : "aiQuery";
   const monthly = endpoint === "layout-md"
     ? balance.layoutMdRemaining
-    : balance.testQueryRemaining;
+    : balance.aiQueryRemaining;
   const topup = endpoint === "layout-md"
     ? balance.topupLayoutMd
-    : balance.topupTestQuery;
+    : balance.topupAiQuery;
 
   if (monthly <= 0 && topup <= 0) {
     return {
       allowed: false,
-      reason: `No ${creditType === "layoutMd" ? "layout.md" : "test query"} credits remaining. Top up or switch to your own API key.`,
+      reason: `No ${creditType === "layoutMd" ? "layout.md" : "AI query"} credits remaining. Top up or switch to your own API key.`,
       remaining: {
         layoutMd: balance.layoutMdRemaining + balance.topupLayoutMd,
-        testQuery: balance.testQueryRemaining + balance.topupTestQuery,
+        aiQuery: balance.aiQueryRemaining + balance.topupAiQuery,
       },
     };
   }
@@ -169,7 +169,7 @@ export async function checkQuotaByOrg(
     allowed: true,
     remaining: {
       layoutMd: balance.layoutMdRemaining + balance.topupLayoutMd,
-      testQuery: balance.testQueryRemaining + balance.topupTestQuery,
+      aiQuery: balance.aiQueryRemaining + balance.topupAiQuery,
     },
   };
 }
@@ -241,7 +241,7 @@ export async function resetMonthlyCredits(
       {
         user_id: userId,
         layout_md_remaining: allocation.layoutMd * multiplier,
-        test_query_remaining: allocation.testQuery * multiplier,
+        test_query_remaining: allocation.aiQuery * multiplier,
         period_start: periodStart,
         period_end: periodEnd,
       },
@@ -273,7 +273,7 @@ export async function resetMonthlyCreditsByOrg(
       {
         org_id: orgId,
         layout_md_remaining: allocation.layoutMd * multiplier,
-        test_query_remaining: allocation.testQuery * multiplier,
+        test_query_remaining: allocation.aiQuery * multiplier,
         period_start: periodStart,
         period_end: periodEnd,
       },
@@ -297,7 +297,7 @@ export async function addTopupCredits(userId: string): Promise<void> {
       period_start: new Date().toISOString(),
       period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       topup_layout_md: CREDITS.topup.layoutMd,
-      topup_test_query: CREDITS.topup.testQuery,
+      topup_test_query: CREDITS.topup.aiQuery,
     });
     if (error) console.error("Failed to create credit balance:", error.message);
     return;
@@ -308,7 +308,7 @@ export async function addTopupCredits(userId: string): Promise<void> {
     .from("layout_credit_balance")
     .update({
       topup_layout_md: balance.topupLayoutMd + CREDITS.topup.layoutMd,
-      topup_test_query: balance.topupTestQuery + CREDITS.topup.testQuery,
+      topup_test_query: balance.topupAiQuery + CREDITS.topup.aiQuery,
     })
     .eq("user_id", userId);
 
