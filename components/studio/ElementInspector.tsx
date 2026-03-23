@@ -52,6 +52,7 @@ interface ElementInspectorProps {
   onStyleEdits: (edits: StyleEdit[]) => void;
   onAnnotationsSubmit?: (annotations: ElementAnnotation[]) => void;
   onDeselect: () => void;
+  onReset?: () => void;
   designTokens?: ExtractedToken[];
   /** Scale factor applied to the iframe (e.g. 0.5 for 50% scale) */
   iframeScale?: number;
@@ -298,6 +299,7 @@ export function ElementInspector({
   onStyleEdits,
   onAnnotationsSubmit,
   onDeselect,
+  onReset,
   designTokens,
   iframeScale = 0.5,
 }: ElementInspectorProps) {
@@ -619,16 +621,24 @@ export function ElementInspector({
         )}
       </div>
 
-      {/* Apply / Submit buttons */}
+      {/* Apply / Discard / Submit buttons */}
       {(pendingEdits.length > 0 || annotations.length > 0) && (
         <div className="flex gap-1.5 border-t border-[var(--studio-border)] px-2.5 py-2">
           {pendingEdits.length > 0 && (
-            <button
-              onClick={handleApplyAll}
-              className="flex-1 rounded-md bg-[var(--studio-accent)] px-3 py-1.5 text-[10px] font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors"
-            >
-              Apply {pendingEdits.length} change{pendingEdits.length !== 1 ? "s" : ""}
-            </button>
+            <>
+              <button
+                onClick={() => { setPendingEdits([]); onReset?.(); }}
+                className="rounded-md border border-[var(--studio-border)] px-2.5 py-1.5 text-[10px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                Discard
+              </button>
+              <button
+                onClick={handleApplyAll}
+                className="flex-1 rounded-md bg-[var(--studio-accent)] px-3 py-1.5 text-[10px] font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors"
+              >
+                Apply {pendingEdits.length} change{pendingEdits.length !== 1 ? "s" : ""}
+              </button>
+            </>
           )}
           {annotations.length > 0 && onAnnotationsSubmit && (
             <button
