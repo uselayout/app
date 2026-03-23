@@ -322,7 +322,7 @@ export function VariantCard({
       )}
 
       {/* Preview area */}
-      <div ref={previewContainerRef} className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white">
+      <div ref={previewContainerRef} className="relative aspect-[4/3] overflow-y-auto overflow-x-hidden rounded-t-xl bg-white">
         {previewError ? (
           <div className="flex h-full items-center justify-center p-4">
             <p className="text-xs text-red-400">{previewError}</p>
