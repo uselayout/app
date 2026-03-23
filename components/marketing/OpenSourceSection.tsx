@@ -21,7 +21,7 @@ export function OpenSourceSection() {
           <div className="w-full lg:w-[575px] flex flex-col gap-8 lg:gap-[64px]">
             <div className="pt-[19px] flex flex-col gap-[10px]">
               <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-                The CLI and MCP server are MIT licensed. Run it locally, deploy it yourself, contribute back. No subscriptions, no lock-in, no vendor risk.
+                The CLI and MCP server are MIT licensed. The Studio is AGPL-3.0. Run it locally, deploy it yourself, contribute back. No lock-in, no vendor risk.
               </p>
               <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
                 Three starter kits bundled — Linear, Stripe, Notion. From npm install to your AI building on-brand in 60 seconds.
