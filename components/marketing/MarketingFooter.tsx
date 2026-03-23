@@ -1,8 +1,8 @@
 const LAYOUT_LINKS = [
-  { label: "home", href: "/" },
-  { label: "pricing", href: "/pricing" },
-  { label: "docs", href: "/docs" },
-  { label: "changelog", href: "/changelog" },
+  { label: "Home", href: "/" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "Docs", href: "/docs" },
+  { label: "Changelog", href: "/changelog" },
 ];
 
 const TOOLS_LINKS = [
@@ -15,7 +15,7 @@ const TOOLS_LINKS = [
 const SOCIALS_LINKS = [
   { label: "GitHub", href: "https://github.com/uselayout" },
   { label: "Discord", href: "/discord" },
-  { label: "X / Twitter", href: "https://x.com/uselayout" },
+  { label: "X / Twitter", href: "https://x.com/uselayoutdesign" },
 ];
 
 function LinkColumn({
