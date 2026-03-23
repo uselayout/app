@@ -33,7 +33,15 @@ export default function StudioPage({
   const updateLayoutMd = useProjectStore((s) => s.updateLayoutMd);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateExplorations = useProjectStore((s) => s.updateExplorations);
+  const refreshProject = useProjectStore((s) => s.refreshProject);
   const project = projects.find((p) => p.id === id);
+
+  // Fetch full project data if we only have summary data (list endpoint omits layout_md + extraction_data)
+  useEffect(() => {
+    if (project && !project.layoutMd && !project.extractionData) {
+      refreshProject(id);
+    }
+  }, [id, project, refreshProject]);
 
   const extractionStatus = useExtractionStore((s) => s.status);
   const extractionProgress = useExtractionStore((s) => s.progress);
