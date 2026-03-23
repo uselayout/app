@@ -12,6 +12,7 @@ import { useOrgStore } from "@/lib/store/organization";
 import { detectSourceType, normaliseUrl } from "@/lib/util/detect-source";
 import { getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
 import { findTokenReferences, flattenTokens } from "@/lib/tokens/token-references";
+import { countTokenReferences } from "@/lib/tokens/rename-token";
 import { groupTokensByPurpose } from "@/lib/tokens/group-tokens";
 import type {
   ExtractionResult,
@@ -317,6 +318,7 @@ function TokensTab({
   const removeTokens = useProjectStore((s) => s.removeTokens);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateToken = useProjectStore((s) => s.updateToken);
+  const renameToken = useProjectStore((s) => s.renameToken);
 
   const allTokensFlat = useMemo(() => flattenTokens(tokens), [tokens]);
 
@@ -432,7 +434,9 @@ function TokensTab({
                         tokenType={SECTION_TYPE_MAP[section.label]}
                         projectId={projectId}
                         allTokens={allTokensFlat}
+                        layoutMd={useProjectStore.getState().projects.find((p) => p.id === projectId)?.layoutMd ?? ""}
                         onUpdate={updateToken}
+                        onRename={renameToken}
                         onDelete={() => handleDelete(section.label, token)}
                       />
                     ))}
@@ -463,24 +467,33 @@ function TokenRow({
   tokenType,
   projectId,
   allTokens,
+  layoutMd,
   onUpdate,
+  onRename,
   onDelete,
 }: {
   token: ExtractedToken;
   tokenType: keyof ExtractedTokens;
   projectId?: string;
   allTokens: ExtractedToken[];
+  layoutMd: string;
   onUpdate?: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string) => void;
+  onRename?: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string) => void;
   onDelete?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   const [editValue, setEditValue] = useState(token.value);
+  const [editName, setEditName] = useState(token.name);
   const [justSaved, setJustSaved] = useState(false);
+  const [renameConfirm, setRenameConfirm] = useState<{ newName: string; refCount: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const isColor = token.type === "color";
   const canEdit = !!projectId && !!onUpdate;
+  const canRename = !!projectId && !!onRename;
 
   const references = useMemo(
     () => findTokenReferences(allTokens, token.name),
@@ -534,12 +547,62 @@ function TokenRow({
     [handleCommitEdit]
   );
 
+  // Name editing
+  const handleStartNameEdit = useCallback(
+    (e: React.MouseEvent) => {
+      if (!canRename) return;
+      e.stopPropagation();
+      setEditName(token.name);
+      setEditingName(true);
+      setTimeout(() => nameInputRef.current?.select(), 0);
+    },
+    [canRename, token.name]
+  );
+
+  const handleCommitNameEdit = useCallback(() => {
+    const trimmed = editName.trim();
+    if (!trimmed || trimmed === token.name || !canRename) {
+      setEditingName(false);
+      return;
+    }
+
+    // Count references to show confirmation
+    const refCount = countTokenReferences(layoutMd, token.name);
+    if (refCount > 1) {
+      // More than just the declaration — show confirmation
+      setRenameConfirm({ newName: trimmed, refCount });
+      setEditingName(false);
+    } else {
+      // Just the declaration, rename directly
+      onRename(projectId, tokenType, token.name, trimmed);
+      setEditingName(false);
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 1200);
+    }
+  }, [editName, token.name, canRename, onRename, projectId, tokenType, layoutMd]);
+
+  const handleNameKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") handleCommitNameEdit();
+      if (e.key === "Escape") setEditingName(false);
+    },
+    [handleCommitNameEdit]
+  );
+
+  const handleConfirmRename = useCallback(() => {
+    if (!renameConfirm || !canRename) return;
+    onRename(projectId, tokenType, token.name, renameConfirm.newName);
+    setRenameConfirm(null);
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 1200);
+  }, [renameConfirm, canRename, onRename, projectId, tokenType, token.name]);
+
   return (
     <div className="group relative">
       <div
         onClick={handleCopy}
         className={`flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-[var(--bg-hover)] ${
-          editing ? "bg-[var(--bg-elevated)] border-l-2 border-l-[var(--studio-border-focus)]" : ""
+          editing || editingName ? "bg-[var(--bg-elevated)] border-l-2 border-l-[var(--studio-border-focus)]" : ""
         } ${justSaved ? "bg-emerald-500/5" : ""}`}
       >
         {isColor && canEdit ? (
@@ -558,9 +621,29 @@ function TokenRow({
           />
         ) : null}
 
-        <span className="min-w-0 flex-1 truncate text-xs text-[var(--text-primary)]">
-          {token.cssVariable ?? token.name}
-        </span>
+        {editingName ? (
+          <input
+            ref={nameInputRef}
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onBlur={handleCommitNameEdit}
+            onKeyDown={handleNameKeyDown}
+            onClick={(e) => e.stopPropagation()}
+            spellCheck={false}
+            className="min-w-0 flex-1 rounded border border-[var(--studio-border-focus)] bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-xs text-[var(--text-primary)] outline-none"
+          />
+        ) : (
+          <span
+            onClick={canRename ? handleStartNameEdit : undefined}
+            className={`min-w-0 flex-1 truncate text-xs text-[var(--text-primary)] ${
+              canRename ? "cursor-text hover:underline hover:decoration-dotted hover:decoration-[var(--text-muted)]" : ""
+            }`}
+            title={canRename ? "Click to rename" : undefined}
+          >
+            {token.cssVariable ?? token.name}
+          </span>
+        )}
 
         {editing ? (
           <input
@@ -610,9 +693,29 @@ function TokenRow({
         )}
       </div>
 
-      {references.length > 0 && (
+      {references.length > 0 && !renameConfirm && (
         <div className="px-2 pb-1 pl-8 text-[10px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity">
           Referenced by: {references.map((r) => r.name).join(", ")}
+        </div>
+      )}
+
+      {renameConfirm && (
+        <div className="mx-2 mb-1 flex items-center gap-2 rounded border border-amber-500/30 bg-amber-500/5 px-2 py-1.5">
+          <span className="flex-1 text-[10px] text-amber-300">
+            Will update {renameConfirm.refCount} reference{renameConfirm.refCount !== 1 ? "s" : ""} in layout.md
+          </span>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleConfirmRename(); }}
+            className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium text-amber-300 hover:bg-amber-500/30 transition-colors"
+          >
+            Rename
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setRenameConfirm(null); }}
+            className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+          >
+            Cancel
+          </button>
         </div>
       )}
     </div>
