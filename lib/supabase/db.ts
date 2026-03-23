@@ -78,6 +78,28 @@ export async function fetchProjectById(id: string): Promise<Project | null> {
   return rowToProject(data as ProjectRow);
 }
 
+/** Lean listing — excludes large JSON columns for fast project list loads. */
+export async function fetchAllProjectsSummary(orgId: string): Promise<Project[]> {
+  const { data, error } = await supabase
+    .from("layout_projects")
+    .select("id, org_id, name, source_type, source_url, token_count, health_score, pending_canvas_image, user_id, created_at, updated_at")
+    .eq("org_id", orgId)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to fetch projects:", error.message);
+    return [];
+  }
+
+  return (data as ProjectRow[]).map((row) => ({
+    ...rowToProject(row),
+    layoutMd: "",
+    extractionData: undefined,
+    explorations: undefined,
+  }));
+}
+
+/** Full project fetch including all JSON columns. */
 export async function fetchAllProjects(orgId: string): Promise<Project[]> {
   const { data, error } = await supabase
     .from("layout_projects")
