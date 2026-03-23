@@ -12,7 +12,7 @@ const tiers = [
   {
     id: "free" as const,
     name: "Free",
-    price: "£0",
+    price: "$0",
     period: "forever",
     description: "Bring your own Anthropic API key",
     cta: "Get Started",
@@ -31,7 +31,7 @@ const tiers = [
   {
     id: "pro" as const,
     name: "Pro",
-    price: "£29",
+    price: "$29",
     period: "/month",
     description: "Hosted AI — no API key needed",
     cta: "Upgrade to Pro",
@@ -42,7 +42,7 @@ const tiers = [
       { text: "Unlimited projects", included: true },
       { text: "3 starter kits", included: true },
       { text: "BYOK — use your own API key", included: true },
-      { text: "50 layout.md + 300 test queries/mo", included: true },
+      { text: "50 layout.md + 100 AI queries/mo", included: true },
       { text: "Drift monitoring", included: true },
       { text: "All premium kits", included: true },
       { text: "Priority extraction queue", included: true },
@@ -51,13 +51,13 @@ const tiers = [
   {
     id: "team" as const,
     name: "Team",
-    price: "£29 + £15",
+    price: "$29 + $15",
     period: "/seat/month",
     description: "Shared design system library",
     cta: "Start Team Plan",
     features: [
       { text: "Everything in Pro", included: true },
-      { text: "50 layout.md + 300 queries per seat", included: true },
+      { text: "50 layout.md + 100 AI queries per seat", included: true },
       { text: "Shared design system library", included: true },
       { text: "Team management", included: true },
       { text: "Centralised API key management", included: true },
