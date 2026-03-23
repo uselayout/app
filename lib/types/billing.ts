@@ -24,11 +24,11 @@ export interface CreditBalance {
   userId: string;
   orgId: string;
   layoutMdRemaining: number;
-  testQueryRemaining: number;
+  aiQueryRemaining: number;
   periodStart: string;
   periodEnd: string;
   topupLayoutMd: number;
-  topupTestQuery: number;
+  topupAiQuery: number;
 }
 
 export interface UsageLogEntry {
@@ -40,7 +40,7 @@ export interface UsageLogEntry {
   inputTokens: number;
   outputTokens: number;
   model: string;
-  costEstimateGbp: number;
+  costEstimateUsd: number;
   createdAt: string;
 }
 
@@ -57,29 +57,29 @@ export interface StreamWithUsage {
 export interface QuotaCheck {
   allowed: boolean;
   reason?: string;
-  remaining?: { layoutMd: number; testQuery: number };
+  remaining?: { layoutMd: number; aiQuery: number };
 }
 
 export interface UsageStats {
   totalLayoutMd: number;
-  totalTestQueries: number;
+  totalAiQueries: number;
   totalInputTokens: number;
   totalOutputTokens: number;
-  totalCostGbp: number;
+  totalCostUsd: number;
   periodStart: string;
   periodEnd: string;
 }
 
 /** Monthly credit allocations per tier */
 export const TIER_CREDITS = {
-  free: { layoutMd: 2, testQuery: 5 },
-  pro: { layoutMd: 50, testQuery: 100 },
-  team: { layoutMd: 50, testQuery: 100 }, // per seat
-  topup: { layoutMd: 30, testQuery: 80 },
+  free: { layoutMd: 2, aiQuery: 5 },
+  pro: { layoutMd: 50, aiQuery: 100 },
+  team: { layoutMd: 50, aiQuery: 100 }, // per seat
+  topup: { layoutMd: 30, aiQuery: 80 },
 } as const;
 
-/** Claude Sonnet 4.6 pricing per token in GBP */
-export const TOKEN_COSTS_GBP = {
+/** Claude Sonnet 4.6 pricing per token in USD */
+export const TOKEN_COSTS_USD = {
   input: 3.0 / 1_000_000,
   output: 15.0 / 1_000_000,
 } as const;

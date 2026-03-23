@@ -21,8 +21,8 @@ export function useBilling() {
   const layoutMdRemaining = credits
     ? credits.layoutMdRemaining + credits.topupLayoutMd
     : 0;
-  const testQueryRemaining = credits
-    ? credits.testQueryRemaining + credits.topupTestQuery
+  const aiQueryRemaining = credits
+    ? credits.aiQueryRemaining + credits.topupAiQuery
     : 0;
 
   return {
@@ -31,7 +31,7 @@ export function useBilling() {
     tier,
     isHosted,
     layoutMdRemaining,
-    testQueryRemaining,
+    aiQueryRemaining,
     loading,
     error,
     refetch: fetchBilling,
