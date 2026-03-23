@@ -81,6 +81,7 @@ export function VariantCard({
   const [refineText, setRefineText] = useState("");
   const [inspectMode, setInspectMode] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
+  const applyAbortRef = useRef<AbortController | null>(null);
   const [previewEntryId, setPreviewEntryId] = useState<string | undefined>();
   const [contentHeight, setContentHeight] = useState<number | null>(null);
 
@@ -199,6 +200,10 @@ export function VariantCard({
 
   const handleStyleEdits = useCallback(async (edits: StyleEdit[]) => {
     if (!onCodeUpdate || edits.length === 0) return;
+    applyAbortRef.current?.abort();
+    const abort = new AbortController();
+    applyAbortRef.current = abort;
+    const timeout = setTimeout(() => abort.abort(), 60_000);
     setIsApplying(true);
 
     try {
@@ -210,6 +215,7 @@ export function VariantCard({
           styleEdits: edits,
           layoutMd,
         }),
+        signal: abort.signal,
       });
 
       if (!res.ok) {
@@ -230,14 +236,20 @@ export function VariantCard({
       );
       onCodeUpdate(updatedCode, newHistory);
     } catch (err) {
-      console.error("Style edit error:", err);
+      if ((err as Error).name !== "AbortError") console.error("Style edit error:", err);
     } finally {
+      clearTimeout(timeout);
+      applyAbortRef.current = null;
       setIsApplying(false);
     }
   }, [variant.code, editHistory, onCodeUpdate, layoutMd]);
 
   const handleAnnotationsSubmit = useCallback(async (anns: ElementAnnotation[]) => {
     if (!onCodeUpdate || anns.length === 0) return;
+    applyAbortRef.current?.abort();
+    const abort = new AbortController();
+    applyAbortRef.current = abort;
+    const timeout = setTimeout(() => abort.abort(), 60_000);
     setIsApplying(true);
 
     try {
@@ -249,6 +261,7 @@ export function VariantCard({
           annotations: anns,
           layoutMd,
         }),
+        signal: abort.signal,
       });
 
       if (!res.ok) {
@@ -267,8 +280,10 @@ export function VariantCard({
       );
       onCodeUpdate(updatedCode, newHistory);
     } catch (err) {
-      console.error("Annotation edit error:", err);
+      if ((err as Error).name !== "AbortError") console.error("Annotation edit error:", err);
     } finally {
+      clearTimeout(timeout);
+      applyAbortRef.current = null;
       setIsApplying(false);
     }
   }, [variant.code, editHistory, onCodeUpdate, layoutMd]);
@@ -395,7 +410,7 @@ export function VariantCard({
       {inspectMode && typeof document !== "undefined" && createPortal(
         <div className="fixed inset-0 z-50 flex bg-[var(--bg-app)]">
           {/* Main preview area */}
-          <div ref={fullscreenContainerRef} className="relative flex-1">
+          <div ref={fullscreenContainerRef} className="relative flex-1 pt-10">
             <iframe
               ref={fullscreenIframeRef}
               sandbox="allow-scripts allow-same-origin"
@@ -428,6 +443,12 @@ export function VariantCard({
                 <div className="flex items-center gap-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--studio-border)] px-4 py-3">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
                   <span className="text-xs text-[var(--text-secondary)]">Applying changes...</span>
+                  <button
+                    onClick={() => applyAbortRef.current?.abort()}
+                    className="ml-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             )}
