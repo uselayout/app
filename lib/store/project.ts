@@ -6,6 +6,12 @@ import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, Explor
 
 /** Save a project via the server-side API (bypasses RLS). */
 function apiUpsertProject(project: Project, onError?: (msg: string) => void): void {
+  if (!project.orgId) {
+    const msg = "Cannot save project: missing orgId";
+    console.error(msg);
+    onError?.(msg);
+    return;
+  }
   void (async () => {
     try {
       const res = await fetch(`/api/organizations/${project.orgId}/projects/${project.id}`, {
