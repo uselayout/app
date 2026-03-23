@@ -81,7 +81,7 @@ window.addEventListener('load',function(){
       '  if(typeof C==="object"&&C.default)C=C.default;',
       '  if(typeof C!=="function"&&!(typeof C==="object"&&C)){showError("Component not found in module exports");return;}',
       '  ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(C));',
-      '  requestAnimationFrame(function(){setTimeout(function(){window.parent.postMessage({type:"__preview_height__",height:document.body.scrollHeight,variantId:"' + (variantId ?? '') + '"},"*");},150);});',
+      '  requestAnimationFrame(function(){setTimeout(function(){window.parent.postMessage({type:"__preview_height__",height:document.body.scrollHeight,variantId:"${variantId ?? ""}"},"*");},150);});',
       '  document.addEventListener("click",function(e){var t=e.target;while(t&&t.tagName!=="A")t=t.parentElement;if(t)e.preventDefault();},true);',
       '})();'
     ].join('\\n');
