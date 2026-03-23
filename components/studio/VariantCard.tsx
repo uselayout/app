@@ -69,8 +69,11 @@ export function VariantCard({
   designTokens,
 }: VariantCardProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const fullscreenIframeRef = useRef<HTMLIFrameElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
+  const transpiledJsRef = useRef<string | null>(null);
+  const componentNameRef = useRef<string>("");
   const refineInputRef = useRef<HTMLInputElement>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -82,7 +85,7 @@ export function VariantCard({
 
   const editHistory = variant.editHistory ?? [];
 
-  // Transpile and render
+  // Transpile when code changes (not on inspectMode toggle)
   useEffect(() => {
     if (!variant.code) return;
     setPreviewReady(false);
@@ -106,13 +109,11 @@ export function VariantCard({
         const { js } = await res.json();
         if (cancelled) return;
 
-        const componentName = extractComponentName(variant.code);
-        const srcdoc = buildSrcdoc(
-          js,
-          componentName,
-          inspectMode ? getInspectorScript() : undefined
-        );
+        const name = extractComponentName(variant.code);
+        transpiledJsRef.current = js;
+        componentNameRef.current = name;
 
+        const srcdoc = buildSrcdoc(js, name);
         if (iframeRef.current) {
           iframeRef.current.srcdoc = srcdoc;
           setPreviewReady(true);
@@ -126,7 +127,18 @@ export function VariantCard({
 
     transpileAndRender();
     return () => { cancelled = true; };
-  }, [variant.code, inspectMode]);
+  }, [variant.code]);
+
+  // Rebuild srcdoc when inspectMode toggles (no re-transpile, instant)
+  useEffect(() => {
+    const js = transpiledJsRef.current;
+    if (!js || !inspectMode) return;
+    const srcdoc = buildSrcdoc(js, componentNameRef.current, getInspectorScript());
+    // Fullscreen iframe gets the inspector script
+    if (fullscreenIframeRef.current) {
+      fullscreenIframeRef.current.srcdoc = srcdoc;
+    }
+  }, [inspectMode]);
 
   // Keyboard shortcut: Cmd+Z for undo
   useEffect(() => {
@@ -342,7 +354,7 @@ export function VariantCard({
           {/* Main preview area */}
           <div ref={fullscreenContainerRef} className="relative flex-1">
             <iframe
-              ref={iframeRef}
+              ref={fullscreenIframeRef}
               sandbox="allow-scripts"
               className="h-full w-full border-0"
               style={{ pointerEvents: "auto" }}
@@ -351,7 +363,7 @@ export function VariantCard({
 
             {/* Inspector popover */}
             <ElementInspector
-              iframeRef={iframeRef}
+              iframeRef={fullscreenIframeRef}
               containerRef={fullscreenContainerRef}
               isActive={inspectMode}
               onStyleEdits={handleStyleEdits}

@@ -105,7 +105,7 @@ function PropertyRow({ label, value, cssProp, onApply, type = "text", options, t
     return (
       <div className="relative py-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] text-[var(--text-muted)] shrink-0 w-20">{label}</span>
+          <span className="text-[10px] text-[var(--text-muted)] shrink-0 w-20 min-w-0 truncate">{label}</span>
           <div className="flex items-center gap-1.5">
             <input
               type="color"
@@ -137,14 +137,14 @@ function PropertyRow({ label, value, cssProp, onApply, type = "text", options, t
   if (type === "select" && options) {
     return (
       <div className="flex items-center justify-between gap-2 py-1">
-        <span className="text-[10px] text-[var(--text-muted)] shrink-0 w-20">{label}</span>
+        <span className="text-[10px] text-[var(--text-muted)] shrink-0 w-20 min-w-0 truncate">{label}</span>
         <select
           value={editValue}
           onChange={(e) => {
             setEditValue(e.target.value);
             onApply(cssProp, e.target.value);
           }}
-          className="w-[90px] rounded bg-[var(--bg-surface)] border border-[var(--studio-border)] px-1 py-0.5 text-[10px] text-[var(--text-primary)] outline-none"
+          className="w-[100px] rounded bg-[var(--bg-surface)] border border-[var(--studio-border)] px-1 py-0.5 text-[10px] text-[var(--text-primary)] outline-none"
         >
           {options.map((opt) => (
             <option key={opt} value={opt}>{opt}</option>
@@ -156,7 +156,7 @@ function PropertyRow({ label, value, cssProp, onApply, type = "text", options, t
 
   return (
     <div className="flex items-center justify-between gap-2 py-1">
-      <span className="text-[10px] text-[var(--text-muted)] shrink-0 w-20">{label}</span>
+      <span className="text-[10px] text-[var(--text-muted)] shrink-0 w-20 min-w-0 truncate">{label}</span>
       {editing ? (
         <input
           ref={inputRef}
@@ -169,12 +169,12 @@ function PropertyRow({ label, value, cssProp, onApply, type = "text", options, t
             if (e.key === "Escape") { setEditValue(value); setEditing(false); }
           }}
           autoFocus
-          className="w-[90px] rounded bg-[var(--bg-surface)] border border-[var(--studio-border-focus)] px-1.5 py-0.5 text-[10px] text-[var(--text-primary)] outline-none"
+          className="w-[100px] rounded bg-[var(--bg-surface)] border border-[var(--studio-border-focus)] px-1.5 py-0.5 text-[10px] text-[var(--text-primary)] outline-none"
         />
       ) : (
         <button
           onClick={() => setEditing(true)}
-          className="w-[90px] text-right rounded px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors truncate"
+          className="w-[100px] text-right rounded px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors truncate"
         >
           {value || "—"}
         </button>
@@ -207,6 +207,70 @@ function TokenDropdown({ tokens, onSelect, onClose }: {
       <button onClick={onClose} className="w-full px-2 py-0.5 text-[8px] text-[var(--text-muted)] hover:text-[var(--text-primary)] text-center">
         Dismiss
       </button>
+    </div>
+  );
+}
+
+function GapSelect({ value, spacingTokens, onApply }: {
+  value: string;
+  spacingTokens: TokenSuggestion[];
+  onApply: (prop: string, value: string) => void;
+}) {
+  const [customMode, setCustomMode] = useState(false);
+  const [customValue, setCustomValue] = useState(value);
+
+  const options = [
+    { label: "normal", value: "normal" },
+    { label: "0", value: "0" },
+    ...spacingTokens.map((t) => ({ label: `${t.name} (${t.value})`, value: t.value })),
+  ];
+
+  // Check if current value matches any option
+  const isKnownValue = options.some((o) => o.value === value);
+
+  if (customMode) {
+    return (
+      <div className="flex items-center justify-between gap-2 py-1">
+        <span className="text-[10px] text-[var(--text-muted)] shrink-0 w-20">Gap</span>
+        <div className="flex items-center gap-1">
+          <input
+            type="text"
+            value={customValue}
+            onChange={(e) => setCustomValue(e.target.value)}
+            onBlur={() => { if (customValue !== value) onApply("gap", customValue); setCustomMode(false); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { onApply("gap", customValue); setCustomMode(false); }
+              if (e.key === "Escape") setCustomMode(false);
+            }}
+            autoFocus
+            className="w-[80px] rounded bg-[var(--bg-surface)] border border-[var(--studio-border-focus)] px-1.5 py-0.5 text-[10px] text-[var(--text-primary)] outline-none"
+          />
+          <button onClick={() => setCustomMode(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+            <X size={10} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-2 py-1">
+      <span className="text-[10px] text-[var(--text-muted)] shrink-0 w-20">Gap</span>
+      <select
+        value={isKnownValue ? value : "__current__"}
+        onChange={(e) => {
+          if (e.target.value === "__custom__") { setCustomValue(value); setCustomMode(true); return; }
+          if (e.target.value === "__current__") return;
+          onApply("gap", e.target.value);
+        }}
+        className="w-[100px] rounded bg-[var(--bg-surface)] border border-[var(--studio-border)] px-1 py-0.5 text-[10px] text-[var(--text-primary)] outline-none focus:border-[var(--studio-border-focus)]"
+      >
+        {!isKnownValue && <option value="__current__">{value || "—"}</option>}
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+        <option value="__custom__">Custom...</option>
+      </select>
     </div>
   );
 }
@@ -360,7 +424,7 @@ export function ElementInspector({
   const popoverY = selected.rect.y * iframeScale;
 
   // Ensure popover stays within container bounds
-  const maxX = containerRect ? containerRect.width - 220 : popoverX;
+  const maxX = containerRect ? containerRect.width - 270 : popoverX;
   const maxY = containerRect ? containerRect.height - 400 : popoverY;
   const finalX = Math.min(popoverX, maxX);
   const finalY = Math.max(0, Math.min(popoverY, maxY));
@@ -378,7 +442,7 @@ export function ElementInspector({
   return (
     <div
       ref={popoverRef}
-      className="absolute z-50 w-[210px] rounded-lg border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] shadow-lg overflow-hidden"
+      className="absolute z-50 w-[260px] rounded-lg border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] shadow-lg overflow-hidden"
       style={{ left: finalX, top: finalY }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -413,7 +477,7 @@ export function ElementInspector({
       </div>
 
       {/* Properties */}
-      <div className="max-h-[280px] overflow-y-auto px-2.5 py-1.5">
+      <div className="max-h-[360px] overflow-y-auto px-2.5 py-1.5">
         {activeSection === "text" && (
           <>
             <PropertyRow label="Font Family" value={cs.fontFamily ?? ""} cssProp="fontFamily" onApply={applyStyle} />
@@ -437,22 +501,22 @@ export function ElementInspector({
 
         {activeSection === "spacing" && (
           <>
-            <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Padding</div>
+            <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Padding</div>
             <div className="grid grid-cols-2 gap-x-2">
               <PropertyRow label="Top" value={cs.paddingTop ?? ""} cssProp="paddingTop" onApply={applyStyle} tokenSuggestions={spacingTokens} />
               <PropertyRow label="Right" value={cs.paddingRight ?? ""} cssProp="paddingRight" onApply={applyStyle} tokenSuggestions={spacingTokens} />
               <PropertyRow label="Bottom" value={cs.paddingBottom ?? ""} cssProp="paddingBottom" onApply={applyStyle} tokenSuggestions={spacingTokens} />
               <PropertyRow label="Left" value={cs.paddingLeft ?? ""} cssProp="paddingLeft" onApply={applyStyle} tokenSuggestions={spacingTokens} />
             </div>
-            <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mb-1 mt-2">Margin</div>
+            <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1 mt-2">Margin</div>
             <div className="grid grid-cols-2 gap-x-2">
               <PropertyRow label="Top" value={cs.marginTop ?? ""} cssProp="marginTop" onApply={applyStyle} tokenSuggestions={spacingTokens} />
               <PropertyRow label="Right" value={cs.marginRight ?? ""} cssProp="marginRight" onApply={applyStyle} tokenSuggestions={spacingTokens} />
               <PropertyRow label="Bottom" value={cs.marginBottom ?? ""} cssProp="marginBottom" onApply={applyStyle} tokenSuggestions={spacingTokens} />
               <PropertyRow label="Left" value={cs.marginLeft ?? ""} cssProp="marginLeft" onApply={applyStyle} tokenSuggestions={spacingTokens} />
             </div>
-            <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mb-1 mt-2">Layout</div>
-            <PropertyRow label="Gap" value={cs.gap ?? ""} cssProp="gap" onApply={applyStyle} tokenSuggestions={spacingTokens} />
+            <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1 mt-2">Layout</div>
+            <GapSelect value={cs.gap ?? ""} spacingTokens={spacingTokens} onApply={applyStyle} />
           </>
         )}
 
@@ -472,43 +536,45 @@ export function ElementInspector({
 
         {activeSection === "annotate" && (
           <>
-            <div className="text-[9px] text-[var(--text-muted)] mb-2">
+            <div className="text-[10px] text-[var(--text-muted)] mb-2">
               Add a note about what to change on this &lt;{selected.elementTag}&gt;
             </div>
-            <div className="flex gap-1">
-              <input
-                type="text"
+            <div className="flex gap-1.5">
+              <textarea
                 value={annotationText}
                 onChange={(e) => setAnnotationText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddAnnotation(); } }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddAnnotation(); } }}
                 placeholder="e.g. make this bigger, use brand colour..."
-                className="flex-1 rounded bg-[var(--bg-surface)] border border-[var(--studio-border)] px-1.5 py-1 text-[10px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)]"
+                rows={2}
+                className="flex-1 rounded bg-[var(--bg-surface)] border border-[var(--studio-border)] px-2 py-1.5 text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] resize-none"
               />
               <button
                 onClick={handleAddAnnotation}
                 disabled={!annotationText.trim()}
-                className="rounded bg-purple-500/20 p-1 text-purple-400 hover:bg-purple-500/30 transition-colors disabled:opacity-30"
+                className="self-end rounded bg-purple-500/20 p-1.5 text-purple-400 hover:bg-purple-500/30 transition-colors disabled:opacity-30"
               >
-                <MessageSquarePlus size={12} />
+                <MessageSquarePlus size={14} />
               </button>
             </div>
             {annotations.length > 0 && (
-              <div className="mt-2 space-y-1">
-                <div className="text-[8px] uppercase tracking-wider text-[var(--text-muted)]">
+              <div className="mt-2.5 space-y-1.5">
+                <div className="text-[9px] uppercase tracking-wider text-[var(--text-muted)]">
                   {annotations.length} note{annotations.length !== 1 ? "s" : ""} queued
                 </div>
-                {annotations.map((ann, i) => (
-                  <div key={i} className="flex items-start gap-1.5 rounded bg-purple-500/5 px-1.5 py-1">
-                    <span className="text-[9px] text-purple-400 shrink-0">&lt;{ann.elementTag}&gt;</span>
-                    <span className="text-[9px] text-[var(--text-secondary)] flex-1">{ann.note}</span>
-                    <button
-                      onClick={() => setAnnotations((prev) => prev.filter((_, j) => j !== i))}
-                      className="shrink-0 text-[var(--text-muted)] hover:text-red-400"
-                    >
-                      <X size={8} />
-                    </button>
-                  </div>
-                ))}
+                <div className="max-h-[200px] overflow-y-auto space-y-1">
+                  {annotations.map((ann, i) => (
+                    <div key={i} className="flex items-start gap-1.5 rounded bg-purple-500/5 px-2 py-1.5">
+                      <span className="text-[10px] text-purple-400 shrink-0">&lt;{ann.elementTag}&gt;</span>
+                      <span className="text-[10px] text-[var(--text-secondary)] flex-1">{ann.note}</span>
+                      <button
+                        onClick={() => setAnnotations((prev) => prev.filter((_, j) => j !== i))}
+                        className="shrink-0 text-[var(--text-muted)] hover:text-red-400"
+                      >
+                        <X size={10} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </>
