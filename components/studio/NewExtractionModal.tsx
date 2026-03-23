@@ -46,7 +46,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
   }, [onClose]);
 
   const handleExtract = () => {
-    if (!isValid || !sourceType) return;
+    if (!isValid || !sourceType || !currentOrgId) return;
 
     const fullUrl = normaliseUrl(url);
     const projectId =
@@ -58,7 +58,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
 
     createProject({
       id: projectId,
-      orgId: currentOrgId ?? "",
+      orgId: currentOrgId,
       name: projectName,
       sourceType,
       sourceUrl: fullUrl,
@@ -176,7 +176,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
           </button>
           <button
             onClick={handleExtract}
-            disabled={!isValid}
+            disabled={!isValid || !currentOrgId}
             className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-30 transition-colors"
           >
             Extract
