@@ -12,6 +12,7 @@ import { useOrgStore } from "@/lib/store/organization";
 import { detectSourceType, normaliseUrl } from "@/lib/util/detect-source";
 import { getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
 import { findTokenReferences, flattenTokens } from "@/lib/tokens/token-references";
+import { groupTokensByPurpose } from "@/lib/tokens/group-tokens";
 import type {
   ExtractionResult,
   ExtractedToken,
@@ -415,17 +416,28 @@ function TokensTab({
             onCopy={() => copySection(section.items)}
           />
           {openSections.has(section.label) && (
-            <div className="space-y-0.5 pl-2">
-              {section.items.map((token) => (
-                <TokenRow
-                  key={token.name}
-                  token={token}
-                  tokenType={SECTION_TYPE_MAP[section.label]}
-                  projectId={projectId}
-                  allTokens={allTokensFlat}
-                  onUpdate={updateToken}
-                  onDelete={() => handleDelete(section.label, token)}
-                />
+            <div className="pl-2">
+              {groupTokensByPurpose(section.items, SECTION_TYPE_MAP[section.label]).map((group) => (
+                <div key={group.label || "_flat"}>
+                  {group.label && (
+                    <div className="px-2 pt-2.5 pb-0.5 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                      {group.label}
+                    </div>
+                  )}
+                  <div className="space-y-0.5">
+                    {group.tokens.map((token) => (
+                      <TokenRow
+                        key={token.name}
+                        token={token}
+                        tokenType={SECTION_TYPE_MAP[section.label]}
+                        projectId={projectId}
+                        allTokens={allTokensFlat}
+                        onUpdate={updateToken}
+                        onDelete={() => handleDelete(section.label, token)}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}
