@@ -7,6 +7,7 @@ export function getInspectorScript(): string {
   return `
 (function() {
   var selected = null;
+  var editingText = null;
   var overlay = null;
   var hoverOverlay = null;
   var idCounter = 0;
@@ -100,6 +101,14 @@ export function getInspectorScript(): string {
 
   document.addEventListener('click', function(e) {
     if (!inspectActive) return;
+
+    // If we're editing text, allow clicks inside the editable element
+    if (editingText) {
+      if (editingText.contains(e.target)) return;
+      // Clicked outside — exit text edit
+      exitTextEdit();
+    }
+
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
@@ -113,6 +122,72 @@ export function getInspectorScript(): string {
     hoverOverlay.style.display = 'none';
     sendSelection(el);
   }, true);
+
+  function exitTextEdit() {
+    if (!editingText) return;
+    var el = editingText;
+    editingText = null;
+    el.contentEditable = 'false';
+    el.style.outline = '';
+    el.style.cursor = '';
+    // Notify parent of text change
+    var props = getComputedProps(el);
+    window.parent.postMessage({
+      type: 'layout-inspector-style-updated',
+      elementId: el.dataset.layoutId,
+      computedStyles: props,
+      rect: (function(){ var r = el.getBoundingClientRect(); return { x: r.left, y: r.top, width: r.width, height: r.height }; })()
+    }, '*');
+    // Also send a textContent edit so it can be tracked
+    window.parent.postMessage({
+      type: 'layout-inspector-text-changed',
+      elementId: el.dataset.layoutId,
+      elementTag: el.tagName.toLowerCase(),
+      elementClasses: el.className || '',
+      textContent: el.textContent
+    }, '*');
+  }
+
+  function isTextElement(el) {
+    if (el.childNodes.length === 0) return false;
+    for (var i = 0; i < el.childNodes.length; i++) {
+      if (el.childNodes[i].nodeType === 3 && el.childNodes[i].textContent.trim()) return true;
+    }
+    // Also allow elements that only contain inline children with text
+    var tag = el.tagName.toLowerCase();
+    return tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6' || tag === 'p' || tag === 'span' || tag === 'a' || tag === 'button' || tag === 'label' || tag === 'li' || tag === 'td' || tag === 'th';
+  }
+
+  document.addEventListener('dblclick', function(e) {
+    if (!inspectActive) return;
+    var el = e.target;
+    if (el === document.body || el === document.documentElement) return;
+    if (!isTextElement(el)) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Exit any previous text edit
+    exitTextEdit();
+
+    editingText = el;
+    el.contentEditable = 'true';
+    el.style.outline = '2px solid rgb(99,102,241)';
+    el.style.cursor = 'text';
+    el.focus();
+
+    // Hide overlays while editing text
+    overlay.style.display = 'none';
+    hoverOverlay.style.display = 'none';
+  }, true);
+
+  // Exit text editing on Escape or clicking outside
+  document.addEventListener('keydown', function(e) {
+    if (editingText && e.key === 'Escape') {
+      e.preventDefault();
+      exitTextEdit();
+    }
+  });
 
   document.addEventListener('mouseleave', function() {
     hoverOverlay.style.display = 'none';
