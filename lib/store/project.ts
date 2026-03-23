@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
+import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType } from "@/lib/types";
 
 /** Save a project via the server-side API (bypasses RLS). */
@@ -73,6 +74,7 @@ interface ProjectState {
   updateTokenCount: (id: string, count: number) => void;
   updateHealthScore: (id: string, score: number) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
+  updateToken: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string) => void;
   removeTokens: (id: string, tokenType: keyof ExtractedTokens, tokenNames: string[]) => void;
   syncTokensFromLayoutMd: (id: string) => number;
   refreshProject: (id: string) => Promise<void>;
@@ -186,6 +188,27 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           ? { ...p, explorations, updatedAt: new Date().toISOString() }
           : p
       ),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  updateToken: (id, tokenType, tokenName, newValue) => {
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id || !p.extractionData) return p;
+        const tokens = { ...p.extractionData.tokens };
+        tokens[tokenType] = tokens[tokenType].map((t) =>
+          t.name === tokenName ? { ...t, value: newValue } : t
+        );
+        const updatedLayoutMd = replaceTokenInLayoutMd(p.layoutMd, tokenName, newValue) ?? p.layoutMd;
+        return {
+          ...p,
+          extractionData: { ...p.extractionData, tokens },
+          layoutMd: updatedLayoutMd,
+          updatedAt: new Date().toISOString(),
+        };
+      }),
     }));
     const project = get().projects.find((p) => p.id === id);
     if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
