@@ -142,15 +142,19 @@ export function VariantCard({
     }
   }, [inspectMode]);
 
-  // Measure iframe content height directly after load (allow-same-origin enables this)
+  // Measure iframe content height directly after load (allow-same-origin enables this).
+  // Shrinks iframe to 1px first so scrollHeight reflects content, not viewport.
   const measureContentHeight = useCallback(() => {
     setTimeout(() => {
       try {
-        const doc = iframeRef.current?.contentDocument;
-        if (doc) {
-          const h = doc.body.scrollHeight;
-          if (h > 0) setContentHeight(h);
-        }
+        const iframe = iframeRef.current;
+        const doc = iframe?.contentDocument;
+        if (!iframe || !doc) return;
+        const prev = iframe.style.height;
+        iframe.style.height = "1px";
+        const h = doc.documentElement.scrollHeight;
+        iframe.style.height = prev;
+        if (h > 0) setContentHeight(h);
       } catch { /* ignore */ }
     }, 300);
   }, []);
@@ -339,8 +343,7 @@ export function VariantCard({
       {/* Preview area */}
       <div
         ref={previewContainerRef}
-        className={`relative overflow-y-auto overflow-x-hidden rounded-t-xl bg-white ${contentHeight == null ? "aspect-[4/3]" : ""}`}
-        style={contentHeight != null ? { height: Math.min(contentHeight * 0.5, 400) } : undefined}
+        className="relative aspect-[4/3] overflow-y-auto overflow-x-hidden rounded-t-xl bg-white"
       >
         {previewError ? (
           <div className="flex h-full items-center justify-center p-4">
