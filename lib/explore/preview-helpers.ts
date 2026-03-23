@@ -27,7 +27,7 @@ export function extractComponentName(code: string): string {
   return lastFn?.[1] ?? "App";
 }
 
-export function buildSrcdoc(js: string, componentName: string, inspectorScript?: string): string {
+export function buildSrcdoc(js: string, componentName: string, inspectorScript?: string, variantId?: string): string {
   // Embed transpiled JS as a JSON-encoded string literal. This safely handles
   // ALL special characters (quotes, backslashes, angle brackets, non-ASCII)
   // without base64/eval. Matches the proven approach used in TestPanel.
@@ -81,7 +81,7 @@ window.addEventListener('load',function(){
       '  if(typeof C==="object"&&C.default)C=C.default;',
       '  if(typeof C!=="function"&&!(typeof C==="object"&&C)){showError("Component not found in module exports");return;}',
       '  ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(C));',
-      '  requestAnimationFrame(function(){setTimeout(function(){window.parent.postMessage({type:"__preview_height__",height:document.body.scrollHeight},"*");},150);});',
+      '  requestAnimationFrame(function(){setTimeout(function(){window.parent.postMessage({type:"__preview_height__",height:document.body.scrollHeight,variantId:"' + (variantId ?? '') + '"},"*");},150);});',
       '  document.addEventListener("click",function(e){var t=e.target;while(t&&t.tagName!=="A")t=t.parentElement;if(t)e.preventDefault();},true);',
       '})();'
     ].join('\\n');

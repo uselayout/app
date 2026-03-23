@@ -8,6 +8,16 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "10mb",
     },
   },
+  async redirects() {
+    return [
+      {
+        source: "/discord",
+        destination:
+          process.env.DISCORD_INVITE_URL || "https://discord.gg/layout",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {
