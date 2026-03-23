@@ -110,7 +110,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
   {
     feature: "Open source",
     values: {
-      Layout: "MIT",
+      Layout: "AGPL-3.0",
       "Paper.design": false,
       "Magic Patterns": false,
       MagicPath: false,
