@@ -3,12 +3,26 @@ import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType } from "@/lib/types";
 
 /** Save a project via the server-side API (bypasses RLS). */
-function apiUpsertProject(project: Project): void {
-  void fetch(`/api/organizations/${project.orgId}/projects/${project.id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(project),
-  }).catch((err) => console.error("Failed to save project:", err));
+function apiUpsertProject(project: Project, onError?: (msg: string) => void): void {
+  void (async () => {
+    try {
+      const res = await fetch(`/api/organizations/${project.orgId}/projects/${project.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(project),
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        const msg = `Save failed (${res.status})${detail ? `: ${detail}` : ""}`;
+        console.error("Failed to save project:", msg);
+        onError?.(msg);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Network error";
+      console.error("Failed to save project:", msg);
+      onError?.(msg);
+    }
+  })();
 }
 
 /** Delete a project via the server-side API. */
@@ -40,12 +54,14 @@ interface ProjectState {
   orgId: string | null;
   hydrating: boolean;
   hydrationError: string | null;
+  saveError: string | null;
 
   // Computed
   currentProject: () => Project | undefined;
 
   // Actions
   setHydrating: (v: boolean) => void;
+  clearSaveError: () => void;
   loadProjects: (projects: Project[], userId: string, orgId: string) => void;
   setHydrationError: (error: string | null) => void;
   createProject: (project: Project) => void;
@@ -71,6 +87,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   orgId: null,
   hydrating: true,
   hydrationError: null,
+  saveError: null,
 
   currentProject: () => {
     const { projects, currentProjectId } = get();
@@ -78,6 +95,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   },
 
   setHydrating: (v) => set({ hydrating: v }),
+  clearSaveError: () => set({ saveError: null }),
 
   loadProjects: (projects, userId, orgId) => set({ projects, userId, orgId, hydrating: false, hydrationError: null }),
 
@@ -88,7 +106,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       projects: [...state.projects, project],
       currentProjectId: project.id,
     }));
-    apiUpsertProject(project);
+    apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
   setCurrentProject: (id) => set({ currentProjectId: id }),
@@ -102,7 +120,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       ),
     }));
     const project = get().projects.find((p) => p.id === id);
-    if (project) apiUpsertProject(project);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
   updateExtractionData: (id, data) => {
@@ -114,7 +132,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       ),
     }));
     const project = get().projects.find((p) => p.id === id);
-    if (project) apiUpsertProject(project);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
   updateProjectName: (id, name) => {
@@ -126,7 +144,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       ),
     }));
     const project = get().projects.find((p) => p.id === id);
-    if (project) apiUpsertProject(project);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
   updateProjectSource: (id, sourceUrl, sourceType) => {
@@ -138,7 +156,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       ),
     }));
     const project = get().projects.find((p) => p.id === id);
-    if (project) apiUpsertProject(project);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
   updateTokenCount: (id, count) => {
@@ -148,7 +166,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       ),
     }));
     const project = get().projects.find((p) => p.id === id);
-    if (project) apiUpsertProject(project);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
   updateHealthScore: (id, score) => {
@@ -158,7 +176,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       ),
     }));
     const project = get().projects.find((p) => p.id === id);
-    if (project) apiUpsertProject(project);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
   updateExplorations: (id, explorations) => {
@@ -170,7 +188,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       ),
     }));
     const project = get().projects.find((p) => p.id === id);
-    if (project) apiUpsertProject(project);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
   removeTokens: (id, tokenType, tokenNames) => {
@@ -195,7 +213,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       }),
     }));
     const project = get().projects.find((p) => p.id === id);
-    if (project) apiUpsertProject(project);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
   syncTokensFromLayoutMd: (id) => {
@@ -258,7 +276,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }));
 
     const updated = get().projects.find((p) => p.id === id);
-    if (updated) apiUpsertProject(updated);
+    if (updated) apiUpsertProject(updated, (msg) => set({ saveError: msg }));
 
     return totalParsed;
   },
@@ -288,5 +306,5 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (orgId) apiDeleteProject(id, orgId);
   },
 
-  clearProjects: () => set({ projects: [], currentProjectId: null, userId: null, orgId: null, hydrating: false }),
+  clearProjects: () => set({ projects: [], currentProjectId: null, userId: null, orgId: null, hydrating: false, saveError: null }),
 }));
