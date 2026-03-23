@@ -107,6 +107,11 @@ function PricingContent() {
       return;
     }
 
+    if (selected === "team") {
+      router.push("/create-team");
+      return;
+    }
+
     const body =
       selected === "topup" ? { type: "topup" } : { tier: selected };
 
