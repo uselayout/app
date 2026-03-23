@@ -4,7 +4,7 @@
 
 Extract design systems from Figma files and live websites, then transform them into structured, LLM-optimised context bundles (layout.md) that enable AI coding agents to produce on-brand UI code consistently.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org)
 
@@ -252,4 +252,6 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 ## License
 
-[MIT](LICENSE) - Layout UI Ltd
+[AGPL-3.0](LICENSE) - Layout UI Ltd
+
+The CLI and MCP server (`@layoutdesign/context`) are separately licensed under [MIT](https://github.com/uselayout/cli/blob/main/LICENSE).

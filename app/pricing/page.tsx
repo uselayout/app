@@ -75,7 +75,7 @@ const FAQS = [
   },
   {
     q: "Can I self-host Layout?",
-    a: "Yes. The CLI, MCP server, and Studio are all open source (MIT). You can self-host the entire stack — no account needed, no usage limits. The managed service just removes the infrastructure overhead.",
+    a: "Yes. The CLI and MCP server are MIT licensed. The Studio web app is AGPL-3.0 — you can self-host the entire stack, no account needed, no usage limits. The managed service just removes the infrastructure overhead.",
   },
   {
     q: "What does 'hosted AI' mean?",
@@ -363,7 +363,7 @@ function PricingContent() {
                       $0
                     </span>
                     <span className="text-[14px] tracking-[0.14px] text-[#7f7e7a]">
-                      forever — MIT licensed
+                      forever — open source
                     </span>
                   </div>
                   <div className="h-px bg-[rgba(245,244,238,0.12)]" />
@@ -372,8 +372,8 @@ function PricingContent() {
                   </p>
                   <ul className="flex flex-col gap-3">
                     {[
-                      "CLI & MCP server (npm install)",
-                      "Full Studio (Next.js app)",
+                      "CLI & MCP server (MIT)",
+                      "Full Studio (AGPL-3.0)",
                       "No account required",
                       "No usage limits",
                       "Community support via GitHub",
