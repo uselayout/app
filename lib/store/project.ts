@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
+import { renameTokenInLayoutMd } from "@/lib/tokens/rename-token";
 import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType } from "@/lib/types";
 
 /** Save a project via the server-side API (bypasses RLS). */
@@ -75,6 +76,7 @@ interface ProjectState {
   updateHealthScore: (id: string, score: number) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
   updateToken: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string) => void;
+  renameToken: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string) => void;
   removeTokens: (id: string, tokenType: keyof ExtractedTokens, tokenNames: string[]) => void;
   syncTokensFromLayoutMd: (id: string) => number;
   refreshProject: (id: string) => Promise<void>;
@@ -202,6 +204,47 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           t.name === tokenName ? { ...t, value: newValue } : t
         );
         const updatedLayoutMd = replaceTokenInLayoutMd(p.layoutMd, tokenName, newValue) ?? p.layoutMd;
+        return {
+          ...p,
+          extractionData: { ...p.extractionData, tokens },
+          layoutMd: updatedLayoutMd,
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  renameToken: (id, tokenType, oldName, newName) => {
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id || !p.extractionData) return p;
+
+        // Update the token name + cssVariable in extraction data
+        const tokens = { ...p.extractionData.tokens };
+        const tokenTypeKey = tokenType as keyof ExtractedTokens;
+        for (const key of Object.keys(tokens) as (keyof ExtractedTokens)[]) {
+          tokens[key] = tokens[key].map((t) => {
+            // Rename the token itself
+            if (key === tokenTypeKey && t.name === oldName) {
+              return {
+                ...t,
+                name: newName,
+                cssVariable: t.cssVariable ? t.cssVariable.replace(oldName, newName) : undefined,
+              };
+            }
+            // Update var() references in other tokens' values
+            if (t.value.includes(oldName)) {
+              return { ...t, value: t.value.replaceAll(oldName, newName) };
+            }
+            return t;
+          });
+        }
+
+        // Rename throughout the entire layout.md
+        const updatedLayoutMd = renameTokenInLayoutMd(p.layoutMd, oldName, newName) ?? p.layoutMd;
+
         return {
           ...p,
           extractionData: { ...p.extractionData, tokens },
