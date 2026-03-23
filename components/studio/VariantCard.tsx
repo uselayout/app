@@ -425,7 +425,14 @@ export function VariantCard({
           <h3 className="text-sm font-semibold text-[var(--text-primary)] line-clamp-1">
             {variant.name}
           </h3>
-          {healthBadge}
+          <div className="flex items-center gap-1">
+            {editHistory.length > 0 && (
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-indigo-500/15 px-1.5 py-0.5 text-[9px] text-indigo-400">
+                {editHistory.length} edit{editHistory.length !== 1 ? "s" : ""}
+              </span>
+            )}
+            {healthBadge}
+          </div>
         </div>
         {variant.rationale && (
           <Tip label={variant.rationale} wide>
