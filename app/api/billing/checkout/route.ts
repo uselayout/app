@@ -5,7 +5,14 @@ import { getSubscription, upsertSubscription } from "@/lib/billing/subscription"
 import { STRIPE_CONFIG } from "@/lib/billing/constants";
 
 const RequestSchema = z.union([
-  z.object({ tier: z.enum(["pro", "team"]) }),
+  z.object({
+    tier: z.literal("pro"),
+  }),
+  z.object({
+    tier: z.literal("team"),
+    seatCount: z.number().int().min(1).max(100).optional().default(1),
+    orgId: z.string().optional(),
+  }),
   z.object({ type: z.literal("topup") }),
 ]);
 
@@ -81,9 +88,15 @@ export async function POST(request: Request) {
     { price: priceId, quantity: 1 },
   ];
 
-  // Team tier: add a seat line item (base already includes 1 seat)
+  // Team tier: add a seat line item with requested seat count
   if (tier === "team" && STRIPE_CONFIG.prices.teamSeat) {
-    lineItems.push({ price: STRIPE_CONFIG.prices.teamSeat, quantity: 1 });
+    const seatCount = "seatCount" in data ? data.seatCount : 1;
+    lineItems.push({ price: STRIPE_CONFIG.prices.teamSeat, quantity: seatCount });
+  }
+
+  const metadata: Record<string, string> = { userId, tier };
+  if ("orgId" in data && data.orgId) {
+    metadata.orgId = data.orgId;
   }
 
   const checkoutSession = await stripe.checkout.sessions.create({
@@ -92,7 +105,7 @@ export async function POST(request: Request) {
     line_items: lineItems,
     success_url: `${baseUrl}/pricing?success=${tier}`,
     cancel_url: `${baseUrl}/pricing?cancelled=true`,
-    metadata: { userId, tier },
+    metadata,
   });
 
   return Response.json({ url: checkoutSession.url });
