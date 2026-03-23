@@ -349,20 +349,25 @@ export function VariantCard({
           <div className="flex h-full items-center justify-center p-4">
             <p className="text-xs text-red-400">{previewError}</p>
           </div>
-        ) : (
+        ) : inspectMode ? (
           <iframe
             ref={iframeRef}
             sandbox="allow-scripts allow-same-origin"
-            onLoad={measureContentHeight}
-            className={`w-full origin-top-left border-0 transition-opacity ${
-              previewReady ? "opacity-100" : "opacity-0"
-            }`}
-            style={inspectMode
-              ? { width: "100%", height: "100%", pointerEvents: "auto" }
-              : { width: "200%", height: contentHeight != null ? `${contentHeight}px` : "200%", zoom: 0.5, pointerEvents: "none" }
-            }
+            className={`w-full h-full border-0 transition-opacity ${previewReady ? "opacity-100" : "opacity-0"}`}
+            style={{ pointerEvents: "auto" }}
             title={`Preview: ${variant.name}`}
           />
+        ) : (
+          <div style={{ height: contentHeight != null ? contentHeight * 0.5 : "100%", overflow: "hidden" }}>
+            <iframe
+              ref={iframeRef}
+              sandbox="allow-scripts allow-same-origin"
+              onLoad={measureContentHeight}
+              className={`w-full origin-top-left scale-50 border-0 transition-opacity ${previewReady ? "opacity-100" : "opacity-0"}`}
+              style={{ width: "200%", height: contentHeight != null ? `${contentHeight}px` : "200%", pointerEvents: "none" }}
+              title={`Preview: ${variant.name}`}
+            />
+          </div>
         )}
         {!previewReady && !previewError && (
           <div className="absolute inset-0 flex items-center justify-center">
