@@ -367,7 +367,7 @@ export function VariantCard({
             title={`Preview: ${variant.name}`}
           />
         ) : (
-          <div style={{ height: contentHeight != null ? contentHeight * 0.5 : "100%", overflow: "hidden" }}>
+          <div style={{ minHeight: "100%", height: contentHeight != null ? contentHeight * 0.5 : "100%", overflow: "hidden" }}>
             <iframe
               ref={iframeRef}
               sandbox="allow-scripts allow-same-origin"
