@@ -491,7 +491,7 @@ export default function BillingPage() {
                       Your key is stored locally in your browser — we never persist it.
                     </p>
                     <p className="mt-3 text-xs text-[var(--text-muted)]">
-                      Configure your API key from the key icon in the top bar.
+                      Configure your API key in Settings → API Keys.
                     </p>
                   </>
                 )}
