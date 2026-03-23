@@ -34,6 +34,8 @@ export default function StudioPage({
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateExplorations = useProjectStore((s) => s.updateExplorations);
   const refreshProject = useProjectStore((s) => s.refreshProject);
+  const saveError = useProjectStore((s) => s.saveError);
+  const clearSaveError = useProjectStore((s) => s.clearSaveError);
   const project = projects.find((p) => p.id === id);
 
   // Fetch full project data if we only have summary data (list endpoint omits layout_md + extraction_data)
@@ -42,6 +44,13 @@ export default function StudioPage({
       refreshProject(id);
     }
   }, [id, project, refreshProject]);
+
+  // Auto-dismiss save error after 8 seconds
+  useEffect(() => {
+    if (!saveError) return;
+    const timer = setTimeout(clearSaveError, 8000);
+    return () => clearTimeout(timer);
+  }, [saveError, clearSaveError]);
 
   const extractionStatus = useExtractionStore((s) => s.status);
   const extractionProgress = useExtractionStore((s) => s.progress);
@@ -400,6 +409,15 @@ export default function StudioPage({
           onClose={handleDiscardDiff}
           onAccept={handleAcceptDiff}
         />
+      )}
+      {saveError && (
+        <div
+          onClick={clearSaveError}
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 cursor-pointer backdrop-blur-sm animate-in slide-in-from-bottom-2 fade-in duration-200"
+        >
+          <span className="text-xs text-red-400">Failed to save changes — your edits may be lost on refresh</span>
+          <button className="text-[10px] text-red-400/60 hover:text-red-400 shrink-0">Dismiss</button>
+        </div>
       )}
     </div>
     </>
