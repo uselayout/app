@@ -134,13 +134,22 @@ export function VariantCard({
   // Rebuild srcdoc when inspectMode toggles (no re-transpile, instant)
   useEffect(() => {
     const js = transpiledJsRef.current;
-    if (!js || !inspectMode) return;
-    const srcdoc = buildSrcdoc(js, componentNameRef.current, getInspectorScript());
-    // Fullscreen iframe gets the inspector script
-    if (fullscreenIframeRef.current) {
-      fullscreenIframeRef.current.srcdoc = srcdoc;
+    if (!js) return;
+    if (inspectMode) {
+      // Fullscreen iframe gets the inspector script
+      const srcdoc = buildSrcdoc(js, componentNameRef.current, getInspectorScript());
+      if (fullscreenIframeRef.current) {
+        fullscreenIframeRef.current.srcdoc = srcdoc;
+      }
+    } else {
+      // Exiting inspect mode — React mounts a fresh scaled iframe, restore its srcdoc
+      const srcdoc = buildSrcdoc(js, componentNameRef.current, undefined, variant.id);
+      if (iframeRef.current) {
+        iframeRef.current.srcdoc = srcdoc;
+        setPreviewReady(true);
+      }
     }
-  }, [inspectMode]);
+  }, [inspectMode, variant.id]);
 
   // Measure iframe content height directly after load (allow-same-origin enables this).
   // Shrinks iframe to 1px first so scrollHeight reflects content, not viewport.
