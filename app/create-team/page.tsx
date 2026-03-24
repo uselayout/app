@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { useOrgStore } from "@/lib/store/organization";
 import { ArrowLeft, Loader2, Minus, Plus } from "lucide-react";
 import Link from "next/link";
@@ -12,7 +11,6 @@ const MIN_SEATS = 2;
 const MAX_SEATS = 100;
 
 export default function CreateTeamPage() {
-  const router = useRouter();
   const addOrganization = useOrgStore((s) => s.addOrganization);
 
   const [name, setName] = useState("");
