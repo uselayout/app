@@ -33,6 +33,25 @@ function apiUpsertProject(project: Project, onError?: (msg: string) => void): vo
   })();
 }
 
+/** Save a project via the server-side API (awaitable version). */
+async function apiUpsertProjectAsync(project: Project): Promise<string | null> {
+  if (!project.orgId) return "Cannot save project: missing orgId";
+  try {
+    const res = await fetch(`/api/organizations/${project.orgId}/projects/${project.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(project),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      return `Save failed (${res.status})${detail ? `: ${detail}` : ""}`;
+    }
+    return null;
+  } catch (err) {
+    return err instanceof Error ? err.message : "Network error";
+  }
+}
+
 /** Delete a project via the server-side API. */
 function apiDeleteProject(id: string, orgId: string): void {
   void fetch(`/api/organizations/${orgId}/projects/${id}`, {
@@ -73,6 +92,7 @@ interface ProjectState {
   loadProjects: (projects: Project[], userId: string, orgId: string) => void;
   setHydrationError: (error: string | null) => void;
   createProject: (project: Project) => void;
+  createProjectAsync: (project: Project) => Promise<string | null>;
   setCurrentProject: (id: string) => void;
   updateLayoutMd: (id: string, layoutMd: string) => void;
   updateExtractionData: (id: string, data: ExtractionResult) => void;
@@ -107,7 +127,15 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   setHydrating: (v) => set({ hydrating: v }),
   clearSaveError: () => set({ saveError: null }),
 
-  loadProjects: (projects, userId, orgId) => set({ projects, userId, orgId, hydrating: false, hydrationError: null }),
+  loadProjects: (serverProjects, userId, orgId) => set((state) => {
+    // Preserve locally-created projects not yet on the server (in-flight saves)
+    const serverIds = new Set(serverProjects.map((p) => p.id));
+    const localOnly = state.projects.filter((p) => !serverIds.has(p.id) && p.orgId === orgId);
+    return {
+      projects: [...serverProjects, ...localOnly],
+      userId, orgId, hydrating: false, hydrationError: null,
+    };
+  }),
 
   setHydrationError: (error) => set({ hydrationError: error }),
 
@@ -117,6 +145,16 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       currentProjectId: project.id,
     }));
     apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  createProjectAsync: async (project) => {
+    set((state) => ({
+      projects: [...state.projects, project],
+      currentProjectId: project.id,
+    }));
+    const error = await apiUpsertProjectAsync(project);
+    if (error) set({ saveError: error });
+    return error;
   },
 
   setCurrentProject: (id) => set({ currentProjectId: id }),
