@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { X, Layers, Globe, ArrowRight } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { X, Layers, Globe, ArrowRight, Loader2 } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
@@ -16,9 +16,11 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
   const router = useRouter();
   const params = useParams();
   const orgSlug = (params?.org as string) ?? "";
-  const createProject = useProjectStore((s) => s.createProject);
+  const createProjectAsync = useProjectStore((s) => s.createProjectAsync);
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
   const [url, setUrl] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const storedFigmaPat = getStoredFigmaApiKey();
   const [pat, setPat] = useState(storedFigmaPat);
   const urlInputRef = useRef<HTMLInputElement>(null);
@@ -45,8 +47,11 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
     };
   }, [onClose]);
 
-  const handleExtract = () => {
-    if (!isValid || !sourceType || !currentOrgId) return;
+  const handleExtract = useCallback(async () => {
+    if (!isValid || !sourceType || !currentOrgId || saving) return;
+
+    setSaving(true);
+    setSaveError(null);
 
     const fullUrl = normaliseUrl(url);
     const projectId =
@@ -56,7 +61,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
       ? "Figma Extraction"
       : new URL(fullUrl).hostname.replace("www.", "");
 
-    createProject({
+    const error = await createProjectAsync({
       id: projectId,
       orgId: currentOrgId,
       name: projectName,
@@ -67,13 +72,19 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
       updatedAt: new Date().toISOString(),
     });
 
+    if (error) {
+      setSaving(false);
+      setSaveError("Failed to create project. Please try again.");
+      return;
+    }
+
     if (isFigma && pat) {
       sessionStorage.setItem(`pat-${projectId}`, pat);
     }
     sessionStorage.setItem(`extract-${projectId}`, "true");
 
     router.push(`/${orgSlug}/projects/${projectId}/studio`);
-  };
+  }, [isValid, sourceType, currentOrgId, saving, url, isFigma, pat, createProjectAsync, orgSlug, router]);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center">
@@ -166,6 +177,11 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
           )}
         </div>
 
+        {/* Error */}
+        {saveError && (
+          <p className="mt-3 text-xs text-red-400">{saveError}</p>
+        )}
+
         {/* Actions */}
         <div className="mt-5 flex items-center justify-end gap-3">
           <button
@@ -176,11 +192,20 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
           </button>
           <button
             onClick={handleExtract}
-            disabled={!isValid || !currentOrgId}
+            disabled={!isValid || !currentOrgId || saving}
             className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-30 transition-colors"
           >
-            Extract
-            <ArrowRight className="h-3.5 w-3.5" />
+            {saving ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Creating…
+              </>
+            ) : (
+              <>
+                Extract
+                <ArrowRight className="h-3.5 w-3.5" />
+              </>
+            )}
           </button>
         </div>
       </div>
