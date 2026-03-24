@@ -10,6 +10,7 @@ import { Tooltip as TooltipPrimitive } from "radix-ui";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ElementInspector } from "@/components/studio/ElementInspector";
 import { EditHistoryPanel } from "@/components/studio/EditHistoryPanel";
+import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import type { DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotation, ExtractedToken } from "@/lib/types";
 
 function Tip({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
@@ -81,6 +82,7 @@ export function VariantCard({
   const [refineText, setRefineText] = useState("");
   const [inspectMode, setInspectMode] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
   const applyAbortRef = useRef<AbortController | null>(null);
   const [previewEntryId, setPreviewEntryId] = useState<string | undefined>();
   const [contentHeight, setContentHeight] = useState<number | null>(null);
@@ -205,11 +207,16 @@ export function VariantCard({
     applyAbortRef.current = abort;
     const timeout = setTimeout(() => abort.abort(), 60_000);
     setIsApplying(true);
+    setApplyError(null);
 
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const storedKey = getStoredApiKey();
+      if (storedKey) headers["X-Api-Key"] = storedKey;
+
       const res = await fetch("/api/generate/apply-edits", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           code: variant.code,
           styleEdits: edits,
@@ -219,7 +226,11 @@ export function VariantCard({
       });
 
       if (!res.ok) {
-        console.error("Style edit failed:", await res.text());
+        const errData = await res.json().catch(() => ({ error: "Request failed" }));
+        const msg = errData.error || `Failed (${res.status})`;
+        console.error("Style edit failed:", msg);
+        setApplyError(msg);
+        setTimeout(() => setApplyError(null), 4000);
         return;
       }
 
@@ -251,11 +262,16 @@ export function VariantCard({
     applyAbortRef.current = abort;
     const timeout = setTimeout(() => abort.abort(), 60_000);
     setIsApplying(true);
+    setApplyError(null);
 
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const storedKey = getStoredApiKey();
+      if (storedKey) headers["X-Api-Key"] = storedKey;
+
       const res = await fetch("/api/generate/apply-edits", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           code: variant.code,
           annotations: anns,
@@ -265,7 +281,11 @@ export function VariantCard({
       });
 
       if (!res.ok) {
-        console.error("Annotation edit failed:", await res.text());
+        const errData = await res.json().catch(() => ({ error: "Request failed" }));
+        const msg = errData.error || `Failed (${res.status})`;
+        console.error("Annotation edit failed:", msg);
+        setApplyError(msg);
+        setTimeout(() => setApplyError(null), 4000);
         return;
       }
 
@@ -438,17 +458,23 @@ export function VariantCard({
             />
 
             {/* Applying overlay */}
-            {isApplying && (
+            {(isApplying || applyError) && (
               <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40">
                 <div className="flex items-center gap-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--studio-border)] px-4 py-3">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
-                  <span className="text-xs text-[var(--text-secondary)]">Applying changes...</span>
-                  <button
-                    onClick={() => applyAbortRef.current?.abort()}
-                    className="ml-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                  >
-                    Cancel
-                  </button>
+                  {applyError ? (
+                    <span className="text-xs text-red-400">{applyError}</span>
+                  ) : (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
+                      <span className="text-xs text-[var(--text-secondary)]">Applying changes...</span>
+                      <button
+                        onClick={() => applyAbortRef.current?.abort()}
+                        className="ml-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             )}
