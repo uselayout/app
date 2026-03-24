@@ -21,6 +21,8 @@ interface ProcessOptions {
   orgId?: string;
   brandColours?: string[];
   brandStyle?: string;
+  /** Force regeneration even for images that already have real URLs */
+  forceRegenerate?: boolean;
 }
 
 export interface ProcessCodeImagesResult {
@@ -57,18 +59,28 @@ export async function processCodeImages(
     const googleKey = getStoredGoogleApiKey();
     if (googleKey) headers["X-Google-Api-Key"] = googleKey;
 
-    const res = await fetch("/api/generate/image", {
-      method: "POST",
-      credentials: "include",
-      headers,
-      body: JSON.stringify({
-        mode: "batch",
-        html: code,
-        orgId: options.orgId,
-        brandColours: options.brandColours,
-        brandStyle: options.brandStyle,
-      }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120_000);
+
+    let res: Response;
+    try {
+      res = await fetch("/api/generate/image", {
+        method: "POST",
+        credentials: "include",
+        headers,
+        body: JSON.stringify({
+          mode: "batch",
+          html: code,
+          orgId: options.orgId,
+          brandColours: options.brandColours,
+          brandStyle: options.brandStyle,
+          forceRegenerate: options.forceRegenerate,
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({ error: "Unknown error" }));

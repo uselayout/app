@@ -4,6 +4,9 @@ import { auth } from "@/lib/auth";
 import { generateImage } from "@/lib/image/generate";
 import { processImagePlaceholders } from "@/lib/image/pipeline";
 
+// Allow up to 2 minutes for large image batches (many Gemini calls)
+export const maxDuration = 120;
+
 // ---------------------------------------------------------------------------
 // Schemas
 // ---------------------------------------------------------------------------
@@ -25,6 +28,7 @@ const BatchSchema = z.object({
   orgId: z.string().optional(),
   brandColours: z.array(z.string()).optional(),
   brandStyle: z.string().optional(),
+  forceRegenerate: z.boolean().optional(),
 });
 
 const RequestSchema = z.discriminatedUnion("mode", [
@@ -77,13 +81,14 @@ export async function POST(request: NextRequest) {
   try {
     if (parsed.data.mode === "batch") {
       // Batch mode: process all image placeholders in HTML
-      const { html, orgId, brandColours, brandStyle } = parsed.data;
+      const { html, orgId, brandColours, brandStyle, forceRegenerate } = parsed.data;
 
       const result = await processImagePlaceholders(html, {
         orgId,
         brandColours,
         brandStyle,
         googleApiKey,
+        forceRegenerate,
       });
 
       return NextResponse.json({

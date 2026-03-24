@@ -44,6 +44,8 @@ export interface PipelineOptions {
   onImageComplete?: (index: number, url: string) => void;
   /** User-provided Google AI API key (BYOK) */
   googleApiKey?: string;
+  /** Force regeneration even for images that already have real URLs */
+  forceRegenerate?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -57,7 +59,12 @@ const STYLE_ATTR_REGEX = /data-image-style=["']([^"']+)["']/i;
 const RATIO_ATTR_REGEX = /data-image-ratio=["']([^"']+)["']/i;
 const ALT_ATTR_REGEX = /alt=["']([^"']+)["']/i;
 
-export function findPlaceholders(html: string): ImagePlaceholder[] {
+const SRC_ATTR_REGEX = /src=["']([^"']+)["']/i;
+
+export function findPlaceholders(
+  html: string,
+  options?: { skipAlreadyGenerated?: boolean }
+): ImagePlaceholder[] {
   const placeholders: ImagePlaceholder[] = [];
   let match: RegExpExecArray | null;
 
@@ -68,6 +75,14 @@ export function findPlaceholders(html: string): ImagePlaceholder[] {
     const fullMatch = match[0];
     const prompt = match[2];
     const fullTag = match[1] + match[3];
+
+    // Skip images that already have a real (non-fallback) src URL
+    if (options?.skipAlreadyGenerated) {
+      const srcMatch = fullMatch.match(SRC_ATTR_REGEX);
+      if (srcMatch && !srcMatch[1].startsWith("data:image/svg+xml")) {
+        continue;
+      }
+    }
 
     const styleMatch = fullTag.match(STYLE_ATTR_REGEX);
     const ratioMatch = fullTag.match(RATIO_ATTR_REGEX);
@@ -94,6 +109,41 @@ export interface PipelineResult {
   totalCount: number;
   failedCount: number;
   errors: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Avatar div/span conversion — catches cases where the AI uses initials
+// instead of <img data-generate-image> tags for avatars
+// ---------------------------------------------------------------------------
+
+/**
+ * Match <div className="...rounded-full...">{initials}</div> or with inner <span>.
+ * Also matches <span className="...rounded-full...">{initials}</span>.
+ * Captures: (1) tag+attrs, (2) initials text, (3) size classes for reuse.
+ */
+const AVATAR_INITIALS_RE =
+  /<(div|span)\s([^>]*?className=["'][^"']*rounded-full[^"']*["'][^>]*)>(?:\s*<span[^>]*>)?\s*([A-Z]{1,3})\s*(?:<\/span>\s*)?<\/\1>/gi;
+
+/**
+ * Convert avatar placeholders using initials (e.g. <div className="...rounded-full...">SC</div>)
+ * into proper <img data-generate-image> tags so the image pipeline can process them.
+ */
+function convertAvatarDivsToImgs(html: string): string {
+  AVATAR_INITIALS_RE.lastIndex = 0;
+  return html.replace(AVATAR_INITIALS_RE, (_fullMatch, _tag, attrs, initials) => {
+    // Extract className from the original element
+    const classMatch = attrs.match(/className=["']([^"']+)["']/i);
+    const classes = classMatch?.[1] ?? "w-10 h-10 rounded-full object-cover";
+    // Ensure object-cover is present for img
+    const imgClasses = classes.includes("object-cover") ? classes : `${classes} object-cover`;
+    // Remove layout classes that don't apply to img (flex, items-center, justify-center, bg-*)
+    const cleanedClasses = imgClasses
+      .replace(/\b(?:flex|inline-flex|items-center|justify-center|text-(?:xs|sm|base|lg|xl|\[[\d.]+\w+\])|font-\w+|bg-\[[^\]]+\]|bg-\w+-\d+)\b/g, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
+    return `<img data-generate-image="professional headshot portrait of a person, ${initials}" data-image-style="photo" data-image-ratio="1:1" alt="${initials}" className="${cleanedClasses}" />`;
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -167,11 +217,18 @@ export async function processImagePlaceholders(
   html: string,
   options: PipelineOptions = {}
 ): Promise<PipelineResult> {
-  // First, convert placeholder URLs and relative paths to data-generate-image attributes
-  const preprocessed = replaceRelativeSrcUrls(replacePlaceholderUrls(html));
-  const placeholders = findPlaceholders(preprocessed);
+  // First, convert avatar divs, placeholder URLs, and relative paths to data-generate-image attributes
+  const preprocessed = replaceRelativeSrcUrls(replacePlaceholderUrls(convertAvatarDivsToImgs(html)));
+  const placeholders = findPlaceholders(preprocessed, {
+    skipAlreadyGenerated: !options.forceRegenerate,
+  });
 
   if (placeholders.length === 0) return { html, totalCount: 0, failedCount: 0, errors: [] };
+
+  // Deduplicate by match string — generate once, replaceAll handles all occurrences
+  const uniquePlaceholders = placeholders.filter(
+    (p, i, arr) => arr.findIndex((q) => q.match === p.match) === i
+  );
 
   const concurrency = options.concurrency ?? 3;
   let result = preprocessed;
@@ -179,8 +236,8 @@ export async function processImagePlaceholders(
   const errors: string[] = [];
 
   // Process in batches to respect concurrency limits
-  for (let i = 0; i < placeholders.length; i += concurrency) {
-    const batch = placeholders.slice(i, i + concurrency);
+  for (let i = 0; i < uniquePlaceholders.length; i += concurrency) {
+    const batch = uniquePlaceholders.slice(i, i + concurrency);
 
     const generated = await Promise.allSettled(
       batch.map((placeholder) =>
@@ -203,11 +260,9 @@ export async function processImagePlaceholders(
       if (genResult.status === "fulfilled") {
         const imageUrl = genResult.value.url;
 
-        // Build replacement img tag with real src
+        // Keep data-generate-image so "Regenerate images" can re-process later.
+        // Just add or update the src attribute with the real URL.
         const replacement = placeholder.match
-          .replace(/data-generate-image=["'][^"']*["']\s*/i, "")
-          .replace(/data-image-style=["'][^"']*["']\s*/i, "")
-          .replace(/data-image-ratio=["'][^"']*["']\s*/i, "")
           .replace(
             /src=["'][^"']*["']/i,
             `src="${imageUrl}"`

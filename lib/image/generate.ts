@@ -70,6 +70,13 @@ export class ImageSafetyError extends Error {
   }
 }
 
+class RateLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RateLimitError";
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Core
 // ---------------------------------------------------------------------------
@@ -141,11 +148,24 @@ async function callGemini(
 
   const url = `${GEMINI_BASE_URL}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(requestBody),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (res.status === 429) {
+    throw new RateLimitError("Gemini rate limit exceeded");
+  }
 
   if (!res.ok) {
     const errorBody = await res.text().catch(() => "Unknown error");
@@ -188,8 +208,32 @@ async function callGemini(
 }
 
 /**
+ * Retry a function with exponential backoff on rate-limit errors.
+ */
+async function withRateLimitRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3
+): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (err instanceof RateLimitError && attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000;
+        console.warn(`[image/generate] Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error("Unreachable");
+}
+
+/**
  * Generate an image using Gemini 3.1 Flash Image Preview.
  * If safety-blocked, auto-retries once with a rephrased illustration prompt.
+ * If rate-limited, retries with exponential backoff.
  */
 export async function generateImageRaw(
   options: GenerateImageOptions
@@ -197,29 +241,31 @@ export async function generateImageRaw(
   const apiKey = getApiKey(options.googleApiKey);
   const prompt = buildPrompt(options);
 
-  try {
-    return await callGemini(prompt, options, apiKey);
-  } catch (err) {
-    if (!(err instanceof ImageSafetyError)) throw err;
-
-    // Auto-retry with illustration style and rephrased prompt
-    console.warn(`[image/generate] Safety block on "${options.prompt}", retrying as illustration...`);
-    const safePrompt = rephraseForSafety(options.prompt);
-    const retryOptions: GenerateImageOptions = {
-      ...options,
-      style: "illustration",
-      prompt: safePrompt,
-    };
+  return withRateLimitRetry(async () => {
     try {
-      return await callGemini(buildPrompt(retryOptions), retryOptions, apiKey);
-    } catch (retryErr) {
-      // If retry also safety-blocked, throw the original error
-      if (retryErr instanceof ImageSafetyError) {
-        throw new ImageSafetyError(options.prompt);
+      return await callGemini(prompt, options, apiKey);
+    } catch (err) {
+      if (!(err instanceof ImageSafetyError)) throw err;
+
+      // Auto-retry with illustration style and rephrased prompt
+      console.warn(`[image/generate] Safety block on "${options.prompt}", retrying as illustration...`);
+      const safePrompt = rephraseForSafety(options.prompt);
+      const retryOptions: GenerateImageOptions = {
+        ...options,
+        style: "illustration",
+        prompt: safePrompt,
+      };
+      try {
+        return await callGemini(buildPrompt(retryOptions), retryOptions, apiKey);
+      } catch (retryErr) {
+        // If retry also safety-blocked, throw the original error
+        if (retryErr instanceof ImageSafetyError) {
+          throw new ImageSafetyError(options.prompt);
+        }
+        throw retryErr;
       }
-      throw retryErr;
     }
-  }
+  });
 }
 
 /**
