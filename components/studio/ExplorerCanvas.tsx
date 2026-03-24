@@ -211,9 +211,12 @@ export function ExplorerCanvas({
       setIsProcessingImages(true);
       setImageNotice(null);
       try {
-        const results: ProcessCodeImagesResult[] = await Promise.all(
-          finalNew.map((v) => processCodeImages(v.code))
-        );
+        // Process variants sequentially to avoid hammering Gemini rate limits
+        // (each variant can contain 6+ images, all processed concurrently within)
+        const results: ProcessCodeImagesResult[] = [];
+        for (const v of finalNew) {
+          results.push(await processCodeImages(v.code));
+        }
 
         // Check for issues
         const anySkippedNoKey = results.some((r) => r.skippedNoKey);
@@ -646,7 +649,7 @@ export function ExplorerCanvas({
       setIsProcessingImages(true);
       setImageNotice(null);
       try {
-        const result = await processCodeImages(variant.code);
+        const result = await processCodeImages(variant.code, { forceRegenerate: true });
         if (result.skippedNoKey && result.placeholderCount > 0) {
           setImageNotice(`${result.placeholderCount} image(s) skipped — add a Google AI API key in Settings to enable image generation.`);
         } else if (result.failedCount > 0) {

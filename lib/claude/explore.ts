@@ -65,9 +65,11 @@ Images (MANDATORY — read carefully)
 - For data tables, team directories, user lists, or any rows showing people: EVERY row MUST have an <img data-generate-image="professional headshot of [name/role description]" data-image-style="photo" data-image-ratio="1:1" alt="[name]" className="w-8 h-8 rounded-full object-cover" /> avatar. NEVER use initials, SVG placeholders, or coloured circles as avatar substitutes.
 - For product tables, file lists, or non-person data: use relevant thumbnails with data-generate-image.
 - Rule: if ANY cell or card would benefit from a visual (avatar, thumbnail, logo, icon), use data-generate-image. When in doubt, generate an image.
+- CRITICAL: The image pipeline can ONLY process <img> tags. NEVER use <div> or <span> elements with initials (like "SC" or "AJ") as avatar substitutes. NEVER use coloured circles, gradient backgrounds, or any non-<img> element where an avatar should be. Every avatar MUST be an <img> tag with data-generate-image.
 - WRONG: <img src="https://placehold.co/800x600" />
 - WRONG: <img src="https://via.placeholder.com/150" />
 - WRONG: <img src="" />
+- WRONG: <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">SC</div>
 - RIGHT: <img data-generate-image="modern office workspace with natural lighting" data-image-style="photo" data-image-ratio="16:9" alt="Office" className="w-full h-64 object-cover" />
 
 OUTPUT FORMAT:
@@ -134,9 +136,11 @@ Images (MANDATORY — read carefully)
 - For data tables, team directories, user lists, or any rows showing people: EVERY row MUST have an <img data-generate-image="professional headshot of [name/role description]" data-image-style="photo" data-image-ratio="1:1" alt="[name]" className="w-8 h-8 rounded-full object-cover" /> avatar. NEVER use initials, SVG placeholders, or coloured circles as avatar substitutes.
 - For product tables, file lists, or non-person data: use relevant thumbnails with data-generate-image.
 - Rule: if ANY cell or card would benefit from a visual (avatar, thumbnail, logo, icon), use data-generate-image. When in doubt, generate an image.
+- CRITICAL: The image pipeline can ONLY process <img> tags. NEVER use <div> or <span> elements with initials (like "SC" or "AJ") as avatar substitutes. NEVER use coloured circles, gradient backgrounds, or any non-<img> element where an avatar should be. Every avatar MUST be an <img> tag with data-generate-image.
 - WRONG: <img src="https://placehold.co/800x600" />
 - WRONG: <img src="https://via.placeholder.com/150" />
 - WRONG: <img src="" />
+- WRONG: <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">SC</div>
 - RIGHT: <img data-generate-image="modern office workspace with natural lighting" data-image-style="photo" data-image-ratio="16:9" alt="Office" className="w-full h-64 object-cover" />
 
 OUTPUT FORMAT:
