@@ -29,6 +29,25 @@ export default function WalkthroughPage() {
         </p>
       </div>
 
+      {/* Quick start callout */}
+      <Callout type="tip">
+        <strong>Just want the CLI?</strong> Run{" "}
+        <code className="text-sm bg-emerald-100 rounded px-1.5 py-0.5">
+          npx @layoutdesign/context install
+        </code>{" "}
+        to configure the MCP server for Claude Code, Cursor, Antigravity, or
+        Windsurf — then{" "}
+        <Link href="#cli" className="underline font-medium">
+          skip to step 7
+        </Link>
+        . Three free starter kits are bundled so you can test without extracting first.
+        See the{" "}
+        <Link href="/docs/cli" className="underline font-medium">
+          CLI guide
+        </Link>{" "}
+        for the full reference.
+      </Callout>
+
       {/* Step 1: Extract from Figma */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
@@ -494,7 +513,7 @@ export default function WalkthroughPage() {
       </section>
 
       {/* Step 7: Set Up the CLI */}
-      <section className="space-y-4">
+      <section id="cli" className="space-y-4 scroll-mt-24">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
           7. Set Up the CLI
         </h2>
@@ -546,7 +565,7 @@ npx @layoutdesign/context install`}
           8. MCP Tools Reference
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          Once the MCP server is configured, your AI agent can call 10 tools
+          Once the MCP server is configured, your AI agent can call 12 tools
           automatically when building UI. You do not need to invoke them
           manually. The agent decides when to use them based on the task.
         </p>
@@ -603,6 +622,14 @@ npx @layoutdesign/context install`}
                 [
                   "update_tokens",
                   "Updates or adds design tokens in the loaded kit in CSS, JSON, or Tailwind format",
+                ],
+                [
+                  "get_screenshots",
+                  "Returns screenshots captured during website extraction for visual reference",
+                ],
+                [
+                  "check_setup",
+                  "Diagnoses and auto-fixes MCP setup issues (Figma transport, OAuth, plugin shadows)",
                 ],
               ].map(([tool, desc]) => (
                 <tr key={tool} className="hover:bg-gray-50">

@@ -2,10 +2,11 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
+import { ConnectTab } from "@/components/studio/ConnectTab";
 import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
@@ -32,7 +33,7 @@ interface SourcePanelProps {
   onExtract?: (url: string, sourceType: SourceType, pat?: string) => void;
 }
 
-type TabId = "tokens" | "components" | "screenshots" | "quality";
+type TabId = "tokens" | "components" | "screenshots" | "quality" | "connect";
 
 function SourcePanelEmptyState({
   projectId,
@@ -169,6 +170,7 @@ function SourcePanelInner({
     { id: "components", label: "Components", icon: LayoutGrid },
     { id: "screenshots", label: "Screenshots", icon: Image },
     { id: "quality", label: "Quality", icon: Gauge },
+    { id: "connect", label: "Connect", icon: Terminal },
   ];
 
   return (
@@ -234,6 +236,7 @@ function SourcePanelInner({
         {activeTab === "quality" && extractionData && (
           <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} projectId={projectId} orgId={currentOrgId ?? undefined} />
         )}
+        {activeTab === "connect" && <ConnectTab />}
       </div>
     </div>
   );
