@@ -99,27 +99,40 @@ export default function AntigravityPage() {
           </p>
           <ul className="list-disc pl-6 space-y-1 text-gray-600">
             <li>
-              <strong>get-design-system</strong> — full layout.md content
+              <strong>get_design_system</strong> — full layout.md content, or a specific section
             </li>
             <li>
-              <strong>get-tokens</strong> — CSS tokens by category
+              <strong>get_tokens</strong> — CSS, JSON, or Tailwind tokens by category
             </li>
             <li>
-              <strong>get-component</strong> — component code by name
+              <strong>get_component</strong> — component code and spec by name
             </li>
             <li>
-              <strong>list-components</strong> — all components with metadata
+              <strong>list_components</strong> — all components with metadata
             </li>
             <li>
-              <strong>check-compliance</strong> — validate code against design
-              system rules
+              <strong>check_compliance</strong> — validate code against design system rules
             </li>
             <li>
-              <strong>preview</strong> — live component preview
+              <strong>preview</strong> — live component preview at localhost:4321
             </li>
             <li>
-              <strong>push-to-figma</strong> — export to Figma as auto-layout
-              frames
+              <strong>push_to_figma</strong> — export to Figma as auto-layout frames
+            </li>
+            <li>
+              <strong>url_to_figma</strong> — capture a live URL into Figma
+            </li>
+            <li>
+              <strong>design_in_figma</strong> — design UI in Figma using your tokens
+            </li>
+            <li>
+              <strong>update_tokens</strong> — add or update tokens in the loaded kit
+            </li>
+            <li>
+              <strong>get_screenshots</strong> — extraction screenshots for visual reference
+            </li>
+            <li>
+              <strong>check_setup</strong> — diagnose and fix MCP setup issues
             </li>
           </ul>
         </div>

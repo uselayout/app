@@ -74,7 +74,7 @@ export default function SelfHostingPage() {
         </p>
         <CopyBlock
           code={`git clone https://github.com/uselayout/app.git
-cd layoutaistudio
+cd app
 cp .env.example .env.local`}
           language="bash"
         />
