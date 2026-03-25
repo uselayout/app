@@ -134,7 +134,7 @@ export function InstallCLIModal({ onClose }: { onClose: () => void }) {
             </p>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'MCP Server', desc: '9 design tools for your AI' },
+                { label: 'MCP Server', desc: '12 design tools for your AI' },
                 { label: 'CLI', desc: 'init, serve, import, install' },
                 { label: '3 Starter Kits', desc: 'Linear, Stripe, Notion' },
                 { label: 'Preview Server', desc: 'Live component preview' },

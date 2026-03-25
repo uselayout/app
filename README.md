@@ -28,7 +28,7 @@ Your AI agents now generate code that matches your actual design system.
 - **Explorer Canvas** - AI-powered design exploration with multi-variant generation, image upload, comparison view, health scoring, and iterative refinement
 - **Push to Figma** - Send generated components to Figma as editable frames with auto-layout via the [Figma MCP server](https://www.figma.com/developers/mcp)
 - **Export bundles** - One-click ZIP with layout.md, CLAUDE.md section, .cursorrules, tokens.css, W3C DTCG tokens.json, and tailwind.config.js
-- **MCP server** - [`@layoutdesign/context`](https://www.npmjs.com/package/@layoutdesign/context) gives AI agents direct access to your design system via 7 MCP tools
+- **MCP server** - [`@layoutdesign/context`](https://www.npmjs.com/package/@layoutdesign/context) gives AI agents direct access to your design system via 12 MCP tools
 - **BYOK** - Bring Your Own Key for Anthropic API. Free tier costs nothing.
 - **Project management** - Save, switch between, and manage multiple design system projects
 - **Saved components** - Save variants as components or full-page designs with categories and tags
@@ -50,7 +50,7 @@ Your AI agents now generate code that matches your actual design system.
 ```bash
 # Clone the repo
 git clone https://github.com/uselayout/app.git
-cd ai-studio
+cd app
 
 # Install dependencies
 npm install
@@ -106,17 +106,22 @@ The import command:
 2. Merges design system rules into your root `CLAUDE.md` automatically
 3. Tells you to run `install` to connect the MCP server
 
-Once connected, your AI agent has access to 7 MCP tools:
+Once connected, your AI agent has access to 12 MCP tools:
 
 | Tool | Description |
 |------|-------------|
-| `get_design_system` | Full layout.md content for the active project |
-| `get_design_section` | A specific section of the design system |
-| `get_tokens` | Design tokens as structured JSON |
+| `get_design_system` | Full layout.md content, or a specific section |
+| `get_tokens` | Design tokens as CSS, JSON, or Tailwind format |
 | `get_component` | Component definition and usage guidance |
-| `get_component_with_context` | Component with surrounding design context |
 | `list_components` | All components in the active project |
 | `check_compliance` | Validate a code snippet against the design system |
+| `preview` | Live component preview at localhost:4321 |
+| `push_to_figma` | Export component to Figma as auto-layout frames |
+| `url_to_figma` | Capture a live URL into Figma |
+| `design_in_figma` | Design UI in Figma using your design tokens |
+| `update_tokens` | Add or update tokens in the loaded kit |
+| `get_screenshots` | Extraction screenshots for visual reference |
+| `check_setup` | Diagnose and fix MCP setup issues |
 
 See [`@layoutdesign/context`](https://github.com/uselayout/cli) for the full CLI and MCP server documentation.
 
@@ -145,9 +150,9 @@ A browser sidebar that extracts design systems from any live website:
 
 See [github.com/uselayout/extension](https://github.com/uselayout/extension) for installation.
 
-## AI Image Generation (Coming Soon)
+## AI Image Generation
 
-Contextual image generation powered by Gemini 3.1 Flash Image Preview will allow full-page designs to include on-brand placeholder imagery, hero images, and component previews generated directly within the Studio - no external tools required.
+Contextual image generation powered by Gemini 3.1 Flash Image Preview. Full-page designs include on-brand placeholder imagery, hero images, avatars, and component previews generated directly within the Explorer Canvas. Requires a Google AI API key (BYOK via Settings or `GOOGLE_AI_API_KEY` env var).
 
 ## Figma Integration
 
