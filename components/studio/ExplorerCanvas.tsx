@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { Sparkles, X, ChevronLeft, ChevronRight, Trash2, Plus, Copy } from "lucide-react";
+import { Sparkles, X, ChevronLeft, ChevronRight, Plus, Copy } from "lucide-react";
 import { ExplorerToolbar } from "./ExplorerToolbar";
 import { VariantCard } from "./VariantCard";
 import { FigmaPushModal } from "./FigmaPushModal";
@@ -749,23 +749,29 @@ export function ExplorerCanvas({
                   setActiveExplorationIndex(i);
                   setSelectedVariantId(null);
                 }}
-                className={`shrink-0 max-w-[200px] truncate rounded-md px-2.5 py-1 text-[11px] transition-colors ${
+                className={`group shrink-0 max-w-[200px] flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] transition-colors ${
                   i === explorationIndex
                     ? "bg-[var(--studio-accent-subtle)] text-[var(--text-primary)] font-medium"
                     : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                 }`}
               >
-                {e.prompt ? (e.prompt.length > 40 ? e.prompt.slice(0, 40) + "…" : e.prompt) : "New exploration"}
+                <span className="truncate">
+                  {e.prompt ? (e.prompt.length > 40 ? e.prompt.slice(0, 40) + "…" : e.prompt) : "New exploration"}
+                </span>
+                <span
+                  role="button"
+                  tabIndex={-1}
+                  onClick={(ev) => { ev.stopPropagation(); handleDeleteExploration(i); }}
+                  className={`shrink-0 rounded p-0.5 transition-colors hover:text-red-400 hover:bg-red-500/10 ${
+                    i === explorationIndex
+                      ? "text-[var(--text-muted)]"
+                      : "text-transparent group-hover:text-[var(--text-muted)]"
+                  }`}
+                >
+                  <X size={10} />
+                </span>
               </button>
             ))}
-            <button
-              onClick={handleNewExploration}
-              disabled={isGenerating}
-              className="shrink-0 flex items-center justify-center size-6 rounded-md text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 transition-colors"
-              title="New exploration"
-            >
-              <Plus size={13} />
-            </button>
           </div>
           <button
             disabled={explorationIndex >= explorations.length - 1}
@@ -775,23 +781,13 @@ export function ExplorerCanvas({
             <ChevronRight size={14} />
           </button>
           <button
-            onClick={() => handleDeleteExploration(explorationIndex)}
+            onClick={handleNewExploration}
             disabled={isGenerating}
-            className="shrink-0 rounded p-1 text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 transition-colors"
-            title="Delete this exploration"
+            className="shrink-0 flex items-center justify-center size-6 rounded-md text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 transition-colors"
+            title="New exploration"
           >
-            <Trash2 size={13} />
+            <Plus size={13} />
           </button>
-          {explorations.length > 1 && (
-            <button
-              onClick={handleClearAllExplorations}
-              disabled={isGenerating}
-              className="shrink-0 rounded px-1.5 py-1 text-[10px] text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 transition-colors"
-              title="Clear all explorations"
-            >
-              Clear all
-            </button>
-          )}
           <span className="shrink-0 text-[10px] text-[var(--text-muted)] tabular-nums">
             {explorationIndex + 1}/{explorations.length}
           </span>
