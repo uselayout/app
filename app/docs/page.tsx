@@ -46,9 +46,9 @@ const capabilities = [
   },
   {
     icon: Server,
-    title: "MCP Server",
+    title: "CLI & MCP Server",
     description:
-      "Install @layoutdesign/context and your AI agent fetches design tokens and checks compliance in real-time. Works with Claude Code, Cursor, Copilot, Antigravity, and Windsurf with no copy-paste needed.",
+      "Run npx @layoutdesign/context install and your AI agent fetches design tokens and checks compliance in real-time. Works with Claude Code, Cursor, Copilot, Antigravity, and Windsurf with no copy-paste needed. Three free starter kits bundled.",
     href: "/docs/cli",
   },
   {
@@ -83,6 +83,25 @@ export default function GettingStartedPage() {
           MCP so every component it builds is on-brand, every time.
         </p>
       </div>
+
+      {/* Quick Start */}
+      <section className="space-y-3">
+        <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-4">
+          <h2 className="text-base font-semibold text-[#0a0a0a]">Quick Start</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Get your AI agent reading your design system in 60 seconds:
+          </p>
+          <div className="mt-3 rounded-lg bg-[#1e1e24] px-4 py-3">
+            <code className="text-sm font-mono text-gray-300">npx @layoutdesign/context install</code>
+          </div>
+          <p className="mt-2 text-xs text-gray-500">
+            Auto-detects Claude Code, Cursor, Antigravity, and Windsurf. Three free starter kits included.{" "}
+            <Link href="/docs/cli" className="text-gray-900 font-medium hover:underline">
+              Full CLI guide →
+            </Link>
+          </p>
+        </div>
+      </section>
 
       {/* Core Capabilities */}
       <section className="space-y-4">

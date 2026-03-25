@@ -51,12 +51,20 @@ export function EarlyAccessCTA({ onInstallCLI }: { onInstallCLI?: () => void }) 
 
             <div className="flex gap-[12px]">
               {isLoggedIn ? (
-                <a
-                  href="/studio"
-                  className="bg-[var(--mkt-btn-primary-bg)] border border-[#e6e6e6] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] inline-flex items-center justify-center"
-                >
-                  Open Studio →
-                </a>
+                <>
+                  <a
+                    href="/studio"
+                    className="bg-[var(--mkt-btn-primary-bg)] border border-[#e6e6e6] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] inline-flex items-center justify-center"
+                  >
+                    Open Studio →
+                  </a>
+                  <button
+                    onClick={onInstallCLI}
+                    className="inline-flex bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium items-center justify-center hover:opacity-80 transition-opacity duration-150"
+                  >
+                    Install CLI
+                  </button>
+                </>
               ) : BETA_ACTIVE ? (
                 <>
                   <a
@@ -82,7 +90,7 @@ export function EarlyAccessCTA({ onInstallCLI }: { onInstallCLI?: () => void }) 
                   </a>
                   <button
                     onClick={onInstallCLI}
-                    className="hidden lg:inline-flex bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium items-center justify-center"
+                    className="inline-flex bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium items-center justify-center hover:opacity-80 transition-opacity duration-150"
                   >
                     Install the free CLI
                   </button>

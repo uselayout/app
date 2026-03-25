@@ -63,12 +63,20 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
           {/* Button group */}
           <div className="flex items-center gap-3">
             {isLoggedIn ? (
-              <Link
-                href="/studio"
-                className="inline-flex items-center justify-center bg-[var(--mkt-btn-primary-bg)] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium border border-[#e6e6e6] shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] hover:opacity-90 transition-opacity duration-150"
-              >
-                Open Studio →
-              </Link>
+              <>
+                <Link
+                  href="/studio"
+                  className="inline-flex items-center justify-center bg-[var(--mkt-btn-primary-bg)] text-[var(--mkt-btn-primary-text)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium border border-[#e6e6e6] shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] hover:opacity-90 transition-opacity duration-150"
+                >
+                  Open Studio →
+                </Link>
+                <button
+                  onClick={onInstallCLI}
+                  className="inline-flex items-center justify-center bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium hover:opacity-80 transition-opacity duration-150"
+                >
+                  Install CLI
+                </button>
+              </>
             ) : BETA_ACTIVE ? (
               <>
                 <Link
@@ -94,7 +102,7 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
                 </Link>
                 <button
                   onClick={onInstallCLI}
-                  className="hidden lg:inline-flex items-center justify-center bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium hover:opacity-80 transition-opacity duration-150"
+                  className="inline-flex items-center justify-center bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium hover:opacity-80 transition-opacity duration-150"
                 >
                   Install CLI
                 </button>
