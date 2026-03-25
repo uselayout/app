@@ -18,7 +18,7 @@ Browser-based tool that extracts design systems from Figma files and live websit
 | **CLI + MCP server** | `uselayout/cli` | `/Users/matt/Cursor Projects/superduperui-context` | Public (MIT) |
 | **Figma plugin** | `uselayout/figma` | `/Users/matt/Cursor Projects/Layout Figma Plugin/superduperui-figma` | Private |
 
-- **CLI** (`@layoutdesign/context` on npm): Commands: `init`, `serve`, `install`, `doctor`, `list`, `use`, `import`. 11 MCP tools including `get-design-system`, `preview`, `push-to-figma`. If the CLI needs new features, add them in that repo.
+- **CLI** (`@layoutdesign/context` on npm): Commands: `init`, `serve`, `install`, `doctor`, `list`, `use`, `import`. 12 MCP tools including `get_design_system`, `preview`, `push_to_figma`, `check_setup`. If the CLI needs new features, add them in that repo.
 - **Figma plugin**: Native Figma plugin for token sync, component push, design system management.
 - This repo provides the **backend API endpoints** the CLI calls (e.g. `/api/export/pull`).
 - DO NOT duplicate CLI/MCP code here — it lives in `uselayout/cli`.
