@@ -116,6 +116,13 @@ function InviteCodesTab({ toast }: { toast: (msg: string, type?: Toast["type"]) 
 
   const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
 
+  // Assign to user state
+  const [assignEmail, setAssignEmail] = useState("");
+  const [assignCount, setAssignCount] = useState(3);
+  const [assigning, setAssigning] = useState(false);
+  const [assignedCodes, setAssignedCodes] = useState<string[]>([]);
+  const [assignedToName, setAssignedToName] = useState("");
+
   const fetchCodes = useCallback(async () => {
     setLoading(true);
     try {
@@ -136,6 +143,43 @@ function InviteCodesTab({ toast }: { toast: (msg: string, type?: Toast["type"]) 
   useEffect(() => {
     void fetchCodes();
   }, [fetchCodes]);
+
+  const handleAssign = async () => {
+    const email = assignEmail.trim();
+    if (!email) {
+      toast("Enter a user email", "error");
+      return;
+    }
+    setAssigning(true);
+    setAssignedCodes([]);
+    try {
+      const lookupRes = await fetch(
+        `/api/admin/users/lookup?email=${encodeURIComponent(email)}`
+      );
+      if (!lookupRes.ok) {
+        const err = await lookupRes.json().catch(() => ({ error: "User not found" })) as { error: string };
+        toast(err.error ?? "User not found", "error");
+        return;
+      }
+      const user = (await lookupRes.json()) as { userId: string; name: string };
+
+      const assignRes = await fetch("/api/admin/invite-codes/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.userId, count: assignCount }),
+      });
+      if (!assignRes.ok) throw new Error("Failed to assign codes");
+      const json = (await assignRes.json()) as { codes: string[] };
+      setAssignedCodes(json.codes);
+      setAssignedToName(user.name || email);
+      toast(`Assigned ${json.codes.length} codes to ${user.name || email}`);
+      void fetchCodes();
+    } catch {
+      toast("Failed to assign codes", "error");
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -248,6 +292,108 @@ function InviteCodesTab({ toast }: { toast: (msg: string, type?: Toast["type"]) 
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {generatedCodes.map((code) => (
+                <button
+                  key={code}
+                  onClick={() => {
+                    copyToClipboard(code);
+                    toast(`Copied ${code}`);
+                  }}
+                  className="px-3 py-1.5 rounded-md text-sm font-mono text-left transition-all"
+                  style={{
+                    background: "var(--bg-app)",
+                    border: "1px solid var(--studio-border)",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  {code}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Assign to user */}
+      <div
+        className="rounded-xl p-6 space-y-4"
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--studio-border)",
+        }}
+      >
+        <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>
+          Assign codes to user
+        </h2>
+        <div className="flex gap-3 flex-wrap">
+          <input
+            type="email"
+            placeholder="User email"
+            value={assignEmail}
+            onChange={(e) => setAssignEmail(e.target.value)}
+            className="flex-1 min-w-48 px-3 py-2 rounded-lg text-sm outline-none"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--studio-border)",
+              color: "var(--text-primary)",
+            }}
+          />
+          <input
+            type="number"
+            min={1}
+            max={50}
+            value={assignCount}
+            onChange={(e) => setAssignCount(Math.max(1, Math.min(50, Number(e.target.value))))}
+            className="w-24 px-3 py-2 rounded-lg text-sm outline-none"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--studio-border)",
+              color: "var(--text-primary)",
+            }}
+          />
+          <button
+            onClick={handleAssign}
+            disabled={assigning}
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+            style={{
+              background: "var(--studio-accent)",
+              color: "var(--text-on-accent, #08090a)",
+              opacity: assigning ? 0.6 : 1,
+              cursor: assigning ? "not-allowed" : "pointer",
+            }}
+          >
+            {assigning ? "Assigning…" : "Assign codes"}
+          </button>
+        </div>
+
+        {assignedCodes.length > 0 && (
+          <div
+            className="rounded-lg p-4 space-y-3"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--studio-border)",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                {assignedCodes.length} codes assigned to {assignedToName}
+              </span>
+              <button
+                onClick={() => {
+                  copyToClipboard(assignedCodes.join("\n"));
+                  toast("Copied all codes");
+                }}
+                className="text-xs px-3 py-1 rounded-md transition-all"
+                style={{
+                  background: "var(--bg-hover)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--studio-border)",
+                }}
+              >
+                Copy all
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {assignedCodes.map((code) => (
                 <button
                   key={code}
                   onClick={() => {
