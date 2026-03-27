@@ -71,12 +71,19 @@ export function useExtraction() {
           extractRes,
           (event) => {
             if (event.type === "step") {
-              const percent = typeof event.percent === "number" ? event.percent : 0;
-              setProgress(10 + Math.round(percent * 0.6));
-              if (event.detail) {
+              if (event.step === "queued") {
                 updateStep("extract", {
+                  status: "running",
                   detail: event.detail as string,
                 });
+              } else {
+                const percent = typeof event.percent === "number" ? event.percent : 0;
+                setProgress(10 + Math.round(percent * 0.6));
+                if (event.detail) {
+                  updateStep("extract", {
+                    detail: event.detail as string,
+                  });
+                }
               }
             }
           },
