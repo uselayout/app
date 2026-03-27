@@ -709,7 +709,7 @@ export function AdminClient() {
         </span>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+      <div className="mx-auto px-6 py-8 space-y-6">
         {/* Tabs */}
         <div
           className="flex gap-1 p-1 rounded-lg w-fit"
