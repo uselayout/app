@@ -626,12 +626,21 @@ export function AdminClient() {
   const [activeTab, setActiveTab] = useState<"codes" | "requests">("codes");
   const { toasts, show: toast } = useToast();
 
-  const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
+  const [adminStatus, setAdminStatus] = useState<"loading" | "granted" | "denied">("loading");
 
-  if (isPending) {
+  useEffect(() => {
+    if (isPending) return;
+    if (!session) {
+      setAdminStatus("denied");
+      return;
+    }
+    // Verify admin access server-side (env var check happens there)
+    fetch("/api/admin/invite-codes", { method: "GET" })
+      .then((res) => setAdminStatus(res.ok ? "granted" : "denied"))
+      .catch(() => setAdminStatus("denied"));
+  }, [session, isPending]);
+
+  if (isPending || adminStatus === "loading") {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
@@ -644,14 +653,7 @@ export function AdminClient() {
     );
   }
 
-  // Client-side access denied (real security is on the API)
-  const isAdmin =
-    session?.user?.email &&
-    (adminEmails.length > 0
-      ? adminEmails.includes(session.user.email.toLowerCase())
-      : true);
-
-  if (!session || !isAdmin) {
+  if (!session || adminStatus === "denied") {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center gap-4"
