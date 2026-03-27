@@ -8,7 +8,8 @@ import { checkQuota, deductCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
 import { saveLayoutMdVersion } from "@/lib/supabase/layout-md-versions";
 import type { Project, ExtractionResult } from "@/lib/types";
-import type { AiMode } from "@/lib/types/billing";
+import type { AiMode, TokenUsageResult } from "@/lib/types/billing";
+import { generationLimit } from "@/lib/concurrency";
 
 export const maxDuration = 120;
 
@@ -109,25 +110,32 @@ export async function POST(request: Request) {
     );
   }
 
-  const { stream, usage } = createLayoutMdStream(extractionData, apiKey);
+  let usage: Promise<TokenUsageResult> | undefined;
+  const layoutMd = await generationLimit(async () => {
+    const { stream, usage: usagePromise } = createLayoutMdStream(extractionData, apiKey);
 
-  // Collect the full stream into a string
-  const reader = stream.getReader();
-  const decoder = new TextDecoder();
-  let layoutMd = "";
+    // Collect the full stream into a string
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    let content = "";
 
-  try {
-    let done = false;
-    while (!done) {
-      const result = await reader.read();
-      done = result.done;
-      if (result.value) {
-        layoutMd += decoder.decode(result.value, { stream: !done });
+    try {
+      let done = false;
+      while (!done) {
+        const result = await reader.read();
+        done = result.done;
+        if (result.value) {
+          content += decoder.decode(result.value, { stream: !done });
+        }
       }
+    } finally {
+      reader.releaseLock();
     }
-  } finally {
-    reader.releaseLock();
-  }
+
+    // Stash usage promise on outer scope so we can log after save
+    usage = usagePromise;
+    return content;
+  });
 
   // Don't save error text as layout.md content
   if (layoutMd.includes("[Error generating layout.md:")) {
@@ -151,18 +159,20 @@ export async function POST(request: Request) {
   await upsertProject(updatedProject, org.ownerId);
 
   // Log usage (fire-and-forget)
-  void usage
-    .then((u) =>
-      logUsage({
-        userId: auth.userId,
-        projectId,
-        endpoint: "layout-md",
-        mode,
-        usage: u,
-        model: "claude-sonnet-4-6",
-      }),
-    )
-    .catch((err) => console.error("Usage logging failed:", err));
+  if (usage) {
+    void usage
+      .then((u) =>
+        logUsage({
+          userId: auth.userId,
+          projectId,
+          endpoint: "layout-md",
+          mode,
+          usage: u,
+          model: "claude-sonnet-4-6",
+        }),
+      )
+      .catch((err) => console.error("Usage logging failed:", err));
+  }
 
   const url = `/studio/${projectId}`;
 

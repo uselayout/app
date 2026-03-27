@@ -6,6 +6,7 @@ import { uploadScreenshots } from "@/lib/supabase/storage";
 import { extractLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
 import { auth } from "@/lib/auth";
+import { playwrightLimit } from "@/lib/concurrency";
 
 const RequestSchema = z.object({
   url: z.url(),
@@ -68,12 +69,21 @@ export async function POST(request: NextRequest) {
         );
       };
 
+      // Heartbeat keeps the SSE connection alive while queued
+      const heartbeat = setInterval(() => {
+        send({ type: "step", step: "queued", percent: 0, detail: "Waiting for available slot..." });
+      }, 15_000);
+
       try {
-        const result = await extractFromWebsite({
-          url,
-          onProgress: (step, percent, detail) => {
-            send({ type: "step", step, percent, detail });
-          },
+        const result = await playwrightLimit(async () => {
+          clearInterval(heartbeat);
+
+          return extractFromWebsite({
+            url,
+            onProgress: (step, percent, detail) => {
+              send({ type: "step", step, percent, detail });
+            },
+          });
         });
 
         // Upload screenshots to Supabase Storage, replace base64 with URLs
@@ -90,6 +100,7 @@ export async function POST(request: NextRequest) {
         const message = err instanceof Error ? err.message : "Unknown error";
         send({ type: "error", message });
       } finally {
+        clearInterval(heartbeat);
         controller.close();
       }
     },
