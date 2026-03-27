@@ -74,12 +74,12 @@ const COMPARISON_DATA: ComparisonRow[] = [
   {
     feature: "MCP server for AI agents",
     values: {
-      Layout: "11 tools",
+      Layout: "12 tools",
       "Paper.design": "24 tools",
       "Magic Patterns": false,
       MagicPath: false,
       Variant: false,
-      "Figma Dev Mode": "3 read-only",
+      "Figma Dev Mode": "11 tools",
       "Pencil.dev": true,
     },
   },
@@ -183,7 +183,7 @@ const OBJECTIONS: Objection[] = [
   {
     question: "Figma Dev Mode has an MCP server now.",
     answer:
-      "Figma\u2019s MCP has 3 read-only tools serving raw file data \u2014 node trees, style references, layer names. Layout serves structured design tokens, component inventories, spacing rules, and anti-patterns in a format LLMs actually understand. Raw Figma JSON \u2260 design system context.",
+      "Figma\u2019s MCP has 11 tools for accessing file-level design data \u2014 node trees, variables, screenshots, and Code Connect mappings. It\u2019s excellent for implementing a specific screen. Layout solves a different problem: it extracts the design system itself (tokens, components, spacing rules, anti-patterns) from Figma or any website and serves it as structured context so your AI agent can build anything on-brand \u2014 not just reproduce an existing design.",
   },
   {
     question:
