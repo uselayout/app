@@ -384,7 +384,7 @@ function InviteCodesTab({ toast }: { toast: (msg: string, type?: Toast["type"]) 
 
 // ─── Access Requests Tab ──────────────────────────────────────────────────────
 
-function AccessRequestsTab({ toast }: { toast: (msg: string, type?: Toast["type"]) => void }) {
+function AccessRequestsTab({ toast, onPendingCountChange }: { toast: (msg: string, type?: Toast["type"]) => void; onPendingCountChange?: (count: number) => void }) {
   const [requests, setRequests] = useState<AccessRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<"" | "pending" | "approved" | "rejected">("");
@@ -400,12 +400,16 @@ function AccessRequestsTab({ toast }: { toast: (msg: string, type?: Toast["type"
       if (!res.ok) throw new Error("Failed to fetch");
       const json = await res.json() as { requests: AccessRequestRow[] };
       setRequests(json.requests);
+      // Update parent pending count when we have unfiltered data
+      if (!statusFilter && onPendingCountChange) {
+        onPendingCountChange(json.requests.filter((r) => r.status === "pending").length);
+      }
     } catch {
       toast("Failed to load access requests", "error");
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, toast]);
+  }, [statusFilter, toast, onPendingCountChange]);
 
   useEffect(() => {
     void fetchRequests();
@@ -625,6 +629,7 @@ export function AdminClient() {
   const { data: session, isPending } = useSession();
   const [activeTab, setActiveTab] = useState<"codes" | "requests">("codes");
   const { toasts, show: toast } = useToast();
+  const [pendingCount, setPendingCount] = useState(0);
 
   const [adminStatus, setAdminStatus] = useState<"loading" | "granted" | "denied">("loading");
 
@@ -636,7 +641,16 @@ export function AdminClient() {
     }
     // Verify admin access server-side (env var check happens there)
     fetch("/api/admin/invite-codes", { method: "GET" })
-      .then((res) => setAdminStatus(res.ok ? "granted" : "denied"))
+      .then((res) => {
+        setAdminStatus(res.ok ? "granted" : "denied");
+        if (res.ok) {
+          // Fetch pending access request count
+          fetch("/api/admin/access-requests?status=pending")
+            .then((r) => r.json())
+            .then((json: { requests: unknown[] }) => setPendingCount(json.requests?.length ?? 0))
+            .catch(() => {});
+        }
+      })
       .catch(() => setAdminStatus("denied"));
   }, [session, isPending]);
 
@@ -719,7 +733,7 @@ export function AdminClient() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className="px-4 py-1.5 rounded-md text-sm font-medium transition-all"
+              className="px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2"
               style={{
                 background: activeTab === tab.key ? "var(--bg-elevated)" : "transparent",
                 color: activeTab === tab.key ? "var(--text-primary)" : "var(--text-muted)",
@@ -727,6 +741,11 @@ export function AdminClient() {
               }}
             >
               {tab.label}
+              {tab.key === "requests" && pendingCount > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  {pendingCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -735,7 +754,7 @@ export function AdminClient() {
         {activeTab === "codes" ? (
           <InviteCodesTab toast={toast} />
         ) : (
-          <AccessRequestsTab toast={toast} />
+          <AccessRequestsTab toast={toast} onPendingCountChange={setPendingCount} />
         )}
       </div>
 
