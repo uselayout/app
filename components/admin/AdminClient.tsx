@@ -626,7 +626,10 @@ export function AdminClient() {
   const [activeTab, setActiveTab] = useState<"codes" | "requests">("codes");
   const { toasts, show: toast } = useToast();
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
 
   if (isPending) {
     return (
@@ -644,7 +647,9 @@ export function AdminClient() {
   // Client-side access denied (real security is on the API)
   const isAdmin =
     session?.user?.email &&
-    (adminEmail ? session.user.email === adminEmail : true);
+    (adminEmails.length > 0
+      ? adminEmails.includes(session.user.email.toLowerCase())
+      : true);
 
   if (!session || !isAdmin) {
     return (

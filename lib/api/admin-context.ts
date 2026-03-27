@@ -13,7 +13,7 @@ export async function requireAdmin(
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
 
-  const adminEmails = (process.env.ADMIN_USER_EMAIL ?? "")
+  const adminEmails = (process.env.ADMIN_EMAIL ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
