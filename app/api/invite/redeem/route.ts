@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { redeemInviteCode, createInviteCodes } from "@/lib/supabase/invite-codes";
+import { redeemInviteCode } from "@/lib/supabase/invite-codes";
 import { auth } from "@/lib/auth";
 
 // POST /api/invite/redeem
@@ -36,7 +36,6 @@ export async function POST(request: NextRequest) {
 
   try {
     await redeemInviteCode(code, userId);
-    await createInviteCodes(userId, 3);
     return NextResponse.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to redeem invite code";
