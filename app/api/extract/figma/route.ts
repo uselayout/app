@@ -5,6 +5,7 @@ import { extractFromFigma } from "@/lib/figma/extractor";
 import { extractLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
 import { auth } from "@/lib/auth";
+import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 
 const RequestSchema = z.object({
   figmaUrl: z.string().url(),
@@ -46,6 +47,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (isShuttingDown()) {
+    return NextResponse.json(
+      { error: "Server is restarting. Please retry in a few seconds." },
+      { status: 503, headers: { "Retry-After": "10" } }
+    );
+  }
+
   const { figmaUrl, accessToken } = parsed.data;
   const fileKey = FigmaClient.extractFileKey(figmaUrl);
 
@@ -57,6 +65,7 @@ export async function POST(request: NextRequest) {
   }
 
   const encoder = new TextEncoder();
+  const streamController = registerStream();
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -80,8 +89,12 @@ export async function POST(request: NextRequest) {
         const message = err instanceof Error ? err.message : "Unknown error";
         send({ type: "error", message });
       } finally {
+        deregisterStream(streamController);
         controller.close();
       }
+    },
+    cancel() {
+      deregisterStream(streamController);
     },
   });
 

@@ -47,6 +47,10 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
+          {
+            key: "X-Build-SHA",
+            value: process.env.NEXT_PUBLIC_BUILD_SHA ?? "dev",
+          },
         ],
       },
     ];

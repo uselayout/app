@@ -29,6 +29,13 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
+# Build SHA for deployment tracking (passed at build time)
+ARG BUILD_SHA=dev
+ENV NEXT_PUBLIC_BUILD_SHA=$BUILD_SHA
+
+# Install tini for proper signal handling (PID 1 must forward SIGTERM)
+RUN apt-get update && apt-get install -y --no-install-recommends tini && rm -rf /var/lib/apt/lists/*
+
 # Install Playwright Chromium to a shared path accessible by all users
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
 RUN npx playwright install --with-deps chromium
@@ -45,4 +52,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 USER nextjs
 EXPOSE 3000
 
+# Use tini as init to properly forward signals to Node.js
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["node", "server.js"]

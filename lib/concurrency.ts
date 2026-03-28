@@ -6,13 +6,40 @@
  * requests until a slot opens.
  */
 
-function createLimiter(maxConcurrent: number) {
+export class ConcurrencyTimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConcurrencyTimeoutError";
+  }
+}
+
+function createLimiter(maxConcurrent: number, timeoutMs = 120_000) {
   let active = 0;
-  const waiting: Array<() => void> = [];
+  const waiting: Array<{ resolve: () => void; reject: (err: Error) => void }> = [];
 
   return async function limit<T>(fn: () => Promise<T>): Promise<T> {
     if (active >= maxConcurrent) {
-      await new Promise<void>((resolve) => waiting.push(resolve));
+      await new Promise<void>((resolve, reject) => {
+        const entry = { resolve, reject };
+        waiting.push(entry);
+
+        const timer = setTimeout(() => {
+          const idx = waiting.indexOf(entry);
+          if (idx !== -1) {
+            waiting.splice(idx, 1);
+            reject(new ConcurrencyTimeoutError(
+              `Timed out waiting for concurrency slot after ${timeoutMs}ms`
+            ));
+          }
+        }, timeoutMs);
+
+        // Store cleanup so resolve can clear the timer
+        const originalResolve = entry.resolve;
+        entry.resolve = () => {
+          clearTimeout(timer);
+          originalResolve();
+        };
+      });
     }
     active++;
     try {
@@ -20,13 +47,13 @@ function createLimiter(maxConcurrent: number) {
     } finally {
       active--;
       const next = waiting.shift();
-      if (next) next();
+      if (next) next.resolve();
     }
   };
 }
 
-/** Max 2 concurrent Playwright browser instances */
-export const playwrightLimit = createLimiter(2);
+/** Max 2 concurrent Playwright browser instances (120s queue timeout) */
+export const playwrightLimit = createLimiter(2, 120_000);
 
-/** Max 5 concurrent Claude API generation streams */
-export const generationLimit = createLimiter(5);
+/** Max 5 concurrent Claude API generation streams (60s queue timeout) */
+export const generationLimit = createLimiter(5, 60_000);

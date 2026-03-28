@@ -19,12 +19,14 @@ export function useExtraction() {
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
 
   const abortRef = useRef<AbortController | null>(null);
+  const layoutMdAccumulator = useRef<string>("");
 
   const runExtraction = useCallback(
     async (project: Project, accessToken?: string) => {
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
+      layoutMdAccumulator.current = "";
 
       const isFigma = project.sourceType === "figma";
 
@@ -61,6 +63,11 @@ export function useExtraction() {
         });
 
         if (!extractRes.ok) {
+          if (extractRes.status === 503) {
+            throw new Error(
+              "Server is restarting. Please wait a few seconds and try again."
+            );
+          }
           throw new Error(
             `Extraction failed: ${extractRes.status} ${extractRes.statusText}`
           );
@@ -125,6 +132,11 @@ export function useExtraction() {
         });
 
         if (!genRes.ok) {
+          if (genRes.status === 503) {
+            throw new Error(
+              "Server is restarting. Please wait a few seconds and try again."
+            );
+          }
           if (genRes.status === 402) {
             const body = await genRes.json().catch(() => null);
             throw new Error(
@@ -149,6 +161,7 @@ export function useExtraction() {
           const { done, value } = await reader.read();
           if (done) break;
           layoutMd += decoder.decode(value, { stream: true });
+          layoutMdAccumulator.current = layoutMd;
 
           const now = Date.now();
           if (now - lastFlush >= FLUSH_INTERVAL) {
@@ -167,7 +180,18 @@ export function useExtraction() {
       } catch (err) {
         if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : "Unknown error";
-        setError(message, "extract");
+
+        // If we have partial layout.md content, save it so the user doesn't lose progress
+        if (layoutMdAccumulator.current.length > 200) {
+          updateLayoutMd(project.id, layoutMdAccumulator.current);
+          setStreamingContent(null);
+          setError(
+            `${message}. Your partial progress has been saved.`,
+            "extract"
+          );
+        } else {
+          setError(message, "extract");
+        }
       }
     },
     [
