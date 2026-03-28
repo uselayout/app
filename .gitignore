@@ -64,3 +64,8 @@ docs/KISS-AUDIT.md
 docs/handoff/
 docs/plans/
 docs/prd/
+docs/public/technical-handoff.md
+
+# Infrastructure docs — deployment details, server IPs, migration scripts
+DEPLOYMENT.md
+migrations/
