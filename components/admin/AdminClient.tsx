@@ -901,13 +901,75 @@ function AccessRequestsTab({ toast, onPendingCountChange }: { toast: (msg: strin
 
 // ─── Admin Client ─────────────────────────────────────────────────────────────
 
+// ─── Admin Stats ─────────────────────────────────────────────────────────────
+
+interface AdminStatsData {
+  totalRequests: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  totalSignups: number;
+  totalUsers: number;
+}
+
+function StatCard({ label, value, accent }: { label: string; value: number; accent?: string }) {
+  return (
+    <div
+      className="flex flex-col gap-1 px-4 py-3 rounded-lg min-w-[120px]"
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--studio-border)",
+      }}
+    >
+      <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+        {label}
+      </span>
+      <span
+        className="text-xl font-semibold font-mono tabular-nums"
+        style={{ color: accent ?? "var(--text-primary)" }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function AdminStats({ stats }: { stats: AdminStatsData | null }) {
+  if (!stats) return null;
+  return (
+    <div className="flex flex-wrap gap-3">
+      <StatCard label="Total requests" value={stats.totalRequests} />
+      <StatCard label="Pending" value={stats.pending} accent="#fbbf24" />
+      <StatCard label="Approved" value={stats.approved} accent="#34d399" />
+      <StatCard label="Rejected" value={stats.rejected} />
+      <StatCard label="Signups" value={stats.totalSignups} accent="#60a5fa" />
+      <StatCard label="Registered users" value={stats.totalUsers} accent="#a78bfa" />
+    </div>
+  );
+}
+
+// ─── Main Admin Component ────────────────────────────────────────────────────
+
 export function AdminClient() {
   const { data: session, isPending } = useSession();
   const [activeTab, setActiveTab] = useState<"codes" | "requests">("codes");
   const { toasts, show: toast } = useToast();
   const [pendingCount, setPendingCount] = useState(0);
+  const [stats, setStats] = useState<AdminStatsData | null>(null);
 
   const [adminStatus, setAdminStatus] = useState<"loading" | "granted" | "denied">("loading");
+
+  const fetchStats = useCallback(() => {
+    fetch("/api/admin/stats")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json: AdminStatsData | null) => {
+        if (json) {
+          setStats(json);
+          setPendingCount(json.pending);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (isPending) return;
@@ -920,15 +982,11 @@ export function AdminClient() {
       .then((res) => {
         setAdminStatus(res.ok ? "granted" : "denied");
         if (res.ok) {
-          // Fetch pending access request count
-          fetch("/api/admin/access-requests?status=pending")
-            .then((r) => r.json())
-            .then((json: { requests: unknown[] }) => setPendingCount(json.requests?.length ?? 0))
-            .catch(() => {});
+          fetchStats();
         }
       })
       .catch(() => setAdminStatus("denied"));
-  }, [session, isPending]);
+  }, [session, isPending, fetchStats]);
 
   if (isPending || adminStatus === "loading") {
     return (
@@ -1026,11 +1084,17 @@ export function AdminClient() {
           ))}
         </div>
 
+        {/* Stats */}
+        <AdminStats stats={stats} />
+
         {/* Tab content */}
         {activeTab === "codes" ? (
           <InviteCodesTab toast={toast} />
         ) : (
-          <AccessRequestsTab toast={toast} onPendingCountChange={setPendingCount} />
+          <AccessRequestsTab toast={toast} onPendingCountChange={(count) => {
+            setPendingCount(count);
+            fetchStats();
+          }} />
         )}
       </div>
 
