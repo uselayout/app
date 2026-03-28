@@ -121,12 +121,6 @@ export function ExplorerCanvas({
     return groups;
   }, [variants, currentExploration?.prompt]);
 
-  const handleClearAllExplorations = useCallback(() => {
-    onUpdateExplorations([]);
-    setActiveExplorationIndex(null);
-    setSelectedVariantId(null);
-  }, [onUpdateExplorations]);
-
   const handleDeleteExploration = useCallback(
     (index: number) => {
       const updated = explorations.filter((_, i) => i !== index);
