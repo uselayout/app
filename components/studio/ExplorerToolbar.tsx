@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { ArrowUp, RotateCw, Figma, Minus, Plus, Download, Wand2, Split, ImagePlus, Paperclip, X, ChevronDown } from "lucide-react";
+import { ArrowUp, RotateCw, Figma, Minus, Plus, Download, Wand2, Split, ImagePlus, Paperclip, X, ChevronDown, KeyRound } from "lucide-react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
 import type { ContextFile, AiModelId } from "@/lib/types";
 import { AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 
@@ -55,6 +57,8 @@ export function ExplorerToolbar({
   hasGoogleKey,
   hasAnthropicKey,
 }: ExplorerToolbarProps) {
+  const params = useParams();
+  const orgSlug = (params?.org as string) ?? "";
   const [prompt, setPrompt] = useState("");
   const [refinePrompt, setRefinePrompt] = useState("");
   const [variantCount, setVariantCount] = useState(2);
@@ -449,6 +453,15 @@ export function ExplorerToolbar({
               </select>
               <ChevronDown size={10} className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
             </div>
+            {(!hasAnthropicKey || !hasGoogleKey) && orgSlug && (
+              <Link
+                href={`/${orgSlug}/settings/api-keys`}
+                className="inline-flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 transition-colors"
+              >
+                <KeyRound size={10} />
+                Add keys
+              </Link>
+            )}
           </div>
 
           {/* Regenerate — pre-fills prompt and focuses input */}

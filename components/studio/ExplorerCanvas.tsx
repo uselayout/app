@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { Sparkles, X, ChevronLeft, ChevronRight, Plus, Copy } from "lucide-react";
+import { Sparkles, X, ChevronLeft, ChevronRight, Plus, Copy, KeyRound } from "lucide-react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
 import { ExplorerToolbar } from "./ExplorerToolbar";
 import { VariantCard } from "./VariantCard";
 import { FigmaPushModal } from "./FigmaPushModal";
@@ -12,14 +14,14 @@ import { PromoteToLibraryModal } from "./PromoteToLibraryModal";
 import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-variants";
 import { friendlyError } from "@/lib/explore/friendly-error";
 import { applyChangesToLayoutMd } from "@/lib/figma/diff";
-import { getStoredApiKey } from "@/lib/hooks/use-api-key";
+import { getStoredApiKey, useKeyStatus, dismissKeyLoss } from "@/lib/hooks/use-api-key";
 import { processCodeImages, type ProcessCodeImagesResult } from "@/lib/image/process-code-images";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { toast } from "sonner";
 import { calculateHealthScore } from "@/lib/health/score";
 import { useOnboardingStore } from "@/lib/store/onboarding";
 import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
-import { DEFAULT_EXPLORE_MODEL } from "@/lib/types";
+import { DEFAULT_EXPLORE_MODEL, AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken } from "@/lib/types";
 
@@ -348,6 +350,17 @@ export function ExplorerCanvas({
     async (prompt: string, variantCount: number, imageDataUrl?: string, contextFiles?: ContextFile[]) => {
       if (isGenerating) return;
 
+      // Pre-flight key check: catch missing keys before hitting the API
+      const model = AI_MODELS[modelId];
+      if (model.provider === "gemini" && !getStoredGoogleApiKey()) {
+        setGenerationError(`${model.label} requires a Google AI API key. Add one in Settings → API Keys.`);
+        return;
+      }
+      if (BYOK_ONLY_MODELS.has(modelId) && model.provider !== "gemini" && !getStoredApiKey()) {
+        setGenerationError(`${model.label} requires an Anthropic API key. Add one in Settings → API Keys.`);
+        return;
+      }
+
       setIsGenerating(true);
       setGenerationError(null);
       setSelectedVariantId(null);
@@ -415,7 +428,7 @@ export function ExplorerCanvas({
         generatingSessionRef.current = null;
       }
     },
-    [isGenerating, projectId, layoutMd, explorations, currentExploration, onUpdateExplorations, runGeneration, fetchUrlsFromPrompt]
+    [isGenerating, projectId, layoutMd, modelId, explorations, currentExploration, onUpdateExplorations, runGeneration, fetchUrlsFromPrompt]
   );
 
   const handleRefine = useCallback(
@@ -698,15 +711,11 @@ export function ExplorerCanvas({
     ? Math.max(0, pendingBatchCountRef.current - variants.filter((v) => v.batchId === streamingBatchRef.current).length)
     : 0;
 
-  const hasGoogleKey = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return !!getStoredGoogleApiKey();
-  }, []);
+  const keyStatus = useKeyStatus();
+  const { hasAnthropicKey, hasGoogleKey, hasLostKeys, lostKeys } = keyStatus;
 
-  const hasAnthropicKey = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return !!getStoredApiKey();
-  }, []);
+  const params = useParams();
+  const orgSlug = (params?.org as string) ?? "";
 
   const gridClassName = "grid grid-cols-2 gap-4";
 
@@ -715,10 +724,51 @@ export function ExplorerCanvas({
       {/* Error banner */}
       {generationError && (
         <div className="mx-4 mt-4 flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3">
-          <p className="flex-1 text-xs text-red-300">{generationError}</p>
+          <p className="flex-1 text-xs text-red-300">
+            {generationError}
+            {generationError.includes("API key") && orgSlug && (
+              <>
+                {" "}
+                <Link
+                  href={`/${orgSlug}/settings/api-keys`}
+                  className="underline text-red-200 hover:text-red-100"
+                >
+                  Open API Keys settings
+                </Link>
+              </>
+            )}
+          </p>
           <button
             onClick={() => setGenerationError(null)}
             className="shrink-0 text-red-400 hover:text-red-300 transition-colors"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Key-loss warning banner */}
+      {hasLostKeys && (
+        <div className="mx-4 mt-4 flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+          <KeyRound size={14} className="mt-0.5 shrink-0 text-amber-400" />
+          <p className="flex-1 text-xs text-amber-300">
+            Your {lostKeys.map((k) => k.charAt(0).toUpperCase() + k.slice(1)).join(" and ")} API {lostKeys.length === 1 ? "key is" : "keys are"} no longer available.
+            This can happen when switching browser windows or profiles.
+            {orgSlug && (
+              <>
+                {" "}
+                <Link
+                  href={`/${orgSlug}/settings/api-keys`}
+                  className="underline text-amber-200 hover:text-amber-100"
+                >
+                  Re-add them in Settings
+                </Link>
+              </>
+            )}
+          </p>
+          <button
+            onClick={dismissKeyLoss}
+            className="shrink-0 text-amber-400 hover:text-amber-300 transition-colors"
           >
             <X size={14} />
           </button>
