@@ -530,7 +530,7 @@ function InviteCodesTab({ toast }: { toast: (msg: string, type?: Toast["type"]) 
 
 // ─── Access Requests Tab ──────────────────────────────────────────────────────
 
-function AccessRequestsTab({ toast, onPendingCountChange }: { toast: (msg: string, type?: Toast["type"]) => void; onPendingCountChange?: (count: number) => void }) {
+function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (msg: string, type?: Toast["type"]) => void; onPendingCountChange?: (count: number) => void; onAction?: () => void }) {
   const [requests, setRequests] = useState<AccessRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<"" | "pending" | "approved" | "rejected">("");
@@ -594,6 +594,7 @@ function AccessRequestsTab({ toast, onPendingCountChange }: { toast: (msg: strin
       }
 
       void fetchRequests();
+      onAction?.();
     } catch {
       toast("Failed to update request", "error");
     } finally {
@@ -1091,10 +1092,7 @@ export function AdminClient() {
         {activeTab === "codes" ? (
           <InviteCodesTab toast={toast} />
         ) : (
-          <AccessRequestsTab toast={toast} onPendingCountChange={(count) => {
-            setPendingCount(count);
-            fetchStats();
-          }} />
+          <AccessRequestsTab toast={toast} onPendingCountChange={setPendingCount} onAction={fetchStats} />
         )}
       </div>
 
