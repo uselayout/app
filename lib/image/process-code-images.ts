@@ -9,7 +9,8 @@
 
 import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 
-const IMAGE_PLACEHOLDER_RE = /data-generate-image=["'][^"']+["']/i;
+// Matches both literal strings and JSX expressions: data-generate-image="..." or data-generate-image={...}
+const IMAGE_PLACEHOLDER_RE = /data-generate-image=(?:["'][^"']+["']|\{[^}]+\})/i;
 const PLACEHOLDER_URL_DOMAINS = "placehold\\.co|via\\.placeholder\\.com|placeholder\\.com|images\\.unsplash\\.com|source\\.unsplash\\.com|picsum\\.photos|dummyimage\\.com|lorempixel\\.com|loremflickr\\.com|fakeimg\\.pl|placekitten\\.com|placebear\\.com|(?:i\\.)?pravatar\\.cc|randomuser\\.me|robohash\\.org|ui-avatars\\.com";
 const PLACEHOLDER_URL_RE = new RegExp(`src=["'](?:https?:)?//(?:${PLACEHOLDER_URL_DOMAINS})`, "i");
 const PLACEHOLDER_URL_RE_GLOBAL = new RegExp(`src=["'](?:https?:)?//(?:${PLACEHOLDER_URL_DOMAINS})`, "gi");
@@ -49,7 +50,7 @@ export async function processCodeImages(
   if (!hasPlaceholders) return { code, skippedNoKey: false, placeholderCount: 0, failedCount: 0, errors: [] };
 
   // Count placeholders for reporting
-  const dataAttrCount = (code.match(/data-generate-image=["'][^"']+["']/gi) ?? []).length;
+  const dataAttrCount = (code.match(/data-generate-image=(?:["'][^"']+["']|\{[^}]+\})/gi) ?? []).length;
   const urlCount = (code.match(PLACEHOLDER_URL_RE_GLOBAL) ?? []).length;
   const relativeCount = (code.match(RELATIVE_SRC_RE_GLOBAL) ?? []).length;
   const placeholderCount = dataAttrCount + urlCount + relativeCount;

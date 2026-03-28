@@ -13,6 +13,7 @@
  */
 
 import { generateImage, ImageSafetyError, type ImageStyle, type AspectRatio } from "./generate";
+import { resolveJsxImages, hasJsxImageExpressions } from "./resolve-jsx-images";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -53,7 +54,7 @@ export interface PipelineOptions {
 // ---------------------------------------------------------------------------
 
 const PLACEHOLDER_REGEX =
-  /(<img\s[^>]*?)data-generate-image=["']([^"']+)["']([^>]*?)\/?>/gi;
+  /(<img\s[^>]*?)data-generate-image\s*=\s*["']([^"']+)["']([^>]*?)\/?>/gi;
 
 const STYLE_ATTR_REGEX = /data-image-style=["']([^"']+)["']/i;
 const RATIO_ATTR_REGEX = /data-image-ratio=["']([^"']+)["']/i;
@@ -217,13 +218,29 @@ export async function processImagePlaceholders(
   html: string,
   options: PipelineOptions = {}
 ): Promise<PipelineResult> {
-  // First, convert avatar divs, placeholder URLs, and relative paths to data-generate-image attributes
-  const preprocessed = replaceRelativeSrcUrls(replacePlaceholderUrls(convertAvatarDivsToImgs(html)));
+  // Phase 1: Resolve JSX expression-based data-generate-image attrs (e.g. {member.prompt})
+  // This must run BEFORE the literal-string pipeline since it modifies the source code
+  let jsxCount = 0;
+  let jsxFailed = 0;
+  const jsxErrors: string[] = [];
+  let working = html;
+
+  if (hasJsxImageExpressions(html)) {
+    const jsxResult = await resolveJsxImages(html, options);
+    working = jsxResult.code;
+    jsxCount = jsxResult.count;
+    jsxFailed = jsxResult.failedCount;
+    jsxErrors.push(...jsxResult.errors);
+  }
+
+  // Phase 2: Convert avatar divs, placeholder URLs, and relative paths to data-generate-image attributes
+  const preprocessed = replaceRelativeSrcUrls(replacePlaceholderUrls(convertAvatarDivsToImgs(working)));
   const placeholders = findPlaceholders(preprocessed, {
     skipAlreadyGenerated: !options.forceRegenerate,
   });
 
-  if (placeholders.length === 0) return { html, totalCount: 0, failedCount: 0, errors: [] };
+  if (placeholders.length === 0 && jsxCount === 0) return { html: working, totalCount: 0, failedCount: 0, errors: [] };
+  if (placeholders.length === 0) return { html: working, totalCount: jsxCount, failedCount: jsxFailed, errors: jsxErrors };
 
   // Deduplicate by match string — generate once, replaceAll handles all occurrences
   const uniquePlaceholders = placeholders.filter(
@@ -312,7 +329,12 @@ export async function processImagePlaceholders(
     }
   }
 
-  return { html: result, totalCount: placeholders.length, failedCount, errors };
+  return {
+    html: result,
+    totalCount: placeholders.length + jsxCount,
+    failedCount: failedCount + jsxFailed,
+    errors: [...jsxErrors, ...errors],
+  };
 }
 
 /**
@@ -320,5 +342,5 @@ export async function processImagePlaceholders(
  */
 export function hasImagePlaceholders(html: string): boolean {
   PLACEHOLDER_REGEX.lastIndex = 0;
-  return PLACEHOLDER_REGEX.test(html);
+  return PLACEHOLDER_REGEX.test(html) || hasJsxImageExpressions(html);
 }
