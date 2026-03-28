@@ -49,8 +49,8 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
           className="text-[15px] leading-[24px] tracking-[-0.165px] text-[var(--mkt-text-secondary)] max-w-full lg:max-w-[862px]"
         >
           Your AI agent writes working code but gets the design wrong. Layout extracts your design
-          system from Figma or any website and serves it to Claude Code, Cursor, Antigravity, and Codex
-          automatically.
+          system from Figma or any website and serves it to Claude Code, Cursor, Windsurf, and any
+          MCP-compatible agent automatically.
         </motion.p>
 
         {/* CTA row */}
