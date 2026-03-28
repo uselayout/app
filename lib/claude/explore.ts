@@ -66,11 +66,17 @@ Images (MANDATORY — read carefully)
 - For product tables, file lists, or non-person data: use relevant thumbnails with data-generate-image.
 - Rule: if ANY cell or card would benefit from a visual (avatar, thumbnail, logo, icon), use data-generate-image. When in doubt, generate an image.
 - CRITICAL: The image pipeline can ONLY process <img> tags. NEVER use <div> or <span> elements with initials (like "SC" or "AJ") as avatar substitutes. NEVER use coloured circles, gradient backgrounds, or any non-<img> element where an avatar should be. Every avatar MUST be an <img> tag with data-generate-image.
+- CRITICAL: data-generate-image MUST always be a static string literal in quotes, NEVER a JavaScript expression, variable, or template literal. The image pipeline parses the source code with regex and cannot resolve JS expressions.
+- WRONG: data-generate-image={member.prompt} — variable reference, invisible to pipeline
+- WRONG: data-generate-image={imagePrompt} — variable reference
+- WRONG: data-generate-image={headshot of $\{name\}} — template literal
+- WRONG: data-generate-image={getPrompt(person)} — function call
 - WRONG: <img src="https://placehold.co/800x600" />
 - WRONG: <img src="https://via.placeholder.com/150" />
 - WRONG: <img src="" />
 - WRONG: <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">SC</div>
 - RIGHT: <img data-generate-image="modern office workspace with natural lighting" data-image-style="photo" data-image-ratio="16:9" alt="Office" className="w-full h-64 object-cover" />
+- Even when mapping over arrays, write each data-generate-image value as an inline string literal directly on the <img> tag. Do NOT store image prompts in data arrays or variables.
 
 OUTPUT FORMAT:
 For each variant, output EXACTLY this format:
@@ -137,11 +143,17 @@ Images (MANDATORY — read carefully)
 - For product tables, file lists, or non-person data: use relevant thumbnails with data-generate-image.
 - Rule: if ANY cell or card would benefit from a visual (avatar, thumbnail, logo, icon), use data-generate-image. When in doubt, generate an image.
 - CRITICAL: The image pipeline can ONLY process <img> tags. NEVER use <div> or <span> elements with initials (like "SC" or "AJ") as avatar substitutes. NEVER use coloured circles, gradient backgrounds, or any non-<img> element where an avatar should be. Every avatar MUST be an <img> tag with data-generate-image.
+- CRITICAL: data-generate-image MUST always be a static string literal in quotes, NEVER a JavaScript expression, variable, or template literal. The image pipeline parses the source code with regex and cannot resolve JS expressions.
+- WRONG: data-generate-image={member.prompt} — variable reference, invisible to pipeline
+- WRONG: data-generate-image={imagePrompt} — variable reference
+- WRONG: data-generate-image={headshot of $\{name\}} — template literal
+- WRONG: data-generate-image={getPrompt(person)} — function call
 - WRONG: <img src="https://placehold.co/800x600" />
 - WRONG: <img src="https://via.placeholder.com/150" />
 - WRONG: <img src="" />
 - WRONG: <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">SC</div>
 - RIGHT: <img data-generate-image="modern office workspace with natural lighting" data-image-style="photo" data-image-ratio="16:9" alt="Office" className="w-full h-64 object-cover" />
+- Even when mapping over arrays, write each data-generate-image value as an inline string literal directly on the <img> tag. Do NOT store image prompts in data arrays or variables.
 
 OUTPUT FORMAT:
 For each variant, output EXACTLY this format:
