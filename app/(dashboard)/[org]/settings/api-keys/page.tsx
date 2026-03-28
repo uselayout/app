@@ -148,7 +148,15 @@ export default function ApiKeysPage() {
           Your Keys
         </h1>
         <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          Stored locally in your browser. We never persist them on our servers.
+          Stored locally in your browser. We never persist them on our servers.{" "}
+          <a
+            href="/docs/api-keys"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--text-muted)] hover:text-[var(--studio-accent)] underline transition-colors"
+          >
+            Learn more
+          </a>
         </p>
 
         <div className="mt-6 space-y-4 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-5">
