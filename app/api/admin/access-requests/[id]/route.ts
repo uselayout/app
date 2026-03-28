@@ -3,10 +3,26 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/api/admin-context";
 import { createInviteCodes } from "@/lib/supabase/invite-codes";
 import { supabase } from "@/lib/supabase/client";
+import { sendEmail } from "@/lib/email/send";
+import {
+  welcomeEmailHtml,
+  welcomeEmailSubject,
+} from "@/lib/email/templates/welcome";
+
+const SENDER_OPTIONS: Record<string, string> = {
+  "matt@layout.design": "Matt from Layout <matt@layout.design>",
+  "ben@layout.design": "Ben from Layout <ben@layout.design>",
+  "hello@layout.design": "Layout <hello@layout.design>",
+};
 
 const PatchSchema = z.object({
-  status: z.enum(["approved", "rejected"]),
+  status: z.enum(["approved", "rejected"]).optional(),
   inviteCode: z.string().optional(),
+  email: z.string().email().optional(),
+  name: z.string().min(1).optional(),
+  whatBuilding: z.string().optional(),
+  howHeard: z.string().optional(),
+  fromEmail: z.string().optional(),
 });
 
 export async function PATCH(
@@ -33,7 +49,7 @@ export async function PATCH(
     );
   }
 
-  const { status, inviteCode } = parsed.data;
+  const { status, inviteCode, email, name, whatBuilding, howHeard, fromEmail } = parsed.data;
 
   // If approving without a code, auto-generate one
   let resolvedCode = inviteCode;
@@ -51,9 +67,16 @@ export async function PATCH(
     }
   }
 
-  const updatePayload: Record<string, string | null> = { status };
-  if (resolvedCode) {
-    updatePayload.invite_code = resolvedCode;
+  const updatePayload: Record<string, string | null> = {};
+  if (status) updatePayload.status = status;
+  if (resolvedCode) updatePayload.invite_code = resolvedCode;
+  if (email) updatePayload.email = email;
+  if (name) updatePayload.name = name;
+  if (whatBuilding) updatePayload.what_building = whatBuilding;
+  if (howHeard) updatePayload.how_heard = howHeard;
+
+  if (Object.keys(updatePayload).length === 0) {
+    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
   }
 
   const { data, error } = await supabase
@@ -70,8 +93,31 @@ export async function PATCH(
     );
   }
 
+  // Send welcome email on approval
+  let emailSent = false;
+  if (status === "approved" && resolvedCode && data) {
+    const recipientEmail = (data as Record<string, string>).email;
+    const recipientName = (data as Record<string, string>).name;
+    if (recipientEmail && recipientName) {
+      const from = fromEmail && SENDER_OPTIONS[fromEmail]
+        ? SENDER_OPTIONS[fromEmail]
+        : undefined;
+      const result = await sendEmail({
+        to: recipientEmail,
+        subject: welcomeEmailSubject(),
+        html: welcomeEmailHtml({ name: recipientName, inviteCode: resolvedCode }),
+        from,
+      });
+      emailSent = result.success && !("skipped" in result);
+      if (!result.success) {
+        console.error("Welcome email failed for", recipientEmail, result.error);
+      }
+    }
+  }
+
   return NextResponse.json({
     request: data,
     inviteCode: resolvedCode ?? null,
+    emailSent,
   });
 }
