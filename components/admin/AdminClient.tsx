@@ -915,7 +915,7 @@ interface AdminStatsData {
 function StatCard({ label, value, accent }: { label: string; value: number; accent?: string }) {
   return (
     <div
-      className="flex flex-col gap-1 px-4 py-3 rounded-lg min-w-[120px]"
+      className="flex flex-col gap-1 px-4 py-3 rounded-lg"
       style={{
         background: "var(--bg-surface)",
         border: "1px solid var(--studio-border)",
@@ -937,7 +937,7 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
 function AdminStats({ stats }: { stats: AdminStatsData | null }) {
   if (!stats) return null;
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
       <StatCard label="Total requests" value={stats.totalRequests} />
       <StatCard label="Pending" value={stats.pending} accent="#fbbf24" />
       <StatCard label="Approved" value={stats.approved} accent="#34d399" />
