@@ -15,20 +15,27 @@ interface SendEmailOptions {
   subject: string;
   html: string;
   from?: string;
+  replyTo?: string;
 }
 
-export async function sendEmail({ to, subject, html, from }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, from, replyTo }: SendEmailOptions) {
   const resend = getResend();
   if (!resend) {
     console.warn("RESEND_API_KEY not set - skipping email send to", to);
     return { success: true, skipped: true };
   }
 
+  const fromAddr = from || FROM_EMAIL;
+  // Extract email from "Name <email>" format for replyTo fallback
+  const emailMatch = fromAddr.match(/<(.+)>/);
+  const resolvedReplyTo = replyTo || (emailMatch ? emailMatch[1] : fromAddr);
+
   const { data, error } = await resend.emails.send({
-    from: from || FROM_EMAIL,
+    from: fromAddr,
     to,
     subject,
     html,
+    replyTo: resolvedReplyTo,
   });
 
   if (error) {
