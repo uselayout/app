@@ -139,7 +139,7 @@ export default function CliPage() {
           language="bash"
         />
         <p className="text-base text-gray-600 leading-relaxed">
-          This detects Claude Code, Cursor, Antigravity, and Windsurf and configures whichever are present. To target a specific tool:
+          This detects Claude Code, Cursor, Windsurf, Copilot, Codex, and Gemini CLI and configures whichever are present. To target a specific tool:
         </p>
         <CopyBlock
           code={`npx @layoutdesign/context install --target claude
@@ -186,7 +186,7 @@ npx @layoutdesign/context install
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Available MCP Tools</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The MCP server exposes 10 tools your AI agent can call automatically:
+          The MCP server exposes 12 tools your AI agent can call automatically:
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
