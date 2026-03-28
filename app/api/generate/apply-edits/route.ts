@@ -108,13 +108,24 @@ export async function POST(request: NextRequest) {
     ? buildStyleEditPrompt(code, styleEdits as StyleEdit[], layoutMd)
     : buildAnnotationPrompt(code, annotations as ElementAnnotation[], layoutMd);
 
-  const client = new Anthropic({ apiKey });
+  const client = new Anthropic({ apiKey, timeout: 90_000 });
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 16_000,
-    messages: [{ role: "user", content: prompt }],
-  });
+  let response: Anthropic.Message;
+  try {
+    response = await client.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 32_000,
+      messages: [{ role: "user", content: prompt }],
+    });
+  } catch (err) {
+    console.error("[apply-edits] Anthropic API error:", err);
+    const message = err instanceof Error ? err.message : "Code generation failed";
+    const isTimeout = message.includes("timeout") || message.includes("aborted");
+    return Response.json(
+      { error: isTimeout ? "Request timed out. Try a smaller change or try again." : message },
+      { status: isTimeout ? 504 : 502 },
+    );
+  }
 
   const text = response.content
     .filter((b): b is Anthropic.TextBlock => b.type === "text")
@@ -124,6 +135,10 @@ export async function POST(request: NextRequest) {
   // Extract code from markdown fence if present
   const fenceMatch = text.match(/```(?:tsx?|jsx?|react)?\n([\s\S]*?)```/);
   const updatedCode = fenceMatch ? fenceMatch[1].trim() : text.trim();
+
+  if (!updatedCode) {
+    return Response.json({ error: "No code returned from AI. Try again." }, { status: 502 });
+  }
 
   void logUsage({
     userId,

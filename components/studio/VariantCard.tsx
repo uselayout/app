@@ -82,8 +82,10 @@ export function VariantCard({
   const [refineText, setRefineText] = useState("");
   const [inspectMode, setInspectMode] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
+  const [applyElapsed, setApplyElapsed] = useState(0);
   const [applyError, setApplyError] = useState<string | null>(null);
   const applyAbortRef = useRef<AbortController | null>(null);
+  const applyTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [previewEntryId, setPreviewEntryId] = useState<string | undefined>();
   const [contentHeight, setContentHeight] = useState<number | null>(null);
 
@@ -208,6 +210,8 @@ export function VariantCard({
     const timeout = setTimeout(() => abort.abort(), 60_000);
     setIsApplying(true);
     setApplyError(null);
+    setApplyElapsed(0);
+    applyTimerRef.current = setInterval(() => setApplyElapsed((t) => t + 1), 1000);
 
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -230,7 +234,7 @@ export function VariantCard({
         const msg = errData.error || `Failed (${res.status})`;
         console.error("Style edit failed:", msg);
         setApplyError(msg);
-        setTimeout(() => setApplyError(null), 4000);
+        setTimeout(() => setApplyError(null), 6000);
         return;
       }
 
@@ -247,9 +251,18 @@ export function VariantCard({
       );
       onCodeUpdate(updatedCode, newHistory);
     } catch (err) {
-      if ((err as Error).name !== "AbortError") console.error("Style edit error:", err);
+      if ((err as Error).name === "AbortError") {
+        setApplyError("Request timed out. Try again.");
+        setTimeout(() => setApplyError(null), 4000);
+      } else {
+        console.error("Style edit error:", err);
+        setApplyError("Something went wrong. Try again.");
+        setTimeout(() => setApplyError(null), 4000);
+      }
     } finally {
       clearTimeout(timeout);
+      if (applyTimerRef.current) clearInterval(applyTimerRef.current);
+      applyTimerRef.current = null;
       applyAbortRef.current = null;
       setIsApplying(false);
     }
@@ -263,6 +276,8 @@ export function VariantCard({
     const timeout = setTimeout(() => abort.abort(), 60_000);
     setIsApplying(true);
     setApplyError(null);
+    setApplyElapsed(0);
+    applyTimerRef.current = setInterval(() => setApplyElapsed((t) => t + 1), 1000);
 
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -285,7 +300,7 @@ export function VariantCard({
         const msg = errData.error || `Failed (${res.status})`;
         console.error("Annotation edit failed:", msg);
         setApplyError(msg);
-        setTimeout(() => setApplyError(null), 4000);
+        setTimeout(() => setApplyError(null), 6000);
         return;
       }
 
@@ -300,9 +315,18 @@ export function VariantCard({
       );
       onCodeUpdate(updatedCode, newHistory);
     } catch (err) {
-      if ((err as Error).name !== "AbortError") console.error("Annotation edit error:", err);
+      if ((err as Error).name === "AbortError") {
+        setApplyError("Request timed out. Try again.");
+        setTimeout(() => setApplyError(null), 4000);
+      } else {
+        console.error("Annotation edit error:", err);
+        setApplyError("Something went wrong. Try again.");
+        setTimeout(() => setApplyError(null), 4000);
+      }
     } finally {
       clearTimeout(timeout);
+      if (applyTimerRef.current) clearInterval(applyTimerRef.current);
+      applyTimerRef.current = null;
       applyAbortRef.current = null;
       setIsApplying(false);
     }
@@ -385,7 +409,7 @@ export function VariantCard({
         <div className="absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-black/40">
           <div className="flex items-center gap-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--studio-border)] px-3 py-2">
             <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
-            <span className="text-[10px] text-[var(--text-secondary)]">Applying changes...</span>
+            <span className="text-[10px] text-[var(--text-secondary)]">Applying changes{applyElapsed > 0 ? ` ${applyElapsed}s` : "..."}</span>
           </div>
         </div>
       )}
@@ -466,7 +490,7 @@ export function VariantCard({
                   ) : (
                     <>
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
-                      <span className="text-xs text-[var(--text-secondary)]">Applying changes...</span>
+                      <span className="text-xs text-[var(--text-secondary)]">Applying changes{applyElapsed > 0 ? ` ${applyElapsed}s` : "..."}</span>
                       <button
                         onClick={() => applyAbortRef.current?.abort()}
                         className="ml-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"

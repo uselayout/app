@@ -310,9 +310,11 @@ export function ElementInspector({
   const [annotationText, setAnnotationText] = useState("");
   const popoverRef = useRef<HTMLDivElement>(null);
   const selectedRef = useRef<SelectedElement | null>(null);
+  const pendingEditsRef = useRef<StyleEdit[]>([]);
 
-  // Keep ref in sync so message listener can read without re-triggering effect
+  // Keep refs in sync so message listener can read without re-triggering effect
   useEffect(() => { selectedRef.current = selected; }, [selected]);
+  useEffect(() => { pendingEditsRef.current = pendingEdits; }, [pendingEdits]);
 
   // Build token suggestions from design tokens
   const tokenSuggestions: TokenSuggestion[] = (designTokens ?? []).map((t) => ({
@@ -351,6 +353,14 @@ export function ElementInspector({
       if (!msg?.type) return;
 
       if (msg.type === "layout-inspector-select") {
+        const isSameElement = selectedRef.current?.elementId === msg.elementId;
+
+        // Auto-apply pending edits when switching to a different element
+        if (!isSameElement && pendingEditsRef.current.length > 0) {
+          onStyleEdits(pendingEditsRef.current);
+          setPendingEdits([]);
+        }
+
         setSelected({
           elementId: msg.elementId,
           elementTag: msg.elementTag,
@@ -358,7 +368,11 @@ export function ElementInspector({
           rect: msg.rect,
           computedStyles: msg.computedStyles,
         });
-        setPendingEdits([]);
+
+        // Only clear pending edits when switching to a different element
+        if (!isSameElement) {
+          setPendingEdits([]);
+        }
       }
 
       if (msg.type === "layout-inspector-style-updated" && selectedRef.current) {
