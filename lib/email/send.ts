@@ -14,17 +14,18 @@ interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
+  from?: string;
 }
 
-export async function sendEmail({ to, subject, html }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, from }: SendEmailOptions) {
   const resend = getResend();
   if (!resend) {
-    console.warn("RESEND_API_KEY not set — skipping email send to", to);
+    console.warn("RESEND_API_KEY not set - skipping email send to", to);
     return { success: true, skipped: true };
   }
 
   const { data, error } = await resend.emails.send({
-    from: FROM_EMAIL,
+    from: from || FROM_EMAIL,
     to,
     subject,
     html,

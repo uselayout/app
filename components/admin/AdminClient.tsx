@@ -535,6 +535,10 @@ function AccessRequestsTab({ toast, onPendingCountChange }: { toast: (msg: strin
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<"" | "pending" | "approved" | "rejected">("");
   const [actioning, setActioning] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ id: string; field: "name" | "email"; value: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [senderEmail, setSenderEmail] = useState("matt@layout.design");
+  const [sendingTest, setSendingTest] = useState(false);
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -567,17 +571,24 @@ function AccessRequestsTab({ toast, onPendingCountChange }: { toast: (msg: strin
   ) => {
     setActioning(id);
     try {
+      const payload: Record<string, string> = { status };
+      if (status === "approved") {
+        payload.fromEmail = senderEmail;
+      }
       const res = await fetch(`/api/admin/access-requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Failed to update");
-      const json = await res.json() as { inviteCode?: string };
+      const json = await res.json() as { inviteCode?: string; emailSent?: boolean };
 
       if (status === "approved" && json.inviteCode) {
         copyToClipboard(json.inviteCode);
-        toast(`Approved — invite code ${json.inviteCode} copied to clipboard`);
+        const emailMsg = json.emailSent
+          ? ", welcome email sent"
+          : " (email not sent)";
+        toast(`Approved - code ${json.inviteCode} copied${emailMsg}`);
       } else {
         toast(status === "approved" ? "Request approved" : "Request rejected");
       }
@@ -587,6 +598,26 @@ function AccessRequestsTab({ toast, onPendingCountChange }: { toast: (msg: strin
       toast("Failed to update request", "error");
     } finally {
       setActioning(null);
+    }
+  };
+
+  const handleFieldSave = async () => {
+    if (!editing || !editing.value.trim()) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/access-requests/${editing.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [editing.field]: editing.value.trim() }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      toast(`Updated ${editing.field}`);
+      setEditing(null);
+      void fetchRequests();
+    } catch {
+      toast(`Failed to update ${editing.field}`, "error");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -613,21 +644,75 @@ function AccessRequestsTab({ toast, onPendingCountChange }: { toast: (msg: strin
         <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>
           Access requests
         </h2>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-          className="ml-auto text-sm px-3 py-1.5 rounded-lg outline-none"
-          style={{
-            background: "var(--bg-elevated)",
-            border: "1px solid var(--studio-border)",
-            color: "var(--text-secondary)",
-          }}
-        >
-          <option value="">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
+        <div className="ml-auto flex items-center gap-2">
+          <label className="text-xs" style={{ color: "var(--text-muted)" }}>Send from:</label>
+          <select
+            value={senderEmail}
+            onChange={(e) => setSenderEmail(e.target.value)}
+            className="text-sm px-3 py-1.5 rounded-lg outline-none"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--studio-border)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <option value="matt@layout.design">matt@layout.design</option>
+            <option value="ben@layout.design">ben@layout.design</option>
+            <option value="hello@layout.design">hello@layout.design</option>
+          </select>
+          <button
+            onClick={async () => {
+              const to = prompt("Send test welcome email to:");
+              if (!to) return;
+              setSendingTest(true);
+              try {
+                const res = await fetch("/api/admin/test-email", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ to, fromEmail: senderEmail }),
+                });
+                const json = await res.json() as { success?: boolean; skipped?: boolean; error?: string };
+                if (!res.ok) {
+                  toast(json.error || "Failed to send test email", "error");
+                } else if (json.skipped) {
+                  toast("RESEND_API_KEY not set, email skipped", "error");
+                } else {
+                  toast(`Test email sent to ${to}`);
+                }
+              } catch {
+                toast("Failed to send test email", "error");
+              } finally {
+                setSendingTest(false);
+              }
+            }}
+            disabled={sendingTest}
+            className="text-xs px-3 py-1.5 rounded-lg transition-all"
+            style={{
+              background: "rgba(96,165,250,0.1)",
+              color: "#60a5fa",
+              border: "1px solid rgba(96,165,250,0.2)",
+              opacity: sendingTest ? 0.5 : 1,
+              cursor: sendingTest ? "not-allowed" : "pointer",
+            }}
+          >
+            {sendingTest ? "Sending..." : "Send test email"}
+          </button>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            className="text-sm px-3 py-1.5 rounded-lg outline-none"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--studio-border)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
       </div>
 
       {loading ? (
@@ -640,10 +725,10 @@ function AccessRequestsTab({ toast, onPendingCountChange }: { toast: (msg: strin
         </p>
       ) : (
         <div
-          className="rounded-xl overflow-hidden"
+          className="rounded-xl overflow-x-auto"
           style={{ border: "1px solid var(--studio-border)" }}
         >
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" style={{ minWidth: 900 }}>
             <thead>
               <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--studio-border)" }}>
                 {["Name", "Email", "What building", "How heard", "Status", "Date", "Actions"].map((h) => (
@@ -667,10 +752,55 @@ function AccessRequestsTab({ toast, onPendingCountChange }: { toast: (msg: strin
                   }}
                 >
                   <td className="px-4 py-3 font-medium" style={{ color: "var(--text-primary)" }}>
-                    {row.name}
+                    {editing?.id === row.id && editing.field === "name" ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          autoFocus
+                          value={editing.value}
+                          onChange={(e) => setEditing({ ...editing, value: e.target.value })}
+                          onKeyDown={(e) => { if (e.key === "Enter") void handleFieldSave(); if (e.key === "Escape") setEditing(null); }}
+                          className="px-2 py-0.5 rounded text-sm w-full outline-none"
+                          style={{ background: "var(--bg-elevated)", border: "1px solid var(--studio-border-focus)", color: "var(--text-primary)" }}
+                          disabled={saving}
+                        />
+                        <button onClick={() => void handleFieldSave()} disabled={saving} className="text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(52,211,153,0.1)", color: "#34d399" }}>✓</button>
+                        <button onClick={() => setEditing(null)} className="text-xs px-1.5 py-0.5 rounded" style={{ color: "var(--text-muted)" }}>✗</button>
+                      </div>
+                    ) : (
+                      <span
+                        className="cursor-pointer hover:underline"
+                        onClick={() => setEditing({ id: row.id, field: "name", value: row.name })}
+                        title="Click to edit"
+                      >
+                        {row.name}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--text-secondary)" }}>
-                    {row.email}
+                    {editing?.id === row.id && editing.field === "email" ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          autoFocus
+                          type="email"
+                          value={editing.value}
+                          onChange={(e) => setEditing({ ...editing, value: e.target.value })}
+                          onKeyDown={(e) => { if (e.key === "Enter") void handleFieldSave(); if (e.key === "Escape") setEditing(null); }}
+                          className="px-2 py-0.5 rounded text-xs font-mono w-full outline-none"
+                          style={{ background: "var(--bg-elevated)", border: "1px solid var(--studio-border-focus)", color: "var(--text-primary)" }}
+                          disabled={saving}
+                        />
+                        <button onClick={() => void handleFieldSave()} disabled={saving} className="text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(52,211,153,0.1)", color: "#34d399" }}>✓</button>
+                        <button onClick={() => setEditing(null)} className="text-xs px-1.5 py-0.5 rounded" style={{ color: "var(--text-muted)" }}>✗</button>
+                      </div>
+                    ) : (
+                      <span
+                        className="cursor-pointer hover:underline"
+                        onClick={() => setEditing({ id: row.id, field: "email", value: row.email })}
+                        title="Click to edit"
+                      >
+                        {row.email}
+                      </span>
+                    )}
                   </td>
                   <td
                     className="px-4 py-3 max-w-48 truncate"
