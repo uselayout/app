@@ -95,7 +95,7 @@ export default function GettingStartedPage() {
             <code className="text-sm font-mono text-gray-300">npx @layoutdesign/context install</code>
           </div>
           <p className="mt-2 text-xs text-gray-500">
-            Auto-detects Claude Code, Cursor, Antigravity, and Windsurf. Three free starter kits included.{" "}
+            Auto-detects Claude Code, Cursor, Windsurf, Copilot, Codex, and Gemini CLI. Three free starter kits included.{" "}
             <Link href="/docs/cli" className="text-gray-900 font-medium hover:underline">
               Full CLI guide →
             </Link>

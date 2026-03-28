@@ -35,8 +35,8 @@ export default function WalkthroughPage() {
         <code className="text-sm bg-emerald-100 rounded px-1.5 py-0.5">
           npx @layoutdesign/context install
         </code>{" "}
-        to configure the MCP server for Claude Code, Cursor, Antigravity, or
-        Windsurf — then{" "}
+        to configure the MCP server for Claude Code, Cursor, Windsurf, Copilot,
+        Codex, or Gemini CLI — then{" "}
         <Link href="#cli" className="underline font-medium">
           skip to step 7
         </Link>
@@ -544,7 +544,7 @@ npx @layoutdesign/context install`}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             install
           </code>{" "}
-          command detects Claude Code, Cursor, Antigravity, and Windsurf and writes the MCP
+          command detects Claude Code, Cursor, Windsurf, Copilot, Codex, and Gemini CLI and writes the MCP
           server configuration to whichever are present. No manual JSON
           editing required.
         </p>

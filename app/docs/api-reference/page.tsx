@@ -7,7 +7,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "API Reference | Layout Docs",
   description:
-    "Complete reference for the 10 MCP tools exposed by the Layout CLI for AI coding agents.",
+    "Complete reference for the 12 MCP tools exposed by the Layout CLI for AI coding agents.",
 };
 
 const tools = [
@@ -335,7 +335,7 @@ export default function ApiReferencePage() {
       <div className="space-y-4">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">API Reference</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Layout CLI exposes 10 MCP tools that AI agents call during
+          Layout CLI exposes 12 MCP tools that AI agents call during
           development. These tools give your agent structured access to design
           tokens, component specs, compliance checking, live preview, and a
           two-way Figma bridge: everything needed to build UI that stays on

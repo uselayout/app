@@ -178,7 +178,7 @@ const OBJECTIONS: Objection[] = [
     question:
       "Magic Patterns and MagicPath have design system import too.",
     answer:
-      "They import your design system into their canvas. Layout exports it into your IDE. They generate prototypes you screenshot and hand off. Layout generates context that makes Claude Code, Cursor, Antigravity, and Copilot produce on-brand code directly in your codebase. No copy-paste. No handoff gap.",
+      "They import your design system into their canvas. Layout exports it into your IDE. They generate prototypes you screenshot and hand off. Layout generates context that makes Claude Code, Cursor, Windsurf, Copilot, Codex, and Gemini CLI produce on-brand code directly in your codebase. No copy-paste. No handoff gap.",
   },
   {
     question: "Figma Dev Mode has an MCP server now.",
@@ -405,7 +405,7 @@ export default function ComparePage() {
         <p className="text-sm text-gray-600 leading-relaxed">
           Layout is infrastructure, not a canvas. It sits between your design
           system (in Figma or on a live website) and your AI coding agent (in
-          Claude Code, Cursor, Antigravity, Copilot, or Windsurf). Your designers stay in
+          Claude Code, Cursor, Windsurf, Copilot, Codex, or Gemini CLI). Your designers stay in
           Figma. Your developers stay in their terminal. Layout is invisible
           between them.
         </p>
