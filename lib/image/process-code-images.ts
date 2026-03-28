@@ -24,6 +24,10 @@ interface ProcessOptions {
   brandStyle?: string;
   /** Force regeneration even for images that already have real URLs */
   forceRegenerate?: boolean;
+  /** AbortSignal for cancellation */
+  signal?: AbortSignal;
+  /** Progress callback: called with (completed, total) as each image finishes */
+  onProgress?: (completed: number, total: number) => void;
 }
 
 export interface ProcessCodeImagesResult {
@@ -60,8 +64,15 @@ export async function processCodeImages(
     const googleKey = getStoredGoogleApiKey();
     if (googleKey) headers["X-Google-Api-Key"] = googleKey;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120_000);
+    // Use caller's signal if provided, otherwise create our own with 5-minute timeout
+    const externalSignal = options.signal;
+    const timeoutController = new AbortController();
+    const timeout = setTimeout(() => timeoutController.abort(), 300_000);
+
+    // Combine caller signal + timeout signal
+    const combinedSignal = externalSignal
+      ? combineSignals(externalSignal, timeoutController.signal)
+      : timeoutController.signal;
 
     let res: Response;
     try {
@@ -77,7 +88,7 @@ export async function processCodeImages(
           brandStyle: options.brandStyle,
           forceRegenerate: options.forceRegenerate,
         }),
-        signal: controller.signal,
+        signal: combinedSignal,
       });
     } finally {
       clearTimeout(timeout);
@@ -95,6 +106,15 @@ export async function processCodeImages(
       return { code, skippedNoKey: false, placeholderCount, failedCount: placeholderCount, errors: [apiErr] };
     }
 
+    // Check if the response is SSE (streaming) or JSON
+    const contentType = res.headers.get("content-type") ?? "";
+
+    if (contentType.includes("text/event-stream")) {
+      // SSE streaming: parse events for progressive updates
+      return await consumeSSEStream(res, code, placeholderCount, options.onProgress);
+    }
+
+    // Fallback: standard JSON response
     const data = await res.json();
 
     if (data.failedCount > 0) {
@@ -102,6 +122,11 @@ export async function processCodeImages(
         `[process-code-images] ${data.failedCount}/${data.totalCount} images failed to generate`,
         data.errors?.[0] ?? ""
       );
+    }
+
+    // Report total count as progress if callback provided
+    if (options.onProgress && data.totalCount) {
+      options.onProgress(data.totalCount - (data.failedCount ?? 0), data.totalCount);
     }
 
     return {
@@ -112,8 +137,97 @@ export async function processCodeImages(
       errors: (data.errors as string[]) ?? [],
     };
   } catch (err) {
+    if ((err as Error).name === "AbortError") {
+      throw err; // Let the caller handle abort
+    }
     console.warn("[process-code-images] Failed:", err);
     const errMsg = err instanceof Error ? err.message : "Image processing failed";
     return { code, skippedNoKey: false, placeholderCount, failedCount: placeholderCount, errors: [errMsg] };
   }
+}
+
+// ---------------------------------------------------------------------------
+// SSE stream consumer
+// ---------------------------------------------------------------------------
+
+async function consumeSSEStream(
+  res: Response,
+  originalCode: string,
+  placeholderCount: number,
+  onProgress?: (completed: number, total: number) => void,
+): Promise<ProcessCodeImagesResult> {
+  const reader = res.body?.getReader();
+  if (!reader) {
+    return { code: originalCode, skippedNoKey: false, placeholderCount, failedCount: placeholderCount, errors: ["No response body"] };
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let latestHtml = originalCode;
+  let totalCount = placeholderCount;
+  let failedCount = 0;
+  let completed = 0;
+  const errors: string[] = [];
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+
+    // Parse SSE events from buffer
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? ""; // Keep incomplete line in buffer
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const jsonStr = line.slice(6).trim();
+      if (!jsonStr) continue;
+
+      try {
+        const event = JSON.parse(jsonStr);
+
+        if (event.type === "progress") {
+          completed++;
+          totalCount = event.total ?? totalCount;
+          onProgress?.(completed, totalCount);
+        } else if (event.type === "error") {
+          failedCount++;
+          if (event.message) errors.push(event.message);
+          onProgress?.(completed, totalCount);
+        } else if (event.type === "complete") {
+          latestHtml = event.html ?? latestHtml;
+          totalCount = event.totalCount ?? totalCount;
+          failedCount = event.failedCount ?? failedCount;
+          if (event.errors) errors.push(...event.errors);
+        }
+      } catch {
+        // Skip malformed SSE events
+      }
+    }
+  }
+
+  return {
+    code: latestHtml,
+    skippedNoKey: false,
+    placeholderCount: totalCount,
+    failedCount,
+    errors,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Signal combiner
+// ---------------------------------------------------------------------------
+
+function combineSignals(...signals: AbortSignal[]): AbortSignal {
+  const controller = new AbortController();
+  for (const signal of signals) {
+    if (signal.aborted) {
+      controller.abort(signal.reason);
+      return controller.signal;
+    }
+    signal.addEventListener("abort", () => controller.abort(signal.reason), { once: true });
+  }
+  return controller.signal;
 }

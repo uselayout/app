@@ -40,7 +40,7 @@ interface VariantCardProps {
   onRegenerate: (feedback?: string) => void;
   onResponsive?: () => void;
   onPromoteToLibrary?: () => void;
-  onRegenerateImages?: () => void;
+  onRegenerateImages?: (forceAll?: boolean) => void;
   isProcessingImages?: boolean;
   onViewComparison?: () => void;
   comparisonCount?: number;
@@ -641,9 +641,9 @@ export function VariantCard({
           </Tip>
         )}
         {onRegenerateImages && (
-          <Tip label="Regenerate images">
+          <Tip label="Generate images (Shift+click: regenerate all)">
           <button
-            onClick={(e) => { e.stopPropagation(); onRegenerateImages(); }}
+            onClick={(e) => { e.stopPropagation(); onRegenerateImages(e.shiftKey); }}
             disabled={isProcessingImages}
             className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50"
           >

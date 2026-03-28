@@ -78,14 +78,22 @@ export function getInspectorScript(): string {
     var id = ensureId(el);
     var rect = el.getBoundingClientRect();
     var props = getComputedProps(el);
-    window.parent.postMessage({
+    var msg = {
       type: 'layout-inspector-select',
       elementId: id,
       elementTag: el.tagName.toLowerCase(),
       elementClasses: el.className || '',
       rect: { x: rect.left, y: rect.top, width: rect.width, height: rect.height },
       computedStyles: props
-    }, '*');
+    };
+    // Include image generation data if this is an img with data-generate-image
+    if (el.tagName === 'IMG' && el.getAttribute('data-generate-image')) {
+      msg.imagePrompt = el.getAttribute('data-generate-image') || '';
+      msg.imageStyle = el.getAttribute('data-image-style') || 'photo';
+      msg.imageRatio = el.getAttribute('data-image-ratio') || '16:9';
+      msg.imageSrc = el.src || '';
+    }
+    window.parent.postMessage(msg, '*');
   }
 
   document.addEventListener('mousemove', function(e) {
@@ -207,6 +215,8 @@ export function getInspectorScript(): string {
       var val = msg.value;
       if (prop === 'textContent') {
         selected.textContent = val;
+      } else if (prop === 'src' && selected.tagName === 'IMG') {
+        selected.src = val;
       } else {
         selected.style[prop] = val;
       }

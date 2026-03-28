@@ -43,6 +43,10 @@ export interface PipelineOptions {
   concurrency?: number;
   /** Callback when an individual image completes */
   onImageComplete?: (index: number, url: string) => void;
+  /** Callback when an individual image fails */
+  onImageError?: (index: number, error: string) => void;
+  /** Callback when total image count is known */
+  onTotalCount?: (count: number) => void;
   /** User-provided Google AI API key (BYOK) */
   googleApiKey?: string;
   /** Force regeneration even for images that already have real URLs */
@@ -247,6 +251,9 @@ export async function processImagePlaceholders(
     (p, i, arr) => arr.findIndex((q) => q.match === p.match) === i
   );
 
+  // Report total count for progress tracking
+  options.onTotalCount?.(uniquePlaceholders.length + jsxCount);
+
   const concurrency = options.concurrency ?? 3;
   let result = preprocessed;
   let failedCount = 0;
@@ -321,6 +328,7 @@ export async function processImagePlaceholders(
           );
 
         result = result.replaceAll(placeholder.match, fallback);
+        options.onImageError?.(i + j, errMsg);
         console.warn(
           `[image-pipeline] Failed to generate image for "${placeholder.prompt}":`,
           errMsg
