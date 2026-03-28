@@ -37,7 +37,7 @@ export function ExtractSection() {
               Figma in 5–15 seconds. Websites in 8–20 seconds.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              From URL paste to a complete, structured layout.md — a 9-section context file built for LLM consumption. Not a token dump. Semantic, actionable, ready to use.
+              From URL paste to a complete, structured layout.md — a multi-section context file built for LLM consumption. Not a token dump. Semantic, actionable, ready to use.
             </p>
           </motion.div>
         </div>
