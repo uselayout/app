@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { registerBrowser, deregisterBrowser } from "@/lib/server/active-streams";
 import {
   extractCSSVariablesScript,
   extractFontsScript,
@@ -41,6 +42,7 @@ export async function extractFromWebsite({
   onProgress,
 }: WebsiteExtractionOptions): Promise<ExtractionResult> {
   const browser = await chromium.launch({ headless: true });
+  registerBrowser(browser);
 
   try {
     const page = await browser.newPage();
@@ -149,6 +151,7 @@ export async function extractFromWebsite({
       computedStyles,
     };
   } finally {
+    deregisterBrowser(browser);
     await browser.close();
   }
 }

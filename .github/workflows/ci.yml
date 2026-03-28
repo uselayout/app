@@ -35,3 +35,48 @@ jobs:
           DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Coolify staging deploy
+        env:
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK_STAGING }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          if [ -n "$COOLIFY_WEBHOOK" ]; then
+            curl -sf -X POST "$COOLIFY_WEBHOOK" \
+              -H "Authorization: Bearer $COOLIFY_TOKEN"
+          else
+            echo "Coolify staging webhook not configured yet"
+          fi
+
+  deploy-production:
+    name: Deploy to Production
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trigger Coolify production deploy
+        env:
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK_PRODUCTION }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          if [ -n "$COOLIFY_WEBHOOK" ]; then
+            curl -sf -X POST "$COOLIFY_WEBHOOK" \
+              -H "Authorization: Bearer $COOLIFY_TOKEN"
+          else
+            echo "Coolify production webhook not configured yet"
+          fi
+
+      - name: Tag deployment
+        run: |
+          DEPLOY_TAG="deploy/$(date -u +%Y-%m-%d-%H%M%S)"
+          git tag "$DEPLOY_TAG"
+          git push origin --tags

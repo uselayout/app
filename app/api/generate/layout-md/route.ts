@@ -3,10 +3,11 @@ import { z } from "zod/v4";
 import { createLayoutMdStream } from "@/lib/claude/synthesise";
 import { resizeScreenshot } from "@/lib/util/resize-screenshot";
 import { auth } from "@/lib/auth";
-import { checkQuota, deductCredit } from "@/lib/billing/credits";
+import { checkQuota, deductCredit, refundCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
 import { generateLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
+import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 import type { ExtractionResult } from "@/lib/types";
 import type { AiMode } from "@/lib/types/billing";
 
@@ -75,6 +76,13 @@ export async function POST(request: NextRequest) {
     return rateLimitResponse(reset);
   }
 
+  if (isShuttingDown()) {
+    return NextResponse.json(
+      { error: "Server is restarting. Please retry in a few seconds." },
+      { status: 503, headers: { "Retry-After": "10" } }
+    );
+  }
+
   const userApiKey = request.headers.get("X-Api-Key") || undefined;
 
   // Determine AI mode: BYOK (user's key) or hosted (platform key)
@@ -117,9 +125,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const streamController = registerStream();
   const { stream, usage } = createLayoutMdStream(extractionData, apiKey);
 
-  // Fire-and-forget: log usage after stream completes
+  // Log usage on success, refund credit on failure
   void usage
     .then((u) =>
       logUsage({
@@ -131,7 +140,15 @@ export async function POST(request: NextRequest) {
         model: "claude-sonnet-4-6",
       })
     )
-    .catch((err) => console.error("Usage logging failed:", err));
+    .catch(async (err) => {
+      console.error("Stream failed, refunding credit:", err);
+      if (mode === "hosted") {
+        await refundCredit(userId, "layout-md");
+      }
+    })
+    .finally(() => {
+      deregisterStream(streamController);
+    });
 
   return new Response(stream, {
     headers: {

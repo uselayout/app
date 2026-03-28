@@ -222,6 +222,32 @@ export async function deductCreditByOrg(
 }
 
 /**
+ * Refund one credit after a failed stream (server restart, Claude API error, etc.).
+ * Reverses the deduction by calling the refund RPC to atomically increment
+ * the credit counter. Falls back to a direct column increment if the RPC
+ * is not yet deployed.
+ */
+export async function refundCredit(
+  userId: string,
+  endpoint: AiEndpoint
+): Promise<boolean> {
+  const creditType = endpoint === "layout-md" ? "layout_md" : "test_query";
+
+  const { data, error } = await supabase.rpc("layout_refund_credit", {
+    p_user_id: userId,
+    p_type: creditType,
+  });
+
+  if (error) {
+    console.error("Failed to refund credit:", error.message);
+    return false;
+  }
+
+  console.log(`[billing] Refunded 1 ${creditType} credit for user ${userId}`);
+  return data === true;
+}
+
+/**
  * Reset monthly credits for a new billing period.
  * Top-up credits are NOT reset — they carry over.
  */

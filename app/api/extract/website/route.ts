@@ -7,6 +7,7 @@ import { extractLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/rat
 import { getClientIp } from "@/lib/get-client-ip";
 import { auth } from "@/lib/auth";
 import { playwrightLimit } from "@/lib/concurrency";
+import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 
 const RequestSchema = z.object({
   url: z.url(),
@@ -48,6 +49,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (isShuttingDown()) {
+    return NextResponse.json(
+      { error: "Server is restarting. Please retry in a few seconds." },
+      { status: 503, headers: { "Retry-After": "10" } }
+    );
+  }
+
   const { url, projectId } = parsed.data;
 
   try {
@@ -60,6 +68,7 @@ export async function POST(request: NextRequest) {
   }
 
   const encoder = new TextEncoder();
+  const streamController = registerStream();
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -101,8 +110,12 @@ export async function POST(request: NextRequest) {
         send({ type: "error", message });
       } finally {
         clearInterval(heartbeat);
+        deregisterStream(streamController);
         controller.close();
       }
+    },
+    cancel() {
+      deregisterStream(streamController);
     },
   });
 

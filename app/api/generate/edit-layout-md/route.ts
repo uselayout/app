@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { createEditStream } from "@/lib/claude/edit";
 import { auth } from "@/lib/auth";
-import { checkQuota, deductCredit } from "@/lib/billing/credits";
+import { checkQuota, deductCredit, refundCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
 import { generateLimiter } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
+import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 import type { AiMode } from "@/lib/types/billing";
 
 const RequestSchema = z.object({
@@ -44,6 +45,13 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Authentication required" }, { status: 401 });
   }
 
+  if (isShuttingDown()) {
+    return NextResponse.json(
+      { error: "Server is restarting. Please retry in a few seconds." },
+      { status: 503, headers: { "Retry-After": "10" } }
+    );
+  }
+
   const userId = session.user.id;
   const userApiKey = request.headers.get("X-Api-Key") || undefined;
 
@@ -75,6 +83,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { instruction, layoutMd } = parsed.data;
+  const streamController = registerStream();
   const { stream, usage } = createEditStream(instruction, layoutMd, apiKey);
 
   void usage
@@ -87,7 +96,15 @@ export async function POST(request: NextRequest) {
         model: "claude-sonnet-4-6",
       })
     )
-    .catch((err) => console.error("Usage logging failed:", err));
+    .catch(async (err) => {
+      console.error("Stream failed, refunding credit:", err);
+      if (mode === "hosted") {
+        await refundCredit(userId, "edit");
+      }
+    })
+    .finally(() => {
+      deregisterStream(streamController);
+    });
 
   return new Response(stream, {
     headers: {

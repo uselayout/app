@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 import { ProjectHydrator } from "@/components/ProjectHydrator";
 import { OrgProvider } from "@/components/OrgProvider";
+import { DeploymentBanner } from "@/components/DeploymentBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -98,6 +99,7 @@ export default function RootLayout({
         <OrgProvider>
           {children}
         </OrgProvider>
+        <DeploymentBanner />
         <Toaster
           position="bottom-right"
           toastOptions={{

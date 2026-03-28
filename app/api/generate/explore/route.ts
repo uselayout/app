@@ -1,9 +1,10 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { createExploreStreamForModel, createRefineStreamForModel } from "@/lib/ai/providers";
 import { auth } from "@/lib/auth";
-import { checkQuota, deductCredit } from "@/lib/billing/credits";
+import { checkQuota, deductCredit, refundCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
+import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 import type { AiMode } from "@/lib/types/billing";
 import { AI_MODELS, BYOK_ONLY_MODELS, DEFAULT_EXPLORE_MODEL } from "@/lib/types";
 import type { AiModelId } from "@/lib/types";
@@ -44,6 +45,13 @@ export async function POST(request: NextRequest) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) {
     return Response.json({ error: "Authentication required" }, { status: 401 });
+  }
+
+  if (isShuttingDown()) {
+    return NextResponse.json(
+      { error: "Server is restarting. Please retry in a few seconds." },
+      { status: 503, headers: { "Retry-After": "10" } }
+    );
   }
 
   const userId = session.user.id;
@@ -100,6 +108,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const streamController = registerStream();
   const { stream, usage } = baseCode
     ? createRefineStreamForModel(modelId, {
         baseCode,
@@ -132,7 +141,15 @@ export async function POST(request: NextRequest) {
         model: modelId,
       })
     )
-    .catch((err) => console.error("Usage logging failed:", err));
+    .catch(async (err) => {
+      console.error("Stream failed, refunding credit:", err);
+      if (mode === "hosted") {
+        await refundCredit(userId, "explore");
+      }
+    })
+    .finally(() => {
+      deregisterStream(streamController);
+    });
 
   return new Response(stream, {
     headers: {
