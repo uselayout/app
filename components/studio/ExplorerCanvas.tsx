@@ -16,6 +16,7 @@ import { friendlyError } from "@/lib/explore/friendly-error";
 import { applyChangesToLayoutMd } from "@/lib/figma/diff";
 import { getStoredApiKey, useKeyStatus, dismissKeyLoss } from "@/lib/hooks/use-api-key";
 import { processCodeImages, type ProcessCodeImagesResult } from "@/lib/image/process-code-images";
+import { injectPlaceholderSvgs, countPlaceholderImages } from "@/lib/image/placeholder";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { toast } from "sonner";
 import { calculateHealthScore } from "@/lib/health/score";
@@ -58,6 +59,8 @@ export function ExplorerCanvas({
   const [modelId, setModelId] = useState<AiModelId>(DEFAULT_EXPLORE_MODEL);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessingImages, setIsProcessingImages] = useState(false);
+  const [imageProgress, setImageProgress] = useState<{ completed: number; total: number } | null>(null);
+  const imageAbortRef = useRef<AbortController | null>(null);
   const [imageNotice, setImageNotice] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generationStatus, setGenerationStatus] = useState<string | null>(null);
@@ -203,61 +206,37 @@ export function ExplorerCanvas({
         markStep("generatedVariant");
       }
 
-      // Process image placeholders in the new batch only
-      setIsProcessingImages(true);
-      setImageNotice(null);
-      try {
-        // Process variants sequentially to avoid hammering Gemini rate limits
-        // (each variant can contain 6+ images, all processed concurrently within)
-        const results: ProcessCodeImagesResult[] = [];
-        for (const v of finalNew) {
-          results.push(await processCodeImages(v.code));
-        }
+      // Inject placeholder SVGs instead of auto-generating images.
+      // Users can generate images later via Inspector, smart regenerate, or bulk generate.
+      let totalPlaceholders = 0;
+      const withPlaceholders = finalNew.map((v) => {
+        const { code: placeholderCode, count } = injectPlaceholderSvgs(v.code);
+        totalPlaceholders += count;
+        return count > 0 ? { ...v, code: placeholderCode } : v;
+      });
 
-        // Check for issues
-        const anySkippedNoKey = results.some((r) => r.skippedNoKey);
-        const totalFailed = results.reduce((sum, r) => sum + r.failedCount, 0);
-        const totalPlaceholders = results.reduce((sum, r) => sum + r.placeholderCount, 0);
-
-        // Collect all error messages across variants
-        const allErrors = results.flatMap((r) => r.errors);
-        const hasSafetyErrors = allErrors.some((e) => e.includes("Safety policy"));
-
-        if (anySkippedNoKey && totalPlaceholders > 0) {
-          setImageNotice(`${totalPlaceholders} image(s) skipped — add a Google AI API key in Settings to enable image generation.`);
-        } else if (totalFailed > 0 && hasSafetyErrors) {
-          setImageNotice(`${totalFailed} of ${totalPlaceholders} image(s) blocked by safety policy. Headshots auto-retried as illustrations — try more abstract descriptions if still failing.`);
-        } else if (totalFailed > 0) {
-          setImageNotice(`${totalFailed} of ${totalPlaceholders} image(s) failed to generate.`);
-        }
-
-        const newWithImages = finalNew.map((v, i) =>
-          results[i].code !== v.code ? { ...v, code: results[i].code } : v
+      if (totalPlaceholders > 0) {
+        const placeholderMerged = [...existingVariants, ...withPlaceholders];
+        const placeholderExplorations = finalExplorations.map((e) =>
+          e.id === sessionId ? { ...e, variants: placeholderMerged } : e
         );
-        const anyChanged = newWithImages.some((v, i) => v !== finalNew[i]);
-        if (anyChanged) {
-          const imageMerged = [...existingVariants, ...newWithImages];
-          const imageExplorations = finalExplorations.map((e) =>
-            e.id === sessionId ? { ...e, variants: imageMerged } : e
-          );
-          onUpdateExplorations(imageExplorations);
-        }
-        // Compute health scores for newly generated variants
-        const variantsToScore = anyChanged ? newWithImages : finalNew;
-        const scored = variantsToScore.map((v) => ({
-          ...v,
-          healthScore: calculateHealthScore(v.code, extractedFonts, layoutMd),
-        }));
-        const scoredMerged = [...existingVariants, ...scored];
-        const scoredExplorations = finalExplorations.map((e) =>
-          e.id === sessionId ? { ...e, variants: scoredMerged } : e
-        );
-        onUpdateExplorations(scoredExplorations);
-      } finally {
-        setIsProcessingImages(false);
-        streamingBatchRef.current = null;
-        pendingBatchCountRef.current = 0;
+        onUpdateExplorations(placeholderExplorations);
+        setImageNotice(`${totalPlaceholders} image(s) ready to generate. Use "Generate images" on each variant or click images in Inspector.`);
       }
+
+      // Compute health scores for newly generated variants
+      const variantsToScore = totalPlaceholders > 0 ? withPlaceholders : finalNew;
+      const scored = variantsToScore.map((v) => ({
+        ...v,
+        healthScore: calculateHealthScore(v.code, extractedFonts, layoutMd),
+      }));
+      const scoredMerged = [...existingVariants, ...scored];
+      const scoredExplorations = finalExplorations.map((e) =>
+        e.id === sessionId ? { ...e, variants: scoredMerged } : e
+      );
+      onUpdateExplorations(scoredExplorations);
+      streamingBatchRef.current = null;
+      pendingBatchCountRef.current = 0;
     },
     [onUpdateExplorations, extractedFonts, layoutMd, markStep]
   );
@@ -648,15 +627,31 @@ export function ExplorerCanvas({
   );
 
   const handleRegenerateImages = useCallback(
-    async (variantId: string) => {
+    async (variantId: string, forceAll?: boolean) => {
       if (!currentExploration) return;
       const variant = currentExploration.variants.find((v) => v.id === variantId);
       if (!variant) return;
 
+      // Cancel any in-progress image generation
+      imageAbortRef.current?.abort();
+      const controller = new AbortController();
+      imageAbortRef.current = controller;
+
       setIsProcessingImages(true);
+      setImageProgress(null);
       setImageNotice(null);
       try {
-        const result = await processCodeImages(variant.code, { forceRegenerate: true });
+        // Default: generate only missing images. Shift+click: regenerate all.
+        const result = await processCodeImages(variant.code, {
+          forceRegenerate: forceAll === true,
+          signal: controller.signal,
+          onProgress: (completed, total) => {
+            setImageProgress({ completed, total });
+          },
+        });
+
+        if (controller.signal.aborted) return;
+
         if (result.skippedNoKey && result.placeholderCount > 0) {
           setImageNotice(`${result.placeholderCount} image(s) skipped — add a Google AI API key in Settings to enable image generation.`);
         } else if (result.failedCount > 0) {
@@ -675,12 +670,23 @@ export function ExplorerCanvas({
           );
           onUpdateExplorations(updated);
         }
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") console.error("Image generation error:", err);
       } finally {
+        imageAbortRef.current = null;
         setIsProcessingImages(false);
+        setImageProgress(null);
       }
     },
     [currentExploration, explorations, onUpdateExplorations]
   );
+
+  const handleCancelImages = useCallback(() => {
+    imageAbortRef.current?.abort();
+    setIsProcessingImages(false);
+    setImageProgress(null);
+    setImageNotice("Image generation stopped. Use 'Generate images' on any variant to continue.");
+  }, []);
 
   const handleRemoveReferenceImage = useCallback(() => {
     if (!currentExploration) return;
@@ -959,7 +965,7 @@ export function ExplorerCanvas({
                       }}
                       onResponsive={() => setResponsiveVariant(variant)}
                       onPromoteToLibrary={() => setPromoteVariant(variant)}
-                      onRegenerateImages={() => handleRegenerateImages(variant.id)}
+                      onRegenerateImages={(forceAll) => handleRegenerateImages(variant.id, forceAll)}
                       onDelete={() => handleDeleteVariant(variant.id)}
                       onCodeUpdate={(code, editHistory) => handleCodeUpdate(variant.id, code, editHistory)}
                       layoutMd={layoutMd}
@@ -1015,16 +1021,20 @@ export function ExplorerCanvas({
               </>
             )}
 
-            {isGeneratingThisTab && variants.length > 0 && !isProcessingImages && (
-              <div className="flex items-center gap-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2.5">
-                <span className="text-xs text-[var(--text-muted)]">Images will generate after all variants complete.</span>
-              </div>
-            )}
-
             {isProcessingImages && (
               <div className="flex items-center gap-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-2.5">
                 <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
-                <span className="text-xs text-[var(--text-secondary)]">Generating images — this may take a moment...</span>
+                <span className="text-xs text-[var(--text-secondary)]">
+                  {imageProgress
+                    ? `Generating image ${imageProgress.completed}/${imageProgress.total}...`
+                    : "Generating images..."}
+                </span>
+                <button
+                  onClick={handleCancelImages}
+                  className="ml-auto text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  Stop
+                </button>
               </div>
             )}
 

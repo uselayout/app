@@ -80,22 +80,72 @@ export async function POST(request: NextRequest) {
 
   try {
     if (parsed.data.mode === "batch") {
-      // Batch mode: process all image placeholders in HTML
+      // Batch mode: process all image placeholders in HTML via SSE stream
       const { html, orgId, brandColours, brandStyle, forceRegenerate } = parsed.data;
 
-      const result = await processImagePlaceholders(html, {
-        orgId,
-        brandColours,
-        brandStyle,
-        googleApiKey,
-        forceRegenerate,
+      let imageIndex = 0;
+      let totalImages = 0;
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          const encoder = new TextEncoder();
+
+          function sendEvent(data: Record<string, unknown>) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+          }
+
+          try {
+            const result = await processImagePlaceholders(html, {
+              orgId,
+              brandColours,
+              brandStyle,
+              googleApiKey,
+              forceRegenerate,
+              onImageComplete: (_index, url) => {
+                imageIndex++;
+                sendEvent({
+                  type: "progress",
+                  index: imageIndex,
+                  total: totalImages || imageIndex,
+                  url,
+                });
+              },
+              onImageError: (_index, error) => {
+                imageIndex++;
+                sendEvent({
+                  type: "error",
+                  index: imageIndex,
+                  total: totalImages || imageIndex,
+                  message: error,
+                });
+              },
+              onTotalCount: (count) => {
+                totalImages = count;
+              },
+            });
+
+            sendEvent({
+              type: "complete",
+              html: result.html,
+              totalCount: result.totalCount,
+              failedCount: result.failedCount,
+              errors: result.errors,
+            });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : "Image generation failed";
+            sendEvent({ type: "error", message });
+          } finally {
+            controller.close();
+          }
+        },
       });
 
-      return NextResponse.json({
-        html: result.html,
-        totalCount: result.totalCount,
-        failedCount: result.failedCount,
-        errors: result.errors,
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "X-Accel-Buffering": "no",
+        },
       });
     }
 

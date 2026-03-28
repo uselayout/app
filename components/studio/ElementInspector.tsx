@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { X, Paintbrush, Type, Maximize2, Move, MessageSquarePlus, Send } from "lucide-react";
+import { X, Paintbrush, Type, Maximize2, Move, MessageSquarePlus, Send, ImageIcon, Loader2 } from "lucide-react";
+import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
+import { isPlaceholderSrc } from "@/lib/image/placeholder";
 import type { StyleEdit, ElementAnnotation, ExtractedToken } from "@/lib/types";
 
 interface ComputedStyles {
@@ -43,6 +45,10 @@ interface SelectedElement {
   elementClasses: string;
   rect: { x: number; y: number; width: number; height: number };
   computedStyles: ComputedStyles;
+  imagePrompt?: string;
+  imageStyle?: string;
+  imageRatio?: string;
+  imageSrc?: string;
 }
 
 interface ElementInspectorProps {
@@ -58,7 +64,7 @@ interface ElementInspectorProps {
   iframeScale?: number;
 }
 
-type PropertySection = "text" | "colours" | "spacing" | "size" | "annotate";
+type PropertySection = "text" | "colours" | "spacing" | "size" | "annotate" | "image";
 
 interface TokenSuggestion {
   name: string;
@@ -308,6 +314,10 @@ export function ElementInspector({
   const [pendingEdits, setPendingEdits] = useState<StyleEdit[]>([]);
   const [annotations, setAnnotations] = useState<ElementAnnotation[]>([]);
   const [annotationText, setAnnotationText] = useState("");
+  const [imagePromptEdit, setImagePromptEdit] = useState("");
+  const [imageStyleEdit, setImageStyleEdit] = useState("photo");
+  const [imageRatioEdit, setImageRatioEdit] = useState("16:9");
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const selectedRef = useRef<SelectedElement | null>(null);
   const pendingEditsRef = useRef<StyleEdit[]>([]);
@@ -315,6 +325,15 @@ export function ElementInspector({
   // Keep refs in sync so message listener can read without re-triggering effect
   useEffect(() => { selectedRef.current = selected; }, [selected]);
   useEffect(() => { pendingEditsRef.current = pendingEdits; }, [pendingEdits]);
+
+  // Sync image edit state when an image element is selected
+  useEffect(() => {
+    if (selected?.imagePrompt) {
+      setImagePromptEdit(selected.imagePrompt);
+      setImageStyleEdit(selected.imageStyle ?? "photo");
+      setImageRatioEdit(selected.imageRatio ?? "16:9");
+    }
+  }, [selected?.elementId, selected?.imagePrompt, selected?.imageStyle, selected?.imageRatio]);
 
   // Build token suggestions from design tokens
   const tokenSuggestions: TokenSuggestion[] = (designTokens ?? []).map((t) => ({
@@ -361,13 +380,23 @@ export function ElementInspector({
           setPendingEdits([]);
         }
 
-        setSelected({
+        const newSelected: SelectedElement = {
           elementId: msg.elementId,
           elementTag: msg.elementTag,
           elementClasses: msg.elementClasses,
           rect: msg.rect,
           computedStyles: msg.computedStyles,
-        });
+          imagePrompt: msg.imagePrompt,
+          imageStyle: msg.imageStyle,
+          imageRatio: msg.imageRatio,
+          imageSrc: msg.imageSrc,
+        };
+        setSelected(newSelected);
+
+        // Auto-select Image tab when clicking an image element
+        if (msg.imagePrompt) {
+          setActiveSection("image");
+        }
 
         // Only clear pending edits when switching to a different element
         if (!isSameElement) {
@@ -445,6 +474,53 @@ export function ElementInspector({
     }
   }, [pendingEdits, onStyleEdits]);
 
+  const handleGenerateImage = useCallback(async () => {
+    if (!selected || !imagePromptEdit.trim()) return;
+
+    setIsGeneratingImage(true);
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const googleKey = getStoredGoogleApiKey();
+      if (googleKey) headers["X-Google-Api-Key"] = googleKey;
+
+      const res = await fetch("/api/generate/image", {
+        method: "POST",
+        credentials: "include",
+        headers,
+        body: JSON.stringify({
+          mode: "single",
+          prompt: imagePromptEdit.trim(),
+          style: imageStyleEdit,
+          aspectRatio: imageRatioEdit,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Failed" }));
+        console.error("Image generation failed:", err.error);
+        return;
+      }
+
+      const data = await res.json();
+      if (data.url) {
+        // Update the image src in the iframe
+        iframeRef.current?.contentWindow?.postMessage({
+          type: "layout-inspector-apply-style",
+          elementId: selected.elementId,
+          property: "src",
+          value: data.url,
+        }, "*");
+
+        // Update selected state
+        setSelected((prev) => prev ? { ...prev, imageSrc: data.url } : null);
+      }
+    } catch (err) {
+      console.error("Image generation error:", err);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  }, [selected, imagePromptEdit, imageStyleEdit, imageRatioEdit, iframeRef]);
+
   const handleClose = useCallback(() => {
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage({ type: "layout-inspector-deselect" }, "*");
@@ -489,7 +565,9 @@ export function ElementInspector({
 
   const cs = selected.computedStyles;
 
+  const hasImageData = !!selected.imagePrompt;
   const sections: { id: PropertySection; icon: React.ReactNode; label: string }[] = [
+    ...(hasImageData ? [{ id: "image" as const, icon: <ImageIcon size={11} />, label: "Image" }] : []),
     { id: "text", icon: <Type size={11} />, label: "Text" },
     { id: "colours", icon: <Paintbrush size={11} />, label: "Colours" },
     { id: "spacing", icon: <Move size={11} />, label: "Spacing" },
@@ -536,6 +614,66 @@ export function ElementInspector({
 
       {/* Properties */}
       <div className="max-h-[360px] overflow-y-auto px-2.5 py-1.5">
+        {activeSection === "image" && hasImageData && (
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] text-[var(--text-muted)]">Prompt</label>
+            <textarea
+              value={imagePromptEdit}
+              onChange={(e) => setImagePromptEdit(e.target.value)}
+              rows={3}
+              className="w-full rounded border border-[var(--studio-border)] bg-[var(--bg-surface)] px-2 py-1.5 text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--studio-border-focus)] focus:outline-none resize-none"
+              placeholder="Describe the image..."
+            />
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="text-[10px] text-[var(--text-muted)]">Style</label>
+                <select
+                  value={imageStyleEdit}
+                  onChange={(e) => setImageStyleEdit(e.target.value)}
+                  className="w-full rounded border border-[var(--studio-border)] bg-[var(--bg-surface)] px-1.5 py-1 text-[11px] text-[var(--text-primary)] focus:outline-none"
+                >
+                  <option value="photo">Photo</option>
+                  <option value="illustration">Illustration</option>
+                  <option value="icon">Icon</option>
+                  <option value="abstract">Abstract</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="text-[10px] text-[var(--text-muted)]">Ratio</label>
+                <select
+                  value={imageRatioEdit}
+                  onChange={(e) => setImageRatioEdit(e.target.value)}
+                  className="w-full rounded border border-[var(--studio-border)] bg-[var(--bg-surface)] px-1.5 py-1 text-[11px] text-[var(--text-primary)] focus:outline-none"
+                >
+                  <option value="1:1">1:1</option>
+                  <option value="16:9">16:9</option>
+                  <option value="9:16">9:16</option>
+                  <option value="4:3">4:3</option>
+                  <option value="3:4">3:4</option>
+                  <option value="3:2">3:2</option>
+                  <option value="21:9">21:9</option>
+                </select>
+              </div>
+            </div>
+            <button
+              onClick={handleGenerateImage}
+              disabled={isGeneratingImage || !imagePromptEdit.trim()}
+              className="mt-1 flex items-center justify-center gap-1.5 rounded bg-[var(--studio-accent)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-40"
+            >
+              {isGeneratingImage ? (
+                <>
+                  <Loader2 size={12} className="animate-spin" />
+                  Generating...
+                </>
+              ) : selected.imageSrc && !isPlaceholderSrc(selected.imageSrc) ? (
+                "Regenerate"
+              ) : (
+                "Generate"
+              )}
+            </button>
+          </div>
+        )}
+
         {activeSection === "text" && (
           <>
             <PropertyRow label="Font Family" value={cs.fontFamily ?? ""} cssProp="fontFamily" onApply={applyStyle} type="select" options={[cs.fontFamily ?? "", ...[...fontFamilySet].filter((f) => f !== cs.fontFamily)]} />
