@@ -31,7 +31,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "changelog:publish": "npx tsx scripts/changelog-publish.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
