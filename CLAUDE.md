@@ -287,6 +287,20 @@ FIGMA_WEBHOOK_PASSCODE=...            # Optional: global fallback for Figma webh
 GOOGLE_AI_API_KEY=...                 # Optional: for AI image generation (planned)
 ```
 
+## Changelog
+
+When shipping user-facing changes across any Layout product, add an entry to `content/changelog/draft.ts`.
+
+- **Products:** `studio`, `cli`, `figma-plugin`, `chrome-extension`
+- **Categories:** `new` (brand new feature), `improved` (enhancement), `fixed` (bug fix)
+- Write titles and descriptions for users, not developers
+- Good: "Faster Figma extraction" / "Design tokens now extract 3x faster from large Figma files."
+- Bad: "perf: optimise batch node fetching"
+
+Weekly workflow: review draft entries, run `npm run changelog:publish`, commit, deploy.
+
+Preview draft entries in dev or with `?draft=true` on `/changelog`.
+
 ## Gotchas
 
 - Monaco editor MUST use `dynamic(() => import('@monaco-editor/react'), { ssr: false })`
