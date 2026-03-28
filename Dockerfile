@@ -34,7 +34,7 @@ ARG BUILD_SHA=dev
 ENV NEXT_PUBLIC_BUILD_SHA=$BUILD_SHA
 
 # Install tini for proper signal handling (PID 1 must forward SIGTERM)
-RUN apt-get update && apt-get install -y --no-install-recommends tini && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends tini curl && rm -rf /var/lib/apt/lists/*
 
 # Install Playwright Chromium to a shared path accessible by all users
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
