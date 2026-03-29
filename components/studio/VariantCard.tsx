@@ -511,59 +511,99 @@ export function VariantCard({
     }
   }, [variant.code, editHistory, onCodeUpdate, layoutMd]);
 
-  const handleImageGenerated = useCallback((prompt: string, imageUrl: string) => {
-    if (!onCodeUpdate) return;
+  const handleImageGenerated = useCallback(
+    (prompt: string, imageUrl: string, context?: { alt?: string; currentSrc?: string; className?: string }) => {
+      if (!onCodeUpdate) return;
 
-    const code = variant.code;
-    const promptLower = prompt.toLowerCase().trim();
+      const code = variant.code;
+      const promptLower = prompt.toLowerCase().trim();
 
-    // Simple string-based approach: find <img> tags that contain the prompt text
-    // This avoids fragile regex escaping issues with special characters in prompts
-    const imgTagRe = /<img\b[^]*?\/?\s*>/gi;
-    let bestMatch: { start: number; end: number; tag: string } | null = null;
-
-    let m: RegExpExecArray | null;
-    while ((m = imgTagRe.exec(code)) !== null) {
-      const tag = m[0];
-      const tagLower = tag.toLowerCase();
-
-      // Check if this img tag contains the prompt (exact or partial)
-      if (tagLower.includes(promptLower) ||
-          (promptLower.length > 25 && tagLower.includes(promptLower.slice(0, 25)))) {
-        bestMatch = { start: m.index, end: m.index + tag.length, tag };
-        break;
+      // Collect all <img> tags with positions
+      const imgTagRe = /<img\b[^]*?\/?\s*>/gi;
+      const allImgs: { start: number; end: number; tag: string }[] = [];
+      let m: RegExpExecArray | null;
+      while ((m = imgTagRe.exec(code)) !== null) {
+        allImgs.push({ start: m.index, end: m.index + m[0].length, tag: m[0] });
       }
-    }
 
-    if (bestMatch) {
-      // Replace or add src attribute in the matched tag
-      let newTag = bestMatch.tag;
-      if (/\ssrc\s*=\s*"[^"]*"/i.test(newTag)) {
-        newTag = newTag.replace(/\ssrc\s*=\s*"[^"]*"/i, ` src="${imageUrl}"`);
-      } else if (/\ssrc\s*=\s*'[^']*'/i.test(newTag)) {
-        newTag = newTag.replace(/\ssrc\s*=\s*'[^']*'/i, ` src="${imageUrl}"`);
-      } else {
-        newTag = newTag.replace(/\/?\s*>$/, ` src="${imageUrl}" />`);
-      }
-      const updatedCode = code.slice(0, bestMatch.start) + newTag + code.slice(bestMatch.end);
-      onCodeUpdate(updatedCode, editHistory);
-      return;
-    }
-
-    // Fallback: replace the first placeholder SVG src in the code
-    if (code.includes("data:image/svg+xml,")) {
-      const updatedCode = code.replace(
-        /\ssrc="data:image\/svg\+xml,[^"]*"/i,
-        ` src="${imageUrl}"`
-      );
-      if (updatedCode !== code) {
-        onCodeUpdate(updatedCode, editHistory);
+      if (allImgs.length === 0) {
+        console.warn("[handleImageGenerated] No img tags found in variant code");
         return;
       }
-    }
 
-    console.warn("[handleImageGenerated] Could not find img tag to update for prompt:", prompt.slice(0, 80));
-  }, [variant.code, editHistory, onCodeUpdate]);
+      // Helper: replace src in a matched img tag and persist
+      const applySrc = (match: { start: number; end: number; tag: string }) => {
+        let newTag = match.tag;
+        if (/\ssrc\s*=\s*"[^"]*"/i.test(newTag)) {
+          newTag = newTag.replace(/\ssrc\s*=\s*"[^"]*"/i, ` src="${imageUrl}"`);
+        } else if (/\ssrc\s*=\s*'[^']*'/i.test(newTag)) {
+          newTag = newTag.replace(/\ssrc\s*=\s*'[^']*'/i, ` src="${imageUrl}"`);
+        } else {
+          newTag = newTag.replace(/\/?\s*>$/, ` src="${imageUrl}" />`);
+        }
+        const updatedCode = code.slice(0, match.start) + newTag + code.slice(match.end);
+        onCodeUpdate(updatedCode, editHistory);
+      };
+
+      // Strategy 1: Match by prompt text inside the tag (data-generate-image="...")
+      const byPrompt = allImgs.find((img) => {
+        const lower = img.tag.toLowerCase();
+        return lower.includes(promptLower) ||
+          (promptLower.length > 25 && lower.includes(promptLower.slice(0, 25)));
+      });
+      if (byPrompt) { applySrc(byPrompt); return; }
+
+      // Strategy 2: Match by the current src the Inspector saw
+      if (context?.currentSrc) {
+        const srcFragment = context.currentSrc.replace(/^https?:\/\//, "").split("?")[0];
+        const bySrc = allImgs.find((img) => img.tag.includes(srcFragment));
+        if (bySrc) { applySrc(bySrc); return; }
+
+        // Match placeholder SVG src
+        if (context.currentSrc.startsWith("data:image/svg+xml,")) {
+          const byPlaceholder = allImgs.find((img) => img.tag.includes("data:image/svg+xml,"));
+          if (byPlaceholder) { applySrc(byPlaceholder); return; }
+        }
+      }
+
+      // Strategy 3: Match by alt text
+      if (context?.alt) {
+        const altLower = context.alt.toLowerCase();
+        const byAlt = allImgs.find((img) => {
+          const altMatch = img.tag.match(/alt=["']([^"']+)["']/i);
+          return altMatch && altMatch[1].toLowerCase() === altLower;
+        });
+        if (byAlt) { applySrc(byAlt); return; }
+      }
+
+      // Strategy 4: Match by className
+      if (context?.className) {
+        const classes = context.className.split(/\s+/).filter(Boolean).slice(0, 3);
+        if (classes.length > 0) {
+          const byClass = allImgs.find((img) =>
+            classes.every((cls) => img.tag.includes(cls))
+          );
+          if (byClass) { applySrc(byClass); return; }
+        }
+      }
+
+      // Strategy 5: First img with a placeholder SVG src
+      const byPlaceholderSvg = allImgs.find((img) => img.tag.includes("data:image/svg+xml,"));
+      if (byPlaceholderSvg) { applySrc(byPlaceholderSvg); return; }
+
+      // Strategy 6: First img with a known placeholder domain or relative path
+      const placeholderDomains = /(?:placehold\.co|placeholder\.com|unsplash\.com|picsum\.photos|pravatar\.cc|randomuser\.me|ui-avatars\.com|robohash\.org)/i;
+      const byPlaceholderUrl = allImgs.find((img) => placeholderDomains.test(img.tag));
+      if (byPlaceholderUrl) { applySrc(byPlaceholderUrl); return; }
+
+      const byRelativeSrc = allImgs.find((img) => /src=["']\/[^"'\s>]+["']/i.test(img.tag));
+      if (byRelativeSrc) { applySrc(byRelativeSrc); return; }
+
+      // Final fallback: update the first img tag (better to save than lose the image)
+      applySrc(allImgs[0]);
+    },
+    [variant.code, editHistory, onCodeUpdate]
+  );
 
   const handleHistoryRestore = useCallback((entry: EditEntry) => {
     if (!onCodeUpdate) return;
