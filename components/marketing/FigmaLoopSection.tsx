@@ -31,7 +31,7 @@ export function FigmaLoopSection() {
               Your design system lives in both tools. Keep them in sync.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Push AI-generated components to Figma via the MCP server — three responsive viewports rendered and placed as frames. The Chrome extension lets you browse any site, capture it, and push directly to the Explorer Canvas where AI rebuilds it using your design tokens.
+              Push AI-generated components to Figma via the MCP server — three responsive viewports rendered and placed as frames. The Chrome extension lets you browse any site, capture it, and push directly to the Explorer where AI rebuilds it using your design tokens.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-accent)] tracking-[-0.165px]">
               Design in Figma with your tokens
@@ -43,7 +43,7 @@ export function FigmaLoopSection() {
               Native Figma plugin
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Extract tokens directly from Figma. Inspect elements to see which design tokens they map to. Push components to the Explorer Canvas for AI variant generation. Assemble variant frames into Figma component sets with hover interactions.
+              Extract tokens directly from Figma. Inspect elements to see which design tokens they map to. Push components to the Explorer for AI variant generation. Assemble variant frames into Figma component sets with hover interactions.
             </p>
           </motion.div>
         </div>

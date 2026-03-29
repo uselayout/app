@@ -65,7 +65,7 @@ app/
   globals.css                   # Design tokens + Tailwind config
   studio/
     [id]/
-      page.tsx                  # Two-panel Studio (Editor/Canvas toggle)
+      page.tsx                  # Two-panel Studio (Editor/Explore toggle)
       loading.tsx               # Loading skeleton
   (dashboard)/
     [org]/
@@ -75,7 +75,7 @@ app/
     extract/figma/route.ts      # Figma extraction → SSE stream
     extract/website/route.ts    # Website extraction → SSE stream
     generate/layout-md/route.ts # Claude layout.md synthesis → stream
-    generate/explore/route.ts   # Explorer Canvas AI generation → stream
+    generate/explore/route.ts   # Explorer AI generation → stream
     export/bundle/route.ts      # ZIP bundle generation
     webhooks/figma/route.ts     # Figma webhook receiver
     health/completeness/route.ts # layout.md quality analysis
@@ -84,10 +84,10 @@ app/
 
 components/
   studio/
-    StudioLayout.tsx            # Two-panel resize layout (source + editor/canvas)
+    StudioLayout.tsx            # Two-panel resize layout (source + editor/explore)
     SourcePanel.tsx             # Left panel (tokens, components, screenshots, quality, saved)
     EditorPanel.tsx             # Centre panel (Monaco)
-    ExplorerCanvas.tsx          # AI-powered design exploration + validation canvas
+    ExplorerCanvas.tsx          # AI-powered design exploration + validation
     ExplorerToolbar.tsx         # Explorer toolbar (prompts, image upload)
     VariantCard.tsx             # Individual variant display + actions
     CompletenessPanel.tsx       # layout.md quality score + suggestions
@@ -158,9 +158,9 @@ app/(dashboard)/
       webhooks/page.tsx         # Figma webhook configuration
 ```
 
-### Explorer Canvas
+### Explorer
 
-The Explorer Canvas (`components/studio/ExplorerCanvas.tsx`) is the AI generation surface:
+The Explorer (`components/studio/ExplorerCanvas.tsx`) is the AI generation surface:
 
 - **Multi-variant generation:** Prompt AI to generate 2-6 component variants simultaneously
 - **Image upload:** Attach reference images (paste, drag-drop, or file picker) for AI to interpret
@@ -209,7 +209,7 @@ The MCP endpoint at `app/api/mcp/route.ts` exposes 7 tools for AI coding agents:
 ### Saved Components
 
 - **Per-org component library** with categories, tags, and component/page type split
-- **Save from Explorer Canvas** via PromoteToLibraryModal (name, type, category, tags)
+- **Save from Explorer** via PromoteToLibraryModal (name, type, category, tags)
 - **Browse in SourcePanel** "Saved" tab with component/page filter and category grouping
 - **API:** `app/api/organizations/[orgId]/components/` routes (also used by MCP server)
 

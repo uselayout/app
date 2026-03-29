@@ -66,7 +66,7 @@ export default function ChromeExtensionPage() {
             <h3 className="text-lg font-semibold text-[#0a0a0a]">Capture</h3>
             <p className="text-base text-gray-600 leading-relaxed">
               Screenshot the current page as viewport, full-page, or a selected
-              region. Push the screenshot to your Layout Explorer Canvas where AI
+              region. Push the screenshot to your Layout Explorer where AI
               can rebuild the design using your tokens. Download option also
               available.
             </p>
@@ -347,7 +347,7 @@ export default function ChromeExtensionPage() {
             references
           </li>
           <li>
-            Capture screenshots and push them to the Explorer Canvas where AI
+            Capture screenshots and push them to the Explorer where AI
             can recreate the design using your own tokens
           </li>
           <li>

@@ -119,7 +119,7 @@ export function TopBar({
                   : "bg-transparent border-[#24282c] text-[#e8e8f0]"
               }`}
             >
-              Canvas
+              Explore
             </button>
           </div>
         )}

@@ -34,7 +34,7 @@ const capabilities = [
     icon: Columns3,
     title: "Studio",
     description:
-      "Two-mode workspace: browse extracted tokens on the left, edit layout.md in the centre with an AI edit bar, then switch to the Explorer Canvas to generate and test component variants.",
+      "Two-mode workspace: browse extracted tokens on the left, edit layout.md in the centre with an AI edit bar, then switch to the Explorer to generate and test component variants.",
     href: "/docs/studio",
   },
   {
@@ -152,7 +152,7 @@ export default function GettingStartedPage() {
             },
             {
               step: "Test",
-              desc: "Switch to the Explorer Canvas and generate a few component variants. Check the health score and aim for 80+.",
+              desc: "Switch to the Explorer and generate a few component variants. Check the health score and aim for 80+.",
             },
             {
               step: "Iterate",
@@ -221,7 +221,7 @@ export default function GettingStartedPage() {
               icon: ArrowUpRight,
               title: "Push to Figma",
               description:
-                "Generate component variants in the Explorer Canvas, then push your favourite back to Figma as a real auto-layout frame. Designers review AI output in their native tool, closing the loop between code and design.",
+                "Generate component variants in the Explorer, then push your favourite back to Figma as a real auto-layout frame. Designers review AI output in their native tool, closing the loop between code and design.",
               href: "/docs/explorer",
             },
           ].map(({ icon: Icon, title, description, href }) => (
@@ -398,7 +398,7 @@ export default function GettingStartedPage() {
             other configuration file. Update it when the design system changes.
           </Callout>
           <Callout type="tip">
-            <strong>Use the comparison view.</strong> In the Explorer Canvas,
+            <strong>Use the comparison view.</strong> In the Explorer,
             generate the same component with and without layout.md context
             side by side. The gap shows you exactly what value the context file
             is providing.
@@ -419,8 +419,7 @@ export default function GettingStartedPage() {
             <Link href="/docs/studio" className="text-gray-900 hover:underline">
               Studio Guide
             </Link>{" "}
-            for the full workspace reference, extraction options, and Explorer
-            Canvas.
+            for the full workspace reference, extraction options, and Explorer.
           </li>
           <li>
             <Link href="/docs/cli" className="text-gray-900 hover:underline">

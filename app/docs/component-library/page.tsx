@@ -7,7 +7,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Saved Components | Layout Docs",
   description:
-    "Save, browse, and reuse components and pages from the Explorer Canvas in your organisation's library.",
+    "Save, browse, and reuse components and pages from the Explorer in your organisation's library.",
 };
 
 export default function ComponentLibraryPage() {
@@ -41,7 +41,7 @@ export default function ComponentLibraryPage() {
               {[
                 [
                   "Save from Explorer",
-                  "Click \"Add to Library\" on any Explorer Canvas variant to save it as a reusable component or full page.",
+                  "Click \"Add to Library\" on any Explorer variant to save it as a reusable component or full page.",
                 ],
                 [
                   "Component / Page types",
@@ -88,7 +88,7 @@ export default function ComponentLibraryPage() {
             <p className="text-base text-gray-600 leading-relaxed">
               Use the{" "}
               <Link href="/docs/explorer" className="text-gray-900 hover:underline">
-                Explorer Canvas
+                Explorer
               </Link>{" "}
               to generate component variants from your design system. Describe
               what you need, attach reference images, and iterate until the
@@ -127,7 +127,7 @@ export default function ComponentLibraryPage() {
         <p className="text-base text-gray-600 leading-relaxed">
           The{" "}
           <Link href="/docs/explorer" className="text-gray-900 hover:underline">
-            Explorer Canvas
+            Explorer
           </Link>{" "}
           generates component variants from your extracted design system. When
           you find a variant worth keeping, click <strong>Add to Library</strong>.
@@ -148,7 +148,7 @@ export default function ComponentLibraryPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Tips</h2>
         <ul className="list-disc pl-6 space-y-3 text-gray-600">
           <li>
-            Components saved from the Explorer Canvas already have design
+            Components saved from the Explorer already have design
             tokens applied, so you rarely need to edit the token references
             manually.
           </li>

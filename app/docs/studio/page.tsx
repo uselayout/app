@@ -137,7 +137,7 @@ export default function StudioPage() {
           After extraction completes, the Studio opens a two-panel workspace
           with a mode toggle in the top bar. The Source Panel stays visible on
           the left in both modes. The right panel switches between the Editor
-          and the Explorer Canvas.
+          and the Explorer.
         </p>
 
         <div className="space-y-4">
@@ -177,17 +177,17 @@ export default function StudioPage() {
 
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
-              Canvas Mode <span className="text-gray-400 font-normal text-sm">(right panel)</span>
+              Explore Mode <span className="text-gray-400 font-normal text-sm">(right panel)</span>
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              The Explorer Canvas is an AI-powered design exploration surface.
+              The Explorer is an AI-powered design exploration surface.
               Enter a prompt, set the variant count (2 to 6), and generate
               multiple component options using your design tokens. Compare
               output with and without layout.md context, refine variants with
               follow-up prompts, push results to Figma, or save them to your
               component library. See the{" "}
               <Link href="/docs/explorer" className="text-gray-900 hover:underline">
-                Explorer Canvas
+                Explorer
               </Link>{" "}
               guide for full details.
             </p>
@@ -199,7 +199,7 @@ export default function StudioPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Testing Your Design System</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The Explorer Canvas is the best way to verify that layout.md actually
+          The Explorer is the best way to verify that layout.md actually
           improves AI output before exporting.
         </p>
 
@@ -391,7 +391,7 @@ export default function StudioPage() {
         <ul className="list-disc pl-6 space-y-2 text-gray-600">
           <li>
             <Link href="/docs/explorer" className="text-gray-900 hover:underline">
-              Explorer Canvas
+              Explorer
             </Link>{" "}
             for multi-variant generation, comparison view, and pushing to Figma.
           </li>
