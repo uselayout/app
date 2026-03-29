@@ -108,8 +108,11 @@ function buildPrompt(options: GenerateImageOptions): string {
     parts.push(`Use these brand colours: ${options.brandColours.join(", ")}.`);
   }
 
-  // Quality hints
-  if (options.style === "photo") {
+  // Quality hints — respect user's prompt if it explicitly requests a different style
+  const promptLower = options.prompt.toLowerCase();
+  const userOverridesStyle = /\b(illustration|cartoon|anime|watercolour|watercolor|sketch|painting|drawn|vector|flat design|3d render|pixel art)\b/.test(promptLower);
+
+  if (options.style === "photo" && !userOverridesStyle) {
     parts.push("Photorealistic, real photograph, natural lighting, NOT an illustration or cartoon or AI art style. Shot on Canon EOS R5.");
   } else {
     parts.push("High quality, clean composition, suitable for a modern web design.");
