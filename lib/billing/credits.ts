@@ -12,11 +12,11 @@ interface CreditRow {
   id: string;
   user_id: string;
   org_id: string;
-  layout_md_remaining: number;
+  design_md_remaining: number;
   test_query_remaining: number;
   period_start: string;
   period_end: string;
-  topup_layout_md: number;
+  topup_design_md: number;
   topup_test_query: number;
 }
 
@@ -24,11 +24,11 @@ function rowToBalance(row: CreditRow): CreditBalance {
   return {
     userId: row.user_id,
     orgId: row.org_id,
-    layoutMdRemaining: row.layout_md_remaining,
+    layoutMdRemaining: row.design_md_remaining,
     aiQueryRemaining: row.test_query_remaining,
     periodStart: row.period_start,
     periodEnd: row.period_end,
-    topupLayoutMd: row.topup_layout_md,
+    topupLayoutMd: row.topup_design_md,
     topupAiQuery: row.topup_test_query,
   };
 }
@@ -213,7 +213,7 @@ export async function deductCredit(
   userId: string,
   endpoint: AiEndpoint
 ): Promise<boolean> {
-  const creditType = endpoint === "layout-md" ? "layout_md" : "test_query";
+  const creditType = endpoint === "layout-md" ? "design_md" : "test_query";
 
   const { data, error } = await supabase.rpc("layout_deduct_credit", {
     p_user_id: userId,
@@ -236,7 +236,7 @@ export async function deductCreditByOrg(
   orgId: string,
   endpoint: AiEndpoint
 ): Promise<boolean> {
-  const creditType = endpoint === "layout-md" ? "layout_md" : "test_query";
+  const creditType = endpoint === "layout-md" ? "design_md" : "test_query";
 
   const { data, error } = await supabase.rpc("layout_deduct_credit_org", {
     p_org_id: orgId,
@@ -261,7 +261,7 @@ export async function refundCredit(
   userId: string,
   endpoint: AiEndpoint
 ): Promise<boolean> {
-  const creditType = endpoint === "layout-md" ? "layout_md" : "test_query";
+  const creditType = endpoint === "layout-md" ? "design_md" : "test_query";
 
   const { data, error } = await supabase.rpc("layout_refund_credit", {
     p_user_id: userId,
@@ -296,7 +296,7 @@ export async function resetMonthlyCredits(
     .upsert(
       {
         user_id: userId,
-        layout_md_remaining: allocation.layoutMd * multiplier,
+        design_md_remaining: allocation.layoutMd * multiplier,
         test_query_remaining: allocation.aiQuery * multiplier,
         period_start: periodStart,
         period_end: periodEnd,
@@ -328,7 +328,7 @@ export async function resetMonthlyCreditsByOrg(
     .upsert(
       {
         org_id: orgId,
-        layout_md_remaining: allocation.layoutMd * multiplier,
+        design_md_remaining: allocation.layoutMd * multiplier,
         test_query_remaining: allocation.aiQuery * multiplier,
         period_start: periodStart,
         period_end: periodEnd,
@@ -348,11 +348,11 @@ export async function addTopupCredits(userId: string): Promise<void> {
   if (!balance) {
     const { error } = await supabase.from("layout_credit_balance").insert({
       user_id: userId,
-      layout_md_remaining: 0,
+      design_md_remaining: 0,
       test_query_remaining: 0,
       period_start: new Date().toISOString(),
       period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      topup_layout_md: CREDITS.topup.layoutMd,
+      topup_design_md: CREDITS.topup.layoutMd,
       topup_test_query: CREDITS.topup.aiQuery,
     });
     if (error) console.error("Failed to create credit balance:", error.message);
@@ -363,7 +363,7 @@ export async function addTopupCredits(userId: string): Promise<void> {
   const { error: updateError } = await supabase
     .from("layout_credit_balance")
     .update({
-      topup_layout_md: balance.topupLayoutMd + CREDITS.topup.layoutMd,
+      topup_design_md: balance.topupLayoutMd + CREDITS.topup.layoutMd,
       topup_test_query: balance.topupAiQuery + CREDITS.topup.aiQuery,
     })
     .eq("user_id", userId);
