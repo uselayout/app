@@ -92,6 +92,7 @@ function showError(msg){
   el.style.cssText='color:red;padding:16px;font-size:12px;white-space:pre-wrap';
   el.textContent=String(msg);
   document.getElementById('root').appendChild(el);
+  window.parent.postMessage({type:'layout-preview-error',error:String(msg)},'*');
 }
 window.onerror=function(msg,src,line,col,err){
   if(err&&err.name==='SecurityError')return true;
