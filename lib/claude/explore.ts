@@ -52,20 +52,33 @@ Responsive Design (Mandatory)
 - Navigation: MUST use a hamburger/mobile menu on mobile. On base (mobile): show ONLY the logo and a hamburger icon — hide ALL nav links, CTA buttons, search bars, and secondary actions behind the hamburger menu. On md: and up: show full horizontal nav with CTAs. Never show buttons or nav links inline at 375px — they WILL overflow.
 - Mobile header rule: At 375px the header must contain ONLY: logo (left) + hamburger icon (right). Everything else is hidden md:block or inside the mobile menu dropdown. No exceptions.
 
-Images (MANDATORY — read carefully)
-- ALL images — hero photos, product shots, team photos, avatars, headshots, thumbnails, icons — MUST use this exact format:
-  <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." className="..." />
-- data-image-style options: "photo", "illustration", "icon", "abstract"
-- data-image-ratio options: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9"
-- For small images like avatars/headshots, use data-image-ratio="1:1": <img data-generate-image="professional headshot of a smiling woman in her 30s" data-image-style="photo" data-image-ratio="1:1" alt="Sarah Chen" className="w-10 h-10 rounded-full object-cover" />
-- Write detailed, specific prompts — e.g. "A diverse team collaborating in a modern sunlit office with plants" not "team photo".
-- NEVER use placeholder services (placehold.co, placeholder.com, via.placeholder.com, unsplash, picsum, dummyimage, or ANY external image URL).
-- NEVER use empty src, data: URIs, or inline SVG placeholders for images. Omit the src attribute entirely — the pipeline adds it.
+Images and Graphics (MANDATORY — read carefully)
+
+TWO types of visuals — use the RIGHT approach for each:
+
+1. PHOTOGRAPHS (hero photos, headshots, product shots, team photos, backgrounds, thumbnails):
+   Use data-generate-image. These need AI image generation.
+   <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." className="..." />
+   - data-image-style options: "photo", "illustration", "icon", "abstract"
+   - data-image-ratio options: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9"
+   - For avatars/headshots: data-image-ratio="1:1"
+   - Write detailed prompts: "A diverse team collaborating in a modern sunlit office with plants" not "team photo"
+   - NEVER use placeholder services, empty src, or data URIs. Omit src entirely — the pipeline adds it.
+
+2. LOGOS, ICONS, and SIMPLE GRAPHICS (brand logos, UI icons, decorative marks, badges, social icons):
+   Generate these as inline <svg> elements directly in the code. Do NOT use data-generate-image for these.
+   - Brand/company logos: create a simple, clean SVG mark (geometric shapes, lettermarks, or abstract symbols)
+   - UI icons: use inline SVG paths (e.g. arrow, check, star, menu icons)
+   - Logo grids/trust bars: create distinct SVG logos for each company — vary shapes, use text elements for wordmarks
+   - Social media icons: use standard SVG paths for known platforms
+   - Decorative elements: SVG patterns, dividers, abstract shapes
+   This means logos render instantly without needing image generation.
+
+Rules for photographs (data-generate-image):
 - If a section has testimonials, team members, or any people — each person MUST have a data-generate-image headshot.
-- For data tables, team directories, user lists, or any rows showing people: EVERY row MUST have an <img data-generate-image="professional headshot of [name/role description]" data-image-style="photo" data-image-ratio="1:1" alt="[name]" className="w-8 h-8 rounded-full object-cover" /> avatar. NEVER use initials, SVG placeholders, or coloured circles as avatar substitutes.
-- For product tables, file lists, or non-person data: use relevant thumbnails with data-generate-image.
-- Rule: if ANY cell or card would benefit from a visual (avatar, thumbnail, logo, icon), use data-generate-image. When in doubt, generate an image.
-- CRITICAL: The image pipeline can ONLY process <img> tags. NEVER use <div> or <span> elements with initials (like "SC" or "AJ") as avatar substitutes. NEVER use coloured circles, gradient backgrounds, or any non-<img> element where an avatar should be. Every avatar MUST be an <img> tag with data-generate-image.
+- For data tables, team directories, user lists: EVERY row MUST have an <img data-generate-image="professional headshot of [name/role]" data-image-style="photo" data-image-ratio="1:1" alt="[name]" className="w-8 h-8 rounded-full object-cover" /> avatar. NEVER use initials, SVG placeholders, or coloured circles as avatar substitutes.
+- For product images, thumbnails, hero backgrounds: use data-generate-image with descriptive prompts.
+- CRITICAL: The image pipeline can ONLY process <img> tags. NEVER use <div> or <span> with initials as avatar substitutes.
 - CRITICAL: data-generate-image MUST always be a static string literal in quotes, NEVER a JavaScript expression, variable, or template literal. The image pipeline parses the source code with regex and cannot resolve JS expressions.
 - WRONG: data-generate-image={member.prompt} — variable reference, invisible to pipeline
 - WRONG: data-generate-image={imagePrompt} — variable reference
@@ -129,20 +142,33 @@ Responsive Design (Mandatory)
 - Navigation: MUST use a hamburger/mobile menu on mobile. On base (mobile): show ONLY the logo and a hamburger icon — hide ALL nav links, CTA buttons, search bars, and secondary actions behind the hamburger menu. On md: and up: show full horizontal nav with CTAs. Never show buttons or nav links inline at 375px — they WILL overflow.
 - Mobile header rule: At 375px the header must contain ONLY: logo (left) + hamburger icon (right). Everything else is hidden md:block or inside the mobile menu dropdown. No exceptions.
 
-Images (MANDATORY — read carefully)
-- ALL images — hero photos, product shots, team photos, avatars, headshots, thumbnails, icons — MUST use this exact format:
-  <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." className="..." />
-- data-image-style options: "photo", "illustration", "icon", "abstract"
-- data-image-ratio options: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9"
-- For small images like avatars/headshots, use data-image-ratio="1:1": <img data-generate-image="professional headshot of a smiling woman in her 30s" data-image-style="photo" data-image-ratio="1:1" alt="Sarah Chen" className="w-10 h-10 rounded-full object-cover" />
-- Write detailed, specific prompts — e.g. "A diverse team collaborating in a modern sunlit office with plants" not "team photo".
-- NEVER use placeholder services (placehold.co, placeholder.com, via.placeholder.com, unsplash, picsum, dummyimage, or ANY external image URL).
-- NEVER use empty src, data: URIs, or inline SVG placeholders for images. Omit the src attribute entirely — the pipeline adds it.
+Images and Graphics (MANDATORY — read carefully)
+
+TWO types of visuals — use the RIGHT approach for each:
+
+1. PHOTOGRAPHS (hero photos, headshots, product shots, team photos, backgrounds, thumbnails):
+   Use data-generate-image. These need AI image generation.
+   <img data-generate-image="descriptive prompt" data-image-style="photo" data-image-ratio="16:9" alt="..." className="..." />
+   - data-image-style options: "photo", "illustration", "icon", "abstract"
+   - data-image-ratio options: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9"
+   - For avatars/headshots: data-image-ratio="1:1"
+   - Write detailed prompts: "A diverse team collaborating in a modern sunlit office with plants" not "team photo"
+   - NEVER use placeholder services, empty src, or data URIs. Omit src entirely — the pipeline adds it.
+
+2. LOGOS, ICONS, and SIMPLE GRAPHICS (brand logos, UI icons, decorative marks, badges, social icons):
+   Generate these as inline <svg> elements directly in the code. Do NOT use data-generate-image for these.
+   - Brand/company logos: create a simple, clean SVG mark (geometric shapes, lettermarks, or abstract symbols)
+   - UI icons: use inline SVG paths (e.g. arrow, check, star, menu icons)
+   - Logo grids/trust bars: create distinct SVG logos for each company — vary shapes, use text elements for wordmarks
+   - Social media icons: use standard SVG paths for known platforms
+   - Decorative elements: SVG patterns, dividers, abstract shapes
+   This means logos render instantly without needing image generation.
+
+Rules for photographs (data-generate-image):
 - If a section has testimonials, team members, or any people — each person MUST have a data-generate-image headshot.
-- For data tables, team directories, user lists, or any rows showing people: EVERY row MUST have an <img data-generate-image="professional headshot of [name/role description]" data-image-style="photo" data-image-ratio="1:1" alt="[name]" className="w-8 h-8 rounded-full object-cover" /> avatar. NEVER use initials, SVG placeholders, or coloured circles as avatar substitutes.
-- For product tables, file lists, or non-person data: use relevant thumbnails with data-generate-image.
-- Rule: if ANY cell or card would benefit from a visual (avatar, thumbnail, logo, icon), use data-generate-image. When in doubt, generate an image.
-- CRITICAL: The image pipeline can ONLY process <img> tags. NEVER use <div> or <span> elements with initials (like "SC" or "AJ") as avatar substitutes. NEVER use coloured circles, gradient backgrounds, or any non-<img> element where an avatar should be. Every avatar MUST be an <img> tag with data-generate-image.
+- For data tables, team directories, user lists: EVERY row MUST have an <img data-generate-image="professional headshot of [name/role]" data-image-style="photo" data-image-ratio="1:1" alt="[name]" className="w-8 h-8 rounded-full object-cover" /> avatar. NEVER use initials, SVG placeholders, or coloured circles as avatar substitutes.
+- For product images, thumbnails, hero backgrounds: use data-generate-image with descriptive prompts.
+- CRITICAL: The image pipeline can ONLY process <img> tags. NEVER use <div> or <span> with initials as avatar substitutes.
 - CRITICAL: data-generate-image MUST always be a static string literal in quotes, NEVER a JavaScript expression, variable, or template literal. The image pipeline parses the source code with regex and cannot resolve JS expressions.
 - WRONG: data-generate-image={member.prompt} — variable reference, invisible to pipeline
 - WRONG: data-generate-image={imagePrompt} — variable reference
