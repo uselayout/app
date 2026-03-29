@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { X, Paintbrush, Type, Maximize2, Move, MessageSquarePlus, Send, ImageIcon, Loader2 } from "lucide-react";
 import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 import { isPlaceholderSrc } from "@/lib/image/placeholder";
+import { toast } from "sonner";
 import type { StyleEdit, ElementAnnotation, ExtractedToken } from "@/lib/types";
 
 interface ComputedStyles {
@@ -491,10 +492,15 @@ export function ElementInspector({
   const handleGenerateImage = useCallback(async () => {
     if (!selected || !imagePromptEdit.trim()) return;
 
+    const googleKey = getStoredGoogleApiKey();
+    if (!googleKey) {
+      toast.error("Add a Google AI API key in Settings → API Keys to generate images.");
+      return;
+    }
+
     setIsGeneratingImage(true);
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
-      const googleKey = getStoredGoogleApiKey();
       if (googleKey) headers["X-Google-Api-Key"] = googleKey;
 
       const res = await fetch("/api/generate/image", {
@@ -510,8 +516,8 @@ export function ElementInspector({
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Failed" }));
-        console.error("Image generation failed:", err.error);
+        const err = await res.json().catch(() => ({ error: "Image generation failed" }));
+        toast.error(err.error ?? "Image generation failed");
         return;
       }
 
