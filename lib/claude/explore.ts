@@ -66,12 +66,19 @@ TWO types of visuals — use the RIGHT approach for each:
    - NEVER use placeholder services, empty src, or data URIs. Omit src entirely — the pipeline adds it.
 
 2. LOGOS, ICONS, and SIMPLE GRAPHICS (brand logos, UI icons, decorative marks, badges, social icons):
-   Generate these as inline <svg> elements directly in the code. Do NOT use data-generate-image for these.
-   - Brand/company logos: create a simple, clean SVG mark (geometric shapes, lettermarks, or abstract symbols)
-   - UI icons: use inline SVG paths (e.g. arrow, check, star, menu icons)
-   - Logo grids/trust bars: create distinct SVG logos for each company — vary shapes, use text elements for wordmarks
-   - Social media icons: use standard SVG paths for known platforms
-   - Decorative elements: SVG patterns, dividers, abstract shapes
+   Do NOT use data-generate-image for these. Two options:
+
+   a) REAL BRAND LOGOS — use Simple Icons CDN for recognisable brands:
+      <img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/{slug}.svg" alt="Brand" className="h-6 opacity-60" />
+      Common slugs: stripe, github, figma, openai, slack, discord, notion, shopify, vercel, react, nextdotjs, tailwindcss, typescript, linkedin, x, youtube, meta, apple, microsoft, google, nvidia, adobe, dropbox, netlify, railway, linear, asana, docker, kubernetes, postgresql, mongodb, redis, amazonaws, googlecloud, microsoftazure
+      Styling: All Simple Icons are monochrome black. Apply opacity-40 to opacity-70 for subtle trust bars.
+      Only use for genuinely recognisable brands you are CERTAIN exist in Simple Icons.
+
+   b) CUSTOM/FICTIONAL LOGOS — use inline <svg> elements:
+      - Create distinct SVG marks (geometric shapes, lettermarks, abstract symbols)
+      - UI icons: inline SVG paths (arrow, check, star, menu)
+      - Decorative elements: SVG patterns, dividers
+
    This means logos render instantly without needing image generation.
 
 Rules for photographs (data-generate-image):
@@ -90,6 +97,15 @@ Rules for photographs (data-generate-image):
 - WRONG: <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">SC</div>
 - RIGHT: <img data-generate-image="modern office workspace with natural lighting" data-image-style="photo" data-image-ratio="16:9" alt="Office" className="w-full h-64 object-cover" />
 - Even when mapping over arrays, write each data-generate-image value as an inline string literal directly on the <img> tag. Do NOT store image prompts in data arrays or variables.
+
+Design System Compliance (MANDATORY — verify before outputting each variant)
+- The design system specification appended below this prompt is NOT optional. It is the single source of truth.
+- Every colour, font family, font weight, spacing value, and border-radius MUST come from the design system tokens.
+- If the design system specifies rounded-full or pill-shaped buttons (border-radius: 9999px), NEVER use rounded-md, rounded-lg, or rounded-sm on buttons. Match the exact radius.
+- If the design system specifies specific fonts (e.g. CursorGothic, jjannon), use ONLY those fonts. Never substitute with Inter, Roboto, or system-ui.
+- Do NOT invent a product name, brand name, or company identity. If the design system names a brand, use that exact name. Otherwise use generic text like "Product" or "Company".
+- Do NOT use pure black (#000000) or pure white (#FFFFFF) unless the design system explicitly defines them.
+- SELF-CHECK: Before writing each variant, mentally verify: Are my colours from the token list? Are my fonts correct? Are my border-radius values matching? Are my spacing values from the grid? If any answer is no, fix it before outputting.
 
 OUTPUT FORMAT:
 For each variant, output EXACTLY this format:
@@ -156,12 +172,19 @@ TWO types of visuals — use the RIGHT approach for each:
    - NEVER use placeholder services, empty src, or data URIs. Omit src entirely — the pipeline adds it.
 
 2. LOGOS, ICONS, and SIMPLE GRAPHICS (brand logos, UI icons, decorative marks, badges, social icons):
-   Generate these as inline <svg> elements directly in the code. Do NOT use data-generate-image for these.
-   - Brand/company logos: create a simple, clean SVG mark (geometric shapes, lettermarks, or abstract symbols)
-   - UI icons: use inline SVG paths (e.g. arrow, check, star, menu icons)
-   - Logo grids/trust bars: create distinct SVG logos for each company — vary shapes, use text elements for wordmarks
-   - Social media icons: use standard SVG paths for known platforms
-   - Decorative elements: SVG patterns, dividers, abstract shapes
+   Do NOT use data-generate-image for these. Two options:
+
+   a) REAL BRAND LOGOS — use Simple Icons CDN for recognisable brands:
+      <img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/{slug}.svg" alt="Brand" className="h-6 opacity-60" />
+      Common slugs: stripe, github, figma, openai, slack, discord, notion, shopify, vercel, react, nextdotjs, tailwindcss, typescript, linkedin, x, youtube, meta, apple, microsoft, google, nvidia, adobe, dropbox, netlify, railway, linear, asana, docker, kubernetes, postgresql, mongodb, redis, amazonaws, googlecloud, microsoftazure
+      Styling: All Simple Icons are monochrome black. Apply opacity-40 to opacity-70 for subtle trust bars.
+      Only use for genuinely recognisable brands you are CERTAIN exist in Simple Icons.
+
+   b) CUSTOM/FICTIONAL LOGOS — use inline <svg> elements:
+      - Create distinct SVG marks (geometric shapes, lettermarks, abstract symbols)
+      - UI icons: inline SVG paths (arrow, check, star, menu)
+      - Decorative elements: SVG patterns, dividers
+
    This means logos render instantly without needing image generation.
 
 Rules for photographs (data-generate-image):
@@ -180,6 +203,15 @@ Rules for photographs (data-generate-image):
 - WRONG: <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">SC</div>
 - RIGHT: <img data-generate-image="modern office workspace with natural lighting" data-image-style="photo" data-image-ratio="16:9" alt="Office" className="w-full h-64 object-cover" />
 - Even when mapping over arrays, write each data-generate-image value as an inline string literal directly on the <img> tag. Do NOT store image prompts in data arrays or variables.
+
+Design System Compliance (MANDATORY — verify before outputting each variant)
+- The design system specification appended below this prompt is NOT optional. It is the single source of truth.
+- Every colour, font family, font weight, spacing value, and border-radius MUST come from the design system tokens.
+- If the design system specifies rounded-full or pill-shaped buttons (border-radius: 9999px), NEVER use rounded-md, rounded-lg, or rounded-sm on buttons. Match the exact radius.
+- If the design system specifies specific fonts (e.g. CursorGothic, jjannon), use ONLY those fonts. Never substitute with Inter, Roboto, or system-ui.
+- Do NOT invent a product name, brand name, or company identity. If the design system names a brand, use that exact name. Otherwise use generic text like "Product" or "Company".
+- Do NOT use pure black (#000000) or pure white (#FFFFFF) unless the design system explicitly defines them.
+- SELF-CHECK: Before writing each variant, mentally verify: Are my colours from the token list? Are my fonts correct? Are my border-radius values matching? Are my spacing values from the grid? If any answer is no, fix it before outputting.
 
 OUTPUT FORMAT:
 For each variant, output EXACTLY this format:
