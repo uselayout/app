@@ -46,7 +46,16 @@ async function ChangelogPageInner({
   let draftWeek: ChangelogWeek | null = null;
   if (showDraft && draftEntries.length > 0) {
     const { weekId, label } = getISOWeekLabel();
-    draftWeek = { weekId, label, entries: draftEntries };
+    draftWeek = {
+      weekId,
+      label,
+      summary: "Draft entries for the current week.",
+      items: draftEntries.map((e) => ({
+        text: e.title,
+        product: e.product,
+        category: e.category,
+      })),
+    };
   }
 
   return (

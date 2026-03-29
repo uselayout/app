@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/admin-context";
 import { draftEntries, publishedWeeks } from "@/content/changelog";
-import { publishDraft, writeDraftEntries } from "@/lib/changelog/publish";
+import { compileDraft, publishWeek, writeDraftEntries } from "@/lib/changelog/publish";
 import type { ChangelogEntry } from "@/lib/types/changelog";
 import { z } from "zod";
 
@@ -14,36 +14,59 @@ const entrySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
+const publishSchema = z.object({
+  weekId: z.string().min(1),
+  label: z.string().min(1),
+  summary: z.string().min(1),
+  items: z.array(
+    z.object({
+      text: z.string().min(1),
+      product: z.enum(["studio", "cli", "figma-plugin", "chrome-extension"]),
+      category: z.enum(["new", "improved", "fixed"]),
+    })
+  ),
+});
+
+// GET: return draft entries, compiled preview, and recent published weeks
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
+  const compiled =
+    draftEntries.length > 0 ? compileDraft(draftEntries) : null;
+
   return NextResponse.json({
     draft: draftEntries,
+    compiled,
     published: publishedWeeks.slice(0, 5),
   });
 }
 
-// Publish draft
+// POST: publish a compiled weekly entry
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const result = publishDraft();
+    const body = await request.json();
+    const week = publishSchema.parse(body);
+    publishWeek(week);
     return NextResponse.json({
       success: true,
-      weekId: result.weekId,
-      label: result.label,
-      entryCount: result.entryCount,
+      weekId: week.weekId,
+      label: week.label,
+      entryCount: week.items.length,
     });
   } catch (err) {
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid week data", details: err.issues }, { status: 400 });
+    }
     const message = err instanceof Error ? err.message : "Publish failed";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
 
-// Update draft entries (full replacement)
+// PUT: update draft entries
 export async function PUT(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
