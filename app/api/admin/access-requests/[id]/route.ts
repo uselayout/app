@@ -4,16 +4,12 @@ import { requireAdmin } from "@/lib/api/admin-context";
 import { createInviteCodes } from "@/lib/supabase/invite-codes";
 import { supabase } from "@/lib/supabase/client";
 import { sendEmail } from "@/lib/email/send";
+import { resolveSender } from "@/lib/email/senders";
+import { logEmail } from "@/lib/email/log";
 import {
   welcomeEmailHtml,
   welcomeEmailSubject,
 } from "@/lib/email/templates/welcome";
-
-const SENDER_OPTIONS: Record<string, string> = {
-  "matt@layout.design": "Matt from Layout <matt@layout.design>",
-  "ben@layout.design": "Ben from Layout <ben@layout.design>",
-  "hello@layout.design": "Layout <hello@layout.design>",
-};
 
 const PatchSchema = z.object({
   status: z.enum(["approved", "rejected"]).optional(),
@@ -99,9 +95,7 @@ export async function PATCH(
     const recipientEmail = (data as Record<string, string>).email;
     const recipientName = (data as Record<string, string>).name;
     if (recipientEmail && recipientName) {
-      const from = fromEmail && SENDER_OPTIONS[fromEmail]
-        ? SENDER_OPTIONS[fromEmail]
-        : undefined;
+      const from = resolveSender(fromEmail);
       const result = await sendEmail({
         to: recipientEmail,
         subject: welcomeEmailSubject(),
@@ -109,6 +103,14 @@ export async function PATCH(
         from,
       });
       emailSent = result.success && !("skipped" in result);
+      if (emailSent) {
+        await logEmail({
+          accessRequestId: id,
+          emailType: "welcome",
+          fromEmail,
+          resendId: "id" in result ? (result.id as string) : undefined,
+        });
+      }
       if (!result.success) {
         console.error("Welcome email failed for", recipientEmail, result.error);
       }

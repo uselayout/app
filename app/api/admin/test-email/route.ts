@@ -2,20 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/api/admin-context";
 import { sendEmail } from "@/lib/email/send";
+import { resolveSender } from "@/lib/email/senders";
 import {
   welcomeEmailHtml,
   welcomeEmailSubject,
 } from "@/lib/email/templates/welcome";
-
-const SENDER_OPTIONS: Record<string, string> = {
-  "matt@layout.design": "Matt from Layout <matt@layout.design>",
-  "ben@layout.design": "Ben from Layout <ben@layout.design>",
-  "hello@layout.design": "Layout <hello@layout.design>",
-};
+import {
+  reminderEmailHtml,
+  reminderEmailSubject,
+} from "@/lib/email/templates/reminder";
 
 const Schema = z.object({
   to: z.string().email(),
   fromEmail: z.string().optional(),
+  template: z.enum(["welcome", "reminder", "final_reminder"]).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -37,16 +37,32 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { to, fromEmail } = parsed.data;
-  const from =
-    fromEmail && SENDER_OPTIONS[fromEmail]
-      ? SENDER_OPTIONS[fromEmail]
-      : undefined;
+  const { to, fromEmail, template = "welcome" } = parsed.data;
+  const from = resolveSender(fromEmail);
+
+  let subject: string;
+  let html: string;
+  const testParams = { name: "Test User", inviteCode: "TEST1234" };
+
+  switch (template) {
+    case "reminder":
+      subject = reminderEmailSubject(false);
+      html = reminderEmailHtml({ ...testParams, isFinal: false });
+      break;
+    case "final_reminder":
+      subject = reminderEmailSubject(true);
+      html = reminderEmailHtml({ ...testParams, isFinal: true });
+      break;
+    default:
+      subject = welcomeEmailSubject();
+      html = welcomeEmailHtml(testParams);
+      break;
+  }
 
   const result = await sendEmail({
     to,
-    subject: `[TEST] ${welcomeEmailSubject()}`,
-    html: welcomeEmailHtml({ name: "Test User", inviteCode: "TEST1234" }),
+    subject: `[TEST] ${subject}`,
+    html,
     from,
   });
 
