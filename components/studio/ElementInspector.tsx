@@ -754,22 +754,28 @@ export function ElementInspector({
                 </select>
               </div>
             </div>
-            <button
-              onClick={handleGenerateImage}
-              disabled={isGeneratingImage || !imagePromptEdit.trim()}
-              className="mt-auto flex items-center justify-center gap-1.5 rounded bg-[var(--studio-accent)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-40"
-            >
-              {isGeneratingImage ? (
-                <>
-                  <Loader2 size={12} className="animate-spin" />
-                  Generating...
-                </>
-              ) : selected.imageSrc && !isPlaceholderSrc(selected.imageSrc) ? (
-                "Regenerate"
-              ) : (
-                "Generate"
-              )}
-            </button>
+            {!getStoredGoogleApiKey() ? (
+              <p className="mt-auto rounded border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[10px] text-amber-400">
+                Add a Google AI API key in Settings to generate images.
+              </p>
+            ) : (
+              <button
+                onClick={handleGenerateImage}
+                disabled={isGeneratingImage || !imagePromptEdit.trim()}
+                className="mt-auto flex items-center justify-center gap-1.5 rounded bg-[var(--studio-accent)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-40"
+              >
+                {isGeneratingImage ? (
+                  <>
+                    <Loader2 size={12} className="animate-spin" />
+                    Generating...
+                  </>
+                ) : selected.imageSrc && !isPlaceholderSrc(selected.imageSrc) ? (
+                  "Regenerate"
+                ) : (
+                  "Generate"
+                )}
+              </button>
+            )}
           </div>
         )}
 
