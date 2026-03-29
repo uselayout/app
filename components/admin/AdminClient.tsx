@@ -27,6 +27,7 @@ interface AccessRequestRow {
   inviteCode: string | null;
   signedUp: boolean;
   createdAt: string;
+  emailTypes: string[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -539,6 +540,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
   const [saving, setSaving] = useState(false);
   const [senderEmail, setSenderEmail] = useState("matt@layout.design");
   const [sendingTest, setSendingTest] = useState(false);
+  const [resending, setResending] = useState<string | null>(null);
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -619,6 +621,38 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
       toast(`Failed to update ${editing.field}`, "error");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const getNextEmailAction = (row: AccessRequestRow): { type: string; label: string } | null => {
+    if (row.status !== "approved" || row.signedUp) return null;
+    const types = row.emailTypes ?? [];
+    if (types.filter((t) => t === "welcome").length < 2) return { type: "welcome", label: "Resend welcome" };
+    if (!types.includes("reminder")) return { type: "reminder", label: "Send reminder" };
+    if (!types.includes("final_reminder")) return { type: "final_reminder", label: "Final reminder" };
+    return null;
+  };
+
+  const handleResend = async (row: AccessRequestRow) => {
+    const action = getNextEmailAction(row);
+    if (!action) return;
+    setResending(row.id);
+    try {
+      const res = await fetch(`/api/admin/access-requests/${row.id}/resend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromEmail: senderEmail, type: action.type }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({ error: "Failed" })) as { error?: string };
+        throw new Error(json.error ?? "Failed to send");
+      }
+      toast(`Sent: ${action.label}`);
+      void fetchRequests();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Failed to send email", "error");
+    } finally {
+      setResending(null);
     }
   };
 
@@ -870,22 +904,44 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                         </button>
                       </div>
                     ) : row.inviteCode ? (
-                      <button
-                        onClick={() => {
-                          copyToClipboard(row.inviteCode!);
-                          toast(`Copied ${row.inviteCode}`);
-                        }}
-                        className="flex items-center gap-2 px-3 py-1 rounded-md text-xs font-mono transition-all"
-                        style={{
-                          background: "var(--bg-elevated)",
-                          color: "var(--text-secondary)",
-                          border: "1px solid var(--studio-border)",
-                        }}
-                        title="Click to copy invite code"
-                      >
-                        {row.inviteCode}
-                        <span style={{ color: "var(--text-muted)" }}>⧉</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            copyToClipboard(row.inviteCode!);
+                            toast(`Copied ${row.inviteCode}`);
+                          }}
+                          className="flex items-center gap-2 px-3 py-1 rounded-md text-xs font-mono transition-all"
+                          style={{
+                            background: "var(--bg-elevated)",
+                            color: "var(--text-secondary)",
+                            border: "1px solid var(--studio-border)",
+                          }}
+                          title="Click to copy invite code"
+                        >
+                          {row.inviteCode}
+                          <span style={{ color: "var(--text-muted)" }}>⧉</span>
+                        </button>
+                        {(() => {
+                          const action = getNextEmailAction(row);
+                          if (!action) return null;
+                          return (
+                            <button
+                              onClick={() => void handleResend(row)}
+                              disabled={resending === row.id}
+                              className="px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap"
+                              style={{
+                                background: "rgba(96,165,250,0.1)",
+                                color: "#60a5fa",
+                                border: "1px solid rgba(96,165,250,0.2)",
+                                opacity: resending === row.id ? 0.5 : 1,
+                                cursor: resending === row.id ? "not-allowed" : "pointer",
+                              }}
+                            >
+                              {resending === row.id ? "Sending..." : action.label}
+                            </button>
+                          );
+                        })()}
+                      </div>
                     ) : (
                       <span style={{ color: "var(--text-muted)" }}>—</span>
                     )}

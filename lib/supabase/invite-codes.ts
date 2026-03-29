@@ -36,6 +36,7 @@
  */
 
 import { supabase } from "./client";
+import { getEmailTypesForRequests } from "@/lib/email/log";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,6 +60,7 @@ export interface AccessRequest {
   inviteCode: string | null;
   signedUp: boolean;
   createdAt: string;
+  emailTypes: string[];
 }
 
 // ─── Row Types ────────────────────────────────────────────────────────────────
@@ -110,6 +112,7 @@ function rowToAccessRequest(row: AccessRequestRow): AccessRequest {
     inviteCode: row.invite_code,
     signedUp: row.invite_codes?.redeemed_by != null,
     createdAt: row.created_at,
+    emailTypes: [],
   };
 }
 
@@ -310,5 +313,16 @@ export async function getAccessRequests(opts?: {
   const { data, error } = await query;
 
   if (error || !data) return [];
-  return (data as AccessRequestRow[]).map(rowToAccessRequest);
+
+  const rows = (data as AccessRequestRow[]).map(rowToAccessRequest);
+
+  // Fetch email history for all requests in one query
+  const ids = rows.map((r) => r.id);
+  const emailMap = await getEmailTypesForRequests(ids);
+
+  for (const row of rows) {
+    row.emailTypes = emailMap[row.id] ?? [];
+  }
+
+  return rows;
 }
