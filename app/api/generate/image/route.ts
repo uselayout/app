@@ -63,8 +63,9 @@ export async function POST(request: NextRequest) {
 
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) {
+    const fields = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(", ");
     return NextResponse.json(
-      { error: "Invalid request", details: parsed.error.issues },
+      { error: `Invalid request: ${fields}` },
       { status: 400 }
     );
   }

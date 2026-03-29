@@ -339,11 +339,14 @@ export function ElementInspector({
   useEffect(() => { activeSectionRef.current = activeSection; }, [activeSection]);
 
   // Sync image edit state when an image element is selected
+  const validStyles = ["photo", "illustration", "icon", "abstract"];
+  const validRatios = ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "21:9"];
   useEffect(() => {
     if (selected?.imagePrompt) {
       setImagePromptEdit(selected.imagePrompt);
-      setImageStyleEdit(selected.imageStyle ?? "photo");
-      setImageRatioEdit(selected.imageRatio ?? "16:9");
+      const style = selected.imageStyle?.toLowerCase() ?? "";
+      setImageStyleEdit(validStyles.includes(style) ? style : "photo");
+      setImageRatioEdit(validRatios.includes(selected.imageRatio ?? "") ? selected.imageRatio! : "1:1");
     }
   }, [selected?.elementId, selected?.imagePrompt, selected?.imageStyle, selected?.imageRatio]);
 
