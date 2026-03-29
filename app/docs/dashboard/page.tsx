@@ -49,7 +49,7 @@ export default function DashboardPage() {
                 ],
                 [
                   "Studio",
-                  "Two-panel workspace for editing your layout.md and generating components with the Explorer Canvas.",
+                  "Two-panel workspace for editing your layout.md and generating components with the Explorer.",
                 ],
               ].map(([page, purpose]) => (
                 <tr key={page} className="hover:bg-gray-50">

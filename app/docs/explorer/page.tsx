@@ -5,7 +5,7 @@ import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
 
 export const metadata: Metadata = {
-  title: "Explorer Canvas | Layout Docs",
+  title: "Explorer | Layout Docs",
   description:
     "AI-powered design exploration tool for generating multiple component variants from a single prompt, with image upload, refinement, and team review workflows.",
 };
@@ -17,9 +17,9 @@ export default function ExplorerPage() {
     <div className="space-y-10">
       {/* Header */}
       <div className="space-y-3">
-        <h1 className="text-3xl font-bold text-[#0a0a0a]">Explorer Canvas</h1>
+        <h1 className="text-3xl font-bold text-[#0a0a0a]">Explorer</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Explorer Canvas is an AI-powered design exploration tool built into
+          The Explorer is an AI-powered design exploration tool built into
           the Studio. Enter a prompt, set how many variants to generate, and
           the AI produces multiple component options using your extracted design
           tokens, all in a single pass. Use it to explore directions quickly
@@ -146,8 +146,8 @@ export default function ExplorerPage() {
               2
             </span>
             <p className="text-base leading-relaxed">
-              Switch to Canvas view using the toggle in the top bar. The
-              three-panel editor will be replaced by the Explorer Canvas
+              Switch to Explore mode using the toggle in the top bar. The
+              three-panel editor will be replaced by the Explorer
               interface.
             </p>
           </li>
@@ -278,8 +278,8 @@ export default function ExplorerPage() {
         </div>
 
         <Callout type="info">
-          Explorer Canvas requires a project with a completed extraction and a
-          generated layout.md. If the Canvas view toggle is disabled, generate
+          The Explorer requires a project with a completed extraction and a
+          generated layout.md. If the Explore mode toggle is disabled, generate
           layout.md in the Editor panel first.
         </Callout>
 
@@ -299,7 +299,7 @@ export default function ExplorerPage() {
               Studio Guide
             </Link>
             . Learn how to extract design tokens and generate layout.md before
-            using the Explorer Canvas.
+            using the Explorer.
           </li>
           <li>
             <Link href="/docs/layout-md" className="text-gray-900 hover:underline">

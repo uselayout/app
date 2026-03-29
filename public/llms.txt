@@ -8,7 +8,7 @@ Layout extracts design systems from Figma files and live websites, then generate
 
 - **Extract** design tokens, components, fonts, and screenshots from Figma or live websites
 - **Studio editor** with three panels: source browser, layout.md editor with AI chat, and live component preview
-- **Explorer Canvas** for generating 2–6 component variants from a single prompt
+- **Explorer** for generating 2–6 component variants from a single prompt
 - **MCP server** (`@layoutdesign/context`) that serves design context to AI agents in real-time
 - **Export** ZIP bundles with layout.md, tokens.css, tokens.json, tailwind.config.js, AGENTS.md, and Cursor rules
 - **Push to Figma** — send AI-generated components back to Figma as real auto-layout frames
@@ -19,7 +19,7 @@ Layout extracts design systems from Figma files and live websites, then generate
 - [What is Layout?](https://layout.design/docs)
 - [Walkthrough](https://layout.design/docs/walkthrough)
 - [Studio Editor](https://layout.design/docs/studio)
-- [Explorer Canvas](https://layout.design/docs/explorer)
+- [Explorer](https://layout.design/docs/explorer)
 - [CLI & MCP Server](https://layout.design/docs/cli)
 - [layout.md Format](https://layout.design/docs/layout-md)
 - [Component Library](https://layout.design/docs/component-library)

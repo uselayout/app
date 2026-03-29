@@ -48,7 +48,7 @@ ${heading("Get started:")}
   <li style="margin-bottom:10px;">Create a project by pasting a Figma file URL or any live website URL. Layout will extract your tokens, typography, colours, spacing, components, and patterns automatically.</li>
   <li style="margin-bottom:10px;">Review your layout.md in the Studio editor. It shows your complete design system context. Edit, refine, or use it as-is.</li>
   <li style="margin-bottom:10px;">Install the CLI by running <code style="background:rgba(224,224,230,0.1);padding:2px 6px;border-radius:4px;font-size:13px;color:#e4f222;">npx @layoutdesign/context install</code> in your project directory to connect Layout to your AI coding tool as an MCP server. Your agent now has your full design system as context.</li>
-  <li>Try the Explorer Canvas. This is where it gets interesting. Generate multiple component variants from a single prompt, all using your design system tokens. Compare, refine, and save the ones you like to your component library.</li>
+  <li>Try the Explorer. This is where it gets interesting. Generate multiple component variants from a single prompt, all using your design system tokens. Compare, refine, and save the ones you like to your component library.</li>
 </ol>
 
 ${p("That's it. Next time you ask your AI tool to build a component, it will use your actual design system, not its own defaults.")}
@@ -61,7 +61,7 @@ ${p("Your free account comes with a few credits to get started: 2 extractions an
 
 ${p("Two keys to add:")}
 <ul style="margin:0 0 16px;padding-left:20px;font-size:14px;color:rgba(237,237,244,0.7);line-height:1.6;">
-  <li style="margin-bottom:8px;"><strong style="color:#EDEDF4;">Anthropic API key</strong> (${link("https://console.anthropic.com", "console.anthropic.com")}) powers layout.md generation and the Explorer Canvas. When active, no credits are consumed.</li>
+  <li style="margin-bottom:8px;"><strong style="color:#EDEDF4;">Anthropic API key</strong> (${link("https://console.anthropic.com", "console.anthropic.com")}) powers layout.md generation and the Explorer. When active, no credits are consumed.</li>
   <li><strong style="color:#EDEDF4;">Google AI API key</strong> (${link("https://aistudio.google.com/apikey", "aistudio.google.com")}) enables AI image generation within your components. This is BYOK-only and not included in free credits.</li>
 </ul>
 

@@ -39,7 +39,7 @@ Three-panel layout:
 - **Editor Panel** (centre): Monaco editor for layout.md with syntax highlighting. Includes an AI chat bar for making edits in natural language.
 - **Test Panel** (right): Generate component variants with live preview, health scoring, and a toggle to compare output with vs without design context.
 
-### Explorer Canvas
+### Explorer
 
 AI-powered design exploration surface:
 - Generate 2–6 component variants simultaneously from a single prompt

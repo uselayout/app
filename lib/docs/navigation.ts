@@ -21,7 +21,7 @@ export const docsNavigation: DocNavSection[] = [
     label: "Studio",
     items: [
       { title: "Studio Guide", href: "/docs/studio" },
-      { title: "Explorer Canvas", href: "/docs/explorer" },
+      { title: "Explorer", href: "/docs/explorer" },
       { title: "Component Library", href: "/docs/component-library" },
     ],
   },

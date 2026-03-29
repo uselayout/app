@@ -137,7 +137,7 @@ export default function FigmaPluginPage() {
             <h3 className="text-lg font-semibold text-[#0a0a0a]">Canvas</h3>
             <p className="text-base text-gray-600 leading-relaxed">
               Capture a component or frame as a screenshot with token context.
-              Push it to Layout&apos;s Explorer Canvas where AI rebuilds it
+              Push it to Layout&apos;s Explorer where AI rebuilds it
               using your design system tokens and generates multiple variants.
               Requires at least one existing project in Layout Studio. Create a
               project first if you have not already.

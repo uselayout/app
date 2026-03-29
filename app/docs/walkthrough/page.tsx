@@ -296,7 +296,7 @@ export default function WalkthroughPage() {
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
           After generation completes, the Studio opens with two modes: Editor
-          mode and Canvas mode. All changes auto-save to browser storage with
+          mode and Explore mode. All changes auto-save to browser storage with
           a 2-second debounce. There is no Save button and no account required.
         </p>
         <div className="space-y-4">
@@ -332,13 +332,13 @@ export default function WalkthroughPage() {
           </div>
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
-              Canvas Mode{" "}
+              Explore Mode{" "}
               <span className="text-gray-400 font-normal text-sm">
-                (Source Panel + Explorer Canvas)
+                (Source Panel + Explorer)
               </span>
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              The Explorer Canvas is the AI generation surface. Generate
+              The Explorer is the AI generation surface. Generate
               multiple component variants simultaneously, compare output with
               and without layout.md in a side-by-side comparison view, check
               the per-variant health score, and iterate until the AI reliably
@@ -355,7 +355,7 @@ export default function WalkthroughPage() {
           5. Test Your Context
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The Explorer Canvas is the most important step before exporting. It
+          The Explorer is the most important step before exporting. It
           tells you whether layout.md actually improves AI output, and by how
           much.
         </p>
@@ -380,8 +380,8 @@ export default function WalkthroughPage() {
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
             Preset component requests appear as one-click buttons in the
-            Explorer Canvas: primary button, card, form input, badge, and more.
-            If your extraction included Figma components, the canvas also
+            Explorer: primary button, card, form input, badge, and more.
+            If your extraction included Figma components, the Explorer also
             generates dynamic prompts for each extracted component name, giving
             you targeted tests for your specific design system rather than
             generic UI patterns.
@@ -393,7 +393,7 @@ export default function WalkthroughPage() {
             Health Score
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
-            Each generated variant in the Explorer Canvas shows a 0-100 health
+            Each generated variant in the Explorer shows a 0-100 health
             score measuring token faithfulness, component accuracy, and
             anti-pattern violations. The score reflects how closely the
             generated code follows the rules in layout.md. Aim for 80 or higher
@@ -406,7 +406,7 @@ export default function WalkthroughPage() {
             Live Variant Preview
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
-            Each variant card in the Explorer Canvas renders the generated TSX
+            Each variant card in the Explorer renders the generated TSX
             live in a sandboxed iframe with React and Tailwind CSS loaded. You
             see the actual component, not just code, so visual errors such as
             wrong colours or broken layouts are immediately obvious without
@@ -765,7 +765,7 @@ npx @layoutdesign/context install`}
             Comparison View A/B Testing
           </h3>
           <p className="text-base text-gray-600 leading-relaxed">
-            The comparison view in the Explorer Canvas is the fastest way to
+            The comparison view in the Explorer is the fastest way to
             validate whether layout.md is providing value. Generate variants
             with and without context side by side using the same prompt. If the
             output looks identical, the context file is not doing its job and
@@ -842,7 +842,7 @@ npx @layoutdesign/context init --kit notion-lite`}
             >
               Studio Guide
             </Link>
-            . Deeper reference for the editor, canvas, and all extraction
+            . Deeper reference for the editor, Explorer, and all extraction
             options.
           </li>
           <li>

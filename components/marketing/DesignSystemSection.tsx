@@ -31,7 +31,7 @@ export function DesignSystemSection() {
               Extraction is the starting point, not the end. Layout gives you a structured design system — tokens, typography, and components, all browsable in the Studio.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Generate components in the Explorer Canvas with AI assistance. Describe what you need — Layout generates variants using your design tokens. Save the best ones to your library with categories and tags.
+              Generate components in the Explorer with AI assistance. Describe what you need — Layout generates variants using your design tokens. Save the best ones to your library with categories and tags.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
               Browse saved components and pages in the Studio. Filter by type, search by category. Everything stays connected to your layout.md.

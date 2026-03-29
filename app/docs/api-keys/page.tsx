@@ -138,7 +138,7 @@ export default function ApiKeysPage() {
         </div>
 
         <Callout type="tip">
-          Layout will show an amber warning banner in the Explorer Canvas if it
+          Layout will show an amber warning banner in the Explorer if it
           detects that keys you previously added are no longer available. Look
           for the key icon next to the model selector.
         </Callout>
