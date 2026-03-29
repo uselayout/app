@@ -316,6 +316,12 @@ export function ElementInspector({
   const [pendingEdits, setPendingEdits] = useState<StyleEdit[]>([]);
   const [annotations, setAnnotations] = useState<ElementAnnotation[]>([]);
   const [annotationText, setAnnotationText] = useState("");
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{ mouseX: number; mouseY: number; panelX: number; panelY: number } | null>(null);
+  const [panelSize, setPanelSize] = useState<{ width: number; height: number }>({ width: 300, height: 480 });
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeStartRef = useRef<{ mouseX: number; mouseY: number; width: number; height: number } | null>(null);
   const [imagePromptEdit, setImagePromptEdit] = useState("");
   const [imageStyleEdit, setImageStyleEdit] = useState("photo");
   const [imageRatioEdit, setImageRatioEdit] = useState("16:9");
@@ -526,6 +532,85 @@ export function ElementInspector({
     }
   }, [selected, imagePromptEdit, imageStyleEdit, imageRatioEdit, iframeRef, onImageGenerated]);
 
+  // --- Drag handling ---
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const rect = popoverRef.current?.getBoundingClientRect();
+    const container = containerRef.current?.getBoundingClientRect();
+    if (!rect || !container) return;
+    dragStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      panelX: rect.left - container.left,
+      panelY: rect.top - container.top,
+    };
+    setIsDragging(true);
+  }, [containerRef]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+    function onMouseMove(e: MouseEvent) {
+      if (!dragStartRef.current) return;
+      const dx = e.clientX - dragStartRef.current.mouseX;
+      const dy = e.clientY - dragStartRef.current.mouseY;
+      setDragPos({
+        x: dragStartRef.current.panelX + dx,
+        y: dragStartRef.current.panelY + dy,
+      });
+    }
+    function onMouseUp() {
+      setIsDragging(false);
+      dragStartRef.current = null;
+    }
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [isDragging]);
+
+  // Reset drag position when selecting a new element
+  useEffect(() => {
+    setDragPos(null);
+  }, [selected?.elementId]);
+
+  // --- Resize handling ---
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizeStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      width: panelSize.width,
+      height: panelSize.height,
+    };
+    setIsResizing(true);
+  }, [panelSize]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+    function onMouseMove(e: MouseEvent) {
+      if (!resizeStartRef.current) return;
+      const dx = e.clientX - resizeStartRef.current.mouseX;
+      const dy = e.clientY - resizeStartRef.current.mouseY;
+      setPanelSize({
+        width: Math.max(280, Math.min(500, resizeStartRef.current.width + dx)),
+        height: Math.max(200, Math.min(700, resizeStartRef.current.height + dy)),
+      });
+    }
+    function onMouseUp() {
+      setIsResizing(false);
+      resizeStartRef.current = null;
+    }
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [isResizing]);
+
   const handleClose = useCallback(() => {
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage({ type: "layout-inspector-deselect" }, "*");
@@ -562,11 +647,11 @@ export function ElementInspector({
   const popoverX = (selected.rect.x + selected.rect.width) * iframeScale + 8;
   const popoverY = selected.rect.y * iframeScale;
 
-  // Ensure popover stays within container bounds
-  const maxX = containerRect ? containerRect.width - 270 : popoverX;
-  const maxY = containerRect ? containerRect.height - 400 : popoverY;
-  const finalX = Math.min(popoverX, maxX);
-  const finalY = Math.max(0, Math.min(popoverY, maxY));
+  // Use drag position if user has dragged, otherwise auto-position near element
+  const autoX = Math.min(popoverX, containerRect ? containerRect.width - panelSize.width - 10 : popoverX);
+  const autoY = Math.max(0, Math.min(popoverY, containerRect ? containerRect.height - panelSize.height - 10 : popoverY));
+  const finalX = dragPos?.x ?? autoX;
+  const finalY = dragPos?.y ?? autoY;
 
   const cs = selected.computedStyles;
 
@@ -583,12 +668,15 @@ export function ElementInspector({
   return (
     <div
       ref={popoverRef}
-      className="absolute z-50 w-[260px] rounded-lg border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] shadow-lg overflow-hidden"
-      style={{ left: finalX, top: finalY }}
+      className="absolute z-50 rounded-lg border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] shadow-lg flex flex-col"
+      style={{ left: finalX, top: finalY, width: panelSize.width, height: panelSize.height }}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-2.5 py-1.5">
+      {/* Header — drag handle */}
+      <div
+        onMouseDown={handleDragStart}
+        className={`flex items-center justify-between border-b border-[var(--studio-border)] px-2.5 py-1.5 select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+      >
         <span className="text-[10px] font-medium text-[var(--text-secondary)]">
           &lt;{selected.elementTag}&gt;
         </span>
@@ -618,7 +706,7 @@ export function ElementInspector({
       </div>
 
       {/* Properties */}
-      <div className="max-h-[360px] overflow-y-auto px-2.5 py-1.5">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 py-1.5">
         {activeSection === "image" && hasImageData && (
           <div className="flex flex-col gap-2">
             <label className="text-[10px] text-[var(--text-muted)]">Prompt</label>
@@ -808,6 +896,17 @@ export function ElementInspector({
           )}
         </div>
       )}
+
+      {/* Resize handle — bottom-right corner */}
+      <div
+        onMouseDown={handleResizeStart}
+        className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize"
+        style={{ touchAction: "none" }}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" className="text-[var(--text-muted)] opacity-40 hover:opacity-80 transition-opacity">
+          <path d="M14 14L8 14M14 14L14 8M14 14L6 6" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+        </svg>
+      </div>
     </div>
   );
 }
