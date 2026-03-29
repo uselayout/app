@@ -442,19 +442,44 @@ export function VariantCard({
 
   const handleImageGenerated = useCallback((prompt: string, imageUrl: string) => {
     if (!onCodeUpdate) return;
-    // Find the img tag with this prompt and add/update src
+
+    let updatedCode = variant.code;
     const escapedPrompt = prompt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const imgRegex = new RegExp(
-      `(<img\\s[^>]*?data-generate-image\\s*=\\s*["']${escapedPrompt}["'][^>]*?)(?:\\s*src=["'][^"']*["'])?(\\s*[^>]*?)\\/?>`,
+
+    // Strategy 1: Find img tag with literal data-generate-image="prompt"
+    const literalRe = new RegExp(
+      `(<img\\s[^>]*?data-generate-image=["']${escapedPrompt}["'][^>]*?)\\s*\\/?>`,
       "i",
     );
-    const match = variant.code.match(imgRegex);
-    if (match) {
-      // Remove existing src, then add new one
-      const tagWithoutSrc = (match[1] + match[2]).replace(/\s*src=["'][^"']*["']/g, "");
-      const updatedTag = `${tagWithoutSrc} src="${imageUrl}" />`;
-      const updatedCode = variant.code.replace(match[0], updatedTag);
+    const literalMatch = updatedCode.match(literalRe);
+
+    if (literalMatch) {
+      let tag = literalMatch[1];
+      // Remove any existing src attribute
+      tag = tag.replace(/\s+src=["'][^"']*["']/g, "");
+      updatedCode = updatedCode.replace(literalMatch[0], `${tag} src="${imageUrl}" />`);
+    } else {
+      // Strategy 2: Find the prompt as a string value in an array/object and add src nearby
+      // Look for prompt: "the prompt text" and add a generatedSrc property
+      const propRe = new RegExp(
+        `(["']${escapedPrompt}["'])`,
+        "i",
+      );
+      if (propRe.test(updatedCode)) {
+        // Find any img tag that has a placeholder SVG src and replace with the real URL
+        // This handles the case where the prompt is in a JS variable, not inline on the img
+        const placeholderImgRe = /src="data:image\/svg\+xml,[^"]*"/;
+        if (placeholderImgRe.test(updatedCode)) {
+          // Replace the first placeholder that hasn't been replaced yet
+          updatedCode = updatedCode.replace(placeholderImgRe, `src="${imageUrl}"`);
+        }
+      }
+    }
+
+    if (updatedCode !== variant.code) {
       onCodeUpdate(updatedCode, editHistory);
+    } else {
+      console.warn("[handleImageGenerated] Could not find img tag to update for prompt:", prompt.slice(0, 50));
     }
   }, [variant.code, editHistory, onCodeUpdate]);
 
