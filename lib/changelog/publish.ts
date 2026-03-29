@@ -1,11 +1,12 @@
 import * as fs from "fs";
 import * as path from "path";
+import type { ChangelogEntry } from "@/lib/types/changelog";
 
 const CONTENT_DIR = path.join(process.cwd(), "content", "changelog");
 const DRAFT_PATH = path.join(CONTENT_DIR, "draft.ts");
 const PUBLISHED_PATH = path.join(CONTENT_DIR, "published.ts");
 
-const EMPTY_DRAFT = `import type { ChangelogEntry } from "@/lib/types/changelog";
+const DRAFT_HEADER = `import type { ChangelogEntry } from "@/lib/types/changelog";
 
 /**
  * Draft entries for the current week.
@@ -15,8 +16,32 @@ const EMPTY_DRAFT = `import type { ChangelogEntry } from "@/lib/types/changelog"
  * Good: "Faster Figma extraction" / "Design tokens now extract 3x faster from large Figma files."
  * Bad:  "perf: optimise batch node fetching"
  */
-export const draftEntries: ChangelogEntry[] = [];
 `;
+
+function buildDraftFile(entries: ChangelogEntry[]): string {
+  if (entries.length === 0) {
+    return DRAFT_HEADER + "export const draftEntries: ChangelogEntry[] = [];\n";
+  }
+
+  const entriesJson = entries
+    .map((e) => {
+      const lines = [
+        `    {`,
+        `      id: ${JSON.stringify(e.id)},`,
+        `      title: ${JSON.stringify(e.title)},`,
+        `      description:`,
+        `        ${JSON.stringify(e.description)},`,
+        `      product: ${JSON.stringify(e.product)},`,
+        `      category: ${JSON.stringify(e.category)},`,
+        `      date: ${JSON.stringify(e.date)},`,
+        `    }`,
+      ];
+      return lines.join("\n");
+    })
+    .join(",\n");
+
+  return DRAFT_HEADER + `export const draftEntries: ChangelogEntry[] = [\n${entriesJson},\n];\n`;
+}
 
 function getISOWeek(): { weekId: string; label: string } {
   const now = new Date();
@@ -61,6 +86,10 @@ export function getDraftEntryCount(): number {
   return draft ? draft.entryCount : 0;
 }
 
+export function writeDraftEntries(entries: ChangelogEntry[]): void {
+  fs.writeFileSync(DRAFT_PATH, buildDraftFile(entries), "utf-8");
+}
+
 export function publishDraft(): { weekId: string; label: string; entryCount: number } {
   const draft = readDraftBlock();
   if (!draft) {
@@ -93,7 +122,7 @@ export function publishDraft(): { weekId: string; label: string; entryCount: num
     publishedContent.slice(arrayStart);
 
   fs.writeFileSync(PUBLISHED_PATH, updatedPublished, "utf-8");
-  fs.writeFileSync(DRAFT_PATH, EMPTY_DRAFT, "utf-8");
+  writeDraftEntries([]);
 
   return { weekId, label, entryCount: draft.entryCount };
 }
