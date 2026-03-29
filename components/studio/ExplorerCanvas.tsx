@@ -648,6 +648,12 @@ export function ExplorerCanvas({
       const variant = currentExploration.variants.find((v) => v.id === variantId);
       if (!variant) return;
 
+      // Check for Google AI key before attempting API call
+      if (!getStoredGoogleApiKey()) {
+        toast.error("Add a Google AI API key in Settings → API Keys to generate images.");
+        return;
+      }
+
       // Cancel any in-progress image generation
       imageAbortRef.current?.abort();
       const controller = new AbortController();

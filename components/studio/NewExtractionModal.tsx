@@ -6,7 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
 import { detectSourceType, normaliseUrl } from "@/lib/util/detect-source";
-import { getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
+import { getStoredFigmaApiKey, markKeySet } from "@/lib/hooks/use-api-key";
 
 interface NewExtractionModalProps {
   onClose: () => void;
@@ -80,6 +80,9 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
 
     if (isFigma && pat) {
       sessionStorage.setItem(`pat-${projectId}`, pat);
+      // Persist to Settings so user doesn't need to re-enter next time
+      localStorage.setItem("sd_figma_pat", pat);
+      markKeySet("figma");
     }
     sessionStorage.setItem(`extract-${projectId}`, "true");
 
