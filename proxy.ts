@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/request-access", "/api/auth", "/api/webhooks", "/api/mcp", "/api/templates", "/api/plugin", "/api/projects", "/api/health", "/api/invite/validate", "/api/access-requests", "/docs", "/pricing", "/invite", "/showcase", "/terms", "/privacy"];
+// All /api/ routes handle their own auth and return JSON 401 responses.
+// Redirecting them to /login would return HTML, breaking client-side JSON parsing.
+const PUBLIC_PATHS = ["/login", "/signup", "/request-access", "/api/", "/docs", "/pricing", "/invite", "/showcase", "/terms", "/privacy"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

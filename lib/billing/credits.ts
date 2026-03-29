@@ -60,6 +60,36 @@ export async function getCreditBalanceByOrg(
 }
 
 /**
+ * Get credit balance, auto-provisioning starter credits for new users.
+ * Use this instead of getCreditBalance() when you need to guarantee a row exists.
+ */
+export async function getOrCreateCreditBalance(
+  userId: string
+): Promise<CreditBalance> {
+  let balance = await getCreditBalance(userId);
+  if (!balance) {
+    const tier = await getUserTier(userId);
+    const now = new Date();
+    const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    await resetMonthlyCredits(userId, tier, 1, now.toISOString(), periodEnd.toISOString());
+    balance = await getCreditBalance(userId);
+  }
+  if (!balance) {
+    return {
+      userId,
+      orgId: "",
+      layoutMdRemaining: 0,
+      aiQueryRemaining: 0,
+      periodStart: new Date().toISOString(),
+      periodEnd: new Date().toISOString(),
+      topupLayoutMd: 0,
+      topupAiQuery: 0,
+    };
+  }
+  return balance;
+}
+
+/**
  * Check whether a user has enough credits for an AI call.
  * Returns allowed: true if they have remaining monthly OR top-up credits.
  */
