@@ -195,6 +195,18 @@ export function ExplorerCanvas({
       }
 
       const finalNew = parseVariants(fullOutput, parseOpts);
+
+      // Detect errors embedded in the stream (e.g. from Gemini)
+      if (finalNew.length === 0) {
+        const errorMatch = fullOutput.match(/\[Error:\s*(.+?)\]/);
+        if (errorMatch) {
+          throw new Error(errorMatch[1]);
+        }
+        if (fullOutput.trim().length > 0) {
+          throw new Error("Generation completed but no variants were produced. The model may have hit a content or token limit. Try a simpler prompt.");
+        }
+      }
+
       const finalMerged = [...existingVariants, ...finalNew];
       const finalExplorations = updatedExplorations.map((e) =>
         e.id === sessionId ? { ...e, variants: finalMerged } : e
