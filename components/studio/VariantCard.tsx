@@ -455,7 +455,7 @@ export function VariantCard({
     let updatedCode = variant.code;
     const escapedPrompt = prompt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-    // Strategy 1: Find img tag with literal data-generate-image="prompt"
+    // Strategy 1: Find img tag with literal data-generate-image="prompt" (exact match)
     const literalRe = new RegExp(
       `(<img\\s[^>]*?data-generate-image=["']${escapedPrompt}["'][^>]*?)\\s*\\/?>`,
       "i",
@@ -464,23 +464,52 @@ export function VariantCard({
 
     if (literalMatch) {
       let tag = literalMatch[1];
-      // Remove any existing src attribute
       tag = tag.replace(/\s+src=["'][^"']*["']/g, "");
       updatedCode = updatedCode.replace(literalMatch[0], `${tag} src="${imageUrl}" />`);
-    } else {
-      // Strategy 2: Find the prompt as a string value in an array/object and add src nearby
-      // Look for prompt: "the prompt text" and add a generatedSrc property
-      const propRe = new RegExp(
-        `(["']${escapedPrompt}["'])`,
+    }
+
+    // Strategy 2: Partial prompt match (first 40 chars) - handles whitespace/encoding differences
+    if (updatedCode === variant.code && prompt.length > 20) {
+      const shortPrompt = prompt.slice(0, 40).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const partialRe = new RegExp(
+        `(<img\\s[^>]*?data-generate-image=["'][^"']*${shortPrompt}[^"']*["'][^>]*?)\\s*\\/?>`,
         "i",
       );
+      const partialMatch = updatedCode.match(partialRe);
+      if (partialMatch) {
+        let tag = partialMatch[1];
+        tag = tag.replace(/\s+src=["'][^"']*["']/g, "");
+        updatedCode = updatedCode.replace(partialMatch[0], `${tag} src="${imageUrl}" />`);
+      }
+    }
+
+    // Strategy 3: Find prompt as a string value and replace first placeholder SVG nearby
+    if (updatedCode === variant.code) {
+      const propRe = new RegExp(`["']${escapedPrompt}["']`, "i");
       if (propRe.test(updatedCode)) {
-        // Find any img tag that has a placeholder SVG src and replace with the real URL
-        // This handles the case where the prompt is in a JS variable, not inline on the img
         const placeholderImgRe = /src="data:image\/svg\+xml,[^"]*"/;
         if (placeholderImgRe.test(updatedCode)) {
-          // Replace the first placeholder that hasn't been replaced yet
           updatedCode = updatedCode.replace(placeholderImgRe, `src="${imageUrl}"`);
+        }
+      }
+    }
+
+    // Strategy 4: Find any img with a placeholder SVG that contains part of the prompt in nearby text
+    if (updatedCode === variant.code) {
+      const promptWords = prompt.split(/\s+/).slice(0, 3).join("\\s+");
+      const contextRe = new RegExp(
+        `(<img\\s[^>]*?)src="data:image\\/svg\\+xml,[^"]*"([^>]*?)\\/?>`
+      );
+      const contextMatch = updatedCode.match(contextRe);
+      if (contextMatch) {
+        // Check if the prompt words appear within 200 chars of this img tag
+        const matchIdx = updatedCode.indexOf(contextMatch[0]);
+        const nearby = updatedCode.slice(Math.max(0, matchIdx - 200), matchIdx + contextMatch[0].length + 200);
+        if (new RegExp(promptWords, "i").test(nearby)) {
+          updatedCode = updatedCode.replace(
+            contextMatch[0],
+            `${contextMatch[1]}src="${imageUrl}"${contextMatch[2]} />`
+          );
         }
       }
     }
@@ -488,7 +517,7 @@ export function VariantCard({
     if (updatedCode !== variant.code) {
       onCodeUpdate(updatedCode, editHistory);
     } else {
-      console.warn("[handleImageGenerated] Could not find img tag to update for prompt:", prompt.slice(0, 50));
+      console.warn("[handleImageGenerated] Could not find img tag to update for prompt:", prompt.slice(0, 80));
     }
   }, [variant.code, editHistory, onCodeUpdate]);
 
