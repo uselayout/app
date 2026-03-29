@@ -18,12 +18,33 @@ import type { DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotatio
 // Direct style edit — instant, no AI call
 // ---------------------------------------------------------------------------
 
-/** CSS property name → Tailwind class prefix mapping */
+/** CSS property name → Tailwind class mapping */
 const CSS_TO_TAILWIND: Record<string, (val: string) => string> = {
   fontWeight: (v) => `font-[${v}]`,
   fontSize: (v) => `text-[${v}]`,
   lineHeight: (v) => `leading-[${v}]`,
   letterSpacing: (v) => `tracking-[${v}]`,
+  fontFamily: (v) => `font-[${v.replace(/\s/g, "_").replace(/['"]/g, "")}]`,
+  textAlign: (v) => {
+    const map: Record<string, string> = { left: "text-left", center: "text-center", right: "text-right", justify: "text-justify" };
+    return map[v] ?? `text-[${v}]`;
+  },
+  display: (v) => {
+    const map: Record<string, string> = { block: "block", flex: "flex", grid: "grid", inline: "inline", "inline-flex": "inline-flex", "inline-block": "inline-block", none: "hidden" };
+    return map[v] ?? `[display:${v}]`;
+  },
+  flexDirection: (v) => {
+    const map: Record<string, string> = { row: "flex-row", column: "flex-col", "row-reverse": "flex-row-reverse", "column-reverse": "flex-col-reverse" };
+    return map[v] ?? `[flex-direction:${v}]`;
+  },
+  alignItems: (v) => {
+    const map: Record<string, string> = { stretch: "items-stretch", "flex-start": "items-start", "flex-end": "items-end", center: "items-center", baseline: "items-baseline" };
+    return map[v] ?? `items-[${v}]`;
+  },
+  justifyContent: (v) => {
+    const map: Record<string, string> = { "flex-start": "justify-start", "flex-end": "justify-end", center: "justify-center", "space-between": "justify-between", "space-around": "justify-around", "space-evenly": "justify-evenly" };
+    return map[v] ?? `justify-[${v}]`;
+  },
   color: (v) => `text-[${v.replace(/\s/g, "")}]`,
   backgroundColor: (v) => `bg-[${v.replace(/\s/g, "")}]`,
   borderColor: (v) => `border-[${v.replace(/\s/g, "")}]`,
@@ -50,6 +71,12 @@ const TAILWIND_PREFIXES: Record<string, RegExp> = {
   fontSize: /\btext-(?:xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|\[[^\]]+\])\b/g,
   lineHeight: /\bleading-(?:none|tight|snug|normal|relaxed|loose|\[[^\]]+\])\b/g,
   letterSpacing: /\btracking-(?:tighter|tight|normal|wide|wider|widest|\[[^\]]+\])\b/g,
+  fontFamily: /\bfont-(?:sans|serif|mono|\[[^\]]+\])\b/g,
+  textAlign: /\btext-(?:left|center|right|justify)\b/g,
+  display: /\b(?:block|flex|grid|inline|inline-flex|inline-block|hidden)\b/g,
+  flexDirection: /\bflex-(?:row|col|row-reverse|col-reverse)\b/g,
+  alignItems: /\bitems-(?:start|end|center|baseline|stretch)\b/g,
+  justifyContent: /\bjustify-(?:start|end|center|between|around|evenly)\b/g,
   color: /\btext-\[(?:rgb|rgba|#)[^\]]*\]\b/g,
   backgroundColor: /\bbg-\[(?:rgb|rgba|#)[^\]]*\]\b/g,
   borderColor: /\bborder-\[(?:rgb|rgba|#)[^\]]*\]\b/g,
@@ -71,40 +98,69 @@ const TAILWIND_PREFIXES: Record<string, RegExp> = {
 };
 
 /**
- * Try to apply style edits directly in the source code by swapping Tailwind classes.
- * Returns the updated code, or null if direct editing isn't possible.
+ * Build a regex that finds a className attribute in source code matching the given
+ * DOM classes, tolerating whitespace differences (multiline classNames, indentation).
+ * Also handles className={"..."} and className={'...'} JSX expressions.
  */
-function tryDirectStyleEdit(code: string, edits: StyleEdit[]): string | null {
+function buildClassNameRegex(elementClasses: string): RegExp | null {
+  const classWords = elementClasses.split(/\s+/).filter(Boolean).slice(0, 8);
+  if (classWords.length === 0) return null;
+  const escapedWords = classWords.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const flexibleSnippet = escapedWords.join("[\\s]+");
+  // Match className="...", className='...', className={"..."}, className={'...'}
+  return new RegExp(
+    `className=(?:["']|\\{["'])([^"']*${flexibleSnippet}[^"']*)(?:["']|["']\\})`,
+    "s",
+  );
+}
+
+/**
+ * Try to apply a single style edit directly in the source code by swapping Tailwind classes.
+ * Returns the updated code, or null if direct editing isn't possible for this edit.
+ */
+function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null {
+  const { elementClasses, property, after } = edit;
+  if (!elementClasses || !CSS_TO_TAILWIND[property]) return null;
+
+  const classRegex = buildClassNameRegex(elementClasses);
+  if (!classRegex) return null;
+
+  const classMatch = code.match(classRegex);
+  if (!classMatch) return null;
+
+  const fullClassName = classMatch[1];
+  const prefix = TAILWIND_PREFIXES[property];
+  const newClass = CSS_TO_TAILWIND[property](after);
+
+  // Remove existing class for this property, add new one
+  let updatedClassName = fullClassName;
+  if (prefix) {
+    updatedClassName = updatedClassName.replace(prefix, "").replace(/\s{2,}/g, " ").trim();
+  }
+  updatedClassName = `${updatedClassName} ${newClass}`;
+
+  const result = code.replace(classMatch[0], `className="${updatedClassName}"`);
+  return result !== code ? result : null;
+}
+
+/**
+ * Try to apply style edits directly in the source code by swapping Tailwind classes.
+ * Returns { code, remaining } where remaining are edits that couldn't be applied directly.
+ */
+function tryDirectStyleEdits(code: string, edits: StyleEdit[]): { code: string; remaining: StyleEdit[] } {
   let result = code;
+  const remaining: StyleEdit[] = [];
 
   for (const edit of edits) {
-    const { elementClasses, property, after } = edit;
-    if (!elementClasses || !CSS_TO_TAILWIND[property]) return null;
-
-    // Find the className string in the source code
-    // Take enough of the class string to uniquely identify the element
-    const classSnippet = elementClasses.slice(0, 80).trim();
-    const escaped = classSnippet.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const classRegex = new RegExp(`className=["']([^"']*${escaped}[^"']*)["']`);
-    const classMatch = result.match(classRegex);
-
-    if (!classMatch) return null; // Can't find element — fall back to AI
-
-    const fullClassName = classMatch[1];
-    const prefix = TAILWIND_PREFIXES[property];
-    const newClass = CSS_TO_TAILWIND[property](after);
-
-    // Remove existing class for this property, add new one
-    let updatedClassName = fullClassName;
-    if (prefix) {
-      updatedClassName = updatedClassName.replace(prefix, "").replace(/\s{2,}/g, " ").trim();
+    const edited = tryDirectStyleEditSingle(result, edit);
+    if (edited) {
+      result = edited;
+    } else {
+      remaining.push(edit);
     }
-    updatedClassName = `${updatedClassName} ${newClass}`;
-
-    result = result.replace(classMatch[0], `className="${updatedClassName}"`);
   }
 
-  return result !== code ? result : null;
+  return { code: result, remaining };
 }
 
 function Tip({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
@@ -309,18 +365,24 @@ export function VariantCard({
   const handleStyleEdits = useCallback(async (edits: StyleEdit[]) => {
     if (!onCodeUpdate || edits.length === 0) return;
 
-    // Try direct code replacement first (instant, no AI call)
-    const directResult = tryDirectStyleEdit(variant.code, edits);
-    if (directResult) {
-      const description = edits
+    // Apply as many edits as possible directly (instant Tailwind class swap)
+    const { code: directCode, remaining } = tryDirectStyleEdits(variant.code, edits);
+
+    // If we applied some edits directly, commit them immediately
+    if (directCode !== variant.code) {
+      const directEdits = edits.filter((e) => !remaining.includes(e));
+      const description = directEdits
         .map((e) => `${e.property}: ${e.before} → ${e.after}`)
         .join(", ");
-      const newHistory = pushManualEdit(editHistory, variant.code, directResult, edits, description);
-      onCodeUpdate(directResult, newHistory);
-      return;
+      const newHistory = pushManualEdit(editHistory, variant.code, directCode, directEdits, description);
+      onCodeUpdate(directCode, newHistory);
     }
 
-    // Fall back to AI for complex changes
+    // If all edits were handled directly, we're done — no AI call needed
+    if (remaining.length === 0) return;
+
+    // Fall back to AI only for edits that couldn't be applied directly
+    const codeForAi = directCode !== variant.code ? directCode : variant.code;
     applyAbortRef.current?.abort();
     const abort = new AbortController();
     applyAbortRef.current = abort;
@@ -339,8 +401,8 @@ export function VariantCard({
         method: "POST",
         headers,
         body: JSON.stringify({
-          code: variant.code,
-          styleEdits: edits,
+          code: codeForAi,
+          styleEdits: remaining,
           layoutMd,
         }),
         signal: abort.signal,
@@ -356,14 +418,14 @@ export function VariantCard({
       }
 
       const { code: updatedCode } = await res.json();
-      const description = edits
+      const description = remaining
         .map((e) => `${e.property}: ${e.before} → ${e.after}`)
         .join(", ");
       const newHistory = pushManualEdit(
         editHistory,
-        variant.code,
+        codeForAi,
         updatedCode,
-        edits,
+        remaining,
         description
       );
       onCodeUpdate(updatedCode, newHistory);
