@@ -130,7 +130,9 @@ export function injectPlaceholderSvgs(code: string): { code: string; count: numb
     if (srcMatch) {
       return fullMatch.replace(/src=["'][^"']*["']/, `src="${placeholder}"`);
     }
-    return fullMatch;
+    // No src attribute — add one before the closing tag
+    const exprWithBraces = `{${_expr}}`;
+    return `${before}src="${placeholder}" data-generate-image=${exprWithBraces}${after} />`;
   });
 
   return { code: result, count };
