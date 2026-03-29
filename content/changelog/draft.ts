@@ -27,4 +27,13 @@ export const draftEntries: ChangelogEntry[] = [
     category: "new",
     date: "2026-03-29",
   },
+  {
+    id: "2026-w13-icon-packs",
+    title: "Icon pack selection for design systems",
+    description:
+      "Choose from 6 open source icon libraries (Lucide, Heroicons, Phosphor, Tabler, Radix, Simple Icons) in the new Icons tab. Selected packs are added to your layout.md and used by AI when generating variants.",
+    product: "studio",
+    category: "new",
+    date: "2026-03-29",
+  },
 ];
