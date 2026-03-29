@@ -960,10 +960,24 @@ interface ChangelogEntryData {
   date: string;
 }
 
+interface ChangelogItemData {
+  text: string;
+  product: string;
+  category: string;
+}
+
+interface CompiledData {
+  weekId: string;
+  label: string;
+  summary: string;
+  items: ChangelogItemData[];
+}
+
 interface ChangelogWeekData {
   weekId: string;
   label: string;
-  entries: ChangelogEntryData[];
+  summary: string;
+  items: ChangelogItemData[];
 }
 
 const PRODUCTS = [
@@ -1024,14 +1038,22 @@ const selectStyle = {
   backgroundPosition: "right 8px center",
 };
 
+const PRODUCT_ORDER = ["studio", "cli", "figma-plugin", "chrome-extension"];
+
 function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "error") => void }) {
   const [draft, setDraft] = useState<ChangelogEntryData[]>([]);
   const [published, setPublished] = useState<ChangelogWeekData[]>([]);
+  const [compiled, setCompiled] = useState<CompiledData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showCompiled, setShowCompiled] = useState(false);
+
+  // Compiled edit state
+  const [editSummary, setEditSummary] = useState("");
+  const [editItems, setEditItems] = useState<ChangelogItemData[]>([]);
 
   // Add/edit form state
   const [formTitle, setFormTitle] = useState("");
@@ -1043,9 +1065,10 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
   const fetchChangelog = useCallback(() => {
     fetch("/api/admin/changelog")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { draft: ChangelogEntryData[]; published: ChangelogWeekData[] } | null) => {
+      .then((data: { draft: ChangelogEntryData[]; compiled: CompiledData | null; published: ChangelogWeekData[] } | null) => {
         if (data) {
           setDraft(data.draft);
+          setCompiled(data.compiled);
           setPublished(data.published);
         }
       })
@@ -1067,6 +1090,12 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
       .then(async (r) => {
         if (r.ok) {
           setDraft(entries);
+          // Re-fetch to get updated compiled data
+          fetch("/api/admin/changelog")
+            .then((r2) => (r2.ok ? r2.json() : null))
+            .then((data: { compiled: CompiledData | null } | null) => {
+              if (data) setCompiled(data.compiled);
+            });
         } else {
           const data = await r.json();
           toast(data.error || "Save failed", "error");
@@ -1112,6 +1141,7 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
     setFormCategory(entry.category);
     setFormDate(entry.date);
     setShowAddForm(false);
+    setShowCompiled(false);
   };
 
   const handleSaveEdit = () => {
@@ -1135,16 +1165,42 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
     if (editingId === id) resetForm();
   };
 
+  const handleCompile = () => {
+    if (!compiled) return;
+    setEditSummary(compiled.summary);
+    setEditItems([...compiled.items]);
+    setShowCompiled(true);
+    resetForm();
+  };
+
+  const handleRemoveItem = (index: number) => {
+    setEditItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateItemText = (index: number, text: string) => {
+    setEditItems((prev) => prev.map((item, i) => i === index ? { ...item, text } : item));
+  };
+
   const handlePublish = () => {
-    if (draft.length === 0) return;
+    if (!compiled) return;
     setPublishing(true);
-    fetch("/api/admin/changelog", { method: "POST" })
+    const week = {
+      weekId: compiled.weekId,
+      label: compiled.label,
+      summary: editSummary,
+      items: editItems,
+    };
+    fetch("/api/admin/changelog", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(week),
+    })
       .then(async (r) => {
         const data = await r.json();
         if (r.ok) {
-          toast(`Published ${data.entryCount} entries for ${data.label}`);
+          toast(`Published ${data.entryCount} items for ${data.label}`);
+          setShowCompiled(false);
           fetchChangelog();
-          resetForm();
         } else {
           toast(data.error || "Publish failed", "error");
         }
@@ -1162,202 +1218,302 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
   const isEditing = editingId !== null;
   const showForm = showAddForm || isEditing;
 
+  // Group items by product for compiled preview
+  const groupedItems = PRODUCT_ORDER
+    .map((product) => ({
+      product,
+      badge: productBadgeStyles[product],
+      items: editItems.filter((item) => item.product === product),
+    }))
+    .filter((g) => g.items.length > 0);
+
   return (
     <div className="space-y-6">
-      {/* Draft section */}
-      <div
-        className="rounded-lg p-5 space-y-4"
-        style={{ background: "var(--bg-surface)", border: "1px solid var(--studio-border)" }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-              Draft entries
-            </h3>
-            {draft.length > 0 && (
-              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                {draft.length}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {!showForm && (
+      {/* Compiled preview + publish */}
+      {showCompiled && compiled && (
+        <div
+          className="rounded-lg p-5 space-y-4"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--studio-accent)" }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                Compiled: {compiled.label}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => { resetForm(); setShowAddForm(true); }}
+                onClick={() => setShowCompiled(false)}
                 className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
-                style={{ background: "var(--bg-elevated)", color: "var(--text-primary)", border: "1px solid var(--studio-border)" }}
+                style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--studio-border)" }}
               >
-                + Add entry
+                Back to draft
               </button>
-            )}
-            {draft.length > 0 && (
               <button
                 onClick={handlePublish}
-                disabled={publishing || saving}
+                disabled={publishing || !editSummary.trim() || editItems.length === 0}
                 className="px-4 py-1.5 rounded-md text-xs font-semibold transition-all"
                 style={{
                   background: "var(--studio-accent)",
                   color: "var(--text-on-accent, #08090a)",
-                  opacity: publishing || saving ? 0.6 : 1,
+                  opacity: publishing || !editSummary.trim() || editItems.length === 0 ? 0.5 : 1,
                 }}
               >
-                {publishing ? "Publishing…" : "Publish all"}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Add/Edit form */}
-        {showForm && (
-          <div
-            className="rounded-md p-4 space-y-3"
-            style={{ background: "var(--bg-panel)", border: "1px solid var(--studio-border-strong)" }}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
-                {isEditing ? "Edit entry" : "New entry"}
-              </span>
-              <button
-                onClick={resetForm}
-                className="text-xs transition-opacity hover:opacity-80"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Cancel
+                {publishing ? "Publishing…" : "Publish"}
               </button>
             </div>
+          </div>
 
-            <input
-              type="text"
-              placeholder="Title"
-              value={formTitle}
-              onChange={(e) => setFormTitle(e.target.value)}
-              className="w-full rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-white/20"
-              style={inputStyle}
-            />
-
+          <div>
+            <label className="text-[11px] font-medium block mb-1.5" style={{ color: "var(--text-muted)" }}>
+              Summary (prose intro)
+            </label>
             <textarea
-              placeholder="Description (1-2 sentences, user-friendly language)"
-              value={formDescription}
-              onChange={(e) => setFormDescription(e.target.value)}
+              value={editSummary}
+              onChange={(e) => setEditSummary(e.target.value)}
               rows={2}
               className="w-full rounded-md px-3 py-2 text-sm outline-none resize-none focus:ring-1 focus:ring-white/20"
               style={inputStyle}
             />
-
-            <div className="flex gap-3">
-              <select
-                value={formProduct}
-                onChange={(e) => setFormProduct(e.target.value)}
-                className="rounded-md px-3 py-2 text-sm outline-none pr-7"
-                style={selectStyle}
-              >
-                {PRODUCTS.map((p) => (
-                  <option key={p.value} value={p.value}>{p.label}</option>
-                ))}
-              </select>
-
-              <select
-                value={formCategory}
-                onChange={(e) => setFormCategory(e.target.value)}
-                className="rounded-md px-3 py-2 text-sm outline-none pr-7"
-                style={selectStyle}
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
-
-              <input
-                type="date"
-                value={formDate}
-                onChange={(e) => setFormDate(e.target.value)}
-                className="rounded-md px-3 py-2 text-sm outline-none"
-                style={inputStyle}
-              />
-            </div>
-
-            <div className="flex justify-end">
-              <button
-                onClick={isEditing ? handleSaveEdit : handleAdd}
-                disabled={saving || !formTitle.trim() || !formDescription.trim()}
-                className="px-4 py-1.5 rounded-md text-xs font-semibold transition-all"
-                style={{
-                  background: "var(--studio-accent)",
-                  color: "var(--text-on-accent, #08090a)",
-                  opacity: saving || !formTitle.trim() || !formDescription.trim() ? 0.5 : 1,
-                }}
-              >
-                {saving ? "Saving…" : isEditing ? "Save changes" : "Add entry"}
-              </button>
-            </div>
           </div>
-        )}
 
-        {/* Draft entries list */}
-        {draft.length === 0 && !showForm ? (
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            No draft entries yet. Click &quot;Add entry&quot; to create one.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {draft.map((entry) => {
-              const badge = productBadgeStyles[entry.product] || productBadgeStyles.studio;
-              const isBeingEdited = editingId === entry.id;
-              return (
-                <div
-                  key={entry.id}
-                  className="rounded-md p-3 group"
+          <div className="space-y-3">
+            {groupedItems.map((group) => (
+              <div key={group.product}>
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded inline-block mb-2"
+                  style={{ background: group.badge.bg, color: group.badge.text }}
+                >
+                  {group.badge.label}
+                </span>
+                <div className="space-y-1.5">
+                  {group.items.map((item) => {
+                    const globalIndex = editItems.indexOf(item);
+                    return (
+                      <div key={globalIndex} className="flex items-center gap-2 group">
+                        <span className="text-[10px] shrink-0" style={{ color: "var(--text-muted)" }}>
+                          {categoryLabels[item.category] || item.category}
+                        </span>
+                        <input
+                          type="text"
+                          value={item.text}
+                          onChange={(e) => handleUpdateItemText(globalIndex, e.target.value)}
+                          className="flex-1 rounded px-2 py-1 text-sm outline-none"
+                          style={inputStyle}
+                        />
+                        <button
+                          onClick={() => handleRemoveItem(globalIndex)}
+                          className="px-1.5 py-0.5 rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{ color: "rgb(239,68,68)" }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Draft section */}
+      {!showCompiled && (
+        <div
+          className="rounded-lg p-5 space-y-4"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--studio-border)" }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                Draft entries
+              </h3>
+              {draft.length > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  {draft.length}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {!showForm && (
+                <button
+                  onClick={() => { resetForm(); setShowAddForm(true); }}
+                  className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                  style={{ background: "var(--bg-elevated)", color: "var(--text-primary)", border: "1px solid var(--studio-border)" }}
+                >
+                  + Add entry
+                </button>
+              )}
+              {draft.length > 0 && (
+                <button
+                  onClick={handleCompile}
+                  disabled={saving}
+                  className="px-4 py-1.5 rounded-md text-xs font-semibold transition-all"
                   style={{
-                    background: isBeingEdited ? "var(--bg-elevated)" : "var(--bg-panel)",
-                    border: isBeingEdited ? "1px solid var(--studio-border-strong)" : "1px solid var(--studio-border)",
+                    background: "var(--studio-accent)",
+                    color: "var(--text-on-accent, #08090a)",
+                    opacity: saving ? 0.6 : 1,
                   }}
                 >
-                  <div className="flex items-start gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0"
-                          style={{ background: badge.bg, color: badge.text }}
-                        >
-                          {badge.label}
-                        </span>
-                        <span className="text-[10px] font-medium shrink-0" style={{ color: "var(--text-muted)" }}>
-                          {categoryLabels[entry.category] || entry.category}
-                        </span>
-                        <span className="text-[10px] font-mono shrink-0 ml-auto" style={{ color: "var(--text-muted)" }}>
-                          {entry.date}
-                        </span>
+                  Compile &amp; review
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Add/Edit form */}
+          {showForm && (
+            <div
+              className="rounded-md p-4 space-y-3"
+              style={{ background: "var(--bg-panel)", border: "1px solid var(--studio-border-strong)" }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+                  {isEditing ? "Edit entry" : "New entry"}
+                </span>
+                <button
+                  onClick={resetForm}
+                  className="text-xs transition-opacity hover:opacity-80"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Title"
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
+                className="w-full rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-white/20"
+                style={inputStyle}
+              />
+
+              <textarea
+                placeholder="Description (1-2 sentences, user-friendly language)"
+                value={formDescription}
+                onChange={(e) => setFormDescription(e.target.value)}
+                rows={2}
+                className="w-full rounded-md px-3 py-2 text-sm outline-none resize-none focus:ring-1 focus:ring-white/20"
+                style={inputStyle}
+              />
+
+              <div className="flex gap-3">
+                <select
+                  value={formProduct}
+                  onChange={(e) => setFormProduct(e.target.value)}
+                  className="rounded-md px-3 py-2 text-sm outline-none pr-7"
+                  style={selectStyle}
+                >
+                  {PRODUCTS.map((p) => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={formCategory}
+                  onChange={(e) => setFormCategory(e.target.value)}
+                  className="rounded-md px-3 py-2 text-sm outline-none pr-7"
+                  style={selectStyle}
+                >
+                  {CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+
+                <input
+                  type="date"
+                  value={formDate}
+                  onChange={(e) => setFormDate(e.target.value)}
+                  className="rounded-md px-3 py-2 text-sm outline-none"
+                  style={inputStyle}
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={isEditing ? handleSaveEdit : handleAdd}
+                  disabled={saving || !formTitle.trim() || !formDescription.trim()}
+                  className="px-4 py-1.5 rounded-md text-xs font-semibold transition-all"
+                  style={{
+                    background: "var(--studio-accent)",
+                    color: "var(--text-on-accent, #08090a)",
+                    opacity: saving || !formTitle.trim() || !formDescription.trim() ? 0.5 : 1,
+                  }}
+                >
+                  {saving ? "Saving…" : isEditing ? "Save changes" : "Add entry"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Draft entries list */}
+          {draft.length === 0 && !showForm ? (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+              No draft entries yet. Click &quot;Add entry&quot; to create one.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {draft.map((entry) => {
+                const badge = productBadgeStyles[entry.product] || productBadgeStyles.studio;
+                const isBeingEdited = editingId === entry.id;
+                return (
+                  <div
+                    key={entry.id}
+                    className="rounded-md p-3 group"
+                    style={{
+                      background: isBeingEdited ? "var(--bg-elevated)" : "var(--bg-panel)",
+                      border: isBeingEdited ? "1px solid var(--studio-border-strong)" : "1px solid var(--studio-border)",
+                    }}
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span
+                            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0"
+                            style={{ background: badge.bg, color: badge.text }}
+                          >
+                            {badge.label}
+                          </span>
+                          <span className="text-[10px] font-medium shrink-0" style={{ color: "var(--text-muted)" }}>
+                            {categoryLabels[entry.category] || entry.category}
+                          </span>
+                          <span className="text-[10px] font-mono shrink-0 ml-auto" style={{ color: "var(--text-muted)" }}>
+                            {entry.date}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                          {entry.title}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
+                          {entry.description}
+                        </p>
                       </div>
-                      <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                        {entry.title}
-                      </p>
-                      <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
-                        {entry.description}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => handleEdit(entry)}
-                        className="px-2 py-1 rounded text-[11px] transition-all hover:opacity-80"
-                        style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--studio-border)" }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleRemove(entry.id)}
-                        className="px-2 py-1 rounded text-[11px] transition-all hover:opacity-80"
-                        style={{ background: "rgba(239,68,68,0.1)", color: "rgb(239,68,68)", border: "1px solid rgba(239,68,68,0.2)" }}
-                      >
-                        Remove
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleEdit(entry)}
+                          className="px-2 py-1 rounded text-[11px] transition-all hover:opacity-80"
+                          style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--studio-border)" }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleRemove(entry.id)}
+                          className="px-2 py-1 rounded text-[11px] transition-all hover:opacity-80"
+                          style={{ background: "rgba(239,68,68,0.1)", color: "rgb(239,68,68)", border: "1px solid rgba(239,68,68,0.2)" }}
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Recent published */}
       {published.length > 0 && (
@@ -1365,42 +1521,46 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
           <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
             Recently published
           </h3>
-          {published.map((week) => (
-            <div key={week.weekId} className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                {week.label}
-              </p>
-              <div
-                className="rounded-lg overflow-hidden"
-                style={{ border: "1px solid var(--studio-border)" }}
-              >
-                {week.entries.map((entry, i) => {
-                  const badge = productBadgeStyles[entry.product] || productBadgeStyles.studio;
-                  return (
-                    <div
-                      key={entry.id}
-                      className="flex items-center gap-3 px-3 py-2 text-xs"
-                      style={{
-                        background: i % 2 === 0 ? "var(--bg-surface)" : "var(--bg-panel)",
-                        borderTop: i > 0 ? "1px solid var(--studio-border)" : undefined,
-                      }}
-                    >
+          {published.map((week) => {
+            const weekGroups = PRODUCT_ORDER
+              .map((product) => ({
+                product,
+                badge: productBadgeStyles[product],
+                items: week.items.filter((item) => item.product === product),
+              }))
+              .filter((g) => g.items.length > 0);
+
+            return (
+              <div key={week.weekId} className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                  {week.label}
+                </p>
+                <div
+                  className="rounded-lg p-3 space-y-2"
+                  style={{ background: "var(--bg-panel)", border: "1px solid var(--studio-border)" }}
+                >
+                  <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                    {week.summary}
+                  </p>
+                  {weekGroups.map((group) => (
+                    <div key={group.product} className="flex flex-wrap gap-x-3 gap-y-1 items-start">
                       <span
-                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
-                        style={{ background: badge.bg, color: badge.text }}
+                        className="text-[9px] font-semibold px-1 py-0.5 rounded shrink-0 mt-0.5"
+                        style={{ background: group.badge.bg, color: group.badge.text }}
                       >
-                        {badge.label}
+                        {group.badge.label}
                       </span>
-                      <span style={{ color: "var(--text-primary)" }}>{entry.title}</span>
-                      <span className="ml-auto shrink-0" style={{ color: "var(--text-muted)" }}>
-                        {entry.description.length > 60 ? entry.description.slice(0, 60) + "…" : entry.description}
-                      </span>
+                      {group.items.map((item, i) => (
+                        <span key={i} className="text-xs" style={{ color: "var(--text-primary)" }}>
+                          {item.text}{i < group.items.length - 1 ? "," : ""}
+                        </span>
+                      ))}
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

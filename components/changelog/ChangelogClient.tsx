@@ -19,9 +19,9 @@ export function ChangelogClient({
     return weeks
       .map((week) => ({
         ...week,
-        entries: week.entries.filter((e) => e.product === filter),
+        items: week.items.filter((item) => item.product === filter),
       }))
-      .filter((week) => week.entries.length > 0);
+      .filter((week) => week.items.length > 0);
   }, [weeks, filter]);
 
   const filteredDraft = useMemo(() => {
@@ -29,9 +29,9 @@ export function ChangelogClient({
     if (filter === "all") return draftWeek;
     const filtered = {
       ...draftWeek,
-      entries: draftWeek.entries.filter((e) => e.product === filter),
+      items: draftWeek.items.filter((item) => item.product === filter),
     };
-    return filtered.entries.length > 0 ? filtered : null;
+    return filtered.items.length > 0 ? filtered : null;
   }, [draftWeek, filter]);
 
   return (

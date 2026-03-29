@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import type { ChangelogEntry } from "@/lib/types/changelog";
+import type { ChangelogEntry, ChangelogItem, ChangelogWeek } from "@/lib/types/changelog";
 
 const CONTENT_DIR = path.join(process.cwd(), "content", "changelog");
 const DRAFT_PATH = path.join(CONTENT_DIR, "draft.ts");
@@ -90,19 +90,47 @@ export function writeDraftEntries(entries: ChangelogEntry[]): void {
   fs.writeFileSync(DRAFT_PATH, buildDraftFile(entries), "utf-8");
 }
 
-export function publishDraft(): { weekId: string; label: string; entryCount: number } {
-  const draft = readDraftBlock();
-  if (!draft) {
-    throw new Error("No draft entries to publish");
-  }
-
+/** Compile draft entries into a weekly changelog structure */
+export function compileDraft(entries: ChangelogEntry[]): {
+  weekId: string;
+  label: string;
+  summary: string;
+  items: ChangelogItem[];
+} {
   const { weekId, label } = getISOWeek();
 
+  const items: ChangelogItem[] = entries.map((e) => ({
+    text: e.title,
+    product: e.product,
+    category: e.category,
+  }));
+
+  // Auto-generate a summary from the entries
+  const titles = entries.slice(0, 3).map((e) => e.title);
+  const summary =
+    titles.length <= 2
+      ? titles.join(" and ") + "."
+      : titles.slice(0, -1).join(", ") + ", and " + titles[titles.length - 1] + ".";
+
+  return { weekId, label, summary, items };
+}
+
+/** Publish a compiled weekly entry to published.ts and clear the draft */
+export function publishWeek(week: ChangelogWeek): void {
+  const itemsStr = week.items
+    .map(
+      (item) =>
+        `      { text: ${JSON.stringify(item.text)}, product: ${JSON.stringify(item.product)}, category: ${JSON.stringify(item.category)} }`
+    )
+    .join(",\n");
+
   const newWeek = `  {
-    weekId: "${weekId}",
-    label: "${label}",
-    entries: [
-      ${draft.entriesBlock}
+    weekId: ${JSON.stringify(week.weekId)},
+    label: ${JSON.stringify(week.label)},
+    summary:
+      ${JSON.stringify(week.summary)},
+    items: [
+${itemsStr},
     ],
   },`;
 
@@ -123,6 +151,35 @@ export function publishDraft(): { weekId: string; label: string; entryCount: num
 
   fs.writeFileSync(PUBLISHED_PATH, updatedPublished, "utf-8");
   writeDraftEntries([]);
+}
 
-  return { weekId, label, entryCount: draft.entryCount };
+/** CLI convenience: compile and publish in one step */
+export function publishDraft(): { weekId: string; label: string; entryCount: number } {
+  // Dynamic import of draft entries for CLI usage
+  const draftContent = fs.readFileSync(DRAFT_PATH, "utf-8");
+  const arrayMatch = draftContent.match(
+    /export const draftEntries[^=]*=\s*\[([\s\S]*?)\];/
+  );
+  if (!arrayMatch || arrayMatch[1].trim() === "") {
+    throw new Error("No draft entries to publish");
+  }
+
+  // For CLI, we need to import the actual entries
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { draftEntries } = require("../../content/changelog/draft") as { draftEntries: ChangelogEntry[] };
+
+  if (draftEntries.length === 0) {
+    throw new Error("No draft entries to publish");
+  }
+
+  const compiled = compileDraft(draftEntries);
+  const week: ChangelogWeek = {
+    weekId: compiled.weekId,
+    label: compiled.label,
+    summary: compiled.summary,
+    items: compiled.items,
+  };
+
+  publishWeek(week);
+  return { weekId: week.weekId, label: week.label, entryCount: week.items.length };
 }
