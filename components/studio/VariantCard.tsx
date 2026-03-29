@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUp, ImagePlus, GitCompareArrows, Trash2, MousePointer2, X } from "lucide-react";
 import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
@@ -11,7 +11,101 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ElementInspector } from "@/components/studio/ElementInspector";
 import { EditHistoryPanel } from "@/components/studio/EditHistoryPanel";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
+import { countPlaceholderImages } from "@/lib/image/placeholder";
 import type { DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotation, ExtractedToken } from "@/lib/types";
+
+// ---------------------------------------------------------------------------
+// Direct style edit — instant, no AI call
+// ---------------------------------------------------------------------------
+
+/** CSS property name → Tailwind class prefix mapping */
+const CSS_TO_TAILWIND: Record<string, (val: string) => string> = {
+  fontWeight: (v) => `font-[${v}]`,
+  fontSize: (v) => `text-[${v}]`,
+  lineHeight: (v) => `leading-[${v}]`,
+  letterSpacing: (v) => `tracking-[${v}]`,
+  color: (v) => `text-[${v.replace(/\s/g, "")}]`,
+  backgroundColor: (v) => `bg-[${v.replace(/\s/g, "")}]`,
+  borderColor: (v) => `border-[${v.replace(/\s/g, "")}]`,
+  borderRadius: (v) => `rounded-[${v}]`,
+  borderWidth: (v) => `border-[${v}]`,
+  opacity: (v) => `opacity-[${v}]`,
+  gap: (v) => `gap-[${v}]`,
+  width: (v) => `w-[${v}]`,
+  height: (v) => `h-[${v}]`,
+  maxWidth: (v) => `max-w-[${v}]`,
+  paddingTop: (v) => `pt-[${v}]`,
+  paddingRight: (v) => `pr-[${v}]`,
+  paddingBottom: (v) => `pb-[${v}]`,
+  paddingLeft: (v) => `pl-[${v}]`,
+  marginTop: (v) => `mt-[${v}]`,
+  marginRight: (v) => `mr-[${v}]`,
+  marginBottom: (v) => `mb-[${v}]`,
+  marginLeft: (v) => `ml-[${v}]`,
+};
+
+/** Tailwind class prefix patterns for each CSS property (for removal) */
+const TAILWIND_PREFIXES: Record<string, RegExp> = {
+  fontWeight: /\bfont-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black|\[\d+\])\b/g,
+  fontSize: /\btext-(?:xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|\[[^\]]+\])\b/g,
+  lineHeight: /\bleading-(?:none|tight|snug|normal|relaxed|loose|\[[^\]]+\])\b/g,
+  letterSpacing: /\btracking-(?:tighter|tight|normal|wide|wider|widest|\[[^\]]+\])\b/g,
+  color: /\btext-\[(?:rgb|rgba|#)[^\]]*\]\b/g,
+  backgroundColor: /\bbg-\[(?:rgb|rgba|#)[^\]]*\]\b/g,
+  borderColor: /\bborder-\[(?:rgb|rgba|#)[^\]]*\]\b/g,
+  borderRadius: /\brounded(?:-(?:none|sm|md|lg|xl|2xl|3xl|full|\[[^\]]+\]))?\b/g,
+  borderWidth: /\bborder(?:-(?:[0248]|\[[^\]]+\]))?\b(?!-\[(?:rgb|rgba|#))/g,
+  opacity: /\bopacity-(?:\d+|\[[^\]]+\])\b/g,
+  gap: /\bgap-(?:\d+|\[[^\]]+\])\b/g,
+  width: /\bw-(?:\d+|full|screen|auto|min|max|fit|\[[^\]]+\])\b/g,
+  height: /\bh-(?:\d+|full|screen|auto|min|max|fit|\[[^\]]+\])\b/g,
+  maxWidth: /\bmax-w-(?:\d+|none|xs|sm|md|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|full|min|max|fit|prose|screen-sm|screen-md|screen-lg|screen-xl|screen-2xl|\[[^\]]+\])\b/g,
+  paddingTop: /\bpt-(?:\d+|\[[^\]]+\])\b/g,
+  paddingRight: /\bpr-(?:\d+|\[[^\]]+\])\b/g,
+  paddingBottom: /\bpb-(?:\d+|\[[^\]]+\])\b/g,
+  paddingLeft: /\bpl-(?:\d+|\[[^\]]+\])\b/g,
+  marginTop: /\bmt-(?:\d+|auto|\[[^\]]+\])\b/g,
+  marginRight: /\bmr-(?:\d+|auto|\[[^\]]+\])\b/g,
+  marginBottom: /\bmb-(?:\d+|auto|\[[^\]]+\])\b/g,
+  marginLeft: /\bml-(?:\d+|auto|\[[^\]]+\])\b/g,
+};
+
+/**
+ * Try to apply style edits directly in the source code by swapping Tailwind classes.
+ * Returns the updated code, or null if direct editing isn't possible.
+ */
+function tryDirectStyleEdit(code: string, edits: StyleEdit[]): string | null {
+  let result = code;
+
+  for (const edit of edits) {
+    const { elementClasses, property, after } = edit;
+    if (!elementClasses || !CSS_TO_TAILWIND[property]) return null;
+
+    // Find the className string in the source code
+    // Take enough of the class string to uniquely identify the element
+    const classSnippet = elementClasses.slice(0, 80).trim();
+    const escaped = classSnippet.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const classRegex = new RegExp(`className=["']([^"']*${escaped}[^"']*)["']`);
+    const classMatch = result.match(classRegex);
+
+    if (!classMatch) return null; // Can't find element — fall back to AI
+
+    const fullClassName = classMatch[1];
+    const prefix = TAILWIND_PREFIXES[property];
+    const newClass = CSS_TO_TAILWIND[property](after);
+
+    // Remove existing class for this property, add new one
+    let updatedClassName = fullClassName;
+    if (prefix) {
+      updatedClassName = updatedClassName.replace(prefix, "").replace(/\s{2,}/g, " ").trim();
+    }
+    updatedClassName = `${updatedClassName} ${newClass}`;
+
+    result = result.replace(classMatch[0], `className="${updatedClassName}"`);
+  }
+
+  return result !== code ? result : null;
+}
 
 function Tip({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
   return (
@@ -81,6 +175,7 @@ export function VariantCard({
   const [showRefineInput, setShowRefineInput] = useState(false);
   const [refineText, setRefineText] = useState("");
   const [inspectMode, setInspectMode] = useState(false);
+  const placeholderImageCount = useMemo(() => countPlaceholderImages(variant.code), [variant.code]);
   const [isApplying, setIsApplying] = useState(false);
   const [applyElapsed, setApplyElapsed] = useState(0);
   const [applyError, setApplyError] = useState<string | null>(null);
@@ -204,6 +299,19 @@ export function VariantCard({
 
   const handleStyleEdits = useCallback(async (edits: StyleEdit[]) => {
     if (!onCodeUpdate || edits.length === 0) return;
+
+    // Try direct code replacement first (instant, no AI call)
+    const directResult = tryDirectStyleEdit(variant.code, edits);
+    if (directResult) {
+      const description = edits
+        .map((e) => `${e.property}: ${e.before} → ${e.after}`)
+        .join(", ");
+      const newHistory = pushManualEdit(editHistory, variant.code, directResult, edits, description);
+      onCodeUpdate(directResult, newHistory);
+      return;
+    }
+
+    // Fall back to AI for complex changes
     applyAbortRef.current?.abort();
     const abort = new AbortController();
     applyAbortRef.current = abort;
@@ -534,6 +642,16 @@ export function VariantCard({
                 Click any element to inspect and edit
               </span>
             </div>
+            {onRegenerateImages && placeholderImageCount > 0 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onRegenerateImages(false); }}
+                disabled={isProcessingImages}
+                className="flex items-center gap-1.5 rounded-md bg-[var(--studio-accent)] px-3 py-1.5 text-xs font-medium text-[var(--text-on-accent)] hover:opacity-90 transition-opacity disabled:opacity-40"
+              >
+                <ImagePlus size={12} />
+                Generate images ({placeholderImageCount})
+              </button>
+            )}
             <button
               onClick={toggleInspectMode}
               className="flex items-center gap-1.5 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"

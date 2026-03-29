@@ -330,9 +330,12 @@ export function ElementInspector({
   const selectedRef = useRef<SelectedElement | null>(null);
   const pendingEditsRef = useRef<StyleEdit[]>([]);
 
+  const activeSectionRef = useRef(activeSection);
+
   // Keep refs in sync so message listener can read without re-triggering effect
   useEffect(() => { selectedRef.current = selected; }, [selected]);
   useEffect(() => { pendingEditsRef.current = pendingEdits; }, [pendingEdits]);
+  useEffect(() => { activeSectionRef.current = activeSection; }, [activeSection]);
 
   // Sync image edit state when an image element is selected
   useEffect(() => {
@@ -401,9 +404,12 @@ export function ElementInspector({
         };
         setSelected(newSelected);
 
-        // Auto-select Image tab when clicking an image element
+        // Auto-select Image tab when clicking an image element,
+        // reset to Text tab when clicking a non-image element
         if (msg.imagePrompt) {
           setActiveSection("image");
+        } else if (activeSectionRef.current === "image") {
+          setActiveSection("text");
         }
 
         // Only clear pending edits when switching to a different element
@@ -708,12 +714,12 @@ export function ElementInspector({
       {/* Properties */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 py-1.5">
         {activeSection === "image" && hasImageData && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 h-full">
             <label className="text-[10px] text-[var(--text-muted)]">Prompt</label>
             <textarea
               value={imagePromptEdit}
               onChange={(e) => setImagePromptEdit(e.target.value)}
-              rows={3}
+              rows={5}
               className="w-full rounded border border-[var(--studio-border)] bg-[var(--bg-surface)] px-2 py-1.5 text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--studio-border-focus)] focus:outline-none resize-none"
               placeholder="Describe the image..."
             />
@@ -751,7 +757,7 @@ export function ElementInspector({
             <button
               onClick={handleGenerateImage}
               disabled={isGeneratingImage || !imagePromptEdit.trim()}
-              className="mt-1 flex items-center justify-center gap-1.5 rounded bg-[var(--studio-accent)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-40"
+              className="mt-auto flex items-center justify-center gap-1.5 rounded bg-[var(--studio-accent)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               {isGeneratingImage ? (
                 <>
