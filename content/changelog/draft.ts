@@ -190,6 +190,51 @@ export const draftEntries: ChangelogEntry[] = [
     date: "2026-03-29",
   },
   {
+    id: "2026-w13-auto-sync-tokens",
+    title: "Tokens appear automatically after extraction",
+    description:
+      "The token panel now populates immediately after layout.md generation completes. No more clicking Sync manually.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-credit-check-before-extract",
+    title: "Credit check before extraction starts",
+    description:
+      "If you have no credits and no API key, you now see a clear message immediately instead of waiting 3-5 minutes for extraction to finish before failing.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-figma-pat-auto-save",
+    title: "Figma token saved to Settings automatically",
+    description:
+      "When you enter a Figma Personal Access Token during extraction, it is now saved to your API Keys settings so you do not need to re-enter it next time.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-design-system-overrides",
+    title: "Override design system tokens in Explorer prompts",
+    description:
+      "You can now ask the AI to try specific style changes (e.g. 'use square buttons' or 'try serif fonts') and it will apply the override while keeping all other design system tokens intact.",
+    product: "studio",
+    category: "new",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-primary-token-grouping",
+    title: "Primary and secondary tokens grouped correctly",
+    description:
+      "Tokens like --color-primary, --color-secondary, and --color-tertiary now appear in their own 'Primary' group instead of being dumped into 'Other'.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-29",
+  },
+  {
     id: "2026-w13-figma-plugin-health-check",
     title: "Figma plugin health check works again",
     description:
