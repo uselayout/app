@@ -15,8 +15,8 @@ import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-varian
 import { friendlyError } from "@/lib/explore/friendly-error";
 import { applyChangesToLayoutMd } from "@/lib/figma/diff";
 import { getStoredApiKey, useKeyStatus, dismissKeyLoss } from "@/lib/hooks/use-api-key";
-import { processCodeImages, type ProcessCodeImagesResult } from "@/lib/image/process-code-images";
-import { injectPlaceholderSvgs, countPlaceholderImages } from "@/lib/image/placeholder";
+import { processCodeImages } from "@/lib/image/process-code-images";
+import { injectPlaceholderSvgs } from "@/lib/image/placeholder";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { toast } from "sonner";
 import { calculateHealthScore } from "@/lib/health/score";
