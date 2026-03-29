@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUp, ImagePlus, GitCompareArrows, Trash2, MousePointer2, X } from "lucide-react";
+import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUp, ImagePlus, GitCompareArrows, Trash2, MousePointer2, X, AlertTriangle } from "lucide-react";
 import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import { getInspectorScript } from "@/lib/explore/inspector-script";
 import { pushManualEdit, pushAiEdit, pushRollback, undoLastEdit } from "@/lib/explore/edit-history";
@@ -295,6 +295,20 @@ export function VariantCard({
     transpileAndRender();
     return () => { cancelled = true; };
   }, [variant.code, inspectMode]);
+
+  // Listen for runtime errors from the preview iframe
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.data?.type !== "layout-preview-error") return;
+      // Only handle errors from our own iframe
+      if (e.source !== iframeRef.current?.contentWindow) return;
+      const errorLine = String(e.data.error).split("\n")[0];
+      setPreviewError(errorLine);
+      setPreviewReady(false);
+    }
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   // Rebuild srcdoc when inspectMode toggles (no re-transpile, instant)
   useEffect(() => {
@@ -693,8 +707,19 @@ export function VariantCard({
         className="relative aspect-[4/3] overflow-y-auto overflow-x-hidden rounded-t-xl bg-white"
       >
         {previewError ? (
-          <div className="flex h-full items-center justify-center p-4">
-            <p className="text-xs text-red-400">{previewError}</p>
+          <div className="flex h-full flex-col items-center justify-center gap-3 p-6">
+            <div className="rounded-full bg-red-500/10 p-2.5">
+              <AlertTriangle size={18} className="text-red-400" />
+            </div>
+            <p className="text-xs font-medium text-[var(--text-primary)]">Failed to render</p>
+            <p className="max-w-[220px] text-center text-[10px] leading-relaxed text-[var(--text-muted)] line-clamp-2">{previewError}</p>
+            <button
+              onClick={() => onRegenerate()}
+              className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-[var(--bg-hover)] px-3 py-1.5 text-[11px] text-[var(--text-primary)] transition-all hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)]"
+            >
+              <RotateCw size={12} />
+              Regenerate
+            </button>
           </div>
         ) : inspectMode ? (
           <iframe
