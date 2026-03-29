@@ -228,7 +228,7 @@ export function ExtractionProgress({
               <div className="flex justify-between text-xs text-[var(--text-muted)]">
                 <span>{Math.round(progress)}%</span>
                 {progress < 100 && (
-                  <span>{elapsed}s elapsed &middot; typically 30-90s</span>
+                  <span>{elapsed}s elapsed &middot; typically 2-3 minutes</span>
                 )}
               </div>
             </div>
