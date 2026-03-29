@@ -966,6 +966,19 @@ interface ChangelogWeekData {
   entries: ChangelogEntryData[];
 }
 
+const PRODUCTS = [
+  { value: "studio", label: "Studio" },
+  { value: "cli", label: "CLI" },
+  { value: "figma-plugin", label: "Figma Plugin" },
+  { value: "chrome-extension", label: "Chrome Extension" },
+] as const;
+
+const CATEGORIES = [
+  { value: "new", label: "New" },
+  { value: "improved", label: "Improved" },
+  { value: "fixed", label: "Fixed" },
+] as const;
+
 const productBadgeStyles: Record<string, { bg: string; text: string; label: string }> = {
   studio: { bg: "rgba(255,255,255,0.1)", text: "rgba(255,255,255,0.8)", label: "Studio" },
   cli: { bg: "rgba(16,185,129,0.15)", text: "rgb(52,211,153)", label: "CLI" },
@@ -979,11 +992,53 @@ const categoryLabels: Record<string, string> = {
   fixed: "Fixed",
 };
 
+function generateEntryId(title: string): string {
+  const now = new Date();
+  const jan4 = new Date(now.getFullYear(), 0, 4);
+  const dayOfYear = Math.floor(
+    (now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000
+  );
+  const weekNum = Math.ceil((dayOfYear + jan4.getDay() + 1) / 7);
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+  return `${now.getFullYear()}-w${weekNum}-${slug}`;
+}
+
+function todayISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+const inputStyle = {
+  background: "var(--bg-panel)",
+  border: "1px solid var(--studio-border)",
+  color: "var(--text-primary)",
+};
+
+const selectStyle = {
+  background: "var(--bg-panel)",
+  border: "1px solid var(--studio-border)",
+  color: "var(--text-primary)",
+  appearance: "none" as const,
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 8px center",
+};
+
 function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "error") => void }) {
   const [draft, setDraft] = useState<ChangelogEntryData[]>([]);
   const [published, setPublished] = useState<ChangelogWeekData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  // Add/edit form state
+  const [formTitle, setFormTitle] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formProduct, setFormProduct] = useState("studio");
+  const [formCategory, setFormCategory] = useState("new");
+  const [formDate, setFormDate] = useState(todayISO());
 
   const fetchChangelog = useCallback(() => {
     fetch("/api/admin/changelog")
@@ -1002,6 +1057,84 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
     fetchChangelog();
   }, [fetchChangelog]);
 
+  const saveDraft = useCallback((entries: ChangelogEntryData[]) => {
+    setSaving(true);
+    fetch("/api/admin/changelog", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entries }),
+    })
+      .then(async (r) => {
+        if (r.ok) {
+          setDraft(entries);
+        } else {
+          const data = await r.json();
+          toast(data.error || "Save failed", "error");
+        }
+      })
+      .catch(() => toast("Save failed", "error"))
+      .finally(() => setSaving(false));
+  }, [toast]);
+
+  const resetForm = () => {
+    setFormTitle("");
+    setFormDescription("");
+    setFormProduct("studio");
+    setFormCategory("new");
+    setFormDate(todayISO());
+    setEditingId(null);
+    setShowAddForm(false);
+  };
+
+  const handleAdd = () => {
+    if (!formTitle.trim() || !formDescription.trim()) {
+      toast("Title and description are required", "error");
+      return;
+    }
+    const entry: ChangelogEntryData = {
+      id: generateEntryId(formTitle),
+      title: formTitle.trim(),
+      description: formDescription.trim(),
+      product: formProduct,
+      category: formCategory,
+      date: formDate,
+    };
+    saveDraft([...draft, entry]);
+    toast("Entry added");
+    resetForm();
+  };
+
+  const handleEdit = (entry: ChangelogEntryData) => {
+    setEditingId(entry.id);
+    setFormTitle(entry.title);
+    setFormDescription(entry.description);
+    setFormProduct(entry.product);
+    setFormCategory(entry.category);
+    setFormDate(entry.date);
+    setShowAddForm(false);
+  };
+
+  const handleSaveEdit = () => {
+    if (!formTitle.trim() || !formDescription.trim()) {
+      toast("Title and description are required", "error");
+      return;
+    }
+    const updated = draft.map((e) =>
+      e.id === editingId
+        ? { ...e, title: formTitle.trim(), description: formDescription.trim(), product: formProduct, category: formCategory, date: formDate }
+        : e
+    );
+    saveDraft(updated);
+    toast("Entry updated");
+    resetForm();
+  };
+
+  const handleRemove = (id: string) => {
+    saveDraft(draft.filter((e) => e.id !== id));
+    toast("Entry removed");
+    if (editingId === id) resetForm();
+  };
+
   const handlePublish = () => {
     if (draft.length === 0) return;
     setPublishing(true);
@@ -1011,6 +1144,7 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
         if (r.ok) {
           toast(`Published ${data.entryCount} entries for ${data.label}`);
           fetchChangelog();
+          resetForm();
         } else {
           toast(data.error || "Publish failed", "error");
         }
@@ -1025,8 +1159,11 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
     );
   }
 
+  const isEditing = editingId !== null;
+  const showForm = showAddForm || isEditing;
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Draft section */}
       <div
         className="rounded-lg p-5 space-y-4"
@@ -1043,56 +1180,178 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
               </span>
             )}
           </div>
-          {draft.length > 0 && (
-            <button
-              onClick={handlePublish}
-              disabled={publishing}
-              className="px-4 py-1.5 rounded-md text-xs font-semibold transition-all"
-              style={{
-                background: "var(--studio-accent)",
-                color: "var(--text-on-accent, #08090a)",
-                opacity: publishing ? 0.6 : 1,
-              }}
-            >
-              {publishing ? "Publishing…" : "Publish now"}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {!showForm && (
+              <button
+                onClick={() => { resetForm(); setShowAddForm(true); }}
+                className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                style={{ background: "var(--bg-elevated)", color: "var(--text-primary)", border: "1px solid var(--studio-border)" }}
+              >
+                + Add entry
+              </button>
+            )}
+            {draft.length > 0 && (
+              <button
+                onClick={handlePublish}
+                disabled={publishing || saving}
+                className="px-4 py-1.5 rounded-md text-xs font-semibold transition-all"
+                style={{
+                  background: "var(--studio-accent)",
+                  color: "var(--text-on-accent, #08090a)",
+                  opacity: publishing || saving ? 0.6 : 1,
+                }}
+              >
+                {publishing ? "Publishing…" : "Publish all"}
+              </button>
+            )}
+          </div>
         </div>
 
-        {draft.length === 0 ? (
+        {/* Add/Edit form */}
+        {showForm && (
+          <div
+            className="rounded-md p-4 space-y-3"
+            style={{ background: "var(--bg-panel)", border: "1px solid var(--studio-border-strong)" }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+                {isEditing ? "Edit entry" : "New entry"}
+              </span>
+              <button
+                onClick={resetForm}
+                className="text-xs transition-opacity hover:opacity-80"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Cancel
+              </button>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Title"
+              value={formTitle}
+              onChange={(e) => setFormTitle(e.target.value)}
+              className="w-full rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-white/20"
+              style={inputStyle}
+            />
+
+            <textarea
+              placeholder="Description (1-2 sentences, user-friendly language)"
+              value={formDescription}
+              onChange={(e) => setFormDescription(e.target.value)}
+              rows={2}
+              className="w-full rounded-md px-3 py-2 text-sm outline-none resize-none focus:ring-1 focus:ring-white/20"
+              style={inputStyle}
+            />
+
+            <div className="flex gap-3">
+              <select
+                value={formProduct}
+                onChange={(e) => setFormProduct(e.target.value)}
+                className="rounded-md px-3 py-2 text-sm outline-none pr-7"
+                style={selectStyle}
+              >
+                {PRODUCTS.map((p) => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
+
+              <select
+                value={formCategory}
+                onChange={(e) => setFormCategory(e.target.value)}
+                className="rounded-md px-3 py-2 text-sm outline-none pr-7"
+                style={selectStyle}
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+
+              <input
+                type="date"
+                value={formDate}
+                onChange={(e) => setFormDate(e.target.value)}
+                className="rounded-md px-3 py-2 text-sm outline-none"
+                style={inputStyle}
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={isEditing ? handleSaveEdit : handleAdd}
+                disabled={saving || !formTitle.trim() || !formDescription.trim()}
+                className="px-4 py-1.5 rounded-md text-xs font-semibold transition-all"
+                style={{
+                  background: "var(--studio-accent)",
+                  color: "var(--text-on-accent, #08090a)",
+                  opacity: saving || !formTitle.trim() || !formDescription.trim() ? 0.5 : 1,
+                }}
+              >
+                {saving ? "Saving…" : isEditing ? "Save changes" : "Add entry"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Draft entries list */}
+        {draft.length === 0 && !showForm ? (
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            No draft entries. Add entries to <code className="font-mono text-xs" style={{ color: "var(--text-secondary)" }}>content/changelog/draft.ts</code>
+            No draft entries yet. Click &quot;Add entry&quot; to create one.
           </p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {draft.map((entry) => {
               const badge = productBadgeStyles[entry.product] || productBadgeStyles.studio;
+              const isBeingEdited = editingId === entry.id;
               return (
                 <div
                   key={entry.id}
-                  className="rounded-md p-3"
-                  style={{ background: "var(--bg-panel)", border: "1px solid var(--studio-border)" }}
+                  className="rounded-md p-3 group"
+                  style={{
+                    background: isBeingEdited ? "var(--bg-elevated)" : "var(--bg-panel)",
+                    border: isBeingEdited ? "1px solid var(--studio-border-strong)" : "1px solid var(--studio-border)",
+                  }}
                 >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span
-                      className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                      style={{ background: badge.bg, color: badge.text }}
-                    >
-                      {badge.label}
-                    </span>
-                    <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
-                      {categoryLabels[entry.category] || entry.category}
-                    </span>
-                    <span className="ml-auto text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
-                      {entry.date}
-                    </span>
+                  <div className="flex items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span
+                          className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0"
+                          style={{ background: badge.bg, color: badge.text }}
+                        >
+                          {badge.label}
+                        </span>
+                        <span className="text-[10px] font-medium shrink-0" style={{ color: "var(--text-muted)" }}>
+                          {categoryLabels[entry.category] || entry.category}
+                        </span>
+                        <span className="text-[10px] font-mono shrink-0 ml-auto" style={{ color: "var(--text-muted)" }}>
+                          {entry.date}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                        {entry.title}
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
+                        {entry.description}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleEdit(entry)}
+                        className="px-2 py-1 rounded text-[11px] transition-all hover:opacity-80"
+                        style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--studio-border)" }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleRemove(entry.id)}
+                        className="px-2 py-1 rounded text-[11px] transition-all hover:opacity-80"
+                        style={{ background: "rgba(239,68,68,0.1)", color: "rgb(239,68,68)", border: "1px solid rgba(239,68,68,0.2)" }}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                    {entry.title}
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
-                    {entry.description}
-                  </p>
                 </div>
               );
             })}
@@ -1133,6 +1392,9 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
                         {badge.label}
                       </span>
                       <span style={{ color: "var(--text-primary)" }}>{entry.title}</span>
+                      <span className="ml-auto shrink-0" style={{ color: "var(--text-muted)" }}>
+                        {entry.description.length > 60 ? entry.description.slice(0, 60) + "…" : entry.description}
+                      </span>
                     </div>
                   );
                 })}
