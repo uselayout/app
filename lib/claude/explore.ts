@@ -90,7 +90,7 @@ Rules for photographs (data-generate-image):
 - CRITICAL: data-generate-image MUST always be a static string literal in quotes, NEVER a JavaScript expression, variable, or template literal. The image pipeline parses the source code with regex and cannot resolve JS expressions.
 - WRONG: data-generate-image={member.prompt} — variable reference, invisible to pipeline
 - WRONG: data-generate-image={imagePrompt} — variable reference
-- WRONG: data-generate-image={headshot of $\{name\}} — template literal
+- WRONG: data-generate-image={headshot of ${name}} — template literal
 - WRONG: data-generate-image={getPrompt(person)} — function call
 - WRONG: <img src="https://placehold.co/800x600" />
 - WRONG: <img src="https://via.placeholder.com/150" />
@@ -196,7 +196,7 @@ Rules for photographs (data-generate-image):
 - CRITICAL: data-generate-image MUST always be a static string literal in quotes, NEVER a JavaScript expression, variable, or template literal. The image pipeline parses the source code with regex and cannot resolve JS expressions.
 - WRONG: data-generate-image={member.prompt} — variable reference, invisible to pipeline
 - WRONG: data-generate-image={imagePrompt} — variable reference
-- WRONG: data-generate-image={headshot of $\{name\}} — template literal
+- WRONG: data-generate-image={headshot of ${name}} — template literal
 - WRONG: data-generate-image={getPrompt(person)} — function call
 - WRONG: <img src="https://placehold.co/800x600" />
 - WRONG: <img src="https://via.placeholder.com/150" />
