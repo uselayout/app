@@ -53,7 +53,8 @@ const codeBlockPattern = /```[\s\S]*?```/;
 const bulletPointPattern = /^[\s]*[-*]\s/m;
 
 function containsCount(body: string, pattern: RegExp): number {
-  return (body.match(new RegExp(pattern.source, "g" + (pattern.flags.includes("i") ? "i" : ""))) ?? []).length;
+  const flags = "g" + (pattern.flags.includes("i") ? "i" : "") + (pattern.flags.includes("m") ? "m" : "");
+  return (body.match(new RegExp(pattern.source, flags)) ?? []).length;
 }
 
 function hasMinOccurrences(body: string, pattern: RegExp, min: number): boolean {
