@@ -949,11 +949,207 @@ function AdminStats({ stats }: { stats: AdminStatsData | null }) {
   );
 }
 
+// ─── Changelog Tab ──────────────────────────────────────────────────────────
+
+interface ChangelogEntryData {
+  id: string;
+  title: string;
+  description: string;
+  product: string;
+  category: string;
+  date: string;
+}
+
+interface ChangelogWeekData {
+  weekId: string;
+  label: string;
+  entries: ChangelogEntryData[];
+}
+
+const productBadgeStyles: Record<string, { bg: string; text: string; label: string }> = {
+  studio: { bg: "rgba(255,255,255,0.1)", text: "rgba(255,255,255,0.8)", label: "Studio" },
+  cli: { bg: "rgba(16,185,129,0.15)", text: "rgb(52,211,153)", label: "CLI" },
+  "figma-plugin": { bg: "rgba(139,92,246,0.15)", text: "rgb(167,139,250)", label: "Figma Plugin" },
+  "chrome-extension": { bg: "rgba(245,158,11,0.15)", text: "rgb(251,191,36)", label: "Chrome Extension" },
+};
+
+const categoryLabels: Record<string, string> = {
+  new: "New",
+  improved: "Improved",
+  fixed: "Fixed",
+};
+
+function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "error") => void }) {
+  const [draft, setDraft] = useState<ChangelogEntryData[]>([]);
+  const [published, setPublished] = useState<ChangelogWeekData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [publishing, setPublishing] = useState(false);
+
+  const fetchChangelog = useCallback(() => {
+    fetch("/api/admin/changelog")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { draft: ChangelogEntryData[]; published: ChangelogWeekData[] } | null) => {
+        if (data) {
+          setDraft(data.draft);
+          setPublished(data.published);
+        }
+      })
+      .catch(() => toast("Failed to load changelog", "error"))
+      .finally(() => setLoading(false));
+  }, [toast]);
+
+  useEffect(() => {
+    fetchChangelog();
+  }, [fetchChangelog]);
+
+  const handlePublish = () => {
+    if (draft.length === 0) return;
+    setPublishing(true);
+    fetch("/api/admin/changelog", { method: "POST" })
+      .then(async (r) => {
+        const data = await r.json();
+        if (r.ok) {
+          toast(`Published ${data.entryCount} entries for ${data.label}`);
+          fetchChangelog();
+        } else {
+          toast(data.error || "Publish failed", "error");
+        }
+      })
+      .catch(() => toast("Publish failed", "error"))
+      .finally(() => setPublishing(false));
+  };
+
+  if (loading) {
+    return (
+      <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading changelog…</p>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Draft section */}
+      <div
+        className="rounded-lg p-5 space-y-4"
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--studio-border)" }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              Draft entries
+            </h3>
+            {draft.length > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                {draft.length}
+              </span>
+            )}
+          </div>
+          {draft.length > 0 && (
+            <button
+              onClick={handlePublish}
+              disabled={publishing}
+              className="px-4 py-1.5 rounded-md text-xs font-semibold transition-all"
+              style={{
+                background: "var(--studio-accent)",
+                color: "var(--text-on-accent, #08090a)",
+                opacity: publishing ? 0.6 : 1,
+              }}
+            >
+              {publishing ? "Publishing…" : "Publish now"}
+            </button>
+          )}
+        </div>
+
+        {draft.length === 0 ? (
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            No draft entries. Add entries to <code className="font-mono text-xs" style={{ color: "var(--text-secondary)" }}>content/changelog/draft.ts</code>
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {draft.map((entry) => {
+              const badge = productBadgeStyles[entry.product] || productBadgeStyles.studio;
+              return (
+                <div
+                  key={entry.id}
+                  className="rounded-md p-3"
+                  style={{ background: "var(--bg-panel)", border: "1px solid var(--studio-border)" }}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                      style={{ background: badge.bg, color: badge.text }}
+                    >
+                      {badge.label}
+                    </span>
+                    <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
+                      {categoryLabels[entry.category] || entry.category}
+                    </span>
+                    <span className="ml-auto text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
+                      {entry.date}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                    {entry.title}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
+                    {entry.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Recent published */}
+      {published.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+            Recently published
+          </h3>
+          {published.map((week) => (
+            <div key={week.weekId} className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                {week.label}
+              </p>
+              <div
+                className="rounded-lg overflow-hidden"
+                style={{ border: "1px solid var(--studio-border)" }}
+              >
+                {week.entries.map((entry, i) => {
+                  const badge = productBadgeStyles[entry.product] || productBadgeStyles.studio;
+                  return (
+                    <div
+                      key={entry.id}
+                      className="flex items-center gap-3 px-3 py-2 text-xs"
+                      style={{
+                        background: i % 2 === 0 ? "var(--bg-surface)" : "var(--bg-panel)",
+                        borderTop: i > 0 ? "1px solid var(--studio-border)" : undefined,
+                      }}
+                    >
+                      <span
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
+                        style={{ background: badge.bg, color: badge.text }}
+                      >
+                        {badge.label}
+                      </span>
+                      <span style={{ color: "var(--text-primary)" }}>{entry.title}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Admin Component ────────────────────────────────────────────────────
 
 export function AdminClient() {
   const { data: session, isPending } = useSession();
-  const [activeTab, setActiveTab] = useState<"codes" | "requests">("codes");
+  const [activeTab, setActiveTab] = useState<"codes" | "requests" | "changelog">("codes");
   const { toasts, show: toast } = useToast();
   const [pendingCount, setPendingCount] = useState(0);
   const [stats, setStats] = useState<AdminStatsData | null>(null);
@@ -1022,9 +1218,10 @@ export function AdminClient() {
     );
   }
 
-  const tabs: { key: "codes" | "requests"; label: string }[] = [
+  const tabs: { key: "codes" | "requests" | "changelog"; label: string }[] = [
     { key: "codes", label: "Invite codes" },
     { key: "requests", label: "Access requests" },
+    { key: "changelog", label: "Changelog" },
   ];
 
   return (
@@ -1089,10 +1286,14 @@ export function AdminClient() {
         <AdminStats stats={stats} />
 
         {/* Tab content */}
-        {activeTab === "codes" ? (
+        {activeTab === "codes" && (
           <InviteCodesTab toast={toast} />
-        ) : (
+        )}
+        {activeTab === "requests" && (
           <AccessRequestsTab toast={toast} onPendingCountChange={setPendingCount} onAction={fetchStats} />
+        )}
+        {activeTab === "changelog" && (
+          <ChangelogTab toast={toast} />
         )}
       </div>
 
