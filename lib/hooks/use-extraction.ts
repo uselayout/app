@@ -43,6 +43,26 @@ export function useExtraction() {
           throw new Error("No source URL set for this project. Please set the website URL before re-extracting.");
         }
 
+        // Pre-flight: check credits before starting extraction (skip if user has BYOK key)
+        const byokKey = getStoredApiKey();
+        if (!byokKey) {
+          try {
+            const creditsRes = await fetch("/api/billing/credits", { credentials: "include" });
+            if (creditsRes.ok) {
+              const { credits } = await creditsRes.json();
+              const hasCredits = ((credits.layoutMdRemaining ?? 0) + (credits.topupLayoutMd ?? 0)) > 0;
+              if (!hasCredits) {
+                throw new Error(
+                  "No layout.md credits remaining. Add your own Anthropic API key in Settings \u2192 API Keys, or buy a credit pack in Settings \u2192 Billing."
+                );
+              }
+            }
+          } catch (err) {
+            // Re-throw credit errors, ignore network failures (let extraction attempt proceed)
+            if (err instanceof Error && err.message.includes("No layout.md credits")) throw err;
+          }
+        }
+
         // Step 1: Run extraction
         updateStep("connect", { status: "complete" });
         updateStep("extract", { status: "running" });
