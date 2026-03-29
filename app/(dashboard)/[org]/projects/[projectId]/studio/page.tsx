@@ -296,12 +296,13 @@ export default function StudioPage({
     );
   }
 
-  // Show progress screen when running, or when failed with no extraction data yet,
-  // or when complete but the "What's next?" screen hasn't been dismissed yet
+  // Show progress screen when actively running, failed with no data,
+  // or just completed (only if extraction was triggered in THIS session)
+  const extractionWasTriggered = extractionStarted.current;
   if (
     extractionStatus === "running" ||
     (extractionStatus === "failed" && !project.extractionData) ||
-    (extractionStatus === "complete" && !whatsNextDismissed)
+    (extractionStatus === "complete" && !whatsNextDismissed && extractionWasTriggered)
   ) {
     return (
       <ExtractionProgress

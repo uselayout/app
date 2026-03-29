@@ -163,7 +163,7 @@ function WhatsNextScreen({
           onClick={handleOpenCanvas}
           className="bg-[var(--studio-accent)] hover:bg-[var(--studio-accent-hover)] text-[var(--text-on-accent)] text-sm px-5 py-2 rounded-lg font-medium transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)]"
         >
-          Explore the Canvas →
+          Explore Designs →
         </button>
       </div>
       <p className="text-[var(--text-muted)] text-xs text-center mt-4">
