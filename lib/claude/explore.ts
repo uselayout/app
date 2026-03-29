@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ContentBlockParam } from "@anthropic-ai/sdk/resources/messages";
 import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
+import { getIconPacks } from "@/lib/icons/registry";
 
 export const EXPLORE_SYSTEM = `You are an expert design explorer. You generate multiple distinct UI component variations that all faithfully follow a provided design system.
 
@@ -49,8 +50,8 @@ Responsive Design (Mandatory)
 - Grid columns adapt: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3".
 - Hide/show elements per breakpoint when it improves the layout: "hidden md:block".
 - The component will be previewed at 375px, 768px, and 1280px — it must look intentional at ALL three.
-- Navigation: MUST use a hamburger/mobile menu on mobile. On base (mobile): show ONLY the logo and a hamburger icon — hide ALL nav links, CTA buttons, search bars, and secondary actions behind the hamburger menu. On md: and up: show full horizontal nav with CTAs. Never show buttons or nav links inline at 375px — they WILL overflow.
-- Mobile header rule: At 375px the header must contain ONLY: logo (left) + hamburger icon (right). Everything else is hidden md:block or inside the mobile menu dropdown. No exceptions.
+- Navigation: MUST use a hamburger/mobile menu on mobile AND tablet. On base through md: (up to 1023px): show ONLY the logo and a hamburger icon — hide ALL nav links, CTA buttons, search bars, and secondary actions behind the hamburger menu. On lg: (1024px) and up: show full horizontal nav with CTAs. NEVER show nav links or buttons inline at 768px — they WILL overflow and squash together.
+- Mobile/tablet header rule: At 375px AND 768px the header must contain ONLY: logo (left) + hamburger icon (right). Everything else uses hidden lg:flex or hidden lg:block. No exceptions.
 
 Images and Graphics (MANDATORY — read carefully)
 
@@ -155,8 +156,8 @@ Responsive Design (Mandatory)
 - Spacing adapts: "p-4 md:p-6 lg:p-8", "gap-3 md:gap-4 lg:gap-6".
 - Grid columns adapt: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3".
 - The component will be previewed at 375px, 768px, and 1280px — it must look intentional at ALL three.
-- Navigation: MUST use a hamburger/mobile menu on mobile. On base (mobile): show ONLY the logo and a hamburger icon — hide ALL nav links, CTA buttons, search bars, and secondary actions behind the hamburger menu. On md: and up: show full horizontal nav with CTAs. Never show buttons or nav links inline at 375px — they WILL overflow.
-- Mobile header rule: At 375px the header must contain ONLY: logo (left) + hamburger icon (right). Everything else is hidden md:block or inside the mobile menu dropdown. No exceptions.
+- Navigation: MUST use a hamburger/mobile menu on mobile AND tablet. On base through md: (up to 1023px): show ONLY the logo and a hamburger icon — hide ALL nav links, CTA buttons, search bars, and secondary actions behind the hamburger menu. On lg: (1024px) and up: show full horizontal nav with CTAs. NEVER show nav links or buttons inline at 768px — they WILL overflow and squash together.
+- Mobile/tablet header rule: At 375px AND 768px the header must contain ONLY: logo (left) + hamburger icon (right). Everything else uses hidden lg:flex or hidden lg:block. No exceptions.
 
 Images and Graphics (MANDATORY — read carefully)
 
@@ -226,6 +227,94 @@ export default function Variant1() {
 
 IMPORTANT: Each component must be fully self-contained. No shared imports between variants. No prose outside the variant blocks.`;
 
+/**
+ * Build a prompt addendum that tells the AI which icon libraries are available.
+ * Returns empty string when no packs are selected.
+ */
+export function buildIconPackAddendum(iconPackIds?: string[]): string {
+  if (!iconPackIds?.length) return "";
+
+  const packs = getIconPacks(iconPackIds);
+  if (packs.length === 0) return "";
+
+  const lines = packs.map((p) => {
+    const common = p.commonIcons.slice(0, 15).join(", ");
+    if (p.id === "simple-icons") {
+      return `- ${p.name}: Use CDN img tags for brand logos: ${p.importSyntax}\n  Common slugs: ${common}`;
+    }
+    return `- ${p.name}: ${p.importSyntax}\n  Naming: ${p.namingConvention}\n  Common: ${common}`;
+  });
+
+  return `
+ICON LIBRARIES AVAILABLE:
+The design system includes the following icon libraries. Use them for UI icons instead of inline SVGs.
+${lines.join("\n")}
+
+Rules:
+- Import icons as named React components from the library.
+- NEVER use inline SVG paths when the icon library provides the icon.
+- NEVER use emoji or Unicode symbols as icon substitutes.
+- Icons inherit currentColor for stroke/fill colour.`;
+}
+
+/**
+ * Patch a base system prompt to allow icon library imports when packs are selected.
+ * When no packs are provided, returns the original prompt unchanged.
+ */
+function patchSystemPromptForIcons(basePrompt: string, iconPackIds?: string[]): string {
+  const addendum = buildIconPackAddendum(iconPackIds);
+  if (!addendum) return basePrompt;
+
+  // Get the npm package names for selected packs to build the allow-list
+  const packs = getIconPacks(iconPackIds ?? []);
+  const allowedPackages = packs
+    .filter((p) => p.id !== "simple-icons")
+    .map((p) => p.npmPackage);
+
+  let patched = basePrompt;
+
+  // Replace the blanket "DO NOT import" rule with a conditional one
+  patched = patched.replace(
+    /- DO NOT import or use framer-motion, lucide-react, @heroicons, recharts, or any other third-party library\.[^\n]*/,
+    `- DO NOT import or use framer-motion, recharts, or any third-party library EXCEPT the icon libraries listed in the ICON LIBRARIES AVAILABLE section below.`,
+  );
+
+  // Replace the "For icons, use inline SVGs" rule
+  patched = patched.replace(
+    /- For icons, use inline SVGs or Unicode characters\./,
+    `- For UI icons, use the icon libraries specified in the ICON LIBRARIES AVAILABLE section. For custom/fictional logos, use inline SVGs.`,
+  );
+
+  // Also handle the refine system variant of the rule
+  patched = patched.replace(
+    /- DO NOT import or use framer-motion, lucide-react, @heroicons, recharts, or any other third-party library\. For animations use CSS\/Tailwind\. For icons use inline SVGs\./,
+    `- DO NOT import or use framer-motion, recharts, or any third-party library EXCEPT the icon libraries listed in the ICON LIBRARIES AVAILABLE section below. For animations use CSS/Tailwind.`,
+  );
+
+  // Update the AVAILABLE LIBRARIES line to include icon packs
+  if (allowedPackages.length > 0) {
+    const packList = allowedPackages.join(", ");
+    patched = patched.replace(
+      /- AVAILABLE LIBRARIES: React 18, ReactDOM 18, Tailwind CSS \(via CDN\)\. Nothing else is available\./,
+      `- AVAILABLE LIBRARIES: React 18, ReactDOM 18, Tailwind CSS (via CDN), ${packList}.`,
+    );
+  }
+
+  // Inject the addendum after the "Token Usage" section (before "Variant Diversity" or "Start from")
+  const insertPoint = patched.indexOf("\nVariant Diversity");
+  const insertPointRefine = patched.indexOf("\nContent & Copy");
+  const insertAt = insertPoint !== -1 ? insertPoint : insertPointRefine;
+
+  if (insertAt !== -1) {
+    patched = patched.slice(0, insertAt) + "\n" + addendum + patched.slice(insertAt);
+  } else {
+    // Fallback: append before layout.md
+    patched = patched + "\n" + addendum;
+  }
+
+  return patched;
+}
+
 export function createExploreStream(
   prompt: string,
   layoutMd: string,
@@ -234,9 +323,11 @@ export function createExploreStream(
   imageDataUrl?: string,
   contextFiles?: Array<{ name: string; content: string }>,
   modelId: string = "claude-sonnet-4-6",
+  iconPacks?: string[],
 ): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
-  const systemPrompt = `${EXPLORE_SYSTEM}\n\nGenerate exactly ${variantCount} variants.\n\n${layoutMd}`;
+  const baseSystem = patchSystemPromptForIcons(EXPLORE_SYSTEM, iconPacks);
+  const systemPrompt = `${baseSystem}\n\nGenerate exactly ${variantCount} variants.\n\n${layoutMd}`;
 
   // Build user message — text-only or multi-content with image + context files
   const userContent = buildUserContent(prompt, imageDataUrl, contextFiles);
@@ -298,9 +389,11 @@ export function createRefineStream(
   contextFiles?: Array<{ name: string; content: string }>,
   imageDataUrl?: string,
   modelId: string = "claude-sonnet-4-6",
+  iconPacks?: string[],
 ): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
-  const systemPrompt = `${REFINE_SYSTEM}\n\nGenerate exactly ${variantCount} refined variants.\n\n${layoutMd}`;
+  const baseSystem = patchSystemPromptForIcons(REFINE_SYSTEM, iconPacks);
+  const systemPrompt = `${baseSystem}\n\nGenerate exactly ${variantCount} refined variants.\n\n${layoutMd}`;
 
   let resolveUsage: (u: TokenUsageResult) => void;
   const usage = new Promise<TokenUsageResult>((resolve) => {
