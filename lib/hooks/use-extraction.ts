@@ -16,6 +16,7 @@ export function useExtraction() {
   const completeExtraction = useExtractionStore((s) => s.completeExtraction);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateLayoutMd = useProjectStore((s) => s.updateLayoutMd);
+  const syncTokensFromLayoutMd = useProjectStore((s) => s.syncTokensFromLayoutMd);
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -178,6 +179,7 @@ export function useExtraction() {
 
         // Write final content to project store (single Supabase persist)
         updateLayoutMd(project.id, layoutMd);
+        syncTokensFromLayoutMd(project.id);
         setStreamingContent(null);
         updateStep("generate", { status: "complete" });
         setProgress(100);
