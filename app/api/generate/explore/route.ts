@@ -23,6 +23,7 @@ const RequestSchema = z.object({
     name: z.string(),
     content: z.string().max(50_000),
   })).max(3).optional(),
+  iconPacks: z.array(z.string()).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
   }
 
   const userId = session.user.id;
-  const { prompt, layoutMd, variantCount, baseCode, imageDataUrl, contextFiles } = parsed.data;
+  const { prompt, layoutMd, variantCount, baseCode, imageDataUrl, contextFiles, iconPacks } = parsed.data;
   const modelId = (parsed.data.modelId ?? DEFAULT_EXPLORE_MODEL) as AiModelId;
   const model = AI_MODELS[modelId];
   const effectiveLayoutMd = layoutMd || "No design system provided. Use sensible defaults with a clean, modern aesthetic.";
@@ -119,6 +120,7 @@ export async function POST(request: NextRequest) {
         contextFiles,
         imageDataUrl,
         modelId,
+        iconPacks,
       })
     : createExploreStreamForModel(modelId, {
         prompt,
@@ -128,6 +130,7 @@ export async function POST(request: NextRequest) {
         imageDataUrl,
         contextFiles,
         modelId,
+        iconPacks,
       });
 
   void usage

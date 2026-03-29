@@ -2,12 +2,14 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
 import { ConnectTab } from "@/components/studio/ConnectTab";
+import { IconPackSelector } from "@/components/studio/IconPackSelector";
 import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
+import { resolveTokenValue } from "@/lib/util/color";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
 import { detectSourceType, normaliseUrl } from "@/lib/util/detect-source";
@@ -33,7 +35,7 @@ interface SourcePanelProps {
   onExtract?: (url: string, sourceType: SourceType, pat?: string) => void;
 }
 
-type TabId = "tokens" | "components" | "screenshots" | "quality" | "connect";
+type TabId = "tokens" | "components" | "screenshots" | "icons" | "quality" | "connect";
 
 function SourcePanelEmptyState({
   projectId,
@@ -169,6 +171,7 @@ function SourcePanelInner({
     { id: "tokens", label: "Tokens", icon: Palette },
     { id: "components", label: "Components", icon: LayoutGrid },
     { id: "screenshots", label: "Screenshots", icon: Image },
+    { id: "icons", label: "Icons", icon: Shapes },
     { id: "quality", label: "Quality", icon: Gauge },
     { id: "connect", label: "Connect", icon: Terminal },
   ];
@@ -225,13 +228,16 @@ function SourcePanelInner({
           />
         )}
         {activeTab === "tokens" && extractionData && (
-          <TokensTab tokens={extractionData.tokens} projectId={projectId} />
+          <TokensTab tokens={extractionData.tokens} cssVariables={extractionData.cssVariables} projectId={projectId} />
         )}
         {activeTab === "components" && extractionData && (
           <ComponentsTab components={extractionData.components} />
         )}
         {activeTab === "screenshots" && extractionData && (
           <ScreenshotsTab screenshots={extractionData.screenshots} onDelete={handleDeleteScreenshot} onAdd={handleAddScreenshot} />
+        )}
+        {activeTab === "icons" && (
+          <IconPackSelector projectId={projectId} />
         )}
         {activeTab === "quality" && extractionData && (
           <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} projectId={projectId} orgId={currentOrgId ?? undefined} />
@@ -313,9 +319,11 @@ const SECTION_TYPE_MAP: Record<string, keyof import("@/lib/types").ExtractedToke
 
 function TokensTab({
   tokens,
+  cssVariables,
   projectId,
 }: {
   tokens: ExtractionResult["tokens"];
+  cssVariables: Record<string, string>;
   projectId?: string;
 }) {
   const removeTokens = useProjectStore((s) => s.removeTokens);
@@ -394,6 +402,37 @@ function TokensTab({
     });
   }, []);
 
+  const [openSubGroups, setOpenSubGroups] = useState<Set<string>>(() => new Set<string>());
+  const [subGroupsInitialised, setSubGroupsInitialised] = useState(false);
+
+  // Initialise sub-groups as open once sections are known
+  useEffect(() => {
+    if (subGroupsInitialised) return;
+    const allKeys = new Set<string>();
+    for (const section of sections) {
+      const groups = groupTokensByPurpose(section.items, SECTION_TYPE_MAP[section.label]);
+      for (const group of groups) {
+        if (group.label) allKeys.add(`${section.label}:${group.label}`);
+      }
+    }
+    if (allKeys.size > 0) {
+      setOpenSubGroups(allKeys);
+      setSubGroupsInitialised(true);
+    }
+  }, [sections, subGroupsInitialised]);
+
+  const toggleSubGroup = useCallback((key: string) => {
+    setOpenSubGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }, []);
+
   const copySection = useCallback((items: ExtractedToken[]) => {
     const text = items
       .map((t) => `${t.cssVariable ?? t.name}: ${t.value}`)
@@ -422,19 +461,37 @@ function TokensTab({
           />
           {openSections.has(section.label) && (
             <div className="pl-2">
-              {groupTokensByPurpose(section.items, SECTION_TYPE_MAP[section.label]).map((group) => (
+              {groupTokensByPurpose(section.items, SECTION_TYPE_MAP[section.label]).map((group) => {
+                const subGroupKey = `${section.label}:${group.label}`;
+                const isSubGroupOpen = !group.label || openSubGroups.has(subGroupKey);
+                return (
                 <div key={group.label || "_flat"}>
                   {group.label && (
-                    <div className="px-2 pt-2.5 pb-0.5 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
-                      {group.label}
-                    </div>
+                    <button
+                      onClick={() => toggleSubGroup(subGroupKey)}
+                      className="flex w-full items-center gap-1 px-2 pt-2 pb-0.5 text-left"
+                    >
+                      <ChevronRight
+                        className={`h-2.5 w-2.5 text-[var(--text-muted)] transition-transform duration-150 ${
+                          isSubGroupOpen ? "rotate-90" : ""
+                        }`}
+                      />
+                      <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                        {group.label}
+                      </span>
+                      <span className="text-[10px] text-[var(--text-muted)] opacity-60">
+                        ({group.tokens.length})
+                      </span>
+                    </button>
                   )}
+                  {isSubGroupOpen && (
                   <div className="space-y-0.5">
                     {group.tokens.map((token) => (
                       <TokenRow
                         key={token.name}
                         token={token}
                         tokenType={SECTION_TYPE_MAP[section.label]}
+                        cssVariables={cssVariables}
                         projectId={projectId}
                         allTokens={allTokensFlat}
                         layoutMd={useProjectStore.getState().projects.find((p) => p.id === projectId)?.layoutMd ?? ""}
@@ -444,8 +501,10 @@ function TokensTab({
                       />
                     ))}
                   </div>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -468,6 +527,7 @@ function TokensTab({
 function TokenRow({
   token,
   tokenType,
+  cssVariables,
   projectId,
   allTokens,
   layoutMd,
@@ -477,6 +537,7 @@ function TokenRow({
 }: {
   token: ExtractedToken;
   tokenType: keyof ExtractedTokens;
+  cssVariables: Record<string, string>;
   projectId?: string;
   allTokens: ExtractedToken[];
   layoutMd: string;
@@ -497,6 +558,11 @@ function TokenRow({
   const isColor = token.type === "color";
   const canEdit = !!projectId && !!onUpdate;
   const canRename = !!projectId && !!onRename;
+
+  const resolvedValue = useMemo(
+    () => resolveTokenValue(token.value, cssVariables),
+    [token.value, cssVariables]
+  );
 
   const references = useMemo(
     () => findTokenReferences(allTokens, token.name),
@@ -609,18 +675,18 @@ function TokenRow({
         } ${justSaved ? "bg-emerald-500/5" : ""}`}
       >
         {isColor && canEdit ? (
-          <ColorPickerPopover value={token.value} onChange={handleColorChange}>
+          <ColorPickerPopover value={resolvedValue} onChange={handleColorChange}>
             <span
               onClick={(e) => e.stopPropagation()}
               className="h-4 w-4 shrink-0 cursor-pointer rounded-full border border-[var(--studio-border)] transition-all hover:ring-2 hover:ring-[var(--studio-border-focus)] hover:ring-offset-1 hover:ring-offset-[var(--bg-panel)]"
-              style={{ backgroundColor: token.value }}
+              style={{ backgroundColor: resolvedValue }}
               title="Click to edit colour"
             />
           </ColorPickerPopover>
         ) : isColor ? (
           <span
             className="h-4 w-4 shrink-0 rounded-full border border-[var(--studio-border)]"
-            style={{ backgroundColor: token.value }}
+            style={{ backgroundColor: resolvedValue }}
           />
         ) : null}
 
@@ -642,7 +708,7 @@ function TokenRow({
             className={`min-w-0 flex-1 truncate text-xs text-[var(--text-primary)] ${
               canRename ? "cursor-text hover:underline hover:decoration-dotted hover:decoration-[var(--text-muted)]" : ""
             }`}
-            title={canRename ? "Click to rename" : undefined}
+            title={token.cssVariable ?? token.name}
           >
             {token.cssVariable ?? token.name}
           </span>
@@ -658,17 +724,17 @@ function TokenRow({
             onKeyDown={handleEditKeyDown}
             onClick={(e) => e.stopPropagation()}
             spellCheck={false}
-            className="w-24 shrink-0 rounded border border-[var(--studio-border-focus)] bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-xs text-[var(--text-primary)] outline-none"
+            className="w-auto min-w-[96px] max-w-[160px] shrink-0 rounded border border-[var(--studio-border-focus)] bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-xs text-[var(--text-primary)] outline-none"
           />
         ) : (
           <span
             onClick={!isColor && canEdit ? handleStartEdit : undefined}
-            className={`shrink-0 text-xs text-[var(--text-muted)] ${
+            className={`shrink-0 max-w-[120px] truncate text-xs text-[var(--text-muted)] ${
               !isColor && canEdit ? "cursor-text hover:text-[var(--text-primary)] hover:underline hover:decoration-dotted" : ""
             }`}
-            title={!isColor && canEdit ? "Click to edit value" : undefined}
+            title={token.value !== resolvedValue ? `${token.value} \u2192 ${resolvedValue}` : token.value}
           >
-            {token.value}
+            {isColor && token.value !== resolvedValue ? resolvedValue : token.value}
           </span>
         )}
 

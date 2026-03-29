@@ -408,6 +408,7 @@ export default function StudioPage({
               initialImage={pendingFigmaImage ?? undefined}
               onInitialImageConsumed={() => setPendingFigmaImage(null)}
               extractedFonts={extractedFonts}
+              iconPacks={project.iconPacks}
             />
           }
         />

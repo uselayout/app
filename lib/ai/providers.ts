@@ -21,6 +21,7 @@ export interface ExploreOptions {
   imageDataUrl?: string;
   contextFiles?: Array<{ name: string; content: string }>;
   modelId?: string;
+  iconPacks?: string[];
 }
 
 export interface RefineOptions {
@@ -32,6 +33,7 @@ export interface RefineOptions {
   contextFiles?: Array<{ name: string; content: string }>;
   imageDataUrl?: string;
   modelId?: string;
+  iconPacks?: string[];
 }
 
 export function createExploreStreamForModel(
@@ -60,6 +62,7 @@ export function createExploreStreamForModel(
     options.imageDataUrl,
     options.contextFiles,
     options.modelId,
+    options.iconPacks,
   );
 }
 
@@ -91,5 +94,6 @@ export function createRefineStreamForModel(
     options.contextFiles,
     options.imageDataUrl,
     options.modelId,
+    options.iconPacks,
   );
 }

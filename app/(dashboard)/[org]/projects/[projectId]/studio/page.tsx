@@ -390,6 +390,7 @@ export default function StudioPage({
               onPushToFigma={handlePushToFigma}
               onLayoutMdUpdate={handleLayoutMdChange}
               extractedFonts={extractedFonts}
+              iconPacks={project.iconPacks}
             />
           }
           savedPanel={

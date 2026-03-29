@@ -142,6 +142,7 @@ interface VariantCardProps {
   onCodeUpdate?: (code: string, editHistory: EditHistory) => void;
   layoutMd?: string;
   designTokens?: ExtractedToken[];
+  iconPacks?: string[];
 }
 
 export function VariantCard({
@@ -162,6 +163,7 @@ export function VariantCard({
   onCodeUpdate,
   layoutMd,
   designTokens,
+  iconPacks,
 }: VariantCardProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fullscreenIframeRef = useRef<HTMLIFrameElement>(null);
@@ -216,7 +218,7 @@ export function VariantCard({
         componentNameRef.current = name;
 
         // Update the scaled card preview
-        const srcdoc = buildSrcdoc(js, name, undefined, variant.id);
+        const srcdoc = buildSrcdoc(js, name, undefined, variant.id, iconPacks);
         if (iframeRef.current) {
           iframeRef.current.srcdoc = srcdoc;
           setPreviewReady(true);
@@ -224,7 +226,7 @@ export function VariantCard({
 
         // Also update the fullscreen Inspector iframe if it's open
         if (inspectMode && fullscreenIframeRef.current) {
-          const inspectorSrcdoc = buildSrcdoc(js, name, getInspectorScript());
+          const inspectorSrcdoc = buildSrcdoc(js, name, getInspectorScript(), undefined, iconPacks);
           fullscreenIframeRef.current.srcdoc = inspectorSrcdoc;
         }
       } catch (err) {
@@ -244,13 +246,13 @@ export function VariantCard({
     if (!js) return;
     if (inspectMode) {
       // Fullscreen iframe gets the inspector script
-      const srcdoc = buildSrcdoc(js, componentNameRef.current, getInspectorScript());
+      const srcdoc = buildSrcdoc(js, componentNameRef.current, getInspectorScript(), undefined, iconPacks);
       if (fullscreenIframeRef.current) {
         fullscreenIframeRef.current.srcdoc = srcdoc;
       }
     } else {
       // Exiting inspect mode — React mounts a fresh scaled iframe, restore its srcdoc
-      const srcdoc = buildSrcdoc(js, componentNameRef.current, undefined, variant.id);
+      const srcdoc = buildSrcdoc(js, componentNameRef.current, undefined, variant.id, iconPacks);
       if (iframeRef.current) {
         iframeRef.current.srcdoc = srcdoc;
         setPreviewReady(true);
@@ -509,7 +511,7 @@ export function VariantCard({
       if (!res.ok) return;
       const { js } = await res.json();
       const componentName = extractComponentName(entry.codeAfter);
-      const srcdoc = buildSrcdoc(js, componentName);
+      const srcdoc = buildSrcdoc(js, componentName, undefined, undefined, iconPacks);
       if (iframeRef.current) {
         iframeRef.current.srcdoc = srcdoc;
       }
@@ -633,7 +635,7 @@ export function VariantCard({
               onReset={() => {
                 const js = transpiledJsRef.current;
                 if (!js) return;
-                const srcdoc = buildSrcdoc(js, componentNameRef.current, getInspectorScript());
+                const srcdoc = buildSrcdoc(js, componentNameRef.current, getInspectorScript(), undefined, iconPacks);
                 if (fullscreenIframeRef.current) fullscreenIframeRef.current.srcdoc = srcdoc;
               }}
               designTokens={designTokens}
