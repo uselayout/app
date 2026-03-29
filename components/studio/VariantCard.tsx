@@ -215,10 +215,17 @@ export function VariantCard({
         transpiledJsRef.current = js;
         componentNameRef.current = name;
 
+        // Update the scaled card preview
         const srcdoc = buildSrcdoc(js, name, undefined, variant.id);
         if (iframeRef.current) {
           iframeRef.current.srcdoc = srcdoc;
           setPreviewReady(true);
+        }
+
+        // Also update the fullscreen Inspector iframe if it's open
+        if (inspectMode && fullscreenIframeRef.current) {
+          const inspectorSrcdoc = buildSrcdoc(js, name, getInspectorScript());
+          fullscreenIframeRef.current.srcdoc = inspectorSrcdoc;
         }
       } catch (err) {
         if (!cancelled) {
@@ -229,7 +236,7 @@ export function VariantCard({
 
     transpileAndRender();
     return () => { cancelled = true; };
-  }, [variant.code]);
+  }, [variant.code, inspectMode]);
 
   // Rebuild srcdoc when inspectMode toggles (no re-transpile, instant)
   useEffect(() => {
@@ -667,14 +674,23 @@ export function VariantCard({
                 Click any element to inspect and edit
               </span>
             </div>
-            {onRegenerateImages && placeholderImageCount > 0 && (
+            {onRegenerateImages && (placeholderImageCount > 0 || isProcessingImages) && (
               <button
                 onClick={(e) => { e.stopPropagation(); onRegenerateImages(false); }}
                 disabled={isProcessingImages}
                 className="flex items-center gap-1.5 rounded-md bg-[var(--studio-accent)] px-3 py-1.5 text-xs font-medium text-[var(--text-on-accent)] hover:opacity-90 transition-opacity disabled:opacity-40"
               >
-                <ImagePlus size={12} />
-                Generate images ({placeholderImageCount})
+                {isProcessingImages ? (
+                  <>
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--text-on-accent)]/30 border-t-[var(--text-on-accent)]" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <ImagePlus size={12} />
+                    Generate images ({placeholderImageCount})
+                  </>
+                )}
               </button>
             )}
             <button
