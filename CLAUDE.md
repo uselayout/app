@@ -289,15 +289,16 @@ GOOGLE_AI_API_KEY=...                 # Optional: for AI image generation (plann
 
 ## Changelog
 
-When shipping user-facing changes across any Layout product, add an entry to `content/changelog/draft.ts`.
+**REQUIRED:** Before finishing any session that includes user-facing changes (new features, improvements, bug fixes), you MUST add changelog entries to `content/changelog/draft.ts`. This is not optional. Do it before the final commit.
 
 - **Products:** `studio`, `cli`, `figma-plugin`, `chrome-extension`
 - **Categories:** `new` (brand new feature), `improved` (enhancement), `fixed` (bug fix)
 - Write titles and descriptions for users, not developers
 - Good: "Faster Figma extraction" / "Design tokens now extract 3x faster from large Figma files."
 - Bad: "perf: optimise batch node fetching"
+- Skip internal-only changes (refactors, dev tooling, CI fixes) that don't affect users
 
-Weekly workflow: review draft entries, run `npm run changelog:publish`, commit, deploy.
+Weekly workflow: review draft entries in admin (/admin > Changelog tab), publish, commit, deploy.
 
 Preview draft entries in dev or with `?draft=true` on `/changelog`.
 
