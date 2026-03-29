@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
+import { useOrgStore } from "@/lib/store/organization";
 import {
   CreditCard,
   Zap,
@@ -60,6 +61,7 @@ interface SeatInfo {
 
 export default function BillingPage() {
   const params = useParams<{ org: string }>();
+  const currentOrgId = useOrgStore((s) => s.currentOrgId);
   const [credits, setCredits] = useState<CreditBalance | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [seatInfo, setSeatInfo] = useState<SeatInfo | null>(null);
@@ -77,10 +79,11 @@ export default function BillingPage() {
   const isByok = hasClaudeKey;
 
   const fetchData = useCallback(async () => {
+    if (!currentOrgId) return;
     const [creditsRes, subRes, membersRes] = await Promise.all([
       fetch("/api/billing/credits"),
       fetch("/api/billing/subscription"),
-      fetch(`/api/organizations/${params.org}/members`),
+      fetch(`/api/organizations/${currentOrgId}/members`),
     ]);
 
     if (creditsRes.ok) {
@@ -97,7 +100,7 @@ export default function BillingPage() {
     }
 
     setLoading(false);
-  }, [params.org]);
+  }, [currentOrgId]);
 
   useEffect(() => {
     fetchData();

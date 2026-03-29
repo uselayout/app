@@ -125,7 +125,7 @@ export async function upsertProject(
   });
 
   if (error) {
-    console.error("Failed to upsert project:", error.message);
+    throw new Error(`Failed to upsert project: ${error.message}`);
   }
 }
 

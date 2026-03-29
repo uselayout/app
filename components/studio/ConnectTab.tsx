@@ -58,7 +58,7 @@ export function ConnectTab({ hasLayoutMd, projectName }: ConnectTabProps) {
         <div className="space-y-3">
           <CopyCommand
             label="1. Export and import the bundle"
-            command="npx @layoutdesign/context import ~/Downloads/*-ai-kit.zip"
+            command={`npx @layoutdesign/context import ~/Downloads/${projectName ? projectName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") : "your-project"}-ai-kit.zip`}
           />
           <p className="text-[10px] text-[var(--text-muted)]">
             Click <span className="text-[var(--text-secondary)]">Export</span> above to download, then run this to import into your project.

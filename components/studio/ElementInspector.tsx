@@ -58,7 +58,7 @@ interface ElementInspectorProps {
   isActive: boolean;
   onStyleEdits: (edits: StyleEdit[]) => void;
   onAnnotationsSubmit?: (annotations: ElementAnnotation[]) => void;
-  onImageGenerated?: (prompt: string, imageUrl: string) => void;
+  onImageGenerated?: (prompt: string, imageUrl: string, context?: { alt?: string; currentSrc?: string; className?: string }) => void;
   onDeselect: () => void;
   onReset?: () => void;
   designTokens?: ExtractedToken[];
@@ -538,7 +538,10 @@ export function ElementInspector({
         setSelected((prev) => prev ? { ...prev, imageSrc: data.url } : null);
 
         // Persist to variant source code so it survives exiting Inspector
-        onImageGenerated?.(imagePromptEdit.trim(), data.url);
+        onImageGenerated?.(imagePromptEdit.trim(), data.url, {
+          currentSrc: selected.imageSrc,
+          className: selected.elementClasses,
+        });
       }
     } catch (err) {
       console.error("Image generation error:", err);

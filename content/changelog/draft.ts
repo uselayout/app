@@ -171,4 +171,31 @@ export const draftEntries: ChangelogEntry[] = [
     category: "improved",
     date: "2026-03-29",
   },
+  {
+    id: "2026-w13-inspector-image-persist",
+    title: "Inspector-generated images now save reliably",
+    description:
+      "Images generated via the Inspector now persist correctly when you exit Inspector mode. Previously, generated images would appear in the preview but disappear when switching back to the Explorer view.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-connect-tab-import-command",
+    title: "Connect tab shows correct import command",
+    description:
+      "The CLI import command on the Connect tab now uses your project's actual filename instead of a wildcard pattern that could match multiple downloads.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-figma-plugin-health-check",
+    title: "Figma plugin health check works again",
+    description:
+      "The Health Check feature in the Figma plugin now correctly authenticates with the Layout API. Previously it returned a 401 error after a recent auth update.",
+    product: "figma-plugin",
+    category: "fixed",
+    date: "2026-03-29",
+  },
 ];
