@@ -54,4 +54,103 @@ export const draftEntries: ChangelogEntry[] = [
     category: "improved",
     date: "2026-03-29",
   },
+  {
+    id: "2026-w13-structure-first-images",
+    title: "Structure-first design exploration",
+    description:
+      "Variants now generate instantly with styled placeholders instead of waiting for all images. See your page structure immediately, then generate images one at a time or in bulk when you're ready.",
+    product: "studio",
+    category: "new",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-inspector-image-tab",
+    title: "Generate images from the Inspector",
+    description:
+      "Click any image placeholder in Inspector to see its prompt, edit it, choose a style and aspect ratio, then generate. Images save to the variant immediately and persist when you exit Inspector.",
+    product: "studio",
+    category: "new",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-smart-regenerate",
+    title: "Smart image regeneration",
+    description:
+      "The Generate Images button now only creates missing images by default, keeping ones you've already generated. Shift+click to regenerate everything. Progress counter and Stop button included.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-real-brand-logos",
+    title: "Real brand logos in designs",
+    description:
+      "Trust bars and logo grids now use real, recognisable brand logos from Simple Icons (3,400+ brands) instead of generic placeholder shapes. Logos render instantly without image generation.",
+    product: "studio",
+    category: "new",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-photorealistic-images",
+    title: "Photorealistic image generation",
+    description:
+      "Generated headshots and photos are now explicitly photorealistic. If a prompt mentions illustration, cartoon, or sketch, the style is respected. Safety retries no longer switch to cartoon style.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-inspector-draggable",
+    title: "Draggable and resizable Inspector panel",
+    description:
+      "The Inspector property panel can now be dragged to any position and resized by pulling the corner handle. Dropdown menus no longer get clipped.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-instant-style-edits",
+    title: "Instant style edits in Inspector",
+    description:
+      "Changing font weight, colour, size, spacing, and other properties in the Inspector now applies instantly via direct code replacement. No more 30-second AI calls for simple changes.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-inspector-apply-fix",
+    title: "Inspector changes no longer hang or get lost",
+    description:
+      "Fixed the 'Applying changes...' spinner that would hang indefinitely. Style edits now show elapsed time, display errors clearly, and pending changes are preserved when switching between elements.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-design-system-compliance",
+    title: "Stronger design system compliance",
+    description:
+      "Variants now strictly follow your design system's button radius, fonts, colours, and spacing. Added self-check instructions that catch common violations like wrong border-radius or invented brand names.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-tablet-nav-fix",
+    title: "Better tablet navigation",
+    description:
+      "Navigation menus now use the hamburger menu on tablet (768px) as well as mobile. Full horizontal nav only appears at desktop width (1024px+) where there's enough room.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-gemini-error-surfacing",
+    title: "Gemini generation errors now visible",
+    description:
+      "When Gemini fails to generate a variant (token limit, content policy, API error), you now see the actual error message instead of the generation silently stopping.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-03-29",
+  },
 ];
