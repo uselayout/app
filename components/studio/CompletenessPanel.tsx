@@ -235,7 +235,10 @@ export function CompletenessPanel({ layoutMd, onLayoutMdChange, projectId, orgId
         toast.error("Auto-fix produced no changes. Try editing manually.");
       } else {
         // Append new content to existing layout.md
-        onLayoutMdChange(layoutMd.trimEnd() + "\n\n" + newContent);
+        const updatedMd = layoutMd.trimEnd() + "\n\n" + newContent;
+        onLayoutMdChange(updatedMd);
+        // Re-analyse immediately so the score updates
+        setReport(analyseCompleteness(updatedMd.trim()));
         toast.success("layout.md improved — new content added");
       }
     } catch (err) {
