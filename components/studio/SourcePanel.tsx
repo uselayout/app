@@ -338,6 +338,19 @@ function TokensTab({
 
   const allTokensFlat = useMemo(() => flattenTokens(tokens), [tokens]);
 
+  // Build a resolution map from cssVariables + all token values
+  // This allows resolving var(--palette-purple-40) when --palette-purple-40 is itself a token
+  const tokenVarMap = useMemo(() => {
+    const map: Record<string, string> = { ...cssVariables };
+    for (const token of allTokensFlat) {
+      const varName = token.cssVariable ?? `--${token.name}`;
+      if (!token.value.includes("var(")) {
+        map[varName] = token.value;
+      }
+    }
+    return map;
+  }, [cssVariables, allTokensFlat]);
+
   const [undoState, setUndoState] = useState<{
     tokenType: keyof import("@/lib/types").ExtractedTokens;
     token: ExtractedToken;
@@ -496,7 +509,7 @@ function TokensTab({
                         key={token.name}
                         token={token}
                         tokenType={SECTION_TYPE_MAP[section.label]}
-                        cssVariables={cssVariables}
+                        cssVariables={tokenVarMap}
                         projectId={projectId}
                         allTokens={allTokensFlat}
                         layoutMd={useProjectStore.getState().projects.find((p) => p.id === projectId)?.layoutMd ?? ""}

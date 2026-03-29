@@ -59,6 +59,12 @@ const COLOR_GROUPS: GroupDef[] = [
       (n.includes("border") || n.includes("divider") || n.includes("outline") || n.includes("separator") || n.includes("stroke")),
   },
   {
+    label: "Primary",
+    match: (n) =>
+      !isComponentToken(n) &&
+      (n.includes("primary") || n.includes("secondary") || n.includes("tertiary") || n.includes("brand")),
+  },
+  {
     label: "Interactive",
     match: (n) =>
       !isComponentToken(n) &&
