@@ -85,13 +85,18 @@ export async function POST(request: NextRequest) {
 
       let imageIndex = 0;
       let totalImages = 0;
+      const requestSignal = request.signal;
 
       const stream = new ReadableStream({
         async start(controller) {
           const encoder = new TextEncoder();
 
           function sendEvent(data: Record<string, unknown>) {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+            try {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+            } catch {
+              // Controller closed — client disconnected
+            }
           }
 
           try {
@@ -101,6 +106,7 @@ export async function POST(request: NextRequest) {
               brandStyle,
               googleApiKey,
               forceRegenerate,
+              signal: requestSignal,
               onImageComplete: (_index, url) => {
                 imageIndex++;
                 sendEvent({

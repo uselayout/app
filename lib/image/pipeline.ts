@@ -51,6 +51,8 @@ export interface PipelineOptions {
   googleApiKey?: string;
   /** Force regeneration even for images that already have real URLs */
   forceRegenerate?: boolean;
+  /** AbortSignal — stops generation when client disconnects or cancels */
+  signal?: AbortSignal;
 }
 
 // ---------------------------------------------------------------------------
@@ -261,6 +263,12 @@ export async function processImagePlaceholders(
 
   // Process in batches to respect concurrency limits
   for (let i = 0; i < uniquePlaceholders.length; i += concurrency) {
+    // Stop if client disconnected or request was cancelled
+    if (options.signal?.aborted) {
+      console.log("[image-pipeline] Aborted — client disconnected or cancelled");
+      break;
+    }
+
     const batch = uniquePlaceholders.slice(i, i + concurrency);
 
     const generated = await Promise.allSettled(

@@ -303,6 +303,9 @@ export async function resolveJsxImages(
   const errors: string[] = [];
 
   for (let i = 0; i < uniquePrompts.length; i += concurrency) {
+    // Stop if client disconnected or request was cancelled
+    if (options.signal?.aborted) break;
+
     const batch = uniquePrompts.slice(i, i + concurrency);
 
     const results = await Promise.allSettled(
