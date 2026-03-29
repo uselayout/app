@@ -542,6 +542,22 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
   const [sendingTest, setSendingTest] = useState(false);
   const [resending, setResending] = useState<string | null>(null);
 
+  // Background refresh without loading state (preserves scroll position)
+  const refreshRequestsQuietly = useCallback(async () => {
+    try {
+      const url = statusFilter
+        ? `/api/admin/access-requests?status=${statusFilter}`
+        : "/api/admin/access-requests";
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const json = await res.json() as { requests: AccessRequestRow[] };
+      setRequests(json.requests);
+      if (!statusFilter && onPendingCountChange) {
+        onPendingCountChange(json.requests.filter((r) => r.status === "pending").length);
+      }
+    } catch { /* silent */ }
+  }, [statusFilter, onPendingCountChange]);
+
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
@@ -595,7 +611,11 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
         toast(status === "approved" ? "Request approved" : "Request rejected");
       }
 
-      void fetchRequests();
+      // Update row in-place to avoid table jump from full reload
+      setRequests((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status } : r))
+      );
+      void refreshRequestsQuietly();
       onAction?.();
     } catch {
       toast("Failed to update request", "error");
@@ -615,8 +635,11 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
       });
       if (!res.ok) throw new Error("Failed to update");
       toast(`Updated ${editing.field}`);
+      setRequests((prev) =>
+        prev.map((r) => (r.id === editing.id ? { ...r, [editing.field]: editing.value.trim() } : r))
+      );
       setEditing(null);
-      void fetchRequests();
+      void refreshRequestsQuietly();
     } catch {
       toast(`Failed to update ${editing.field}`, "error");
     } finally {
@@ -648,7 +671,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
         throw new Error(json.error ?? "Failed to send");
       }
       toast(`Sent: ${action.label}`);
-      void fetchRequests();
+      void refreshRequestsQuietly();
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to send email", "error");
     } finally {
