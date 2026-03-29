@@ -242,7 +242,12 @@ function SourcePanelInner({
         {activeTab === "quality" && extractionData && (
           <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} projectId={projectId} orgId={currentOrgId ?? undefined} />
         )}
-        {activeTab === "connect" && <ConnectTab />}
+        {activeTab === "connect" && (
+          <ConnectTab
+            hasLayoutMd={!!layoutMd && layoutMd.length > 100}
+            projectName={useProjectStore.getState().projects.find((p) => p.id === projectId)?.name}
+          />
+        )}
       </div>
     </div>
   );

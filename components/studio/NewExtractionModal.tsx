@@ -161,14 +161,24 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
 
           {/* Figma PAT field — hidden when already stored in Settings */}
           {isFigma && !storedFigmaPat && (
-            <input
-              type="password"
-              placeholder="Figma Personal Access Token"
-              value={pat}
-              onChange={(e) => setPat(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
-              className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[var(--bg-app)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
-            />
+            <div className="space-y-1.5">
+              <input
+                type="password"
+                placeholder="Figma Personal Access Token"
+                value={pat}
+                onChange={(e) => setPat(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
+                className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[var(--bg-app)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+              />
+              <a
+                href="https://www.figma.com/developers/api#access-tokens"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+              >
+                Get a token at figma.com/settings &rarr;
+              </a>
+            </div>
           )}
           {isFigma && storedFigmaPat && (
             <p className="text-xs text-[var(--text-muted)]">
