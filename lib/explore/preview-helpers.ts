@@ -3,6 +3,8 @@
  * Used by VariantCard, ResponsivePreview, and ComparisonView.
  */
 
+import { getIconPacks, type IconPack } from "@/lib/icons/registry";
+
 const PLACEHOLDER_SVG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'%3E%3Crect fill='%23e5e7eb' width='800' height='400'/%3E%3Ctext x='400' y='200' text-anchor='middle' dy='.3em' fill='%239ca3af' font-family='system-ui' font-size='14'%3EImage placeholder%3C/text%3E%3C/svg%3E";
 
@@ -27,7 +29,39 @@ export function extractComponentName(code: string): string {
   return lastFn?.[1] ?? "App";
 }
 
-export function buildSrcdoc(js: string, componentName: string, inspectorScript?: string, _variantId?: string): string {
+/**
+ * Build CDN script tags and require() mappings for selected icon packs.
+ */
+function buildIconCdnScripts(iconPackIds?: string[]): { scriptTags: string; requireMappings: string } {
+  if (!iconPackIds?.length) {
+    return { scriptTags: "", requireMappings: "" };
+  }
+
+  const packs = getIconPacks(iconPackIds);
+  const cdnPacks = packs.filter((p): p is IconPack & { cdnUrl: string; cdnGlobalName: string } =>
+    p.cdnUrl !== null && p.cdnGlobalName !== null
+  );
+
+  const scriptTags = cdnPacks
+    .map((p) => `<script src="${p.cdnUrl}"></${"script"}>`)
+    .join("\n");
+
+  // Build require() mappings: n==="lucide-react"?window.LucideReact||_lucideShim
+  const mappings = packs.map((p) => {
+    if (p.cdnUrl && p.cdnGlobalName) {
+      return `n==="${p.npmPackage}"?window.${p.cdnGlobalName}||_lucideShim`;
+    }
+    // No CDN available: fall back to the icon stub proxy
+    return `n==="${p.npmPackage}"?_lucideShim`;
+  });
+
+  return {
+    scriptTags,
+    requireMappings: mappings.length > 0 ? mappings.join(":") + ":" : "",
+  };
+}
+
+export function buildSrcdoc(js: string, componentName: string, inspectorScript?: string, _variantId?: string, iconPacks?: string[]): string {
   // Embed transpiled JS as a JSON-encoded string literal. This safely handles
   // ALL special characters (quotes, backslashes, angle brackets, non-ASCII)
   // without base64/eval. Matches the proven approach used in TestPanel.
@@ -39,6 +73,8 @@ export function buildSrcdoc(js: string, componentName: string, inspectorScript?:
     .replace(/</g, "\\u003c")
     .replace(/>/g, "\\u003e");
 
+  const { scriptTags: iconScriptTags, requireMappings: iconRequireMappings } = buildIconCdnScripts(iconPacks);
+
   return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
@@ -46,6 +82,7 @@ export function buildSrcdoc(js: string, componentName: string, inspectorScript?:
 <script src="https://cdn.tailwindcss.com"></${"script"}>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></${"script"}>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></${"script"}>
+${iconScriptTags}
 <style>body{margin:0;font-family:system-ui,sans-serif}a[href]{cursor:default}</style>
 </head><body>
 <div id="root"></div>
@@ -73,7 +110,7 @@ window.addEventListener('load',function(){
       'var _framerShim={motion:_motionProxy,AnimatePresence:function(p){return React.createElement(React.Fragment,null,p.children)}};',
       'var _iconStub=function(p){return React.createElement("svg",Object.assign({xmlns:"http://www.w3.org/2000/svg",width:p&&p.size||24,height:p&&p.size||24,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"},p))};',
       'var _lucideShim=new Proxy({},{get:function(){return _iconStub}});',
-      'var require=function(n){return n==="react"?React:n==="react-dom"?ReactDOM:n==="react-dom/client"?ReactDOM:n==="framer-motion"?_framerShim:n==="lucide-react"?_lucideShim:{};};',
+      'var require=function(n){return ${iconRequireMappings}n==="react"?React:n==="react-dom"?ReactDOM:n==="react-dom/client"?ReactDOM:n==="framer-motion"?_framerShim:n==="lucide-react"?_lucideShim:{};};',
       'var exports=_exp,module={exports:_exp};',
       moduleCode,
       '(function(){',

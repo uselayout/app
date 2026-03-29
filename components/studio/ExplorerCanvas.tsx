@@ -36,6 +36,7 @@ interface ExplorerCanvasProps {
   initialImage?: string;
   onInitialImageConsumed?: () => void;
   extractedFonts?: string[];
+  iconPacks?: string[];
 }
 
 export function ExplorerCanvas({
@@ -48,6 +49,7 @@ export function ExplorerCanvas({
   initialImage,
   onInitialImageConsumed,
   extractedFonts = [],
+  iconPacks,
 }: ExplorerCanvasProps) {
   // Parse design tokens from layoutMd for the inspector's token suggestions
   const allDesignTokens: ExtractedToken[] = useMemo(() => {
@@ -405,7 +407,7 @@ export function ExplorerCanvas({
           batchId,
           batchPrompt,
           updatedExplorations,
-          { prompt: resolvedPrompt, layoutMd, variantCount, projectId, imageDataUrl, contextFiles: resolvedContextFiles },
+          { prompt: resolvedPrompt, layoutMd, variantCount, projectId, imageDataUrl, contextFiles: resolvedContextFiles, iconPacks },
           variantCount,
         );
       } catch (err) {
@@ -457,6 +459,7 @@ export function ExplorerCanvas({
             baseCode: selectedVariant.code,
             imageDataUrl,
             contextFiles: resolvedContextFiles,
+            iconPacks,
           },
           variantCount,
         );
@@ -530,6 +533,7 @@ export function ExplorerCanvas({
             variantCount: 1,
             projectId,
             baseCode: variant.code,
+            iconPacks,
           },
           1,
         );
@@ -982,6 +986,7 @@ export function ExplorerCanvas({
                       onCodeUpdate={(code, editHistory) => handleCodeUpdate(variant.id, code, editHistory)}
                       layoutMd={layoutMd}
                       designTokens={allDesignTokens}
+                      iconPacks={iconPacks}
                       isProcessingImages={isProcessingImages}
                       onViewComparison={() => {
                         const comparisons = currentExploration?.comparisons?.filter(

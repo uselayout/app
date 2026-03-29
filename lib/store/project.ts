@@ -100,6 +100,7 @@ interface ProjectState {
   updateProjectSource: (id: string, sourceUrl: string, sourceType: SourceType) => void;
   updateTokenCount: (id: string, count: number) => void;
   updateHealthScore: (id: string, score: number) => void;
+  updateIconPacks: (id: string, iconPacks: string[]) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
   updateToken: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string) => void;
   renameToken: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string) => void;
@@ -221,6 +222,16 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === id ? { ...p, healthScore: score } : p
+      ),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  updateIconPacks: (id, iconPacks) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id ? { ...p, iconPacks } : p
       ),
     }));
     const project = get().projects.find((p) => p.id === id);
