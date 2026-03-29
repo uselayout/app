@@ -36,4 +36,22 @@ export const draftEntries: ChangelogEntry[] = [
     category: "new",
     date: "2026-03-29",
   },
+  {
+    id: "2026-w13-token-colour-swatches",
+    title: "Token colour swatches now show actual colours",
+    description:
+      "Colour tokens using CSS variable references (like var(--primary)) now display their resolved colour instead of showing a black circle.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-token-subgroups",
+    title: "Collapsible token sub-groups",
+    description:
+      "Token categories like Surfaces, Text, and Borders can now be collapsed and expanded independently, making it easier to navigate large design systems.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-29",
+  },
 ];
