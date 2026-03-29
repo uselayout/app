@@ -34,6 +34,15 @@ function StepIcon({ status }: { status: ExtractionStepStatus }) {
 }
 
 function getErrorHelp(error: string): string | null {
+  if (error.includes("402") || error.includes("No credits") || error.includes("QUOTA_EXCEEDED")) {
+    return "Out of free credits. Add your own Anthropic API key to continue. Go to Settings → API Keys.";
+  }
+  if (error.includes("500") || error.includes("generation failed")) {
+    return "Generation failed. If this keeps happening, add your own Anthropic API key in Settings → API Keys.";
+  }
+  if (error.includes("API key") || error.includes("api_key")) {
+    return "No API key configured. Add your Anthropic API key in Settings → API Keys to generate layout.md files.";
+  }
   if (error.includes("401") || error.includes("Unauthorized")) {
     return "No API key set. Add your Anthropic API key in Settings → API Keys, then re-extract.";
   }

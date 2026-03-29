@@ -140,7 +140,12 @@ export function useExtraction() {
           if (genRes.status === 402) {
             const body = await genRes.json().catch(() => null);
             throw new Error(
-              body?.error ?? "No credits remaining. Top up or add your own API key in the top bar."
+              body?.error ?? "No credits remaining. Top up or add your own API key in Settings → API Keys."
+            );
+          }
+          if (genRes.status === 500) {
+            throw new Error(
+              "layout.md generation failed. Add your own Anthropic API key in Settings → API Keys to continue."
             );
           }
           throw new Error(

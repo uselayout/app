@@ -153,4 +153,22 @@ export const draftEntries: ChangelogEntry[] = [
     category: "fixed",
     date: "2026-03-29",
   },
+  {
+    id: "2026-w13-free-credits-init",
+    title: "Free credits work on first sign-up",
+    description:
+      "New accounts now correctly receive their free monthly credits (2 layout.md extractions + 5 AI queries) immediately. Previously the billing page showed 0 credits until the first generation attempt.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-better-error-messages",
+    title: "Clearer error messages when generation fails",
+    description:
+      "When layout.md generation fails due to missing credits or API key issues, you now see a helpful message pointing you to Settings to add your own Anthropic API key.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-29",
+  },
 ];
