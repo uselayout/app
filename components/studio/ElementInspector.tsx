@@ -57,6 +57,7 @@ interface ElementInspectorProps {
   isActive: boolean;
   onStyleEdits: (edits: StyleEdit[]) => void;
   onAnnotationsSubmit?: (annotations: ElementAnnotation[]) => void;
+  onImageGenerated?: (prompt: string, imageUrl: string) => void;
   onDeselect: () => void;
   onReset?: () => void;
   designTokens?: ExtractedToken[];
@@ -304,6 +305,7 @@ export function ElementInspector({
   isActive,
   onStyleEdits,
   onAnnotationsSubmit,
+  onImageGenerated,
   onDeselect,
   onReset,
   designTokens,
@@ -513,13 +515,16 @@ export function ElementInspector({
 
         // Update selected state
         setSelected((prev) => prev ? { ...prev, imageSrc: data.url } : null);
+
+        // Persist to variant source code so it survives exiting Inspector
+        onImageGenerated?.(imagePromptEdit.trim(), data.url);
       }
     } catch (err) {
       console.error("Image generation error:", err);
     } finally {
       setIsGeneratingImage(false);
     }
-  }, [selected, imagePromptEdit, imageStyleEdit, imageRatioEdit, iframeRef]);
+  }, [selected, imagePromptEdit, imageStyleEdit, imageRatioEdit, iframeRef, onImageGenerated]);
 
   const handleClose = useCallback(() => {
     if (iframeRef.current?.contentWindow) {

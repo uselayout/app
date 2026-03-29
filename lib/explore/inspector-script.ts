@@ -13,6 +13,13 @@ export function getInspectorScript(): string {
   var idCounter = 0;
   var inspectActive = true;
 
+  // Block all navigation and form submission inside the Inspector iframe
+  // Prevents accidental clicks on nav links, buttons, etc. from triggering real actions
+  document.addEventListener('submit', function(e) { e.preventDefault(); }, true);
+  window.addEventListener('beforeunload', function(e) { e.preventDefault(); });
+  // Override window.open so buttons can't open popups
+  window.open = function() { return null; };
+
   function ensureId(el) {
     if (!el.dataset.layoutId) {
       el.dataset.layoutId = 'li-' + (idCounter++);

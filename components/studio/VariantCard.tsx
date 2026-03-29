@@ -332,6 +332,24 @@ export function VariantCard({
     }
   }, [variant.code, editHistory, onCodeUpdate, layoutMd]);
 
+  const handleImageGenerated = useCallback((prompt: string, imageUrl: string) => {
+    if (!onCodeUpdate) return;
+    // Find the img tag with this prompt and add/update src
+    const escapedPrompt = prompt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const imgRegex = new RegExp(
+      `(<img\\s[^>]*?data-generate-image\\s*=\\s*["']${escapedPrompt}["'][^>]*?)(?:\\s*src=["'][^"']*["'])?(\\s*[^>]*?)\\/?>`,
+      "i",
+    );
+    const match = variant.code.match(imgRegex);
+    if (match) {
+      // Remove existing src, then add new one
+      const tagWithoutSrc = (match[1] + match[2]).replace(/\s*src=["'][^"']*["']/g, "");
+      const updatedTag = `${tagWithoutSrc} src="${imageUrl}" />`;
+      const updatedCode = variant.code.replace(match[0], updatedTag);
+      onCodeUpdate(updatedCode, editHistory);
+    }
+  }, [variant.code, editHistory, onCodeUpdate]);
+
   const handleHistoryRestore = useCallback((entry: EditEntry) => {
     if (!onCodeUpdate) return;
     const newHistory = pushRollback(editHistory, variant.code, entry);
@@ -470,6 +488,7 @@ export function VariantCard({
               isActive={inspectMode}
               onStyleEdits={handleStyleEdits}
               onAnnotationsSubmit={handleAnnotationsSubmit}
+              onImageGenerated={handleImageGenerated}
               onDeselect={() => {}}
               onReset={() => {
                 const js = transpiledJsRef.current;
