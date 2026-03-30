@@ -93,7 +93,7 @@ export async function extractFromFigma({
       onProgress?.(
         "variables",
         70,
-        "Variables API requires Enterprise plan - continuing with styles"
+        "Variables API requires a Figma Enterprise plan. Try the Figma plugin (layout.design/docs/figma-plugin) to extract variables on any plan."
       );
     } else {
       throw err;

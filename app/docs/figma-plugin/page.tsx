@@ -78,7 +78,7 @@ export default function FigmaPluginPage() {
                 ],
                 [
                   "Variables",
-                  "Local Styles on all plans; Variables API requires Enterprise",
+                  "All plans (uses Plugin API)",
                   "Enterprise plans only via REST API",
                 ],
                 [
@@ -265,7 +265,7 @@ export default function FigmaPluginPage() {
             },
             {
               problem: "Variables sync fails or shows an error",
-              fix: "On Professional and Starter Figma plans, the Variables API is unavailable (Figma restriction). The plugin automatically falls back to syncing Local Styles. This is expected behaviour, not a bug.",
+              fix: "The plugin uses the Figma Plugin API, which supports Variables on all plans. If sync fails, check that your file has Variables defined (open the Local Variables panel in Figma to verify). Styles from shared team libraries may not be accessible.",
             },
             {
               problem: "Canvas push returns an error",
@@ -302,10 +302,10 @@ export default function FigmaPluginPage() {
         </ul>
 
         <Callout type="info">
-          The plugin reads local (unpublished) styles on all Figma plans, a
-          significant advantage over the REST API approach used by Web Studio.
-          Full Figma Variables API access requires an Enterprise plan; on other
-          plans, the plugin syncs Local Styles instead.
+          The plugin reads local styles and Variables on all Figma plans
+          using the Plugin API, a significant advantage over the REST API
+          approach used by Web Studio (which requires an Enterprise plan for
+          Variables).
         </Callout>
       </section>
 
