@@ -1,3 +1,5 @@
+import "server-only";
+
 /** Stripe price IDs — set in environment variables */
 export const STRIPE_CONFIG = {
   secretKey: process.env.STRIPE_SECRET_KEY ?? "",

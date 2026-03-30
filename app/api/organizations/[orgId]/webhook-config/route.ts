@@ -69,10 +69,14 @@ export async function GET(
     );
   }
 
-  // Strip the raw token — return only whether it's set
+  // Strip secrets — return only whether they're set
   const sanitised = (data ?? []).map((row: Record<string, unknown>) => {
-    const { github_token_encrypted, ...rest } = row;
-    return { ...rest, hasGithubToken: !!github_token_encrypted };
+    const { github_token_encrypted, passcode, ...rest } = row;
+    return {
+      ...rest,
+      hasPasscode: !!passcode,
+      hasGithubToken: !!github_token_encrypted,
+    };
   });
 
   return NextResponse.json(sanitised);

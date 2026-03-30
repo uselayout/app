@@ -453,11 +453,12 @@ export async function acceptInvitation(
   return { success: true, orgId: invitation.orgId };
 }
 
-export async function deleteInvitation(id: string): Promise<boolean> {
+export async function deleteInvitation(id: string, orgId: string): Promise<boolean> {
   const { error } = await supabase
     .from("layout_invitation")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("org_id", orgId);
 
   if (error) {
     console.error("Failed to delete invitation:", error.message);

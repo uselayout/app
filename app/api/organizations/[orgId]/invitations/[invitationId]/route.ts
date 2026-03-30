@@ -11,7 +11,7 @@ export async function DELETE(
   const authResult = await requireOrgAuth(orgId, "manageMembers");
   if (authResult instanceof NextResponse) return authResult;
 
-  const success = await deleteInvitation(invitationId);
+  const success = await deleteInvitation(invitationId, orgId);
   if (!success) {
     return NextResponse.json(
       { error: "Failed to cancel invitation" },

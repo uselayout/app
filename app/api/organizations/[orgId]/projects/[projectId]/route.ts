@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { requireOrgAuth } from "@/lib/api/auth-context";
 import { fetchProjectById, upsertProject, removeProject } from "@/lib/supabase/db";
 
@@ -31,15 +32,38 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const authResult = await requireOrgAuth(orgId, "editProject");
     if (authResult instanceof NextResponse) return authResult;
 
-    const body = await request.json();
+    const raw = await request.json();
+
+    const ProjectUpdateSchema = z.object({
+      id: z.string(),
+      name: z.string(),
+      sourceType: z.enum(["figma", "website", "manual"]),
+      sourceUrl: z.string().optional(),
+      layoutMd: z.string(),
+      extractionData: z.record(z.string(), z.unknown()).nullable().optional(),
+      tokenCount: z.number().nullable().optional(),
+      healthScore: z.number().nullable().optional(),
+      explorations: z.array(z.record(z.string(), z.unknown())).nullable().optional(),
+      iconPacks: z.array(z.string()).nullable().optional(),
+      pendingCanvasImage: z.string().nullable().optional(),
+      createdAt: z.string(),
+      updatedAt: z.string(),
+    });
+
+    const parsed = ProjectUpdateSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 400 });
+    }
+
+    const body = parsed.data;
     if (body.id !== projectId) {
       return NextResponse.json({ error: "Project ID mismatch" }, { status: 400 });
     }
 
     // Ensure the project is saved under the resolved org UUID
-    body.orgId = authResult.orgId;
+    const project = { ...body, orgId: authResult.orgId };
 
-    await upsertProject(body, authResult.userId);
+    await upsertProject(project as Parameters<typeof upsertProject>[0], authResult.userId);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("PUT project error:", err);

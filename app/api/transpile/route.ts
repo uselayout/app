@@ -3,10 +3,16 @@ import { z } from "zod";
 import { transpileTsx } from "@/lib/transpile";
 import { transpileLimiter } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
+import { auth } from "@/lib/auth";
 
 const schema = z.object({ code: z.string().max(200_000) });
 
 export async function POST(req: NextRequest) {
+  const session = await auth.api.getSession({ headers: req.headers });
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  }
+
   const ip = await getClientIp();
   const { success } = transpileLimiter.check(60, ip);
   if (!success) {
