@@ -108,7 +108,7 @@ async function findProjectByFileKey(fileKey: string) {
   const { data, error } = await supabase
     .from("layout_projects")
     .select("id, org_id, name, source_url")
-    .ilike("source_url", `%${fileKey}%`)
+    .ilike("source_url", `%${fileKey.replace(/%/g, "\\%").replace(/_/g, "\\_")}%`)
     .limit(1)
     .maybeSingle();
 

@@ -18,7 +18,8 @@ export function LoginPageClient() {
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/studio";
+  const rawNext = searchParams.get("next") ?? "/studio";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/studio";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

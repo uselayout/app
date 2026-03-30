@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { upsertFigmaConnection } from "@/lib/supabase/figma";
+import { verifyOAuthState } from "@/lib/oauth-state";
 
 /**
  * Figma OAuth callback. Figma redirects here after the user authorises.
@@ -25,19 +26,15 @@ export async function GET(request: Request) {
     );
   }
 
-  // Decode state to get orgId
-  let orgId: string;
-  try {
-    const state = JSON.parse(
-      Buffer.from(stateParam, "base64url").toString(),
-    ) as { orgId: string };
-    orgId = state.orgId;
-  } catch {
+  // Verify HMAC-signed state to prevent orgId tampering
+  const state = verifyOAuthState(stateParam);
+  if (!state) {
     return new NextResponse(
-      renderHtml("Figma Connection Failed", "Invalid state parameter."),
+      renderHtml("Figma Connection Failed", "Invalid or tampered state parameter."),
       { status: 400, headers: { "Content-Type": "text/html" } },
     );
   }
+  const { orgId } = state;
 
   const clientId = process.env.FIGMA_CLIENT_ID;
   const clientSecret = process.env.FIGMA_CLIENT_SECRET;
@@ -48,12 +45,8 @@ export async function GET(request: Request) {
     );
   }
 
-  const headers = new Headers(request.headers);
-  const forwardedHost = headers.get("x-forwarded-host");
-  const forwardedProto = headers.get("x-forwarded-proto") ?? "https";
-  const origin = forwardedHost
-    ? `${forwardedProto}://${forwardedHost}`
-    : new URL(request.url).origin;
+  // Use canonical app URL for OAuth redirect to prevent x-forwarded-host manipulation
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
   const redirectUri = `${origin}/api/plugin/figma/callback`;
 
   // Exchange code for tokens

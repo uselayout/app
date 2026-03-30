@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/client";
-import { auth } from "@/lib/auth";
+import { requireProjectAccess } from "@/lib/api/project-context";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -9,10 +9,8 @@ type RouteContext = {
 export async function POST(request: Request, ctx: RouteContext) {
   const { id } = await ctx.params;
 
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireProjectAccess(id);
+  if (access instanceof NextResponse) return access;
 
   await supabase
     .from("layout_projects")
