@@ -1073,6 +1073,21 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                           );
                         })()}
                       </div>
+                    ) : row.status === "rejected" ? (
+                      <button
+                        onClick={() => handleAction(row.id, "approved")}
+                        disabled={actioning === row.id}
+                        className="px-3 py-1 rounded-md text-xs font-medium transition-all"
+                        style={{
+                          background: "rgba(52,211,153,0.1)",
+                          color: "#34d399",
+                          border: "1px solid rgba(52,211,153,0.2)",
+                          opacity: actioning === row.id ? 0.5 : 1,
+                          cursor: actioning === row.id ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {actioning === row.id ? "…" : "Approve"}
+                      </button>
                     ) : (
                       <span style={{ color: "var(--text-muted)" }}>—</span>
                     )}
