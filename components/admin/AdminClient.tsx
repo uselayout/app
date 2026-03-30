@@ -534,24 +534,31 @@ function InviteCodesTab({ toast }: { toast: (msg: string, type?: Toast["type"]) 
 function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (msg: string, type?: Toast["type"]) => void; onPendingCountChange?: (count: number) => void; onAction?: () => void }) {
   const [requests, setRequests] = useState<AccessRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<"" | "pending" | "approved" | "rejected">("");
+  const [statusFilter, setStatusFilter] = useState<"" | "pending" | "approved" | "rejected" | "signed_up">("");
   const [actioning, setActioning] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: string; field: "name" | "email"; value: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [senderEmail, setSenderEmail] = useState("matt@layout.design");
   const [sendingTest, setSendingTest] = useState(false);
   const [resending, setResending] = useState<string | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [whatBuildingWidth, setWhatBuildingWidth] = useState(320);
 
   // Background refresh without loading state (preserves scroll position)
   const refreshRequestsQuietly = useCallback(async () => {
     try {
-      const url = statusFilter
-        ? `/api/admin/access-requests?status=${statusFilter}`
+      const apiFilter = statusFilter === "signed_up" ? "" : statusFilter;
+      const url = apiFilter
+        ? `/api/admin/access-requests?status=${apiFilter}`
         : "/api/admin/access-requests";
       const res = await fetch(url);
       if (!res.ok) return;
       const json = await res.json() as { requests: AccessRequestRow[] };
-      setRequests(json.requests);
+      let filtered = json.requests;
+      if (statusFilter === "signed_up") {
+        filtered = filtered.filter((r) => r.status === "approved" && r.signedUp);
+      }
+      setRequests(filtered);
       if (!statusFilter && onPendingCountChange) {
         onPendingCountChange(json.requests.filter((r) => r.status === "pending").length);
       }
@@ -561,13 +568,18 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const url = statusFilter
-        ? `/api/admin/access-requests?status=${statusFilter}`
+      const apiFilter = statusFilter === "signed_up" ? "" : statusFilter;
+      const url = apiFilter
+        ? `/api/admin/access-requests?status=${apiFilter}`
         : "/api/admin/access-requests";
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch");
       const json = await res.json() as { requests: AccessRequestRow[] };
-      setRequests(json.requests);
+      let filtered = json.requests;
+      if (statusFilter === "signed_up") {
+        filtered = filtered.filter((r) => r.status === "approved" && r.signedUp);
+      }
+      setRequests(filtered);
       // Update parent pending count when we have unfiltered data
       if (!statusFilter && onPendingCountChange) {
         onPendingCountChange(json.requests.filter((r) => r.status === "pending").length);
@@ -647,30 +659,32 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
     }
   };
 
-  const getNextEmailAction = (row: AccessRequestRow): { type: string; label: string } | null => {
-    if (row.status !== "approved" || row.signedUp) return null;
+  const getEmailActions = (row: AccessRequestRow): { type: string; label: string }[] => {
+    if (row.status !== "approved" || row.signedUp) return [];
     const types = row.emailTypes ?? [];
-    if (types.filter((t) => t === "welcome").length < 2) return { type: "welcome", label: "Resend welcome" };
-    if (!types.includes("reminder")) return { type: "reminder", label: "Send reminder" };
-    if (!types.includes("final_reminder")) return { type: "final_reminder", label: "Final reminder" };
-    return null;
+    if (types.includes("final_reminder")) return [];
+    if (types.includes("reminder")) return [{ type: "final_reminder", label: "Final reminder" }];
+    if (types.includes("welcome")) return [
+      { type: "welcome", label: "Resend welcome" },
+      { type: "reminder", label: "Send reminder" },
+    ];
+    return [{ type: "welcome", label: "Send welcome" }];
   };
 
-  const handleResend = async (row: AccessRequestRow) => {
-    const action = getNextEmailAction(row);
-    if (!action) return;
+  const handleResend = async (row: AccessRequestRow, actionType: string, actionLabel: string) => {
     setResending(row.id);
+    setOpenDropdown(null);
     try {
       const res = await fetch(`/api/admin/access-requests/${row.id}/resend`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fromEmail: senderEmail, type: action.type }),
+        body: JSON.stringify({ fromEmail: senderEmail, type: actionType }),
       });
       if (!res.ok) {
         const json = await res.json().catch(() => ({ error: "Failed" })) as { error?: string };
         throw new Error(json.error ?? "Failed to send");
       }
-      toast(`Sent: ${action.label}`);
+      toast(`Sent: ${actionLabel}`);
       void refreshRequestsQuietly();
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to send email", "error");
@@ -678,6 +692,17 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
       setResending(null);
     }
   };
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    if (!openDropdown) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-email-dropdown]")) setOpenDropdown(null);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [openDropdown]);
 
   const statusBadge = (status: AccessRequestRow["status"]) => {
     const styles: Record<string, { bg: string; color: string; border: string }> = {
@@ -769,6 +794,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
+            <option value="signed_up">Signed up</option>
           </select>
         </div>
       </div>
@@ -789,14 +815,35 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
           <table className="w-full text-sm" style={{ minWidth: 900 }}>
             <thead>
               <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--studio-border)" }}>
-                {["Name", "Email", "What building", "How heard", "Status", "Date", "Actions"].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-left text-xs font-medium"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {h}
-                  </th>
+                {["Name", "Email"].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-medium" style={{ color: "var(--text-muted)" }}>{h}</th>
+                ))}
+                <th
+                  className="px-4 py-3 text-left text-xs font-medium relative select-none"
+                  style={{ color: "var(--text-muted)", width: whatBuildingWidth }}
+                >
+                  What building
+                  <div
+                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-white/20"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      const startX = e.clientX;
+                      const startW = whatBuildingWidth;
+                      const onMove = (ev: MouseEvent) => {
+                        const newW = Math.max(150, Math.min(600, startW + ev.clientX - startX));
+                        setWhatBuildingWidth(newW);
+                      };
+                      const onUp = () => {
+                        document.removeEventListener("mousemove", onMove);
+                        document.removeEventListener("mouseup", onUp);
+                      };
+                      document.addEventListener("mousemove", onMove);
+                      document.addEventListener("mouseup", onUp);
+                    }}
+                  />
+                </th>
+                {["How heard", "Status", "Date", "Actions"].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-medium" style={{ color: "var(--text-muted)" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -861,8 +908,8 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                     )}
                   </td>
                   <td
-                    className="px-4 py-3 max-w-48 truncate"
-                    style={{ color: "var(--text-secondary)" }}
+                    className="px-4 py-3 truncate"
+                    style={{ color: "var(--text-secondary)", maxWidth: whatBuildingWidth }}
                     title={row.whatBuilding}
                   >
                     {row.whatBuilding}
@@ -887,6 +934,11 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                           }}
                         >
                           Signed up
+                        </span>
+                      )}
+                      {row.status === "approved" && !row.signedUp && (
+                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                          {Math.floor((Date.now() - new Date(row.createdAt).getTime()) / 86400000)}d
                         </span>
                       )}
                     </div>
@@ -945,23 +997,77 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                           <span style={{ color: "var(--text-muted)" }}>⧉</span>
                         </button>
                         {(() => {
-                          const action = getNextEmailAction(row);
-                          if (!action) return null;
+                          const actions = getEmailActions(row);
+                          if (actions.length === 0) return null;
+                          if (actions.length === 1) {
+                            return (
+                              <button
+                                onClick={() => void handleResend(row, actions[0].type, actions[0].label)}
+                                disabled={resending === row.id}
+                                className="px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap"
+                                style={{
+                                  background: "rgba(96,165,250,0.1)",
+                                  color: "#60a5fa",
+                                  border: "1px solid rgba(96,165,250,0.2)",
+                                  opacity: resending === row.id ? 0.5 : 1,
+                                  cursor: resending === row.id ? "not-allowed" : "pointer",
+                                }}
+                              >
+                                {resending === row.id ? "Sending..." : actions[0].label}
+                              </button>
+                            );
+                          }
                           return (
-                            <button
-                              onClick={() => void handleResend(row)}
-                              disabled={resending === row.id}
-                              className="px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap"
-                              style={{
-                                background: "rgba(96,165,250,0.1)",
-                                color: "#60a5fa",
-                                border: "1px solid rgba(96,165,250,0.2)",
-                                opacity: resending === row.id ? 0.5 : 1,
-                                cursor: resending === row.id ? "not-allowed" : "pointer",
-                              }}
-                            >
-                              {resending === row.id ? "Sending..." : action.label}
-                            </button>
+                            <div className="relative" data-email-dropdown>
+                              <div className="flex items-center rounded-md overflow-hidden" style={{ border: "1px solid rgba(96,165,250,0.2)" }}>
+                                <button
+                                  onClick={() => void handleResend(row, actions[0].type, actions[0].label)}
+                                  disabled={resending === row.id}
+                                  className="px-3 py-1 text-xs font-medium transition-all whitespace-nowrap"
+                                  style={{
+                                    background: "rgba(96,165,250,0.1)",
+                                    color: "#60a5fa",
+                                    opacity: resending === row.id ? 0.5 : 1,
+                                    cursor: resending === row.id ? "not-allowed" : "pointer",
+                                  }}
+                                >
+                                  {resending === row.id ? "Sending..." : actions[0].label}
+                                </button>
+                                <button
+                                  onClick={() => setOpenDropdown(openDropdown === row.id ? null : row.id)}
+                                  className="px-1.5 py-1 text-xs transition-all"
+                                  style={{
+                                    background: "rgba(96,165,250,0.15)",
+                                    color: "#60a5fa",
+                                    borderLeft: "1px solid rgba(96,165,250,0.2)",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  ▾
+                                </button>
+                              </div>
+                              {openDropdown === row.id && (
+                                <div
+                                  className="absolute right-0 top-full mt-1 z-50 rounded-lg py-1 min-w-[160px]"
+                                  style={{
+                                    background: "var(--bg-elevated)",
+                                    border: "1px solid var(--studio-border-strong)",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                                  }}
+                                >
+                                  {actions.map((action) => (
+                                    <button
+                                      key={action.type}
+                                      onClick={() => void handleResend(row, action.type, action.label)}
+                                      className="w-full text-left px-3 py-1.5 text-xs transition-all hover:bg-white/5"
+                                      style={{ color: "#60a5fa" }}
+                                    >
+                                      {action.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           );
                         })()}
                       </div>
@@ -988,8 +1094,7 @@ interface AdminStatsData {
   pending: number;
   approved: number;
   rejected: number;
-  totalSignups: number;
-  totalUsers: number;
+  signedUp: number;
 }
 
 function StatCard({ label, value, accent }: { label: string; value: number; accent?: string }) {
@@ -1017,13 +1122,12 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
 function AdminStats({ stats }: { stats: AdminStatsData | null }) {
   if (!stats) return null;
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+    <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
       <StatCard label="Total requests" value={stats.totalRequests} />
       <StatCard label="Pending" value={stats.pending} accent="#fbbf24" />
       <StatCard label="Approved" value={stats.approved} accent="#34d399" />
       <StatCard label="Rejected" value={stats.rejected} />
-      <StatCard label="Signups" value={stats.totalSignups} accent="#60a5fa" />
-      <StatCard label="Registered users" value={stats.totalUsers} accent="#a78bfa" />
+      <StatCard label="Signed up" value={stats.signedUp} accent="#60a5fa" />
     </div>
   );
 }
