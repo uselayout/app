@@ -69,3 +69,6 @@ docs/public/technical-handoff.md
 # Infrastructure docs — deployment details, server IPs, migration scripts
 DEPLOYMENT.md
 migrations/
+
+# Backup scripts (may contain credentials)
+scripts/backup/
