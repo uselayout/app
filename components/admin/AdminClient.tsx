@@ -662,9 +662,11 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
   const getEmailActions = (row: AccessRequestRow): { type: string; label: string }[] => {
     if (row.status !== "approved" || row.signedUp) return [];
     const types = row.emailTypes ?? [];
+    // If approved with an invite code, a welcome email was sent (even if not in email_log for early users)
+    const hasWelcome = types.includes("welcome") || row.inviteCode != null;
     if (types.includes("final_reminder")) return [];
     if (types.includes("reminder")) return [{ type: "final_reminder", label: "Final reminder" }];
-    if (types.includes("welcome")) return [
+    if (hasWelcome) return [
       { type: "welcome", label: "Resend welcome" },
       { type: "reminder", label: "Send reminder" },
     ];
