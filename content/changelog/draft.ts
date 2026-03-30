@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w13-security-hardening",
+    title: "Security hardening",
+    description:
+      "Improved security practices for infrastructure credentials and repository hygiene.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-30",
+  },
+  {
     id: "2026-w13-changelog-system",
     title: "Weekly changelog",
     description:
@@ -240,6 +249,144 @@ export const draftEntries: ChangelogEntry[] = [
     description:
       "The Health Check feature in the Figma plugin now correctly authenticates with the Layout API. Previously it returned a 401 error after a recent auth update.",
     product: "figma-plugin",
+    category: "fixed",
+    date: "2026-03-29",
+  },
+  // --- CLI ---
+  {
+    id: "2026-w13-cli-6-targets",
+    title: "Install to 6 AI coding tools",
+    description:
+      "The CLI now installs the Layout MCP server to VS Code/Copilot, Codex CLI, and Gemini CLI in addition to Claude Code, Cursor, and Windsurf.",
+    product: "cli",
+    category: "new",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-cli-check-setup",
+    title: "New check-setup tool and enhanced doctor",
+    description:
+      "AI agents can now run check-setup to verify their Layout configuration is working. The doctor command also gained richer diagnostics and a --fix flag for auto-repair.",
+    product: "cli",
+    category: "new",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-cli-layout-md-rename",
+    title: "DESIGN.md renamed to layout.md",
+    description:
+      "The design system file is now called layout.md. Existing projects are migrated automatically when you run any CLI command.",
+    product: "cli",
+    category: "improved",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-cli-multi-variant-push",
+    title: "Push multiple variants to Figma",
+    description:
+      "push-to-figma now supports sending multiple component variants to Figma in a single operation.",
+    product: "cli",
+    category: "improved",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-cli-serve-local",
+    title: "Local preview server",
+    description:
+      "New serve-local command starts a local preview server so you can see generated components in the browser before pushing to Figma.",
+    product: "cli",
+    category: "new",
+    date: "2026-03-29",
+  },
+  // --- Figma Plugin ---
+  {
+    id: "2026-w13-figma-variables-panel",
+    title: "Variables panel for token sync",
+    description:
+      "New Variables tab lets you sync design tokens between your layout.md and Figma variables. Tokens are organised into groups by category (colours, spacing, typography).",
+    product: "figma-plugin",
+    category: "new",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-figma-project-picker",
+    title: "Project and org picker",
+    description:
+      "Switch between Layout projects and organisations directly from the plugin header. No more copying project IDs manually.",
+    product: "figma-plugin",
+    category: "new",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-figma-component-set",
+    title: "Variant frames assembled into ComponentSets",
+    description:
+      "Pushed variants are now grouped into Figma ComponentSets with hover interactions, making them behave like native Figma components.",
+    product: "figma-plugin",
+    category: "new",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-figma-black-ui",
+    title: "Refreshed plugin UI",
+    description:
+      "The plugin UI now uses a clean black and white design instead of the previous blue Figma brand buttons, matching the Layout Studio aesthetic.",
+    product: "figma-plugin",
+    category: "improved",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-figma-create-project",
+    title: "Create projects from the plugin",
+    description:
+      "Start a new Layout project directly from the Figma plugin header without switching to the web app.",
+    product: "figma-plugin",
+    category: "new",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-figma-layout-md-rename",
+    title: "layout.md support",
+    description:
+      "The Figma plugin now uses the new layout.md filename, matching the rename across all Layout tools.",
+    product: "figma-plugin",
+    category: "improved",
+    date: "2026-03-29",
+  },
+  // --- Chrome Extension ---
+  {
+    id: "2026-w13-extension-launch",
+    title: "Chrome extension for website extraction",
+    description:
+      "New Chrome extension lets you extract design systems from any website. Click Extract to capture colours, typography, spacing, and components, then open the result in Layout Studio.",
+    product: "chrome-extension",
+    category: "new",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-extension-create-project",
+    title: "Create projects from the extension",
+    description:
+      "Start a new Layout project directly from the extension settings without switching to the web app.",
+    product: "chrome-extension",
+    category: "new",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-extension-copy-element",
+    title: "Copy Element to clipboard",
+    description:
+      "Select any element on a page and copy its styles to your clipboard, ready to paste into your layout.md or code.",
+    product: "chrome-extension",
+    category: "new",
+    date: "2026-03-29",
+  },
+  {
+    id: "2026-w13-extension-capture-fix",
+    title: "Better full-page captures",
+    description:
+      "Full-page screenshots now hide fixed and sticky elements (navbars, cookie banners) that previously covered the captured content.",
+    product: "chrome-extension",
     category: "fixed",
     date: "2026-03-29",
   },
