@@ -10,6 +10,24 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w14-retry-generation-errors",
+    title: "Smarter error handling for design system generation",
+    description:
+      "If our AI service is temporarily at capacity, Layout now automatically retries a couple of times before showing an error. When generation does fail, you'll see a clear message instead of raw technical output, and your credit is refunded automatically.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-03-31",
+  },
+  {
+    id: "2026-w14-admin-credit-topup",
+    title: "Admin credit management",
+    description:
+      "Admins can now look up any user's credit balance and manually add top-up credits directly from the admin panel.",
+    product: "studio",
+    category: "new",
+    date: "2026-03-31",
+  },
+  {
     id: "2026-w14-admin-email-dropdown",
     title: "Choose which email to send from admin",
     description:
