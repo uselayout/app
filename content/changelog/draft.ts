@@ -10,6 +10,33 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w14-admin-email-dropdown",
+    title: "Choose which email to send from admin",
+    description:
+      "When resending emails to approved users, you can now choose between resending the welcome email or sending a reminder. Previously only one option was shown at a time.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-31",
+  },
+  {
+    id: "2026-w14-admin-search",
+    title: "Search access requests",
+    description:
+      "Quickly find users in the admin panel by searching by name or email. Filters instantly as you type.",
+    product: "studio",
+    category: "new",
+    date: "2026-03-31",
+  },
+  {
+    id: "2026-w14-admin-improvements",
+    title: "Admin panel improvements",
+    description:
+      "Wider resizable 'What building' column, days-since-approval indicator, 'Signed up' filter, clearer stats, and ability to re-approve rejected users.",
+    product: "studio",
+    category: "improved",
+    date: "2026-03-30",
+  },
+  {
     id: "2026-w13-security-hardening",
     title: "Security hardening",
     description:
