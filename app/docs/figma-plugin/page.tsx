@@ -250,6 +250,87 @@ export default function FigmaPluginPage() {
         </Callout>
       </section>
 
+      {/* Syncing Variables */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          Syncing Figma Variables
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The Variables tab lets you push Figma Variables to Layout and pull
+          Layout tokens back into Figma. Here&apos;s the full walkthrough:
+        </p>
+        <ol className="list-decimal pl-6 space-y-2 text-gray-600">
+          <li>
+            <strong className="font-semibold text-[#0a0a0a]">
+              Get your API key
+            </strong>{" "}
+            if you haven&apos;t already (see{" "}
+            <a href="#getting-your-api-key" className="text-gray-900 underline hover:no-underline">
+              above
+            </a>
+            ). Make sure both read and write scopes are ticked.
+          </li>
+          <li>
+            <strong className="font-semibold text-[#0a0a0a]">
+              Create a project
+            </strong>{" "}
+            in Layout to push variables into. If you already created one via the
+            Export tab, use that. Otherwise, go to your dashboard at{" "}
+            <a
+              href="https://layout.design"
+              className="text-gray-900 underline hover:no-underline"
+            >
+              layout.design
+            </a>
+            , click &quot;New Project&quot;, paste your Figma file URL and run
+            the extraction.
+          </li>
+          <li>
+            <strong className="font-semibold text-[#0a0a0a]">
+              Connect the plugin
+            </strong>{" "}
+            by going to the Settings tab, pasting your API key, and clicking
+            Save &amp; Verify. You should see a green &quot;Connected to [your
+            org name]&quot; message.
+          </li>
+          <li>
+            <strong className="font-semibold text-[#0a0a0a]">
+              Select your project
+            </strong>{" "}
+            using the dropdown at the top of the plugin.
+          </li>
+          <li>
+            <strong className="font-semibold text-[#0a0a0a]">
+              Push your Variables
+            </strong>{" "}
+            by going to the Variables tab, clicking &quot;To Layout&quot; (the
+            right-hand toggle), then &quot;Push Figma Variables to Layout&quot;.
+            You should see a result like &quot;5 created, 0 updated, 0
+            unchanged&quot;.
+          </li>
+        </ol>
+
+        <Callout type="warning">
+          The plugin can only read variables that are local to the file
+          it&apos;s running in. If your brand colours are defined in a separate
+          Figma library file and linked into your working files, you need to open
+          that library file and run the plugin there. Linked variables in a
+          consuming file won&apos;t be visible to the plugin.
+        </Callout>
+
+        <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
+          <h3 className="text-sm font-semibold text-[#0a0a0a]">
+            Why are Export and Variables separate?
+          </h3>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            When you create a project using the Export tab, it pushes Styles
+            (paint styles, text styles, effects) but not Variables. Variables
+            sync is a separate step in the Variables tab. We&apos;re merging
+            these into one step soon so everything comes through together.
+          </p>
+        </div>
+      </section>
+
       {/* Troubleshooting */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Troubleshooting</h2>
