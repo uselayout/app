@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
 
@@ -543,6 +543,13 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
   const [resending, setResending] = useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [whatBuildingWidth, setWhatBuildingWidth] = useState(320);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredRequests = useMemo(() => {
+    if (!searchQuery.trim()) return requests;
+    const q = searchQuery.toLowerCase();
+    return requests.filter((r) => r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q));
+  }, [requests, searchQuery]);
 
   // Background refresh without loading state (preserves scroll position)
   const refreshRequestsQuietly = useCallback(async () => {
@@ -782,6 +789,19 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
           >
             {sendingTest ? "Sending..." : "Send test email"}
           </button>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search name or email..."
+            className="text-sm px-3 py-1.5 rounded-lg outline-none"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--studio-border)",
+              color: "var(--text-primary)",
+              width: 220,
+            }}
+          />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
@@ -805,7 +825,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
         <p className="text-sm py-8 text-center" style={{ color: "var(--text-muted)" }}>
           Loading…
         </p>
-      ) : requests.length === 0 ? (
+      ) : filteredRequests.length === 0 ? (
         <p className="text-sm py-8 text-center" style={{ color: "var(--text-muted)" }}>
           No requests found
         </p>
@@ -850,7 +870,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
               </tr>
             </thead>
             <tbody>
-              {requests.map((row, i) => (
+              {filteredRequests.map((row, i) => (
                 <tr
                   key={row.id}
                   style={{
