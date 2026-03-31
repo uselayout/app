@@ -6,6 +6,7 @@ import "./globals.css";
 import { ProjectHydrator } from "@/components/ProjectHydrator";
 import { OrgProvider } from "@/components/OrgProvider";
 import { DeploymentBanner } from "@/components/DeploymentBanner";
+import { MaintenancePage } from "@/components/MaintenancePage";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -95,11 +96,15 @@ export default function RootLayout({
         <Script id="plausible-init" strategy="afterInteractive">
           {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
         </Script>
-        <ProjectHydrator />
-        <OrgProvider>
-          {children}
-        </OrgProvider>
-        <DeploymentBanner />
+        {process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "true" ? (
+          <MaintenancePage />
+        ) : (
+          <>
+            <ProjectHydrator />
+            <OrgProvider>{children}</OrgProvider>
+            <DeploymentBanner />
+          </>
+        )}
         <Toaster
           position="bottom-right"
           toastOptions={{

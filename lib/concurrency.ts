@@ -52,8 +52,8 @@ function createLimiter(maxConcurrent: number, timeoutMs = 120_000) {
   };
 }
 
-/** Max 2 concurrent Playwright browser instances (120s queue timeout) */
-export const playwrightLimit = createLimiter(2, 120_000);
+/** Max 6 concurrent Playwright browser instances (120s queue timeout) */
+export const playwrightLimit = createLimiter(6, 120_000);
 
-/** Max 5 concurrent Claude API generation streams (60s queue timeout) */
-export const generationLimit = createLimiter(5, 60_000);
+/** Max 10 concurrent Claude API generation streams (60s queue timeout) */
+export const generationLimit = createLimiter(10, 60_000);

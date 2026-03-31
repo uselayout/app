@@ -1787,11 +1787,238 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
   );
 }
 
+// ─── Credits Tab ─────────────────────────────────────────────────────────────
+
+interface CreditLookupResult {
+  user: { id: string; email: string; name: string };
+  balance: {
+    layoutMdRemaining: number;
+    aiQueryRemaining: number;
+    topupLayoutMd: number;
+    topupAiQuery: number;
+    periodStart: string;
+    periodEnd: string;
+  } | null;
+}
+
+function CreditsTab({ toast }: { toast: (msg: string, type?: "success" | "error") => void }) {
+  const [email, setEmail] = useState("");
+  const [lookup, setLookup] = useState<CreditLookupResult | null>(null);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [layoutMdAmount, setLayoutMdAmount] = useState(1);
+  const [aiQueryAmount, setAiQueryAmount] = useState(0);
+  const [adding, setAdding] = useState(false);
+
+  const handleLookup = async () => {
+    if (!email.trim()) return;
+    setLoading(true);
+    setLookupError(null);
+    setLookup(null);
+
+    try {
+      const res = await fetch(`/api/admin/credits?email=${encodeURIComponent(email.trim())}`);
+      const json = await res.json();
+      if (!res.ok) {
+        setLookupError(json.error ?? "Lookup failed");
+        return;
+      }
+      setLookup(json);
+    } catch {
+      setLookupError("Network error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddCredits = async () => {
+    if (!lookup) return;
+    setAdding(true);
+    try {
+      const res = await fetch("/api/admin/credits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: lookup.user.email,
+          layoutMd: layoutMdAmount,
+          aiQuery: aiQueryAmount,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast(json.error ?? "Failed to add credits", "error");
+        return;
+      }
+      toast(json.message, "success");
+      // Refresh balance
+      handleLookup();
+    } catch {
+      toast("Network error", "error");
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Lookup */}
+      <div
+        className="rounded-lg p-5 space-y-4"
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--studio-border)" }}
+      >
+        <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+          Look up user credits
+        </h3>
+        <div className="flex gap-2">
+          <input
+            type="email"
+            placeholder="user@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleLookup()}
+            className="flex-1 px-3 py-2 rounded-md text-sm outline-none"
+            style={{
+              background: "var(--bg-panel)",
+              border: "1px solid var(--studio-border)",
+              color: "var(--text-primary)",
+            }}
+          />
+          <button
+            onClick={handleLookup}
+            disabled={loading || !email.trim()}
+            className="px-4 py-2 rounded-md text-sm font-medium transition-all"
+            style={{
+              background: "var(--studio-accent)",
+              color: "var(--text-on-accent)",
+              opacity: loading || !email.trim() ? 0.5 : 1,
+            }}
+          >
+            {loading ? "Looking up…" : "Look up"}
+          </button>
+        </div>
+        {lookupError && (
+          <p className="text-sm text-red-400">{lookupError}</p>
+        )}
+      </div>
+
+      {/* Balance display + top-up */}
+      {lookup && (
+        <div
+          className="rounded-lg p-5 space-y-4"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--studio-border)" }}
+        >
+          <div className="flex items-baseline gap-2">
+            <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              {lookup.user.name ?? lookup.user.email}
+            </h3>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+              {lookup.user.email}
+            </span>
+          </div>
+
+          {lookup.balance ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div
+                className="rounded-md p-3"
+                style={{ background: "var(--bg-panel)", border: "1px solid var(--studio-border)" }}
+              >
+                <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>layout.md credits</p>
+                <p className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+                  {lookup.balance.layoutMdRemaining}
+                  {lookup.balance.topupLayoutMd > 0 && (
+                    <span className="text-xs font-normal ml-1" style={{ color: "var(--text-muted)" }}>
+                      + {lookup.balance.topupLayoutMd} top-up
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div
+                className="rounded-md p-3"
+                style={{ background: "var(--bg-panel)", border: "1px solid var(--studio-border)" }}
+              >
+                <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>AI query credits</p>
+                <p className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+                  {lookup.balance.aiQueryRemaining}
+                  {lookup.balance.topupAiQuery > 0 && (
+                    <span className="text-xs font-normal ml-1" style={{ color: "var(--text-muted)" }}>
+                      + {lookup.balance.topupAiQuery} top-up
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+              No credit balance yet (will be created on first use)
+            </p>
+          )}
+
+          {/* Add credits form */}
+          <div
+            className="rounded-md p-4 space-y-3"
+            style={{ background: "var(--bg-panel)", border: "1px solid var(--studio-border)" }}
+          >
+            <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+              Add top-up credits
+            </p>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+                layout.md
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={layoutMdAmount}
+                  onChange={(e) => setLayoutMdAmount(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-16 px-2 py-1 rounded text-sm text-center outline-none"
+                  style={{
+                    background: "var(--bg-surface)",
+                    border: "1px solid var(--studio-border)",
+                    color: "var(--text-primary)",
+                  }}
+                />
+              </label>
+              <label className="flex items-center gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+                AI query
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={aiQueryAmount}
+                  onChange={(e) => setAiQueryAmount(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-16 px-2 py-1 rounded text-sm text-center outline-none"
+                  style={{
+                    background: "var(--bg-surface)",
+                    border: "1px solid var(--studio-border)",
+                    color: "var(--text-primary)",
+                  }}
+                />
+              </label>
+              <button
+                onClick={handleAddCredits}
+                disabled={adding || (layoutMdAmount === 0 && aiQueryAmount === 0)}
+                className="px-4 py-1.5 rounded-md text-sm font-medium transition-all"
+                style={{
+                  background: "var(--studio-accent)",
+                  color: "var(--text-on-accent)",
+                  opacity: adding || (layoutMdAmount === 0 && aiQueryAmount === 0) ? 0.5 : 1,
+                }}
+              >
+                {adding ? "Adding…" : "Add credits"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Admin Component ────────────────────────────────────────────────────
 
 export function AdminClient() {
   const { data: session, isPending } = useSession();
-  const [activeTab, setActiveTab] = useState<"codes" | "requests" | "changelog">("codes");
+  const [activeTab, setActiveTab] = useState<"codes" | "requests" | "changelog" | "credits">("codes");
   const { toasts, show: toast } = useToast();
   const [pendingCount, setPendingCount] = useState(0);
   const [stats, setStats] = useState<AdminStatsData | null>(null);
@@ -1860,10 +2087,11 @@ export function AdminClient() {
     );
   }
 
-  const tabs: { key: "codes" | "requests" | "changelog"; label: string }[] = [
+  const tabs: { key: "codes" | "requests" | "changelog" | "credits"; label: string }[] = [
     { key: "codes", label: "Invite codes" },
     { key: "requests", label: "Access requests" },
     { key: "changelog", label: "Changelog" },
+    { key: "credits", label: "Credits" },
   ];
 
   return (
@@ -1936,6 +2164,9 @@ export function AdminClient() {
         )}
         {activeTab === "changelog" && (
           <ChangelogTab toast={toast} />
+        )}
+        {activeTab === "credits" && (
+          <CreditsTab toast={toast} />
         )}
       </div>
 

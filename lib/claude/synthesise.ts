@@ -5,6 +5,7 @@ import type {
 } from "@anthropic-ai/sdk/resources/messages";
 import type { ExtractionResult } from "@/lib/types";
 import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
+import { isTransientError, friendlyApiError } from "@/lib/api-error";
 
 const SYSTEM_PROMPT = `You are a design system architect synthesizing extracted design data into a layout.md context file. This file will be consumed by AI coding agents (Claude Code, Cursor, Copilot) to generate pixel-accurate UI components.
 
@@ -256,43 +257,76 @@ export function createLayoutMdStream(
   const userContent = buildUserContent(extractionData);
 
   let resolveUsage: (u: TokenUsageResult) => void;
-  const usage = new Promise<TokenUsageResult>((resolve) => {
+  let rejectUsage: (err: unknown) => void;
+  const usage = new Promise<TokenUsageResult>((resolve, reject) => {
     resolveUsage = resolve;
+    rejectUsage = reject;
   });
+
+  // Guard against double-settling (e.g. cancel() after reject)
+  let usageSettled = false;
+  const settle = {
+    resolve(u: TokenUsageResult) {
+      if (!usageSettled) { usageSettled = true; resolveUsage(u); }
+    },
+    reject(err: unknown) {
+      if (!usageSettled) { usageSettled = true; rejectUsage(err); }
+    },
+  };
+
+  const MAX_RETRIES = 2;
 
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
+      let hasEnqueued = false;
 
-      try {
-        const msgStream = anthropic.messages.stream({
-          model: "claude-sonnet-4-6",
-          max_tokens: 16384,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: "user", content: userContent }],
-        });
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          const msgStream = anthropic.messages.stream({
+            model: "claude-sonnet-4-6",
+            max_tokens: 16384,
+            system: SYSTEM_PROMPT,
+            messages: [{ role: "user", content: userContent }],
+          });
 
-        for await (const event of msgStream) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            controller.enqueue(encoder.encode(event.delta.text));
+          for await (const event of msgStream) {
+            if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "text_delta"
+            ) {
+              hasEnqueued = true;
+              controller.enqueue(encoder.encode(event.delta.text));
+            }
           }
-        }
 
-        const finalMessage = await msgStream.finalMessage();
-        resolveUsage({
-          inputTokens: finalMessage.usage.input_tokens,
-          outputTokens: finalMessage.usage.output_tokens,
-        });
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Unknown error";
-        controller.enqueue(encoder.encode(`\n\n[Error generating layout.md: ${msg}]`));
-        resolveUsage({ inputTokens: 0, outputTokens: 0 });
-      } finally {
-        controller.close();
+          const finalMessage = await msgStream.finalMessage();
+          settle.resolve({
+            inputTokens: finalMessage.usage.input_tokens,
+            outputTokens: finalMessage.usage.output_tokens,
+          });
+          return; // success
+        } catch (err) {
+          // Only retry if no content has been sent to the client yet
+          // (retrying after partial output would produce corrupted content)
+          if (!hasEnqueued && isTransientError(err) && attempt < MAX_RETRIES) {
+            const delay = Math.pow(2, attempt) * 2000 + Math.random() * 1000;
+            await new Promise((r) => setTimeout(r, delay));
+            continue;
+          }
+
+          const friendly = friendlyApiError(err);
+          controller.enqueue(
+            encoder.encode(`\n\n[Error generating layout.md: ${friendly}]`)
+          );
+          settle.reject(err);
+          return;
+        }
       }
+    },
+    cancel() {
+      // Stream cancelled by client; resolve with zeros (no refund needed)
+      settle.resolve({ inputTokens: 0, outputTokens: 0 });
     },
   });
 
