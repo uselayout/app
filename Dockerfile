@@ -40,7 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends tini curl && rm
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
 COPY --from=deps /app/node_modules/playwright ./node_modules/playwright
 COPY --from=deps /app/node_modules/playwright-core ./node_modules/playwright-core
-RUN npx playwright install --with-deps chromium
+RUN node ./node_modules/playwright-core/cli.js install --with-deps chromium
 
 # Non-root user
 RUN addgroup --system --gid 1001 nodejs && \
