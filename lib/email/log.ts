@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase/client";
 
-export type EmailType = "welcome" | "reminder" | "final_reminder";
+export type EmailType = "welcome" | "reminder" | "final_reminder" | "broadcast";
 
 interface LogEmailParams {
   accessRequestId: string;
@@ -23,6 +23,25 @@ export async function logEmail({
   });
   if (error) {
     console.error("Failed to log email:", error);
+  }
+}
+
+export async function logBroadcastEmail(params: {
+  recipientEmail: string;
+  subject: string;
+  fromEmail?: string;
+  resendId?: string;
+}): Promise<void> {
+  const { error } = await supabase.from("email_log").insert({
+    access_request_id: null,
+    email_type: "broadcast" as EmailType,
+    from_email: params.fromEmail ?? null,
+    resend_id: params.resendId ?? null,
+    recipient_email: params.recipientEmail,
+    subject: params.subject,
+  });
+  if (error) {
+    console.error("Failed to log broadcast email:", error);
   }
 }
 
