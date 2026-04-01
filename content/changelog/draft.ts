@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w14-admin-email-broadcast",
+    title: "Admin email broadcast",
+    description:
+      "Send broadcast emails to all users or specific segments directly from the admin panel. Write in plain text with basic formatting support and preview the styled email before sending.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-01",
+  },
+  {
     id: "2026-w14-large-site-reliability",
     title: "More reliable generation for large websites",
     description:
