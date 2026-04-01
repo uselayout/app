@@ -36,20 +36,20 @@ ENV NEXT_PUBLIC_BUILD_SHA=$BUILD_SHA
 # Install tini for proper signal handling (PID 1 must forward SIGTERM)
 RUN apt-get update && apt-get install -y --no-install-recommends tini curl && rm -rf /var/lib/apt/lists/*
 
-# Install Playwright Chromium matching the exact version in package-lock.json
-ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
-COPY --from=deps /app/node_modules/playwright ./node_modules/playwright
-COPY --from=deps /app/node_modules/playwright-core ./node_modules/playwright-core
-RUN node ./node_modules/playwright-core/cli.js install --with-deps chromium
-
 # Non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy standalone output
+# Copy standalone output FIRST (includes its own node_modules/)
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# THEN install Playwright Chromium (copies over standalone's node_modules entries)
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
+COPY --from=deps /app/node_modules/playwright ./node_modules/playwright
+COPY --from=deps /app/node_modules/playwright-core ./node_modules/playwright-core
+RUN node ./node_modules/playwright-core/cli.js install --with-deps chromium
 
 USER nextjs
 EXPOSE 3000
