@@ -94,6 +94,13 @@ tokenSource: [extracted-css-vars | extracted-config | reconstructed-from-compute
 Confidence level. Clustering method used for any reconstructed tokens.
 If Tailwind: note v3 (no CSS vars) vs v4 (CSS vars via @theme).`;
 
+// Synthesis caps — truncate at synthesis time, full data stays in project store
+const MAX_CSS_VARIABLES = 150;
+const MAX_COLOUR_TOKENS = 150;
+const MAX_TYPOGRAPHY_TOKENS = 50;
+const MAX_COMPUTED_STYLES = 30;
+const MAX_SCREENSHOTS = 3;
+
 function buildUserContent(
   data: ExtractionResult
 ): Array<TextBlockParam | ImageBlockParam> {
@@ -117,7 +124,7 @@ function buildUserContent(
 
   if (cssVarCount > 0) {
     // Group CSS variables by category for structured synthesis
-    const allVars = Object.entries(data.cssVariables).slice(0, 100);
+    const allVars = Object.entries(data.cssVariables).slice(0, MAX_CSS_VARIABLES);
     const colourVars = allVars.filter(([k]) => /color|colour|bg|background|fill|stroke|text|border|ring|shadow/i.test(k));
     const spacingVars = allVars.filter(([k]) => /space|spacing|gap|padding|margin|size|width|height|radius|rounded/i.test(k));
     const typographyVars = allVars.filter(([k]) => /font|text|size|weight|leading|tracking|line/i.test(k));
@@ -159,8 +166,12 @@ function buildUserContent(
   }
 
   if (Object.keys(data.computedStyles).length > 0) {
+    const styleEntries = Object.entries(data.computedStyles);
+    const capped = Object.fromEntries(styleEntries.slice(0, MAX_COMPUTED_STYLES));
+    const omitted = styleEntries.length - Math.min(styleEntries.length, MAX_COMPUTED_STYLES);
     sections.push(
-      `--- COMPUTED STYLES FOR KEY ELEMENTS (use for token synthesis/clustering) ---\n${JSON.stringify(data.computedStyles, null, 2)}`
+      `--- COMPUTED STYLES FOR KEY ELEMENTS (use for token synthesis/clustering) ---\n${JSON.stringify(capped, null, 2)}` +
+      (omitted > 0 ? `\n/* ... ${omitted} additional element samples omitted */` : "")
     );
   }
 
@@ -176,18 +187,28 @@ function buildUserContent(
   }
 
   if (data.tokens.colors.length > 0) {
-    const colours = data.tokens.colors
+    const allColours = data.tokens.colors;
+    const capped = allColours.slice(0, MAX_COLOUR_TOKENS);
+    const colours = capped
       .map((t) => `  ${t.name}: ${t.value}${t.description ? ` /* ${t.description} */` : ""}`)
       .join("\n");
-    sections.push(`--- COLOUR TOKENS (with descriptions where available) ---\n${colours}`);
+    const omitted = allColours.length - capped.length;
+    sections.push(
+      `--- COLOUR TOKENS (with descriptions where available) ---\n${colours}` +
+      (omitted > 0 ? `\n  /* ... ${omitted} additional colour tokens omitted for context budget */` : "")
+    );
   }
 
   if (data.tokens.typography.length > 0) {
-    const typo = data.tokens.typography
+    const allTypo = data.tokens.typography;
+    const capped = allTypo.slice(0, MAX_TYPOGRAPHY_TOKENS);
+    const typo = capped
       .map((t) => `  ${t.name}: ${t.value}${t.description ? ` /* ${t.description} */` : ""}`)
       .join("\n");
+    const omitted = allTypo.length - capped.length;
     sections.push(
-      `--- TYPOGRAPHY TOKENS (group these as composites in the layout.md — never list individually) ---\n${typo}`
+      `--- TYPOGRAPHY TOKENS (group these as composites in the layout.md — never list individually) ---\n${typo}` +
+      (omitted > 0 ? `\n  /* ... ${omitted} additional typography tokens omitted for context budget */` : "")
     );
   }
 
@@ -226,7 +247,7 @@ function buildUserContent(
 
   // Add screenshots as image blocks for page structure analysis
   if (hasScreenshots) {
-    for (const screenshot of data.screenshots) {
+    for (const screenshot of data.screenshots.slice(0, MAX_SCREENSHOTS)) {
       if (!screenshot) continue;
       const base64Data = screenshot.replace(/^data:image\/\w+;base64,/, "");
       contentBlocks.push({
@@ -276,52 +297,70 @@ export function createLayoutMdStream(
 
   const MAX_RETRIES = 2;
 
+  const FINAL_MESSAGE_TIMEOUT_MS = 30_000;
+
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
       let hasEnqueued = false;
 
-      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-        try {
-          const msgStream = anthropic.messages.stream({
-            model: "claude-sonnet-4-6",
-            max_tokens: 16384,
-            system: SYSTEM_PROMPT,
-            messages: [{ role: "user", content: userContent }],
-          });
+      try {
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            const msgStream = anthropic.messages.stream({
+              model: "claude-sonnet-4-6",
+              max_tokens: 16384,
+              system: SYSTEM_PROMPT,
+              messages: [{ role: "user", content: userContent }],
+            });
 
-          for await (const event of msgStream) {
-            if (
-              event.type === "content_block_delta" &&
-              event.delta.type === "text_delta"
-            ) {
-              hasEnqueued = true;
-              controller.enqueue(encoder.encode(event.delta.text));
+            for await (const event of msgStream) {
+              if (
+                event.type === "content_block_delta" &&
+                event.delta.type === "text_delta"
+              ) {
+                hasEnqueued = true;
+                controller.enqueue(encoder.encode(event.delta.text));
+              }
             }
-          }
 
-          const finalMessage = await msgStream.finalMessage();
-          settle.resolve({
-            inputTokens: finalMessage.usage.input_tokens,
-            outputTokens: finalMessage.usage.output_tokens,
-          });
-          return; // success
-        } catch (err) {
-          // Only retry if no content has been sent to the client yet
-          // (retrying after partial output would produce corrupted content)
-          if (!hasEnqueued && isTransientError(err) && attempt < MAX_RETRIES) {
-            const delay = Math.pow(2, attempt) * 2000 + Math.random() * 1000;
-            await new Promise((r) => setTimeout(r, delay));
-            continue;
-          }
+            // Race finalMessage against a timeout to prevent indefinite hangs
+            const finalMessage = await Promise.race([
+              msgStream.finalMessage(),
+              new Promise<null>((resolve) =>
+                setTimeout(() => resolve(null), FINAL_MESSAGE_TIMEOUT_MS)
+              ),
+            ]);
 
-          const friendly = friendlyApiError(err);
-          controller.enqueue(
-            encoder.encode(`\n\n[Error generating layout.md: ${friendly}]`)
-          );
-          settle.reject(err);
-          return;
+            if (finalMessage) {
+              settle.resolve({
+                inputTokens: finalMessage.usage.input_tokens,
+                outputTokens: finalMessage.usage.output_tokens,
+              });
+            } else {
+              // Timed out waiting for final usage stats; content was streamed OK
+              settle.resolve({ inputTokens: 0, outputTokens: 0 });
+            }
+            return; // success
+          } catch (err) {
+            // Only retry if no content has been sent to the client yet
+            // (retrying after partial output would produce corrupted content)
+            if (!hasEnqueued && isTransientError(err) && attempt < MAX_RETRIES) {
+              const delay = Math.pow(2, attempt) * 2000 + Math.random() * 1000;
+              await new Promise((r) => setTimeout(r, delay));
+              continue;
+            }
+
+            const friendly = friendlyApiError(err);
+            controller.enqueue(
+              encoder.encode(`\n\n[Error generating layout.md: ${friendly}]`)
+            );
+            settle.reject(err);
+            return;
+          }
         }
+      } finally {
+        controller.close();
       }
     },
     cancel() {

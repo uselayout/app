@@ -61,6 +61,11 @@ export function friendlyApiError(err: unknown): string {
     return "Claude is currently overloaded. Please wait a moment and try again.";
   if (type === "rate_limit_error" || msg.includes("rate limit"))
     return "Rate limit reached. Please wait a moment and try again.";
+  if (
+    type === "invalid_request_error" &&
+    (msg.includes("too many tokens") || msg.includes("context length") || msg.includes("too long"))
+  )
+    return "This design system is too large for a single generation. Try a smaller file or reduce the number of styles.";
   if (msg.includes("authentication") || msg.includes("401"))
     return "Authentication failed. Check your API key in Settings.";
   if (

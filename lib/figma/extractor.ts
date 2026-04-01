@@ -9,11 +9,23 @@ interface FigmaExtractionOptions {
   onProgress?: (step: string, percent: number, detail?: string) => void;
 }
 
+const EXTRACTION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
 export async function extractFromFigma({
   fileKey,
   accessToken,
   onProgress,
 }: FigmaExtractionOptions): Promise<ExtractionResult> {
+  const startTime = Date.now();
+  const checkTimeout = (step: string) => {
+    const elapsed = Date.now() - startTime;
+    if (elapsed > EXTRACTION_TIMEOUT_MS) {
+      throw new Error(
+        `Extraction timed out after ${Math.round(elapsed / 1000)}s during ${step}. This Figma file may be too large.`
+      );
+    }
+  };
+
   const client = new FigmaClient({
     accessToken,
     onProgress: (msg) => onProgress?.("progress", 0, msg),
@@ -24,6 +36,7 @@ export async function extractFromFigma({
   const file = await client.getFile(fileKey, 1);
 
   // Step 2: Styles extraction (requires library_content:read scope — non-fatal if missing)
+  checkTimeout("styles");
   let colors: ExtractionResult["tokens"]["colors"] = [];
   let typography: ExtractionResult["tokens"]["typography"] = [];
   let effects: ExtractionResult["tokens"]["effects"] = [];
@@ -51,6 +64,7 @@ export async function extractFromFigma({
   }
 
   // Step 3: Components extraction (requires file_content:read — non-fatal if missing scope)
+  checkTimeout("components");
   let components: ExtractionResult["components"] = [];
   try {
     onProgress?.("components", 45, "Extracting components...");
@@ -73,6 +87,7 @@ export async function extractFromFigma({
   }
 
   // Step 4: Variables (Enterprise only - non-fatal)
+  checkTimeout("variables");
   let cssVariables: Record<string, string> = {};
   try {
     onProgress?.("variables", 65, "Fetching variables (Enterprise plan)...");

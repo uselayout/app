@@ -52,7 +52,12 @@ export async function parseStyles(
   const stylesResponse = await client.getStyles(fileKey);
   const styles = stylesResponse.meta.styles;
 
-  const nodeIds = styles.map((s) => s.node_id);
+  const MAX_STYLES = 300;
+  const allNodeIds = styles.map((s) => s.node_id);
+  const nodeIds = allNodeIds.slice(0, MAX_STYLES);
+  if (allNodeIds.length > MAX_STYLES) {
+    onProgress?.(`File has ${allNodeIds.length} styles. Extracting first ${MAX_STYLES} for performance.`);
+  }
   onProgress?.(`Resolving ${nodeIds.length} style values...`);
   const nodesResponse = await client.getNodesBatched(fileKey, nodeIds);
 

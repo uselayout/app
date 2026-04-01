@@ -75,6 +75,11 @@ export async function POST(request: NextRequest) {
         );
       };
 
+      // Heartbeat keeps SSE connection alive during long extractions
+      const heartbeat = setInterval(() => {
+        send({ type: "step", step: "extracting", percent: 0, detail: "Still working..." });
+      }, 15_000);
+
       try {
         const result = await extractFromFigma({
           fileKey,
@@ -89,6 +94,7 @@ export async function POST(request: NextRequest) {
         const message = err instanceof Error ? err.message : "Unknown error";
         send({ type: "error", message });
       } finally {
+        clearInterval(heartbeat);
         deregisterStream(streamController);
         controller.close();
       }

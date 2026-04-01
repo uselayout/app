@@ -122,7 +122,14 @@ export function useExtraction() {
           throw new Error("No extraction data received");
         }
 
-        updateStep("extract", { status: "complete" });
+        const sizeSummary = [
+          extractionData.tokens.colors.length > 0 && `${extractionData.tokens.colors.length} colours`,
+          extractionData.tokens.typography.length > 0 && `${extractionData.tokens.typography.length} typography`,
+          extractionData.components.length > 0 && `${extractionData.components.length} components`,
+          Object.keys(extractionData.cssVariables).length > 0 && `${Object.keys(extractionData.cssVariables).length} variables`,
+        ].filter(Boolean).join(", ");
+
+        updateStep("extract", { status: "complete", detail: sizeSummary || "Extraction complete" });
         setProgress(70);
         updateExtractionData(project.id, extractionData);
 
@@ -183,23 +190,48 @@ export function useExtraction() {
         let lastFlush = 0;
         const FLUSH_INTERVAL = 200; // ms between UI updates
 
+        const STALE_TIMEOUT_MS = 120_000; // 120s with no data after first chunk = stale
+        let receivedFirstChunk = false;
+
         while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          layoutMd += decoder.decode(value, { stream: true });
+          const readPromise = reader.read();
+
+          // Only enforce stale timeout after we've received at least one chunk
+          // (time-to-first-token can be 60-120s for large multimodal prompts)
+          let staleTimer: ReturnType<typeof setTimeout> | undefined;
+          const result = await Promise.race([
+            readPromise.finally(() => { if (staleTimer) clearTimeout(staleTimer); }),
+            ...(receivedFirstChunk
+              ? [
+                  new Promise<{ done: true; value: undefined }>((resolve) => {
+                    staleTimer = setTimeout(() => {
+                      reader.cancel();
+                      resolve({ done: true, value: undefined });
+                    }, STALE_TIMEOUT_MS);
+                  }),
+                ]
+              : []),
+          ]);
+
+          if (result.done) break;
+
+          receivedFirstChunk = true;
+          layoutMd += decoder.decode(result.value, { stream: true });
           layoutMdAccumulator.current = layoutMd;
 
           const now = Date.now();
           if (now - lastFlush >= FLUSH_INTERVAL) {
             lastFlush = now;
             setStreamingContent(layoutMd);
-            setProgress(Math.min(99, 70 + Math.round((layoutMd.length / 8000) * 29)));
+            setProgress(Math.min(99, 70 + Math.round((layoutMd.length / 25000) * 29)));
           }
         }
 
         // Write final content to project store (single Supabase persist)
-        updateLayoutMd(project.id, layoutMd);
-        syncTokensFromLayoutMd(project.id);
+        if (layoutMd.length > 0) {
+          updateLayoutMd(project.id, layoutMd);
+          syncTokensFromLayoutMd(project.id);
+        }
         setStreamingContent(null);
         updateStep("generate", { status: "complete" });
         setProgress(100);
