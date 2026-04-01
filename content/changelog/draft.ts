@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w14-large-site-reliability",
+    title: "More reliable generation for large websites",
+    description:
+      "Fixed an issue where layout.md generation could hang indefinitely on large or complex websites. Generation now completes reliably, with better progress indication and automatic recovery if the connection stalls.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-01",
+  },
+  {
     id: "2026-w14-retry-generation-errors",
     title: "Smarter error handling for design system generation",
     description:
