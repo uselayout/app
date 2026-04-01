@@ -36,8 +36,10 @@ ENV NEXT_PUBLIC_BUILD_SHA=$BUILD_SHA
 # Install tini for proper signal handling (PID 1 must forward SIGTERM)
 RUN apt-get update && apt-get install -y --no-install-recommends tini curl && rm -rf /var/lib/apt/lists/*
 
-# Install Playwright Chromium to a shared path accessible by all users
+# Install Playwright Chromium matching the exact version in package-lock.json
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
+COPY --from=deps /app/node_modules/playwright ./node_modules/playwright
+COPY --from=deps /app/node_modules/playwright-core ./node_modules/playwright-core
 RUN npx playwright install --with-deps chromium
 
 # Non-root user
