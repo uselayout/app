@@ -25,7 +25,7 @@ export function wrapBroadcastHtml(bodyHtml: string): string {
         </table>
         <p style="margin:24px 0 0;font-size:11px;color:rgba(237,237,244,0.3);">
           Layout &ndash; The compiler between design systems and AI coding agents.<br />
-          You received this because you signed up for Layout. Reply to unsubscribe.
+          You received this because you signed up for Layout.
         </p>
       </td>
     </tr>

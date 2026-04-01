@@ -52,9 +52,14 @@ function textToEmailHtml(text: string): string {
   function formatInline(text: string): string {
     // Bold: **text**
     let result = text.replace(/\*\*(.+?)\*\*/g, '<strong style="color:#EDEDF4;">$1</strong>');
-    // URLs: auto-link bare URLs
+    // Markdown links: [text](url)
     result = result.replace(
-      /(https?:\/\/[^\s<]+)/g,
+      /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+      '<a href="$2" style="color:#e4f222;text-decoration:underline;">$1</a>'
+    );
+    // Auto-link bare URLs (only those not already wrapped in an href)
+    result = result.replace(
+      /(?<!href=")(https?:\/\/[^\s<]+)/g,
       '<a href="$1" style="color:#e4f222;text-decoration:underline;">$1</a>'
     );
     return result;
@@ -387,7 +392,7 @@ export function EmailTab({ toast }: Props) {
           <textarea
             value={bodyText}
             onChange={(e) => setBodyText(e.target.value)}
-            placeholder={"Write your message here. Basic formatting supported:\n\nBlank lines create new paragraphs\n- Dashes create bullet lists\n**Bold text** for emphasis\n## Headings for sections\nURLs are auto-linked"}
+            placeholder={"Write your message here. Basic formatting supported:\n\nBlank lines create new paragraphs\n- Dashes create bullet lists\n**Bold text** for emphasis\n## Headings for sections\nURLs are auto-linked\n[link text](https://example.com) for named links"}
             rows={12}
             className="w-full px-3 py-2 rounded-md text-sm outline-none resize-y"
             style={{
