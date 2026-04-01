@@ -52,11 +52,13 @@ export default function StudioPage({
     return () => clearTimeout(timer);
   }, [saveError, clearSaveError]);
 
+  const extractionProjectId = useExtractionStore((s) => s.projectId);
   const extractionStatus = useExtractionStore((s) => s.status);
   const extractionProgress = useExtractionStore((s) => s.progress);
   const extractionSteps = useExtractionStore((s) => s.steps);
   const extractionError = useExtractionStore((s) => s.error);
   const streamingContent = useExtractionStore((s) => s.streamingContent);
+  const isThisProjectExtracting = extractionProjectId === id;
 
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
@@ -300,9 +302,11 @@ export default function StudioPage({
   // or just completed (only if extraction was triggered in THIS session)
   const extractionWasTriggered = extractionStarted.current;
   if (
-    extractionStatus === "running" ||
-    (extractionStatus === "failed" && !project.extractionData) ||
-    (extractionStatus === "complete" && !whatsNextDismissed && extractionWasTriggered)
+    isThisProjectExtracting && (
+      extractionStatus === "running" ||
+      (extractionStatus === "failed" && !project.extractionData) ||
+      (extractionStatus === "complete" && !whatsNextDismissed && extractionWasTriggered)
+    )
   ) {
     return (
       <ExtractionProgress

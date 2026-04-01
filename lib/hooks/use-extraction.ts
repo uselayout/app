@@ -31,7 +31,7 @@ export function useExtraction() {
 
       const isFigma = project.sourceType === "figma";
 
-      startExtraction([
+      startExtraction(project.id, [
         { id: "connect", label: "Connecting to source", status: "running" },
         { id: "extract", label: "Extracting design data", status: "pending" },
         { id: "generate", label: "Generating layout.md", status: "pending" },

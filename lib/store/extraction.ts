@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { ExtractionStatus, ExtractionStep } from "@/lib/types";
 
 interface ExtractionState {
+  projectId: string | null;
   status: ExtractionStatus;
   progress: number;
   steps: ExtractionStep[];
@@ -11,7 +12,7 @@ interface ExtractionState {
   streamingContent: string | null;
 
   // Actions
-  startExtraction: (steps: ExtractionStep[]) => void;
+  startExtraction: (projectId: string, steps: ExtractionStep[]) => void;
   updateStep: (
     stepId: string,
     update: Partial<ExtractionStep>
@@ -24,6 +25,7 @@ interface ExtractionState {
 }
 
 export const useExtractionStore = create<ExtractionState>()((set) => ({
+  projectId: null,
   status: "idle",
   progress: 0,
   steps: [],
@@ -32,8 +34,9 @@ export const useExtractionStore = create<ExtractionState>()((set) => ({
   errorStep: null,
   streamingContent: null,
 
-  startExtraction: (steps) =>
+  startExtraction: (projectId, steps) =>
     set({
+      projectId,
       status: "running",
       progress: 0,
       steps,
@@ -73,6 +76,7 @@ export const useExtractionStore = create<ExtractionState>()((set) => ({
 
   resetExtraction: () =>
     set({
+      projectId: null,
       status: "idle",
       progress: 0,
       steps: [],

@@ -78,11 +78,13 @@ export default function StudioPage({
     return () => clearTimeout(timer);
   }, [id, project]);
 
+  const extractionProjectId = useExtractionStore((s) => s.projectId);
   const extractionStatus = useExtractionStore((s) => s.status);
   const extractionProgress = useExtractionStore((s) => s.progress);
   const extractionSteps = useExtractionStore((s) => s.steps);
   const extractionError = useExtractionStore((s) => s.error);
   const streamingContent = useExtractionStore((s) => s.streamingContent);
+  const isThisProjectExtracting = extractionProjectId === id;
 
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
@@ -315,9 +317,11 @@ export default function StudioPage({
   // Show progress screen when running, or when failed with no extraction data yet,
   // or when complete but the "What's next?" screen hasn't been dismissed yet
   if (
-    extractionStatus === "running" ||
-    (extractionStatus === "failed" && !project.extractionData) ||
-    (extractionStatus === "complete" && !whatsNextDismissed)
+    isThisProjectExtracting && (
+      extractionStatus === "running" ||
+      (extractionStatus === "failed" && !project.extractionData) ||
+      (extractionStatus === "complete" && !whatsNextDismissed)
+    )
   ) {
     return (
       <ExtractionProgress
