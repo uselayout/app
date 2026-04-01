@@ -116,6 +116,17 @@ export interface ComputedStyleMap {
   border?: string;
   boxShadow?: string;
   transition?: string;
+  // Layout
+  display?: string;
+  flexDirection?: string;
+  justifyContent?: string;
+  alignItems?: string;
+  gap?: string;
+  margin?: string;
+  // Text
+  textAlign?: string;
+  textTransform?: string;
+  textDecoration?: string;
 }
 
 export interface ExtractedTokens {
@@ -138,6 +149,7 @@ export interface ExtractionResult {
   librariesDetected: Record<string, boolean>;
   cssVariables: Record<string, string>;
   computedStyles: Record<string, ComputedStyleMap>;
+  interactiveStates?: Record<string, Record<string, string>>;
 }
 
 export interface ExtractionStep {

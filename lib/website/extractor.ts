@@ -5,6 +5,8 @@ import {
   extractFontsScript,
   extractComputedStylesScript,
   extractAnimationsScript,
+  extractRadiusCensusScript,
+  extractInteractiveStatesScript,
   detectLibrariesScript,
 } from "./css-extract";
 import type {
@@ -75,8 +77,18 @@ export async function extractFromWebsite({
     const animations: AnimationDefinition[] = await page.evaluate(`(${extractAnimationsScript})()`);
     onProgress?.("animations", 58, `Found ${animations.length} animations`);
 
+    // Survey border-radius usage across all interactive elements
+    onProgress?.("radius", 59, "Surveying border-radius usage...");
+    const radiusCensus: Record<string, { count: number; elements: Array<{ tag: string; class: string; text: string }> }> =
+      await page.evaluate(`(${extractRadiusCensusScript})()`);
+
+    // Extract interactive state styles (hover/focus/active) from CSS rules
+    onProgress?.("states", 62, "Extracting interactive states...");
+    const interactiveStates: Record<string, Record<string, string>> =
+      await page.evaluate(`(${extractInteractiveStatesScript})()`);
+
     // Detect libraries
-    onProgress?.("libraries", 60, "Detecting libraries...");
+    onProgress?.("libraries", 64, "Detecting libraries...");
     const librariesDetected: Record<string, boolean> = await page.evaluate(`(${detectLibrariesScript})()`);
     const libCount = Object.values(librariesDetected).filter(Boolean).length;
     if (libCount > 0) {
@@ -108,6 +120,35 @@ export async function extractFromWebsite({
           case "spacing": spacing.push(token); break;
           case "radius": radius.push(token); break;
         }
+      }
+    }
+
+    // Mine radius tokens from census when CSS vars don't provide them
+    if (radius.length < 2 && radiusCensus) {
+      const seenRadii = new Set(radius.map((t) => t.value));
+      for (const [value, info] of Object.entries(radiusCensus)) {
+        if (seenRadii.has(value)) continue;
+        seenRadii.add(value);
+        const px = parseInt(value, 10);
+        if (isNaN(px)) continue;
+        let name = "--radius-xs";
+        if (px >= 100) name = "--radius-full";
+        else if (px >= 20) name = "--radius-xl";
+        else if (px >= 12) name = "--radius-lg";
+        else if (px >= 8) name = "--radius-md";
+        else if (px >= 4) name = "--radius-sm";
+
+        const examples = info.elements
+          .map((e) => `${e.tag}${e.text ? ` "${e.text}"` : ""}`)
+          .join(", ");
+
+        radius.push({
+          name,
+          value,
+          type: "radius",
+          category: "semantic",
+          description: `${info.count} elements (e.g. ${examples}) /* reconstructed */`,
+        });
       }
     }
 
@@ -149,6 +190,7 @@ export async function extractFromWebsite({
       librariesDetected,
       cssVariables,
       computedStyles,
+      interactiveStates,
     };
   } finally {
     deregisterBrowser(browser);

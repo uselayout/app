@@ -30,6 +30,12 @@ If the extracted design system has few/no CSS custom properties:
 - Synthesise tokens from computed styles by clustering: group colours by hue family, spacing by multiples (4px grid? 8px?)
 - Map clusters to semantic intent: dominant background colour → --color-surface, primary accent → --color-primary, body text colour → --color-text
 - Annotate each synthetic token with confidence level inline in the comment
+- For border-radius: identify the distinct radius scale from extracted values. Common patterns:
+  - Sharp (0px), small (4px), medium (8px), large (16px), pill/full (>=50px)
+  - Many sites use pill-shaped buttons (border-radius >= 50px). If the radius census shows large values on CTA buttons, the primary button radius is pill-shaped, NOT 8px
+  - Name radius tokens by scale: --radius-sm, --radius-md, --radius-lg, --radius-full
+  - CRITICAL: cookie banners and modals often have different radius values than the brand UI. Use the element context to identify which values belong to the main design system
+- For layout properties: use the extracted display, flexDirection, justifyContent, alignItems, and gap values to document how components are laid out — not just how they look
 
 OUTPUT FORMAT RULES:
 - All tokens: fenced \`\`\`css code blocks with inline usage description comments
@@ -172,6 +178,28 @@ function buildUserContent(
     sections.push(
       `--- COMPUTED STYLES FOR KEY ELEMENTS (use for token synthesis/clustering) ---\n${JSON.stringify(capped, null, 2)}` +
       (omitted > 0 ? `\n/* ... ${omitted} additional element samples omitted */` : "")
+    );
+  }
+
+  if (data.tokens.radius.length > 0) {
+    const radiusTokens = data.tokens.radius
+      .map((t) => `  ${t.name}: ${t.value}${t.description ? ` /* ${t.description} */` : ""}`)
+      .join("\n");
+    sections.push(
+      `--- EXTRACTED BORDER-RADIUS VALUES ---\n` +
+      `These were mined from actual page elements. Pill-shaped buttons (radius >= 50px) indicate the brand uses pill buttons.\n` +
+      radiusTokens
+    );
+  }
+
+  if (data.interactiveStates && Object.keys(data.interactiveStates).length > 0) {
+    const capped = Object.fromEntries(
+      Object.entries(data.interactiveStates).slice(0, 50)
+    );
+    sections.push(
+      `--- INTERACTIVE STATE STYLES (hover/focus/active/disabled from CSS rules) ---\n` +
+      `Use these to document accurate hover, focus, active, and disabled states for components.\n` +
+      JSON.stringify(capped, null, 2)
     );
   }
 

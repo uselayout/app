@@ -52,7 +52,18 @@ export const extractComputedStylesScript = `() => {
     h2: document.querySelector('h2'),
     h3: document.querySelector('h3'),
     body: document.querySelector('p, [class*="body"]'),
-    button_primary: document.querySelector('button:not([disabled]), [class*="btn-primary"], [class*="button-primary"]'),
+    button_primary: (() => {
+      const candidates = document.querySelectorAll(
+        'button:not([disabled]), a[class*="btn"], a[class*="button"], a[class*="cta"], [role="button"], [class*="btn-primary"], [class*="button-primary"]'
+      );
+      for (const el of candidates) {
+        const excluded = el.closest(
+          '[class*="cookie"], [class*="consent"], [class*="banner"], [id*="cookie"], [id*="consent"], dialog, [role="dialog"], nav, header'
+        );
+        if (!excluded) return el;
+      }
+      return candidates[0] || null;
+    })(),
     button_secondary: document.querySelector('[class*="btn-secondary"], [class*="button-secondary"]'),
     input: document.querySelector('input[type="text"], input[type="email"]'),
     label: document.querySelector('label'),
@@ -76,6 +87,15 @@ export const extractComputedStylesScript = `() => {
         border: cs.border,
         boxShadow: cs.boxShadow,
         transition: cs.transition,
+        display: cs.display,
+        flexDirection: cs.flexDirection,
+        justifyContent: cs.justifyContent,
+        alignItems: cs.alignItems,
+        gap: cs.gap,
+        margin: cs.margin,
+        textAlign: cs.textAlign,
+        textTransform: cs.textTransform,
+        textDecoration: cs.textDecoration,
       };
     }
   }
@@ -112,6 +132,65 @@ export const extractBreakpointsScript = `() => {
     } catch(e) {}
   }
   return [...breakpoints].sort((a, b) => parseInt(a) - parseInt(b));
+}`;
+
+export const extractRadiusCensusScript = `() => {
+  const selectors = [
+    'button', 'a[href]', '[role="button"]',
+    '[class*="btn"]', '[class*="button"]', '[class*="cta"]',
+    '[class*="card"]', '[class*="Card"]',
+    'input', 'select', 'textarea',
+    '[class*="badge"]', '[class*="chip"]', '[class*="tag"]', '[class*="pill"]',
+  ];
+  const radiusMap = {};
+  for (const sel of selectors) {
+    try {
+      const els = document.querySelectorAll(sel);
+      for (const el of Array.from(els).slice(0, 20)) {
+        const cs = getComputedStyle(el);
+        const r = cs.borderRadius;
+        if (r && r !== '0px') {
+          if (!radiusMap[r]) radiusMap[r] = { count: 0, elements: [] };
+          radiusMap[r].count++;
+          if (radiusMap[r].elements.length < 3) {
+            radiusMap[r].elements.push({
+              tag: el.tagName.toLowerCase(),
+              class: (el.className?.toString?.() || '').slice(0, 80),
+              text: (el.textContent?.trim() || '').slice(0, 40),
+            });
+          }
+        }
+      }
+    } catch(e) {}
+  }
+  return radiusMap;
+}`;
+
+export const extractInteractiveStatesScript = `() => {
+  const stateSelectors = [':hover', ':focus', ':active', ':disabled', ':focus-visible'];
+  const states = {};
+  for (const sheet of document.styleSheets) {
+    try {
+      for (const rule of sheet.cssRules) {
+        if (!(rule instanceof CSSStyleRule)) continue;
+        for (const pseudo of stateSelectors) {
+          if (!rule.selectorText.includes(pseudo)) continue;
+          const key = rule.selectorText;
+          const props = {};
+          for (let i = 0; i < rule.style.length; i++) {
+            const prop = rule.style[i];
+            const val = rule.style.getPropertyValue(prop);
+            if (val) props[prop] = val;
+          }
+          if (Object.keys(props).length > 0) {
+            states[key] = props;
+          }
+        }
+      }
+    } catch(e) {}
+  }
+  const entries = Object.entries(states).slice(0, 50);
+  return Object.fromEntries(entries);
 }`;
 
 export const detectLibrariesScript = `() => ({
