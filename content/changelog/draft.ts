@@ -46,6 +46,15 @@ export const draftEntries: ChangelogEntry[] = [
     date: "2026-03-31",
   },
   {
+    id: "2026-w14-figma-plugin-docs",
+    title: "Figma Plugin documentation",
+    description:
+      "New docs page with a step-by-step walkthrough for syncing design variables between Layout and Figma using the plugin.",
+    product: "figma-plugin",
+    category: "new",
+    date: "2026-03-31",
+  },
+  {
     id: "2026-w14-admin-email-dropdown",
     title: "Choose which email to send from admin",
     description:
