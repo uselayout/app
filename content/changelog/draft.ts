@@ -11,6 +11,24 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w14-reminder-tracking",
+    title: "Reminder status visible in admin waitlist",
+    description:
+      "The admin waitlist now shows whether a 1st or final reminder was sent, when it was sent, and how many days ago. Makes it easy to see who needs a follow-up.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-02",
+  },
+  {
+    id: "2026-w14-new-users-timerange",
+    title: "New Users stat respects time range",
+    description:
+      "The New Users count on the admin dashboard now correctly reflects the selected time range (today, 7 days, 30 days, 90 days) instead of always showing the monthly total.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-02",
+  },
+  {
     id: "2026-w14-figma-radius-spacing",
     title: "Figma extraction now captures radius and spacing",
     description:
