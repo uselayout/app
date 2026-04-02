@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     await Promise.all([
       supabase
         .from("layout_usage_log")
-        .select("user_id, endpoint, created_at, mode, model")
+        .select("user_id, endpoint, created_at, mode, model, cost_estimate_gbp")
         .limit(10000),
 
       supabase
@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
 
       supabase
         .from("layout_credit_balance")
-        .select("user_id, layout_md_remaining, topup_layout_md")
-        .eq("layout_md_remaining", 0)
-        .eq("topup_layout_md", 0),
+        .select("user_id, design_md_remaining, topup_design_md")
+        .eq("design_md_remaining", 0)
+        .eq("topup_design_md", 0),
     ]);
 
   const usageLogs = usageRes.data ?? [];
@@ -132,14 +132,17 @@ export async function GET(request: NextRequest) {
   ).length;
 
   // --- Billing ---
-  // Top consumers from usage log
+  // Top consumers by cost
   const userCosts = new Map<string, number>();
   for (const log of usageLogs) {
-    // We don't have cost here, so use count as proxy
-    if (log.user_id) {
-      userCosts.set(log.user_id, (userCosts.get(log.user_id) ?? 0) + 1);
+    if (log.user_id && typeof log.cost_estimate_gbp === "number") {
+      userCosts.set(log.user_id, (userCosts.get(log.user_id) ?? 0) + log.cost_estimate_gbp);
     }
   }
+  const topConsumers = Array.from(userCosts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([, cost]) => ({ email: "***", cost: Math.round(cost * 100) / 100 }));
 
   // Matches ProductData interface in DashboardTab
   return NextResponse.json({
@@ -172,7 +175,7 @@ export async function GET(request: NextRequest) {
     billing: {
       usersAtZeroCredits: zeroCredits.length,
       zeroCreditsEmails: [],
-      topConsumers: [],
+      topConsumers,
     },
   }, { headers: { "Cache-Control": "no-store, private" } });
 }

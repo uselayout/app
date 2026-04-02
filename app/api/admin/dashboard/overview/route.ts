@@ -94,8 +94,8 @@ export async function GET(request: NextRequest) {
     supabase
       .from("layout_credit_balance")
       .select("*", { count: "exact", head: true })
-      .eq("layout_md_remaining", 0)
-      .eq("topup_layout_md", 0),
+      .eq("design_md_remaining", 0)
+      .eq("topup_design_md", 0),
 
     // Errors last 24h
     supabase

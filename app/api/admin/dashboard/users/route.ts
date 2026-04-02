@@ -46,6 +46,13 @@ export async function GET(request: NextRequest) {
       supabase.from("layout_figma_connection").select("user_id"),
     ]);
 
+  // Log query errors for debugging
+  if (usersRes.error) console.error("[dashboard/users] layout_user query failed:", usersRes.error.message);
+  if (usageRes.error) console.error("[dashboard/users] layout_usage_log query failed:", usageRes.error.message);
+  if (projectsRes.error) console.error("[dashboard/users] layout_projects query failed:", projectsRes.error.message);
+  if (subscriptionsRes.error) console.error("[dashboard/users] layout_subscription query failed:", subscriptionsRes.error.message);
+  if (figmaRes.error) console.error("[dashboard/users] layout_figma_connection query failed:", figmaRes.error.message);
+
   const allUsers = usersRes.data ?? [];
   const usageLogs = usageRes.data ?? [];
   const projects = projectsRes.data ?? [];
