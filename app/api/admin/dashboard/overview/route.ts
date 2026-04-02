@@ -29,10 +29,14 @@ export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
+  const requestedDays = Math.min(
+    Math.max(parseInt(request.nextUrl.searchParams.get("days") ?? "30", 10) || 30, 1),
+    365
+  );
   const monthStart = startOfMonth();
   const weekStart = startOfWeekMonday();
   const sevenDaysAgo = daysAgo(7);
-  const thirtyDaysAgo = daysAgo(30);
+  const periodStart = daysAgo(requestedDays);
   const twentyFourHoursAgo = hoursAgo(24);
 
   const [
@@ -72,7 +76,7 @@ export async function GET(request: NextRequest) {
     supabase
       .from("layout_usage_log")
       .select("user_id, endpoint, created_at, cost_estimate_gbp, mode")
-      .gte("created_at", thirtyDaysAgo)
+      .gte("created_at", periodStart)
       .limit(10000),
 
     // Components

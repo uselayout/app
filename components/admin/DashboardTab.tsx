@@ -422,16 +422,21 @@ export function DashboardTab() {
   // Expanded error rows
   const [expandedErrors, setExpandedErrors] = useState<Set<number>>(new Set());
 
+  // Time range filter
+  const [timeRange, setTimeRange] = useState<"today" | "7d" | "30d" | "90d">("30d");
+
   // Error endpoint filter
   const [endpointFilter, setEndpointFilter] = useState<string>("all");
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
+    const days = timeRange === "today" ? 1 : timeRange === "7d" ? 7 : timeRange === "90d" ? 90 : 30;
+    const errorHours = timeRange === "today" ? 24 : days * 24;
     try {
       const [ov, us, er, fu, usr, pr] = await Promise.all([
-        fetch("/api/admin/dashboard/overview").then((r) => r.json()),
-        fetch("/api/admin/dashboard/usage?days=30").then((r) => r.json()),
-        fetch("/api/admin/dashboard/errors?hours=24").then((r) => r.json()),
+        fetch(`/api/admin/dashboard/overview?days=${days}`).then((r) => r.json()),
+        fetch(`/api/admin/dashboard/usage?days=${days}`).then((r) => r.json()),
+        fetch(`/api/admin/dashboard/errors?hours=${errorHours}`).then((r) => r.json()),
         fetch("/api/admin/dashboard/funnel").then((r) => r.json()),
         fetch("/api/admin/dashboard/users?sort=cost&limit=20").then((r) => r.json()),
         fetch("/api/admin/dashboard/products").then((r) => r.json()),
@@ -446,7 +451,7 @@ export function DashboardTab() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [timeRange]);
 
   useEffect(() => {
     fetchAll();
@@ -546,30 +551,52 @@ export function DashboardTab() {
             Last updated: {lastRefreshed ? formatRelativeTime(lastRefreshed) : "Loading..."}
           </p>
         </div>
-        <button
-          onClick={fetchAll}
-          disabled={loading}
-          className="px-3 py-1.5 text-xs rounded-md transition-all"
-          style={{
-            border: "1px solid var(--studio-border)",
-            background: "var(--bg-elevated)",
-            color: "var(--text-secondary)",
-            transition: "all var(--duration-base) var(--ease-out)",
-            opacity: loading ? 0.6 : 1,
-          }}
-          onMouseEnter={(e) => {
-            if (!loading) {
-              (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-hover)";
-              (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-elevated)";
-            (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
-          }}
-        >
-          {loading ? "Refreshing..." : "Refresh"}
-        </button>
+        <div className="flex items-center gap-2">
+          <div
+            className="flex rounded-md overflow-hidden"
+            style={{ border: "1px solid var(--studio-border)" }}
+          >
+            {(["today", "7d", "30d", "90d"] as const).map((range) => (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className="px-2.5 py-1 text-xs transition-all"
+                style={{
+                  background: timeRange === range ? "var(--bg-hover)" : "var(--bg-elevated)",
+                  color: timeRange === range ? "var(--text-primary)" : "var(--text-muted)",
+                  borderRight: range !== "90d" ? "1px solid var(--studio-border)" : "none",
+                  transition: "all var(--duration-base) var(--ease-out)",
+                }}
+              >
+                {range === "today" ? "Today" : range === "7d" ? "7 days" : range === "30d" ? "30 days" : "90 days"}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={fetchAll}
+            disabled={loading}
+            className="px-3 py-1.5 text-xs rounded-md transition-all"
+            style={{
+              border: "1px solid var(--studio-border)",
+              background: "var(--bg-elevated)",
+              color: "var(--text-secondary)",
+              transition: "all var(--duration-base) var(--ease-out)",
+              opacity: loading ? 0.6 : 1,
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-hover)";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-elevated)";
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
+            }}
+          >
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
       </div>
 
       {/* Loading skeleton */}
