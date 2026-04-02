@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 interface OverviewData {
   totalUsers: number;
   activeUsers7d: number;
-  newUsersMonth: number;
+  newUsersPeriod: number;
   totalProjects: number;
   layoutMdsCreated: number;
   variantsGenerated: number;
@@ -17,7 +17,6 @@ interface OverviewData {
   bundleExports: number;
   layoutMdsThisMonth?: number;
   variantsThisMonth?: number;
-  newUsersThisWeek?: number;
   errorsLast24h: number;
 }
 
@@ -628,8 +627,8 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
             />
             <StatCard
               label="New Users"
-              value={formatNumber(overview?.newUsersMonth)}
-              subValue={timeRange === "today" ? "today" : timeRange === "7d" ? "this week" : timeRange === "90d" ? "this quarter" : "this month"}
+              value={formatNumber(overview?.newUsersPeriod)}
+              subValue={timeRange === "today" ? "today" : timeRange === "7d" ? "last 7 days" : timeRange === "90d" ? "last 90 days" : "last 30 days"}
             />
             <StatCard
               label="Total Projects"

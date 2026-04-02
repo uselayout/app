@@ -19,6 +19,11 @@ interface InviteCodeRow {
   redeemed_user?: { email: string } | null;
 }
 
+interface EmailLogEntry {
+  type: string;
+  sentAt: string;
+}
+
 interface AccessRequestRow {
   id: string;
   name: string;
@@ -29,7 +34,19 @@ interface AccessRequestRow {
   inviteCode: string | null;
   signedUp: boolean;
   createdAt: string;
-  emailTypes: string[];
+  emailLog: EmailLogEntry[];
+}
+
+function getEmailTypes(row: AccessRequestRow): string[] {
+  return row.emailLog.map((e) => e.type);
+}
+
+function getEmailEntry(row: AccessRequestRow, type: string): EmailLogEntry | undefined {
+  return row.emailLog.find((e) => e.type === type);
+}
+
+function daysSince(iso: string): number {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -538,11 +555,11 @@ function applyClientFilter(requests: AccessRequestRow[], filter: string): Access
     case "not_signed_up":
       return requests.filter((r) => r.status === "approved" && !r.signedUp);
     case "no_reminder":
-      return requests.filter((r) => r.status === "approved" && !r.signedUp && !(r.emailTypes ?? []).includes("reminder") && !(r.emailTypes ?? []).includes("final_reminder"));
+      return requests.filter((r) => r.status === "approved" && !r.signedUp && !getEmailTypes(r).includes("reminder") && !getEmailTypes(r).includes("final_reminder"));
     case "reminder_sent":
-      return requests.filter((r) => r.status === "approved" && (r.emailTypes ?? []).includes("reminder") && !(r.emailTypes ?? []).includes("final_reminder"));
+      return requests.filter((r) => r.status === "approved" && getEmailTypes(r).includes("reminder") && !getEmailTypes(r).includes("final_reminder"));
     case "final_sent":
-      return requests.filter((r) => r.status === "approved" && (r.emailTypes ?? []).includes("final_reminder"));
+      return requests.filter((r) => r.status === "approved" && getEmailTypes(r).includes("final_reminder"));
     default:
       return requests;
   }
@@ -683,7 +700,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
 
   const getEmailActions = (row: AccessRequestRow): { type: string; label: string }[] => {
     if (row.status !== "approved" || row.signedUp) return [];
-    const types = row.emailTypes ?? [];
+    const types = getEmailTypes(row);
     const hasWelcome = types.includes("welcome") || row.inviteCode != null;
     if (types.includes("final_reminder")) return [];
     if (types.includes("reminder")) return [{ type: "final_reminder", label: "Send final reminder" }];
@@ -691,12 +708,19 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
     return [{ type: "welcome", label: "Send welcome" }];
   };
 
-  const getEmailStatus = (row: AccessRequestRow): string | null => {
-    const types = row.emailTypes ?? [];
-    if (types.includes("final_reminder")) return "Final reminder sent";
-    if (types.includes("reminder")) return "Reminder sent";
-    if (types.includes("welcome")) return "Welcome sent";
-    if (row.inviteCode != null) return "Welcome sent";
+  const getEmailStatusInfo = (row: AccessRequestRow): { label: string; daysAgo: number | null } | null => {
+    const types = getEmailTypes(row);
+    const finalEntry = getEmailEntry(row, "final_reminder");
+    if (finalEntry) {
+      return { label: "Final sent", daysAgo: daysSince(finalEntry.sentAt) };
+    }
+    const reminderEntry = getEmailEntry(row, "reminder");
+    if (reminderEntry) {
+      return { label: "1st reminder", daysAgo: daysSince(reminderEntry.sentAt) };
+    }
+    if (types.includes("welcome") || row.inviteCode != null) {
+      return { label: "Welcome sent", daysAgo: null };
+    }
     return null;
   };
 
@@ -1043,13 +1067,13 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                           <span style={{ color: "var(--text-muted)" }}>⧉</span>
                         </button>
                         {(() => {
-                          const emailStatus = getEmailStatus(row);
+                          const statusInfo = getEmailStatusInfo(row);
                           const actions = getEmailActions(row);
                           return (
                             <div className="flex items-center gap-2">
-                              {emailStatus && (
-                                <span className="text-[10px] whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
-                                  {emailStatus}
+                              {statusInfo && (
+                                <span className="text-[10px] whitespace-nowrap" style={{ color: statusInfo.label === "1st reminder" ? "#fbbf24" : statusInfo.label === "Final sent" ? "#f87171" : "var(--text-muted)" }}>
+                                  {statusInfo.label}{statusInfo.daysAgo != null ? ` (${statusInfo.daysAgo}d ago)` : ""}
                                 </span>
                               )}
                               {actions.length > 0 && (

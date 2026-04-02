@@ -56,11 +56,11 @@ export async function GET(request: NextRequest) {
       .from("layout_user")
       .select("*", { count: "exact", head: true }),
 
-    // New users this month (Better Auth uses camelCase columns)
+    // New users in requested period (Better Auth uses camelCase columns)
     supabase
       .from("layout_user")
       .select("*", { count: "exact", head: true })
-      .gte("createdAt", monthStart),
+      .gte("createdAt", periodStart),
 
     // Total projects
     supabase
@@ -215,7 +215,7 @@ export async function GET(request: NextRequest) {
     // Matches OverviewData interface in DashboardTab
     totalUsers: usersRes.count ?? 0,
     activeUsers7d,
-    newUsersMonth: newUsersRes.count ?? 0,
+    newUsersPeriod: newUsersRes.count ?? 0,
     totalProjects: projectsRes.count ?? 0,
     layoutMdsCreated: totalLayoutMdsRes.count ?? 0,
     variantsGenerated: totalVariantsRes.count ?? 0,
