@@ -16,11 +16,16 @@ export async function OPTIONS() {
 const GenerateDesignSchema = z.object({
   fileKey: z.string(),
   pageName: z.string().optional(),
+  tool: z.enum(["generate_figma_design", "use_figma"]).optional(),
+  description: z.string().optional(),
 });
 
 /**
- * Calls Figma MCP's generate_figma_design tool to create a capture session.
- * Returns a captureId that the extension uses to inject capture.js.
+ * Calls Figma MCP to create designs in Figma.
+ *
+ * Supports two tools:
+ * - `generate_figma_design` (default): Creates a capture session, returns captureId for capture.js injection.
+ * - `use_figma`: Creates native, editable Figma objects directly. Returns the tool result text.
  */
 export async function POST(request: Request) {
   const auth = await requireMcpAuth(request, "write");
@@ -108,7 +113,21 @@ export async function POST(request: Request) {
     }),
   });
 
-  // Step 3: Call generate_figma_design tool
+  const selectedTool = parsed.data.tool ?? "generate_figma_design";
+
+  // Step 3: Call the selected Figma MCP tool
+  const toolArgs =
+    selectedTool === "use_figma"
+      ? {
+          ...(parsed.data.description ? { description: parsed.data.description } : {}),
+          fileKey: parsed.data.fileKey,
+        }
+      : {
+          outputMode: "existingFile" as const,
+          fileKey: parsed.data.fileKey,
+          ...(parsed.data.pageName ? { pageName: parsed.data.pageName } : {}),
+        };
+
   const toolResponse = await fetch("https://mcp.figma.com/mcp", {
     method: "POST",
     headers: {
@@ -121,21 +140,17 @@ export async function POST(request: Request) {
       id: 2,
       method: "tools/call",
       params: {
-        name: "generate_figma_design",
-        arguments: {
-          outputMode: "existingFile",
-          fileKey: parsed.data.fileKey,
-          ...(parsed.data.pageName ? { pageName: parsed.data.pageName } : {}),
-        },
+        name: selectedTool,
+        arguments: toolArgs,
       },
     }),
   });
 
   if (!toolResponse.ok) {
     const text = await toolResponse.text();
-    console.error("[Layout] Figma MCP tool call failed:", text);
+    console.error(`[Layout] Figma MCP ${selectedTool} failed:`, text);
     return NextResponse.json(
-      { error: "Failed to call generate_figma_design" },
+      { error: `Failed to call ${selectedTool}` },
       { status: 502, headers: CORS },
     );
   }
@@ -148,8 +163,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // Extract captureId from the tool result
-  // The result.content is an array of text blocks; captureId is in the response
+  // Extract content from the tool result
   const content = toolResult.result?.content;
   if (!content || !Array.isArray(content)) {
     return NextResponse.json(
@@ -158,22 +172,32 @@ export async function POST(request: Request) {
     );
   }
 
-  // Parse the text content to find captureId
   const textContent = content
     .filter((c: { type: string }) => c.type === "text")
     .map((c: { text: string }) => c.text)
     .join("\n");
 
-  // captureId is typically returned in the response text
+  // For use_figma: return the result text directly (no captureId flow)
+  if (selectedTool === "use_figma") {
+    return NextResponse.json(
+      {
+        tool: "use_figma",
+        result: textContent,
+        sessionId,
+      },
+      { headers: CORS },
+    );
+  }
+
+  // For generate_figma_design: extract captureId from response
   const captureIdMatch = textContent.match(/captureId["\s:]+([a-zA-Z0-9_-]+)/i);
   if (!captureIdMatch?.[1]) {
-    // Try to parse as JSON in case the content is structured
     try {
-      const parsed = JSON.parse(textContent);
-      if (parsed.captureId) {
+      const jsonParsed = JSON.parse(textContent);
+      if (jsonParsed.captureId) {
         return NextResponse.json(
           {
-            captureId: parsed.captureId,
+            captureId: jsonParsed.captureId,
             sessionId,
           },
           { headers: CORS },

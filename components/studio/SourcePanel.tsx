@@ -2,11 +2,13 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes, Figma } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
 import { ConnectTab } from "@/components/studio/ConnectTab";
+import { FigmaEmbed } from "@/components/studio/FigmaEmbed";
+import { parseFigmaUrl } from "@/lib/figma/parse-url";
 import { IconPackSelector } from "@/components/studio/IconPackSelector";
 import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
 import { resolveTokenValue } from "@/lib/util/color";
@@ -35,7 +37,7 @@ interface SourcePanelProps {
   onExtract?: (url: string, sourceType: SourceType, pat?: string) => void;
 }
 
-type TabId = "tokens" | "components" | "screenshots" | "icons" | "quality" | "connect";
+type TabId = "tokens" | "components" | "screenshots" | "icons" | "quality" | "connect" | "figma";
 
 function SourcePanelEmptyState({
   projectId,
@@ -129,6 +131,8 @@ function SourcePanelEmptyState({
 
 function SourcePanelInner({
   extractionData,
+  sourceType,
+  sourceUrl,
   layoutMd,
   projectId,
   onLayoutMdChange,
@@ -173,6 +177,7 @@ function SourcePanelInner({
     { id: "screenshots", label: "Screenshots", icon: Image },
     { id: "icons", label: "Icons", icon: Shapes },
     { id: "quality", label: "Quality", icon: Gauge },
+    { id: "figma", label: "Figma", icon: Figma },
     { id: "connect", label: "Connect", icon: Terminal },
   ];
 
@@ -228,7 +233,7 @@ function SourcePanelInner({
           />
         )}
         {activeTab === "tokens" && extractionData && (
-          <TokensTab tokens={extractionData.tokens} cssVariables={extractionData.cssVariables} projectId={projectId} />
+          <TokensTab tokens={extractionData.tokens} cssVariables={extractionData.cssVariables} projectId={projectId} sourceType={extractionData.sourceType} />
         )}
         {activeTab === "components" && extractionData && (
           <ComponentsTab components={extractionData.components} />
@@ -242,6 +247,9 @@ function SourcePanelInner({
         {activeTab === "quality" && extractionData && (
           <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} projectId={projectId} orgId={currentOrgId ?? undefined} />
         )}
+        {activeTab === "figma" && (
+          <FigmaTab sourceUrl={sourceType === "figma" ? sourceUrl : undefined} />
+        )}
         {activeTab === "connect" && (
           <ConnectTab
             hasLayoutMd={!!layoutMd && layoutMd.length > 100}
@@ -249,6 +257,56 @@ function SourcePanelInner({
           />
         )}
       </div>
+    </div>
+  );
+}
+
+function FigmaTab({ sourceUrl }: { sourceUrl?: string }) {
+  const [customUrl, setCustomUrl] = useState("");
+
+  // Try to get fileKey from the project's source URL or a custom URL
+  const urlToUse = customUrl || sourceUrl || "";
+  const parsed = parseFigmaUrl(urlToUse);
+
+  // Also try a simpler parse for URLs without node-id
+  const fileKeyMatch = urlToUse.match(/figma\.com\/design\/([^/]+)/);
+  const fileKey = parsed?.fileKey ?? fileKeyMatch?.[1];
+
+  return (
+    <div className="flex h-full flex-col gap-3 p-3">
+      {!fileKey && (
+        <div className="space-y-3">
+          <p className="text-xs text-[var(--text-muted)]">
+            View your Figma file alongside the editor. Paste a Figma URL to get started.
+          </p>
+          <input
+            type="url"
+            value={customUrl}
+            onChange={(e) => setCustomUrl(e.target.value)}
+            placeholder="https://www.figma.com/design/..."
+            className="w-full rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+          />
+        </div>
+      )}
+
+      {fileKey && (
+        <>
+          <FigmaEmbed
+            fileKey={fileKey}
+            nodeId={parsed?.nodeId}
+            title="Figma File"
+            height={500}
+            className="flex-1 min-h-0"
+          />
+          <input
+            type="url"
+            value={customUrl || sourceUrl || ""}
+            onChange={(e) => setCustomUrl(e.target.value)}
+            placeholder="Paste a different Figma URL..."
+            className="w-full rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-[11px] text-[var(--text-secondary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+          />
+        </>
+      )}
     </div>
   );
 }
@@ -322,14 +380,49 @@ const SECTION_TYPE_MAP: Record<string, keyof import("@/lib/types").ExtractedToke
   Effects: "effects",
 };
 
+function FigmaPluginCallout() {
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("layout:figma-plugin-callout-dismissed") === "true";
+  });
+
+  if (dismissed) return null;
+
+  return (
+    <div className="relative mx-2 mb-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-3">
+      <button
+        onClick={() => {
+          setDismissed(true);
+          localStorage.setItem("layout:figma-plugin-callout-dismissed", "true");
+        }}
+        className="absolute right-2 top-2 rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+      >
+        <X className="h-3 w-3" />
+      </button>
+      <p className="pr-5 text-xs leading-relaxed text-[var(--text-secondary)]">
+        <span className="font-medium text-[var(--text-primary)]">Want more accurate tokens?</span>{" "}
+        Figma&apos;s API restricts Variable access to Enterprise plans. The Layout Figma Plugin reads your Variables on any plan, giving you exact token names and values.{" "}
+        <a
+          href="/docs/figma-plugin"
+          className="font-medium text-[var(--text-primary)] underline decoration-dotted hover:decoration-solid"
+        >
+          Set up the plugin
+        </a>
+      </p>
+    </div>
+  );
+}
+
 function TokensTab({
   tokens,
   cssVariables,
   projectId,
+  sourceType,
 }: {
   tokens: ExtractionResult["tokens"];
   cssVariables: Record<string, string>;
   projectId?: string;
+  sourceType?: SourceType;
 }) {
   const removeTokens = useProjectStore((s) => s.removeTokens);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
@@ -337,6 +430,7 @@ function TokensTab({
   const renameToken = useProjectStore((s) => s.renameToken);
 
   const allTokensFlat = useMemo(() => flattenTokens(tokens), [tokens]);
+  const showFigmaCallout = sourceType === "figma" && Object.keys(cssVariables).length < 15;
 
   // Build a resolution map from cssVariables + all token values
   // This allows resolving var(--palette-purple-40) when --palette-purple-40 is itself a token
@@ -468,6 +562,7 @@ function TokensTab({
 
   return (
     <div className="relative p-2">
+      {showFigmaCallout && <FigmaPluginCallout />}
       {sections.map((section) => (
         <div key={section.label} className="mb-1">
           <TokenSectionHeader
