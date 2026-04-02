@@ -405,7 +405,7 @@ function PillSplit({ a, b }: { a: { label: string; count: number; color: string 
 // Main component
 // ---------------------------------------------------------------------------
 
-export function DashboardTab() {
+export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => void }) {
   const [overview, setOverview] = useState<OverviewData | null>(null);
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [errors, setErrors] = useState<ErrorsData | null>(null);
@@ -622,14 +622,14 @@ export function DashboardTab() {
               value={formatNumber(overview?.totalUsers)}
             />
             <StatCard
-              label="Active Users (7d)"
+              label={`Active Users (${timeRange === "today" ? "today" : timeRange})`}
               value={formatNumber(overview?.activeUsers7d)}
-              subValue="this week"
+              subValue={timeRange === "today" ? "today" : timeRange === "7d" ? "this week" : timeRange === "90d" ? "this quarter" : "this month"}
             />
             <StatCard
               label="New Users"
               value={formatNumber(overview?.newUsersMonth)}
-              subValue={`+${formatNumber(overview?.newUsersThisWeek)} this week`}
+              subValue={timeRange === "today" ? "today" : timeRange === "7d" ? "this week" : timeRange === "90d" ? "this quarter" : "this month"}
             />
             <StatCard
               label="Total Projects"
@@ -640,12 +640,12 @@ export function DashboardTab() {
             <StatCard
               label="Layout.mds Created"
               value={formatNumber(overview?.layoutMdsCreated)}
-              subValue={overview?.layoutMdsThisMonth != null ? `${formatNumber(overview.layoutMdsThisMonth)} this month` : undefined}
+              subValue={overview?.layoutMdsThisMonth != null ? `${formatNumber(overview.layoutMdsThisMonth)} ${timeRange === "today" ? "today" : timeRange === "7d" ? "this week" : timeRange === "90d" ? "this quarter" : "this month"}` : undefined}
             />
             <StatCard
               label="Variants Generated"
               value={formatNumber(overview?.variantsGenerated)}
-              subValue={overview?.variantsThisMonth != null ? `${formatNumber(overview.variantsThisMonth)} this month` : undefined}
+              subValue={overview?.variantsThisMonth != null ? `${formatNumber(overview.variantsThisMonth)} ${timeRange === "today" ? "today" : timeRange === "7d" ? "this week" : timeRange === "90d" ? "this quarter" : "this month"}` : undefined}
             />
             <StatCard
               label="Components Saved"
@@ -1003,7 +1003,18 @@ export function DashboardTab() {
               ))}
             </div>
           ) : (
-            <div className="text-xs" style={{ color: "var(--text-muted)" }}>All users have credits</div>
+            <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+              {(products?.billing?.usersAtZeroCredits ?? 0) > 0 ? `${products!.billing!.usersAtZeroCredits} users at zero credits` : "All users have credits"}
+            </div>
+          )}
+          {onSwitchTab && (
+            <button
+              onClick={() => onSwitchTab("credits")}
+              className="mt-3 px-3 py-1 text-xs rounded-md"
+              style={{ border: "1px solid var(--studio-border)", background: "var(--bg-elevated)", color: "var(--text-secondary)" }}
+            >
+              Manage Credits
+            </button>
           )}
         </div>
 

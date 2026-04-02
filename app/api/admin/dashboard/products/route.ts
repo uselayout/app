@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/admin-context";
 import { supabase } from "@/lib/supabase/client";
 
+function maskEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  if (!domain || !local) return "***";
+  return `${local[0]}***@${domain}`;
+}
+
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
@@ -10,7 +16,7 @@ export async function GET(request: NextRequest) {
     Date.now() - 7 * 24 * 60 * 60 * 1000
   ).toISOString();
 
-  const [usageRes, eventsRes, figmaRes, projectsRes, componentsRes, creditsRes] =
+  const [usageRes, eventsRes, figmaRes, projectsRes, componentsRes, creditsRes, allUsersRes] =
     await Promise.all([
       supabase
         .from("layout_usage_log")
@@ -24,7 +30,7 @@ export async function GET(request: NextRequest) {
 
       supabase
         .from("layout_figma_connection")
-        .select("user_id"),
+        .select("org_id"),
 
       supabase
         .from("layout_projects")
@@ -39,6 +45,12 @@ export async function GET(request: NextRequest) {
         .select("user_id, design_md_remaining, topup_design_md")
         .eq("design_md_remaining", 0)
         .eq("topup_design_md", 0),
+
+      // Fetch users for email lookups
+      supabase
+        .from("layout_user")
+        .select("id, email")
+        .limit(500),
     ]);
 
   const usageLogs = usageRes.data ?? [];
@@ -47,6 +59,13 @@ export async function GET(request: NextRequest) {
   const projects = projectsRes.data ?? [];
   const components = componentsRes.data ?? [];
   const zeroCredits = creditsRes.data ?? [];
+  const allUsers = allUsersRes.data ?? [];
+
+  // Build user email lookup
+  const userEmailMap = new Map<string, string>();
+  for (const u of allUsers) {
+    if (u.id && u.email) userEmailMap.set(u.id, u.email);
+  }
 
   // --- Studio ---
   const studioActiveUsers7d = new Set(
@@ -111,8 +130,8 @@ export async function GET(request: NextRequest) {
     .slice(0, 10);
 
   // --- Figma Plugin ---
-  const connectedUsers = new Set(
-    figmaConnections.map((c) => c.user_id)
+  const connectedOrgs = new Set(
+    figmaConnections.map((c) => c.org_id)
   ).size;
   const captureEvents = platformEvents.filter(
     (e) => e.event === "plugin.figma.capture"
@@ -132,7 +151,7 @@ export async function GET(request: NextRequest) {
   ).length;
 
   // --- Billing ---
-  // Top consumers by cost
+  // Top consumers by cost with masked emails
   const userCosts = new Map<string, number>();
   for (const log of usageLogs) {
     if (log.user_id && typeof log.cost_estimate_gbp === "number") {
@@ -142,9 +161,16 @@ export async function GET(request: NextRequest) {
   const topConsumers = Array.from(userCosts.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
-    .map(([, cost]) => ({ email: "***", cost: Math.round(cost * 100) / 100 }));
+    .map(([userId, cost]) => ({
+      email: maskEmail(userEmailMap.get(userId) ?? "unknown"),
+      cost: Math.round(cost * 100) / 100,
+    }));
 
-  // Matches ProductData interface in DashboardTab
+  // Zero-credit user emails
+  const zeroCreditsEmails = zeroCredits
+    .map((c) => maskEmail(userEmailMap.get(c.user_id) ?? "unknown"))
+    .filter((e) => e !== "***");
+
   return NextResponse.json({
     studio: {
       activeUsers7d: studioActiveUsers7d,
@@ -164,7 +190,7 @@ export async function GET(request: NextRequest) {
       exports: exportEvents.length + pullEvents.length,
     },
     figmaPlugin: {
-      activeUsers: connectedUsers,
+      activeUsers: connectedOrgs,
       syncs: captureEvents.length,
       pushes: pushFigmaEvents.length,
     },
@@ -174,7 +200,7 @@ export async function GET(request: NextRequest) {
     },
     billing: {
       usersAtZeroCredits: zeroCredits.length,
-      zeroCreditsEmails: [],
+      zeroCreditsEmails,
       topConsumers,
     },
   }, { headers: { "Cache-Control": "no-store, private" } });

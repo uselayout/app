@@ -2138,7 +2138,7 @@ export function AdminClient() {
 
         {/* Tab content */}
         {activeTab === "dashboard" && (
-          <DashboardTab />
+          <DashboardTab onSwitchTab={(tab) => setActiveTab(tab as typeof activeTab)} />
         )}
         {activeTab === "codes" && (
           <InviteCodesTab toast={toast} />

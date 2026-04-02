@@ -56,11 +56,11 @@ export async function GET(request: NextRequest) {
       .from("layout_user")
       .select("*", { count: "exact", head: true }),
 
-    // New users this month
+    // New users this month (Better Auth uses camelCase columns)
     supabase
       .from("layout_user")
       .select("*", { count: "exact", head: true })
-      .gte("created_at", monthStart),
+      .gte("createdAt", monthStart),
 
     // Total projects
     supabase
@@ -89,10 +89,10 @@ export async function GET(request: NextRequest) {
       .from("layout_platform_event")
       .select("event"),
 
-    // Figma connections
+    // Figma connections (keyed by org_id, not user_id)
     supabase
       .from("layout_figma_connection")
-      .select("user_id"),
+      .select("org_id"),
 
     // Credits at zero
     supabase
@@ -208,7 +208,7 @@ export async function GET(request: NextRequest) {
   // Figma plugin users
   const figmaConnections = figmaConnectionRes.data ?? [];
   const figmaPluginUsers = new Set(
-    figmaConnections.map((c) => c.user_id)
+    figmaConnections.map((c) => c.org_id)
   ).size;
 
   return NextResponse.json({

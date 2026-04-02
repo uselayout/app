@@ -26,12 +26,12 @@ export async function GET(request: NextRequest) {
     200
   );
 
-  const [usersRes, usageRes, projectsRes, subscriptionsRes, figmaRes] =
+  const [usersRes, usageRes, projectsRes, subscriptionsRes] =
     await Promise.all([
       supabase
         .from("layout_user")
-        .select("id, email, created_at")
-        .order("created_at", { ascending: false })
+        .select('id, email, "createdAt"')
+        .order("createdAt", { ascending: false })
         .limit(200),
 
       supabase
@@ -43,22 +43,12 @@ export async function GET(request: NextRequest) {
 
       supabase.from("layout_subscription").select("user_id, tier"),
 
-      supabase.from("layout_figma_connection").select("user_id"),
     ]);
-
-  // Log query errors for debugging
-  if (usersRes.error) console.error("[dashboard/users] layout_user query failed:", usersRes.error.message);
-  if (usageRes.error) console.error("[dashboard/users] layout_usage_log query failed:", usageRes.error.message);
-  if (projectsRes.error) console.error("[dashboard/users] layout_projects query failed:", projectsRes.error.message);
-  if (subscriptionsRes.error) console.error("[dashboard/users] layout_subscription query failed:", subscriptionsRes.error.message);
-  if (figmaRes.error) console.error("[dashboard/users] layout_figma_connection query failed:", figmaRes.error.message);
 
   const allUsers = usersRes.data ?? [];
   const usageLogs = usageRes.data ?? [];
   const projects = projectsRes.data ?? [];
   const subscriptions = subscriptionsRes.data ?? [];
-  const figmaConnections = figmaRes.data ?? [];
-
   // Index usage by user
   const userUsage = new Map<
     string,
@@ -110,22 +100,20 @@ export async function GET(request: NextRequest) {
     if (s.user_id) tierMap.set(s.user_id, s.tier);
   }
 
-  // Index Figma connections
-  const figmaSet = new Set(figmaConnections.map((c) => c.user_id));
-
   // Build user list — matches UserRow interface in DashboardTab
   const users = allUsers.map((u) => {
     const usage = userUsage.get(u.id);
+    const createdAt = (u as Record<string, unknown>).createdAt as string ?? "";
     return {
       email: maskEmail(u.email),
       projects: projectCounts.get(u.id) ?? 0,
       layoutMds: usage?.layoutMdCount ?? 0,
       variants: usage?.variantCount ?? 0,
       cost: Math.round((usage?.totalCost ?? 0) * 100) / 100,
-      lastActive: usage?.lastActive ?? u.created_at,
+      lastActive: usage?.lastActive ?? createdAt,
       tier: tierMap.get(u.id) ?? "free",
       mode: usage?.mode ?? "hosted",
-      hasFigma: figmaSet.has(u.id),
+      hasFigma: false, // Can't reliably map user->org without extra query
     };
   });
 
@@ -142,19 +130,5 @@ export async function GET(request: NextRequest) {
   const sortFn = sortFns[sort] ?? sortFns.cost;
   users.sort(sortFn);
 
-  return NextResponse.json({
-    users: users.slice(0, limit),
-    _debug: {
-      totalUsersQueried: allUsers.length,
-      usageLogsQueried: usageLogs.length,
-      projectsQueried: projects.length,
-      errors: {
-        users: usersRes.error?.message ?? null,
-        usage: usageRes.error?.message ?? null,
-        projects: projectsRes.error?.message ?? null,
-        subscriptions: subscriptionsRes.error?.message ?? null,
-        figma: figmaRes.error?.message ?? null,
-      },
-    },
-  }, { headers: { "Cache-Control": "no-store, private" } });
+  return NextResponse.json({ users: users.slice(0, limit) }, { headers: { "Cache-Control": "no-store, private" } });
 }
