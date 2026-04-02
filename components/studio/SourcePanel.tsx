@@ -729,6 +729,11 @@ function TokenRow({
             title={token.cssVariable ?? token.name}
           >
             {token.cssVariable ?? token.name}
+            {token.originalName && (
+              <span className="ml-1 text-[10px] text-[var(--text-muted)]" title={token.originalName}>
+                ({token.originalName})
+              </span>
+            )}
           </span>
         )}
 

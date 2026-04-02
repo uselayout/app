@@ -5,6 +5,7 @@ import {
   extractFontsScript,
   extractComputedStylesScript,
   extractAnimationsScript,
+  extractBreakpointsScript,
   extractRadiusCensusScript,
   extractInteractiveStatesScript,
   detectLibrariesScript,
@@ -22,21 +23,97 @@ interface WebsiteExtractionOptions {
   onProgress?: (step: string, percent: number, detail?: string) => void;
 }
 
-function cssVarToToken(name: string, value: string): ExtractedToken | null {
+/** Check whether a CSS value looks like a colour. */
+function isColourValue(value: string): boolean {
+  const v = value.trim().toLowerCase();
+  // hex (#fff, #ffffff, #ffffffaa)
+  if (/^#[0-9a-f]{3,8}$/i.test(v)) return true;
+  // rgb/rgba/hsl/hsla/oklch/oklab/lch/lab/color()
+  if (/^(rgb|rgba|hsl|hsla|oklch|oklab|lch|lab|color)\s*\(/.test(v)) return true;
+  // Named CSS colours (common ones that appear as token values)
+  const named = new Set([
+    "transparent", "currentcolor", "inherit", "white", "black",
+    "red", "green", "blue", "yellow", "orange", "purple", "pink",
+    "grey", "gray", "navy", "teal", "aqua", "maroon", "lime",
+  ]);
+  if (named.has(v)) return true;
+  return false;
+}
+
+/** Check whether a CSS value looks like a length/dimension. */
+function isLengthValue(value: string): boolean {
+  return /^-?[\d.]+\s*(px|rem|em|%|vh|vw|vmin|vmax|ch|ex|svh|dvh|lvh|cqw|cqh)$/i.test(value.trim());
+}
+
+/** Check whether a CSS value looks like a plain number (z-index, opacity, etc.). */
+function isNumericValue(value: string): boolean {
+  return /^-?[\d.]+$/.test(value.trim());
+}
+
+/** Check whether a CSS value looks like a font stack. */
+function isFontStackValue(value: string): boolean {
+  // Font stacks typically contain commas and quoted/unquoted family names
+  return /,/.test(value) && /[a-z-]+/i.test(value) && !isColourValue(value);
+}
+
+/**
+ * Classify a CSS variable into a token. Uses name-based heuristics first,
+ * then falls back to value-based classification. Never drops tokens.
+ */
+function cssVarToToken(name: string, value: string): ExtractedToken {
   const lower = name.toLowerCase();
-  if (lower.includes("color") || lower.includes("bg") || lower.includes("text") || lower.includes("border")) {
-    return { name, value, type: "color", category: "semantic", cssVariable: name };
-  }
-  if (lower.includes("spacing") || lower.includes("space") || lower.includes("gap")) {
-    return { name, value, type: "spacing", category: "semantic", cssVariable: name };
-  }
+  const resolvedValue = value.trim();
+  const valueIsColour = isColourValue(resolvedValue);
+  const valueIsLength = isLengthValue(resolvedValue);
+
+  // ── Name + value disambiguation ──
+  // "text" in name is ambiguous: could be colour (--text-primary: #333)
+  // or typography (--text-large-size: 1.0625rem). Resolve by checking value.
   if (lower.includes("radius") || lower.includes("rounded")) {
     return { name, value, type: "radius", category: "semantic", cssVariable: name };
   }
-  if (lower.includes("font") || lower.includes("text") || lower.includes("size")) {
+  if (lower.includes("font") || lower.includes("line-height") || lower.includes("letter-spacing") || lower.includes("tracking") || lower.includes("leading")) {
     return { name, value, type: "typography", category: "semantic", cssVariable: name };
   }
-  return null;
+  if (lower.includes("spacing") || lower.includes("space") || lower.includes("gap") || lower.includes("padding") || lower.includes("margin") || lower.includes("inset")) {
+    return { name, value, type: "spacing", category: "semantic", cssVariable: name };
+  }
+
+  // For names containing "text", "size", "bg", "color", "border": disambiguate by value
+  if (lower.includes("color") || lower.includes("colour")) {
+    return { name, value, type: "color", category: "semantic", cssVariable: name };
+  }
+  if (lower.includes("bg") || lower.includes("background") || lower.includes("fill") || lower.includes("stroke")) {
+    return { name, value, type: "color", category: "semantic", cssVariable: name };
+  }
+  if (lower.includes("border")) {
+    // Border can be colour or spacing. Check value.
+    return { name, value, type: valueIsColour ? "color" : "spacing", category: "semantic", cssVariable: name };
+  }
+  if (lower.includes("text") || lower.includes("size")) {
+    // "text" is ambiguous. If value is a colour, it's a colour token. Otherwise typography.
+    if (valueIsColour) {
+      return { name, value, type: "color", category: "semantic", cssVariable: name };
+    }
+    return { name, value, type: "typography", category: "semantic", cssVariable: name };
+  }
+
+  // ── Value-based fallback (no keyword matched) ──
+  if (valueIsColour) {
+    return { name, value, type: "color", category: "semantic", cssVariable: name };
+  }
+  if (isFontStackValue(resolvedValue)) {
+    return { name, value, type: "typography", category: "semantic", cssVariable: name };
+  }
+  if (valueIsLength) {
+    return { name, value, type: "spacing", category: "semantic", cssVariable: name };
+  }
+  if (isNumericValue(resolvedValue)) {
+    return { name, value, type: "effect", category: "semantic", cssVariable: name };
+  }
+
+  // Everything else (complex values, var() references, etc.)
+  return { name, value, type: "effect", category: "semantic", cssVariable: name };
 }
 
 export async function extractFromWebsite({
@@ -77,8 +154,12 @@ export async function extractFromWebsite({
     const animations: AnimationDefinition[] = await page.evaluate(`(${extractAnimationsScript})()`);
     onProgress?.("animations", 58, `Found ${animations.length} animations`);
 
+    // Extract media query breakpoints
+    onProgress?.("breakpoints", 59, "Extracting breakpoints...");
+    const breakpoints: string[] = await page.evaluate(`(${extractBreakpointsScript})()`);
+
     // Survey border-radius usage across all interactive elements
-    onProgress?.("radius", 59, "Surveying border-radius usage...");
+    onProgress?.("radius", 60, "Surveying border-radius usage...");
     const radiusCensus: Record<string, { count: number; elements: Array<{ tag: string; class: string; text: string }> }> =
       await page.evaluate(`(${extractRadiusCensusScript})()`);
 
@@ -105,21 +186,21 @@ export async function extractFromWebsite({
       `data:image/png;base64,${viewportBuffer.toString("base64")}`,
     ];
 
-    // Classify CSS variables into tokens
+    // Classify CSS variables into tokens (no tokens are dropped)
     const colors: ExtractedToken[] = [];
     const typography: ExtractedToken[] = [];
     const spacing: ExtractedToken[] = [];
     const radius: ExtractedToken[] = [];
+    const effects: ExtractedToken[] = [];
 
     for (const [name, value] of Object.entries(cssVariables)) {
       const token = cssVarToToken(name, value);
-      if (token) {
-        switch (token.type) {
-          case "color": colors.push(token); break;
-          case "typography": typography.push(token); break;
-          case "spacing": spacing.push(token); break;
-          case "radius": radius.push(token); break;
-        }
+      switch (token.type) {
+        case "color": colors.push(token); break;
+        case "typography": typography.push(token); break;
+        case "spacing": spacing.push(token); break;
+        case "radius": radius.push(token); break;
+        case "effect": effects.push(token); break;
       }
     }
 
@@ -146,7 +227,8 @@ export async function extractFromWebsite({
           name,
           value,
           type: "radius",
-          category: "semantic",
+          category: "primitive",
+          originalName: `${value} (computed from ${info.count} elements)`,
           description: `${info.count} elements (e.g. ${examples}) /* reconstructed */`,
         });
       }
@@ -175,14 +257,14 @@ export async function extractFromWebsite({
 
     const hostname = new URL(url).hostname.replace("www.", "");
 
-    const tokenCount = colors.length + typography.length + spacing.length + radius.length;
+    const tokenCount = colors.length + typography.length + spacing.length + radius.length + effects.length;
     onProgress?.("complete", 80, `Extraction complete — ${tokenCount} tokens, ${allFonts.length} fonts`);
 
     return {
       sourceType: "website",
       sourceName: hostname,
       sourceUrl: url,
-      tokens: { colors, typography, spacing, radius, effects: [] },
+      tokens: { colors, typography, spacing, radius, effects },
       components: [],
       screenshots,
       fonts: allFonts,
@@ -191,6 +273,7 @@ export async function extractFromWebsite({
       cssVariables,
       computedStyles,
       interactiveStates,
+      breakpoints: breakpoints.length > 0 ? breakpoints : undefined,
     };
   } finally {
     deregisterBrowser(browser);

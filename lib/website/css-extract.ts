@@ -9,9 +9,15 @@ export const extractCSSVariablesScript = `() => {
       for (const rule of sheet.cssRules) {
         if (rule instanceof CSSStyleRule && (
           rule.selectorText === ':root' ||
+          rule.selectorText === 'html' ||
+          rule.selectorText === 'body' ||
+          rule.selectorText === ':host' ||
           rule.selectorText.includes('[data-theme]') ||
+          rule.selectorText.includes('[data-mode]') ||
+          rule.selectorText.includes('[data-color-scheme]') ||
           rule.selectorText.includes('[class*="dark"]') ||
-          rule.selectorText === 'html'
+          rule.selectorText === '.light' ||
+          rule.selectorText === '.dark'
         )) {
           for (let i = 0; i < rule.style.length; i++) {
             const prop = rule.style[i];

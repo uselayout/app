@@ -18,14 +18,17 @@ CRITICAL PRINCIPLES:
 6. Include ONE real production-ready code example per key component showing correct token usage with all states.
 7. For sparse or reconstructed token data, annotate confidence level inline: /* extracted: high confidence */ vs /* reconstructed: moderate confidence, inferred from 3 elements */
 8. Keep Section 0 (Quick Reference) to exactly 50-75 lines — it must be copy-pasteable as standalone context into CLAUDE.md or .cursorrules.
-9. Name colours by PURPOSE (--color-action-primary), not appearance (--color-blue-button).
-NOTE: The output file is called layout.md (not layout.md). References within the content should use "layout.md".
+9. Name colours by PURPOSE (--color-action-primary), not appearance (--color-blue-button). However, if the site already defines CSS custom properties, PRESERVE their original names exactly as extracted. Only apply semantic naming to tokens you synthesise from computed styles.
+NOTE: The output file is called layout.md (not design.md). References within the content should use "layout.md".
 10. Write anti-patterns as "failure narratives": explain WHY the AI fails in that specific way, not just that it fails. Format: **Rule → Why it fails → What to do instead.**
 11. Write rules with extreme specificity — "16px" not "medium spacing", exact hex values, exact font names.
 12. If you genuinely lack data for a value, write "[TBD - extract manually]" — never fabricate values.
+13. PRESERVE original CSS variable names from the extraction. If the site defines --primary, use --primary in the token system, not --color-action-primary. Only synthesise NEW names for tokens derived from computed styles (not from CSS variables). The goal is 1:1 fidelity with the site's actual CSS, augmented with usage descriptions and grouping.
+14. In Section 0 (Quick Reference), include a "How to apply" one-liner: "Use as var(--token-name) in CSS, style={{ prop: 'var(--token-name)' }} in JSX, or bg-[var(--token-name)] in Tailwind."
 
 HANDLING SPARSE OR RECONSTRUCTED TOKEN DATA:
-If the extracted design system has few/no CSS custom properties:
+These rules apply ONLY when the token source is "reconstructed-from-computed" (the site has few/no CSS custom properties).
+When the token source is "extracted-css-vars", use the original CSS variable names exactly as provided and skip reconstruction.
 - Do NOT scatter literal hex values through the layout.md — always create a CSS variable token system first
 - Synthesise tokens from computed styles by clustering: group colours by hue family, spacing by multiples (4px grid? 8px?)
 - Map clusters to semantic intent: dominant background colour → --color-surface, primary accent → --color-primary, body text colour → --color-text
@@ -101,11 +104,21 @@ Confidence level. Clustering method used for any reconstructed tokens.
 If Tailwind: note v3 (no CSS vars) vs v4 (CSS vars via @theme).`;
 
 // Synthesis caps — truncate at synthesis time, full data stays in project store
-const MAX_CSS_VARIABLES = 150;
+const MAX_CSS_VARIABLES = 300;
 const MAX_COLOUR_TOKENS = 150;
 const MAX_TYPOGRAPHY_TOKENS = 50;
 const MAX_COMPUTED_STYLES = 30;
 const MAX_SCREENSHOTS = 3;
+
+/** Priority order for CSS variable truncation (lower = higher priority). */
+function cssVarPriority(name: string): number {
+  const lower = name.toLowerCase();
+  if (/color|colour|bg|background|text|border|fill|stroke|shadow/.test(lower)) return 0;
+  if (/space|spacing|gap|padding|margin|size|width|height/.test(lower)) return 1;
+  if (/font|weight|leading|tracking|line/.test(lower)) return 2;
+  if (/radius|rounded/.test(lower)) return 3;
+  return 4;
+}
 
 function buildUserContent(
   data: ExtractionResult
@@ -130,7 +143,17 @@ function buildUserContent(
 
   if (cssVarCount > 0) {
     // Group CSS variables by category for structured synthesis
-    const allVars = Object.entries(data.cssVariables).slice(0, MAX_CSS_VARIABLES);
+    const sortedVars = Object.entries(data.cssVariables)
+      .sort(([a], [b]) => cssVarPriority(a) - cssVarPriority(b));
+    const allVars = sortedVars.slice(0, MAX_CSS_VARIABLES);
+
+    if (tokenSource === "extracted-css-vars") {
+      sections.push(
+        `IMPORTANT: Preserve all CSS variable names exactly as extracted. ` +
+        `Do not rename --primary to --color-primary or similar. ` +
+        `Add descriptive comments and group logically, but keep original names.`
+      );
+    }
     const colourVars = allVars.filter(([k]) => /color|colour|bg|background|fill|stroke|text|border|ring|shadow/i.test(k));
     const spacingVars = allVars.filter(([k]) => /space|spacing|gap|padding|margin|size|width|height|radius|rounded/i.test(k));
     const typographyVars = allVars.filter(([k]) => /font|text|size|weight|leading|tracking|line/i.test(k));
@@ -203,6 +226,13 @@ function buildUserContent(
     );
   }
 
+  if (data.breakpoints && data.breakpoints.length > 0) {
+    sections.push(
+      `--- EXTRACTED BREAKPOINTS (from media queries) ---\n` +
+      data.breakpoints.join(", ")
+    );
+  }
+
   if (data.components.length > 0) {
     const comps = data.components
       .slice(0, 30)
@@ -247,6 +277,12 @@ function buildUserContent(
       .join(", ");
     if (libs) {
       sections.push(`--- DETECTED LIBRARIES ---\n${libs}`);
+      if (data.librariesDetected["tailwind-css"]) {
+        sections.push(
+          `The site uses Tailwind CSS. Component code examples in the layout.md should use Tailwind utility classes ` +
+          `(e.g. bg-[var(--color-primary)] text-sm rounded-lg) rather than inline styles or vanilla CSS.`
+        );
+      }
     }
   }
 

@@ -11,6 +11,51 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w14-extraction-fidelity",
+    title: "More accurate website extraction",
+    description:
+      "Extracted design tokens now match your site's actual CSS much more closely. CSS variables are no longer silently dropped or renamed. The AI preserves your original variable names instead of inventing semantic alternatives, so generated code uses the real tokens from your codebase.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-01",
+  },
+  {
+    id: "2026-w14-wider-css-selectors",
+    title: "Extract tokens from more CSS selectors",
+    description:
+      "Website extraction now finds CSS variables defined on body, :host, .dark, .light, and data-mode selectors, not just :root. More tokens captured from more sites.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-01",
+  },
+  {
+    id: "2026-w14-breakpoints-extraction",
+    title: "Breakpoints included in extractions",
+    description:
+      "Media query breakpoints are now extracted from websites and included in your layout.md, giving AI agents accurate responsive design context.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-01",
+  },
+  {
+    id: "2026-w14-tailwind-examples",
+    title: "Tailwind-aware component examples",
+    description:
+      "When extracting a Tailwind CSS site, the generated layout.md now includes component examples using Tailwind utility classes instead of vanilla CSS.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-01",
+  },
+  {
+    id: "2026-w14-effects-grouping",
+    title: "Effects tokens grouped in sidebar",
+    description:
+      "Shadows, z-index, opacity, and transition tokens now appear in their own Effects section with sub-groups, instead of being dropped from the tokens panel.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-01",
+  },
+  {
     id: "2026-w14-admin-email-broadcast",
     title: "Admin email broadcast",
     description:

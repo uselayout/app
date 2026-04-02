@@ -107,10 +107,30 @@ const SPACING_GROUPS: GroupDef[] = [
   },
 ];
 
+const EFFECTS_GROUPS: GroupDef[] = [
+  {
+    label: "Shadows",
+    match: (n) => n.includes("shadow") || n.includes("elevation"),
+  },
+  {
+    label: "Z-Index",
+    match: (n) => n.includes("z-") || n.includes("z-index") || n.includes("layer"),
+  },
+  {
+    label: "Opacity",
+    match: (n) => n.includes("opacity") || n.includes("alpha"),
+  },
+  {
+    label: "Transitions",
+    match: (n) => n.includes("duration") || n.includes("ease") || n.includes("transition") || n.includes("delay"),
+  },
+];
+
 const GROUP_RULES: Record<string, GroupDef[]> = {
   colors: COLOR_GROUPS,
   typography: TYPOGRAPHY_GROUPS,
   spacing: SPACING_GROUPS,
+  effects: EFFECTS_GROUPS,
 };
 
 /** Minimum tokens in a section before sub-grouping kicks in. */

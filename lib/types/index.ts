@@ -74,6 +74,8 @@ export interface ExtractedToken {
   cssVariable?: string;
   description?: string;
   groupName?: string;
+  /** Original name before extraction renamed it (e.g. mined radius tokens). */
+  originalName?: string;
 }
 
 export interface ComponentProperty {
@@ -150,6 +152,7 @@ export interface ExtractionResult {
   cssVariables: Record<string, string>;
   computedStyles: Record<string, ComputedStyleMap>;
   interactiveStates?: Record<string, Record<string, string>>;
+  breakpoints?: string[];
 }
 
 export interface ExtractionStep {
