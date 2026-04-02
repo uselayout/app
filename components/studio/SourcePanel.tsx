@@ -228,7 +228,7 @@ function SourcePanelInner({
           />
         )}
         {activeTab === "tokens" && extractionData && (
-          <TokensTab tokens={extractionData.tokens} cssVariables={extractionData.cssVariables} projectId={projectId} />
+          <TokensTab tokens={extractionData.tokens} cssVariables={extractionData.cssVariables} projectId={projectId} sourceType={extractionData.sourceType} />
         )}
         {activeTab === "components" && extractionData && (
           <ComponentsTab components={extractionData.components} />
@@ -322,14 +322,49 @@ const SECTION_TYPE_MAP: Record<string, keyof import("@/lib/types").ExtractedToke
   Effects: "effects",
 };
 
+function FigmaPluginCallout() {
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("layout:figma-plugin-callout-dismissed") === "true";
+  });
+
+  if (dismissed) return null;
+
+  return (
+    <div className="relative mx-2 mb-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-3">
+      <button
+        onClick={() => {
+          setDismissed(true);
+          localStorage.setItem("layout:figma-plugin-callout-dismissed", "true");
+        }}
+        className="absolute right-2 top-2 rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+      >
+        <X className="h-3 w-3" />
+      </button>
+      <p className="pr-5 text-xs leading-relaxed text-[var(--text-secondary)]">
+        <span className="font-medium text-[var(--text-primary)]">Want more accurate tokens?</span>{" "}
+        Figma&apos;s API restricts Variable access to Enterprise plans. The Layout Figma Plugin reads your Variables on any plan, giving you exact token names and values.{" "}
+        <a
+          href="/docs/figma-plugin"
+          className="font-medium text-[var(--text-primary)] underline decoration-dotted hover:decoration-solid"
+        >
+          Set up the plugin
+        </a>
+      </p>
+    </div>
+  );
+}
+
 function TokensTab({
   tokens,
   cssVariables,
   projectId,
+  sourceType,
 }: {
   tokens: ExtractionResult["tokens"];
   cssVariables: Record<string, string>;
   projectId?: string;
+  sourceType?: SourceType;
 }) {
   const removeTokens = useProjectStore((s) => s.removeTokens);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
@@ -337,6 +372,7 @@ function TokensTab({
   const renameToken = useProjectStore((s) => s.renameToken);
 
   const allTokensFlat = useMemo(() => flattenTokens(tokens), [tokens]);
+  const showFigmaCallout = sourceType === "figma" && Object.keys(cssVariables).length < 15;
 
   // Build a resolution map from cssVariables + all token values
   // This allows resolving var(--palette-purple-40) when --palette-purple-40 is itself a token
@@ -468,6 +504,7 @@ function TokensTab({
 
   return (
     <div className="relative p-2">
+      {showFigmaCallout && <FigmaPluginCallout />}
       {sections.map((section) => (
         <div key={section.label} className="mb-1">
           <TokenSectionHeader
