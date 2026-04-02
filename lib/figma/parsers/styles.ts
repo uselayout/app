@@ -24,19 +24,72 @@ function nameToVariable(name: string): string {
   return `--${name.toLowerCase().replace(/[/\s]+/g, "-").replace(/[^a-z0-9-]/g, "")}`;
 }
 
+/** Common colour names used as Figma group prefixes for primitives. */
+const COLOUR_NAME_PREFIXES = new Set([
+  "red", "orange", "yellow", "green", "blue", "purple", "pink", "violet",
+  "indigo", "teal", "cyan", "lime", "amber", "emerald", "sky", "rose",
+  "slate", "gray", "grey", "zinc", "stone", "neutral", "white", "black",
+]);
+
+/** Semantic role keywords that indicate a token is semantic, not primitive. */
+const SEMANTIC_KEYWORDS = [
+  "bg", "text", "border", "accent", "status", "surface", "action",
+  "primary", "secondary", "tertiary", "error", "warning", "success",
+  "info", "danger", "link", "focus", "hover", "disabled", "muted",
+  "foreground", "background", "brand", "cta", "overlay", "divider",
+];
+
 function categoriseColorToken(name: string): "primitive" | "semantic" {
   const lower = name.toLowerCase();
-  if (
-    lower.includes("bg") ||
-    lower.includes("text") ||
-    lower.includes("border") ||
-    lower.includes("accent") ||
-    lower.includes("status") ||
-    lower.includes("surface")
-  ) {
+
+  // Figma group naming: "Blue/500", "Gray/100" -> primitive
+  if (lower.includes("/")) {
+    const firstSegment = lower.split("/")[0].trim();
+    if (COLOUR_NAME_PREFIXES.has(firstSegment)) return "primitive";
+  }
+
+  // Check for semantic keywords
+  if (SEMANTIC_KEYWORDS.some((kw) => lower.includes(kw))) {
     return "semantic";
   }
+
+  // Names with numeric suffixes (e.g. "blue-500", "gray-100") -> primitive
+  if (/[-/]\d{2,3}$/.test(lower)) return "primitive";
+
   return "primitive";
+}
+
+/**
+ * After extracting all colour tokens, find tokens that share the same hex value
+ * and annotate semantic tokens with which primitive they alias.
+ */
+function linkPrimitivesToSemantics(colors: ExtractedToken[]): void {
+  // Group tokens by normalised hex value
+  const byValue = new Map<string, ExtractedToken[]>();
+  for (const token of colors) {
+    const hex = token.value.toUpperCase().slice(0, 7); // normalise to 6-char hex
+    const group = byValue.get(hex) ?? [];
+    group.push(token);
+    byValue.set(hex, group);
+  }
+
+  for (const [, group] of byValue) {
+    if (group.length < 2) continue;
+
+    const primitives = group.filter((t) => t.category === "primitive");
+    const semantics = group.filter((t) => t.category === "semantic");
+
+    if (primitives.length === 0 || semantics.length === 0) continue;
+
+    // Annotate each semantic token with its primitive alias
+    const primitiveName = primitives[0].cssVariable ?? primitives[0].name;
+    for (const semantic of semantics) {
+      const existing = semantic.description ?? "";
+      semantic.description = existing
+        ? `${existing}. Aliases ${primitiveName}`
+        : `Aliases ${primitiveName}`;
+    }
+  }
 }
 
 export async function parseStyles(
@@ -116,6 +169,9 @@ export async function parseStyles(
       }
     }
   }
+
+  // Link primitives to semantics by matching hex values
+  linkPrimitivesToSemantics(colors);
 
   onProgress?.(
     `Extracted: ${colors.length} colours, ${typography.length} typography, ${effects.length} effects`

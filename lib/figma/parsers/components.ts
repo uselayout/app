@@ -1,11 +1,17 @@
-import type { FigmaClient } from "../client";
+import type { FigmaClient, FigmaNode } from "../client";
 import type { ExtractedComponent } from "@/lib/types";
+
+export interface ParseComponentsResult {
+  components: ExtractedComponent[];
+  /** Raw node data from the batch fetch, reusable for mining radius/spacing. */
+  nodeData: Record<string, { document: FigmaNode }>;
+}
 
 export async function parseComponents(
   fileKey: string,
   client: FigmaClient,
   onProgress?: (msg: string) => void
-): Promise<ExtractedComponent[]> {
+): Promise<ParseComponentsResult> {
   onProgress?.("Fetching components...");
   const [componentsRes, componentSetsRes] = await Promise.all([
     client.getComponents(fileKey),
@@ -21,12 +27,12 @@ export async function parseComponents(
   const componentNodeIds = components.slice(0, 50).map((c) => c.node_id);
   const allNodeIds = [...new Set([...setNodeIds, ...componentNodeIds])];
 
-  let nodeData: Record<string, { document: { componentPropertyDefinitions?: Record<string, { type: string }> } }> = {};
+  let nodeData: Record<string, { document: FigmaNode }> = {};
 
   if (allNodeIds.length > 0) {
     onProgress?.(`Enriching top ${allNodeIds.length} components with full data...`);
     const nodesRes = await client.getNodesBatched(fileKey, allNodeIds);
-    nodeData = nodesRes.nodes as typeof nodeData;
+    nodeData = nodesRes.nodes as Record<string, { document: FigmaNode }>;
   }
 
   const setNamesMap = new Map<string, string>();
@@ -76,5 +82,5 @@ export async function parseComponents(
     }
   }
 
-  return Array.from(groupedBySet.values());
+  return { components: Array.from(groupedBySet.values()), nodeData };
 }

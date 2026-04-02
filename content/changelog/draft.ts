@@ -11,6 +11,33 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w14-figma-radius-spacing",
+    title: "Figma extraction now captures radius and spacing",
+    description:
+      "Border-radius and spacing values are now extracted directly from your Figma component nodes instead of being reconstructed by AI. You'll see your actual radius scale and spacing values in the Tokens panel.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-02",
+  },
+  {
+    id: "2026-w14-figma-primitive-linking",
+    title: "Primitive tokens linked to semantic tokens",
+    description:
+      "Colour tokens that share the same hex value are now linked. Semantic tokens like 'Error' show which primitive they alias (e.g. 'Aliases --red-500'), making the token hierarchy visible.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-02",
+  },
+  {
+    id: "2026-w14-admin-panel-fixes",
+    title: "Admin panel mobile and filter fixes",
+    description:
+      "Fixed mobile layout overflow in the admin panel, improved email dropdown logic when resending to approved users, and corrected reminder filter behaviour.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-02",
+  },
+  {
     id: "2026-w14-extraction-fidelity",
     title: "More accurate website extraction",
     description:

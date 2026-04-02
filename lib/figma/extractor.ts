@@ -1,7 +1,8 @@
 import { FigmaClient, FigmaApiError } from "./client";
+import type { FigmaNode } from "./client";
 import { parseStyles } from "./parsers/styles";
 import { parseComponents } from "./parsers/components";
-import type { ExtractionResult } from "@/lib/types";
+import type { ExtractionResult, ExtractedToken } from "@/lib/types";
 
 interface FigmaExtractionOptions {
   fileKey: string;
@@ -10,6 +11,133 @@ interface FigmaExtractionOptions {
 }
 
 const EXTRACTION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+// ─── Node property mining ────────────────────────────────────────────────────
+
+interface PropertyCensus {
+  count: number;
+  elements: string[];
+}
+
+/**
+ * Recursively walk a Figma node tree and collect distinct cornerRadius
+ * and spacing values (itemSpacing, padding) from auto-layout frames.
+ */
+function collectNodeProperties(
+  node: FigmaNode,
+  radiusCensus: Map<number, PropertyCensus>,
+  spacingCensus: Map<number, PropertyCensus>
+): void {
+  // Collect corner radius
+  if (node.cornerRadius !== undefined && node.cornerRadius > 0) {
+    const existing = radiusCensus.get(node.cornerRadius);
+    if (existing) {
+      existing.count++;
+      if (existing.elements.length < 5) existing.elements.push(node.name);
+    } else {
+      radiusCensus.set(node.cornerRadius, { count: 1, elements: [node.name] });
+    }
+  }
+
+  // Collect spacing from auto-layout nodes
+  if (node.layoutMode) {
+    const spacingValues = [
+      node.itemSpacing,
+      node.paddingTop,
+      node.paddingRight,
+      node.paddingBottom,
+      node.paddingLeft,
+    ].filter((v): v is number => v !== undefined && v > 0);
+
+    for (const val of spacingValues) {
+      const existing = spacingCensus.get(val);
+      if (existing) {
+        existing.count++;
+        if (existing.elements.length < 5) existing.elements.push(node.name);
+      } else {
+        spacingCensus.set(val, { count: 1, elements: [node.name] });
+      }
+    }
+  }
+
+  // Recurse into children
+  if (node.children) {
+    for (const child of node.children) {
+      collectNodeProperties(child, radiusCensus, spacingCensus);
+    }
+  }
+}
+
+/**
+ * Mine radius and spacing tokens from component node data.
+ * Clusters distinct values into a token scale.
+ */
+function mineNodeProperties(
+  nodeData: Record<string, { document: FigmaNode }>
+): { radius: ExtractedToken[]; spacing: ExtractedToken[] } {
+  const radiusCensus = new Map<number, PropertyCensus>();
+  const spacingCensus = new Map<number, PropertyCensus>();
+
+  for (const entry of Object.values(nodeData)) {
+    if (entry?.document) {
+      collectNodeProperties(entry.document, radiusCensus, spacingCensus);
+    }
+  }
+
+  // Build radius tokens from census
+  const radius: ExtractedToken[] = [];
+  const sortedRadii = Array.from(radiusCensus.entries()).sort(([a], [b]) => a - b);
+
+  for (const [value, info] of sortedRadii) {
+    // Assign scale name based on value
+    let scaleName: string;
+    if (value >= 9999) scaleName = "--radius-full";
+    else if (value >= 100) scaleName = "--radius-pill";
+    else if (value >= 20) scaleName = "--radius-xl";
+    else if (value >= 16) scaleName = "--radius-lg";
+    else if (value >= 12) scaleName = "--radius-md";
+    else if (value >= 8) scaleName = "--radius-sm";
+    else if (value >= 4) scaleName = "--radius-xs";
+    else scaleName = `--radius-${value}`;
+
+    // Avoid duplicate scale names by appending the value
+    if (radius.some((t) => t.name === scaleName)) {
+      scaleName = `--radius-${value}`;
+    }
+
+    const examples = info.elements.slice(0, 3).join(", ");
+    radius.push({
+      name: scaleName,
+      value: `${value}px`,
+      type: "radius",
+      category: "primitive",
+      cssVariable: scaleName,
+      originalName: `${value}px (from ${info.count} components: ${examples})`,
+      description: `${info.count} components (e.g. ${examples}) /* extracted from node tree */`,
+    });
+  }
+
+  // Build spacing tokens from census
+  const spacing: ExtractedToken[] = [];
+  const sortedSpacing = Array.from(spacingCensus.entries()).sort(([a], [b]) => a - b);
+
+  for (const [value, info] of sortedSpacing) {
+    const examples = info.elements.slice(0, 3).join(", ");
+    spacing.push({
+      name: `--space-${value}`,
+      value: `${value}px`,
+      type: "spacing",
+      category: "primitive",
+      cssVariable: `--space-${value}`,
+      originalName: `${value}px (from ${info.count} components: ${examples})`,
+      description: `${info.count} components (e.g. ${examples}) /* extracted from node tree */`,
+    });
+  }
+
+  return { radius, spacing };
+}
+
+// ─── Main extraction ─────────────────────────────────────────────────────────
 
 export async function extractFromFigma({
   fileKey,
@@ -66,13 +194,16 @@ export async function extractFromFigma({
   // Step 3: Components extraction (requires file_content:read — non-fatal if missing scope)
   checkTimeout("components");
   let components: ExtractionResult["components"] = [];
+  let componentNodeData: Record<string, { document: FigmaNode }> = {};
   try {
     onProgress?.("components", 45, "Extracting components...");
-    components = await parseComponents(
+    const parsed = await parseComponents(
       fileKey,
       client,
       (msg) => onProgress?.("components", 55, msg)
     );
+    components = parsed.components;
+    componentNodeData = parsed.nodeData;
     onProgress?.("components", 60, `Found ${components.length} components`);
   } catch (err) {
     if (err instanceof FigmaApiError && err.statusCode === 403) {
@@ -84,6 +215,14 @@ export async function extractFromFigma({
     } else {
       throw err;
     }
+  }
+
+  // Step 3b: Mine radius and spacing from component node trees
+  checkTimeout("node-properties");
+  onProgress?.("node-properties", 62, "Mining radius and spacing from components...");
+  const { radius, spacing } = mineNodeProperties(componentNodeData);
+  if (radius.length > 0 || spacing.length > 0) {
+    onProgress?.("node-properties", 64, `Found ${radius.length} radius values, ${spacing.length} spacing values`);
   }
 
   // Step 4: Variables (Enterprise only - non-fatal)
@@ -115,15 +254,16 @@ export async function extractFromFigma({
     }
   }
 
-  // Add extracted colour tokens as CSS variables
-  for (const token of colors) {
+  // Add extracted tokens as CSS variables for synthesis
+  for (const token of [...colors, ...radius, ...spacing]) {
     if (token.cssVariable) {
       cssVariables[token.cssVariable] = token.value;
     }
   }
 
+  const tokenCount = colors.length + typography.length + effects.length + radius.length + spacing.length;
   const varCount = Object.keys(cssVariables).length;
-  onProgress?.("complete", 80, `Extraction complete — ${colors.length + typography.length + effects.length} tokens${varCount > 0 ? `, ${varCount} variables` : ""}`);
+  onProgress?.("complete", 80, `Extraction complete — ${tokenCount} tokens${varCount > 0 ? `, ${varCount} variables` : ""}`);
 
   return {
     sourceType: "figma",
@@ -132,8 +272,8 @@ export async function extractFromFigma({
     tokens: {
       colors,
       typography,
-      spacing: [],
-      radius: [],
+      spacing,
+      radius,
       effects,
     },
     components,
