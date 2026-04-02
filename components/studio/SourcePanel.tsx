@@ -2,11 +2,13 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes, Figma } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
 import { ConnectTab } from "@/components/studio/ConnectTab";
+import { FigmaEmbed } from "@/components/studio/FigmaEmbed";
+import { parseFigmaUrl } from "@/lib/figma/parse-url";
 import { IconPackSelector } from "@/components/studio/IconPackSelector";
 import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
 import { resolveTokenValue } from "@/lib/util/color";
@@ -35,7 +37,7 @@ interface SourcePanelProps {
   onExtract?: (url: string, sourceType: SourceType, pat?: string) => void;
 }
 
-type TabId = "tokens" | "components" | "screenshots" | "icons" | "quality" | "connect";
+type TabId = "tokens" | "components" | "screenshots" | "icons" | "quality" | "connect" | "figma";
 
 function SourcePanelEmptyState({
   projectId,
@@ -129,6 +131,8 @@ function SourcePanelEmptyState({
 
 function SourcePanelInner({
   extractionData,
+  sourceType,
+  sourceUrl,
   layoutMd,
   projectId,
   onLayoutMdChange,
@@ -173,6 +177,7 @@ function SourcePanelInner({
     { id: "screenshots", label: "Screenshots", icon: Image },
     { id: "icons", label: "Icons", icon: Shapes },
     { id: "quality", label: "Quality", icon: Gauge },
+    { id: "figma", label: "Figma", icon: Figma },
     { id: "connect", label: "Connect", icon: Terminal },
   ];
 
@@ -242,6 +247,9 @@ function SourcePanelInner({
         {activeTab === "quality" && extractionData && (
           <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} projectId={projectId} orgId={currentOrgId ?? undefined} />
         )}
+        {activeTab === "figma" && (
+          <FigmaTab sourceUrl={sourceType === "figma" ? sourceUrl : undefined} />
+        )}
         {activeTab === "connect" && (
           <ConnectTab
             hasLayoutMd={!!layoutMd && layoutMd.length > 100}
@@ -249,6 +257,56 @@ function SourcePanelInner({
           />
         )}
       </div>
+    </div>
+  );
+}
+
+function FigmaTab({ sourceUrl }: { sourceUrl?: string }) {
+  const [customUrl, setCustomUrl] = useState("");
+
+  // Try to get fileKey from the project's source URL or a custom URL
+  const urlToUse = customUrl || sourceUrl || "";
+  const parsed = parseFigmaUrl(urlToUse);
+
+  // Also try a simpler parse for URLs without node-id
+  const fileKeyMatch = urlToUse.match(/figma\.com\/design\/([^/]+)/);
+  const fileKey = parsed?.fileKey ?? fileKeyMatch?.[1];
+
+  return (
+    <div className="flex h-full flex-col gap-3 p-3">
+      {!fileKey && (
+        <div className="space-y-3">
+          <p className="text-xs text-[var(--text-muted)]">
+            View your Figma file alongside the editor. Paste a Figma URL to get started.
+          </p>
+          <input
+            type="url"
+            value={customUrl}
+            onChange={(e) => setCustomUrl(e.target.value)}
+            placeholder="https://www.figma.com/design/..."
+            className="w-full rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+          />
+        </div>
+      )}
+
+      {fileKey && (
+        <>
+          <FigmaEmbed
+            fileKey={fileKey}
+            nodeId={parsed?.nodeId}
+            title="Figma File"
+            height={500}
+            className="flex-1 min-h-0"
+          />
+          <input
+            type="url"
+            value={customUrl || sourceUrl || ""}
+            onChange={(e) => setCustomUrl(e.target.value)}
+            placeholder="Paste a different Figma URL..."
+            className="w-full rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-[11px] text-[var(--text-secondary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+          />
+        </>
+      )}
     </div>
   );
 }
