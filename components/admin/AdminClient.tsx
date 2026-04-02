@@ -530,12 +530,29 @@ function InviteCodesTab({ toast }: { toast: (msg: string, type?: Toast["type"]) 
   );
 }
 
+function applyClientFilter(requests: AccessRequestRow[], filter: string): AccessRequestRow[] {
+  switch (filter) {
+    case "signed_up":
+      return requests.filter((r) => r.status === "approved" && r.signedUp);
+    case "not_signed_up":
+      return requests.filter((r) => r.status === "approved" && !r.signedUp);
+    case "no_reminder":
+      return requests.filter((r) => r.status === "approved" && !r.signedUp && !(r.emailTypes ?? []).includes("reminder") && !(r.emailTypes ?? []).includes("final_reminder"));
+    case "reminder_sent":
+      return requests.filter((r) => r.status === "approved" && (r.emailTypes ?? []).includes("reminder") && !(r.emailTypes ?? []).includes("final_reminder"));
+    case "final_sent":
+      return requests.filter((r) => r.status === "approved" && (r.emailTypes ?? []).includes("final_reminder"));
+    default:
+      return requests;
+  }
+}
+
 // ─── Access Requests Tab ──────────────────────────────────────────────────────
 
 function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (msg: string, type?: Toast["type"]) => void; onPendingCountChange?: (count: number) => void; onAction?: () => void }) {
   const [requests, setRequests] = useState<AccessRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<"" | "pending" | "approved" | "rejected" | "signed_up">("");
+  const [statusFilter, setStatusFilter] = useState<"" | "pending" | "approved" | "rejected" | "signed_up" | "not_signed_up" | "no_reminder" | "reminder_sent" | "final_sent">("");
   const [actioning, setActioning] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: string; field: "name" | "email"; value: string } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -555,17 +572,15 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
   // Background refresh without loading state (preserves scroll position)
   const refreshRequestsQuietly = useCallback(async () => {
     try {
-      const apiFilter = statusFilter === "signed_up" ? "" : statusFilter;
+      const clientSideFilters = ["signed_up", "not_signed_up", "no_reminder", "reminder_sent", "final_sent"];
+      const apiFilter = clientSideFilters.includes(statusFilter) ? "" : statusFilter;
       const url = apiFilter
         ? `/api/admin/access-requests?status=${apiFilter}`
         : "/api/admin/access-requests";
       const res = await fetch(url);
       if (!res.ok) return;
       const json = await res.json() as { requests: AccessRequestRow[] };
-      let filtered = json.requests;
-      if (statusFilter === "signed_up") {
-        filtered = filtered.filter((r) => r.status === "approved" && r.signedUp);
-      }
+      const filtered = applyClientFilter(json.requests, statusFilter);
       setRequests(filtered);
       if (!statusFilter && onPendingCountChange) {
         onPendingCountChange(json.requests.filter((r) => r.status === "pending").length);
@@ -576,17 +591,15 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const apiFilter = statusFilter === "signed_up" ? "" : statusFilter;
+      const clientSideFilters = ["signed_up", "not_signed_up", "no_reminder", "reminder_sent", "final_sent"];
+      const apiFilter = clientSideFilters.includes(statusFilter) ? "" : statusFilter;
       const url = apiFilter
         ? `/api/admin/access-requests?status=${apiFilter}`
         : "/api/admin/access-requests";
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch");
       const json = await res.json() as { requests: AccessRequestRow[] };
-      let filtered = json.requests;
-      if (statusFilter === "signed_up") {
-        filtered = filtered.filter((r) => r.status === "approved" && r.signedUp);
-      }
+      const filtered = applyClientFilter(json.requests, statusFilter);
       setRequests(filtered);
       // Update parent pending count when we have unfiltered data
       if (!statusFilter && onPendingCountChange) {
@@ -670,15 +683,20 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
   const getEmailActions = (row: AccessRequestRow): { type: string; label: string }[] => {
     if (row.status !== "approved" || row.signedUp) return [];
     const types = row.emailTypes ?? [];
-    // If approved with an invite code, a welcome email was sent (even if not in email_log for early users)
     const hasWelcome = types.includes("welcome") || row.inviteCode != null;
     if (types.includes("final_reminder")) return [];
-    if (types.includes("reminder")) return [{ type: "final_reminder", label: "Final reminder" }];
-    if (hasWelcome) return [
-      { type: "welcome", label: "Resend welcome" },
-      { type: "reminder", label: "Send reminder" },
-    ];
+    if (types.includes("reminder")) return [{ type: "final_reminder", label: "Send final reminder" }];
+    if (hasWelcome) return [{ type: "reminder", label: "Send reminder" }];
     return [{ type: "welcome", label: "Send welcome" }];
+  };
+
+  const getEmailStatus = (row: AccessRequestRow): string | null => {
+    const types = row.emailTypes ?? [];
+    if (types.includes("final_reminder")) return "Final reminder sent";
+    if (types.includes("reminder")) return "Reminder sent";
+    if (types.includes("welcome")) return "Welcome sent";
+    if (row.inviteCode != null) return "Welcome sent";
+    return null;
   };
 
   const handleResend = async (row: AccessRequestRow, actionType: string, actionLabel: string) => {
@@ -818,6 +836,10 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
             <option value="signed_up">Signed up</option>
+            <option value="not_signed_up">Approved (not signed up)</option>
+            <option value="no_reminder">No reminder sent</option>
+            <option value="reminder_sent">1st reminder sent</option>
+            <option value="final_sent">Final reminder sent</option>
           </select>
         </div>
       </div>
@@ -1020,75 +1042,30 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                           <span style={{ color: "var(--text-muted)" }}>⧉</span>
                         </button>
                         {(() => {
+                          const emailStatus = getEmailStatus(row);
                           const actions = getEmailActions(row);
-                          if (actions.length === 0) return null;
-                          if (actions.length === 1) {
-                            return (
-                              <button
-                                onClick={() => void handleResend(row, actions[0].type, actions[0].label)}
-                                disabled={resending === row.id}
-                                className="px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap"
-                                style={{
-                                  background: "rgba(96,165,250,0.1)",
-                                  color: "#60a5fa",
-                                  border: "1px solid rgba(96,165,250,0.2)",
-                                  opacity: resending === row.id ? 0.5 : 1,
-                                  cursor: resending === row.id ? "not-allowed" : "pointer",
-                                }}
-                              >
-                                {resending === row.id ? "Sending..." : actions[0].label}
-                              </button>
-                            );
-                          }
                           return (
-                            <div className="relative" data-email-dropdown>
-                              <div className="flex items-center rounded-md overflow-hidden" style={{ border: "1px solid rgba(96,165,250,0.2)" }}>
+                            <div className="flex items-center gap-2">
+                              {emailStatus && (
+                                <span className="text-[10px] whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                                  {emailStatus}
+                                </span>
+                              )}
+                              {actions.length > 0 && (
                                 <button
                                   onClick={() => void handleResend(row, actions[0].type, actions[0].label)}
                                   disabled={resending === row.id}
-                                  className="px-3 py-1 text-xs font-medium transition-all whitespace-nowrap"
+                                  className="px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap"
                                   style={{
                                     background: "rgba(96,165,250,0.1)",
                                     color: "#60a5fa",
+                                    border: "1px solid rgba(96,165,250,0.2)",
                                     opacity: resending === row.id ? 0.5 : 1,
                                     cursor: resending === row.id ? "not-allowed" : "pointer",
                                   }}
                                 >
                                   {resending === row.id ? "Sending..." : actions[0].label}
                                 </button>
-                                <button
-                                  onClick={() => setOpenDropdown(openDropdown === row.id ? null : row.id)}
-                                  className="px-1.5 py-1 text-xs transition-all"
-                                  style={{
-                                    background: "rgba(96,165,250,0.15)",
-                                    color: "#60a5fa",
-                                    borderLeft: "1px solid rgba(96,165,250,0.2)",
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  ▾
-                                </button>
-                              </div>
-                              {openDropdown === row.id && (
-                                <div
-                                  className="absolute right-0 top-full mt-1 z-50 rounded-lg py-1 min-w-[160px]"
-                                  style={{
-                                    background: "var(--bg-elevated)",
-                                    border: "1px solid var(--studio-border-strong)",
-                                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                                  }}
-                                >
-                                  {actions.map((action) => (
-                                    <button
-                                      key={action.type}
-                                      onClick={() => void handleResend(row, action.type, action.label)}
-                                      className="w-full text-left px-3 py-1.5 text-xs transition-all hover:bg-white/5"
-                                      style={{ color: "#60a5fa" }}
-                                    >
-                                      {action.label}
-                                    </button>
-                                  ))}
-                                </div>
                               )}
                             </div>
                           );
@@ -2098,12 +2075,12 @@ export function AdminClient() {
 
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen overflow-x-hidden"
       style={{ background: "var(--bg-app)", color: "var(--text-primary)" }}
     >
       {/* Header */}
       <div
-        className="sticky top-0 z-10 px-6 py-4 flex items-center gap-4"
+        className="sticky top-0 z-10 px-4 sm:px-6 py-4 flex items-center gap-4 overflow-hidden"
         style={{
           background: "var(--bg-panel)",
           borderBottom: "1px solid var(--studio-border)",
@@ -2120,17 +2097,17 @@ export function AdminClient() {
           Admin
         </span>
         <span
-          className="ml-auto text-xs font-mono"
+          className="ml-auto text-xs font-mono truncate max-w-[200px] hidden sm:block"
           style={{ color: "var(--text-muted)" }}
         >
           {session.user.email}
         </span>
       </div>
 
-      <div className="mx-auto px-6 py-8 space-y-6">
+      <div className="mx-auto px-4 sm:px-6 py-8 space-y-6 overflow-x-hidden">
         {/* Tabs */}
         <div
-          className="flex gap-1 p-1 rounded-lg w-fit"
+          className="flex gap-1 p-1 rounded-lg w-fit overflow-x-auto max-w-full"
           style={{ background: "var(--bg-surface)", border: "1px solid var(--studio-border)" }}
         >
           {tabs.map((tab) => (
