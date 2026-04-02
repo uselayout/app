@@ -142,5 +142,19 @@ export async function GET(request: NextRequest) {
   const sortFn = sortFns[sort] ?? sortFns.cost;
   users.sort(sortFn);
 
-  return NextResponse.json({ users: users.slice(0, limit) }, { headers: { "Cache-Control": "no-store, private" } });
+  return NextResponse.json({
+    users: users.slice(0, limit),
+    _debug: {
+      totalUsersQueried: allUsers.length,
+      usageLogsQueried: usageLogs.length,
+      projectsQueried: projects.length,
+      errors: {
+        users: usersRes.error?.message ?? null,
+        usage: usageRes.error?.message ?? null,
+        projects: projectsRes.error?.message ?? null,
+        subscriptions: subscriptionsRes.error?.message ?? null,
+        figma: figmaRes.error?.message ?? null,
+      },
+    },
+  }, { headers: { "Cache-Control": "no-store, private" } });
 }
