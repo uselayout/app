@@ -62,14 +62,19 @@ export async function getEmailTypes(
   return (data ?? []).map((row) => row.email_type as EmailType);
 }
 
+export interface EmailLogEntry {
+  type: EmailType;
+  sentAt: string;
+}
+
 export async function getEmailTypesForRequests(
   requestIds: string[]
-): Promise<Record<string, EmailType[]>> {
+): Promise<Record<string, EmailLogEntry[]>> {
   if (requestIds.length === 0) return {};
 
   const { data, error } = await supabase
     .from("email_log")
-    .select("access_request_id, email_type")
+    .select("access_request_id, email_type, sent_at")
     .in("access_request_id", requestIds)
     .order("sent_at", { ascending: true });
 
@@ -78,11 +83,14 @@ export async function getEmailTypesForRequests(
     return {};
   }
 
-  const result: Record<string, EmailType[]> = {};
+  const result: Record<string, EmailLogEntry[]> = {};
   for (const row of data ?? []) {
     const id = row.access_request_id as string;
     if (!result[id]) result[id] = [];
-    result[id].push(row.email_type as EmailType);
+    result[id].push({
+      type: row.email_type as EmailType,
+      sentAt: row.sent_at as string,
+    });
   }
   return result;
 }
