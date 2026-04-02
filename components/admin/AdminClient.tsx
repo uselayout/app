@@ -746,7 +746,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
             : r
         )
       );
-      void refreshRequestsQuietly();
+      setTimeout(() => void refreshRequestsQuietly(), 2000);
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to send email", "error");
     } finally {
