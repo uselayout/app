@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { X, Figma, Copy, Check, ExternalLink, Loader2, Smartphone, Tablet, Monitor, Info } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { parseFigmaUrl } from "@/lib/figma/parse-url";
+import { FigmaEmbed } from "./FigmaEmbed";
 import type { DesignVariant } from "@/lib/types";
 
 interface FigmaPushModalProps {
@@ -25,6 +26,7 @@ export function FigmaPushModal({
   const [selectedViewports, setSelectedViewports] = useState<Set<string>>(
     () => new Set(["mobile", "tablet", "desktop"])
   );
+  const [pushMode, setPushMode] = useState<"capture" | "native">("native");
 
   const toggleViewport = useCallback((vp: string) => {
     setSelectedViewports((prev) => {
@@ -38,7 +40,7 @@ export function FigmaPushModal({
     });
   }, []);
 
-  const mcpCommand = buildMcpCommand(variant, Array.from(selectedViewports), figmaUrl || undefined);
+  const mcpCommand = buildMcpCommand(variant, Array.from(selectedViewports), pushMode, figmaUrl || undefined);
 
   const handleCopy = useCallback(
     async (text: string, field: string) => {
@@ -61,7 +63,7 @@ export function FigmaPushModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] shadow-2xl">
+      <div className={`relative w-full rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] shadow-2xl ${step === "done" && parseFigmaUrl(figmaUrl) ? "max-w-2xl" : "max-w-lg"}`}>
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-5 py-4">
           <div className="flex items-center gap-2.5">
@@ -157,6 +159,34 @@ export function FigmaPushModal({
                       >
                         <Icon size={12} />
                         {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Push mode toggle */}
+              <div>
+                <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                  Push mode
+                </p>
+                <div className="flex gap-1.5">
+                  {PUSH_MODE_OPTIONS.map(({ key, label, description: desc }) => {
+                    const active = pushMode === key;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setPushMode(key)}
+                        className={`flex-1 rounded-lg px-3 py-2 text-left transition-colors ${
+                          active
+                            ? "border border-[var(--studio-accent)] bg-[var(--studio-accent-subtle)]"
+                            : "border border-[var(--studio-border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)]"
+                        }`}
+                      >
+                        <p className={`text-xs font-medium ${active ? "text-[var(--studio-accent)]" : "text-[var(--text-secondary)]"}`}>
+                          {label}
+                        </p>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{desc}</p>
                       </button>
                     );
                   })}
@@ -283,20 +313,37 @@ export function FigmaPushModal({
           )}
 
           {step === "done" && (
-            <div className="flex flex-col items-center gap-4 py-6">
-              <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <Check size={24} className="text-emerald-400" />
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                  <Check size={16} className="text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-[var(--text-primary)]">
+                    Pushed to Figma
+                  </p>
+                  <p className="text-[11px] text-[var(--text-secondary)]">
+                    &ldquo;{variant.name}&rdquo; is now in your Figma file.
+                  </p>
+                </div>
               </div>
-              <div className="text-center">
-                <p className="text-sm font-medium text-[var(--text-primary)]">
-                  Pushed to Figma
-                </p>
-                <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                  &ldquo;{variant.name}&rdquo; is now in your Figma file.
-                  Edit it there, then import changes back into Studio.
-                </p>
-              </div>
-              {figmaUrl && (
+
+              {/* Live Figma embed */}
+              {(() => {
+                const parsed = parseFigmaUrl(figmaUrl);
+                if (!parsed) return null;
+                return (
+                  <FigmaEmbed
+                    fileKey={parsed.fileKey}
+                    nodeId={parsed.nodeId}
+                    title={variant.name}
+                    height={300}
+                    className="w-full"
+                  />
+                );
+              })()}
+
+              {!parseFigmaUrl(figmaUrl) && figmaUrl && (
                 <a
                   href={figmaUrl}
                   target="_blank"
@@ -394,6 +441,19 @@ const VIEWPORT_OPTIONS = [
   { key: "desktop", label: "Desktop", icon: Monitor },
 ] as const;
 
+const PUSH_MODE_OPTIONS = [
+  {
+    key: "native" as const,
+    label: "Native",
+    description: "Editable Figma objects with auto-layout",
+  },
+  {
+    key: "capture" as const,
+    label: "Capture",
+    description: "Pixel-perfect screenshot frames",
+  },
+];
+
 /** Clean up a user prompt or variant name into a short Figma frame label. */
 export function toFrameName(raw: string): string {
   // Strip leading verbs like "create", "build", "make", "design", "generate"
@@ -407,7 +467,7 @@ export function toFrameName(raw: string): string {
   return name.trim() || raw.slice(0, 60);
 }
 
-function buildMcpCommand(variant: DesignVariant, viewports: string[], figmaUrl?: string): string {
+function buildMcpCommand(variant: DesignVariant, viewports: string[], mode: "capture" | "native", figmaUrl?: string): string {
   const frameName = toFrameName(variant.name);
 
   const inputs = [
@@ -415,9 +475,16 @@ function buildMcpCommand(variant: DesignVariant, viewports: string[], figmaUrl?:
     `- name: "${frameName}"`,
     `- viewports: [${viewports.map((v) => `"${v}"`).join(", ")}]`,
   ];
+  if (mode === "native") {
+    inputs.push(`- mode: "native"`);
+  }
   if (figmaUrl) {
     inputs.push(`- figmaUrl: "${figmaUrl}"`);
   }
+
+  const modeNote = mode === "native"
+    ? "Native mode creates editable Figma objects with auto-layout. No Playwright MCP needed."
+    : "The tool handles all viewports in a single call. Do NOT create temp HTML files or start HTTP servers.";
 
   return `Call the layout MCP server's push_to_figma tool once with these inputs:
 ${inputs.join("\n")}
@@ -426,6 +493,6 @@ ${inputs.join("\n")}
 ${variant.code}
 \`\`\`
 
-The tool handles all viewports in a single call. Do NOT create temp HTML files or start HTTP servers.`;
+${modeNote}`;
 }
 
