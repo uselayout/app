@@ -439,7 +439,7 @@ export function DashboardTab() {
       setOverview(ov);
       setUsage(us);
       setErrors(er);
-      setFunnel(fu);
+      setFunnel(fu.funnel);
       setUsers(usr);
       setProducts(pr);
       setLastRefreshed(new Date());
