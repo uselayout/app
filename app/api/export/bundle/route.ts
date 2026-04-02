@@ -8,6 +8,7 @@ import { generateCursorRules } from "@/lib/export/cursor-rules";
 import { generateTokensCss } from "@/lib/export/tokens-css";
 import { generateTokensJson } from "@/lib/export/tokens-json";
 import { generateTailwindConfig } from "@/lib/export/tailwind-config";
+import { logEvent } from "@/lib/logging/platform-event";
 import type { Project, ExportFormat } from "@/lib/types";
 
 const RequestSchema = z.object({
@@ -95,6 +96,8 @@ export async function POST(request: NextRequest) {
       })
     );
   }
+
+  void logEvent("export.bundle", "studio", { userId: session.user.id, metadata: { formats, projectId: project.id, hasScreenshots: !!proj.extractionData?.screenshots?.length } });
 
   const zipBuffer = await zip.generateAsync({ type: "arraybuffer" });
   const safeName = project.name

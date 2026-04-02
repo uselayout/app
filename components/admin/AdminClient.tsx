@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
 import { EmailTab } from "./EmailTab";
+import { DashboardTab } from "./DashboardTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1996,7 +1997,7 @@ function CreditsTab({ toast }: { toast: (msg: string, type?: "success" | "error"
 
 export function AdminClient() {
   const { data: session, isPending } = useSession();
-  const [activeTab, setActiveTab] = useState<"codes" | "requests" | "changelog" | "credits" | "email">("codes");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "codes" | "requests" | "changelog" | "credits" | "email">("dashboard");
   const { toasts, show: toast } = useToast();
   const [pendingCount, setPendingCount] = useState(0);
   const [stats, setStats] = useState<AdminStatsData | null>(null);
@@ -2065,7 +2066,8 @@ export function AdminClient() {
     );
   }
 
-  const tabs: { key: "codes" | "requests" | "changelog" | "credits" | "email"; label: string }[] = [
+  const tabs: { key: "dashboard" | "codes" | "requests" | "changelog" | "credits" | "email"; label: string }[] = [
+    { key: "dashboard", label: "Dashboard" },
     { key: "codes", label: "Invite codes" },
     { key: "requests", label: "Access requests" },
     { key: "changelog", label: "Changelog" },
@@ -2135,6 +2137,9 @@ export function AdminClient() {
         <AdminStats stats={stats} />
 
         {/* Tab content */}
+        {activeTab === "dashboard" && (
+          <DashboardTab />
+        )}
         {activeTab === "codes" && (
           <InviteCodesTab toast={toast} />
         )}

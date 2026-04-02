@@ -5,6 +5,8 @@ import { auth } from "@/lib/auth";
 import { checkQuota, deductCredit, refundCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
+import { logApiCall } from "@/lib/logging/api-log";
+import { logEvent } from "@/lib/logging/platform-event";
 import type { AiMode } from "@/lib/types/billing";
 import { AI_MODELS, BYOK_ONLY_MODELS, DEFAULT_EXPLORE_MODEL } from "@/lib/types";
 import type { AiModelId } from "@/lib/types";
@@ -110,6 +112,21 @@ export async function POST(request: NextRequest) {
   }
 
   const streamController = registerStream();
+  const startTime = Date.now();
+  const isRefinement = !!baseCode;
+
+  const apiLogMetadata = {
+    projectId: parsed.data.projectId,
+    variantCount,
+    modelId,
+    hasImageUpload: !!imageDataUrl,
+    hasContextFiles: (contextFiles?.length ?? 0) > 0,
+    contextFileCount: contextFiles?.length ?? 0,
+    iconPacks: iconPacks ?? [],
+    isRefinement,
+    promptLength: prompt.length,
+  };
+
   const { stream, usage } = baseCode
     ? createRefineStreamForModel(modelId, {
         baseCode,
@@ -134,18 +151,21 @@ export async function POST(request: NextRequest) {
       });
 
   void usage
-    .then((u) =>
-      logUsage({
+    .then((u) => {
+      void logApiCall({ userId, endpoint: "generate/explore", statusCode: 200, durationMs: Date.now() - startTime, metadata: apiLogMetadata });
+      void logEvent("variant.generated", "studio", { userId, metadata: { variantCount, modelId, isRefinement, hasImageUpload: !!imageDataUrl } });
+      return logUsage({
         userId,
         projectId: parsed.data.projectId,
         endpoint: "explore",
         mode,
         usage: u,
         model: modelId,
-      })
-    )
+      });
+    })
     .catch(async (err) => {
       console.error("Stream failed, refunding credit:", err);
+      void logApiCall({ userId, endpoint: "generate/explore", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: err instanceof Error ? err.message : String(err), metadata: apiLogMetadata });
       if (mode === "hosted") {
         await refundCredit(userId, "explore");
       }

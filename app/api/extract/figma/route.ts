@@ -6,6 +6,8 @@ import { extractLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/rat
 import { getClientIp } from "@/lib/get-client-ip";
 import { auth } from "@/lib/auth";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
+import { logApiCall } from "@/lib/logging/api-log";
+import { logEvent } from "@/lib/logging/platform-event";
 
 const RequestSchema = z.object({
   figmaUrl: z.string().url(),
@@ -66,6 +68,7 @@ export async function POST(request: NextRequest) {
 
   const encoder = new TextEncoder();
   const streamController = registerStream();
+  const startTime = Date.now();
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -89,9 +92,15 @@ export async function POST(request: NextRequest) {
           },
         });
 
+        const durationMs = Date.now() - startTime;
+        void logApiCall({ userId: session.user.id, endpoint: "extract/figma", statusCode: 200, durationMs, metadata: { figmaFileKey: fileKey } });
+        void logEvent("extraction.complete", "studio", { userId: session.user.id, metadata: { sourceType: "figma", durationMs } });
+
         send({ type: "complete", data: result });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
+        void logApiCall({ userId: session.user.id, endpoint: "extract/figma", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: message, metadata: { figmaFileKey: fileKey } });
+        void logEvent("extraction.failed", "studio", { userId: session.user.id, metadata: { sourceType: "figma", error: message } });
         send({ type: "error", message });
       } finally {
         clearInterval(heartbeat);

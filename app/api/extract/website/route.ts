@@ -8,6 +8,8 @@ import { getClientIp } from "@/lib/get-client-ip";
 import { auth } from "@/lib/auth";
 import { playwrightLimit } from "@/lib/concurrency";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
+import { logApiCall } from "@/lib/logging/api-log";
+import { logEvent } from "@/lib/logging/platform-event";
 
 const RequestSchema = z.object({
   url: z.url(),
@@ -69,6 +71,7 @@ export async function POST(request: NextRequest) {
 
   const encoder = new TextEncoder();
   const streamController = registerStream();
+  const startTime = Date.now();
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -104,9 +107,15 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        const durationMs = Date.now() - startTime;
+        void logApiCall({ userId: session.user.id, endpoint: "extract/website", statusCode: 200, durationMs, metadata: { domain: new URL(url).hostname, projectId } });
+        void logEvent("extraction.complete", "studio", { userId: session.user.id, metadata: { sourceType: "website", domain: new URL(url).hostname, screenshotCount: result.screenshots.length, durationMs } });
+
         send({ type: "complete", data: result });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
+        void logApiCall({ userId: session.user.id, endpoint: "extract/website", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: message, metadata: { domain: new URL(url).hostname } });
+        void logEvent("extraction.failed", "studio", { userId: session.user.id, metadata: { sourceType: "website", error: message } });
         send({ type: "error", message });
       } finally {
         clearInterval(heartbeat);

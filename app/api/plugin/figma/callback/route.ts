@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { upsertFigmaConnection } from "@/lib/supabase/figma";
 import { verifyOAuthState } from "@/lib/oauth-state";
+import { logEvent } from "@/lib/logging/platform-event";
 
 /**
  * Figma OAuth callback. Figma redirects here after the user authorises.
@@ -107,6 +108,8 @@ export async function GET(request: Request) {
     String(tokenData.user_id),
     figmaUserName,
   );
+
+  void logEvent("plugin.figma.connected", "figma-plugin", { orgId, metadata: { figmaUserId: tokenData.user_id, figmaUserName } });
 
   return new NextResponse(
     renderHtml(

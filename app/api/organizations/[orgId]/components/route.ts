@@ -10,6 +10,7 @@ import {
 } from "@/lib/supabase/components";
 
 import { transpileTsx } from "@/lib/transpile";
+import { logEvent } from "@/lib/logging/platform-event";
 import type { ComponentStatus } from "@/lib/types/component";
 
 const CreateComponentSchema = z.object({
@@ -120,6 +121,7 @@ export async function POST(
       );
     }
 
+    void logEvent("component.saved", "studio", { userId: authResult.userId, orgId, metadata: { source: parsed.data.source, designType: parsed.data.designType, category: parsed.data.category } });
     return NextResponse.json(component, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

@@ -4,6 +4,7 @@ import {
   createFigmaCapture,
   getPendingFigmaCapture,
 } from "@/lib/supabase/figma";
+import { logEvent } from "@/lib/logging/platform-event";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -50,6 +51,8 @@ export async function POST(request: Request) {
     body.url ?? null,
     body.title ?? null,
   );
+
+  void logEvent("plugin.figma.capture", "figma-plugin", { orgId: auth.orgId, metadata: { url: body.url } });
 
   return NextResponse.json({ captureId }, { status: 201, headers: CORS });
 }

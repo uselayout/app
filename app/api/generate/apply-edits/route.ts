@@ -7,6 +7,7 @@ import { checkQuota, deductCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
 import { generateLimiter } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
+import { logApiCall } from "@/lib/logging/api-log";
 import type { StyleEdit, ElementAnnotation } from "@/lib/types";
 import type { AiMode } from "@/lib/types/billing";
 
@@ -99,6 +100,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { code, layoutMd, styleEdits, annotations } = parsed.data;
+  const startTime = Date.now();
 
   if (!styleEdits?.length && !annotations?.length) {
     return Response.json({ error: "No edits or annotations provided" }, { status: 400 });
@@ -121,9 +123,11 @@ export async function POST(request: NextRequest) {
     console.error("[apply-edits] Anthropic API error:", err);
     const message = err instanceof Error ? err.message : "Code generation failed";
     const isTimeout = message.includes("timeout") || message.includes("aborted");
+    const statusCode = isTimeout ? 504 : 502;
+    void logApiCall({ userId, endpoint: "generate/apply-edits", statusCode, durationMs: Date.now() - startTime, errorMessage: message, metadata: { editCount: styleEdits?.length ?? 0, annotationCount: annotations?.length ?? 0 } });
     return Response.json(
       { error: isTimeout ? "Request timed out. Try a smaller change or try again." : message },
-      { status: isTimeout ? 504 : 502 },
+      { status: statusCode },
     );
   }
 
@@ -140,6 +144,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "No code returned from AI. Try again." }, { status: 502 });
   }
 
+  void logApiCall({ userId, endpoint: "generate/apply-edits", statusCode: 200, durationMs: Date.now() - startTime, metadata: { editCount: styleEdits?.length ?? 0, annotationCount: annotations?.length ?? 0 } });
   void logUsage({
     userId,
     endpoint: "test",

@@ -8,6 +8,8 @@ import { logUsage } from "@/lib/billing/usage";
 import { generateLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
+import { logApiCall } from "@/lib/logging/api-log";
+import { logEvent } from "@/lib/logging/platform-event";
 import type { ExtractionResult } from "@/lib/types";
 import type { AiMode } from "@/lib/types/billing";
 
@@ -126,22 +128,40 @@ export async function POST(request: NextRequest) {
   }
 
   const streamController = registerStream();
+  const startTime = Date.now();
   const { stream, usage } = createLayoutMdStream(extractionData, apiKey);
+
+  const apiLogMetadata = {
+    projectId: parsed.data.projectId,
+    sourceType: extractionData.sourceType,
+    tokenCounts: {
+      colors: extractionData.tokens.colors.length,
+      typography: extractionData.tokens.typography.length,
+      spacing: extractionData.tokens.spacing.length,
+      radius: extractionData.tokens.radius.length,
+      effects: extractionData.tokens.effects.length,
+    },
+    componentCount: extractionData.components.length,
+    screenshotCount: extractionData.screenshots.length,
+  };
 
   // Log usage on success, refund credit on failure
   void usage
-    .then((u) =>
-      logUsage({
+    .then((u) => {
+      void logApiCall({ userId, endpoint: "generate/layout-md", statusCode: 200, durationMs: Date.now() - startTime, metadata: apiLogMetadata });
+      void logEvent("layout_md.created", "studio", { userId, metadata: { sourceType: extractionData.sourceType, componentCount: extractionData.components.length } });
+      return logUsage({
         userId,
         projectId: parsed.data.projectId,
         endpoint: "layout-md",
         mode,
         usage: u,
         model: "claude-sonnet-4-6",
-      })
-    )
+      });
+    })
     .catch(async (err) => {
       console.error("Stream failed, refunding credit:", err);
+      void logApiCall({ userId, endpoint: "generate/layout-md", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: err instanceof Error ? err.message : String(err), metadata: apiLogMetadata });
       if (mode === "hosted") {
         await refundCredit(userId, "layout-md");
       }

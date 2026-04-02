@@ -7,6 +7,7 @@ import { generateTokensCss } from "@/lib/export/tokens-css";
 import { generateTokensJson } from "@/lib/export/tokens-json";
 import { supabase } from "@/lib/supabase/client";
 
+import { logEvent } from "@/lib/logging/platform-event";
 import type { ExtractionResult } from "@/lib/types";
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
@@ -513,6 +514,8 @@ export async function POST(request: Request) {
       toolResult = await handleCheckCompliance(orgId, params);
       break;
   }
+
+  void logEvent("mcp.tool_call", "cli", { orgId, metadata: { tool } });
 
   if (toolResult.error) {
     return NextResponse.json(

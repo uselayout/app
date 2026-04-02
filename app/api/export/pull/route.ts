@@ -8,6 +8,7 @@ import { generateCursorRules } from "@/lib/export/cursor-rules";
 import { generateTokensCss } from "@/lib/export/tokens-css";
 import { generateTokensJson } from "@/lib/export/tokens-json";
 import { generateTailwindConfig } from "@/lib/export/tailwind-config";
+import { logEvent } from "@/lib/logging/platform-event";
 
 const QuerySchema = z.object({
   projectId: z.string().uuid().optional(),
@@ -105,6 +106,8 @@ export async function GET(request: Request) {
   if (formats.includes("tailwind-config") && tokens) {
     files["tailwind.config.js"] = generateTailwindConfig(tokens);
   }
+
+  void logEvent("export.pull", "cli", { orgId, metadata: { formats, projectId: project.id } });
 
   return NextResponse.json({
     project: {

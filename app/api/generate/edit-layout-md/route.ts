@@ -7,6 +7,7 @@ import { logUsage } from "@/lib/billing/usage";
 import { generateLimiter } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
+import { logApiCall } from "@/lib/logging/api-log";
 import type { AiMode } from "@/lib/types/billing";
 
 const RequestSchema = z.object({
@@ -84,20 +85,23 @@ export async function POST(request: NextRequest) {
 
   const { instruction, layoutMd } = parsed.data;
   const streamController = registerStream();
+  const startTime = Date.now();
   const { stream, usage } = createEditStream(instruction, layoutMd, apiKey);
 
   void usage
-    .then((u) =>
-      logUsage({
+    .then((u) => {
+      void logApiCall({ userId, endpoint: "generate/edit-layout-md", statusCode: 200, durationMs: Date.now() - startTime, metadata: { instructionLength: instruction.length } });
+      return logUsage({
         userId,
         endpoint: "edit",
         mode,
         usage: u,
         model: "claude-sonnet-4-6",
-      })
-    )
+      });
+    })
     .catch(async (err) => {
       console.error("Stream failed, refunding credit:", err);
+      void logApiCall({ userId, endpoint: "generate/edit-layout-md", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: err instanceof Error ? err.message : String(err) });
       if (mode === "hosted") {
         await refundCredit(userId, "edit");
       }

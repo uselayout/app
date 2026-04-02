@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireMcpAuth } from "@/lib/api/mcp-auth";
 import { getOrganization } from "@/lib/supabase/organization";
 import { fetchAllProjects, upsertProject } from "@/lib/supabase/db";
+import { logEvent } from "@/lib/logging/platform-event";
 import type { Project } from "@/lib/types";
 
 const CORS = {
@@ -77,6 +78,8 @@ export async function POST(request: Request) {
   await upsertProject(updatedProject, org.ownerId);
 
   const url = `/studio/${project.id}?tab=explorer&source=figma`;
+
+  void logEvent("plugin.figma.push", "figma-plugin", { orgId: auth.orgId, metadata: { projectId: project.id } });
 
   return NextResponse.json(
     { explorationId: project.id, url },

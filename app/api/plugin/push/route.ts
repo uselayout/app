@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireMcpAuth } from "@/lib/api/mcp-auth";
 import { getOrganization } from "@/lib/supabase/organization";
 import { fetchAllProjects, upsertProject } from "@/lib/supabase/db";
+import { logEvent } from "@/lib/logging/platform-event";
 import type { Project } from "@/lib/types";
 
 const CORS = {
@@ -167,6 +168,8 @@ export async function POST(request: Request) {
 
   const origin = new URL(request.url).origin;
   const url = `${origin}/studio/${updatedProject.id}`;
+
+  void logEvent("plugin.figma.push_tokens", "figma-plugin", { orgId: auth.orgId, metadata: { tokenCount, componentCount: components.length, fileKey } });
 
   return NextResponse.json(
     { projectId: updatedProject.id, url },
