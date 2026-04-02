@@ -1788,6 +1788,15 @@ function CreditsTab({ toast }: { toast: (msg: string, type?: "success" | "error"
   const [layoutMdAmount, setLayoutMdAmount] = useState(1);
   const [aiQueryAmount, setAiQueryAmount] = useState(0);
   const [adding, setAdding] = useState(false);
+  const [zeroUsers, setZeroUsers] = useState<Array<{ email: string }>>([]);
+
+  // Fetch zero-credit users on mount
+  useEffect(() => {
+    fetch("/api/admin/credits/zero")
+      .then((r) => r.json())
+      .then((data) => setZeroUsers(data.users ?? []))
+      .catch(() => {});
+  }, []);
 
   const handleLookup = async () => {
     if (!email.trim()) return;
@@ -1840,6 +1849,54 @@ function CreditsTab({ toast }: { toast: (msg: string, type?: "success" | "error"
 
   return (
     <div className="space-y-6">
+      {/* Zero-credit users */}
+      {zeroUsers.length > 0 && (
+        <div
+          className="rounded-lg p-5 space-y-3"
+          style={{ background: "var(--bg-surface)", border: "1px solid rgba(245,158,11,0.4)" }}
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold" style={{ color: "#f59e0b" }}>
+              Users at zero credits ({zeroUsers.length})
+            </h3>
+          </div>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            Click to look up and top up
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {zeroUsers.map((u) => (
+              <button
+                key={u.email}
+                onClick={() => {
+                  setEmail(u.email);
+                  setLookup(null);
+                  setLookupError(null);
+                  // Trigger lookup after state update
+                  setTimeout(async () => {
+                    setLoading(true);
+                    try {
+                      const res = await fetch(`/api/admin/credits?email=${encodeURIComponent(u.email)}`);
+                      const json = await res.json();
+                      if (!res.ok) { setLookupError(json.error ?? "Lookup failed"); return; }
+                      setLookup(json);
+                    } catch { setLookupError("Network error"); }
+                    finally { setLoading(false); }
+                  }, 0);
+                }}
+                className="px-2.5 py-1 rounded-md text-xs transition-all"
+                style={{
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--studio-border)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                {u.email}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Lookup */}
       <div
         className="rounded-lg p-5 space-y-4"
