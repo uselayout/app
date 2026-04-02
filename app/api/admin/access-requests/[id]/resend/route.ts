@@ -145,5 +145,12 @@ export async function POST(
     );
   }
 
-  return NextResponse.json({ success: true, emailSent });
+  if (!emailSent) {
+    return NextResponse.json(
+      { error: "Email skipped — RESEND_API_KEY may not be set in this environment" },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ success: true });
 }
