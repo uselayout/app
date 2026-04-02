@@ -11,6 +11,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w14-figma-plugin-zip-fix",
+    title: "Figma plugin download fixed",
+    description:
+      "The downloadable Figma plugin ZIP was missing recent fixes, causing a manifest error when importing. The plugin now installs without errors.",
+    product: "figma-plugin",
+    category: "fixed",
+    date: "2026-04-02",
+  },
+  {
     id: "2026-w14-reminder-tracking",
     title: "Reminder status visible in admin waitlist",
     description:
