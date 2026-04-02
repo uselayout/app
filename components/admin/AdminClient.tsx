@@ -738,6 +738,14 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
         throw new Error(json.error ?? "Failed to send");
       }
       toast(`Sent: ${actionLabel}`);
+      // Optimistic update so button/status reflects new state immediately
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === row.id
+            ? { ...r, emailLog: [...r.emailLog, { type: actionType, sentAt: new Date().toISOString() }] }
+            : r
+        )
+      );
       void refreshRequestsQuietly();
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to send email", "error");
