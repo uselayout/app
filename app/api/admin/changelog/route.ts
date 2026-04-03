@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/admin-context";
 import { publishedWeeks } from "@/content/changelog";
-import { compileDraft, publishWeek, writeDraftEntries, readDraftEntries } from "@/lib/changelog/publish";
+import { compileDraft, publishWeek } from "@/lib/changelog/publish";
+import { readDraftEntries, writeDraftEntries } from "@/lib/supabase/changelog-draft";
 import type { ChangelogEntry } from "@/lib/types/changelog";
 import { z } from "zod";
 
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
-  const draft = readDraftEntries();
+  const draft = await readDraftEntries();
   const compiled = draft.length > 0 ? compileDraft(draft) : null;
 
   return NextResponse.json({
@@ -74,7 +75,7 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const parsed = z.array(entrySchema).parse(body.entries);
-    writeDraftEntries(parsed as ChangelogEntry[]);
+    await writeDraftEntries(parsed as ChangelogEntry[]);
     return NextResponse.json({ success: true, count: parsed.length });
   } catch (err) {
     if (err instanceof z.ZodError) {

@@ -5,6 +5,7 @@ import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
 import { EmailTab } from "./EmailTab";
 import { DashboardTab } from "./DashboardTab";
+import { RoadmapTab } from "./RoadmapTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -2224,7 +2225,7 @@ function CreditsTab({ toast }: { toast: (msg: string, type?: "success" | "error"
 
 export function AdminClient() {
   const { data: session, isPending } = useSession();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "codes" | "requests" | "changelog" | "credits" | "email">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "codes" | "requests" | "changelog" | "credits" | "email" | "roadmap">("dashboard");
   const { toasts, show: toast } = useToast();
   const [pendingCount, setPendingCount] = useState(0);
   const [stats, setStats] = useState<AdminStatsData | null>(null);
@@ -2293,11 +2294,12 @@ export function AdminClient() {
     );
   }
 
-  const tabs: { key: "dashboard" | "codes" | "requests" | "changelog" | "credits" | "email"; label: string }[] = [
+  const tabs: { key: typeof activeTab; label: string }[] = [
     { key: "dashboard", label: "Dashboard" },
     { key: "codes", label: "Invite codes" },
     { key: "requests", label: "Access requests" },
     { key: "changelog", label: "Changelog" },
+    { key: "roadmap", label: "Roadmap" },
     { key: "credits", label: "Credits" },
     { key: "email", label: "Email" },
   ];
@@ -2381,6 +2383,9 @@ export function AdminClient() {
         )}
         {activeTab === "email" && (
           <EmailTab toast={toast} />
+        )}
+        {activeTab === "roadmap" && (
+          <RoadmapTab toast={toast} />
         )}
       </div>
 
