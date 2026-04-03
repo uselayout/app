@@ -50,7 +50,7 @@ export function FigmaEmbed({
             <path d="M26 19.5C26 23.09 23.09 26 19.5 26C15.91 26 13 23.09 13 19.5C13 15.91 15.91 13 19.5 13C23.09 13 26 15.91 26 19.5Z" fill="#1ABCFE"/>
           </svg>
           <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
-            {title ?? "Figma Preview"}
+            {title ?? "Figma File"}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -65,10 +65,10 @@ export function FigmaEmbed({
             href={figmaUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded p-1 text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
-            title="Open in Figma"
+            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+            title="Open in Figma to edit"
           >
-            <ExternalLink size={12} />
+            <ExternalLink size={10} />
           </a>
         </div>
       </div>

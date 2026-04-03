@@ -172,7 +172,7 @@ function Tip({ label, children, wide }: { label: string; children: React.ReactNo
         <TooltipPrimitive.Content
           side="top"
           sideOffset={6}
-          className={`z-50 rounded-md bg-[var(--bg-elevated)] border border-[var(--studio-border)] px-2 py-1 text-[10px] text-[var(--text-secondary)] animate-in fade-in-0 zoom-in-95 ${wide ? "max-w-xs whitespace-normal leading-relaxed" : ""}`}
+          className={`z-50 rounded-md bg-[var(--bg-elevated)] border border-[var(--studio-border)] px-2 py-1 text-[10px] text-[var(--text-secondary)] animate-in fade-in-0 zoom-in-95 ${wide ? "max-w-xs whitespace-pre-line leading-relaxed" : ""}`}
         >
           {label}
         </TooltipPrimitive.Content>
@@ -656,19 +656,25 @@ export function VariantCard({
     setPreviewEntryId(undefined);
   }, []);
 
-  const healthBadge = variant.healthScore ? (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-        variant.healthScore.total >= 80
-          ? "bg-emerald-500/20 text-emerald-400"
-          : variant.healthScore.total >= 50
-            ? "bg-amber-500/20 text-amber-400"
-            : "bg-red-500/20 text-red-400"
-      }`}
-    >
-      {variant.healthScore.total}
-    </span>
-  ) : null;
+  const healthBadge = variant.healthScore ? (() => {
+    const hs = variant.healthScore;
+    const label = `Design system compliance: ${hs.total}/100\nToken faithfulness: ${hs.tokenFaithfulness}\nComponent accuracy: ${hs.componentAccuracy}\nAnti-pattern violations: ${hs.antiPatternViolations}${hs.issues.length > 0 ? `\n${hs.issues.length} issue${hs.issues.length === 1 ? "" : "s"} found` : ""}`;
+    return (
+      <Tip label={label} wide>
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold cursor-help ${
+            hs.total >= 80
+              ? "bg-emerald-500/20 text-emerald-400"
+              : hs.total >= 50
+                ? "bg-amber-500/20 text-amber-400"
+                : "bg-red-500/20 text-red-400"
+          }`}
+        >
+          {hs.total}
+        </span>
+      </Tip>
+    );
+  })() : null;
 
   return (
     <TooltipProvider>
@@ -962,10 +968,10 @@ export function VariantCard({
           </Tip>
         )}
         {onRegenerateImages && (
-          <Tip label="Generate images (Shift+click: regenerate all)">
+          <Tip label={variant.code.includes("data-generate-image") ? "Generate images (Shift+click: regenerate all)" : "No images to generate"}>
           <button
-            onClick={(e) => { e.stopPropagation(); onRegenerateImages(e.shiftKey); }}
-            disabled={isProcessingImages}
+            onClick={(e) => { e.stopPropagation(); if (variant.code.includes("data-generate-image")) onRegenerateImages(e.shiftKey); }}
+            disabled={isProcessingImages || !variant.code.includes("data-generate-image")}
             className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50"
           >
             <ImagePlus size={12} />

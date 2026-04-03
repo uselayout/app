@@ -38,6 +38,7 @@ interface ExplorerCanvasProps {
   onInitialImageConsumed?: () => void;
   extractedFonts?: string[];
   iconPacks?: string[];
+  sourceUrl?: string;
 }
 
 export function ExplorerCanvas({
@@ -51,6 +52,7 @@ export function ExplorerCanvas({
   onInitialImageConsumed,
   extractedFonts = [],
   iconPacks,
+  sourceUrl,
 }: ExplorerCanvasProps) {
   // Parse design tokens from layoutMd for the inspector's token suggestions
   const allDesignTokens: ExtractedToken[] = useMemo(() => {
@@ -1116,6 +1118,7 @@ export function ExplorerCanvas({
           variant={pushVariant}
           onClose={() => setPushVariant(null)}
           onPushComplete={handlePushComplete}
+          defaultFigmaUrl={sourceUrl}
         />
       )}
 
