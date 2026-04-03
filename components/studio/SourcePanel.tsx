@@ -280,6 +280,8 @@ function FigmaTab({
   const [customUrl, setCustomUrl] = useState("");
   const [isCapturing, setIsCapturing] = useState(false);
   const [captureError, setCaptureError] = useState<string | null>(null);
+  const [showPatInput, setShowPatInput] = useState(false);
+  const [patValue, setPatValue] = useState("");
 
   // Try to get fileKey from the project's source URL or a custom URL
   const urlToUse = customUrl || sourceUrl || "";
@@ -293,10 +295,15 @@ function FigmaTab({
   const handleGenerateClick = useCallback(async () => {
     if (!fileKey || !parsed?.nodeId || !onGenerateFromFigma) return;
 
-    const pat = getStoredFigmaApiKey() || sessionStorage.getItem(`pat-${projectId}`);
+    const pat = getStoredFigmaApiKey() || sessionStorage.getItem(`pat-${projectId}`) || patValue;
     if (!pat) {
-      setCaptureError("Figma access token required. Add one in your project settings or extraction flow.");
+      setShowPatInput(true);
       return;
+    }
+
+    // Persist the token for future use
+    if (patValue) {
+      localStorage.setItem("sd_figma_pat", patValue);
     }
 
     setIsCapturing(true);
@@ -374,6 +381,26 @@ function FigmaTab({
                 <p className="text-[11px] text-[var(--text-muted)]">
                   Select a specific frame in Figma and update the URL with its node-id to enable generation.
                 </p>
+              )}
+              {showPatInput && !getStoredFigmaApiKey() && (
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={patValue}
+                    onChange={(e) => setPatValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && patValue) handleGenerateClick(); }}
+                    placeholder="Paste Figma access token..."
+                    className="flex-1 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleGenerateClick}
+                    disabled={!patValue}
+                    className="rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-40 transition-colors"
+                  >
+                    Go
+                  </button>
+                </div>
               )}
               {captureError && (
                 <p className="text-[11px] text-red-400">{captureError}</p>
