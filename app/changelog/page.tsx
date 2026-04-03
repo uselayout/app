@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { draftEntries, publishedWeeks } from "@/content/changelog";
+import { publishedWeeks } from "@/content/changelog";
 import type { ChangelogWeek } from "@/lib/types/changelog";
 import { ChangelogClient } from "@/components/changelog/ChangelogClient";
+import { readDraftEntries, getPublishedWeeks } from "@/lib/supabase/changelog-draft";
 
 export const metadata: Metadata = {
   title: "Changelog | Layout",
@@ -43,19 +44,26 @@ async function ChangelogPageInner({
   const showDraft =
     params.draft === "true" || process.env.NODE_ENV === "development";
 
+  // Read from Supabase, fall back to static file for existing published weeks
+  const dbWeeks = await getPublishedWeeks();
+  const allPublished = dbWeeks.length > 0 ? dbWeeks : publishedWeeks;
+
   let draftWeek: ChangelogWeek | null = null;
-  if (showDraft && draftEntries.length > 0) {
-    const { weekId, label } = getISOWeekLabel();
-    draftWeek = {
-      weekId,
-      label,
-      summary: "Draft entries for the current week.",
-      items: draftEntries.map((e) => ({
-        text: e.title,
-        product: e.product,
-        category: e.category,
-      })),
-    };
+  if (showDraft) {
+    const draftEntries = await readDraftEntries();
+    if (draftEntries.length > 0) {
+      const { weekId, label } = getISOWeekLabel();
+      draftWeek = {
+        weekId,
+        label,
+        summary: "Draft entries for the current week.",
+        items: draftEntries.map((e) => ({
+          text: e.title,
+          product: e.product,
+          category: e.category,
+        })),
+      };
+    }
   }
 
   return (
@@ -79,7 +87,7 @@ async function ChangelogPageInner({
           and Chrome Extension.
         </p>
 
-        <ChangelogClient weeks={publishedWeeks} draftWeek={draftWeek} />
+        <ChangelogClient weeks={allPublished} draftWeek={draftWeek} />
       </main>
     </div>
   );
