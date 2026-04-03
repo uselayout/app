@@ -289,7 +289,18 @@ GOOGLE_AI_API_KEY=...                 # Optional: for AI image generation (plann
 
 ## Changelog
 
-**REQUIRED:** Before finishing any session that includes user-facing changes (new features, improvements, bug fixes), you MUST add changelog entries to `content/changelog/draft.ts`. This is not optional. Do it before the final commit.
+**REQUIRED:** Before finishing any session that includes user-facing changes (new features, improvements, bug fixes), you MUST add changelog entries via the admin API. This is not optional. Do it before the final commit.
+
+Draft entries are stored in Supabase (`layout_changelog_draft` table), NOT in `content/changelog/draft.ts`. To add entries, POST to the changelog API:
+
+```bash
+# First GET existing entries, then PUT the full array with new entries appended
+curl -s http://localhost:3000/api/admin/changelog | jq '.draft'
+# Then PUT with the updated array:
+# PUT /api/admin/changelog { "entries": [...existing, ...new] }
+```
+
+Or use the Supabase client directly in a script/API call. The admin UI at /admin > Changelog tab is the primary interface.
 
 - **Products:** `studio`, `cli`, `figma-plugin`, `chrome-extension`
 - **Categories:** `new` (brand new feature), `improved` (enhancement), `fixed` (bug fix)
