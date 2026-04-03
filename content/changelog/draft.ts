@@ -45,4 +45,31 @@ export const draftEntries: ChangelogEntry[] = [
     category: "fixed",
     date: "2026-04-03",
   },
+  {
+    id: "2026-w14-health-tooltip",
+    title: "Health score breakdown on hover",
+    description:
+      "Hover the compliance score badge on any variant to see a full breakdown: token faithfulness, component accuracy, anti-pattern violations, and issue count.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-03",
+  },
+  {
+    id: "2026-w14-figma-url-autofill",
+    title: "Push to Figma auto-fills your file URL",
+    description:
+      "When pushing a variant to Figma, the target file URL is now pre-filled from your extraction source. You can still change it.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-03",
+  },
+  {
+    id: "2026-w14-inspector-buttons",
+    title: "Inspector now selects all button types",
+    description:
+      "Fixed an issue where clicking certain interactive buttons in the inspector wouldn't open the edit panel.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-03",
+  },
 ];
