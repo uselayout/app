@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { SENDER_OPTIONS } from "@/lib/email/senders";
+import { SENDER_OPTIONS, OUTREACH_SENDER_OPTIONS } from "@/lib/email/senders";
 
 interface RecipientData {
   segments: {
@@ -11,7 +11,71 @@ interface RecipientData {
   users: Array<{ email: string; name: string; source: string }>;
 }
 
-type Segment = "all_users" | "approved_not_signed_up" | "individual";
+type Segment = "all_users" | "approved_not_signed_up" | "individual" | "outreach";
+
+interface OutreachRecipient {
+  email: string;
+  name: string;
+  suppressed?: boolean;
+}
+
+/** Parse bulk-pasted text into email + name pairs */
+function parseBulkEmails(text: string): OutreachRecipient[] {
+  const results: OutreachRecipient[] = [];
+  const seen = new Set<string>();
+
+  // Split on newlines, commas (but not within angle brackets), or semicolons
+  const lines = text.split(/[\n;]+/).flatMap((l) => {
+    // Only split on commas if there's no angle bracket pattern
+    if (l.includes("<") && l.includes(">")) return [l];
+    return l.split(",");
+  });
+
+  for (const raw of lines) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+
+    let email = "";
+    let name = "";
+
+    // Format: "First Last <email@example.com>"
+    const angleMatch = trimmed.match(/^(.+?)\s*<([^>]+@[^>]+)>\s*$/);
+    if (angleMatch) {
+      name = angleMatch[1].replace(/^["']|["']$/g, "").trim();
+      email = angleMatch[2].trim().toLowerCase();
+    } else {
+      // Format: just an email
+      const emailMatch = trimmed.match(/[\w.+-]+@[\w.-]+\.\w+/);
+      if (emailMatch) {
+        email = emailMatch[0].toLowerCase();
+        // Try to extract name from before the email
+        const before = trimmed.slice(0, trimmed.indexOf(emailMatch[0])).replace(/[,;:\s]+$/, "").trim();
+        if (before && !before.includes("@")) {
+          name = before;
+        }
+      }
+    }
+
+    if (!email) continue;
+    if (seen.has(email)) continue;
+    seen.add(email);
+
+    // Guess name from email if not provided
+    if (!name) {
+      const local = email.split("@")[0];
+      const parts = local.split(/[._-]/);
+      name = parts
+        .filter((p) => p.length > 1)
+        .slice(0, 2)
+        .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+        .join(" ");
+    }
+
+    results.push({ email, name });
+  }
+
+  return results;
+}
 
 interface Props {
   toast: (msg: string, type?: "success" | "error") => void;
@@ -118,6 +182,9 @@ export function EmailTab({ toast }: Props) {
   const [confirming, setConfirming] = useState(false);
   const [suggestions, setSuggestions] = useState<Array<{ email: string; name: string }>>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [outreachRecipients, setOutreachRecipients] = useState<OutreachRecipient[]>([]);
+  const [bulkPasteText, setBulkPasteText] = useState("");
+  const [checkingSuppression, setCheckingSuppression] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/email/recipients")
@@ -128,12 +195,17 @@ export function EmailTab({ toast }: Props) {
       .catch(() => {});
   }, []);
 
+  const activeOutreach = outreachRecipients.filter((r) => !r.suppressed);
+  const suppressedCount = outreachRecipients.filter((r) => r.suppressed).length;
+
   const recipientCount =
     segment === "all_users"
       ? recipients?.segments.all_users.count ?? 0
       : segment === "approved_not_signed_up"
         ? recipients?.segments.approved_not_signed_up.count ?? 0
-        : individualEmails.length;
+        : segment === "outreach"
+          ? activeOutreach.length
+          : individualEmails.length;
 
   const canSend = subject.trim() && bodyText.trim() && recipientCount > 0 && !sending;
 
@@ -193,6 +265,7 @@ export function EmailTab({ toast }: Props) {
           bodyHtml: textToEmailHtml(bodyText),
           segment,
           individualEmails: segment === "individual" ? individualEmails : undefined,
+          outreachRecipients: segment === "outreach" ? activeOutreach : undefined,
           fromEmail,
         }),
       });
@@ -238,7 +311,51 @@ export function EmailTab({ toast }: Props) {
     }
   };
 
-  const senderKeys = Object.keys(SENDER_OPTIONS);
+  const activeSenders = segment === "outreach" ? OUTREACH_SENDER_OPTIONS : SENDER_OPTIONS;
+  const senderKeys = Object.keys(activeSenders);
+
+  // Switch to outreach sender when segment changes
+  useEffect(() => {
+    if (segment === "outreach" && !Object.keys(OUTREACH_SENDER_OPTIONS).includes(fromEmail)) {
+      setFromEmail(Object.keys(OUTREACH_SENDER_OPTIONS)[0]);
+    } else if (segment !== "outreach" && !Object.keys(SENDER_OPTIONS).includes(fromEmail)) {
+      setFromEmail(Object.keys(SENDER_OPTIONS)[0]);
+    }
+  }, [segment, fromEmail]);
+
+  const handleParseBulk = async () => {
+    const parsed = parseBulkEmails(bulkPasteText);
+    if (parsed.length === 0) {
+      toast("No valid emails found", "error");
+      return;
+    }
+
+    // Check suppressions
+    setCheckingSuppression(true);
+    try {
+      const res = await fetch("/api/admin/email/check-suppression", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emails: parsed.map((r) => r.email) }),
+      });
+      if (res.ok) {
+        const { suppressed } = await res.json() as { suppressed: string[] };
+        const suppressedSet = new Set(suppressed);
+        const withSuppression = parsed.map((r) => ({
+          ...r,
+          suppressed: suppressedSet.has(r.email),
+        }));
+        setOutreachRecipients(withSuppression);
+      } else {
+        setOutreachRecipients(parsed);
+      }
+    } catch {
+      setOutreachRecipients(parsed);
+    } finally {
+      setCheckingSuppression(false);
+    }
+    setBulkPasteText("");
+  };
 
   return (
     <div className="space-y-6">
@@ -255,6 +372,7 @@ export function EmailTab({ toast }: Props) {
             { key: "all_users" as Segment, label: "All signed-up users", count: recipients?.segments.all_users.count },
             { key: "approved_not_signed_up" as Segment, label: "Approved (not signed up)", count: recipients?.segments.approved_not_signed_up.count },
             { key: "individual" as Segment, label: "Individual recipients", count: segment === "individual" ? individualEmails.length : undefined },
+            { key: "outreach" as Segment, label: "Cold outreach", count: segment === "outreach" ? activeOutreach.length : undefined },
           ].map((opt) => (
             <button
               key={opt.key}
@@ -337,6 +455,102 @@ export function EmailTab({ toast }: Props) {
             </div>
           </div>
         )}
+
+        {/* Outreach bulk paste */}
+        {segment === "outreach" && (
+          <div className="space-y-3">
+            {outreachRecipients.length === 0 ? (
+              <div className="space-y-2">
+                <textarea
+                  value={bulkPasteText}
+                  onChange={(e) => setBulkPasteText(e.target.value)}
+                  placeholder={"Paste emails here (one per line):\n\nname@example.com\nFirst Last <email@example.com>\nFirst, email@example.com"}
+                  rows={6}
+                  className="w-full px-3 py-2 rounded-md text-sm outline-none resize-y font-mono"
+                  style={{
+                    background: "var(--bg-panel)",
+                    border: "1px solid var(--studio-border)",
+                    color: "var(--text-primary)",
+                    lineHeight: "1.6",
+                  }}
+                />
+                <button
+                  onClick={handleParseBulk}
+                  disabled={!bulkPasteText.trim() || checkingSuppression}
+                  className="px-4 py-2 rounded-md text-sm font-medium transition-all"
+                  style={{
+                    background: "var(--studio-accent)",
+                    color: "var(--text-on-accent)",
+                    opacity: !bulkPasteText.trim() || checkingSuppression ? 0.5 : 1,
+                  }}
+                >
+                  {checkingSuppression ? "Checking..." : "Parse emails"}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    {activeOutreach.length} recipient{activeOutreach.length !== 1 ? "s" : ""}
+                    {suppressedCount > 0 && (
+                      <span style={{ color: "#f87171" }}> ({suppressedCount} suppressed)</span>
+                    )}
+                  </p>
+                  <button
+                    onClick={() => setOutreachRecipients([])}
+                    className="text-xs px-2 py-1 rounded"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Clear all
+                  </button>
+                </div>
+                <div
+                  className="rounded-md overflow-y-auto"
+                  style={{ maxHeight: 200, border: "1px solid var(--studio-border)" }}
+                >
+                  {outreachRecipients.map((r, i) => (
+                    <div
+                      key={r.email}
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs"
+                      style={{
+                        background: i % 2 === 0 ? "var(--bg-app)" : "var(--bg-surface)",
+                        opacity: r.suppressed ? 0.4 : 1,
+                        textDecoration: r.suppressed ? "line-through" : "none",
+                      }}
+                    >
+                      <input
+                        type="text"
+                        value={r.name}
+                        onChange={(e) => {
+                          const updated = [...outreachRecipients];
+                          updated[i] = { ...updated[i], name: e.target.value };
+                          setOutreachRecipients(updated);
+                        }}
+                        className="w-32 px-1.5 py-0.5 rounded outline-none"
+                        style={{ background: "transparent", color: "var(--text-primary)", border: "1px solid transparent" }}
+                        onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = "var(--studio-border)"; }}
+                        onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = "transparent"; }}
+                      />
+                      <span className="flex-1 font-mono" style={{ color: "var(--text-secondary)" }}>{r.email}</span>
+                      {r.suppressed && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "rgba(248,113,113,0.1)", color: "#f87171" }}>
+                          Unsubscribed
+                        </span>
+                      )}
+                      <button
+                        onClick={() => setOutreachRecipients(outreachRecipients.filter((_, j) => j !== i))}
+                        className="opacity-0 group-hover:opacity-100 hover:opacity-100"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        x
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Compose */}
@@ -363,7 +577,7 @@ export function EmailTab({ toast }: Props) {
               }}
             >
               {senderKeys.map((key) => (
-                <option key={key} value={key}>{SENDER_OPTIONS[key]}</option>
+                <option key={key} value={key}>{activeSenders[key]}</option>
               ))}
             </select>
           </div>
@@ -468,8 +682,11 @@ export function EmailTab({ toast }: Props) {
               Send broadcast?
             </h3>
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-              This will send <strong>{recipientCount}</strong> email{recipientCount !== 1 ? "s" : ""} with
-              subject &quot;{subject}&quot; from {SENDER_OPTIONS[fromEmail] ?? fromEmail}.
+              This will send <strong>{recipientCount}</strong> {segment === "outreach" ? "outreach" : ""} email{recipientCount !== 1 ? "s" : ""} with
+              subject &quot;{subject}&quot; from {activeSenders[fromEmail] ?? fromEmail}.
+              {segment === "outreach" && suppressedCount > 0 && (
+                <><br /><span style={{ color: "#fbbf24" }}>{suppressedCount} suppressed email{suppressedCount !== 1 ? "s" : ""} will be skipped.</span></>
+              )}
             </p>
             <div className="flex gap-3 justify-end">
               <button

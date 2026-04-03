@@ -4,6 +4,11 @@ export const SENDER_OPTIONS: Record<string, string> = {
   "hello@layout.design": "Layout <hello@layout.design>",
 };
 
+export const OUTREACH_SENDER_OPTIONS: Record<string, string> = {
+  "matt@outreach.layout.design": "Matt from Layout <matt@outreach.layout.design>",
+  "ben@outreach.layout.design": "Ben from Layout <ben@outreach.layout.design>",
+};
+
 export function resolveSender(fromEmail?: string): string | undefined {
   return fromEmail && SENDER_OPTIONS[fromEmail]
     ? SENDER_OPTIONS[fromEmail]

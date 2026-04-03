@@ -5,13 +5,17 @@ import { supabase } from "@/lib/supabase/client";
 import { sendEmail } from "@/lib/email/send";
 import { resolveSender } from "@/lib/email/senders";
 import { wrapBroadcastHtml } from "@/lib/email/templates/broadcast-wrapper";
+import { outreachEmailHtml } from "@/lib/email/templates/outreach";
 import { logBroadcastEmail } from "@/lib/email/log";
+import { getSuppressedEmails } from "@/lib/email/suppression";
+import { generateUnsubscribeUrl } from "@/lib/email/unsubscribe";
 
 const BroadcastSchema = z.object({
   subject: z.string().min(1).max(200),
   bodyHtml: z.string().min(1),
-  segment: z.enum(["all_users", "approved_not_signed_up", "individual"]),
+  segment: z.enum(["all_users", "approved_not_signed_up", "individual", "outreach"]),
   individualEmails: z.array(z.string().email()).optional(),
+  outreachRecipients: z.array(z.object({ email: z.string().email(), name: z.string() })).optional(),
   fromEmail: z.string().optional(),
 });
 
@@ -82,15 +86,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { subject, bodyHtml, segment, individualEmails, fromEmail } = parsed.data;
-  const recipients = await resolveRecipients(segment, individualEmails);
+  const { subject, bodyHtml, segment, individualEmails, outreachRecipients, fromEmail } = parsed.data;
+  const isOutreach = segment === "outreach";
 
-  if (recipients.length === 0) {
-    return NextResponse.json({ error: "No recipients found" }, { status: 400 });
+  let recipients: Array<{ email: string; name: string }>;
+  if (isOutreach && outreachRecipients) {
+    recipients = outreachRecipients;
+  } else {
+    recipients = await resolveRecipients(segment, individualEmails);
   }
 
-  const wrappedHtml = wrapBroadcastHtml(bodyHtml);
+  // Filter out suppressed emails
+  const suppressed = await getSuppressedEmails(recipients.map((r) => r.email));
+  recipients = recipients.filter((r) => !suppressed.has(r.email.toLowerCase()));
+
+  if (recipients.length === 0) {
+    return NextResponse.json({ error: "No recipients found (all may be suppressed)" }, { status: 400 });
+  }
+
   const from = resolveSender(fromEmail);
+  // Extract sender name for outreach template (e.g. "Matt from Layout" from "Matt from Layout <matt@...>")
+  const senderDisplayName = from?.replace(/<[^>]+>/, "").trim();
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -103,12 +119,29 @@ export async function POST(request: NextRequest) {
       let failed = 0;
 
       for (const recipient of recipients) {
+        let html: string;
+        let headers: Record<string, string> | undefined;
+
+        if (isOutreach) {
+          const unsubUrl = generateUnsubscribeUrl(recipient.email);
+          html = outreachEmailHtml({
+            name: recipient.name,
+            bodyHtml,
+            unsubscribeUrl: unsubUrl,
+            senderName: senderDisplayName,
+          });
+          headers = { "List-Unsubscribe": `<${unsubUrl}>` };
+        } else {
+          html = wrapBroadcastHtml(bodyHtml);
+        }
+
         try {
           const result = await sendEmail({
             to: recipient.email,
             subject,
-            html: wrappedHtml,
+            html,
             from,
+            headers,
           });
 
           await logBroadcastEmail({
@@ -127,8 +160,9 @@ export async function POST(request: NextRequest) {
               const retryResult = await sendEmail({
                 to: recipient.email,
                 subject,
-                html: wrappedHtml,
+                html,
                 from,
+                headers,
               });
               await logBroadcastEmail({
                 recipientEmail: recipient.email,

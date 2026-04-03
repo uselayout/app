@@ -1846,11 +1846,64 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
               }))
               .filter((g) => g.items.length > 0);
 
+            const generatePublishedCopy = (format: "twitter" | "linkedin" | "markdown") => {
+              const lines: string[] = [];
+              const catOrder = ["new", "improved", "fixed"] as const;
+              const catLabels: Record<string, string> = { new: "New", improved: "Improved", fixed: "Fixed" };
+              if (format === "twitter") {
+                lines.push(`Layout changelog - ${week.label}`, "");
+                for (const cat of catOrder) {
+                  const items = week.items.filter((i) => i.category === cat);
+                  if (items.length === 0) continue;
+                  lines.push(`${catLabels[cat]}: ${items.slice(0, 3).map((i) => i.text).join(", ")}`);
+                }
+                lines.push("", "Full changelog: layout.design/changelog");
+              } else if (format === "linkedin") {
+                lines.push(`Layout - ${week.label}`, "", week.summary, "");
+                for (const g of weekGroups) {
+                  lines.push(g.badge.label);
+                  for (const cat of catOrder) {
+                    const items = g.items.filter((i) => i.category === cat);
+                    for (const item of items) lines.push(`- ${catLabels[item.category]}: ${item.text}`);
+                  }
+                  lines.push("");
+                }
+                lines.push("See the full changelog: layout.design/changelog");
+              } else {
+                lines.push(`## ${week.label}`, "", week.summary, "");
+                for (const g of weekGroups) {
+                  lines.push(`### ${g.badge.label}`);
+                  for (const cat of catOrder) {
+                    const items = g.items.filter((i) => i.category === cat);
+                    if (items.length === 0) continue;
+                    lines.push(`**${catLabels[cat]}**`);
+                    for (const item of items) lines.push(`- ${item.text}`);
+                    lines.push("");
+                  }
+                }
+              }
+              return lines.join("\n");
+            };
+
             return (
               <div key={week.weekId} className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                  {week.label}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                    {week.label}
+                  </p>
+                  <div className="flex gap-1.5">
+                    {(["twitter", "linkedin", "markdown"] as const).map((fmt) => (
+                      <button
+                        key={fmt}
+                        onClick={() => { copyToClipboard(generatePublishedCopy(fmt)); toast(`Copied for ${fmt === "markdown" ? "Markdown" : fmt.charAt(0).toUpperCase() + fmt.slice(1)}`); }}
+                        className="px-2 py-0.5 rounded text-[10px] transition-all"
+                        style={{ background: "var(--bg-elevated)", color: "var(--text-muted)", border: "1px solid var(--studio-border)" }}
+                      >
+                        {fmt === "twitter" ? "Twitter" : fmt === "linkedin" ? "LinkedIn" : "MD"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div
                   className="rounded-lg p-3 space-y-2"
                   style={{ background: "var(--bg-panel)", border: "1px solid var(--studio-border)" }}

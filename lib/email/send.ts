@@ -16,9 +16,10 @@ interface SendEmailOptions {
   html: string;
   from?: string;
   replyTo?: string;
+  headers?: Record<string, string>;
 }
 
-export async function sendEmail({ to, subject, html, from, replyTo }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, from, replyTo, headers }: SendEmailOptions) {
   const resend = getResend();
   if (!resend) {
     console.warn("RESEND_API_KEY not set - skipping email send to", to);
@@ -36,6 +37,7 @@ export async function sendEmail({ to, subject, html, from, replyTo }: SendEmailO
     subject,
     html,
     replyTo: resolvedReplyTo,
+    ...(headers ? { headers } : {}),
   });
 
   if (error) {
