@@ -333,7 +333,7 @@ function FigmaTab({
     } finally {
       setIsCapturing(false);
     }
-  }, [fileKey, parsed?.nodeId, projectId, onGenerateFromFigma]);
+  }, [fileKey, parsed?.nodeId, projectId, onGenerateFromFigma, patValue]);
 
   return (
     <div className="flex h-full flex-col gap-3 p-3">
@@ -364,9 +364,20 @@ function FigmaTab({
 
           {onGenerateFromFigma && (
             <div className="space-y-2">
+              {showPatInput && !getStoredFigmaApiKey() && (
+                <input
+                  type="password"
+                  value={patValue}
+                  onChange={(e) => setPatValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && patValue) handleGenerateClick(); }}
+                  placeholder="Paste Figma access token..."
+                  className="w-full rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+                  autoFocus
+                />
+              )}
               <button
                 onClick={handleGenerateClick}
-                disabled={!hasNodeId || isCapturing}
+                disabled={!hasNodeId || isCapturing || (showPatInput && !patValue && !getStoredFigmaApiKey())}
                 title={!hasNodeId ? "Select a frame in Figma and include its node-id in the URL" : "Capture this frame and generate code variants"}
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)] hover:border-[var(--studio-border-strong)] disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -381,26 +392,6 @@ function FigmaTab({
                 <p className="text-[11px] text-[var(--text-muted)]">
                   Select a specific frame in Figma and update the URL with its node-id to enable generation.
                 </p>
-              )}
-              {showPatInput && !getStoredFigmaApiKey() && (
-                <div className="flex gap-2">
-                  <input
-                    type="password"
-                    value={patValue}
-                    onChange={(e) => setPatValue(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && patValue) handleGenerateClick(); }}
-                    placeholder="Paste Figma access token..."
-                    className="flex-1 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
-                    autoFocus
-                  />
-                  <button
-                    onClick={handleGenerateClick}
-                    disabled={!patValue}
-                    className="rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-40 transition-colors"
-                  >
-                    Go
-                  </button>
-                </div>
               )}
               {captureError && (
                 <p className="text-[11px] text-red-400">{captureError}</p>
