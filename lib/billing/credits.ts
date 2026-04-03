@@ -5,7 +5,7 @@ import type {
   QuotaCheck,
   SubscriptionTier,
 } from "@/lib/types/billing";
-import { TIER_CREDITS as CREDITS } from "@/lib/types/billing";
+import { TIER_CREDITS as CREDITS, ALPHA_MODE, ALPHA_CREDITS } from "@/lib/types/billing";
 import { getUserTier, getSubscriptionByOrg } from "@/lib/billing/subscription";
 
 interface CreditRow {
@@ -288,7 +288,7 @@ export async function resetMonthlyCredits(
   periodStart: string,
   periodEnd: string
 ): Promise<void> {
-  const allocation = CREDITS[tier];
+  const allocation = (ALPHA_MODE && tier === "free") ? ALPHA_CREDITS : CREDITS[tier];
   const multiplier = tier === "team" ? seatCount : 1;
 
   const { error } = await supabase
@@ -320,7 +320,7 @@ export async function resetMonthlyCreditsByOrg(
   periodStart: string,
   periodEnd: string
 ): Promise<void> {
-  const allocation = CREDITS[tier];
+  const allocation = (ALPHA_MODE && tier === "free") ? ALPHA_CREDITS : CREDITS[tier];
   const multiplier = tier === "team" ? seatCount : 1;
 
   const { error } = await supabase

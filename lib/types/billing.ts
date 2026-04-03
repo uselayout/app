@@ -78,6 +78,10 @@ export const TIER_CREDITS = {
   topup: { layoutMd: 30, aiQuery: 80 },
 } as const;
 
+/** Alpha phase: generous credits for early testers. Set to false to revert to standard free tier. */
+export const ALPHA_MODE = true;
+export const ALPHA_CREDITS = { layoutMd: 5, aiQuery: 100 } as const;
+
 /** Claude Sonnet 4.6 pricing per token in USD */
 export const TOKEN_COSTS_USD = {
   input: 3.0 / 1_000_000,
