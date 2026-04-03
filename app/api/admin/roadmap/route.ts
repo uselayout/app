@@ -7,7 +7,7 @@ const createSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(2000).optional(),
   product: z.enum(["studio", "cli", "figma-plugin", "chrome-extension"]),
-  status: z.enum(["planned", "in-progress", "shipped", "considering"]),
+  status: z.enum(["planned", "in_progress", "shipped", "considering"]),
 });
 
 export async function GET(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const items = await getRoadmapItems();
-    return NextResponse.json(items);
+    return NextResponse.json({ items });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to fetch roadmap";
     return NextResponse.json({ error: message }, { status: 500 });
