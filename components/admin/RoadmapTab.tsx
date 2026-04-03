@@ -61,8 +61,8 @@ export function RoadmapTab({ toast }: Props) {
     try {
       const res = await fetch("/api/admin/roadmap");
       if (!res.ok) return;
-      const data = await res.json() as { items: RoadmapItem[] };
-      setItems(data.items);
+      const data = await res.json() as { items?: RoadmapItem[] };
+      setItems(data.items ?? []);
     } catch {
       toast("Failed to load roadmap items", "error");
     } finally {
