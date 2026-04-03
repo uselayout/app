@@ -279,29 +279,30 @@ function StepItem({
   );
 }
 
-/** Paper.design logo icon */
+/** Paper.design logo icon — adapted from official brand SVG */
 export function PaperIcon({ size = 16 }: { size?: number }) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
+      viewBox="0 0 300 300"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M4 4h16v16H4V4z"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        strokeLinejoin="round"
-        fill="none"
+        d="M82.48 52.5H247.5V130.7c0 13.5-.32 28.4.04 41.8-24.93-.18-50.13.28-75 -.06V247.5c-12.97-.23-26.5-.04-39.52-.04H52.54V82.52c9.98-.1 20.1-.02 30.1-.01-.3-9.9.06-20.1-.08-30Z"
+        fill="currentColor"
+        opacity={0.7}
       />
       <path
-        d="M4 4l8 8m0 0l8-8m-8 8v12"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d="M52.47 82.52c9.98-.1 20.1-.02 30.1-.01-.04 6.69-.28 88.86.21 89.83l.21.15 60.5-.03c9.32 0 19.85.25 29.02-.02V247.5c-12.97-.23-26.5-.04-39.52-.04H52.54V82.52Z"
+        fill="currentColor"
+        opacity={0.5}
+      />
+      <path
+        d="M83.25 82.53l89.22-.03-.02 59.3c0 9.35-.35 21.47.06 30.65-9.17.26-19.7.02-29.02.02L82.99 172.5l-.21-.15c-.49-.97-.26-83.15-.2-89.82l.67.02Z"
+        fill="currentColor"
+        opacity={0.2}
       />
     </svg>
   );
