@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ExplorerToolbar } from "./ExplorerToolbar";
 import { VariantCard } from "./VariantCard";
 import { FigmaPushModal } from "./FigmaPushModal";
+import { PaperPushModal } from "./PaperPushModal";
 import { FigmaImportModal } from "./FigmaImportModal";
 import { ResponsivePreview } from "./ResponsivePreview";
 import { ComparisonView } from "./ComparisonView";
@@ -68,6 +69,7 @@ export function ExplorerCanvas({
   const [generationStatus, setGenerationStatus] = useState<string | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [pushVariant, setPushVariant] = useState<DesignVariant | null>(null);
+  const [paperPushVariant, setPaperPushVariant] = useState<DesignVariant | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [responsiveVariant, setResponsiveVariant] = useState<DesignVariant | null>(null);
   const [promoteVariant, setPromoteVariant] = useState<DesignVariant | null>(null);
@@ -605,6 +607,10 @@ export function ExplorerCanvas({
     setPushVariant(variant);
   }, []);
 
+  const handlePushToPaper = useCallback((variant: DesignVariant) => {
+    setPaperPushVariant(variant);
+  }, []);
+
   const handlePushComplete = useCallback(
     (record: { fileKey: string; nodeId: string; viewports: string[] }) => {
       if (!pushVariant || !currentExploration) return;
@@ -978,6 +984,7 @@ export function ExplorerCanvas({
                       onRate={(rating) => handleRateVariant(variant.id, rating)}
                       onCopyCode={() => navigator.clipboard.writeText(variant.code)}
                       onPushToFigma={() => handlePushToFigma(variant)}
+                      onPushToPaper={() => handlePushToPaper(variant)}
                       onRegenerate={(feedback) => {
                         if (feedback) {
                           handleRefineVariant(variant, feedback);
@@ -1090,6 +1097,7 @@ export function ExplorerCanvas({
         })}
         onRegenerate={handleRegenerate}
         onPushToFigma={() => selectedVariant && handlePushToFigma(selectedVariant)}
+        onPushToPaper={() => selectedVariant && handlePushToPaper(selectedVariant)}
         onImportFromFigma={() => setShowImport(true)}
         isGenerating={isGeneratingThisTab}
         hasVariants={variants.length > 0}
@@ -1108,6 +1116,13 @@ export function ExplorerCanvas({
           variant={pushVariant}
           onClose={() => setPushVariant(null)}
           onPushComplete={handlePushComplete}
+        />
+      )}
+
+      {paperPushVariant && (
+        <PaperPushModal
+          variant={paperPushVariant}
+          onClose={() => setPaperPushVariant(null)}
         />
       )}
 

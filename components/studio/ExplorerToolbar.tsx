@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { ArrowUp, RotateCw, Figma, Minus, Plus, Download, Wand2, Split, ImagePlus, Paperclip, X, ChevronDown, KeyRound } from "lucide-react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { PaperIcon } from "@/components/studio/PaperPushModal";
 import type { ContextFile, AiModelId } from "@/lib/types";
 import { AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 
@@ -20,6 +21,7 @@ interface ExplorerToolbarProps {
   onCompare: (prompt: string, imageDataUrl?: string, contextFiles?: ContextFile[]) => void;
   onRegenerate: () => void;
   onPushToFigma: () => void;
+  onPushToPaper: () => void;
   onImportFromFigma: () => void;
   isGenerating: boolean;
   hasVariants: boolean;
@@ -45,6 +47,7 @@ export function ExplorerToolbar({
   onRefine,
   onCompare,
   onPushToFigma,
+  onPushToPaper,
   onImportFromFigma,
   isGenerating,
   hasVariants,
@@ -502,14 +505,24 @@ export function ExplorerToolbar({
             Import from Figma
           </button>
           {hasSelection && (
-            <button
-              onClick={onPushToFigma}
-              disabled={isGenerating}
-              className="inline-flex items-center gap-1.5 rounded-md border border-[rgba(255,255,255,0.07)] h-[30px] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-40"
-            >
-              <Figma size={12} />
-              Push to Figma
-            </button>
+            <>
+              <button
+                onClick={onPushToFigma}
+                disabled={isGenerating}
+                className="inline-flex items-center gap-1.5 rounded-md border border-[rgba(255,255,255,0.07)] h-[30px] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-40"
+              >
+                <Figma size={12} />
+                Push to Figma
+              </button>
+              <button
+                onClick={onPushToPaper}
+                disabled={isGenerating}
+                className="inline-flex items-center gap-1.5 rounded-md border border-[rgba(255,255,255,0.07)] h-[30px] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-40"
+              >
+                <PaperIcon size={12} />
+                Push to Paper
+              </button>
+            </>
           )}
         </div>
       </div>

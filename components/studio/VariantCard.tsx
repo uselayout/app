@@ -12,6 +12,7 @@ import { ElementInspector } from "@/components/studio/ElementInspector";
 import { EditHistoryPanel } from "@/components/studio/EditHistoryPanel";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { countPlaceholderImages } from "@/lib/image/placeholder";
+import { PaperIcon } from "@/components/studio/PaperPushModal";
 import type { DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotation, ExtractedToken } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -187,6 +188,7 @@ interface VariantCardProps {
   onRate: (rating: "up" | "down") => void;
   onCopyCode: () => void;
   onPushToFigma: () => void;
+  onPushToPaper: () => void;
   onRegenerate: (feedback?: string) => void;
   onResponsive?: () => void;
   onPromoteToLibrary?: () => void;
@@ -208,6 +210,7 @@ export function VariantCard({
   onRate,
   onCopyCode,
   onPushToFigma,
+  onPushToPaper,
   onRegenerate,
   onResponsive,
   onPromoteToLibrary,
@@ -1002,6 +1005,14 @@ export function VariantCard({
           className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
         >
           <Figma size={12} />
+        </button>
+        </Tip>
+        <Tip label="Push to Paper">
+        <button
+          onClick={(e) => { e.stopPropagation(); onPushToPaper(); }}
+          className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+        >
+          <PaperIcon size={12} />
         </button>
         </Tip>
         {onPromoteToLibrary && (
