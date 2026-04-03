@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { RoadmapStatusGroup } from "./RoadmapStatusGroup";
-import { ProductBadge } from "@/components/changelog/ProductBadge";
-import type { ChangelogProduct } from "@/lib/types/changelog";
+import { RoadmapItem as RoadmapItemComponent } from "./RoadmapItem";
 
 interface RoadmapItem {
   id: string;
@@ -21,8 +19,7 @@ const STATUS_ORDER = [
   { key: "shipped", label: "Recently shipped", colour: "#a78bfa" },
 ] as const;
 
-const PRODUCTS: { key: string; label: string }[] = [
-  { key: "all", label: "All" },
+const PRODUCT_SECTIONS = [
   { key: "studio", label: "Studio" },
   { key: "cli", label: "CLI" },
   { key: "figma-plugin", label: "Figma Plugin" },
@@ -121,7 +118,7 @@ export function RoadmapClient() {
     <div className="mt-10">
       {/* Product filters */}
       <div className="flex gap-2 mb-10">
-        {PRODUCTS.map((p) => (
+        {[{ key: "all", label: "All" }, ...PRODUCT_SECTIONS].map((p) => (
           <button
             key={p.key}
             onClick={() => setProductFilter(p.key)}
@@ -137,28 +134,66 @@ export function RoadmapClient() {
         ))}
       </div>
 
-      {/* Status groups */}
-      <div className="space-y-12">
-        {STATUS_ORDER.map((status) => {
-          const statusItems = filtered.filter((i) => i.status === status.key);
-          if (statusItems.length === 0) return null;
-          return (
-            <RoadmapStatusGroup
-              key={status.key}
-              label={status.label}
-              colour={status.colour}
-              items={statusItems}
-              votedIds={votedIds}
-              votingId={votingId}
-              onVote={handleVote}
-            />
-          );
-        })}
+      {/* Product sections with status sub-groups */}
+      <div className="space-y-16">
+        {PRODUCT_SECTIONS
+          .filter((p) => productFilter === "all" || productFilter === p.key)
+          .map((product) => {
+            const productItems = items.filter((i) => i.product === product.key);
+            if (productItems.length === 0) return null;
+
+            return (
+              <section key={product.key}>
+                <h2 className="text-lg font-bold text-white mb-6">
+                  {product.label}
+                </h2>
+                <div className="space-y-8">
+                  {STATUS_ORDER.map((status) => {
+                    const statusItems = productItems.filter((i) => i.status === status.key);
+                    if (statusItems.length === 0) return null;
+
+                    return (
+                      <div key={status.key}>
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: status.colour }} />
+                          <h3 className="text-xs font-semibold uppercase tracking-widest" style={{ color: status.colour }}>
+                            {status.label}
+                          </h3>
+                        </div>
+                        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                          <table className="w-full">
+                            <thead>
+                              <tr style={{ background: "rgba(255,255,255,0.03)" }}>
+                                <th className="py-2 px-3 w-[50px]" />
+                                <th className="py-2 px-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/30">Item</th>
+                                <th className="py-2 px-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/30">Description</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {statusItems.map((item) => (
+                                <RoadmapItemComponent
+                                  key={item.id}
+                                  item={item}
+                                  voted={votedIds.has(item.id)}
+                                  voting={votingId === item.id}
+                                  onVote={() => handleVote(item.id)}
+                                />
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
       </div>
 
-      {filtered.length === 0 && (
+      {items.length === 0 && (
         <p className="text-sm text-white/40 text-center py-16">
-          No roadmap items for this product yet.
+          No roadmap items yet.
         </p>
       )}
     </div>
