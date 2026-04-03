@@ -162,11 +162,10 @@ export function RoadmapClient() {
                         </div>
                         <div className="rounded-lg overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
                           <table className="w-full">
-                            <thead>
-                              <tr style={{ background: "rgba(255,255,255,0.03)" }}>
-                                <th className="py-2 px-3 w-[50px]" />
-                                <th className="py-2 px-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/30">Item</th>
-                                <th className="py-2 px-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/30">Description</th>
+                            <thead className="sr-only">
+                              <tr>
+                                <th>Vote</th>
+                                <th colSpan={2}>Feature</th>
                               </tr>
                             </thead>
                             <tbody>
