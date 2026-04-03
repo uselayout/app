@@ -144,7 +144,10 @@ export default function CliPage() {
         <CopyBlock
           code={`npx @layoutdesign/context install --target claude
 npx @layoutdesign/context install --target cursor
-npx @layoutdesign/context install --target windsurf`}
+npx @layoutdesign/context install --target windsurf
+npx @layoutdesign/context install --target vscode
+npx @layoutdesign/context install --target codex
+npx @layoutdesign/context install --target gemini`}
           language="bash"
         />
       </section>
@@ -237,6 +240,14 @@ npx @layoutdesign/context install
                 [
                   "update_tokens",
                   "Updates or adds design tokens in the loaded kit (CSS, JSON, or Tailwind format)",
+                ],
+                [
+                  "get_screenshots",
+                  "Returns reference screenshots captured during website extraction for visual comparison",
+                ],
+                [
+                  "check_setup",
+                  "Diagnoses and optionally fixes MCP server setup issues (registration, OAuth, reachability)",
                 ],
               ].map(([tool, desc]) => (
                 <tr key={tool} className="hover:bg-gray-50">

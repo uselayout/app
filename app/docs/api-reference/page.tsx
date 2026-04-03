@@ -7,7 +7,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "API Reference | Layout Docs",
   description:
-    "Complete reference for the 12 MCP tools exposed by the Layout CLI for AI coding agents.",
+    "Complete reference for the MCP tools exposed by the Layout CLI for AI coding agents.",
 };
 
 const tools = [
@@ -295,6 +295,53 @@ await mcp.call("update_tokens", {
   format: "css"
 });`,
   },
+  {
+    name: "get_screenshots",
+    description:
+      "Returns design system reference screenshots captured during website extraction. Returns full-page and/or viewport screenshots as images that can be used for visual comparison when building UI components.",
+    parameters: [
+      {
+        name: "type",
+        type: '"full-page" | "viewport" | "all" (optional)',
+        description:
+          'Which screenshot to return. Defaults to "all" which returns both full-page and viewport captures.',
+      },
+    ],
+    example: `// Get all reference screenshots
+const screenshots = await mcp.call("get_screenshots");
+
+// Get only the viewport-cropped screenshot
+const viewport = await mcp.call("get_screenshots", {
+  type: "viewport"
+});`,
+  },
+  {
+    name: "check_setup",
+    description:
+      "Diagnoses and optionally fixes MCP server setup issues. Call this when Figma tools (push_to_figma, design_in_figma, url_to_figma) are not working. Checks MCP registration, transport type, OAuth status, and endpoint reachability. With fix enabled, attempts to re-register missing or misconfigured servers.",
+    parameters: [
+      {
+        name: "focus",
+        type: '"all" | "figma" | "playwright" | "layout" (optional)',
+        description:
+          'What to check. Defaults to "all".',
+      },
+      {
+        name: "fix",
+        type: "boolean (optional)",
+        description:
+          "If true, attempts to auto-fix issues by re-registering MCP servers. Defaults to false (report only).",
+      },
+    ],
+    example: `// Check everything
+const result = await mcp.call("check_setup");
+
+// Check only Figma setup and auto-fix issues
+const fixed = await mcp.call("check_setup", {
+  focus: "figma",
+  fix: true
+});`,
+  },
 ];
 
 const loopDiagram = `Developer prompts Claude Code / Cursor
@@ -335,7 +382,7 @@ export default function ApiReferencePage() {
       <div className="space-y-4">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">API Reference</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Layout CLI exposes 12 MCP tools that AI agents call during
+          Layout CLI exposes 12 MCP tools that AI agents call automatically during
           development. These tools give your agent structured access to design
           tokens, component specs, compliance checking, live preview, and a
           two-way Figma bridge: everything needed to build UI that stays on
