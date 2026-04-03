@@ -17,6 +17,11 @@ function startOfWeekMonday(): string {
   return monday.toISOString();
 }
 
+function startOfToday(): string {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+}
+
 function daysAgo(days: number): string {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 }
@@ -36,7 +41,7 @@ export async function GET(request: NextRequest) {
   const monthStart = startOfMonth();
   const weekStart = startOfWeekMonday();
   const sevenDaysAgo = daysAgo(7);
-  const periodStart = daysAgo(requestedDays);
+  const periodStart = requestedDays === 1 ? startOfToday() : daysAgo(requestedDays);
   const twentyFourHoursAgo = hoursAgo(24);
 
   const [

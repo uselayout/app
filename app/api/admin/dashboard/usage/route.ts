@@ -14,7 +14,9 @@ export async function GET(request: NextRequest) {
     Math.max(parseInt(request.nextUrl.searchParams.get("days") ?? "30", 10) || 30, 1),
     365
   );
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const since = days === 1
+    ? new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()).toISOString()
+    : new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
   const [usageRes, eventsRes] = await Promise.all([
     supabase
