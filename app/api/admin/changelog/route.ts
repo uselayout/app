@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/admin-context";
-import { draftEntries, publishedWeeks } from "@/content/changelog";
-import { compileDraft, publishWeek, writeDraftEntries } from "@/lib/changelog/publish";
+import { publishedWeeks } from "@/content/changelog";
+import { compileDraft, publishWeek, writeDraftEntries, readDraftEntries } from "@/lib/changelog/publish";
 import type { ChangelogEntry } from "@/lib/types/changelog";
 import { z } from "zod";
 
@@ -32,11 +32,11 @@ export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
-  const compiled =
-    draftEntries.length > 0 ? compileDraft(draftEntries) : null;
+  const draft = readDraftEntries();
+  const compiled = draft.length > 0 ? compileDraft(draft) : null;
 
   return NextResponse.json({
-    draft: draftEntries,
+    draft,
     compiled,
     published: publishedWeeks.slice(0, 5),
   });

@@ -1448,14 +1448,73 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
   const isEditing = editingId !== null;
   const showForm = showAddForm || isEditing;
 
-  // Group items by product for compiled preview
+  const CATEGORY_ORDER = ["new", "improved", "fixed"] as const;
+
+  // Group items by product, then by category within each product
   const groupedItems = PRODUCT_ORDER
-    .map((product) => ({
-      product,
-      badge: productBadgeStyles[product],
-      items: editItems.filter((item) => item.product === product),
-    }))
-    .filter((g) => g.items.length > 0);
+    .map((product) => {
+      const productItems = editItems.filter((item) => item.product === product);
+      const byCategory = CATEGORY_ORDER
+        .map((cat) => ({
+          category: cat,
+          label: categoryLabels[cat],
+          items: productItems.filter((item) => item.category === cat),
+        }))
+        .filter((g) => g.items.length > 0);
+      return {
+        product,
+        badge: productBadgeStyles[product],
+        byCategory,
+        totalCount: productItems.length,
+      };
+    })
+    .filter((g) => g.totalCount > 0);
+
+  // Generate social copy text
+  const generateTwitterText = () => {
+    if (!compiled) return "";
+    const lines: string[] = [`Layout changelog - ${compiled.label}`, ""];
+    for (const cat of CATEGORY_ORDER) {
+      const items = editItems.filter((i) => i.category === cat);
+      if (items.length === 0) continue;
+      const label = cat === "new" ? "New" : cat === "improved" ? "Improved" : "Fixed";
+      lines.push(`${label}: ${items.slice(0, 3).map((i) => i.text).join(", ")}`);
+    }
+    lines.push("", "Full changelog: layout.design/changelog");
+    return lines.join("\n");
+  };
+
+  const generateLinkedInText = () => {
+    if (!compiled) return "";
+    const lines: string[] = [`Layout - ${compiled.label}`, "", editSummary, ""];
+    for (const group of groupedItems) {
+      lines.push(group.badge.label);
+      for (const catGroup of group.byCategory) {
+        for (const item of catGroup.items) {
+          lines.push(`- ${catGroup.label}: ${item.text}`);
+        }
+      }
+      lines.push("");
+    }
+    lines.push("See the full changelog: layout.design/changelog");
+    return lines.join("\n");
+  };
+
+  const generateMarkdown = () => {
+    if (!compiled) return "";
+    const lines: string[] = [`## ${compiled.label}`, "", `${editSummary}`, ""];
+    for (const group of groupedItems) {
+      lines.push(`### ${group.badge.label}`);
+      for (const catGroup of group.byCategory) {
+        lines.push(`**${catGroup.label}**`);
+        for (const item of catGroup.items) {
+          lines.push(`- ${item.text}`);
+        }
+        lines.push("");
+      }
+    }
+    return lines.join("\n");
+  };
 
   return (
     <div className="space-y-6">
@@ -1472,6 +1531,27 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
               </h3>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => { copyToClipboard(generateTwitterText()); toast("Copied for Twitter"); }}
+                className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--studio-border)" }}
+              >
+                Copy Twitter
+              </button>
+              <button
+                onClick={() => { copyToClipboard(generateLinkedInText()); toast("Copied for LinkedIn"); }}
+                className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--studio-border)" }}
+              >
+                Copy LinkedIn
+              </button>
+              <button
+                onClick={() => { copyToClipboard(generateMarkdown()); toast("Copied as Markdown"); }}
+                className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--studio-border)" }}
+              >
+                Copy MD
+              </button>
               <button
                 onClick={() => setShowCompiled(false)}
                 className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
@@ -1507,7 +1587,7 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
             />
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {groupedItems.map((group) => (
               <div key={group.product}>
                 <span
@@ -1516,31 +1596,37 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
                 >
                   {group.badge.label}
                 </span>
-                <div className="space-y-1.5">
-                  {group.items.map((item) => {
-                    const globalIndex = editItems.indexOf(item);
-                    return (
-                      <div key={globalIndex} className="flex items-center gap-2 group">
-                        <span className="text-[10px] shrink-0" style={{ color: "var(--text-muted)" }}>
-                          {categoryLabels[item.category] || item.category}
-                        </span>
-                        <input
-                          type="text"
-                          value={item.text}
-                          onChange={(e) => handleUpdateItemText(globalIndex, e.target.value)}
-                          className="flex-1 rounded px-2 py-1 text-sm outline-none"
-                          style={inputStyle}
-                        />
-                        <button
-                          onClick={() => handleRemoveItem(globalIndex)}
-                          className="px-1.5 py-0.5 rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
-                          style={{ color: "rgb(239,68,68)" }}
-                        >
-                          ×
-                        </button>
+                <div className="space-y-3">
+                  {group.byCategory.map((catGroup) => (
+                    <div key={catGroup.category}>
+                      <span className="text-[10px] font-semibold block mb-1" style={{ color: catGroup.category === "new" ? "#34d399" : catGroup.category === "improved" ? "#60a5fa" : "#fbbf24" }}>
+                        {catGroup.label}
+                      </span>
+                      <div className="space-y-1.5 pl-2">
+                        {catGroup.items.map((item) => {
+                          const globalIndex = editItems.indexOf(item);
+                          return (
+                            <div key={globalIndex} className="flex items-center gap-2 group">
+                              <input
+                                type="text"
+                                value={item.text}
+                                onChange={(e) => handleUpdateItemText(globalIndex, e.target.value)}
+                                className="flex-1 rounded px-2 py-1 text-sm outline-none"
+                                style={inputStyle}
+                              />
+                              <button
+                                onClick={() => handleRemoveItem(globalIndex)}
+                                className="px-1.5 py-0.5 rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                style={{ color: "rgb(239,68,68)" }}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}

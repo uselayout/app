@@ -90,6 +90,33 @@ export function writeDraftEntries(entries: ChangelogEntry[]): void {
   fs.writeFileSync(DRAFT_PATH, buildDraftFile(entries), "utf-8");
 }
 
+/** Read draft entries from disk (bypasses module cache) */
+export function readDraftEntries(): ChangelogEntry[] {
+  const content = fs.readFileSync(DRAFT_PATH, "utf-8");
+  const arrayMatch = content.match(
+    /export const draftEntries[^=]*=\s*\[([\s\S]*?)\];/
+  );
+  if (!arrayMatch || arrayMatch[1].trim() === "") return [];
+
+  const block = arrayMatch[1];
+  const entries: ChangelogEntry[] = [];
+  const entryRegex = /\{[^{}]*?id:\s*"([^"]*)"[^{}]*?title:\s*"([^"]*)"[^{}]*?description:\s*\n?\s*"((?:[^"\\]|\\.)*)"\s*,[^{}]*?product:\s*"([^"]*)"[^{}]*?category:\s*"([^"]*)"[^{}]*?date:\s*"([^"]*)"/g;
+
+  let match: RegExpExecArray | null;
+  while ((match = entryRegex.exec(block)) !== null) {
+    entries.push({
+      id: match[1],
+      title: match[2],
+      description: match[3].replace(/\\"/g, '"').replace(/\\n/g, "\n"),
+      product: match[4] as ChangelogEntry["product"],
+      category: match[5] as ChangelogEntry["category"],
+      date: match[6],
+    });
+  }
+
+  return entries;
+}
+
 /** Compile draft entries into a weekly changelog structure */
 export function compileDraft(entries: ChangelogEntry[]): {
   weekId: string;
@@ -106,11 +133,31 @@ export function compileDraft(entries: ChangelogEntry[]): {
   }));
 
   // Auto-generate a summary from the entries
-  const titles = entries.slice(0, 3).map((e) => e.title);
-  const summary =
-    titles.length <= 2
-      ? titles.join(" and ") + "."
-      : titles.slice(0, -1).join(", ") + ", and " + titles[titles.length - 1] + ".";
+  const newCount = entries.filter((e) => e.category === "new").length;
+  const improvedCount = entries.filter((e) => e.category === "improved").length;
+  const fixedCount = entries.filter((e) => e.category === "fixed").length;
+
+  const parts: string[] = [];
+  if (newCount > 0) parts.push(`${newCount} new feature${newCount === 1 ? "" : "s"}`);
+  if (improvedCount > 0) parts.push(`${improvedCount} improvement${improvedCount === 1 ? "" : "s"}`);
+  if (fixedCount > 0) parts.push(`${fixedCount} fix${fixedCount === 1 ? "" : "es"}`);
+
+  const countStr = parts.length <= 2
+    ? parts.join(" and ")
+    : parts.slice(0, -1).join(", ") + ", and " + parts[parts.length - 1];
+
+  const products = [...new Set(entries.map((e) => e.product))];
+  const productNames: Record<string, string> = {
+    studio: "Studio", cli: "CLI", "figma-plugin": "Figma Plugin", "chrome-extension": "Chrome Extension",
+  };
+  const productStr = products.map((p) => productNames[p] || p).join(", ");
+
+  const highlights = entries.filter((e) => e.category === "new").slice(0, 3).map((e) => e.title);
+  const highlightStr = highlights.length > 0
+    ? ` Highlights: ${highlights.join(", ")}.`
+    : "";
+
+  const summary = `${countStr} across ${productStr}.${highlightStr}`;
 
   return { weekId, label, summary, items };
 }
