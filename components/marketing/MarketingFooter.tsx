@@ -3,6 +3,7 @@ const LAYOUT_LINKS = [
   { label: "Pricing", href: "/pricing" },
   { label: "Docs", href: "/docs" },
   { label: "Changelog", href: "/changelog" },
+  { label: "Roadmap", href: "/roadmap" },
 ];
 
 const TOOLS_LINKS = [
