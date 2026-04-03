@@ -201,6 +201,8 @@ export interface FigmaNode {
   paddingBottom?: number;
   itemSpacing?: number;
   cornerRadius?: number;
+  characters?: string;
+  absoluteBoundingBox?: { x: number; y: number; width: number; height: number };
 }
 
 export interface FigmaFill {

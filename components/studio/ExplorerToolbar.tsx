@@ -31,6 +31,8 @@ interface ExplorerToolbarProps {
   currentPrompt?: string;
   /** Pre-loaded reference image (e.g. from Figma push-to-canvas) */
   initialImage?: string;
+  /** Pre-loaded context files (e.g. from Figma frame capture) */
+  initialContextFiles?: ContextFile[];
   /** Currently selected AI model */
   modelId: AiModelId;
   /** Callback when user switches model */
@@ -55,6 +57,7 @@ export function ExplorerToolbar({
   selectedVariantName,
   currentPrompt,
   initialImage,
+  initialContextFiles,
   modelId,
   onModelChange,
   hasGoogleKey,
@@ -86,6 +89,13 @@ export function ExplorerToolbar({
       setImageName("Captured screenshot");
     }
   }, [initialImage]);
+
+  // Pre-populate context files from Figma frame capture
+  useEffect(() => {
+    if (initialContextFiles?.length) {
+      setContextFiles(initialContextFiles);
+    }
+  }, [initialContextFiles]);
 
   const processFile = useCallback(async (file: File) => {
     if (!ACCEPTED_TYPES.includes(file.type)) return;

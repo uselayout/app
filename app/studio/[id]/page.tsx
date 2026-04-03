@@ -17,7 +17,7 @@ import { ExportModal } from "@/components/studio/ExportModal";
 import { ExtractionDiffModal } from "@/components/studio/ExtractionDiffModal";
 import { diffExtractions } from "@/lib/extraction/diff";
 import type { ExtractionDiff } from "@/lib/extraction/diff";
-import type { DesignVariant, ExtractionResult, SourceType } from "@/lib/types";
+import type { DesignVariant, ExtractionResult, SourceType, ContextFile } from "@/lib/types";
 
 export default function StudioPage({
   params,
@@ -100,6 +100,7 @@ export default function StudioPage({
   // Figma push-to-canvas: pre-load screenshot as reference image
   // Must be state (not ref) so async update triggers re-render for ExplorerCanvas
   const [pendingFigmaImage, setPendingFigmaImage] = useState<string | null>(null);
+  const [pendingFigmaContext, setPendingFigmaContext] = useState<ContextFile[] | null>(null);
 
   // When opened from extension (source=figma), refresh project from DB
   // to get the pendingCanvasImage the extension just pushed
@@ -273,6 +274,12 @@ export default function StudioPage({
     navigator.clipboard.writeText(variant.code);
   }, []);
 
+  const handleGenerateFromFigma = useCallback((imageDataUrl: string, contextFiles?: ContextFile[]) => {
+    setPendingFigmaImage(imageDataUrl);
+    setPendingFigmaContext(contextFiles ?? null);
+    setCentreView("canvas");
+  }, []);
+
   const handleUpdateExplorations = useCallback(
     (explorations: import("@/lib/types").ExplorationSession[]) => {
       updateExplorations(id, explorations);
@@ -390,6 +397,7 @@ export default function StudioPage({
               projectId={project.id}
               onLayoutMdChange={handleLayoutMdChange}
               onExtract={handleExtractFromPanel}
+              onGenerateFromFigma={handleGenerateFromFigma}
             />
           }
           editorPanel={
@@ -410,7 +418,8 @@ export default function StudioPage({
               onPushToFigma={handlePushToFigma}
               onLayoutMdUpdate={handleLayoutMdChange}
               initialImage={pendingFigmaImage ?? undefined}
-              onInitialImageConsumed={() => setPendingFigmaImage(null)}
+              initialContextFiles={pendingFigmaContext ?? undefined}
+              onInitialImageConsumed={() => { setPendingFigmaImage(null); setPendingFigmaContext(null); }}
               extractedFonts={extractedFonts}
               iconPacks={project.iconPacks}
               sourceUrl={project.sourceUrl}

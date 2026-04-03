@@ -35,6 +35,7 @@ interface ExplorerCanvasProps {
   onPushToFigma: (variant: DesignVariant) => void;
   onLayoutMdUpdate?: (newMd: string) => void;
   initialImage?: string;
+  initialContextFiles?: ContextFile[];
   onInitialImageConsumed?: () => void;
   extractedFonts?: string[];
   iconPacks?: string[];
@@ -49,6 +50,7 @@ export function ExplorerCanvas({
   onPushToFigma: _onPushToFigma,
   onLayoutMdUpdate,
   initialImage,
+  initialContextFiles,
   onInitialImageConsumed,
   extractedFonts = [],
   iconPacks,
@@ -499,6 +501,7 @@ export function ExplorerCanvas({
         variantCount: 0,
         variants: [],
         referenceImage: initialImage,
+        contextFiles: initialContextFiles,
         createdAt: new Date().toISOString(),
       };
       const updated = [...explorations, newExploration];
@@ -1107,6 +1110,7 @@ export function ExplorerCanvas({
         selectedVariantName={selectedVariant?.name}
         currentPrompt={currentExploration?.prompt}
         initialImage={initialImage}
+        initialContextFiles={initialContextFiles}
         modelId={modelId}
         onModelChange={setModelId}
         hasGoogleKey={hasGoogleKey}
