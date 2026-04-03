@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/admin-context";
-import { publishedWeeks } from "@/content/changelog";
-import { compileDraft, publishWeek } from "@/lib/changelog/publish";
-import { readDraftEntries, writeDraftEntries } from "@/lib/supabase/changelog-draft";
+import { compileDraft } from "@/lib/changelog/publish";
+import { readDraftEntries, writeDraftEntries, publishWeekToDb, getPublishedWeeks } from "@/lib/supabase/changelog-draft";
 import type { ChangelogEntry } from "@/lib/types/changelog";
 import { z } from "zod";
 
@@ -39,7 +38,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     draft,
     compiled,
-    published: publishedWeeks.slice(0, 5),
+    published: await getPublishedWeeks(),
   });
 }
 
@@ -51,7 +50,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const week = publishSchema.parse(body);
-    publishWeek(week);
+    await publishWeekToDb(week);
     return NextResponse.json({
       success: true,
       weekId: week.weekId,
