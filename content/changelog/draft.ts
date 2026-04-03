@@ -20,6 +20,15 @@ export const draftEntries: ChangelogEntry[] = [
     date: "2026-04-02",
   },
   {
+    id: "2026-w14-reminder-button-fix",
+    title: "Reminder button updates instantly",
+    description:
+      "Clicking Send reminder in the admin waitlist now immediately updates the button and status badge. Previously the UI could revert to the old state after a few seconds.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-03",
+  },
+  {
     id: "2026-w14-reminder-tracking",
     title: "Reminder status visible in admin waitlist",
     description:
