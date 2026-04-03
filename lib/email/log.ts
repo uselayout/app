@@ -72,25 +72,32 @@ export async function getEmailTypesForRequests(
 ): Promise<Record<string, EmailLogEntry[]>> {
   if (requestIds.length === 0) return {};
 
-  const { data, error } = await supabase
-    .from("email_log")
-    .select("access_request_id, email_type, sent_at")
-    .in("access_request_id", requestIds)
-    .order("sent_at", { ascending: true });
-
-  if (error) {
-    console.error("Failed to fetch email logs:", error);
-    return {};
-  }
-
   const result: Record<string, EmailLogEntry[]> = {};
-  for (const row of data ?? []) {
-    const id = row.access_request_id as string;
-    if (!result[id]) result[id] = [];
-    result[id].push({
-      type: row.email_type as EmailType,
-      sentAt: row.sent_at as string,
-    });
+
+  // Batch in chunks of 50 to avoid Supabase PostgREST URL length limits
+  const BATCH_SIZE = 50;
+  for (let i = 0; i < requestIds.length; i += BATCH_SIZE) {
+    const batch = requestIds.slice(i, i + BATCH_SIZE);
+    const { data, error } = await supabase
+      .from("email_log")
+      .select("access_request_id, email_type, sent_at")
+      .in("access_request_id", batch)
+      .order("sent_at", { ascending: true });
+
+    if (error) {
+      console.error("Failed to fetch email logs batch:", error);
+      continue;
+    }
+
+    for (const row of data ?? []) {
+      const id = row.access_request_id as string;
+      if (!result[id]) result[id] = [];
+      result[id].push({
+        type: row.email_type as EmailType,
+        sentAt: row.sent_at as string,
+      });
+    }
   }
+
   return result;
 }
