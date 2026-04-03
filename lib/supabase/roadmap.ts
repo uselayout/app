@@ -188,7 +188,7 @@ export async function deleteRoadmapItem(id: string): Promise<boolean> {
 
 /**
  * Toggle a vote on a roadmap item. If the voter has already voted, remove the vote.
- * Otherwise, add a vote. Returns the new voted state and updated count.
+ * Otherwise, add a vote. The Postgres trigger handles vote_count updates.
  */
 export async function toggleVote(
   itemId: string,
@@ -208,7 +208,7 @@ export async function toggleVote(
   }
 
   if (existing) {
-    // Remove vote
+    // Remove vote (trigger decrements vote_count)
     const { error: deleteError } = await supabase
       .from("layout_roadmap_vote")
       .delete()
@@ -218,32 +218,8 @@ export async function toggleVote(
       console.error("Failed to remove vote:", deleteError);
       return { voted: true, newCount: 0 };
     }
-
-    // Decrement vote_count
-    const { data: updated, error: updateError } = await supabase
-      .rpc("decrement_vote_count", { row_id: itemId })
-      .single();
-
-    if (updateError) {
-      // Fallback: read the current count
-      console.error("Failed to decrement vote count via RPC, falling back:", updateError);
-      const { data: item } = await supabase
-        .from("layout_roadmap_item")
-        .select("vote_count")
-        .eq("id", itemId)
-        .single();
-      const currentCount = (item as RoadmapItemRow | null)?.vote_count ?? 0;
-      const newCount = Math.max(0, currentCount - 1);
-      await supabase
-        .from("layout_roadmap_item")
-        .update({ vote_count: newCount })
-        .eq("id", itemId);
-      return { voted: false, newCount };
-    }
-
-    return { voted: false, newCount: (updated as { vote_count: number })?.vote_count ?? 0 };
   } else {
-    // Add vote
+    // Add vote (trigger increments vote_count)
     const { error: insertError } = await supabase
       .from("layout_roadmap_vote")
       .insert({ item_id: itemId, voter_id: voterId });
@@ -252,31 +228,17 @@ export async function toggleVote(
       console.error("Failed to add vote:", insertError);
       return { voted: false, newCount: 0 };
     }
-
-    // Increment vote_count
-    const { data: updated, error: updateError } = await supabase
-      .rpc("increment_vote_count", { row_id: itemId })
-      .single();
-
-    if (updateError) {
-      // Fallback: read the current count
-      console.error("Failed to increment vote count via RPC, falling back:", updateError);
-      const { data: item } = await supabase
-        .from("layout_roadmap_item")
-        .select("vote_count")
-        .eq("id", itemId)
-        .single();
-      const currentCount = (item as RoadmapItemRow | null)?.vote_count ?? 0;
-      const newCount = currentCount + 1;
-      await supabase
-        .from("layout_roadmap_item")
-        .update({ vote_count: newCount })
-        .eq("id", itemId);
-      return { voted: true, newCount };
-    }
-
-    return { voted: true, newCount: (updated as { vote_count: number })?.vote_count ?? 0 };
   }
+
+  // Read updated count
+  const { data: item } = await supabase
+    .from("layout_roadmap_item")
+    .select("vote_count")
+    .eq("id", itemId)
+    .single();
+
+  const newCount = (item as RoadmapItemRow | null)?.vote_count ?? 0;
+  return { voted: !existing, newCount };
 }
 
 /**
