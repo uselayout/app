@@ -17,7 +17,7 @@ import { ExportModal } from "@/components/studio/ExportModal";
 import { ExtractionDiffModal } from "@/components/studio/ExtractionDiffModal";
 import { diffExtractions } from "@/lib/extraction/diff";
 import type { ExtractionDiff } from "@/lib/extraction/diff";
-import type { DesignVariant, ExtractionResult, SourceType } from "@/lib/types";
+import type { DesignVariant, ExtractionResult, SourceType, ContextFile } from "@/lib/types";
 import { SavedLibraryView } from "@/components/studio/SavedLibraryView";
 
 export default function StudioPage({
@@ -66,6 +66,8 @@ export default function StudioPage({
   const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved">("editor");
   const [showSourcePanel, setShowSourcePanel] = useState(true);
   const [whatsNextDismissed, setWhatsNextDismissed] = useState(false);
+  const [pendingFigmaImage, setPendingFigmaImage] = useState<string | null>(null);
+  const [pendingFigmaContext, setPendingFigmaContext] = useState<ContextFile[] | null>(null);
 
   // Sync centreView with ?view= query param
   const searchParams = useSearchParams();
@@ -241,6 +243,12 @@ export default function StudioPage({
     navigator.clipboard.writeText(variant.code);
   }, []);
 
+  const handleGenerateFromFigma = useCallback((imageDataUrl: string, contextFiles?: ContextFile[]) => {
+    setPendingFigmaImage(imageDataUrl);
+    setPendingFigmaContext(contextFiles ?? null);
+    setCentreView("canvas");
+  }, []);
+
   const handleUpdateExplorations = useCallback(
     (explorations: import("@/lib/types").ExplorationSession[]) => {
       updateExplorations(id, explorations);
@@ -375,6 +383,7 @@ export default function StudioPage({
               projectId={project.id}
               onLayoutMdChange={handleLayoutMdChange}
               onExtract={handleExtractFromPanel}
+              onGenerateFromFigma={handleGenerateFromFigma}
             />
           }
           editorPanel={
@@ -394,6 +403,9 @@ export default function StudioPage({
               onUpdateExplorations={handleUpdateExplorations}
               onPushToFigma={handlePushToFigma}
               onLayoutMdUpdate={handleLayoutMdChange}
+              initialImage={pendingFigmaImage ?? undefined}
+              initialContextFiles={pendingFigmaContext ?? undefined}
+              onInitialImageConsumed={() => { setPendingFigmaImage(null); setPendingFigmaContext(null); }}
               extractedFonts={extractedFonts}
               iconPacks={project.iconPacks}
             />

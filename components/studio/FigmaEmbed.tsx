@@ -38,7 +38,7 @@ export function FigmaEmbed({
   const figmaUrl = `https://www.figma.com/design/${fileKey}${nodeId ? `?node-id=${nodeId.replaceAll(":", "-")}` : ""}`;
 
   return (
-    <div className={`rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] overflow-hidden ${className}`}>
+    <div className={`flex flex-col rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] overflow-hidden ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-3 py-2">
         <div className="flex items-center gap-2">
@@ -76,8 +76,8 @@ export function FigmaEmbed({
       {/* Embed */}
       <iframe
         src={embedUrl}
-        className="w-full border-0"
-        style={{ height: expanded ? 600 : height }}
+        className="w-full flex-1 border-0"
+        style={{ minHeight: expanded ? 600 : height }}
         allowFullScreen
       />
     </div>
