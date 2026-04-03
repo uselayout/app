@@ -50,8 +50,8 @@ export function RoadmapClient() {
     try {
       const res = await fetch("/api/roadmap");
       if (!res.ok) return;
-      const data = await res.json() as { items: RoadmapItem[] };
-      setItems(data.items);
+      const data = await res.json() as { items?: RoadmapItem[] };
+      setItems(data.items ?? []);
     } catch { /* silent */ }
     finally { setLoading(false); }
   }, []);
