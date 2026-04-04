@@ -233,6 +233,7 @@ export function VariantCard({
   const refineInputRef = useRef<HTMLInputElement>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const [showRefineInput, setShowRefineInput] = useState(false);
   const [refineText, setRefineText] = useState("");
   const [inspectMode, setInspectMode] = useState(false);
@@ -297,7 +298,7 @@ export function VariantCard({
 
     transpileAndRender();
     return () => { cancelled = true; };
-  }, [variant.code, inspectMode]);
+  }, [variant.code, inspectMode, retryKey]);
 
   // Listen for runtime errors from the preview iframe
   useEffect(() => {
@@ -658,7 +659,9 @@ export function VariantCard({
 
   const healthBadge = variant.healthScore ? (() => {
     const hs = variant.healthScore;
-    const label = `Design system compliance: ${hs.total}/100\nToken faithfulness: ${hs.tokenFaithfulness}\nComponent accuracy: ${hs.componentAccuracy}\nAnti-pattern violations: ${hs.antiPatternViolations}${hs.issues.length > 0 ? `\n${hs.issues.length} issue${hs.issues.length === 1 ? "" : "s"} found` : ""}`;
+    const issueLines = hs.issues.slice(0, 8).map((issue) => `  - ${issue.rule}: ${issue.actual} (use ${issue.expected})`).join("\n");
+    const issuesSuffix = hs.issues.length > 8 ? `\n  ...and ${hs.issues.length - 8} more` : "";
+    const label = `Design system compliance: ${hs.total}/100\nToken faithfulness: ${hs.tokenFaithfulness}\nComponent accuracy: ${hs.componentAccuracy}\nAnti-pattern violations: ${hs.antiPatternViolations}${hs.issues.length > 0 ? `\n\nIssues:\n${issueLines}${issuesSuffix}` : ""}`;
     return (
       <Tip label={label} wide>
         <span
@@ -723,11 +726,11 @@ export function VariantCard({
             <p className="text-xs font-medium text-[var(--text-primary)]">Failed to render</p>
             <p className="max-w-[220px] text-center text-[10px] leading-relaxed text-[var(--text-muted)] line-clamp-2">{previewError}</p>
             <button
-              onClick={() => onRegenerate()}
+              onClick={(e) => { e.stopPropagation(); setRetryKey((k) => k + 1); }}
               className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-[var(--bg-hover)] px-3 py-1.5 text-[11px] text-[var(--text-primary)] transition-all hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)]"
             >
               <RotateCw size={12} />
-              Regenerate
+              Retry render
             </button>
           </div>
         ) : inspectMode ? (
@@ -843,7 +846,7 @@ export function VariantCard({
               </button>
             )}
             <button
-              onClick={toggleInspectMode}
+              onClick={(e) => { e.preventDefault(); toggleInspectMode(e); }}
               className="flex items-center gap-1.5 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
             >
               <X size={12} />

@@ -129,6 +129,13 @@ export default function StudioPage({
     }
   }, [sourceParam, id, refreshProject]);
 
+  // Fetch full project data if we only have summary data (list endpoint omits explorations)
+  useEffect(() => {
+    if (project && !project.explorations) {
+      refreshProject(id);
+    }
+  }, [id, project, refreshProject]);
+
   // Clear URL params after consuming so refresh doesn't re-trigger
   useEffect(() => {
     if (tabParam || sourceParam) {

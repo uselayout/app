@@ -38,9 +38,9 @@ export default function StudioPage({
   const clearSaveError = useProjectStore((s) => s.clearSaveError);
   const project = projects.find((p) => p.id === id);
 
-  // Fetch full project data if we only have summary data (list endpoint omits layout_md + extraction_data)
+  // Fetch full project data if we only have summary data (list endpoint omits layout_md, extraction_data, explorations)
   useEffect(() => {
-    if (project && !project.layoutMd && !project.extractionData) {
+    if (project && (!project.layoutMd || !project.extractionData || !project.explorations)) {
       refreshProject(id);
     }
   }, [id, project, refreshProject]);
