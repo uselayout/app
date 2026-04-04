@@ -232,13 +232,35 @@ export async function extractFromFigma({
     onProgress?.("variables", 65, "Fetching variables (Enterprise plan)...");
     const varsResponse = await client.getVariables(fileKey);
     const vars = varsResponse.meta.variables;
+    const collections = varsResponse.meta.variableCollections;
+
+    // Build mode ID → mode name lookup from collections
+    const modeNames = new Map<string, string>();
+    for (const collection of Object.values(collections)) {
+      for (const mode of collection.modes) {
+        modeNames.set(mode.modeId, mode.name);
+      }
+    }
+
     for (const v of Object.values(vars)) {
-      const modes = Object.values(v.valuesByMode);
-      if (modes.length > 0 && typeof modes[0] === "object" && modes[0] !== null) {
-        const val = modes[0] as { r?: number; g?: number; b?: number; a?: number };
-        if (val.r !== undefined && val.g !== undefined && val.b !== undefined) {
-          const hex = `#${Math.round(val.r * 255).toString(16).padStart(2, "0")}${Math.round(val.g * 255).toString(16).padStart(2, "0")}${Math.round(val.b * 255).toString(16).padStart(2, "0")}`;
-          cssVariables[`--${v.name.toLowerCase().replace(/[/\s]+/g, "-")}`] = hex;
+      const modeEntries = Object.entries(v.valuesByMode);
+      const hasMultipleModes = modeEntries.length > 1;
+
+      for (const [modeId, modeValue] of modeEntries) {
+        const baseName = `--${v.name.toLowerCase().replace(/[/\s]+/g, "-")}`;
+        const modeName = modeNames.get(modeId)?.toLowerCase().replace(/[/\s]+/g, "-");
+        const varName = hasMultipleModes && modeName ? `${baseName}-${modeName}` : baseName;
+
+        if (v.resolvedType === "COLOR" && typeof modeValue === "object" && modeValue !== null) {
+          const val = modeValue as { r?: number; g?: number; b?: number; a?: number };
+          if (val.r !== undefined && val.g !== undefined && val.b !== undefined) {
+            const hex = `#${Math.round(val.r * 255).toString(16).padStart(2, "0")}${Math.round(val.g * 255).toString(16).padStart(2, "0")}${Math.round(val.b * 255).toString(16).padStart(2, "0")}`;
+            cssVariables[varName] = hex;
+          }
+        } else if (v.resolvedType === "FLOAT" && typeof modeValue === "number") {
+          cssVariables[varName] = `${modeValue}`;
+        } else if (v.resolvedType === "STRING" && typeof modeValue === "string") {
+          cssVariables[varName] = modeValue;
         }
       }
     }
@@ -275,19 +297,25 @@ export async function extractFromFigma({
       spacing,
       radius,
       effects,
+      motion: [],
     },
     components,
     screenshots: [],
-    fonts: typography.length > 0
-      ? [
-          {
-            family: typography[0].value.split("font-family: ")[1]?.split(";")[0] || "Unknown",
-            weight: "400",
-            style: "normal",
-            display: "swap",
-          },
-        ]
-      : [],
+    fonts: (() => {
+      const seen = new Set<string>();
+      const fonts: Array<{ family: string; weight: string; style: string; display: string }> = [];
+      for (const t of typography) {
+        const family = t.value.split("font-family: ")[1]?.split(";")[0]?.trim() || "Unknown";
+        const weight = t.value.split("font-weight: ")[1]?.split(";")[0]?.trim() || "400";
+        const style = t.value.includes("font-style: italic") ? "italic" : "normal";
+        const key = `${family}:${weight}:${style}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          fonts.push({ family, weight, style, display: "swap" });
+        }
+      }
+      return fonts;
+    })(),
     animations: [],
     librariesDetected: {},
     cssVariables,

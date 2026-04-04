@@ -90,6 +90,60 @@ export function calculateHealthScore(
     });
   }
 
+  // Check spacing compliance against design system grid
+  if (layoutMd) {
+    const spacingTokenValues = new Set<number>();
+    for (const m of layoutMd.matchAll(/--(?:space|spacing|gap|padding|margin)[\w-]*:\s*(\d+)px/gi)) {
+      spacingTokenValues.add(parseInt(m[1]!, 10));
+    }
+
+    if (spacingTokenValues.size > 0) {
+      const offGridValues: string[] = [];
+      for (const m of output.matchAll(/(?:p|px|py|pl|pr|pt|pb|m|mx|my|ml|mr|mt|mb|gap)-\[(\d+)px\]/g)) {
+        const px = parseInt(m[1]!, 10);
+        if (!spacingTokenValues.has(px)) {
+          offGridValues.push(`${px}px`);
+        }
+      }
+
+      if (offGridValues.length > 0) {
+        const penalty = Math.min(offGridValues.length * 5, 15);
+        score -= penalty;
+        issues.push({
+          severity: "warning",
+          rule: "Spacing matches design system grid",
+          actual: `Off-grid values: ${[...new Set(offGridValues)].slice(0, 5).join(", ")}`,
+          expected: `Design system spacing: ${[...spacingTokenValues].sort((a, b) => a - b).join(", ")}px`,
+        });
+      }
+    }
+
+    // Check border-radius compliance
+    const radiusTokenValues = new Set<string>();
+    for (const m of layoutMd.matchAll(/--(?:radius|border-radius|rounded)[\w-]*:\s*(\d+px|\d+%)/gi)) {
+      radiusTokenValues.add(m[1]!);
+    }
+
+    if (radiusTokenValues.size > 0) {
+      const offGridRadius: string[] = [];
+      for (const m of output.matchAll(/rounded-\[(\d+px)\]/g)) {
+        if (!radiusTokenValues.has(m[1]!)) {
+          offGridRadius.push(m[1]!);
+        }
+      }
+
+      if (offGridRadius.length > 0) {
+        score -= 5;
+        issues.push({
+          severity: "warning",
+          rule: "Border radius matches design system",
+          actual: `Off-scale: ${[...new Set(offGridRadius)].slice(0, 3).join(", ")}`,
+          expected: `Design system radius: ${[...radiusTokenValues].join(", ")}`,
+        });
+      }
+    }
+  }
+
   const total = Math.max(0, Math.min(100, score));
 
   return {

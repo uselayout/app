@@ -265,7 +265,7 @@ Rules:
  * Patch a base system prompt to allow icon library imports when packs are selected.
  * When no packs are provided, returns the original prompt unchanged.
  */
-function patchSystemPromptForIcons(basePrompt: string, iconPackIds?: string[]): string {
+export function patchSystemPromptForIcons(basePrompt: string, iconPackIds?: string[]): string {
   const addendum = buildIconPackAddendum(iconPackIds);
   if (!addendum) return basePrompt;
 

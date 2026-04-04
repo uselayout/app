@@ -61,7 +61,13 @@ export async function POST(request: NextRequest) {
   const { prompt, layoutMd, variantCount, baseCode, imageDataUrl, contextFiles, iconPacks } = parsed.data;
   const modelId = (parsed.data.modelId ?? DEFAULT_EXPLORE_MODEL) as AiModelId;
   const model = AI_MODELS[modelId];
-  const effectiveLayoutMd = layoutMd || "No design system provided. Use sensible defaults with a clean, modern aesthetic.";
+  if (!layoutMd || layoutMd.trim().length < 50) {
+    return NextResponse.json(
+      { error: "No design system loaded. Extract from a Figma file or website first to generate on-brand variants." },
+      { status: 400 }
+    );
+  }
+  const effectiveLayoutMd = layoutMd;
 
   // Resolve API key + billing mode based on provider
   let mode: AiMode;

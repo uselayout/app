@@ -44,7 +44,7 @@ export const DEFAULT_EXPLORE_MODEL: AiModelId = "claude-sonnet-4-6";
 
 export type SourceType = "figma" | "website" | "manual";
 
-export type TokenType = "color" | "typography" | "spacing" | "radius" | "effect";
+export type TokenType = "color" | "typography" | "spacing" | "radius" | "effect" | "motion";
 
 export type TokenCategory = "primitive" | "semantic";
 
@@ -137,6 +137,7 @@ export interface ExtractedTokens {
   spacing: ExtractedToken[];
   radius: ExtractedToken[];
   effects: ExtractedToken[];
+  motion: ExtractedToken[];
 }
 
 export interface ExtractionResult {

@@ -13,7 +13,7 @@ const GEMINI_MODEL = "gemini-3.1-pro-preview";
 
 // Re-use the same system prompts as Claude — the output format (### Variant N:)
 // is defined there and the parser depends on it.
-import { EXPLORE_SYSTEM, REFINE_SYSTEM } from "@/lib/claude/explore";
+import { EXPLORE_SYSTEM, REFINE_SYSTEM, patchSystemPromptForIcons } from "@/lib/claude/explore";
 
 export function createGeminiExploreStream(
   prompt: string,
@@ -22,8 +22,10 @@ export function createGeminiExploreStream(
   apiKey?: string,
   imageDataUrl?: string,
   contextFiles?: Array<{ name: string; content: string }>,
+  iconPacks?: string[],
 ): StreamWithUsage {
-  const systemPrompt = `${EXPLORE_SYSTEM}\n\nGenerate exactly ${variantCount} variants.\n\n${layoutMd}`;
+  const baseSystem = patchSystemPromptForIcons(EXPLORE_SYSTEM, iconPacks);
+  const systemPrompt = `${baseSystem}\n\nGenerate exactly ${variantCount} variants.\n\n${layoutMd}`;
   const userContent = buildGeminiContent(prompt, imageDataUrl, contextFiles);
 
   return runGeminiStream(systemPrompt, userContent, apiKey);
@@ -37,8 +39,10 @@ export function createGeminiRefineStream(
   apiKey?: string,
   contextFiles?: Array<{ name: string; content: string }>,
   imageDataUrl?: string,
+  iconPacks?: string[],
 ): StreamWithUsage {
-  const systemPrompt = `${REFINE_SYSTEM}\n\nGenerate exactly ${variantCount} refined variants.\n\n${layoutMd}`;
+  const baseSystem = patchSystemPromptForIcons(REFINE_SYSTEM, iconPacks);
+  const systemPrompt = `${baseSystem}\n\nGenerate exactly ${variantCount} refined variants.\n\n${layoutMd}`;
 
   const contextBlock = contextFiles?.length
     ? contextFiles.map((f) => `--- context: ${f.name} ---\n${f.content}\n--- end ---`).join("\n\n") + "\n\n"

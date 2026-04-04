@@ -359,6 +359,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       spacing: mergeTokens(existing?.tokens.spacing, parsed.spacing),
       radius: mergeTokens(existing?.tokens.radius, parsed.radius),
       effects: mergeTokens(existing?.tokens.effects, parsed.effects),
+      motion: mergeTokens(existing?.tokens.motion, parsed.motion),
     };
 
     const mergedData: ExtractionResult = existing

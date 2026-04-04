@@ -21,6 +21,7 @@ export function parseTokensFromLayoutMd(markdown: string): ExtractedTokens {
   const spacing: ExtractedToken[] = [];
   const radius: ExtractedToken[] = [];
   const effects: ExtractedToken[] = [];
+  const motion: ExtractedToken[] = [];
 
   for (const token of seen.values()) {
     switch (token.type) {
@@ -29,10 +30,11 @@ export function parseTokensFromLayoutMd(markdown: string): ExtractedTokens {
       case "spacing": spacing.push(token); break;
       case "radius": radius.push(token); break;
       case "effect": effects.push(token); break;
+      case "motion": motion.push(token); break;
     }
   }
 
-  return { colors, typography, spacing, radius, effects };
+  return { colors, typography, spacing, radius, effects, motion };
 }
 
 interface CSSDeclaration {

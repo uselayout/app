@@ -148,6 +148,7 @@ export async function POST(request: Request) {
         spacing: mapTokens(tokens.spacing, "spacing"),
         radius: mapTokens(tokens.radius, "radius"),
         effects: mapTokens(tokens.effects, "effect"),
+        motion: [],
       },
       components: components.map((c) => ({
         name: c.name,

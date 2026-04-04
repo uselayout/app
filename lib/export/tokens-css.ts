@@ -48,6 +48,15 @@ export function generateTokensCss(tokens: ExtractedTokens): string {
     lines.push("");
   }
 
+  if (tokens.motion.length > 0) {
+    lines.push("  /* === MOTION === */");
+    for (const token of tokens.motion) {
+      const varName = token.cssVariable || `--motion-${token.name.toLowerCase().replace(/[/\s]+/g, "-")}`;
+      lines.push(`  ${varName}: ${token.value};`);
+    }
+    lines.push("");
+  }
+
   lines.push("}");
   return lines.join("\n");
 }

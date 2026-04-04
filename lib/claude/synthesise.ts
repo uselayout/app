@@ -104,9 +104,9 @@ Confidence level. Clustering method used for any reconstructed tokens.
 If Tailwind: note v3 (no CSS vars) vs v4 (CSS vars via @theme).`;
 
 // Synthesis caps — truncate at synthesis time, full data stays in project store
-const MAX_CSS_VARIABLES = 300;
-const MAX_COLOUR_TOKENS = 150;
-const MAX_TYPOGRAPHY_TOKENS = 50;
+const MAX_CSS_VARIABLES = 400;
+const MAX_COLOUR_TOKENS = 200;
+const MAX_TYPOGRAPHY_TOKENS = 75;
 const MAX_COMPUTED_STYLES = 30;
 const MAX_SCREENSHOTS = 3;
 
@@ -146,6 +146,12 @@ function buildUserContent(
     const sortedVars = Object.entries(data.cssVariables)
       .sort(([a], [b]) => cssVarPriority(a) - cssVarPriority(b));
     const allVars = sortedVars.slice(0, MAX_CSS_VARIABLES);
+    const cssVarsOmitted = sortedVars.length - allVars.length;
+    if (cssVarsOmitted > 0) {
+      sections.push(
+        `NOTE: ${cssVarsOmitted} CSS variables omitted for context budget (${sortedVars.length} total, showing top ${MAX_CSS_VARIABLES}). Full set available in tokens.css.`
+      );
+    }
 
     if (tokenSource === "extracted-css-vars") {
       sections.push(

@@ -192,6 +192,7 @@ export async function extractFromWebsite({
     const spacing: ExtractedToken[] = [];
     const radius: ExtractedToken[] = [];
     const effects: ExtractedToken[] = [];
+    const motion: ExtractedToken[] = [];
 
     for (const [name, value] of Object.entries(cssVariables)) {
       const token = cssVarToToken(name, value);
@@ -201,6 +202,20 @@ export async function extractFromWebsite({
         case "spacing": spacing.push(token); break;
         case "radius": radius.push(token); break;
         case "effect": effects.push(token); break;
+        case "motion": motion.push(token); break;
+      }
+    }
+
+    // Convert extracted animations to motion tokens
+    if (animations && animations.length > 0) {
+      for (const anim of animations) {
+        motion.push({
+          name: `--motion-${anim.name}`,
+          value: anim.cssText,
+          type: "motion",
+          category: "primitive",
+          description: `@keyframes ${anim.name}`,
+        });
       }
     }
 
@@ -264,7 +279,7 @@ export async function extractFromWebsite({
       sourceType: "website",
       sourceName: hostname,
       sourceUrl: url,
-      tokens: { colors, typography, spacing, radius, effects },
+      tokens: { colors, typography, spacing, radius, effects, motion },
       components: [],
       screenshots,
       fonts: allFonts,
