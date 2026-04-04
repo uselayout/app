@@ -43,6 +43,7 @@ export interface ExtractedLayout {
   direction: string;
   gap: number;
   padding: { top: number; right: number; bottom: number; left: number };
+  childCount: number;
 }
 
 /**
@@ -176,6 +177,7 @@ function extractLayout(node: FigmaNode): ExtractedLayout | null {
       bottom: node.paddingBottom ?? 0,
       left: node.paddingLeft ?? 0,
     },
+    childCount: node.children?.length ?? 0,
   };
 }
 
@@ -208,7 +210,16 @@ export function formatAsContext(data: ImportedNodeData): string {
 
   if (data.layout) {
     const p = data.layout.padding;
-    lines.push("", `Layout: ${data.layout.direction}, gap ${data.layout.gap}px, padding ${p.top}px ${p.right}px ${p.bottom}px ${p.left}px`);
+    const dir = data.layout.direction;
+    const dirLabel = dir === "row" ? "horizontal (row)" : "vertical (column)";
+    lines.push("", "Layout structure:");
+    lines.push(`- Root: ${dirLabel}, gap ${data.layout.gap}px, padding ${p.top}px ${p.right}px ${p.bottom}px ${p.left}px`);
+    if (data.layout.childCount > 0) {
+      lines.push(`- Children: ${data.layout.childCount} sections ${dir === "row" ? "side by side" : "stacked vertically"}`);
+    }
+    if (dir === "row") {
+      lines.push("- IMPORTANT: Preserve this horizontal layout at desktop/tablet. Only stack on mobile.");
+    }
   }
 
   if (data.colours.length > 0) {

@@ -37,6 +37,8 @@ Reference Images
 - When a reference image/screenshot is provided, treat it as a CLOSE visual reference — match its layout structure, spacing proportions, typography hierarchy, and visual style as faithfully as possible.
 - Adapt colours and tokens to the design system, but preserve the reference's composition, element placement, and overall feel.
 - Each variant should interpret the reference slightly differently, but all must clearly derive from it.
+- When the reference shows a horizontal/side-by-side layout, generate it as flex-row at desktop (e.g. md:flex-row or lg:flex-row). Do not default to single-column if the reference is clearly multi-column.
+- Pay close attention to context files describing the Figma frame layout. If the context says "horizontal (row)" or "side by side", the desktop layout MUST reflect that.
 
 Interaction States (Mandatory)
 - Every interactive element MUST handle: default, hover, focus-visible, active, disabled states.

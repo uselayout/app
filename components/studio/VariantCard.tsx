@@ -266,7 +266,8 @@ export function VariantCard({
         });
 
         if (!res.ok) {
-          setPreviewError("Transpilation failed");
+          const errData = await res.json().catch(() => null);
+          setPreviewError(errData?.error || "Transpilation failed");
           return;
         }
 
@@ -404,7 +405,7 @@ export function VariantCard({
     applyAbortRef.current?.abort();
     const abort = new AbortController();
     applyAbortRef.current = abort;
-    const timeout = setTimeout(() => abort.abort(), 60_000);
+    const timeout = setTimeout(() => abort.abort(), 120_000);
     setIsApplying(true);
     setApplyError(null);
     setApplyElapsed(0);
@@ -470,7 +471,7 @@ export function VariantCard({
     applyAbortRef.current?.abort();
     const abort = new AbortController();
     applyAbortRef.current = abort;
-    const timeout = setTimeout(() => abort.abort(), 60_000);
+    const timeout = setTimeout(() => abort.abort(), 120_000);
     setIsApplying(true);
     setApplyError(null);
     setApplyElapsed(0);
