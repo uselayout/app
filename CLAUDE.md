@@ -262,6 +262,23 @@ The app uses its own dark-first design system. Always use CSS variables, never h
 6. **Font:** Geist for UI, Geist Mono for code/editor/monospace content
 7. **No box-shadow** - elevation = background colour difference + border
 
+## Git Branching
+
+**Branches:**
+- `main` — production. Never push directly. Only merged from staging after testing.
+- `staging` — integration branch. Staging site deploys from here.
+- `staging/<feature>` — feature branches. All work happens here.
+
+**Workflow (ALL Claude Code sessions MUST follow this):**
+1. Start: `git checkout -b staging/<short-name> origin/staging`
+2. Work: commit and push to your feature branch
+3. Done: merge feature branch into staging, then delete it
+4. Never push directly to staging or main
+
+**Branch naming:** `staging/<short-description>` e.g. `staging/extraction-fixes`
+
+**Need another session's changes?** `git pull origin staging --rebase`
+
 ## Conventions
 
 - **TypeScript:** Strict mode, no `any` types
