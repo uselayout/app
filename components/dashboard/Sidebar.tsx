@@ -55,7 +55,7 @@ function SidebarInner() {
     { label: "Editor", href: `${projectBase}/studio`, segment: "editor", icon: <Pencil size={16} /> },
     { label: "Explore", href: `${projectBase}/studio?view=explore`, segment: "explore", icon: <Sparkles size={16} /> },
     { label: "Design System", href: `${projectBase}/studio?view=design-system`, segment: "design-system", icon: <Palette size={16} /> },
-    { label: "Saved", href: `${projectBase}/studio?view=saved`, segment: "saved", icon: <BookMarked size={16} /> },
+    { label: "Library", href: `${projectBase}/studio?view=saved`, segment: "saved", icon: <BookMarked size={16} /> },
   ];
 
   function isActive(segment: string): boolean {
