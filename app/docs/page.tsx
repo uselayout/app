@@ -81,6 +81,7 @@ export default function GettingStartedPage() {
           or a live website, lets you refine them in a studio editor with AI
           assistance, then serves the result directly to your coding agent via
           MCP so every component it builds is on-brand, every time.
+          Designers stay in control of the system. AI stays on-brand.
         </p>
       </div>
 

@@ -37,6 +37,9 @@ export function ContextGapSection() {
               This is the context gap, the invisible wall between your design system and your AI tools.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+              Designers spend hours correcting AI output that ignores their system. Developers ship components that look &apos;close enough.&apos; The brand erodes one commit at a time.
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
               <span className="text-[var(--mkt-accent)]">Layout</span> is the compiler that closes it.
             </p>
           </motion.div>

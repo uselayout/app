@@ -28,7 +28,7 @@ export function FigmaLoopSection() {
             className="w-full lg:w-[575px] pt-[19px] flex flex-col gap-[10px]"
           >
             <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-              Your design system lives in both tools. Keep them in sync.
+              Generate six directions in seconds. Push to Figma. Your designer does what AI can&apos;t: refine with taste. Import changes back. The system stays in sync.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
               Push AI-generated components to Figma via the MCP server — three responsive viewports rendered and placed as frames. The Chrome extension lets you browse any site, capture it, and push directly to the Explorer where AI rebuilds it using your design tokens.
