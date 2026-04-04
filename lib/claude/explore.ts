@@ -108,6 +108,8 @@ Design System Compliance (MANDATORY — verify before outputting each variant)
 - If the design system specifies specific fonts (e.g. CursorGothic, jjannon), use ONLY those fonts. Never substitute with Inter, Roboto, or system-ui.
 - Do NOT invent a product name, brand name, or company identity. If the design system names a brand, use that exact name. Otherwise use generic text like "Product" or "Company".
 - Do NOT use pure black (#000000) or pure white (#FFFFFF) unless the design system explicitly defines them.
+- If the design system defines border tokens (e.g. "1px solid #ccc"), use those exact values for borders and dividers. Do NOT hardcode border colours or widths.
+- If the design system defines motion/animation tokens, use them for transitions and animations instead of arbitrary durations or easings.
 - SELF-CHECK: Before writing each variant, mentally verify: Are my colours from the token list? Are my fonts correct? Are my border-radius values matching? Are my spacing values from the grid? If any answer is no, fix it before outputting.
 - EXCEPTION: If the user's prompt explicitly requests a specific style override (e.g. "use square buttons", "try serif fonts", "make it darker"), apply that override for the specified elements only. Keep all other design system tokens intact. The user is experimenting with alternatives.
 
@@ -215,6 +217,8 @@ Design System Compliance (MANDATORY — verify before outputting each variant)
 - If the design system specifies specific fonts (e.g. CursorGothic, jjannon), use ONLY those fonts. Never substitute with Inter, Roboto, or system-ui.
 - Do NOT invent a product name, brand name, or company identity. If the design system names a brand, use that exact name. Otherwise use generic text like "Product" or "Company".
 - Do NOT use pure black (#000000) or pure white (#FFFFFF) unless the design system explicitly defines them.
+- If the design system defines border tokens (e.g. "1px solid #ccc"), use those exact values for borders and dividers. Do NOT hardcode border colours or widths.
+- If the design system defines motion/animation tokens, use them for transitions and animations instead of arbitrary durations or easings.
 - SELF-CHECK: Before writing each variant, mentally verify: Are my colours from the token list? Are my fonts correct? Are my border-radius values matching? Are my spacing values from the grid? If any answer is no, fix it before outputting.
 - EXCEPTION: If the user's prompt explicitly requests a specific style override (e.g. "use square buttons", "try serif fonts", "make it darker"), apply that override for the specified elements only. Keep all other design system tokens intact. The user is experimenting with alternatives.
 

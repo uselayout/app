@@ -276,6 +276,29 @@ function buildUserContent(
     );
   }
 
+  // Include effect tokens that contain border definitions
+  const borderTokens = data.tokens.effects.filter((t) =>
+    t.value.includes("solid") || t.value.includes("dashed") || t.value.includes("dotted")
+  );
+  if (borderTokens.length > 0) {
+    const borders = borderTokens
+      .map((t) => `  ${t.name}: ${t.value}${t.description ? ` /* ${t.description} */` : ""}`)
+      .join("\n");
+    sections.push(
+      `--- BORDER TOKENS (use these for all border/divider styling — do not hardcode border values) ---\n${borders}`
+    );
+  }
+
+  // Include motion tokens
+  if (data.tokens.motion.length > 0) {
+    const motionList = data.tokens.motion
+      .map((t) => `  ${t.name}: ${t.value}${t.description ? ` /* ${t.description} */` : ""}`)
+      .join("\n");
+    sections.push(
+      `--- MOTION TOKENS (use for transitions and animations) ---\n${motionList}`
+    );
+  }
+
   if (Object.keys(data.librariesDetected).length > 0) {
     const libs = Object.entries(data.librariesDetected)
       .filter(([, v]) => v)
