@@ -4,21 +4,10 @@ import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { jsxToHtml } from "@/lib/explore/jsx-to-html";
 
 interface StreamingPreviewCardProps {
-  /** Raw JSX code streaming in from Claude */
   codeInProgress: string;
-  /** Whether this variant's code block has closed */
   isComplete: boolean;
 }
 
-/**
- * Srcdoc for the preview iframe. Loads Tailwind CDN and listens for HTML updates
- * via postMessage. Posts a "tailwind-ready" message once Tailwind has loaded so
- * the parent can start sending HTML updates with confidence that styles will apply.
- *
- * The iframe is sandboxed (allow-scripts only, no allow-same-origin) so it cannot
- * access the parent page. Content comes from our own Claude API output converted
- * through jsxToHtml.
- */
 const PREVIEW_SRCDOC = `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
@@ -51,6 +40,7 @@ const PREVIEW_SRCDOC = `<!DOCTYPE html>
       children[i].style.animation = "";
     }
     lastChildCount = children.length;
+    window.parent.postMessage({type:'content-rendered'},'*');
   }
 
   window.addEventListener("message", function(e) {
@@ -64,7 +54,6 @@ const PREVIEW_SRCDOC = `<!DOCTYPE html>
     }
   });
 
-  // Fallback: if Tailwind loads after messages arrived, apply pending
   var checkTw = setInterval(function() {
     if (window._twReady && pendingHtml) {
       applyHtml(pendingHtml);
@@ -72,24 +61,47 @@ const PREVIEW_SRCDOC = `<!DOCTYPE html>
       clearInterval(checkTw);
     }
   }, 100);
-  // Safety: stop checking after 5s
   setTimeout(function() { clearInterval(checkTw); }, 5000);
 </${"script"}>
 </body></html>`;
+
+/** Shimmer skeleton overlay shown before any content renders */
+function ShimmerSkeleton() {
+  return (
+    <div className="absolute inset-0 z-20 bg-white p-6">
+      <div className="flex h-full flex-col gap-3">
+        {/* Hero area */}
+        <div className="h-[35%] w-full animate-shimmer rounded-lg bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
+        {/* Title bar */}
+        <div className="h-4 w-[60%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "100ms" }} />
+        {/* Subtitle */}
+        <div className="h-3 w-[40%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "200ms" }} />
+        {/* Body lines */}
+        <div className="mt-2 h-3 w-[90%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "300ms" }} />
+        <div className="h-3 w-[75%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "400ms" }} />
+        {/* Button area */}
+        <div className="mt-auto flex gap-2">
+          <div className="h-8 w-20 animate-shimmer rounded-full bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "500ms" }} />
+          <div className="h-8 w-20 animate-shimmer rounded-full bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "600ms" }} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function StreamingPreviewCardInner({ codeInProgress, isComplete }: StreamingPreviewCardProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const lastHtmlRef = useRef("");
   const rafRef = useRef<number>(0);
   const [iframeReady, setIframeReady] = useState(false);
+  const [hasContent, setHasContent] = useState(false);
   const pendingHtmlRef = useRef<string>("");
 
-  // Listen for tailwind-ready message from iframe
+  // Listen for messages from iframe
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       if (e.data?.type === "tailwind-ready") {
         setIframeReady(true);
-        // Flush any pending HTML
         if (pendingHtmlRef.current) {
           const iframe = iframeRef.current;
           if (iframe?.contentWindow) {
@@ -100,6 +112,9 @@ function StreamingPreviewCardInner({ codeInProgress, isComplete }: StreamingPrev
           }
           pendingHtmlRef.current = "";
         }
+      }
+      if (e.data?.type === "content-rendered") {
+        setHasContent(true);
       }
     };
     window.addEventListener("message", handler);
@@ -114,7 +129,6 @@ function StreamingPreviewCardInner({ codeInProgress, isComplete }: StreamingPrev
     if (!iframe?.contentWindow) return;
 
     if (!iframeReady) {
-      // Queue for when Tailwind is ready
       pendingHtmlRef.current = html;
       return;
     }
@@ -134,37 +148,37 @@ function StreamingPreviewCardInner({ codeInProgress, isComplete }: StreamingPrev
     return () => cancelAnimationFrame(rafRef.current);
   }, [codeInProgress, sendHtmlUpdate]);
 
-  const hasCode = codeInProgress.length > 0;
-
   return (
-    <div className="group relative flex flex-col rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)]">
+    <div
+      className={`group relative flex flex-col rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] transition-opacity duration-500 ${
+        isComplete ? "opacity-0" : "opacity-100"
+      }`}
+    >
       {/* Pulsing accent line at top */}
       {!isComplete && (
-        <div className="absolute left-0 right-0 top-0 z-10 h-[2px] overflow-hidden rounded-t-xl">
+        <div className="absolute left-0 right-0 top-0 z-30 h-[2px] overflow-hidden rounded-t-xl">
           <div className="h-full w-full animate-pulse bg-[var(--studio-accent)]/40" />
         </div>
       )}
 
       {/* Preview area */}
       <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white">
-        {hasCode ? (
-          <div style={{ height: "100%", overflow: "hidden" }}>
-            <iframe
-              ref={iframeRef}
-              srcDoc={PREVIEW_SRCDOC}
-              sandbox="allow-scripts"
-              className="w-full origin-top-left scale-50 border-0"
-              style={{ width: "200%", height: "200%", pointerEvents: "none" }}
-              title="Streaming preview"
-            />
-          </div>
-        ) : (
-          <div className="flex h-full items-center justify-center gap-1.5">
-            <div className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)] animate-pulse" style={{ animationDelay: "0ms" }} />
-            <div className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)] animate-pulse" style={{ animationDelay: "150ms" }} />
-            <div className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)] animate-pulse" style={{ animationDelay: "300ms" }} />
-          </div>
-        )}
+        {/* Always mount iframe to pre-load Tailwind */}
+        <div style={{ height: "100%", overflow: "hidden" }}>
+          <iframe
+            ref={iframeRef}
+            srcDoc={PREVIEW_SRCDOC}
+            sandbox="allow-scripts"
+            className="w-full origin-top-left scale-50 border-0"
+            style={{ width: "200%", height: "200%", pointerEvents: "none" }}
+            title="Streaming preview"
+          />
+        </div>
+
+        {/* Shimmer skeleton overlay — fades out when first content renders */}
+        <div className={`transition-opacity duration-500 ${hasContent ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+          <ShimmerSkeleton />
+        </div>
       </div>
 
       {/* Footer skeleton */}

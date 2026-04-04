@@ -204,6 +204,14 @@ export function jsxToHtml(jsx: string): string {
     '<img$1$2 src="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3C/svg%3E" />'
   );
 
+  // Strip text content that looks like code fragments
+  // These appear when JSX expressions are only partially stripped
+  html = html.replace(/\b(const|let|var|function|return|export|import)\b[^<]*/g, "");
+  html = html.replace(/=>\s*\{?/g, "");
+  html = html.replace(/&&|\|\||\?\?/g, "");
+  html = html.replace(/\btrue\b|\bfalse\b|\bnull\b|\bundefined\b/g, "");
+  html = html.replace(/[{};]\s*(?=<|$)/gm, "");
+
   // Clean up whitespace
   html = html.replace(/\s{2,}/g, " ");
   html = html.replace(/>\s+</g, "><");

@@ -89,6 +89,7 @@ export function ExplorerCanvas({
   const generatingSessionRef = useRef<string | null>(null);
   const [streamingPartials, setStreamingPartials] = useState<PartialVariant[]>([]);
   const partialsRafRef = useRef<number>(0);
+  const fadeoutTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 
   const { steps, markStep } = useOnboardingStore();
   const stepsRef = useRef(steps);
@@ -198,9 +199,26 @@ export function ExplorerCanvas({
         cancelAnimationFrame(partialsRafRef.current);
         partialsRafRef.current = requestAnimationFrame(() => {
           const partials = parsePartialVariants(fullOutput);
-          // Only show partials that aren't yet complete in the main variants array
-          const incompletePartials = partials.filter((p) => !p.isComplete);
-          setStreamingPartials(incompletePartials);
+          setStreamingPartials((prev) => {
+            // Keep completed partials that are still fading out
+            const fadingOut = prev.filter((p) => p.isComplete);
+            const fadingIndices = new Set(fadingOut.map((p) => p.index));
+
+            // For newly completed partials, schedule removal after 600ms
+            for (const p of partials) {
+              if (p.isComplete && !fadingIndices.has(p.index) && !fadeoutTimersRef.current.has(p.index)) {
+                fadeoutTimersRef.current.set(p.index, setTimeout(() => {
+                  setStreamingPartials((curr) => curr.filter((c) => c.index !== p.index));
+                  fadeoutTimersRef.current.delete(p.index);
+                }, 600));
+              }
+            }
+
+            // Merge: incomplete partials + fading-out completed ones + newly completed ones
+            const incomplete = partials.filter((p) => !p.isComplete);
+            const newlyComplete = partials.filter((p) => p.isComplete);
+            return [...incomplete, ...newlyComplete];
+          });
         });
 
         const completeCount = countCompleteVariants(fullOutput);
@@ -215,9 +233,16 @@ export function ExplorerCanvas({
         }
       }
 
-      // Clear partials when stream ends
+      // Clear partials when stream ends (allow fadeout to complete)
       cancelAnimationFrame(partialsRafRef.current);
-      setStreamingPartials([]);
+      // Mark all remaining partials as complete so they fade out
+      setStreamingPartials((prev) => prev.map((p) => ({ ...p, isComplete: true })));
+      // Clear after fadeout duration
+      setTimeout(() => {
+        setStreamingPartials([]);
+        fadeoutTimersRef.current.forEach((t) => clearTimeout(t));
+        fadeoutTimersRef.current.clear();
+      }, 600);
 
       const finalNew = parseVariants(fullOutput, parseOpts);
 
@@ -1071,15 +1096,17 @@ export function ExplorerCanvas({
                   {/* Remaining skeleton slots with no partial data yet */}
                   {Array.from({ length: Math.max(0, skeletonCount - streamingPartials.length) }).map((_, i) => (
                     <div key={`skeleton-${i}`} className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col">
-                      <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white">
-                        <div className="flex h-full items-center justify-center gap-1.5">
-                          <div className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)] animate-pulse" style={{ animationDelay: "0ms" }} />
-                          <div className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)] animate-pulse" style={{ animationDelay: "150ms" }} />
-                          <div className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)] animate-pulse" style={{ animationDelay: "300ms" }} />
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white p-6">
+                        <div className="flex h-full flex-col gap-3">
+                          <div className="h-[35%] w-full animate-shimmer rounded-lg bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
+                          <div className="h-4 w-[60%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "100ms" }} />
+                          <div className="h-3 w-[40%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "200ms" }} />
+                          <div className="mt-2 h-3 w-[90%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "300ms" }} />
+                          <div className="h-3 w-[75%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "400ms" }} />
                         </div>
                       </div>
                       <div className="flex items-center gap-2 px-3 py-2.5">
-                        <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
+                        <div className="h-3 w-24 animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
                       </div>
                     </div>
                   ))}
