@@ -297,9 +297,9 @@ export async function generateImage(
       });
 
     if (!uploadError) {
-      // Use app-relative proxy URL to avoid mixed content (HTTPS page loading HTTP Supabase).
-      // Next.js rewrite in next.config.ts proxies /supabase-storage/* to Supabase Storage.
-      const proxyUrl = `/supabase-storage/layout-images/${filename}`;
+      // Use app API proxy to avoid mixed content (HTTPS app loading HTTP Supabase).
+      // API route at /api/storage/[...path] fetches from Supabase server-side.
+      const proxyUrl = `/api/storage/layout-images/${filename}`;
       return { url: proxyUrl, mimeType, prompt };
     }
 

@@ -8,17 +8,6 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "10mb",
     },
   },
-  async rewrites() {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-    return supabaseUrl
-      ? [
-          {
-            source: "/supabase-storage/:path*",
-            destination: `${supabaseUrl}/storage/v1/object/public/:path*`,
-          },
-        ]
-      : [];
-  },
   async redirects() {
     return [
       {
