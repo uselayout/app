@@ -87,8 +87,8 @@ function TypographySpecimenRow({
   }, [editValue, token.value, onUpdate]);
 
   return (
-    <div className="group flex items-center gap-4 rounded-lg px-3 py-2.5 hover:bg-[var(--bg-surface)] transition-colors">
-      <div className="w-52 shrink-0 space-y-0.5">
+    <div className="group flex items-start gap-4 rounded-lg px-3 py-2.5 hover:bg-[var(--bg-surface)] transition-colors">
+      <div className="w-52 shrink-0 space-y-0.5 overflow-hidden">
         <button
           onClick={handleCopy}
           className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
@@ -118,7 +118,8 @@ function TypographySpecimenRow({
         ) : (
           <button
             onClick={() => setEditing(true)}
-            className="text-[11px] font-mono text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors cursor-text"
+            className="text-[11px] font-mono text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors cursor-text line-clamp-1"
+            title={token.value}
           >
             {token.value}
           </button>

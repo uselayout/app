@@ -428,6 +428,7 @@ export default function StudioPage({
             <DesignSystemPanel
               extractionData={project.extractionData}
               projectId={project.id}
+              onNavigateToEditor={() => handleCentreViewChange("editor")}
             />
           }
         />

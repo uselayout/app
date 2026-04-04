@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useCallback, useMemo } from "react";
+import { useRef, useCallback, useMemo, useState, useEffect } from "react";
+import { X } from "lucide-react";
 import type { ExtractionResult } from "@/lib/types";
 import { useProjectStore } from "@/lib/store/project";
 import { DesignSystemSection } from "./design-system/DesignSystemSection";
@@ -11,9 +12,12 @@ import { RadiusPreview } from "./design-system/RadiusPreview";
 import { EffectsPreview } from "./design-system/EffectsPreview";
 import { ScreenshotGallery } from "./design-system/ScreenshotGallery";
 
+const GUIDANCE_DISMISSED_KEY = "layout_ds_guidance_dismissed";
+
 interface DesignSystemPanelProps {
   extractionData?: ExtractionResult;
   projectId: string;
+  onNavigateToEditor?: () => void;
 }
 
 const SECTIONS = [
@@ -28,11 +32,21 @@ const SECTIONS = [
 export function DesignSystemPanel({
   extractionData,
   projectId,
+  onNavigateToEditor,
 }: DesignSystemPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const updateToken = useProjectStore((s) => s.updateToken);
   const renameToken = useProjectStore((s) => s.renameToken);
   const removeTokens = useProjectStore((s) => s.removeTokens);
+
+  const [guidanceDismissed, setGuidanceDismissed] = useState(true);
+  useEffect(() => {
+    setGuidanceDismissed(localStorage.getItem(GUIDANCE_DISMISSED_KEY) === "true");
+  }, []);
+  const dismissGuidance = useCallback(() => {
+    setGuidanceDismissed(true);
+    localStorage.setItem(GUIDANCE_DISMISSED_KEY, "true");
+  }, []);
 
   const tokens = extractionData?.tokens;
   const screenshots = extractionData?.screenshots ?? [];
@@ -127,6 +141,30 @@ export function DesignSystemPanel({
           );
         })}
       </div>
+
+      {/* Editing guidance */}
+      {!guidanceDismissed && (
+        <div className="flex items-center gap-3 border-b border-[var(--studio-border)] bg-[var(--bg-panel)] px-8 py-2.5">
+          <p className="flex-1 text-xs text-[var(--text-muted)]">
+            <span className="text-[var(--text-secondary)]">Quick edits:</span> click any value to edit, click swatches to pick colours, double-click names to rename.{" "}
+            <span className="text-[var(--text-secondary)]">Complex changes:</span>{" "}
+            {onNavigateToEditor ? (
+              <button onClick={onNavigateToEditor} className="underline text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                open the Editor
+              </button>
+            ) : (
+              "open the Editor"
+            )}{" "}
+            to edit your layout.md directly.
+          </p>
+          <button
+            onClick={dismissGuidance}
+            className="shrink-0 flex items-center justify-center h-5 w-5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Scrollable content */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-6">
