@@ -72,4 +72,49 @@ export const draftEntries: ChangelogEntry[] = [
     category: "fixed",
     date: "2026-04-03",
   },
+  {
+    id: "2026-w14-generate-from-figma",
+    title: "Generate code from Figma frames",
+    description:
+      "New 'Generate from this frame' button in the Figma tab. Captures the frame screenshot and structural data (text, colours, spacing, layout), then generates 2-6 code variants that closely match your Figma design using your design system tokens.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-04",
+  },
+  {
+    id: "2026-w14-explorations-persist",
+    title: "Generated variants survive page refresh",
+    description:
+      "Previously, generated code variants would disappear when you refreshed the page. They now persist and reload automatically.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-04",
+  },
+  {
+    id: "2026-w14-health-issues-detail",
+    title: "See exactly why your compliance score is low",
+    description:
+      "Health score tooltips now list each specific issue: hardcoded colours, unknown fonts, off-grid spacing. Know exactly what to fix to improve your score.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-04",
+  },
+  {
+    id: "2026-w14-retry-render",
+    title: "Retry render without regenerating",
+    description:
+      "Failed variant previews now show 'Retry render' instead of 'Regenerate', which retries the preview without burning AI credits on a full re-generation.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-04",
+  },
+  {
+    id: "2026-w14-inspector-exit-bleed",
+    title: "Fixed accidental actions when exiting Inspector",
+    description:
+      "Clicking 'Exit Inspector' no longer triggers buttons underneath the overlay, which could accidentally start an extraction.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-04",
+  },
 ];
