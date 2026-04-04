@@ -180,4 +180,22 @@ export const draftEntries: ChangelogEntry[] = [
     category: "improved",
     date: "2026-04-04",
   },
+  {
+    id: "2026-w14-shimmer-skeletons",
+    title: "Better loading experience for variant generation",
+    description:
+      "Replaced static spinners with animated shimmer skeletons that hint at the UI structure being generated. Cards stay in place throughout generation instead of jumping between rows.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-04",
+  },
+  {
+    id: "2026-w14-variant-reveal-animation",
+    title: "Smooth reveal animation for generated variants",
+    description:
+      "Completed variants now reveal with a top-down wipe animation instead of appearing instantly, creating a satisfying 'painting on' effect.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-04",
+  },
 ];
