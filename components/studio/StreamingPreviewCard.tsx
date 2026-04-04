@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useCallback, memo } from "react";
+import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { jsxToHtml } from "@/lib/explore/jsx-to-html";
 
 interface StreamingPreviewCardProps {
@@ -11,24 +11,26 @@ interface StreamingPreviewCardProps {
 }
 
 /**
- * Srcdoc for the preview iframe — loads Tailwind CDN and listens for HTML updates.
+ * Srcdoc for the preview iframe. Loads Tailwind CDN and listens for HTML updates
+ * via postMessage. Posts a "tailwind-ready" message once Tailwind has loaded so
+ * the parent can start sending HTML updates with confidence that styles will apply.
+ *
  * The iframe is sandboxed (allow-scripts only, no allow-same-origin) so it cannot
- * access the parent page. The HTML content comes from our own Claude API output,
- * converted through jsxToHtml, not from user input.
+ * access the parent page. Content comes from our own Claude API output converted
+ * through jsxToHtml.
  */
 const PREVIEW_SRCDOC = `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="https://cdn.tailwindcss.com"></${"script"}>
+<script src="https://cdn.tailwindcss.com" onload="window._twReady=true;window.parent.postMessage({type:'tailwind-ready'},'*')"></${"script"}>
 <style>
   body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
-  #root { min-height: 100vh; }
   #root > * {
-    animation: fadeSlideIn 0.3s ease-out both;
+    animation: fadeSlideIn 0.35s ease-out both;
   }
   @keyframes fadeSlideIn {
-    from { opacity: 0; transform: translateY(4px); }
+    from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
   }
 </style>
@@ -37,18 +39,41 @@ const PREVIEW_SRCDOC = `<!DOCTYPE html>
 <${"script"}>
   var root = document.getElementById("root");
   var lastChildCount = 0;
+  var pendingHtml = null;
+
+  function applyHtml(html) {
+    if (!html) return;
+    root.innerHTML = html;
+    var children = root.children;
+    for (var i = lastChildCount; i < children.length; i++) {
+      children[i].style.animation = "none";
+      children[i].offsetHeight;
+      children[i].style.animation = "";
+    }
+    lastChildCount = children.length;
+  }
+
   window.addEventListener("message", function(e) {
-    if (e.data && e.data.type === "streaming-html-update") {
-      root.innerHTML = e.data.html;
-      var children = root.children;
-      for (var i = lastChildCount; i < children.length; i++) {
-        children[i].style.animation = "none";
-        children[i].offsetHeight;
-        children[i].style.animation = "";
+    if (!e.data) return;
+    if (e.data.type === "streaming-html-update") {
+      if (window._twReady) {
+        applyHtml(e.data.html);
+      } else {
+        pendingHtml = e.data.html;
       }
-      lastChildCount = children.length;
     }
   });
+
+  // Fallback: if Tailwind loads after messages arrived, apply pending
+  var checkTw = setInterval(function() {
+    if (window._twReady && pendingHtml) {
+      applyHtml(pendingHtml);
+      pendingHtml = null;
+      clearInterval(checkTw);
+    }
+  }, 100);
+  // Safety: stop checking after 5s
+  setTimeout(function() { clearInterval(checkTw); }, 5000);
 </${"script"}>
 </body></html>`;
 
@@ -56,14 +81,46 @@ function StreamingPreviewCardInner({ codeInProgress, isComplete }: StreamingPrev
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const lastHtmlRef = useRef("");
   const rafRef = useRef<number>(0);
+  const [iframeReady, setIframeReady] = useState(false);
+  const pendingHtmlRef = useRef<string>("");
+
+  // Listen for tailwind-ready message from iframe
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === "tailwind-ready") {
+        setIframeReady(true);
+        // Flush any pending HTML
+        if (pendingHtmlRef.current) {
+          const iframe = iframeRef.current;
+          if (iframe?.contentWindow) {
+            iframe.contentWindow.postMessage(
+              { type: "streaming-html-update", html: pendingHtmlRef.current },
+              "*"
+            );
+          }
+          pendingHtmlRef.current = "";
+        }
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
 
   const sendHtmlUpdate = useCallback((html: string) => {
-    if (html === lastHtmlRef.current) return;
+    if (!html || html === lastHtmlRef.current) return;
     lastHtmlRef.current = html;
+
     const iframe = iframeRef.current;
     if (!iframe?.contentWindow) return;
+
+    if (!iframeReady) {
+      // Queue for when Tailwind is ready
+      pendingHtmlRef.current = html;
+      return;
+    }
+
     iframe.contentWindow.postMessage({ type: "streaming-html-update", html }, "*");
-  }, []);
+  }, [iframeReady]);
 
   useEffect(() => {
     if (!codeInProgress) return;
@@ -88,7 +145,7 @@ function StreamingPreviewCardInner({ codeInProgress, isComplete }: StreamingPrev
         </div>
       )}
 
-      {/* Preview area — matches VariantCard dimensions */}
+      {/* Preview area */}
       <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white">
         {hasCode ? (
           <div style={{ height: "100%", overflow: "hidden" }}>
@@ -102,7 +159,6 @@ function StreamingPreviewCardInner({ codeInProgress, isComplete }: StreamingPrev
             />
           </div>
         ) : (
-          /* Pulsing dots before any code arrives */
           <div className="flex h-full items-center justify-center gap-1.5">
             <div className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)] animate-pulse" style={{ animationDelay: "0ms" }} />
             <div className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)] animate-pulse" style={{ animationDelay: "150ms" }} />
@@ -111,7 +167,7 @@ function StreamingPreviewCardInner({ codeInProgress, isComplete }: StreamingPrev
         )}
       </div>
 
-      {/* Footer area — matches VariantCard spacing */}
+      {/* Footer skeleton */}
       <div className="flex items-center gap-2 px-3 py-2.5">
         <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
       </div>
