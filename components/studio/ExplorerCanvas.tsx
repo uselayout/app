@@ -1060,6 +1060,34 @@ export function ExplorerCanvas({
                       isNewlyGenerated={variant.batchId === streamingBatchRef.current}
                     />
                   ))}
+                  {/* Streaming preview cards — inline in the same grid so cards don't jump */}
+                  {isGeneratingThisTab && batch.batchId === streamingBatchRef.current && (
+                    <>
+                      {streamingPartials.map((partial) => (
+                        <StreamingPreviewCard
+                          key={`streaming-${partial.index}`}
+                          codeInProgress={partial.codeInProgress}
+                          isComplete={partial.isComplete}
+                        />
+                      ))}
+                      {Array.from({ length: Math.max(0, skeletonCount - streamingPartials.length) }).map((_, i) => (
+                        <div key={`skeleton-${i}`} className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col">
+                          <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white p-6">
+                            <div className="flex h-full flex-col gap-3">
+                              <div className="h-[35%] w-full animate-shimmer rounded-lg bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
+                              <div className="h-4 w-[60%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "100ms" }} />
+                              <div className="h-3 w-[40%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "200ms" }} />
+                              <div className="mt-2 h-3 w-[90%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "300ms" }} />
+                              <div className="h-3 w-[75%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "400ms" }} />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 px-3 py-2.5">
+                            <div className="h-3 w-24 animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -1072,8 +1100,8 @@ export function ExplorerCanvas({
               </div>
             )}
 
-            {/* Streaming preview cards for in-progress batch */}
-            {(skeletonCount > 0 || streamingPartials.length > 0) && isGeneratingThisTab && (
+            {/* Streaming cards when no batch variants exist yet (initial generation) */}
+            {isGeneratingThisTab && (skeletonCount > 0 || streamingPartials.length > 0) && !batches.some((b) => b.batchId === streamingBatchRef.current) && (
               <>
                 {batches.length > 0 && (
                   <div className="flex items-center gap-3 py-3">
@@ -1085,7 +1113,6 @@ export function ExplorerCanvas({
                   </div>
                 )}
                 <div className={gridClassName}>
-                  {/* Render streaming preview cards for in-progress partials */}
                   {streamingPartials.map((partial) => (
                     <StreamingPreviewCard
                       key={`streaming-${partial.index}`}
@@ -1093,7 +1120,6 @@ export function ExplorerCanvas({
                       isComplete={partial.isComplete}
                     />
                   ))}
-                  {/* Remaining skeleton slots with no partial data yet */}
                   {Array.from({ length: Math.max(0, skeletonCount - streamingPartials.length) }).map((_, i) => (
                     <div key={`skeleton-${i}`} className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col">
                       <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white p-6">

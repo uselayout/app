@@ -211,6 +211,11 @@ export function jsxToHtml(jsx: string): string {
   html = html.replace(/&&|\|\||\?\?/g, "");
   html = html.replace(/\btrue\b|\bfalse\b|\bnull\b|\bundefined\b/g, "");
   html = html.replace(/[{};]\s*(?=<|$)/gm, "");
+  // Strip .map() / .filter() / .slice() fragments
+  html = html.replace(/\.\s*(?:map|filter|slice|reduce|forEach|find)\s*\([^)]*\)\s*(?:\()?/g, "");
+  // Strip array/spread patterns like [...] or [
+  html = html.replace(/\[\s*\.{3}[^\]]*\]/g, "");
+  html = html.replace(/\[\s*\.\.\./g, "");
 
   // Clean up whitespace
   html = html.replace(/\s{2,}/g, " ");

@@ -114,7 +114,8 @@ function StreamingPreviewCardInner({ codeInProgress, isComplete }: StreamingPrev
         }
       }
       if (e.data?.type === "content-rendered") {
-        setHasContent(true);
+        // One-way transition: once content is shown, never go back to shimmer
+        setHasContent((prev) => prev || true);
       }
     };
     window.addEventListener("message", handler);
@@ -122,6 +123,7 @@ function StreamingPreviewCardInner({ codeInProgress, isComplete }: StreamingPrev
   }, []);
 
   const sendHtmlUpdate = useCallback((html: string) => {
+    // Never send empty HTML — keep the last good render visible
     if (!html || html === lastHtmlRef.current) return;
     lastHtmlRef.current = html;
 
