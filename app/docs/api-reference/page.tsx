@@ -169,12 +169,18 @@ await mcp.call("preview", {
   {
     name: "push_to_figma",
     description:
-      "Sends a rendered component to Figma as a set of editable frames via the Figma MCP plugin. The component is first rendered by the preview tool, then captured and pushed as vector-compatible frames that designers can inspect and modify. Requires the Figma MCP plugin to be installed.",
+      "Sends a rendered component to Figma as a set of editable frames via the Figma MCP plugin. Supports two modes: capture (default) renders the component and pushes screenshot-based frames, native creates editable Figma objects with auto-layout using the Figma MCP directly (no Playwright required). Requires the Figma MCP plugin to be installed.",
     parameters: [
       {
         name: "code",
         type: "string",
         description: "The TSX component code to render and push.",
+      },
+      {
+        name: "mode",
+        type: '"capture" | "native" (optional)',
+        description:
+          'Push mode. "capture" (default) renders the component and pushes screenshot-based frames. "native" creates editable Figma objects with auto-layout via the Figma MCP. Native mode does not require Playwright MCP.',
       },
       {
         name: "pageName",
@@ -189,7 +195,7 @@ await mcp.call("preview", {
           "Name for the created frame. Defaults to the component function name.",
       },
     ],
-    example: `// Push a generated component to Figma for designer review
+    example: `// Push a generated component to Figma for designer review (capture mode)
 await mcp.call("push_to_figma", {
   code: \`
     export default function HeroBanner() {
@@ -204,7 +210,44 @@ await mcp.call("push_to_figma", {
   \`,
   pageName: "Sprint 3 -  Components",
   frameName: "HeroBanner / Desktop"
+});
+
+// Push as editable Figma objects (native mode, no Playwright needed)
+await mcp.call("push_to_figma", {
+  code: \`
+    export default function HeroBanner() {
+      return (
+        <section className="bg-[var(--color-bg-surface)] px-8 py-16">
+          <h1 className="text-5xl font-black text-[var(--text-primary)]">
+            Your AI builds on-brand.
+          </h1>
+        </section>
+      );
+    }
+  \`,
+  mode: "native",
+  pageName: "Sprint 3 -  Components"
 });`,
+  },
+  {
+    name: "push_tokens_to_figma",
+    description:
+      "Pushes design system tokens from the loaded kit to Figma as native variables and styles. Creates colour variables, text styles, and effect styles that designers can use directly in their Figma file. Requires the Figma MCP plugin to be installed.",
+    parameters: [
+      {
+        name: "fileKey",
+        type: "string (optional)",
+        description:
+          "Figma file key to push tokens into. If omitted, creates a new file.",
+      },
+    ],
+    example: `// Push tokens to an existing Figma file
+await mcp.call("push_tokens_to_figma", {
+  fileKey: "EHmQZ1wq5qHUcifyRYtiBC"
+});
+
+// Push tokens to a new Figma file
+await mcp.call("push_tokens_to_figma");`,
   },
   {
     name: "url_to_figma",
@@ -382,7 +425,7 @@ export default function ApiReferencePage() {
       <div className="space-y-4">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">API Reference</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Layout CLI exposes 12 MCP tools that AI agents call automatically during
+          Layout CLI exposes 13 MCP tools that AI agents call automatically during
           development. These tools give your agent structured access to design
           tokens, component specs, compliance checking, live preview, and a
           two-way Figma bridge: everything needed to build UI that stays on

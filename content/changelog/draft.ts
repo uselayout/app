@@ -127,6 +127,51 @@ export const draftEntries: ChangelogEntry[] = [
     date: "2026-04-04",
   },
   {
+    id: "2026-w14-figma-embed-tab",
+    title: "Live Figma preview in Studio",
+    description:
+      "New Figma tab in the source panel shows a live, interactive embed of your Figma file alongside the editor. Auto-loads from your extraction source, or paste any Figma URL.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-04",
+  },
+  {
+    id: "2026-w14-native-push-mode",
+    title: "Push to Figma as editable objects",
+    description:
+      "New 'Native' push mode creates real, editable Figma frames with auto-layout, proper text nodes, and colour fills. No more flat screenshots. Toggle between Native and Capture in the push modal.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-04",
+  },
+  {
+    id: "2026-w14-extraction-improvements",
+    title: "More accurate design system extraction",
+    description:
+      "Gradients, Figma Variables (spacing, radius, strings), strokes/borders, motion tokens, and semi-transparent colours now extracted correctly. Website extraction samples 24 element types (was 10). Component limit raised to 100, style limit to 500.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-04",
+  },
+  {
+    id: "2026-w14-push-tokens-to-figma",
+    title: "Push design tokens to Figma",
+    description:
+      "New MCP tool pushes your extracted design tokens to Figma as native variables and styles. Colours become Figma colour variables, spacing becomes number variables, typography becomes text styles.",
+    product: "cli",
+    category: "new",
+    date: "2026-04-04",
+  },
+  {
+    id: "2026-w14-auto-fix-figma-mcp",
+    title: "Auto-fix Figma MCP setup",
+    description:
+      "The Layout MCP server now detects outdated or misconfigured Figma MCP installations on startup and fixes them automatically. No more manual 'claude mcp add' commands.",
+    product: "cli",
+    category: "improved",
+    date: "2026-04-04",
+  },
+  {
     id: "2026-w14-sidebar-nav-restructure",
     title: "Cleaner sidebar navigation",
     description:
