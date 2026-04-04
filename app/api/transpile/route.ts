@@ -5,7 +5,7 @@ import { transpileLimiter } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
 import { auth } from "@/lib/auth";
 
-const schema = z.object({ code: z.string().max(500_000) });
+const schema = z.object({ code: z.string().max(2_000_000) });
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: req.headers });
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const issues = parsed.error.issues;
     const tooLong = issues.some((i) => i.code === "too_big");
     return NextResponse.json(
-      { error: tooLong ? "Code too large to preview (max 500KB)" : "Invalid request" },
+      { error: tooLong ? "Code too large to preview (max 2MB)" : "Invalid request" },
       { status: 400 }
     );
   }
