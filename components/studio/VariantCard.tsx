@@ -201,6 +201,8 @@ interface VariantCardProps {
   layoutMd?: string;
   designTokens?: ExtractedToken[];
   iconPacks?: string[];
+  /** When true, card animates in with a scale-up + fade-in entrance */
+  isNewlyGenerated?: boolean;
 }
 
 export function VariantCard({
@@ -223,7 +225,18 @@ export function VariantCard({
   layoutMd,
   designTokens,
   iconPacks,
+  isNewlyGenerated = false,
 }: VariantCardProps) {
+  // Entrance animation for newly generated variants
+  const [entered, setEntered] = useState(!isNewlyGenerated);
+  useEffect(() => {
+    if (!isNewlyGenerated || entered) return;
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setEntered(true));
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [isNewlyGenerated, entered]);
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fullscreenIframeRef = useRef<HTMLIFrameElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -557,6 +570,8 @@ export function VariantCard({
           newTag = newTag.replace(/\ssrc\s*=\s*"[^"]*"/i, ` src="${imageUrl}"`);
         } else if (/\ssrc\s*=\s*'[^']*'/i.test(newTag)) {
           newTag = newTag.replace(/\ssrc\s*=\s*'[^']*'/i, ` src="${imageUrl}"`);
+        } else if (/\ssrc\s*=\s*\{[^}]*\}/i.test(newTag)) {
+          newTag = newTag.replace(/\ssrc\s*=\s*\{[^}]*\}/i, ` src="${imageUrl}"`);
         } else {
           newTag = newTag.replace(/\/?\s*>$/, ` src="${imageUrl}" />`);
         }
@@ -684,7 +699,9 @@ export function VariantCard({
     <TooltipProvider>
     <div
       onClick={inspectMode ? undefined : onSelect}
-      className={`group relative flex flex-col rounded-xl border transition-all ${inspectMode ? "" : "cursor-pointer"} ${
+      className={`group relative flex flex-col rounded-xl border transition-all duration-300 ease-out ${inspectMode ? "" : "cursor-pointer"} ${
+        isNewlyGenerated && !entered ? "opacity-0 scale-[0.97] translate-y-1" : "opacity-100 scale-100 translate-y-0"
+      } ${
         isSelected
           ? "border-[var(--studio-accent)] ring-1 ring-[var(--studio-accent)]/30 bg-[var(--bg-elevated)]"
           : "border-[var(--studio-border)] bg-[var(--bg-surface)] hover:border-[var(--studio-border-strong)]"
