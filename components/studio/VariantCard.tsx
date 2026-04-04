@@ -565,16 +565,13 @@ export function VariantCard({
 
       // Helper: replace src in a matched img tag and persist
       const applySrc = (match: { start: number; end: number; tag: string }) => {
-        let newTag = match.tag;
-        if (/\ssrc\s*=\s*"[^"]*"/i.test(newTag)) {
-          newTag = newTag.replace(/\ssrc\s*=\s*"[^"]*"/i, ` src="${imageUrl}"`);
-        } else if (/\ssrc\s*=\s*'[^']*'/i.test(newTag)) {
-          newTag = newTag.replace(/\ssrc\s*=\s*'[^']*'/i, ` src="${imageUrl}"`);
-        } else if (/\ssrc\s*=\s*\{[^}]*\}/i.test(newTag)) {
-          newTag = newTag.replace(/\ssrc\s*=\s*\{[^}]*\}/i, ` src="${imageUrl}"`);
-        } else {
-          newTag = newTag.replace(/\/?\s*>$/, ` src="${imageUrl}" />`);
-        }
+        // Strip ALL existing src attributes (handles duplicates from pipeline fallbacks)
+        let newTag = match.tag
+          .replace(/\ssrc\s*=\s*"[^"]*"/gi, "")
+          .replace(/\ssrc\s*=\s*'[^']*'/gi, "")
+          .replace(/\ssrc\s*=\s*\{[^}]*\}/gi, "");
+        // Add single clean src attribute before the closing
+        newTag = newTag.replace(/\/?\s*>$/, ` src="${imageUrl}" />`);
         const updatedCode = code.slice(0, match.start) + newTag + code.slice(match.end);
         onCodeUpdate(updatedCode, editHistory);
       };

@@ -293,20 +293,16 @@ export async function processImagePlaceholders(
         const imageUrl = genResult.value.url;
 
         // Keep data-generate-image so "Regenerate images" can re-process later.
-        // Just add or update the src attribute with the real URL.
-        const replacement = placeholder.match
-          .replace(
-            /src=["'][^"']*["']/i,
-            `src="${imageUrl}"`
-          )
-          // If no src attribute exists, add one before the closing
-          .replace(
-            /\/?>$/,
-            (closing) =>
-              closing.includes("src=")
-                ? closing
-                : ` src="${imageUrl}" ${closing}`
-          );
+        // Strip ALL existing src attributes (prevents duplicates in JSX where last wins)
+        // then add a single clean src with the real URL.
+        const stripped = placeholder.match
+          .replace(/\ssrc\s*=\s*"[^"]*"/gi, "")
+          .replace(/\ssrc\s*=\s*'[^']*'/gi, "")
+          .replace(/\ssrc\s*=\s*\{[^}]*\}/gi, "");
+        const replacement = stripped.replace(
+          /\/?\s*>$/,
+          ` src="${imageUrl}" />`
+        );
 
         // replaceAll handles duplicate identical prompts
         result = result.replaceAll(placeholder.match, replacement);
@@ -322,18 +318,15 @@ export async function processImagePlaceholders(
         errors.push(errMsg);
 
         // Replace with fallback image but KEEP data-generate-image for retry
-        const fallback = placeholder.match
-          .replace(
-            /src=["'][^"']*["']/i,
-            `src="${FALLBACK_SVG}"`
-          )
-          .replace(
-            /\/?>$/,
-            (closing) =>
-              closing.includes("src=")
-                ? closing
-                : ` src="${FALLBACK_SVG}" ${closing}`
-          );
+        // Strip ALL existing src attributes to prevent duplicates
+        const fallbackStripped = placeholder.match
+          .replace(/\ssrc\s*=\s*"[^"]*"/gi, "")
+          .replace(/\ssrc\s*=\s*'[^']*'/gi, "")
+          .replace(/\ssrc\s*=\s*\{[^}]*\}/gi, "");
+        const fallback = fallbackStripped.replace(
+          /\/?\s*>$/,
+          ` src="${FALLBACK_SVG}" />`
+        );
 
         result = result.replaceAll(placeholder.match, fallback);
         options.onImageError?.(i + j, errMsg);
