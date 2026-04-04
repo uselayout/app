@@ -24,7 +24,7 @@ export async function parseComponents(
   onProgress?.(`Found ${components.length} components, ${componentSets.length} component sets`);
 
   const setNodeIds = componentSets.map((s) => s.node_id);
-  const componentNodeIds = components.slice(0, 50).map((c) => c.node_id);
+  const componentNodeIds = components.slice(0, 100).map((c) => c.node_id);
   const allNodeIds = [...new Set([...setNodeIds, ...componentNodeIds])];
 
   let nodeData: Record<string, { document: FigmaNode }> = {};
