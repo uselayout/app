@@ -93,7 +93,7 @@ export default function StudioPage({
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
-  const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved">(
+  const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved" | "design-system">(
     tabParam === "explorer" ? "canvas" : "editor"
   );
 

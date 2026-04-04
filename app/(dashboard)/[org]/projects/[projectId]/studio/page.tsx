@@ -19,6 +19,7 @@ import { diffExtractions } from "@/lib/extraction/diff";
 import type { ExtractionDiff } from "@/lib/extraction/diff";
 import type { DesignVariant, ExtractionResult, SourceType, ContextFile } from "@/lib/types";
 import { SavedLibraryView } from "@/components/studio/SavedLibraryView";
+import { DesignSystemPanel } from "@/components/studio/DesignSystemPanel";
 
 export default function StudioPage({
   params,
@@ -34,6 +35,7 @@ export default function StudioPage({
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateExplorations = useProjectStore((s) => s.updateExplorations);
   const refreshProject = useProjectStore((s) => s.refreshProject);
+  const syncTokensFromLayoutMd = useProjectStore((s) => s.syncTokensFromLayoutMd);
   const saveError = useProjectStore((s) => s.saveError);
   const clearSaveError = useProjectStore((s) => s.clearSaveError);
   const project = projects.find((p) => p.id === id);
@@ -63,7 +65,7 @@ export default function StudioPage({
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
-  const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved">("editor");
+  const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved" | "design-system">("editor");
   const [showSourcePanel, setShowSourcePanel] = useState(true);
   const [whatsNextDismissed, setWhatsNextDismissed] = useState(false);
   const [pendingFigmaImage, setPendingFigmaImage] = useState<string | null>(null);
@@ -78,19 +80,23 @@ export default function StudioPage({
     const view = searchParams.get("view");
     if (view === "saved") {
       setCentreView("saved");
-    } else if (centreView === "saved") {
+    } else if (view === "design-system") {
+      setCentreView("design-system");
+      // Sync tokens from layout.md to pick up any manual editor changes
+      syncTokensFromLayoutMd(id);
+    } else if (centreView === "saved" || centreView === "design-system") {
       setCentreView("editor");
     }
-  }, [searchParams]);
+  }, [searchParams, id, syncTokensFromLayoutMd]);
 
   // Clean up URL when navigating away from saved view via TopBar toggle
   const handleCentreViewChange = useCallback(
-    (view: "editor" | "canvas" | "saved") => {
+    (view: "editor" | "canvas" | "saved" | "design-system") => {
       setCentreView(view);
       const currentView = searchParams.get("view");
-      if (view === "saved" && currentView !== "saved") {
-        router.replace(`${pathname}?view=saved`, { scroll: false });
-      } else if (view !== "saved" && currentView === "saved") {
+      if ((view === "saved" || view === "design-system") && currentView !== view) {
+        router.replace(`${pathname}?view=${view}`, { scroll: false });
+      } else if (view !== "saved" && view !== "design-system" && currentView) {
         router.replace(pathname, { scroll: false });
       }
     },
@@ -373,7 +379,7 @@ export default function StudioPage({
       <div className="flex-1 overflow-hidden">
         <StudioLayout
           centreView={centreView}
-          showSourcePanel={showSourcePanel && centreView !== "saved"}
+          showSourcePanel={showSourcePanel && centreView !== "saved" && centreView !== "design-system"}
           sourcePanel={
             <SourcePanel
               extractionData={project.extractionData}
@@ -414,6 +420,12 @@ export default function StudioPage({
             <SavedLibraryView
               onNavigateToCanvas={() => handleCentreViewChange("canvas")}
               onOpenInCanvas={handleOpenSavedInCanvas}
+            />
+          }
+          designSystemPanel={
+            <DesignSystemPanel
+              extractionData={project.extractionData}
+              projectId={project.id}
             />
           }
         />

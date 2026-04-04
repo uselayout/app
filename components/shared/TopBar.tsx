@@ -13,8 +13,8 @@ interface TopBarProps {
   onToggleSource?: () => void;
   sourcePanelOpen?: boolean;
   onExport?: () => void;
-  centreView?: "editor" | "canvas" | "saved";
-  onCentreViewChange?: (view: "editor" | "canvas" | "saved") => void;
+  centreView?: "editor" | "canvas" | "saved" | "design-system";
+  onCentreViewChange?: (view: "editor" | "canvas" | "saved" | "design-system") => void;
 }
 
 export function TopBar({

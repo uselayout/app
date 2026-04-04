@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, usePathname, useSearchParams } from "next/navigation";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { UserMenu } from "./UserMenu";
-import { PanelLeftClose, PanelLeftOpen, BookMarked } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, BookMarked, Palette } from "lucide-react";
 
 interface NavItem {
   label: string;
@@ -60,6 +60,7 @@ function SidebarInner() {
 
   const navItems: NavItem[] = [
     { label: "Studio", href: `${projectBase}/studio`, segment: "studio", icon: <StudioIcon /> },
+    { label: "Design System", href: `${projectBase}/studio?view=design-system`, segment: "design-system", icon: <Palette size={16} /> },
     { label: "Saved", href: `${projectBase}/studio?view=saved`, segment: "saved", icon: <BookMarked size={16} /> },
   ];
 
@@ -68,13 +69,17 @@ function SidebarInner() {
     const prefix = `/${orgSlug}/projects/${projectId}/`;
     if (pathname.startsWith(prefix)) {
       const current = pathname.slice(prefix.length).split("/")[0];
-      // "Saved" uses studio path + ?tab=saved query param
+      const viewParam = searchParams.get("view");
+      // "Saved" and "Design System" use studio path + ?view= query param
       if (segment === "saved") {
-        return current === "studio" && searchParams.get("view") === "saved";
+        return current === "studio" && viewParam === "saved";
       }
-      // "Studio" is active when on studio without the saved view
+      if (segment === "design-system") {
+        return current === "studio" && viewParam === "design-system";
+      }
+      // "Studio" is active when on studio without a view param
       if (segment === "studio") {
-        return current === "studio" && searchParams.get("view") !== "saved";
+        return current === "studio" && !viewParam;
       }
       return current === segment;
     }
