@@ -149,11 +149,7 @@ function StreamingPreviewCardInner({ codeInProgress, isComplete }: StreamingPrev
   }, [codeInProgress, sendHtmlUpdate]);
 
   return (
-    <div
-      className={`group relative flex flex-col rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] transition-opacity duration-500 ${
-        isComplete ? "opacity-0" : "opacity-100"
-      }`}
-    >
+    <div className="group relative flex flex-col rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)]">
       {/* Pulsing accent line at top */}
       {!isComplete && (
         <div className="absolute left-0 right-0 top-0 z-30 h-[2px] overflow-hidden rounded-t-xl">

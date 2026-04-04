@@ -210,7 +210,7 @@ export function ExplorerCanvas({
                 fadeoutTimersRef.current.set(p.index, setTimeout(() => {
                   setStreamingPartials((curr) => curr.filter((c) => c.index !== p.index));
                   fadeoutTimersRef.current.delete(p.index);
-                }, 600));
+                }, 800));
               }
             }
 
@@ -237,12 +237,12 @@ export function ExplorerCanvas({
       cancelAnimationFrame(partialsRafRef.current);
       // Mark all remaining partials as complete so they fade out
       setStreamingPartials((prev) => prev.map((p) => ({ ...p, isComplete: true })));
-      // Clear after fadeout duration
+      // Clear after wipe duration
       setTimeout(() => {
         setStreamingPartials([]);
         fadeoutTimersRef.current.forEach((t) => clearTimeout(t));
         fadeoutTimersRef.current.clear();
-      }, 600);
+      }, 800);
 
       const finalNew = parseVariants(fullOutput, parseOpts);
 
@@ -908,10 +908,10 @@ export function ExplorerCanvas({
           <button
             onClick={handleNewExploration}
             disabled={isGenerating}
-            className="shrink-0 flex items-center justify-center size-6 rounded-md text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 transition-colors"
+            className="shrink-0 flex items-center justify-center size-7 rounded-md bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)] disabled:opacity-30 transition-colors"
             title="New exploration"
           >
-            <Plus size={13} />
+            <Plus size={14} />
           </button>
           <span className="shrink-0 text-[10px] text-[var(--text-muted)] tabular-nums">
             {explorationIndex + 1}/{explorations.length}

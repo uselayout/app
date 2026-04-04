@@ -227,15 +227,10 @@ export function VariantCard({
   iconPacks,
   isNewlyGenerated = false,
 }: VariantCardProps) {
-  // Entrance animation for newly generated variants
-  const [entered, setEntered] = useState(!isNewlyGenerated);
-  useEffect(() => {
-    if (!isNewlyGenerated || entered) return;
-    const raf = requestAnimationFrame(() => {
-      requestAnimationFrame(() => setEntered(true));
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [isNewlyGenerated, entered]);
+  // Top-down clip-path reveal for newly generated variants.
+  // Starts fully clipped, reveals when preview iframe loads.
+  const [revealed, setRevealed] = useState(!isNewlyGenerated);
+  const revealedRef = useRef(!isNewlyGenerated);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fullscreenIframeRef = useRef<HTMLIFrameElement>(null);
@@ -296,6 +291,11 @@ export function VariantCard({
         if (iframeRef.current) {
           iframeRef.current.srcdoc = srcdoc;
           setPreviewReady(true);
+          // Trigger top-down reveal after a frame to let the iframe start rendering
+          if (!revealedRef.current) {
+            revealedRef.current = true;
+            requestAnimationFrame(() => setRevealed(true));
+          }
         }
 
         // Also update the fullscreen Inspector iframe if it's open
@@ -699,9 +699,11 @@ export function VariantCard({
     <TooltipProvider>
     <div
       onClick={inspectMode ? undefined : onSelect}
-      className={`group relative flex flex-col rounded-xl border transition-all duration-300 ease-out ${inspectMode ? "" : "cursor-pointer"} ${
-        isNewlyGenerated && !entered ? "opacity-0 scale-[0.97] translate-y-1" : "opacity-100 scale-100 translate-y-0"
-      } ${
+      style={isNewlyGenerated ? {
+        clipPath: revealed ? "inset(0 0 0 0)" : "inset(0 0 100% 0)",
+        transition: "clip-path 800ms ease-out",
+      } : undefined}
+      className={`group relative flex flex-col rounded-xl border transition-colors ${inspectMode ? "" : "cursor-pointer"} ${
         isSelected
           ? "border-[var(--studio-accent)] ring-1 ring-[var(--studio-accent)]/30 bg-[var(--bg-elevated)]"
           : "border-[var(--studio-border)] bg-[var(--bg-surface)] hover:border-[var(--studio-border-strong)]"
