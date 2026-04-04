@@ -78,25 +78,28 @@ export default function StudioPage({
 
   useEffect(() => {
     const view = searchParams.get("view");
-    if (view === "saved") {
+    if (view === "explore") {
+      setCentreView("canvas");
+    } else if (view === "saved") {
       setCentreView("saved");
     } else if (view === "design-system") {
       setCentreView("design-system");
       // Sync tokens from layout.md to pick up any manual editor changes
       syncTokensFromLayoutMd(id);
-    } else if (centreView === "saved" || centreView === "design-system") {
+    } else {
       setCentreView("editor");
     }
   }, [searchParams, id, syncTokensFromLayoutMd]);
 
-  // Clean up URL when navigating away from saved view via TopBar toggle
+  // Sync URL when view changes programmatically (e.g. from saved library "Open in Canvas")
   const handleCentreViewChange = useCallback(
     (view: "editor" | "canvas" | "saved" | "design-system") => {
       setCentreView(view);
+      const viewParam = view === "canvas" ? "explore" : view === "editor" ? null : view;
       const currentView = searchParams.get("view");
-      if ((view === "saved" || view === "design-system") && currentView !== view) {
-        router.replace(`${pathname}?view=${view}`, { scroll: false });
-      } else if (view !== "saved" && view !== "design-system" && currentView) {
+      if (viewParam && currentView !== viewParam) {
+        router.replace(`${pathname}?view=${viewParam}`, { scroll: false });
+      } else if (!viewParam && currentView) {
         router.replace(pathname, { scroll: false });
       }
     },
@@ -373,13 +376,12 @@ export default function StudioPage({
         onToggleSource={() => setShowSourcePanel((prev) => !prev)}
         sourcePanelOpen={showSourcePanel}
         onExport={() => setShowExport(true)}
-        centreView={centreView}
-        onCentreViewChange={handleCentreViewChange}
+        showSourceToggle={centreView === "editor"}
       />
       <div className="flex-1 overflow-hidden">
         <StudioLayout
           centreView={centreView}
-          showSourcePanel={showSourcePanel && centreView !== "saved" && centreView !== "design-system"}
+          showSourcePanel={showSourcePanel && centreView === "editor"}
           sourcePanel={
             <SourcePanel
               extractionData={project.extractionData}

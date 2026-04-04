@@ -31,7 +31,7 @@ export function DesignSystemSection({
             open ? "" : "-rotate-90"
           }`}
         />
-        <h2 className="text-sm font-semibold text-[var(--text-primary)] tracking-wide uppercase">
+        <h2 className="text-base font-semibold text-[var(--text-primary)] tracking-wide uppercase">
           {title}
         </h2>
         {count !== undefined && count > 0 && (
@@ -40,7 +40,11 @@ export function DesignSystemSection({
           </span>
         )}
       </button>
-      {open && <div className="pb-8">{children}</div>}
+      {open && (
+        <div className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-panel)] p-5 mb-10">
+          {children}
+        </div>
+      )}
     </section>
   );
 }

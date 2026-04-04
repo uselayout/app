@@ -58,6 +58,13 @@ export function DesignSystemPanel({
     [projectId, removeTokens]
   );
 
+  const handleRenameToken = useCallback(
+    (tokenType: "colors" | "typography" | "spacing" | "radius" | "effects", oldName: string, newName: string) => {
+      renameToken(projectId, tokenType, oldName, newName);
+    },
+    [projectId, renameToken]
+  );
+
   const cssVariables = useMemo(() => {
     if (!tokens) return {};
     const vars: Record<string, string> = {};
@@ -122,7 +129,7 @@ export function DesignSystemPanel({
       </div>
 
       {/* Scrollable content */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-6">
         {tokens.colors.length > 0 && (
           <DesignSystemSection id="colours" title="Colours" count={tokens.colors.length}>
             <ColourPalette
@@ -130,6 +137,7 @@ export function DesignSystemPanel({
               cssVariables={cssVariables}
               onUpdateToken={(name, value) => handleUpdateToken("colors", name, value)}
               onRemoveToken={(name) => handleRemoveToken("colors", [name])}
+              onRenameToken={(oldName, newName) => handleRenameToken("colors", oldName, newName)}
             />
           </DesignSystemSection>
         )}

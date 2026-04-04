@@ -389,8 +389,7 @@ export default function StudioPage({
         onNameChange={(name) => updateProjectName(id, name)}
         onReExtract={handleReExtract}
         onExport={() => setShowExport(true)}
-        centreView={centreView}
-        onCentreViewChange={setCentreView}
+        showSourceToggle={centreView === "editor"}
       />
       <div className="flex-1 overflow-hidden">
         <StudioLayout

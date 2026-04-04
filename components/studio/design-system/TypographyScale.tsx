@@ -18,7 +18,26 @@ function parseNumericValue(value: string): number | null {
   return match ? parseFloat(match[1]) : null;
 }
 
-function TypographyRow({
+/** Check if a token value is renderable as a typography specimen */
+function isRenderableTypography(name: string, value: string): boolean {
+  // var() references are not renderable
+  if (value.startsWith("var(")) return false;
+  // Font families (comma-separated list or quoted name)
+  if (name.includes("font-family") || name.includes("font-sans") || name.includes("font-mono") || name.includes("font-serif")) return true;
+  // Font sizes with numeric values
+  if ((name.includes("size") || name.includes("font-size")) && parseNumericValue(value) !== null) return true;
+  // Font weights
+  if (name.includes("weight") && parseNumericValue(value) !== null) return true;
+  // Line heights
+  if ((name.includes("line-height") || name.includes("leading")) && value.match(/[\d.]/)) return true;
+  // Letter spacing
+  if (name.includes("letter-spacing") || name.includes("tracking")) return true;
+  // Font stacks (contain commas, likely a font family list)
+  if (value.includes(",") && !value.includes("(")) return true;
+  return false;
+}
+
+function TypographySpecimenRow({
   token,
   onUpdate,
   onRemove,
@@ -33,13 +52,12 @@ function TypographyRow({
 
   const displayName = token.cssVariable ?? `--${token.name}`;
   const isFontSize = token.name.includes("size") || token.name.includes("font-size");
-  const isFontFamily = token.name.includes("font-family") || token.name.includes("font-sans") || token.name.includes("font-mono") || token.name.includes("font-serif");
+  const isFontFamily = token.name.includes("font-family") || token.name.includes("font-sans") || token.name.includes("font-mono") || token.name.includes("font-serif") || (token.value.includes(",") && !token.value.includes("("));
   const isFontWeight = token.name.includes("weight");
   const isLineHeight = token.name.includes("line-height") || token.name.includes("leading");
 
   const numericValue = parseNumericValue(token.value);
 
-  // Determine specimen style
   const specimenStyle: React.CSSProperties = {};
   if (isFontSize && numericValue) {
     specimenStyle.fontSize = `${Math.min(numericValue, 48)}px`;
@@ -47,6 +65,7 @@ function TypographyRow({
     specimenStyle.fontFamily = token.value;
   } else if (isFontWeight && numericValue) {
     specimenStyle.fontWeight = numericValue;
+    specimenStyle.fontSize = "18px";
   } else if (isLineHeight) {
     specimenStyle.lineHeight = token.value;
     specimenStyle.fontSize = "16px";
@@ -68,9 +87,8 @@ function TypographyRow({
   }, [editValue, token.value, onUpdate]);
 
   return (
-    <div className="group flex items-center gap-4 rounded-lg px-3 py-2 hover:bg-[var(--bg-surface)] transition-colors">
-      {/* Token info */}
-      <div className="w-48 shrink-0 space-y-0.5">
+    <div className="group flex items-center gap-4 rounded-lg px-3 py-2.5 hover:bg-[var(--bg-surface)] transition-colors">
+      <div className="w-52 shrink-0 space-y-0.5">
         <button
           onClick={handleCopy}
           className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
@@ -80,7 +98,7 @@ function TypographyRow({
           ) : (
             <Copy className="h-3 w-3 opacity-0 group-hover:opacity-100 shrink-0" />
           )}
-          <span className="truncate">{displayName.replace(/^--/, "")}</span>
+          <span>{displayName.replace(/^--/, "")}</span>
         </button>
         {editing ? (
           <input
@@ -107,20 +125,94 @@ function TypographyRow({
         )}
       </div>
 
-      {/* Specimen */}
       <div className="flex-1 min-w-0">
-        <p
-          className="truncate text-[var(--text-primary)]"
-          style={specimenStyle}
-        >
+        <p className="truncate text-[var(--text-primary)]" style={specimenStyle}>
           {isFontFamily ? "The quick brown fox jumps over the lazy dog" : "Aa Bb Cc 123"}
         </p>
       </div>
 
-      {/* Delete */}
       <button
         onClick={onRemove}
         className="shrink-0 opacity-0 group-hover:opacity-100 flex items-center justify-center h-5 w-5 rounded text-[var(--text-muted)] hover:text-red-400 transition-all"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
+/** Compact row for var() reference tokens that can't be rendered as specimens */
+function TypographyReferenceRow({
+  token,
+  onUpdate,
+  onRemove,
+}: {
+  token: ExtractedToken;
+  onUpdate: (value: string) => void;
+  onRemove: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(token.value);
+  const [justCopied, setJustCopied] = useState(false);
+
+  const displayName = token.cssVariable ?? `--${token.name}`;
+
+  const handleCopy = useCallback(() => {
+    copyToClipboard(displayName);
+    setJustCopied(true);
+    setTimeout(() => setJustCopied(false), 1500);
+  }, [displayName]);
+
+  const handleCommit = useCallback(() => {
+    setEditing(false);
+    if (editValue.trim() && editValue !== token.value) {
+      onUpdate(editValue.trim());
+    } else {
+      setEditValue(token.value);
+    }
+  }, [editValue, token.value, onUpdate]);
+
+  return (
+    <div className="group flex items-center gap-3 rounded-md px-3 py-1.5 hover:bg-[var(--bg-surface)] transition-colors">
+      <button
+        onClick={handleCopy}
+        className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shrink-0"
+      >
+        {justCopied ? (
+          <Check className="h-3 w-3 text-emerald-400 shrink-0" />
+        ) : (
+          <Copy className="h-3 w-3 opacity-0 group-hover:opacity-100 shrink-0" />
+        )}
+        <span>{displayName.replace(/^--/, "")}</span>
+      </button>
+
+      {editing ? (
+        <input
+          autoFocus
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={handleCommit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleCommit();
+            if (e.key === "Escape") {
+              setEditValue(token.value);
+              setEditing(false);
+            }
+          }}
+          className="flex-1 rounded border border-[var(--studio-border-focus)] bg-[var(--bg-elevated)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--text-primary)] outline-none"
+        />
+      ) : (
+        <button
+          onClick={() => setEditing(true)}
+          className="rounded bg-[var(--bg-elevated)] px-2 py-0.5 font-mono text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors cursor-text"
+        >
+          {token.value}
+        </button>
+      )}
+
+      <button
+        onClick={onRemove}
+        className="shrink-0 opacity-0 group-hover:opacity-100 flex items-center justify-center h-5 w-5 rounded text-[var(--text-muted)] hover:text-red-400 transition-all ml-auto"
       >
         <X className="h-3.5 w-3.5" />
       </button>
@@ -134,11 +226,16 @@ export function TypographyScale({
   onRemoveToken,
   extractedFonts,
 }: TypographyScaleProps) {
-  const groups = groupTokensByPurpose(tokens, "typography");
+  // Separate renderable specimens from var() reference tokens
+  const renderableTokens = tokens.filter((t) => isRenderableTypography(t.name, t.value));
+  const referenceTokens = tokens.filter((t) => !isRenderableTypography(t.name, t.value));
 
+  const groups = groupTokensByPurpose(renderableTokens, "typography");
   const displayGroups = groups.length > 0
     ? groups
-    : [{ label: "All Typography", tokens }];
+    : renderableTokens.length > 0
+      ? [{ label: "All Typography", tokens: renderableTokens }]
+      : [];
 
   // Sort font-size tokens by numeric value (largest first)
   const sortedGroups = displayGroups.map((group) => {
@@ -153,16 +250,22 @@ export function TypographyScale({
     return group;
   });
 
+  // Deduplicate extracted fonts by family name
+  const uniqueFonts = extractedFonts.reduce<FontDeclaration[]>((acc, font) => {
+    if (!acc.some((f) => f.family === font.family)) acc.push(font);
+    return acc;
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* Font families overview */}
-      {extractedFonts.length > 0 && (
-        <div className="mb-6">
+      {uniqueFonts.length > 0 && (
+        <div>
           <h3 className="mb-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
             Font Families
           </h3>
           <div className="flex flex-wrap gap-3">
-            {extractedFonts.map((font) => (
+            {uniqueFonts.map((font) => (
               <div
                 key={font.family}
                 className="rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-3"
@@ -182,6 +285,7 @@ export function TypographyScale({
         </div>
       )}
 
+      {/* Renderable specimens */}
       {sortedGroups.map((group) => (
         <div key={group.label}>
           <h3 className="mb-2 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
@@ -189,7 +293,7 @@ export function TypographyScale({
           </h3>
           <div className="space-y-0.5">
             {group.tokens.map((token) => (
-              <TypographyRow
+              <TypographySpecimenRow
                 key={token.cssVariable ?? token.name}
                 token={token}
                 onUpdate={(value) => onUpdateToken(token.name, value)}
@@ -199,6 +303,26 @@ export function TypographyScale({
           </div>
         </div>
       ))}
+
+      {/* Reference tokens (var() values) - compact list */}
+      {referenceTokens.length > 0 && (
+        <div>
+          <h3 className="mb-2 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
+            Token References
+            <span className="ml-2 opacity-60">{referenceTokens.length}</span>
+          </h3>
+          <div className="space-y-0.5">
+            {referenceTokens.map((token) => (
+              <TypographyReferenceRow
+                key={token.cssVariable ?? token.name}
+                token={token}
+                onUpdate={(value) => onUpdateToken(token.name, value)}
+                onRemove={() => onRemoveToken(token.name)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

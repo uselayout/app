@@ -14,6 +14,7 @@ interface ColourSwatchCardProps {
   description?: string;
   onUpdate: (newValue: string) => void;
   onRemove: () => void;
+  onRename: (newName: string) => void;
 }
 
 export function ColourSwatchCard({
@@ -24,9 +25,12 @@ export function ColourSwatchCard({
   description,
   onUpdate,
   onRemove,
+  onRename,
 }: ColourSwatchCardProps) {
   const [justCopied, setJustCopied] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(name);
 
   const displayHex = toHex(resolvedValue) ?? resolvedValue;
   const swatchColour = toHex(resolvedValue) ?? "#000000";
@@ -37,6 +41,16 @@ export function ColourSwatchCard({
     setJustCopied(true);
     setTimeout(() => setJustCopied(false), 1500);
   }, [displayName]);
+
+  const handleRenameCommit = useCallback(() => {
+    setRenaming(false);
+    const trimmed = renameValue.trim();
+    if (trimmed && trimmed !== name) {
+      onRename(trimmed);
+    } else {
+      setRenameValue(name);
+    }
+  }, [renameValue, name, onRename]);
 
   return (
     <div
@@ -64,21 +78,40 @@ export function ColourSwatchCard({
       </ColorPickerPopover>
 
       {/* Name + value */}
-      <div className="flex flex-col items-center gap-0.5 max-w-[80px]">
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1 text-[10px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors truncate max-w-full"
-          title={`Copy ${displayName}`}
-        >
-          {justCopied ? (
-            <Check className="h-2.5 w-2.5 text-emerald-400 shrink-0" />
-          ) : (
-            <Copy className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 shrink-0" />
-          )}
-          <span className="truncate">
-            {displayName.replace(/^--/, "")}
-          </span>
-        </button>
+      <div className="flex flex-col items-center gap-0.5">
+        {renaming ? (
+          <input
+            autoFocus
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onBlur={handleRenameCommit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleRenameCommit();
+              if (e.key === "Escape") {
+                setRenameValue(name);
+                setRenaming(false);
+              }
+            }}
+            className="w-28 rounded border border-[var(--studio-border-focus)] bg-[var(--bg-elevated)] px-1 py-0.5 text-center font-mono text-[10px] text-[var(--text-primary)] outline-none"
+          />
+        ) : (
+          <button
+            onClick={handleCopy}
+            onDoubleClick={() => {
+              setRenameValue(name);
+              setRenaming(true);
+            }}
+            className="flex items-center gap-1 text-[10px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-center leading-tight"
+            title={`Click to copy, double-click to rename`}
+          >
+            {justCopied ? (
+              <Check className="h-2.5 w-2.5 text-emerald-400 shrink-0" />
+            ) : (
+              <Copy className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 shrink-0" />
+            )}
+            <span>{displayName.replace(/^--/, "")}</span>
+          </button>
+        )}
         <span className="text-[10px] font-mono text-[var(--text-muted)]">
           {displayHex}
         </span>
