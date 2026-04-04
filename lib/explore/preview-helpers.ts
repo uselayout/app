@@ -79,6 +79,7 @@ export function buildSrcdoc(js: string, componentName: string, inspectorScript?:
 <html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="${typeof globalThis.window !== 'undefined' ? globalThis.window.location.origin + '/' : '/'}">
 <script src="https://cdn.tailwindcss.com"></${"script"}>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></${"script"}>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></${"script"}>

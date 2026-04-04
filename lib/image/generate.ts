@@ -297,8 +297,9 @@ export async function generateImage(
       });
 
     if (!uploadError) {
-      // Use app API proxy to avoid mixed content (HTTPS app loading HTTP Supabase).
-      // API route at /api/storage/[...path] fetches from Supabase server-side.
+      // Return relative proxy URL. The preview iframe's <base href> ensures
+      // this resolves correctly. API route at /api/storage/[...path] fetches
+      // from Supabase server-side, avoiding mixed content issues.
       const proxyUrl = `/api/storage/layout-images/${filename}`;
       return { url: proxyUrl, mimeType, prompt };
     }
