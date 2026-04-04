@@ -38,6 +38,7 @@ export function DesignSystemPanel({
   const updateToken = useProjectStore((s) => s.updateToken);
   const renameToken = useProjectStore((s) => s.renameToken);
   const removeTokens = useProjectStore((s) => s.removeTokens);
+  const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
 
   const [guidanceDismissed, setGuidanceDismissed] = useState(true);
   useEffect(() => {
@@ -77,6 +78,28 @@ export function DesignSystemPanel({
       renameToken(projectId, tokenType, oldName, newName);
     },
     [projectId, renameToken]
+  );
+
+  const handleAddScreenshot = useCallback(
+    (dataUrl: string) => {
+      if (!extractionData) return;
+      updateExtractionData(projectId, {
+        ...extractionData,
+        screenshots: [...extractionData.screenshots, dataUrl],
+      });
+    },
+    [projectId, extractionData, updateExtractionData]
+  );
+
+  const handleDeleteScreenshot = useCallback(
+    (index: number) => {
+      if (!extractionData) return;
+      updateExtractionData(projectId, {
+        ...extractionData,
+        screenshots: extractionData.screenshots.filter((_, i) => i !== index),
+      });
+    },
+    [projectId, extractionData, updateExtractionData]
   );
 
   const cssVariables = useMemo(() => {
@@ -223,7 +246,11 @@ export function DesignSystemPanel({
 
         {screenshots.length > 0 && (
           <DesignSystemSection id="screenshots" title="Screenshots" count={screenshots.length}>
-            <ScreenshotGallery screenshots={screenshots} />
+            <ScreenshotGallery
+              screenshots={screenshots}
+              onAdd={handleAddScreenshot}
+              onDelete={handleDeleteScreenshot}
+            />
           </DesignSystemSection>
         )}
       </div>
