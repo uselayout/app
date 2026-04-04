@@ -35,8 +35,20 @@ export async function POST(req: NextRequest) {
 
   const { code } = parsed.data;
 
+  // Strip base64 data URLs before transpilation to avoid massive string literals.
+  // They don't affect TypeScript compilation and are preserved in the output.
+  const dataUrlPlaceholders: string[] = [];
+  const strippedCode = code.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]{100,}/g, (match) => {
+    dataUrlPlaceholders.push(match);
+    return `__DATA_URL_${dataUrlPlaceholders.length - 1}__`;
+  });
+
   try {
-    const js = transpileTsx(code);
+    let js = transpileTsx(strippedCode);
+    // Restore base64 data URLs in the transpiled output
+    for (let i = 0; i < dataUrlPlaceholders.length; i++) {
+      js = js.replace(`__DATA_URL_${i}__`, dataUrlPlaceholders[i]);
+    }
     return NextResponse.json({ js });
   } catch (err) {
     return NextResponse.json(
