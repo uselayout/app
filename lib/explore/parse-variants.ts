@@ -61,6 +61,81 @@ export function parseVariants(output: string, options: ParseOptions = {}): Desig
 }
 
 /**
+ * Partial variant data extracted from an in-progress stream.
+ * Used to drive the live preview before transpilation.
+ */
+export interface PartialVariant {
+  index: number;
+  name: string | null;
+  rationale: string | null;
+  codeInProgress: string;
+  isComplete: boolean;
+}
+
+/**
+ * Parse streaming output into partial variants, including in-progress ones.
+ * Unlike parseVariants(), this returns variants whose code blocks haven't
+ * closed yet, enabling live preview of the UI as it streams.
+ */
+export function parsePartialVariants(output: string): PartialVariant[] {
+  const headingPattern = /^### Variant \d+:\s*/m;
+  const sections = output.split(headingPattern);
+  // First element is text before the first heading (discard)
+  const filtered = sections.slice(1);
+  const results: PartialVariant[] = [];
+
+  for (let i = 0; i < filtered.length; i++) {
+    const section = filtered[i];
+    if (!section) continue;
+
+    const firstNewline = section.indexOf("\n");
+    const name = firstNewline === -1 ? section.trim() : section.slice(0, firstNewline).trim();
+    const rest = firstNewline === -1 ? "" : section.slice(firstNewline + 1);
+
+    // Check for a complete code block (closed ```)
+    const closedMatch = rest.match(/```(?:tsx|typescript|jsx)?\r?\n([\s\S]*?)```/);
+    if (closedMatch) {
+      const codeBlockStart = rest.indexOf("```");
+      const rationale = codeBlockStart > 0 ? rest.slice(0, codeBlockStart).trim() : "";
+      results.push({
+        index: i,
+        name: name || null,
+        rationale: rationale || null,
+        codeInProgress: closedMatch[1]?.trim() ?? "",
+        isComplete: true,
+      });
+      continue;
+    }
+
+    // Check for an open (unclosed) code block
+    const openMatch = rest.match(/```(?:tsx|typescript|jsx)?\r?\n([\s\S]*)/);
+    if (openMatch) {
+      const codeBlockStart = rest.indexOf("```");
+      const rationale = codeBlockStart > 0 ? rest.slice(0, codeBlockStart).trim() : "";
+      results.push({
+        index: i,
+        name: name || null,
+        rationale: rationale || null,
+        codeInProgress: openMatch[1] ?? "",
+        isComplete: false,
+      });
+      continue;
+    }
+
+    // Heading exists but no code block yet
+    results.push({
+      index: i,
+      name: name || null,
+      rationale: rest.trim() || null,
+      codeInProgress: "",
+      isComplete: false,
+    });
+  }
+
+  return results;
+}
+
+/**
  * Check if a streaming output has a new complete variant since the last parse.
  * Returns the number of complete variants found.
  */

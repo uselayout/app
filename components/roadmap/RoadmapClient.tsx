@@ -97,10 +97,6 @@ export function RoadmapClient() {
     finally { setVotingId(null); }
   };
 
-  const filtered = productFilter === "all"
-    ? items
-    : items.filter((i) => i.product === productFilter);
-
   if (loading) {
     return (
       <div className="mt-12">

@@ -12,7 +12,8 @@ import { FigmaImportModal } from "./FigmaImportModal";
 import { ResponsivePreview } from "./ResponsivePreview";
 import { ComparisonView } from "./ComparisonView";
 import { PromoteToLibraryModal } from "./PromoteToLibraryModal";
-import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-variants";
+import { parseVariants, countCompleteVariants, parsePartialVariants, type PartialVariant } from "@/lib/explore/parse-variants";
+import { StreamingPreviewCard } from "./StreamingPreviewCard";
 import { friendlyError } from "@/lib/explore/friendly-error";
 import { applyChangesToLayoutMd } from "@/lib/figma/diff";
 import { getStoredApiKey, useKeyStatus, dismissKeyLoss } from "@/lib/hooks/use-api-key";
@@ -86,6 +87,8 @@ export function ExplorerCanvas({
   const streamingBatchRef = useRef<string | null>(null);
   const pendingBatchCountRef = useRef(0);
   const generatingSessionRef = useRef<string | null>(null);
+  const [streamingPartials, setStreamingPartials] = useState<PartialVariant[]>([]);
+  const partialsRafRef = useRef<number>(0);
 
   const { steps, markStep } = useOnboardingStore();
   const stepsRef = useRef(steps);
@@ -190,6 +193,16 @@ export function ExplorerCanvas({
         if (done) break;
 
         fullOutput += decoder.decode(value, { stream: true });
+
+        // Update partial previews on every chunk (throttled via rAF)
+        cancelAnimationFrame(partialsRafRef.current);
+        partialsRafRef.current = requestAnimationFrame(() => {
+          const partials = parsePartialVariants(fullOutput);
+          // Only show partials that aren't yet complete in the main variants array
+          const incompletePartials = partials.filter((p) => !p.isComplete);
+          setStreamingPartials(incompletePartials);
+        });
+
         const completeCount = countCompleteVariants(fullOutput);
         if (completeCount > lastCount) {
           lastCount = completeCount;
@@ -201,6 +214,10 @@ export function ExplorerCanvas({
           onUpdateExplorations(updated);
         }
       }
+
+      // Clear partials when stream ends
+      cancelAnimationFrame(partialsRafRef.current);
+      setStreamingPartials([]);
 
       const finalNew = parseVariants(fullOutput, parseOpts);
 
@@ -1015,6 +1032,7 @@ export function ExplorerCanvas({
                       comparisonCount={currentExploration?.comparisons?.filter(
                         (c) => c.sourceVariantId === variant.id
                       ).length ?? 0}
+                      isNewlyGenerated={variant.batchId === streamingBatchRef.current}
                     />
                   ))}
                 </div>
@@ -1029,8 +1047,8 @@ export function ExplorerCanvas({
               </div>
             )}
 
-            {/* Skeleton loaders for in-progress batch */}
-            {skeletonCount > 0 && (
+            {/* Streaming preview cards for in-progress batch */}
+            {(skeletonCount > 0 || streamingPartials.length > 0) && isGeneratingThisTab && (
               <>
                 {batches.length > 0 && (
                   <div className="flex items-center gap-3 py-3">
@@ -1042,13 +1060,26 @@ export function ExplorerCanvas({
                   </div>
                 )}
                 <div className={gridClassName}>
-                  {Array.from({ length: skeletonCount }).map((_, i) => (
-                    <div key={`skeleton-${i}`} className="rounded-xl border-2 border-dashed border-white/20 bg-white/[0.04] p-4 flex flex-col items-center justify-center">
-                      <div className="aspect-[4/3] w-full flex flex-col items-center justify-center gap-3">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white/60" />
-                        <p className="text-xs text-[var(--text-muted)] animate-pulse">
-                          Generating variant…
-                        </p>
+                  {/* Render streaming preview cards for in-progress partials */}
+                  {streamingPartials.map((partial) => (
+                    <StreamingPreviewCard
+                      key={`streaming-${partial.index}`}
+                      codeInProgress={partial.codeInProgress}
+                      isComplete={partial.isComplete}
+                    />
+                  ))}
+                  {/* Remaining skeleton slots with no partial data yet */}
+                  {Array.from({ length: Math.max(0, skeletonCount - streamingPartials.length) }).map((_, i) => (
+                    <div key={`skeleton-${i}`} className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col">
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white">
+                        <div className="flex h-full items-center justify-center gap-1.5">
+                          <div className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)] animate-pulse" style={{ animationDelay: "0ms" }} />
+                          <div className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)] animate-pulse" style={{ animationDelay: "150ms" }} />
+                          <div className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)] animate-pulse" style={{ animationDelay: "300ms" }} />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-2.5">
+                        <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
                       </div>
                     </div>
                   ))}
