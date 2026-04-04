@@ -742,7 +742,7 @@ export function VariantCard({
               <AlertTriangle size={18} className="text-red-400" />
             </div>
             <p className="text-xs font-medium text-[var(--text-primary)]">Failed to render</p>
-            <p className="max-w-[220px] text-center text-[10px] leading-relaxed text-[var(--text-muted)] line-clamp-2">{previewError}</p>
+            <p className="max-w-[220px] text-center text-[10px] leading-relaxed text-red-400/70 line-clamp-2">{previewError}</p>
             <button
               onClick={(e) => { e.stopPropagation(); setRetryKey((k) => k + 1); }}
               className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-[var(--bg-hover)] px-3 py-1.5 text-[11px] text-[var(--text-primary)] transition-all hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)]"
