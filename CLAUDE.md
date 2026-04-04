@@ -332,3 +332,6 @@ Preview draft entries in dev or with `?draft=true` on `/changelog`.
 - Figma Variables API returns 403 on non-Enterprise plans - treat as non-fatal, continue with styles
 - Zustand persist with complex types: store only serialisable data (no functions, no Blobs)
 - Next.js 15 + Tailwind v4: use `@import "tailwindcss"` not `@tailwind base/components/utilities`
+- Image src replacement: ALWAYS strip ALL existing `src` attributes before adding a new one. In JSX, duplicate attributes use the LAST value, so `src="real-url" src="fallback"` renders the fallback. Use `.replace(/\ssrc\s*=\s*"[^"]*"/gi, "")` (global, all formats) then add one clean `src`. Applies to both `lib/image/pipeline.ts` and `VariantCard.tsx` `applySrc()`
+- Staging Supabase is HTTP-only. Images are proxied through `/api/storage/[...path]` route to avoid mixed content. URLs must be absolute (not relative) for srcdoc iframes
+- Preview iframes use `<base href>` pointing to `window.location.origin` so relative URLs resolve correctly
