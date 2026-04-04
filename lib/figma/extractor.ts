@@ -161,7 +161,32 @@ export async function extractFromFigma({
 
   // Step 1: File metadata
   onProgress?.("metadata", 5, "Fetching file metadata...");
-  const file = await client.getFile(fileKey, 1);
+  let file;
+  try {
+    file = await client.getFile(fileKey, 1);
+  } catch (err) {
+    if (err instanceof FigmaApiError && err.statusCode === 403) {
+      onProgress?.(
+        "metadata",
+        0,
+        "Your Figma token doesn't have access to this file. Check the token is valid and has file_content:read scope enabled in Figma Settings > Security > Personal access tokens."
+      );
+      return {
+        sourceType: "figma",
+        sourceName: fileKey,
+        sourceUrl: `https://www.figma.com/file/${fileKey}`,
+        tokens: { colors: [], typography: [], spacing: [], radius: [], effects: [], motion: [] },
+        components: [],
+        screenshots: [],
+        fonts: [],
+        animations: [],
+        librariesDetected: {},
+        cssVariables: {},
+        computedStyles: {},
+      };
+    }
+    throw err;
+  }
 
   // Step 2: Styles extraction (requires library_content:read scope — non-fatal if missing)
   checkTimeout("styles");
