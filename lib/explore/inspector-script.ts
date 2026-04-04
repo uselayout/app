@@ -229,13 +229,16 @@ export function getInspectorScript(): string {
     var msg = e.data;
     if (!msg || !msg.type) return;
 
-    if (msg.type === 'layout-inspector-apply-style' && selected) {
+    if (msg.type === 'layout-inspector-apply-style') {
+      console.log('[inspector] apply-style:', msg.property, 'selected:', selected ? selected.tagName : 'null', 'value length:', (msg.value || '').length);
+      if (!selected) return;
       var prop = msg.property;
       var val = msg.value;
       if (prop === 'textContent') {
         selected.textContent = val;
       } else if (prop === 'src' && selected.tagName === 'IMG') {
         selected.src = val;
+        console.log('[inspector] set img src to:', val.substring(0, 80));
       } else {
         selected.style[prop] = val;
       }
