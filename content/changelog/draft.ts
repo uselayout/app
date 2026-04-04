@@ -117,4 +117,22 @@ export const draftEntries: ChangelogEntry[] = [
     category: "fixed",
     date: "2026-04-04",
   },
+  {
+    id: "2026-w14-design-system-page",
+    title: "Visual design system reference page",
+    description:
+      "New Design System page in the sidebar shows your extracted tokens as a visual reference: colour palettes with grouped swatches, typography specimens, spacing scale bars, radius previews, and shadow cards. Edit any token inline and changes sync to your layout.md.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-04",
+  },
+  {
+    id: "2026-w14-sidebar-nav-restructure",
+    title: "Cleaner sidebar navigation",
+    description:
+      "Editor, Explore, Design System, and Saved are now separate sidebar items instead of being split between the sidebar and a top bar toggle. Easier to find, easier to switch.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-04",
+  },
 ];
