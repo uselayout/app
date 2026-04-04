@@ -12,8 +12,7 @@ import { FigmaImportModal } from "./FigmaImportModal";
 import { ResponsivePreview } from "./ResponsivePreview";
 import { ComparisonView } from "./ComparisonView";
 import { PromoteToLibraryModal } from "./PromoteToLibraryModal";
-import { parseVariants, countCompleteVariants, parsePartialVariants, type PartialVariant } from "@/lib/explore/parse-variants";
-import { StreamingPreviewCard } from "./StreamingPreviewCard";
+import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-variants";
 import { friendlyError } from "@/lib/explore/friendly-error";
 import { applyChangesToLayoutMd } from "@/lib/figma/diff";
 import { getStoredApiKey, useKeyStatus, dismissKeyLoss } from "@/lib/hooks/use-api-key";
@@ -87,9 +86,6 @@ export function ExplorerCanvas({
   const streamingBatchRef = useRef<string | null>(null);
   const pendingBatchCountRef = useRef(0);
   const generatingSessionRef = useRef<string | null>(null);
-  const [streamingPartials, setStreamingPartials] = useState<PartialVariant[]>([]);
-  const partialsRafRef = useRef<number>(0);
-  const fadeoutTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 
   const { steps, markStep } = useOnboardingStore();
   const stepsRef = useRef(steps);
@@ -194,33 +190,6 @@ export function ExplorerCanvas({
         if (done) break;
 
         fullOutput += decoder.decode(value, { stream: true });
-
-        // Update partial previews on every chunk (throttled via rAF)
-        cancelAnimationFrame(partialsRafRef.current);
-        partialsRafRef.current = requestAnimationFrame(() => {
-          const partials = parsePartialVariants(fullOutput);
-          setStreamingPartials((prev) => {
-            // Keep completed partials that are still fading out
-            const fadingOut = prev.filter((p) => p.isComplete);
-            const fadingIndices = new Set(fadingOut.map((p) => p.index));
-
-            // For newly completed partials, schedule removal after 600ms
-            for (const p of partials) {
-              if (p.isComplete && !fadingIndices.has(p.index) && !fadeoutTimersRef.current.has(p.index)) {
-                fadeoutTimersRef.current.set(p.index, setTimeout(() => {
-                  setStreamingPartials((curr) => curr.filter((c) => c.index !== p.index));
-                  fadeoutTimersRef.current.delete(p.index);
-                }, 800));
-              }
-            }
-
-            // Merge: incomplete partials + fading-out completed ones + newly completed ones
-            const incomplete = partials.filter((p) => !p.isComplete);
-            const newlyComplete = partials.filter((p) => p.isComplete);
-            return [...incomplete, ...newlyComplete];
-          });
-        });
-
         const completeCount = countCompleteVariants(fullOutput);
         if (completeCount > lastCount) {
           lastCount = completeCount;
@@ -232,17 +201,6 @@ export function ExplorerCanvas({
           onUpdateExplorations(updated);
         }
       }
-
-      // Clear partials when stream ends (allow fadeout to complete)
-      cancelAnimationFrame(partialsRafRef.current);
-      // Mark all remaining partials as complete so they fade out
-      setStreamingPartials((prev) => prev.map((p) => ({ ...p, isComplete: true })));
-      // Clear after wipe duration
-      setTimeout(() => {
-        setStreamingPartials([]);
-        fadeoutTimersRef.current.forEach((t) => clearTimeout(t));
-        fadeoutTimersRef.current.clear();
-      }, 800);
 
       const finalNew = parseVariants(fullOutput, parseOpts);
 
@@ -1060,34 +1018,25 @@ export function ExplorerCanvas({
                       isNewlyGenerated={variant.batchId === streamingBatchRef.current}
                     />
                   ))}
-                  {/* Streaming preview cards — inline in the same grid so cards don't jump */}
-                  {isGeneratingThisTab && batch.batchId === streamingBatchRef.current && (
-                    <>
-                      {streamingPartials.map((partial) => (
-                        <StreamingPreviewCard
-                          key={`streaming-${partial.index}`}
-                          codeInProgress={partial.codeInProgress}
-                          isComplete={partial.isComplete}
-                        />
-                      ))}
-                      {Array.from({ length: Math.max(0, skeletonCount - streamingPartials.length) }).map((_, i) => (
-                        <div key={`skeleton-${i}`} className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col">
-                          <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white p-6">
-                            <div className="flex h-full flex-col gap-3">
-                              <div className="h-[35%] w-full animate-shimmer rounded-lg bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
-                              <div className="h-4 w-[60%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "100ms" }} />
-                              <div className="h-3 w-[40%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "200ms" }} />
-                              <div className="mt-2 h-3 w-[90%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "300ms" }} />
-                              <div className="h-3 w-[75%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "400ms" }} />
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 px-3 py-2.5">
-                            <div className="h-3 w-24 animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
+                  {/* Shimmer skeletons for remaining slots — inline so cards stay in place */}
+                  {isGeneratingThisTab && batch.batchId === streamingBatchRef.current && skeletonCount > 0 &&
+                    Array.from({ length: skeletonCount }).map((_, i) => (
+                      <div key={`skeleton-${i}`} className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col">
+                        <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white p-6">
+                          <div className="flex h-full flex-col gap-3">
+                            <div className="h-[35%] w-full animate-shimmer rounded-lg bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
+                            <div className="h-4 w-[60%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "100ms" }} />
+                            <div className="h-3 w-[40%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "200ms" }} />
+                            <div className="mt-2 h-3 w-[90%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "300ms" }} />
+                            <div className="h-3 w-[75%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "400ms" }} />
                           </div>
                         </div>
-                      ))}
-                    </>
-                  )}
+                        <div className="flex items-center gap-2 px-3 py-2.5">
+                          <div className="h-3 w-24 animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
+                        </div>
+                      </div>
+                    ))
+                  }
                 </div>
               </div>
             ))}
@@ -1100,8 +1049,8 @@ export function ExplorerCanvas({
               </div>
             )}
 
-            {/* Streaming cards when no batch variants exist yet (initial generation) */}
-            {isGeneratingThisTab && (skeletonCount > 0 || streamingPartials.length > 0) && !batches.some((b) => b.batchId === streamingBatchRef.current) && (
+            {/* Shimmer skeletons when no batch variants exist yet (initial generation) */}
+            {isGeneratingThisTab && skeletonCount > 0 && !batches.some((b) => b.batchId === streamingBatchRef.current) && (
               <>
                 {batches.length > 0 && (
                   <div className="flex items-center gap-3 py-3">
@@ -1113,14 +1062,7 @@ export function ExplorerCanvas({
                   </div>
                 )}
                 <div className={gridClassName}>
-                  {streamingPartials.map((partial) => (
-                    <StreamingPreviewCard
-                      key={`streaming-${partial.index}`}
-                      codeInProgress={partial.codeInProgress}
-                      isComplete={partial.isComplete}
-                    />
-                  ))}
-                  {Array.from({ length: Math.max(0, skeletonCount - streamingPartials.length) }).map((_, i) => (
+                  {Array.from({ length: skeletonCount }).map((_, i) => (
                     <div key={`skeleton-${i}`} className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col">
                       <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white p-6">
                         <div className="flex h-full flex-col gap-3">
