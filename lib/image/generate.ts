@@ -297,11 +297,10 @@ export async function generateImage(
       });
 
     if (!uploadError) {
-      const { data: publicUrlData } = supabase.storage
-        .from("layout-images")
-        .getPublicUrl(filename);
-
-      return { url: publicUrlData.publicUrl, mimeType, prompt };
+      // Use app-relative proxy URL to avoid mixed content (HTTPS page loading HTTP Supabase).
+      // Next.js rewrite in next.config.ts proxies /supabase-storage/* to Supabase Storage.
+      const proxyUrl = `/supabase-storage/layout-images/${filename}`;
+      return { url: proxyUrl, mimeType, prompt };
     }
 
     console.error(`[image/generate] Storage upload to bucket "layout-images" failed: ${uploadError.message}. Falling back to base64 data URL (will cause large code). Run migration 038_layout_images_bucket.sql to fix.`);

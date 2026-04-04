@@ -8,6 +8,17 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "10mb",
     },
   },
+  async rewrites() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    return supabaseUrl
+      ? [
+          {
+            source: "/supabase-storage/:path*",
+            destination: `${supabaseUrl}/storage/v1/object/public/:path*`,
+          },
+        ]
+      : [];
+  },
   async redirects() {
     return [
       {
@@ -53,7 +64,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https:",
+              "img-src 'self' data: blob: https: http:",
               "font-src 'self' data:",
               "connect-src 'self' https:",
               "frame-src 'self' blob:",
