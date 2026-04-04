@@ -1,4 +1,4 @@
-import type { FigmaClient, FigmaStyleMeta, FigmaFill, FigmaTypeStyle, FigmaEffect } from "../client";
+import type { FigmaClient, FigmaStyleMeta, FigmaFill, FigmaTypeStyle, FigmaEffect, FigmaNode } from "../client";
 import type { ExtractedToken } from "@/lib/types";
 
 function rgbaToHex(r: number, g: number, b: number, a?: number): string {
@@ -8,7 +8,7 @@ function rgbaToHex(r: number, g: number, b: number, a?: number): string {
       .padStart(2, "0");
   const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   if (a !== undefined && a < 1) {
-    return `${hex}${toHex(a)}`;
+    return `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${parseFloat(a.toFixed(2))})`;
   }
   return hex;
 }
@@ -16,8 +16,18 @@ function rgbaToHex(r: number, g: number, b: number, a?: number): string {
 function parseFillColor(fills?: FigmaFill[]): string | null {
   if (!fills || fills.length === 0) return null;
   const fill = fills[0];
-  if (fill.type !== "SOLID" || !fill.color) return null;
-  return rgbaToHex(fill.color.r, fill.color.g, fill.color.b, fill.color.a);
+
+  if (fill.type === "SOLID" && fill.color) {
+    return rgbaToHex(fill.color.r, fill.color.g, fill.color.b, fill.color.a);
+  }
+
+  const gradientTypes = ["GRADIENT_LINEAR", "GRADIENT_RADIAL", "GRADIENT_ANGULAR", "GRADIENT_DIAMOND"];
+  if (gradientTypes.includes(fill.type) && fill.gradientStops && fill.gradientStops.length > 0) {
+    const stop = fill.gradientStops[0];
+    return rgbaToHex(stop.color.r, stop.color.g, stop.color.b, stop.color.a);
+  }
+
+  return null;
 }
 
 function nameToVariable(name: string): string {
@@ -92,6 +102,31 @@ function linkPrimitivesToSemantics(colors: ExtractedToken[]): void {
   }
 }
 
+function extractBorderTokens(
+  doc: FigmaNode,
+  style: FigmaStyleMeta,
+  effects: ExtractedToken[]
+): void {
+  if (!doc.strokes || doc.strokes.length === 0 || !doc.strokeWeight) return;
+
+  const strokeHex = parseFillColor(doc.strokes);
+  if (!strokeHex) return;
+
+  const borderValue = `${doc.strokeWeight}px solid ${strokeHex}`;
+  const name = `${style.name}/border`;
+
+  effects.push({
+    name,
+    value: borderValue,
+    type: "effect",
+    category: "semantic",
+    cssVariable: nameToVariable(name),
+    description: doc.strokeAlign
+      ? `Stroke align: ${doc.strokeAlign.toLowerCase()}`
+      : undefined,
+  });
+}
+
 export async function parseStyles(
   fileKey: string,
   client: FigmaClient,
@@ -105,7 +140,7 @@ export async function parseStyles(
   const stylesResponse = await client.getStyles(fileKey);
   const styles = stylesResponse.meta.styles;
 
-  const MAX_STYLES = 300;
+  const MAX_STYLES = 500;
   const allNodeIds = styles.map((s) => s.node_id);
   const nodeIds = allNodeIds.slice(0, MAX_STYLES);
   if (allNodeIds.length > MAX_STYLES) {
@@ -168,6 +203,9 @@ export async function parseStyles(
         break;
       }
     }
+
+    // Extract border tokens from strokes on any style node
+    extractBorderTokens(doc, style, effects);
   }
 
   // Link primitives to semantics by matching hex values
