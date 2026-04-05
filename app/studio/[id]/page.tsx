@@ -81,33 +81,51 @@ export default function StudioPage({
     try {
       const { getStoredApiKey } = await import("@/lib/hooks/use-api-key");
       const apiKey = getStoredApiKey();
+      // Strip screenshots to avoid huge request body (base64 data URIs)
+      const { screenshots: _s, ...extractionWithoutScreenshots } = project.extractionData;
+      const payload = {
+        extractionData: { ...extractionWithoutScreenshots, screenshots: [] },
+        projectId: project.id,
+      };
       const res = await fetch("/api/generate/layout-md", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(apiKey ? { "X-Api-Key": apiKey } : {}),
         },
-        body: JSON.stringify({ extractionData: project.extractionData }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Generation failed" }));
-        console.error("layout.md regeneration failed:", err);
+        const errText = await res.text().catch(() => "");
+        let errMsg = "Failed to regenerate layout.md";
+        try {
+          const errJson = JSON.parse(errText);
+          errMsg = errJson.error ?? errMsg;
+        } catch { /* not JSON */ }
+        console.error("layout.md regeneration failed:", res.status, errText);
         const { toast } = await import("sonner");
-        toast.error(err.error ?? "Failed to regenerate layout.md");
+        toast.error(errMsg);
         return;
       }
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
       let md = "";
+      let lastUpdate = 0;
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           md += decoder.decode(value, { stream: true });
-          // Update progressively so the user sees it streaming
-          updateLayoutMd(id, md);
+          // Throttle store updates to avoid excessive re-renders
+          const now = Date.now();
+          if (now - lastUpdate > 500) {
+            updateLayoutMd(id, md);
+            lastUpdate = now;
+          }
         }
       }
+      // Final update with complete content
+      if (md) updateLayoutMd(id, md);
     } catch (err) {
       console.error("layout.md regeneration error:", err);
       const { toast } = await import("sonner");
@@ -116,7 +134,7 @@ export default function StudioPage({
       setIsRegenerating(false);
       setPluginTokensUpdated(false);
     }
-  }, [project?.extractionData, id, updateLayoutMd]);
+  }, [project?.extractionData, project?.id, id, updateLayoutMd]);
 
   // Mark viewedLayoutMd step when studio is open with non-empty layout.md
   // and the user has dismissed the "What's next?" screen
