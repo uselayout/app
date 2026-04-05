@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { X, Sparkles, AlertTriangle, Maximize2, Minimize2, Loader2, Copy } from "lucide-react";
+import Link from "next/link";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { parseVariants } from "@/lib/explore/parse-variants";
 import { extractComponentName, buildSrcdoc } from "@/lib/explore/preview-helpers";
@@ -18,6 +19,7 @@ interface ComparisonViewProps {
   savedResult?: ComparisonResult;
   onSave?: (result: ComparisonResult) => void;
   onClose: () => void;
+  orgSlug?: string;
 }
 
 export function ComparisonView({
@@ -29,6 +31,7 @@ export function ComparisonView({
   savedResult,
   onSave,
   onClose,
+  orgSlug,
 }: ComparisonViewProps) {
   const [withDs, setWithDs] = useState<DesignVariant | null>(savedResult?.withDs ?? null);
   const [withoutDs, setWithoutDs] = useState<DesignVariant | null>(savedResult?.withoutDs ?? null);
@@ -101,7 +104,13 @@ export function ComparisonView({
         ]);
 
         if (!withRes.ok || !withoutRes.ok) {
-          throw new Error("Generation failed");
+          const failedRes = !withRes.ok ? withRes : withoutRes;
+          let errorMsg = "Generation failed";
+          try {
+            const errBody = await failedRes.json();
+            errorMsg = errBody.error || errorMsg;
+          } catch { /* use default */ }
+          throw new Error(errorMsg);
         }
 
         const [withText, withoutText] = await Promise.all([
@@ -202,9 +211,19 @@ export function ComparisonView({
             </p>
           </div>
         ) : error ? (
-          <div className="flex flex-1 items-center justify-center gap-2">
-            <AlertTriangle size={16} className="text-red-400" />
-            <p className="text-sm text-red-400">{error}</p>
+          <div className="flex flex-1 flex-col items-center justify-center gap-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={16} className="text-red-400" />
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+            {(error.toLowerCase().includes("credit") || error.toLowerCase().includes("api key")) && orgSlug && (
+              <Link
+                href={`/${orgSlug}/settings/api-keys`}
+                className="text-xs text-[var(--text-secondary)] underline hover:text-[var(--text-primary)] transition-colors"
+              >
+                Manage API keys and credits
+              </Link>
+            )}
           </div>
         ) : (
           <>

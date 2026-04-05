@@ -1190,6 +1190,7 @@ export function ExplorerCanvas({
             onUpdateExplorations(updated);
           }}
           onClose={() => setCompareData(null)}
+          orgSlug={orgSlug}
         />
       )}
       {viewSavedComparison && (
@@ -1198,6 +1199,7 @@ export function ExplorerCanvas({
           layoutMd={layoutMd}
           savedResult={viewSavedComparison}
           onClose={() => setViewSavedComparison(null)}
+          orgSlug={orgSlug}
         />
       )}
 
