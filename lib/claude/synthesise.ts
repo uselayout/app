@@ -200,6 +200,15 @@ function buildUserContent(
     );
   }
 
+  // Include uploaded custom fonts so Claude knows they're available
+  const uploadedFonts = (data as unknown as Record<string, unknown>)._uploadedFonts;
+  if (Array.isArray(uploadedFonts) && uploadedFonts.length > 0) {
+    const fontNames = uploadedFonts.map((f: Record<string, unknown>) => `${f.family} (${f.weight}, ${f.format})`).join(", ");
+    sections.push(
+      `--- CUSTOM FONT FILES AVAILABLE ---\nThe following custom font files have been uploaded and are available in the .layout/fonts/ directory with a fonts.css file containing @font-face declarations:\n${fontNames}\n\nIMPORTANT: In the Typography System section, include a note that custom font files are available at .layout/fonts/fonts.css and should be imported with @import './.layout/fonts/fonts.css' or a <link> tag. AI coding agents should reference this file to load the custom fonts.`
+    );
+  }
+
   if (Object.keys(data.computedStyles).length > 0) {
     const styleEntries = Object.entries(data.computedStyles);
     const capped = Object.fromEntries(styleEntries.slice(0, MAX_COMPUTED_STYLES));
