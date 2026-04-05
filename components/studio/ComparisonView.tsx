@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Sparkles, AlertTriangle, Maximize2, Minimize2, Loader2, Copy } from "lucide-react";
 import Link from "next/link";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";

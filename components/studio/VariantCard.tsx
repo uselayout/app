@@ -14,7 +14,7 @@ import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { countPlaceholderImages } from "@/lib/image/placeholder";
 import { PaperIcon } from "@/components/studio/PaperPushModal";
 import type { DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotation, ExtractedToken, FontDeclaration, UploadedFont } from "@/lib/types";
-import type { BuildSrcdocOptions } from "@/lib/explore/preview-helpers";
+
 
 // ---------------------------------------------------------------------------
 // Direct style edit — instant, no AI call
