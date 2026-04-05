@@ -25,7 +25,7 @@ import { useOnboardingStore } from "@/lib/store/onboarding";
 import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 import { DEFAULT_EXPLORE_MODEL, AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
-import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont } from "@/lib/types";
+import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont, ComparisonResult } from "@/lib/types";
 
 interface ExplorerCanvasProps {
   projectId: string;
@@ -760,6 +760,17 @@ export function ExplorerCanvas({
   const params = useParams();
   const orgSlug = (params?.org as string) ?? "";
 
+  const handleComparisonSave = useCallback((result: ComparisonResult) => {
+    if (!currentExploration) return;
+    const taggedResult = { ...result, sourceVariantId: selectedVariantId ?? undefined };
+    const updated = explorations.map((e) =>
+      e.id === currentExploration.id
+        ? { ...e, comparisons: [...(e.comparisons ?? []), taggedResult] }
+        : e
+    );
+    onUpdateExplorations(updated);
+  }, [currentExploration, selectedVariantId, explorations, onUpdateExplorations]);
+
   const gridClassName = "grid grid-cols-2 gap-4";
 
   return (
@@ -1179,16 +1190,7 @@ export function ExplorerCanvas({
           imageDataUrl={compareData.image}
           contextFiles={compareData.contextFiles}
           layoutMd={layoutMd}
-          onSave={(result) => {
-            if (!currentExploration) return;
-            const taggedResult = { ...result, sourceVariantId: selectedVariantId ?? undefined };
-            const updated = explorations.map((e) =>
-              e.id === currentExploration.id
-                ? { ...e, comparisons: [...(e.comparisons ?? []), taggedResult] }
-                : e
-            );
-            onUpdateExplorations(updated);
-          }}
+          onSave={handleComparisonSave}
           onClose={() => setCompareData(null)}
           orgSlug={orgSlug}
         />

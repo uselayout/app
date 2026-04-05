@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { X, Sparkles, AlertTriangle, Maximize2, Minimize2, Loader2, Copy } from "lucide-react";
 import Link from "next/link";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
@@ -35,12 +35,17 @@ export function ComparisonView({
 }: ComparisonViewProps) {
   const [withDs, setWithDs] = useState<DesignVariant | null>(savedResult?.withDs ?? null);
   const [withoutDs, setWithoutDs] = useState<DesignVariant | null>(savedResult?.withoutDs ?? null);
-  const [loading, setLoading] = useState(!savedResult);
+  const [withDsLoading, setWithDsLoading] = useState(!savedResult);
+  const [withoutDsLoading, setWithoutDsLoading] = useState(!savedResult);
+  const [withDsError, setWithDsError] = useState<string | null>(null);
+  const [withoutDsError, setWithoutDsError] = useState<string | null>(null);
   const [processingImages, setProcessingImages] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [focusedPanel, setFocusedPanel] = useState<"left" | "right" | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const savedRef = useRef(false);
+  // Ref to avoid onSave in dependency array (inline functions cause infinite re-triggers)
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
 
   // Handle Escape to restore split view or close
   useEffect(() => {
@@ -64,114 +69,113 @@ export function ComparisonView({
     abortRef.current = new AbortController();
     const signal = abortRef.current.signal;
 
-    async function generate() {
-      const apiKey = getStoredApiKey();
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (apiKey) headers["X-Api-Key"] = apiKey;
+    const apiKey = getStoredApiKey();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (apiKey) headers["X-Api-Key"] = apiKey;
 
-      const sharedBody = {
-        prompt,
-        variantCount: 1,
-        imageDataUrl,
-        contextFiles,
-      };
+    const sharedBody = {
+      prompt,
+      variantCount: 1,
+      imageDataUrl,
+      contextFiles,
+    };
 
+    async function generatePanel(
+      panelLayoutMd: string,
+      includeBaseCode: boolean,
+      setVariant: (v: DesignVariant | null) => void,
+      setLoading: (b: boolean) => void,
+      setError: (e: string | null) => void,
+    ): Promise<DesignVariant | null> {
       try {
-        const [withRes, withoutRes] = await Promise.all([
-          // With design system — refine from existing variant if available
-          fetch("/api/generate/explore", {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              ...sharedBody,
-              ...(baseCode ? { baseCode } : {}),
-              layoutMd,
-            }),
-            signal,
+        const res = await fetch("/api/generate/explore", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            ...sharedBody,
+            ...(includeBaseCode && baseCode ? { baseCode } : {}),
+            layoutMd: panelLayoutMd,
           }),
-          // Without design system — fresh generation, NO baseCode
-          fetch("/api/generate/explore", {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              ...sharedBody,
-              layoutMd: "No design system provided. Use your best judgement for colours, spacing, and typography. Make it look modern and professional.",
-            }),
-            signal,
-          }),
-        ]);
+          signal,
+        });
 
-        if (!withRes.ok || !withoutRes.ok) {
-          const failedRes = !withRes.ok ? withRes : withoutRes;
+        if (!res.ok) {
           let errorMsg = "Generation failed";
           try {
-            const errBody = await failedRes.json();
+            const errBody = await res.json();
             errorMsg = errBody.error || errorMsg;
           } catch { /* use default */ }
           throw new Error(errorMsg);
         }
 
-        const [withText, withoutText] = await Promise.all([
-          readStream(withRes, signal),
-          readStream(withoutRes, signal),
-        ]);
-
-        const withVariants = parseVariants(withText);
-        const withoutVariants = parseVariants(withoutText);
-
-        const withVariant = withVariants[0] ?? null;
-        const withoutVariant = withoutVariants[0] ?? null;
-
-        setWithDs(withVariant);
-        setWithoutDs(withoutVariant);
-        setLoading(false);
-
-        // Process images in parallel for both panels
-        if (withVariant || withoutVariant) {
-          setProcessingImages(true);
-          try {
-            const [withProcessed, withoutProcessed] = await Promise.all([
-              withVariant ? processCodeImages(withVariant.code) : Promise.resolve(null),
-              withoutVariant ? processCodeImages(withoutVariant.code) : Promise.resolve(null),
-            ]);
-
-            const finalWith = withProcessed && withProcessed.code !== withVariant?.code
-              ? { ...withVariant!, code: withProcessed.code }
-              : withVariant;
-            const finalWithout = withoutProcessed && withoutProcessed.code !== withoutVariant?.code
-              ? { ...withoutVariant!, code: withoutProcessed.code }
-              : withoutVariant;
-
-            if (finalWith !== withVariant) setWithDs(finalWith);
-            if (finalWithout !== withoutVariant) setWithoutDs(finalWithout);
-
-            // Auto-save
-            if (onSave && finalWith && finalWithout && !savedRef.current) {
-              savedRef.current = true;
-              onSave({
-                id: crypto.randomUUID(),
-                prompt,
-                withDs: finalWith,
-                withoutDs: finalWithout,
-                createdAt: new Date().toISOString(),
-              });
-            }
-          } finally {
-            setProcessingImages(false);
-          }
-        }
+        const text = await readStream(res, signal);
+        const variants = parseVariants(text);
+        const variant = variants[0] ?? null;
+        setVariant(variant);
+        return variant;
       } catch (err) {
-        if ((err as Error).name === "AbortError") return;
-        setError(err instanceof Error ? err.message : "Comparison failed");
+        if ((err as Error).name === "AbortError") return null;
+        setError(err instanceof Error ? err.message : "Generation failed");
+        return null;
+      } finally {
         setLoading(false);
+      }
+    }
+
+    async function generate() {
+      const [withResult, withoutResult] = await Promise.allSettled([
+        generatePanel(layoutMd, true, setWithDs, setWithDsLoading, setWithDsError),
+        generatePanel(
+          "No design system provided. Use your best judgement for colours, spacing, and typography. Make it look modern and professional.",
+          false, setWithoutDs, setWithoutDsLoading, setWithoutDsError,
+        ),
+      ]);
+
+      // Process images for whichever panels succeeded
+      const withVariant = withResult.status === "fulfilled" ? withResult.value : null;
+      const withoutVariant = withoutResult.status === "fulfilled" ? withoutResult.value : null;
+
+      if (withVariant || withoutVariant) {
+        setProcessingImages(true);
+        try {
+          const [withProcessed, withoutProcessed] = await Promise.all([
+            withVariant ? processCodeImages(withVariant.code) : Promise.resolve(null),
+            withoutVariant ? processCodeImages(withoutVariant.code) : Promise.resolve(null),
+          ]);
+
+          const finalWith = withProcessed && withProcessed.code !== withVariant?.code
+            ? { ...withVariant!, code: withProcessed.code }
+            : withVariant;
+          const finalWithout = withoutProcessed && withoutProcessed.code !== withoutVariant?.code
+            ? { ...withoutVariant!, code: withoutProcessed.code }
+            : withoutVariant;
+
+          if (finalWith !== withVariant) setWithDs(finalWith);
+          if (finalWithout !== withoutVariant) setWithoutDs(finalWithout);
+
+          // Auto-save when both panels succeeded
+          if (onSaveRef.current && finalWith && finalWithout && !savedRef.current) {
+            savedRef.current = true;
+            onSaveRef.current({
+              id: crypto.randomUUID(),
+              prompt,
+              withDs: finalWith,
+              withoutDs: finalWithout,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        } finally {
+          setProcessingImages(false);
+        }
       }
     }
 
     generate();
     return () => { abortRef.current?.abort(); };
-  }, [prompt, layoutMd, baseCode, imageDataUrl, contextFiles, savedResult, onSave]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prompt, layoutMd, baseCode, imageDataUrl, contextFiles, savedResult]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-sm">
@@ -201,91 +205,73 @@ export function ComparisonView({
         </div>
       </div>
 
-      {/* Content */}
+      {/* Content — always show two-panel layout */}
       <div className="flex flex-1 overflow-hidden">
-        {loading ? (
-          <div className="flex flex-1 items-center justify-center gap-3">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
-            <p className="text-sm text-[var(--text-secondary)]">
-              Generating comparison...
-            </p>
-          </div>
-        ) : error ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3">
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={16} className="text-red-400" />
-              <p className="text-sm text-red-400">{error}</p>
-            </div>
-            {(error.toLowerCase().includes("credit") || error.toLowerCase().includes("api key")) && orgSlug && (
-              <Link
-                href={`/${orgSlug}/settings/api-keys`}
-                className="text-xs text-[var(--text-secondary)] underline hover:text-[var(--text-primary)] transition-colors"
+        {/* Without design system */}
+        {focusedPanel !== "right" && (
+          <div className={`flex flex-1 flex-col ${focusedPanel !== "left" ? "border-r border-[var(--studio-border)]" : ""}`}>
+            <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-red-500/5 px-4 py-2.5">
+              <span className="h-2 w-2 rounded-full bg-red-400" />
+              <span className="text-xs font-semibold text-red-400">
+                Without Design System
+              </span>
+              <div className="flex-1" />
+              <button
+                onClick={() => setFocusedPanel(focusedPanel === "left" ? null : "left")}
+                className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+                title={focusedPanel === "left" ? "Split view" : "Full screen"}
               >
-                Manage API keys and credits
-              </Link>
-            )}
+                {focusedPanel === "left" ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+              </button>
+            </div>
+            <div className="flex-1 bg-white">
+              {withoutDsLoading ? (
+                <ComparisonShimmer />
+              ) : withoutDsError ? (
+                <PanelError error={withoutDsError} orgSlug={orgSlug} />
+              ) : withoutDs ? (
+                <PreviewFrame code={withoutDs.code} />
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <p className="text-xs text-[var(--text-muted)]">No result</p>
+                </div>
+              )}
+            </div>
           </div>
-        ) : (
-          <>
-            {/* Without design system */}
-            {focusedPanel !== "right" && (
-              <div className={`flex flex-1 flex-col ${focusedPanel !== "left" ? "border-r border-[var(--studio-border)]" : ""}`}>
-                <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-red-500/5 px-4 py-2.5">
-                  <span className="h-2 w-2 rounded-full bg-red-400" />
-                  <span className="text-xs font-semibold text-red-400">
-                    Without Design System
-                  </span>
-                  <div className="flex-1" />
-                  <button
-                    onClick={() => setFocusedPanel(focusedPanel === "left" ? null : "left")}
-                    className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-                    title={focusedPanel === "left" ? "Split view" : "Full screen"}
-                  >
-                    {focusedPanel === "left" ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-                  </button>
-                </div>
-                <div className="flex-1 bg-white">
-                  {withoutDs ? (
-                    <PreviewFrame code={withoutDs.code} />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <p className="text-xs text-[var(--text-muted)]">No result</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+        )}
 
-            {/* With design system */}
-            {focusedPanel !== "left" && (
-              <div className="flex flex-1 flex-col">
-                <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-emerald-500/5 px-4 py-2.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                  <span className="text-xs font-semibold text-emerald-400">
-                    With Design System
-                  </span>
-                  <Sparkles size={12} className="text-emerald-400" />
-                  <div className="flex-1" />
-                  <button
-                    onClick={() => setFocusedPanel(focusedPanel === "right" ? null : "right")}
-                    className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-                    title={focusedPanel === "right" ? "Split view" : "Full screen"}
-                  >
-                    {focusedPanel === "right" ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-                  </button>
+        {/* With design system */}
+        {focusedPanel !== "left" && (
+          <div className="flex flex-1 flex-col">
+            <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-emerald-500/5 px-4 py-2.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="text-xs font-semibold text-emerald-400">
+                With Design System
+              </span>
+              <Sparkles size={12} className="text-emerald-400" />
+              <div className="flex-1" />
+              <button
+                onClick={() => setFocusedPanel(focusedPanel === "right" ? null : "right")}
+                className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+                title={focusedPanel === "right" ? "Split view" : "Full screen"}
+              >
+                {focusedPanel === "right" ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+              </button>
+            </div>
+            <div className="flex-1 bg-white">
+              {withDsLoading ? (
+                <ComparisonShimmer />
+              ) : withDsError ? (
+                <PanelError error={withDsError} orgSlug={orgSlug} />
+              ) : withDs ? (
+                <PreviewFrame code={withDs.code} />
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <p className="text-xs text-[var(--text-muted)]">No result</p>
                 </div>
-                <div className="flex-1 bg-white">
-                  {withDs ? (
-                    <PreviewFrame code={withDs.code} />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <p className="text-xs text-[var(--text-muted)]">No result</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </>
+              )}
+            </div>
+          </div>
         )}
       </div>
 
@@ -307,6 +293,39 @@ export function ComparisonView({
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function ComparisonShimmer() {
+  return (
+    <div className="flex h-full flex-col gap-4 p-8">
+      <div className="h-8 w-[45%] animate-shimmer rounded-lg bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
+      <div className="h-4 w-[70%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "100ms" }} />
+      <div className="h-4 w-[55%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "200ms" }} />
+      <div className="mt-4 h-32 w-full animate-shimmer rounded-lg bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "300ms" }} />
+      <div className="mt-2 h-4 w-[80%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "400ms" }} />
+      <div className="h-4 w-[60%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "500ms" }} />
+      <div className="mt-auto h-10 w-[30%] animate-shimmer rounded-lg bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "600ms" }} />
+    </div>
+  );
+}
+
+function PanelError({ error, orgSlug }: { error: string; orgSlug?: string }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3">
+      <div className="flex items-center gap-2">
+        <AlertTriangle size={16} className="text-red-400" />
+        <p className="text-sm text-red-400">{error}</p>
+      </div>
+      {(error.toLowerCase().includes("credit") || error.toLowerCase().includes("api key")) && orgSlug && (
+        <Link
+          href={`/${orgSlug}/settings/api-keys`}
+          className="text-xs text-[var(--text-secondary)] underline hover:text-[var(--text-primary)] transition-colors"
+        >
+          Manage API keys and credits
+        </Link>
+      )}
+    </div>
+  );
+}
 
 function PreviewFrame({ code }: { code: string }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -362,15 +381,20 @@ function PreviewFrame({ code }: { code: string }) {
   );
 }
 
-async function readStream(res: Response, signal: AbortSignal): Promise<string> {
+async function readStream(res: Response, signal: AbortSignal, timeoutMs = 120_000): Promise<string> {
   const reader = res.body?.getReader();
   if (!reader) return "";
 
   const decoder = new TextDecoder();
   let text = "";
+  const deadline = Date.now() + timeoutMs;
 
   while (true) {
     if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+    if (Date.now() > deadline) {
+      reader.cancel();
+      throw new Error("Generation timed out");
+    }
     const { done, value } = await reader.read();
     if (done) break;
     text += decoder.decode(value, { stream: true });
