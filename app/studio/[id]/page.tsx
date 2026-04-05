@@ -89,19 +89,29 @@ export default function StudioPage({
         },
         body: JSON.stringify({ extractionData: project.extractionData }),
       });
-      if (res.ok) {
-        const reader = res.body?.getReader();
-        const decoder = new TextDecoder();
-        let md = "";
-        if (reader) {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            md += decoder.decode(value, { stream: true });
-          }
-        }
-        if (md) updateLayoutMd(id, md);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Generation failed" }));
+        console.error("layout.md regeneration failed:", err);
+        const { toast } = await import("sonner");
+        toast.error(err.error ?? "Failed to regenerate layout.md");
+        return;
       }
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let md = "";
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          md += decoder.decode(value, { stream: true });
+          // Update progressively so the user sees it streaming
+          updateLayoutMd(id, md);
+        }
+      }
+    } catch (err) {
+      console.error("layout.md regeneration error:", err);
+      const { toast } = await import("sonner");
+      toast.error("Failed to regenerate layout.md");
     } finally {
       setIsRegenerating(false);
       setPluginTokensUpdated(false);
@@ -514,18 +524,19 @@ export default function StudioPage({
         </div>
       )}
       {pluginTokensUpdated && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] px-4 py-2.5 backdrop-blur-sm animate-in slide-in-from-bottom-2 fade-in duration-200">
-          <span className="text-xs text-[var(--text-primary)]">Figma plugin updated your tokens.</span>
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-5 py-3 backdrop-blur-md shadow-lg shadow-emerald-500/10 animate-in slide-in-from-bottom-2 fade-in duration-200">
+          <div className="h-2 w-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
+          <span className="text-sm text-[var(--text-primary)]">Figma plugin updated your tokens</span>
           <button
             onClick={handleRegenerateLayoutMd}
             disabled={isRegenerating}
-            className="text-xs font-medium text-[var(--studio-accent)] hover:text-[var(--studio-accent-hover)] disabled:opacity-50 shrink-0 transition-colors"
+            className="ml-1 px-3 py-1 text-xs font-medium rounded-md bg-emerald-500 text-white hover:bg-emerald-400 disabled:opacity-50 shrink-0 transition-colors"
           >
             {isRegenerating ? "Regenerating..." : "Regenerate layout.md"}
           </button>
           <button
             onClick={() => setPluginTokensUpdated(false)}
-            className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] shrink-0"
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] shrink-0 ml-1"
           >
             Dismiss
           </button>
