@@ -198,4 +198,31 @@ export const draftEntries: ChangelogEntry[] = [
     category: "improved",
     date: "2026-04-04",
   },
+  {
+    id: "2026-w14-feedback-link",
+    title: "Feedback link in sidebar",
+    description:
+      "New feedback button in the sidebar with options to email us or join the Discord community.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-05",
+  },
+  {
+    id: "2026-w14-default-explorer",
+    title: "Explorer is now the default view",
+    description:
+      "Opening a project now lands you in the Explorer instead of the Editor, since that is where most users spend their time.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-05",
+  },
+  {
+    id: "2026-w14-docs-fixes",
+    title: "Documentation updates",
+    description:
+      "Data & Privacy page now live. Updated competitor comparison, API reference, and integration guides with latest tool counts and corrected information.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-05",
+  },
 ];
