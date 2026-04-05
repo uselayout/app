@@ -38,6 +38,7 @@ interface SourcePanelProps {
   onLayoutMdChange?: (value: string) => void;
   onExtract?: (url: string, sourceType: SourceType, pat?: string) => void;
   onGenerateFromFigma?: (imageDataUrl: string, contextFiles?: ContextFile[]) => void;
+  onFontUploaded?: () => void;
 }
 
 type TabId = "tokens" | "components" | "screenshots" | "icons" | "fonts" | "quality" | "connect" | "figma";
@@ -141,6 +142,7 @@ function SourcePanelInner({
   onLayoutMdChange,
   onExtract,
   onGenerateFromFigma,
+  onFontUploaded,
 }: SourcePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("tokens");
   const syncTokensFromLayoutMd = useProjectStore((s) => s.syncTokensFromLayoutMd);
@@ -257,6 +259,8 @@ function SourcePanelInner({
               orgId={currentOrgId ?? undefined}
               extractedFonts={extractionData?.fonts ?? []}
               uploadedFonts={currentProject?.uploadedFonts ?? []}
+              typographyTokens={extractionData?.tokens.typography}
+              onFontUploaded={onFontUploaded}
             />
           </div>
         )}

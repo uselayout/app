@@ -56,6 +56,7 @@ export default function StudioPage({
 
   // Poll for external updates (e.g. Figma plugin pushing tokens or screenshots)
   const [pluginTokensUpdated, setPluginTokensUpdated] = useState(false);
+  const [fontUploaded, setFontUploaded] = useState(false);
   const prevTokenSnapshotRef = useRef<string | null>(null);
   const pendingImageConsumedRef = useRef(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -148,6 +149,7 @@ export default function StudioPage({
     } finally {
       setIsRegenerating(false);
       setPluginTokensUpdated(false);
+      setFontUploaded(false);
     }
   }, [project?.extractionData, project?.id, id, updateLayoutMd]);
 
@@ -494,6 +496,7 @@ export default function StudioPage({
               onLayoutMdChange={handleLayoutMdChange}
               onExtract={handleExtractFromPanel}
               onGenerateFromFigma={handleGenerateFromFigma}
+              onFontUploaded={() => setFontUploaded(true)}
             />
           }
           editorPanel={
@@ -556,10 +559,12 @@ export default function StudioPage({
           <button className="text-[10px] text-red-400/60 hover:text-red-400 shrink-0">Dismiss</button>
         </div>
       )}
-      {pluginTokensUpdated && (
+      {(pluginTokensUpdated || fontUploaded) && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-5 py-3 backdrop-blur-md shadow-lg shadow-emerald-500/10 animate-in slide-in-from-bottom-2 fade-in duration-200">
           <div className="h-2 w-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
-          <span className="text-sm text-[var(--text-primary)]">Figma plugin updated your tokens</span>
+          <span className="text-sm text-[var(--text-primary)]">
+            {fontUploaded ? "Custom font added" : "Figma plugin updated your tokens"}
+          </span>
           <button
             onClick={handleRegenerateLayoutMd}
             disabled={isRegenerating}
@@ -568,7 +573,7 @@ export default function StudioPage({
             {isRegenerating ? "Regenerating..." : "Regenerate layout.md"}
           </button>
           <button
-            onClick={() => setPluginTokensUpdated(false)}
+            onClick={() => { setPluginTokensUpdated(false); setFontUploaded(false); }}
             className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] shrink-0 ml-1"
           >
             Dismiss

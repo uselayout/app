@@ -4,13 +4,46 @@ import { useState, useRef, useCallback } from "react";
 import { Upload, Trash2, Type, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useProjectStore } from "@/lib/store/project";
-import type { FontDeclaration, UploadedFont } from "@/lib/types";
+import type { FontDeclaration, UploadedFont, ExtractedToken } from "@/lib/types";
 
 interface FontManagerProps {
   projectId: string;
   orgId?: string;
   extractedFonts: FontDeclaration[];
   uploadedFonts: UploadedFont[];
+  /** Typography tokens to parse font families from when extractedFonts is empty */
+  typographyTokens?: ExtractedToken[];
+  /** Called after a font is uploaded (e.g. to show regeneration prompt) */
+  onFontUploaded?: () => void;
+}
+
+/** Extract unique font families from typography token values. */
+function parseFontsFromTypography(tokens: ExtractedToken[]): FontDeclaration[] {
+  const families = new Map<string, Set<string>>();
+  for (const t of tokens) {
+    // Typography tokens have values like "font-family: 'Circular', -apple-system, ..."
+    const match = t.value.match(/font-family:\s*([^;]+)/i);
+    if (!match) continue;
+    // Get the first font in the stack (primary family)
+    const raw = match[1].trim().split(",")[0].trim().replace(/['"]/g, "");
+    if (!raw || raw === "Unknown") continue;
+
+    // Try to extract weight from the same token value
+    const weightMatch = t.value.match(/font-weight:\s*(\d+|normal|bold)/i);
+    const weight = weightMatch?.[1] === "bold" ? "700" : weightMatch?.[1] === "normal" ? "400" : weightMatch?.[1] ?? "400";
+
+    const existing = families.get(raw) ?? new Set<string>();
+    existing.add(weight);
+    families.set(raw, existing);
+  }
+
+  const result: FontDeclaration[] = [];
+  for (const [family, weights] of families) {
+    for (const weight of weights) {
+      result.push({ family, weight, style: "normal", display: "swap" });
+    }
+  }
+  return result;
 }
 
 /** Parse font weight and style from filename conventions. */
@@ -43,16 +76,21 @@ function parseWeightFromName(name: string): { weight: string; style: string } {
   return { weight, style };
 }
 
-export function FontManager({ projectId, orgId, extractedFonts, uploadedFonts }: FontManagerProps) {
+export function FontManager({ projectId, orgId, extractedFonts, uploadedFonts, typographyTokens, onFontUploaded }: FontManagerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [familyInput, setFamilyInput] = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const updateUploadedFonts = useProjectStore((s) => s.updateUploadedFonts);
 
+  // Use extractedFonts if available, otherwise parse from typography tokens
+  const effectiveFonts = extractedFonts.length > 0
+    ? extractedFonts
+    : parseFontsFromTypography(typographyTokens ?? []);
+
   // Group extracted fonts by family
   const extractedFamilies = new Map<string, FontDeclaration[]>();
-  for (const f of extractedFonts) {
+  for (const f of effectiveFonts) {
     const existing = extractedFamilies.get(f.family) ?? [];
     existing.push(f);
     extractedFamilies.set(f.family, existing);
@@ -125,6 +163,7 @@ export function FontManager({ projectId, orgId, extractedFonts, uploadedFonts }:
       setPendingFile(null);
       setFamilyInput("");
       if (fileInputRef.current) fileInputRef.current.value = "";
+      onFontUploaded?.();
     } catch {
       toast.error("Upload failed");
     } finally {

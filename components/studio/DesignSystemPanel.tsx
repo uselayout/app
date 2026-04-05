@@ -11,6 +11,8 @@ import { SpacingScale } from "./design-system/SpacingScale";
 import { RadiusPreview } from "./design-system/RadiusPreview";
 import { EffectsPreview } from "./design-system/EffectsPreview";
 import { ScreenshotGallery } from "./design-system/ScreenshotGallery";
+import { FontManager } from "./FontManager";
+import { useOrgStore } from "@/lib/store/organization";
 
 const GUIDANCE_DISMISSED_KEY = "layout_ds_guidance_dismissed";
 
@@ -211,6 +213,15 @@ export function DesignSystemPanel({
               onRemoveToken={(name) => handleRemoveToken("typography", [name])}
               extractedFonts={extractionData?.fonts ?? []}
             />
+            <div className="mt-6 pt-6 border-t border-[var(--studio-border)]">
+              <FontManager
+                projectId={projectId}
+                orgId={useOrgStore.getState().currentOrgId ?? undefined}
+                extractedFonts={extractionData?.fonts ?? []}
+                uploadedFonts={useProjectStore.getState().projects.find((p) => p.id === projectId)?.uploadedFonts ?? []}
+                typographyTokens={tokens.typography}
+              />
+            </div>
           </DesignSystemSection>
         )}
 
