@@ -425,7 +425,12 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       return {
         projects: state.projects.map((p) =>
           p.id === id
-            ? { ...fresh, explorations: p.explorations ?? fresh.explorations }
+            ? {
+                ...fresh,
+                explorations: p.explorations ?? fresh.explorations,
+                // If we already consumed the canvas image locally (set to null), don't restore from server
+                pendingCanvasImage: p.pendingCanvasImage !== undefined ? p.pendingCanvasImage : fresh.pendingCanvasImage,
+              }
             : p
         ),
       };

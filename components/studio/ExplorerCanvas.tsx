@@ -762,7 +762,9 @@ export function ExplorerCanvas({
 
   const handleComparisonSave = useCallback((result: ComparisonResult) => {
     if (!currentExploration) return;
-    const taggedResult = { ...result, sourceVariantId: selectedVariantId ?? undefined };
+    // Tag to selected variant, or fall back to first variant in the exploration
+    const variantId = selectedVariantId ?? currentExploration.variants?.[0]?.id;
+    const taggedResult = { ...result, sourceVariantId: variantId };
     const updated = explorations.map((e) =>
       e.id === currentExploration.id
         ? { ...e, comparisons: [...(e.comparisons ?? []), taggedResult] }
@@ -1025,12 +1027,12 @@ export function ExplorerCanvas({
                       isProcessingImages={isProcessingImages}
                       onViewComparison={() => {
                         const comparisons = currentExploration?.comparisons?.filter(
-                          (c) => c.sourceVariantId === variant.id
+                          (c) => c.sourceVariantId === variant.id || !c.sourceVariantId
                         );
                         if (comparisons?.length) setViewSavedComparison(comparisons[comparisons.length - 1]);
                       }}
                       comparisonCount={currentExploration?.comparisons?.filter(
-                        (c) => c.sourceVariantId === variant.id
+                        (c) => c.sourceVariantId === variant.id || !c.sourceVariantId
                       ).length ?? 0}
                       isNewlyGenerated={variant.batchId === streamingBatchRef.current}
                     />

@@ -95,7 +95,15 @@ export default function StudioPage({
         pendingImageConsumedRef.current = true;
         setPendingImageRef.current?.(pending);
         switchToCanvasRef.current?.();
-        fetch(`/api/projects/${project.id}/clear-canvas-image`, { method: "POST" }).catch(() => {});
+        // Clear from local store so refreshProject merge doesn't restore it
+        useProjectStore.setState((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === project.id ? { ...p, pendingCanvasImage: null } : p
+          ),
+        }));
+        fetch(`/api/projects/${project.id}/clear-canvas-image`, { method: "POST" }).catch((err) => {
+          console.error("Failed to clear canvas image:", err);
+        });
       }
     }, 10_000);
     return () => clearInterval(interval);
