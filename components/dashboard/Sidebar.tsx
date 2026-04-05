@@ -193,7 +193,7 @@ function SidebarInner() {
                 Email
               </a>
               <a
-                href="https://discord.gg/layout"
+                href="https://layout.design/discord"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-all duration-[var(--duration-base)]"
