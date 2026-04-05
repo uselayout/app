@@ -54,6 +54,63 @@ export default function StudioPage({
     return () => clearTimeout(timer);
   }, [saveError, clearSaveError]);
 
+  // Poll for external updates (e.g. Figma plugin pushing tokens)
+  const [pluginTokensUpdated, setPluginTokensUpdated] = useState(false);
+  const prevTokenSnapshotRef = useRef<string | null>(null);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+
+  useEffect(() => {
+    if (!project?.id) return;
+    const snapshot = JSON.stringify(project.extractionData?.tokens ?? {});
+    if (prevTokenSnapshotRef.current === null) {
+      prevTokenSnapshotRef.current = snapshot;
+    }
+
+    const interval = setInterval(async () => {
+      await refreshProject(project.id);
+      const updated = useProjectStore.getState().projects.find((p) => p.id === project.id);
+      const newSnapshot = JSON.stringify(updated?.extractionData?.tokens ?? {});
+      if (prevTokenSnapshotRef.current && newSnapshot !== prevTokenSnapshotRef.current) {
+        setPluginTokensUpdated(true);
+        prevTokenSnapshotRef.current = newSnapshot;
+      }
+    }, 10_000);
+    return () => clearInterval(interval);
+  }, [project?.id, refreshProject]);
+
+  const handleRegenerateLayoutMd = useCallback(async () => {
+    if (!project?.extractionData) return;
+    setIsRegenerating(true);
+    try {
+      const { getStoredApiKey } = await import("@/lib/hooks/use-api-key");
+      const apiKey = getStoredApiKey();
+      const res = await fetch("/api/generate/layout-md", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(apiKey ? { "X-Api-Key": apiKey } : {}),
+        },
+        body: JSON.stringify({ extractionData: project.extractionData }),
+      });
+      if (res.ok) {
+        const reader = res.body?.getReader();
+        const decoder = new TextDecoder();
+        let md = "";
+        if (reader) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            md += decoder.decode(value, { stream: true });
+          }
+        }
+        if (md) updateLayoutMd(id, md);
+      }
+    } finally {
+      setIsRegenerating(false);
+      setPluginTokensUpdated(false);
+    }
+  }, [project?.extractionData, id, updateLayoutMd]);
+
   const extractionProjectId = useExtractionStore((s) => s.projectId);
   const extractionStatus = useExtractionStore((s) => s.status);
   const extractionProgress = useExtractionStore((s) => s.progress);
@@ -453,6 +510,24 @@ export default function StudioPage({
         >
           <span className="text-xs text-red-400">Failed to save changes — your edits may be lost on refresh</span>
           <button className="text-[10px] text-red-400/60 hover:text-red-400 shrink-0">Dismiss</button>
+        </div>
+      )}
+      {pluginTokensUpdated && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] px-4 py-2.5 backdrop-blur-sm animate-in slide-in-from-bottom-2 fade-in duration-200">
+          <span className="text-xs text-[var(--text-primary)]">Figma plugin updated your tokens.</span>
+          <button
+            onClick={handleRegenerateLayoutMd}
+            disabled={isRegenerating}
+            className="text-xs font-medium text-[var(--studio-accent)] hover:text-[var(--studio-accent-hover)] disabled:opacity-50 shrink-0 transition-colors"
+          >
+            {isRegenerating ? "Regenerating..." : "Regenerate layout.md"}
+          </button>
+          <button
+            onClick={() => setPluginTokensUpdated(false)}
+            className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] shrink-0"
+          >
+            Dismiss
+          </button>
         </div>
       )}
     </div>
