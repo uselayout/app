@@ -45,6 +45,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       healthScore: z.number().nullable().optional(),
       explorations: z.array(z.record(z.string(), z.unknown())).nullable().optional(),
       iconPacks: z.array(z.string()).nullable().optional(),
+      uploadedFonts: z.array(z.record(z.string(), z.unknown())).nullable().optional(),
       pendingCanvasImage: z.string().nullable().optional(),
       createdAt: z.string(),
       updatedAt: z.string(),

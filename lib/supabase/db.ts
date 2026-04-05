@@ -31,6 +31,9 @@ function rowToProject(row: ProjectRow): Project {
     extractionData: row.extraction_data
       ? (row.extraction_data as Project["extractionData"])
       : undefined,
+    uploadedFonts: row.extraction_data
+      ? ((row.extraction_data as Record<string, unknown>)._uploadedFonts as Project["uploadedFonts"]) ?? undefined
+      : undefined,
     tokenCount: row.token_count ?? undefined,
     healthScore: row.health_score ?? undefined,
     explorations: row.explorations
@@ -47,7 +50,10 @@ function projectToRow(
   userId: string
 ): Omit<ProjectRow, "created_at"> & { updated_at: string } {
   // Screenshots are now Supabase Storage URLs (not base64), safe to persist
-  const extractionData = project.extractionData ?? null;
+  // Store uploadedFonts inside extraction_data to avoid a DB migration
+  const extractionData = project.extractionData
+    ? { ...project.extractionData, _uploadedFonts: project.uploadedFonts ?? [] }
+    : null;
 
   return {
     id: project.id,
