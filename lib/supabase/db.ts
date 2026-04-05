@@ -21,6 +21,18 @@ interface ProjectRow {
 }
 
 function rowToProject(row: ProjectRow): Project {
+  // Extract _uploadedFonts from extraction_data before casting
+  const rawExtraction = row.extraction_data as Record<string, unknown> | null;
+  const uploadedFonts = (rawExtraction?._uploadedFonts as Project["uploadedFonts"]) ?? undefined;
+
+  // Strip _uploadedFonts from extraction data before casting to ExtractionResult
+  let extractionData: Project["extractionData"] | undefined;
+  if (rawExtraction) {
+    const { _uploadedFonts: _, ...clean } = rawExtraction;
+    // Only treat as real extraction data if it has actual extraction fields
+    extractionData = clean.sourceType ? (clean as unknown as Project["extractionData"]) : undefined;
+  }
+
   return {
     id: row.id,
     orgId: row.org_id,
@@ -28,12 +40,8 @@ function rowToProject(row: ProjectRow): Project {
     sourceType: row.source_type as Project["sourceType"],
     sourceUrl: row.source_url ?? undefined,
     layoutMd: row.layout_md,
-    extractionData: row.extraction_data
-      ? (row.extraction_data as Project["extractionData"])
-      : undefined,
-    uploadedFonts: row.extraction_data
-      ? ((row.extraction_data as Record<string, unknown>)._uploadedFonts as Project["uploadedFonts"]) ?? undefined
-      : undefined,
+    extractionData,
+    uploadedFonts,
     tokenCount: row.token_count ?? undefined,
     healthScore: row.health_score ?? undefined,
     explorations: row.explorations
@@ -49,11 +57,13 @@ function projectToRow(
   project: Project,
   userId: string
 ): Omit<ProjectRow, "created_at"> & { updated_at: string } {
-  // Screenshots are now Supabase Storage URLs (not base64), safe to persist
   // Store uploadedFonts inside extraction_data to avoid a DB migration
+  const fonts = project.uploadedFonts ?? [];
   const extractionData = project.extractionData
-    ? { ...project.extractionData, _uploadedFonts: project.uploadedFonts ?? [] }
-    : null;
+    ? { ...project.extractionData, _uploadedFonts: fonts }
+    : fonts.length > 0
+      ? { _uploadedFonts: fonts }
+      : null;
 
   return {
     id: project.id,

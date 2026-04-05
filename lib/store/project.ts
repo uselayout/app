@@ -430,6 +430,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
                 explorations: p.explorations ?? fresh.explorations,
                 // If we already consumed the canvas image locally (set to null), don't restore from server
                 pendingCanvasImage: p.pendingCanvasImage !== undefined ? p.pendingCanvasImage : fresh.pendingCanvasImage,
+                // Prefer server data if it has fonts, otherwise keep local (save may be in-flight)
+                uploadedFonts: fresh.uploadedFonts ?? p.uploadedFonts,
+                iconPacks: p.iconPacks ?? fresh.iconPacks,
               }
             : p
         ),
