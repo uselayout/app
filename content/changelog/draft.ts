@@ -252,4 +252,58 @@ export const draftEntries: ChangelogEntry[] = [
     category: "improved",
     date: "2026-04-05",
   },
+  {
+    id: "2026-w14-plugin-variables-fix",
+    title: "Variables API works on all Figma plans",
+    description:
+      "Removed the Enterprise-only restriction for the Variables API. Token extraction now works on all Figma plans.",
+    product: "figma-plugin",
+    category: "fixed",
+    date: "2026-04-04",
+  },
+  {
+    id: "2026-w14-plugin-new-project",
+    title: "Create new projects from the plugin",
+    description:
+      "New project button in the plugin header lets you create a Layout project without leaving Figma.",
+    product: "figma-plugin",
+    category: "new",
+    date: "2026-04-04",
+  },
+  {
+    id: "2026-w14-plugin-extraction-perf",
+    title: "Faster, safer token extraction",
+    description:
+      "Token extraction now has a depth limit to prevent freezing on deeply nested files, and scans the current page instead of the entire document.",
+    product: "figma-plugin",
+    category: "improved",
+    date: "2026-04-05",
+  },
+  {
+    id: "2026-w14-extension-layout-md-rename",
+    title: "layout.md support",
+    description:
+      "The Chrome extension now uses the new layout.md filename, matching the Studio and CLI.",
+    product: "chrome-extension",
+    category: "improved",
+    date: "2026-04-03",
+  },
+  {
+    id: "2026-w14-extension-capture-fix",
+    title: "Better full-page screenshots",
+    description:
+      "Fixed and sticky elements (navbars, cookie banners) are now hidden during full-page capture for cleaner screenshots.",
+    product: "chrome-extension",
+    category: "fixed",
+    date: "2026-04-03",
+  },
+  {
+    id: "2026-w14-extension-org-projects",
+    title: "Create projects from the extension",
+    description:
+      "New project creation from the extension now correctly scopes to your organisation.",
+    product: "chrome-extension",
+    category: "improved",
+    date: "2026-04-04",
+  },
 ];
