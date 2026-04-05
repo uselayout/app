@@ -50,14 +50,17 @@ export default function StudioPage({
     return () => clearTimeout(timer);
   }, [saveError, clearSaveError]);
 
-  // Poll for external updates (e.g. Figma plugin pushing tokens)
+  // Poll for external updates (e.g. Figma plugin pushing tokens or screenshots)
   const [pluginTokensUpdated, setPluginTokensUpdated] = useState(false);
   const prevTokenSnapshotRef = useRef<string | null>(null);
+  const pendingImageConsumedRef = useRef(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  // Callback refs so the polling effect can call these without re-subscribing
+  const setPendingImageRef = useRef<((img: string) => void) | null>(null);
+  const switchToCanvasRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!project?.id) return;
-    // Snapshot current tokens on mount
     const snapshot = JSON.stringify(project.extractionData?.tokens ?? {});
     if (prevTokenSnapshotRef.current === null) {
       prevTokenSnapshotRef.current = snapshot;
@@ -66,10 +69,21 @@ export default function StudioPage({
     const interval = setInterval(async () => {
       await refreshProject(project.id);
       const updated = useProjectStore.getState().projects.find((p) => p.id === project.id);
+
+      // Detect token changes from plugin
       const newSnapshot = JSON.stringify(updated?.extractionData?.tokens ?? {});
       if (prevTokenSnapshotRef.current && newSnapshot !== prevTokenSnapshotRef.current) {
         setPluginTokensUpdated(true);
         prevTokenSnapshotRef.current = newSnapshot;
+      }
+
+      // Detect pending canvas image from plugin/extension push
+      const pending = updated?.pendingCanvasImage;
+      if (pending && !pendingImageConsumedRef.current) {
+        pendingImageConsumedRef.current = true;
+        setPendingImageRef.current?.(pending);
+        switchToCanvasRef.current?.();
+        fetch(`/api/projects/${project.id}/clear-canvas-image`, { method: "POST" }).catch(() => {});
       }
     }, 10_000);
     return () => clearInterval(interval);
@@ -187,6 +201,10 @@ export default function StudioPage({
   // Must be state (not ref) so async update triggers re-render for ExplorerCanvas
   const [pendingFigmaImage, setPendingFigmaImage] = useState<string | null>(null);
   const [pendingFigmaContext, setPendingFigmaContext] = useState<ContextFile[] | null>(null);
+
+  // Wire up callback refs for the polling effect (declared before state was available)
+  setPendingImageRef.current = setPendingFigmaImage;
+  switchToCanvasRef.current = () => setCentreView("canvas");
 
   // When opened from extension (source=figma), refresh project from DB
   // to get the pendingCanvasImage the extension just pushed
