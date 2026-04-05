@@ -44,7 +44,7 @@ export default function ChromeExtensionPage() {
           Download Chrome Extension (Alpha)
         </a>
         <p className="text-sm text-gray-500">
-          v0.1.0 &middot; 94 KB &middot; Chrome or Chromium-based browsers
+          v0.1.0 &middot; 95 KB &middot; Chrome or Chromium-based browsers
         </p>
       </section>
 
