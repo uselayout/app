@@ -890,7 +890,7 @@ export function ExplorerCanvas({
             </div>
             <div>
               <h3 className="mb-1 text-sm font-semibold text-[var(--text-primary)]">
-                Canvas
+                Explorer
               </h3>
               <p className="max-w-xs text-xs text-[var(--text-secondary)]">
                 Describe what to explore. Layout will generate
