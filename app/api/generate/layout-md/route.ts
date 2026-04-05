@@ -27,6 +27,7 @@ const RequestSchema = z.object({
       spacing: z.array(z.record(z.string(), z.unknown())),
       radius: z.array(z.record(z.string(), z.unknown())),
       effects: z.array(z.record(z.string(), z.unknown())),
+      motion: z.array(z.record(z.string(), z.unknown())),
     }),
     components: z.array(z.record(z.string(), z.unknown())),
     screenshots: z.array(z.string()),
@@ -35,6 +36,9 @@ const RequestSchema = z.object({
     librariesDetected: z.record(z.string(), z.boolean()),
     cssVariables: z.record(z.string(), z.string()),
     computedStyles: z.record(z.string(), z.unknown()),
+    sourceUrl: z.string().optional(),
+    interactiveStates: z.record(z.string(), z.record(z.string(), z.string())).optional(),
+    breakpoints: z.array(z.string()).optional(),
   }),
   projectId: z.string().optional(),
 });

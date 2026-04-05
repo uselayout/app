@@ -290,7 +290,7 @@ function buildUserContent(
   }
 
   // Include motion tokens
-  if (data.tokens.motion.length > 0) {
+  if (data.tokens.motion?.length > 0) {
     const motionList = data.tokens.motion
       .map((t) => `  ${t.name}: ${t.value}${t.description ? ` /* ${t.description} */` : ""}`)
       .join("\n");
