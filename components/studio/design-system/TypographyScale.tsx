@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { X, Copy, Check } from "lucide-react";
-import type { ExtractedToken, FontDeclaration } from "@/lib/types";
+import type { ExtractedToken, FontDeclaration, UploadedFont } from "@/lib/types";
 import { groupTokensByPurpose } from "@/lib/tokens/group-tokens";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
+import { buildFontTags } from "@/lib/explore/font-loader";
 
 interface TypographyScaleProps {
   tokens: ExtractedToken[];
   onUpdateToken: (name: string, value: string) => void;
   onRemoveToken: (name: string) => void;
   extractedFonts: FontDeclaration[];
+  uploadedFonts?: UploadedFont[];
 }
 
 function parseNumericValue(value: string): number | null {
@@ -226,7 +228,48 @@ export function TypographyScale({
   onUpdateToken,
   onRemoveToken,
   extractedFonts,
+  uploadedFonts,
 }: TypographyScaleProps) {
+  // Load extracted and uploaded fonts into the document so specimens render correctly
+  const fontStyleRef = useRef<HTMLStyleElement | null>(null);
+  useEffect(() => {
+    const { linkTags, fontFaceCSS } = buildFontTags(extractedFonts, uploadedFonts);
+
+    // Inject @font-face rules
+    if (fontFaceCSS) {
+      const style = document.createElement("style");
+      style.setAttribute("data-layout-fonts", "typography-scale");
+      style.textContent = fontFaceCSS;
+      document.head.appendChild(style);
+      fontStyleRef.current = style;
+    }
+
+    // Inject Google Fonts <link> tags
+    const links: HTMLLinkElement[] = [];
+    if (linkTags) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(linkTags, "text/html");
+      doc.querySelectorAll("link").forEach((el) => {
+        // Avoid duplicates
+        const href = el.getAttribute("href");
+        if (href && !document.querySelector(`link[href="${href}"]`)) {
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = href;
+          link.setAttribute("data-layout-fonts", "typography-scale");
+          document.head.appendChild(link);
+          links.push(link);
+        }
+      });
+    }
+
+    return () => {
+      fontStyleRef.current?.remove();
+      fontStyleRef.current = null;
+      links.forEach((l) => l.remove());
+    };
+  }, [extractedFonts, uploadedFonts]);
+
   // Separate renderable specimens from var() reference tokens
   const renderableTokens = tokens.filter((t) => isRenderableTypography(t.name, t.value));
   const referenceTokens = tokens.filter((t) => !isRenderableTypography(t.name, t.value));

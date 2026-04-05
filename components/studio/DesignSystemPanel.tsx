@@ -212,6 +212,7 @@ export function DesignSystemPanel({
               onUpdateToken={(name, value) => handleUpdateToken("typography", name, value)}
               onRemoveToken={(name) => handleRemoveToken("typography", [name])}
               extractedFonts={extractionData?.fonts ?? []}
+              uploadedFonts={useProjectStore.getState().projects.find((p) => p.id === projectId)?.uploadedFonts}
             />
             <div className="mt-6 pt-6 border-t border-[var(--studio-border)]">
               <FontManager
