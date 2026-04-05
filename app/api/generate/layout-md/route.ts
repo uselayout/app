@@ -89,95 +89,104 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const userApiKey = request.headers.get("X-Api-Key") || undefined;
+  try {
+    const userApiKey = request.headers.get("X-Api-Key") || undefined;
 
-  // Determine AI mode: BYOK (user's key) or hosted (platform key)
-  let mode: AiMode;
-  let apiKey: string | undefined;
+    // Determine AI mode: BYOK (user's key) or hosted (platform key)
+    let mode: AiMode;
+    let apiKey: string | undefined;
 
-  if (userApiKey && userApiKey.startsWith("sk-ant-")) {
-    mode = "byok";
-    apiKey = userApiKey;
-  } else {
-    const quota = await checkQuota(userId, "layout-md");
-    if (!quota.allowed) {
-      return Response.json(
-        { error: quota.reason, code: "QUOTA_EXCEEDED", remaining: quota.remaining },
-        { status: 402 }
-      );
-    }
-
-    const deducted = await deductCredit(userId, "layout-md");
-    if (!deducted) {
-      return Response.json(
-        { error: "No credits remaining. Top up or use your own API key.", code: "QUOTA_EXCEEDED" },
-        { status: 402 }
-      );
-    }
-
-    mode = "hosted";
-    apiKey = process.env.ANTHROPIC_API_KEY;
-  }
-
-  const extractionData = parsed.data.extractionData as unknown as ExtractionResult;
-
-  // Resize screenshots server-side to keep Claude token costs reasonable
-  if (extractionData.screenshots.length > 0) {
-    const resized = await Promise.all(
-      extractionData.screenshots.map((s) => resizeScreenshot(s))
-    );
-    extractionData.screenshots = resized.filter(
-      (s): s is string => s !== null
-    );
-  }
-
-  const streamController = registerStream();
-  const startTime = Date.now();
-  const { stream, usage } = createLayoutMdStream(extractionData, apiKey);
-
-  const apiLogMetadata = {
-    projectId: parsed.data.projectId,
-    sourceType: extractionData.sourceType,
-    tokenCounts: {
-      colors: extractionData.tokens.colors.length,
-      typography: extractionData.tokens.typography.length,
-      spacing: extractionData.tokens.spacing.length,
-      radius: extractionData.tokens.radius.length,
-      effects: extractionData.tokens.effects.length,
-    },
-    componentCount: extractionData.components.length,
-    screenshotCount: extractionData.screenshots.length,
-  };
-
-  // Log usage on success, refund credit on failure
-  void usage
-    .then((u) => {
-      void logApiCall({ userId, endpoint: "generate/layout-md", statusCode: 200, durationMs: Date.now() - startTime, metadata: apiLogMetadata });
-      void logEvent("layout_md.created", "studio", { userId, metadata: { sourceType: extractionData.sourceType, componentCount: extractionData.components.length } });
-      return logUsage({
-        userId,
-        projectId: parsed.data.projectId,
-        endpoint: "layout-md",
-        mode,
-        usage: u,
-        model: "claude-sonnet-4-6",
-      });
-    })
-    .catch(async (err) => {
-      console.error("Stream failed, refunding credit:", err);
-      void logApiCall({ userId, endpoint: "generate/layout-md", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: err instanceof Error ? err.message : String(err), metadata: apiLogMetadata });
-      if (mode === "hosted") {
-        await refundCredit(userId, "layout-md");
+    if (userApiKey && userApiKey.startsWith("sk-ant-")) {
+      mode = "byok";
+      apiKey = userApiKey;
+    } else {
+      const quota = await checkQuota(userId, "layout-md");
+      if (!quota.allowed) {
+        return Response.json(
+          { error: quota.reason, code: "QUOTA_EXCEEDED", remaining: quota.remaining },
+          { status: 402 }
+        );
       }
-    })
-    .finally(() => {
-      deregisterStream(streamController);
-    });
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "X-Accel-Buffering": "no",
-    },
-  });
+      const deducted = await deductCredit(userId, "layout-md");
+      if (!deducted) {
+        return Response.json(
+          { error: "No credits remaining. Top up or use your own API key.", code: "QUOTA_EXCEEDED" },
+          { status: 402 }
+        );
+      }
+
+      mode = "hosted";
+      apiKey = process.env.ANTHROPIC_API_KEY;
+    }
+
+    const extractionData = parsed.data.extractionData as unknown as ExtractionResult;
+
+    // Resize screenshots server-side to keep Claude token costs reasonable
+    if (extractionData.screenshots.length > 0) {
+      const resized = await Promise.all(
+        extractionData.screenshots.map((s) => resizeScreenshot(s))
+      );
+      extractionData.screenshots = resized.filter(
+        (s): s is string => s !== null
+      );
+    }
+
+    const streamController = registerStream();
+    const startTime = Date.now();
+    const { stream, usage } = createLayoutMdStream(extractionData, apiKey);
+
+    const apiLogMetadata = {
+      projectId: parsed.data.projectId,
+      sourceType: extractionData.sourceType,
+      tokenCounts: {
+        colors: extractionData.tokens.colors.length,
+        typography: extractionData.tokens.typography.length,
+        spacing: extractionData.tokens.spacing.length,
+        radius: extractionData.tokens.radius.length,
+        effects: extractionData.tokens.effects.length,
+      },
+      componentCount: extractionData.components.length,
+      screenshotCount: extractionData.screenshots.length,
+    };
+
+    // Log usage on success, refund credit on failure
+    void usage
+      .then((u) => {
+        void logApiCall({ userId, endpoint: "generate/layout-md", statusCode: 200, durationMs: Date.now() - startTime, metadata: apiLogMetadata });
+        void logEvent("layout_md.created", "studio", { userId, metadata: { sourceType: extractionData.sourceType, componentCount: extractionData.components.length } });
+        return logUsage({
+          userId,
+          projectId: parsed.data.projectId,
+          endpoint: "layout-md",
+          mode,
+          usage: u,
+          model: "claude-sonnet-4-6",
+        });
+      })
+      .catch(async (err) => {
+        console.error("Stream failed, refunding credit:", err);
+        void logApiCall({ userId, endpoint: "generate/layout-md", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: err instanceof Error ? err.message : String(err), metadata: apiLogMetadata });
+        if (mode === "hosted") {
+          await refundCredit(userId, "layout-md");
+        }
+      })
+      .finally(() => {
+        deregisterStream(streamController);
+      });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Accel-Buffering": "no",
+      },
+    });
+  } catch (err) {
+    console.error("layout-md generation error:", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return Response.json(
+      { error: `layout.md generation failed: ${message}` },
+      { status: 500 }
+    );
+  }
 }
