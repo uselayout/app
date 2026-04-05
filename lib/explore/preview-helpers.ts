@@ -4,6 +4,8 @@
  */
 
 import { getIconPacks, type IconPack } from "@/lib/icons/registry";
+import { buildFontTags } from "@/lib/explore/font-loader";
+import type { FontDeclaration, UploadedFont } from "@/lib/types";
 
 const PLACEHOLDER_SVG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'%3E%3Crect fill='%23e5e7eb' width='800' height='400'/%3E%3Ctext x='400' y='200' text-anchor='middle' dy='.3em' fill='%239ca3af' font-family='system-ui' font-size='14'%3EImage placeholder%3C/text%3E%3C/svg%3E";
@@ -61,7 +63,35 @@ function buildIconCdnScripts(iconPackIds?: string[]): { scriptTags: string; requ
   };
 }
 
-export function buildSrcdoc(js: string, componentName: string, inspectorScript?: string, _variantId?: string, iconPacks?: string[]): string {
+export interface BuildSrcdocOptions {
+  inspectorScript?: string;
+  variantId?: string;
+  iconPacks?: string[];
+  fonts?: FontDeclaration[];
+  uploadedFonts?: UploadedFont[];
+}
+
+export function buildSrcdoc(js: string, componentName: string, opts?: BuildSrcdocOptions): string;
+/** @deprecated Use options object overload instead. */
+export function buildSrcdoc(js: string, componentName: string, inspectorScript?: string, _variantId?: string, iconPacks?: string[]): string;
+export function buildSrcdoc(
+  js: string,
+  componentName: string,
+  inspectorScriptOrOpts?: string | BuildSrcdocOptions,
+  _variantId?: string,
+  iconPacks?: string[]
+): string {
+  // Support both old positional args and new options object
+  let opts: BuildSrcdocOptions;
+  if (typeof inspectorScriptOrOpts === "object" && inspectorScriptOrOpts !== null) {
+    opts = inspectorScriptOrOpts;
+  } else {
+    opts = {
+      inspectorScript: inspectorScriptOrOpts ?? undefined,
+      variantId: _variantId,
+      iconPacks,
+    };
+  }
   // Embed transpiled JS as a JSON-encoded string literal. This safely handles
   // ALL special characters (quotes, backslashes, angle brackets, non-ASCII)
   // without base64/eval. Matches the proven approach used in TestPanel.
@@ -73,18 +103,25 @@ export function buildSrcdoc(js: string, componentName: string, inspectorScript?:
     .replace(/</g, "\\u003c")
     .replace(/>/g, "\\u003e");
 
-  const { scriptTags: iconScriptTags, requireMappings: iconRequireMappings } = buildIconCdnScripts(iconPacks);
+  const { scriptTags: iconScriptTags, requireMappings: iconRequireMappings } = buildIconCdnScripts(opts.iconPacks);
+
+  // Build font loading tags
+  const fontResult = buildFontTags(opts.fonts, opts.uploadedFonts);
+  const bodyFont = fontResult.primaryFamily
+    ? `"${fontResult.primaryFamily}",system-ui,sans-serif`
+    : "system-ui,sans-serif";
 
   return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <base href="${typeof globalThis.window !== 'undefined' ? globalThis.window.location.origin + '/' : '/'}">
+${fontResult.linkTags}
 <script src="https://cdn.tailwindcss.com"></${"script"}>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></${"script"}>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></${"script"}>
 ${iconScriptTags}
-<style>body{margin:0;font-family:system-ui,sans-serif}a[href]{cursor:default}</style>
+<style>${fontResult.fontFaceCSS ? fontResult.fontFaceCSS + "\n" : ""}body{margin:0;font-family:${bodyFont}}a[href]{cursor:default}</style>
 </head><body>
 <div id="root"></div>
 <script>
@@ -129,6 +166,6 @@ window.addEventListener('load',function(){
   }
 });
 </${"script"}>
-${inspectorScript ? `<${"script"}>${inspectorScript}</${"script"}>` : ""}
+${opts.inspectorScript ? `<${"script"}>${opts.inspectorScript}</${"script"}>` : ""}
 </body></html>`;
 }

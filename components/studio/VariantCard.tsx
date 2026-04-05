@@ -13,7 +13,8 @@ import { EditHistoryPanel } from "@/components/studio/EditHistoryPanel";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { countPlaceholderImages } from "@/lib/image/placeholder";
 import { PaperIcon } from "@/components/studio/PaperPushModal";
-import type { DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotation, ExtractedToken } from "@/lib/types";
+import type { DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotation, ExtractedToken, FontDeclaration, UploadedFont } from "@/lib/types";
+import type { BuildSrcdocOptions } from "@/lib/explore/preview-helpers";
 
 // ---------------------------------------------------------------------------
 // Direct style edit — instant, no AI call
@@ -99,54 +100,161 @@ const TAILWIND_PREFIXES: Record<string, RegExp> = {
 };
 
 /**
- * Build a regex that finds a className attribute in source code matching the given
- * DOM classes, tolerating whitespace differences (multiline classNames, indentation).
- * Also handles className={"..."} and className={'...'} JSX expressions.
+ * Find all className attributes in source code and return the best match for
+ * the given DOM classes. Uses a scoring approach: a className attribute that
+ * contains more of the DOM classes ranks higher, and we require at least 2
+ * matching words (or 1 if the element only has 1 class).
  */
-function buildClassNameRegex(elementClasses: string): RegExp | null {
-  const classWords = elementClasses.split(/\s+/).filter(Boolean).slice(0, 8);
+function findBestClassNameMatch(code: string, elementClasses: string): { full: string; captured: string; index: number } | null {
+  const classWords = elementClasses.split(/\s+/).filter(Boolean);
   if (classWords.length === 0) return null;
-  const escapedWords = classWords.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-  const flexibleSnippet = escapedWords.join("[\\s]+");
-  // Match className="...", className='...', className={"..."}, className={'...'}
-  return new RegExp(
-    `className=(?:["']|\\{["'])([^"']*${flexibleSnippet}[^"']*)(?:["']|["']\\})`,
-    "s",
+  const minRequired = Math.min(classWords.length, 2);
+
+  // Find all className="...", className='...', className={"..."}, className={'...'}
+  const classNameRegex = /className=(?:["']|\{["'])([^"']*?)(?:["']|["']\})/g;
+  let best: { full: string; captured: string; index: number; score: number } | null = null;
+
+  let match: RegExpExecArray | null;
+  while ((match = classNameRegex.exec(code)) !== null) {
+    const captured = match[1];
+    const capturedWords = captured.split(/\s+/).filter(Boolean);
+    let score = 0;
+    for (const w of classWords) {
+      if (capturedWords.includes(w)) score++;
+    }
+    if (score >= minRequired && (!best || score > best.score)) {
+      best = { full: match[0], captured, index: match.index, score };
+    }
+  }
+
+  return best;
+}
+
+/** Map CSS camelCase property to its JSX style object key (same in most cases) */
+const CSS_TO_STYLE_KEY: Record<string, string> = {
+  fontWeight: "fontWeight", fontSize: "fontSize", lineHeight: "lineHeight",
+  letterSpacing: "letterSpacing", fontFamily: "fontFamily", textAlign: "textAlign",
+  display: "display", flexDirection: "flexDirection", alignItems: "alignItems",
+  justifyContent: "justifyContent", color: "color", backgroundColor: "backgroundColor",
+  borderColor: "borderColor", borderRadius: "borderRadius", borderWidth: "borderWidth",
+  opacity: "opacity", gap: "gap", width: "width", height: "height", maxWidth: "maxWidth",
+  paddingTop: "paddingTop", paddingRight: "paddingRight", paddingBottom: "paddingBottom",
+  paddingLeft: "paddingLeft", marginTop: "marginTop", marginRight: "marginRight",
+  marginBottom: "marginBottom", marginLeft: "marginLeft",
+};
+
+/**
+ * Try to apply a style edit by modifying an inline style={{ ... }} in the source code.
+ */
+function tryDirectInlineStyleEdit(code: string, edit: StyleEdit): string | null {
+  const { property, after } = edit;
+  const styleKey = CSS_TO_STYLE_KEY[property];
+  if (!styleKey) return null;
+
+  // Build regex to find styleKey: "value" or styleKey: 'value' or styleKey: number
+  const propRegex = new RegExp(
+    `(${styleKey}\\s*:\\s*)(?:"[^"]*"|'[^']*'|[^,}\\s]+)`,
+    "g",
   );
+
+  // Quote the new value appropriately
+  const isNumeric = /^\d+(\.\d+)?$/.test(after);
+  const quotedValue = isNumeric ? after : `"${after}"`;
+
+  let found = false;
+  const result = code.replace(propRegex, (match, prefix) => {
+    if (found) return match;
+    found = true;
+    return `${prefix}${quotedValue}`;
+  });
+
+  return found && result !== code ? result : null;
 }
 
 /**
- * Try to apply a single style edit directly in the source code by swapping Tailwind classes.
- * Returns the updated code, or null if direct editing isn't possible for this edit.
+ * Try to apply a textContent edit by finding and replacing the text in the source code.
+ */
+function tryDirectTextEdit(code: string, edit: StyleEdit): string | null {
+  if (edit.property !== "textContent" || !edit.before || !edit.after) return null;
+
+  const escapedBefore = edit.before.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  // Find the literal text in JSX (between > and <)
+  const textInJsx = new RegExp(`(>\\s*)${escapedBefore}(\\s*<)`, "g");
+  let found = false;
+  const result = code.replace(textInJsx, (match, prefix, suffix) => {
+    if (found) return match;
+    found = true;
+    return `${prefix}${edit.after}${suffix}`;
+  });
+  if (found) return result;
+
+  // Also try as a string literal (e.g. inside a variable or prop)
+  const asString = new RegExp(`(["'])${escapedBefore}\\1`);
+  const stringMatch = code.match(asString);
+  if (stringMatch) {
+    const quote = stringMatch[1];
+    return code.replace(stringMatch[0], `${quote}${edit.after}${quote}`);
+  }
+
+  return null;
+}
+
+/**
+ * Try to apply a single style edit directly in the source code.
+ * Attempts in order: text content replacement, Tailwind class swap, inline style edit.
+ * Returns the updated code, or null if all direct paths fail.
  */
 function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null {
   const { elementClasses, property, after } = edit;
-  if (!elementClasses || !CSS_TO_TAILWIND[property]) return null;
 
-  const classRegex = buildClassNameRegex(elementClasses);
-  if (!classRegex) return null;
-
-  const classMatch = code.match(classRegex);
-  if (!classMatch) return null;
-
-  const fullClassName = classMatch[1];
-  const prefix = TAILWIND_PREFIXES[property];
-  const newClass = CSS_TO_TAILWIND[property](after);
-
-  // Remove existing class for this property, add new one
-  let updatedClassName = fullClassName;
-  if (prefix) {
-    updatedClassName = updatedClassName.replace(prefix, "").replace(/\s{2,}/g, " ").trim();
+  // Handle text content edits separately
+  if (property === "textContent") {
+    const textResult = tryDirectTextEdit(code, edit);
+    if (textResult) {
+      console.debug("[direct-edit] textContent: replaced via direct text match");
+      return textResult;
+    }
+    console.debug("[direct-edit] textContent: no direct match found for:", edit.before?.substring(0, 50));
+    return null;
   }
-  updatedClassName = `${updatedClassName} ${newClass}`;
 
-  const result = code.replace(classMatch[0], `className="${updatedClassName}"`);
-  return result !== code ? result : null;
+  // Try Tailwind class swap first
+  if (elementClasses && CSS_TO_TAILWIND[property]) {
+    const classMatch = findBestClassNameMatch(code, elementClasses);
+    if (classMatch) {
+      const prefix = TAILWIND_PREFIXES[property];
+      const newClass = CSS_TO_TAILWIND[property](after);
+      let updatedClassName = classMatch.captured;
+      if (prefix) {
+        updatedClassName = updatedClassName.replace(prefix, "").replace(/\s{2,}/g, " ").trim();
+      }
+      updatedClassName = `${updatedClassName} ${newClass}`;
+      const result = code.replace(classMatch.full, `className="${updatedClassName}"`);
+      if (result !== code) {
+        console.debug(`[direct-edit] ${property}: Tailwind class swap succeeded`);
+        return result;
+      }
+    } else {
+      console.debug(`[direct-edit] ${property}: no className match in source for classes:`, elementClasses.substring(0, 80));
+    }
+  }
+
+  // Fall back to inline style editing
+  const inlineResult = tryDirectInlineStyleEdit(code, edit);
+  if (inlineResult) {
+    console.debug(`[direct-edit] ${property}: inline style edit succeeded`);
+    return inlineResult;
+  }
+
+  console.debug(`[direct-edit] ${property}: all direct edit paths failed, will use AI fallback`);
+  return null;
 }
 
 /**
- * Try to apply style edits directly in the source code by swapping Tailwind classes.
- * Returns { code, remaining } where remaining are edits that couldn't be applied directly.
+ * Try to apply style edits directly in the source code by swapping Tailwind classes
+ * or editing inline styles. Returns { code, remaining } where remaining are edits
+ * that couldn't be applied directly and need AI assistance.
  */
 function tryDirectStyleEdits(code: string, edits: StyleEdit[]): { code: string; remaining: StyleEdit[] } {
   let result = code;
@@ -201,6 +309,8 @@ interface VariantCardProps {
   layoutMd?: string;
   designTokens?: ExtractedToken[];
   iconPacks?: string[];
+  fonts?: FontDeclaration[];
+  uploadedFonts?: UploadedFont[];
   /** When true, card animates in with a scale-up + fade-in entrance */
   isNewlyGenerated?: boolean;
 }
@@ -225,6 +335,8 @@ export function VariantCard({
   layoutMd,
   designTokens,
   iconPacks,
+  fonts,
+  uploadedFonts,
   isNewlyGenerated = false,
 }: VariantCardProps) {
   // Top-down clip-path reveal for newly generated variants.
@@ -287,7 +399,7 @@ export function VariantCard({
         componentNameRef.current = name;
 
         // Update the scaled card preview
-        const srcdoc = buildSrcdoc(js, name, undefined, variant.id, iconPacks);
+        const srcdoc = buildSrcdoc(js, name, { variantId: variant.id, iconPacks, fonts, uploadedFonts });
         if (iframeRef.current) {
           iframeRef.current.srcdoc = srcdoc;
           setPreviewReady(true);
@@ -300,7 +412,7 @@ export function VariantCard({
 
         // Also update the fullscreen Inspector iframe if it's open
         if (inspectMode && fullscreenIframeRef.current) {
-          const inspectorSrcdoc = buildSrcdoc(js, name, getInspectorScript(), undefined, iconPacks);
+          const inspectorSrcdoc = buildSrcdoc(js, name, { inspectorScript: getInspectorScript(), iconPacks, fonts, uploadedFonts });
           fullscreenIframeRef.current.srcdoc = inspectorSrcdoc;
         }
       } catch (err) {
@@ -334,13 +446,13 @@ export function VariantCard({
     if (!js) return;
     if (inspectMode) {
       // Fullscreen iframe gets the inspector script
-      const srcdoc = buildSrcdoc(js, componentNameRef.current, getInspectorScript(), undefined, iconPacks);
+      const srcdoc = buildSrcdoc(js, componentNameRef.current, { inspectorScript: getInspectorScript(), iconPacks, fonts, uploadedFonts });
       if (fullscreenIframeRef.current) {
         fullscreenIframeRef.current.srcdoc = srcdoc;
       }
     } else {
       // Exiting inspect mode — React mounts a fresh scaled iframe, restore its srcdoc
-      const srcdoc = buildSrcdoc(js, componentNameRef.current, undefined, variant.id, iconPacks);
+      const srcdoc = buildSrcdoc(js, componentNameRef.current, { variantId: variant.id, iconPacks, fonts, uploadedFonts });
       if (iframeRef.current) {
         iframeRef.current.srcdoc = srcdoc;
         setPreviewReady(true);
@@ -655,7 +767,7 @@ export function VariantCard({
       if (!res.ok) return;
       const { js } = await res.json();
       const componentName = extractComponentName(entry.codeAfter);
-      const srcdoc = buildSrcdoc(js, componentName, undefined, undefined, iconPacks);
+      const srcdoc = buildSrcdoc(js, componentName, { iconPacks, fonts, uploadedFonts });
       if (iframeRef.current) {
         iframeRef.current.srcdoc = srcdoc;
       }
@@ -802,7 +914,7 @@ export function VariantCard({
               onReset={() => {
                 const js = transpiledJsRef.current;
                 if (!js) return;
-                const srcdoc = buildSrcdoc(js, componentNameRef.current, getInspectorScript(), undefined, iconPacks);
+                const srcdoc = buildSrcdoc(js, componentNameRef.current, { inspectorScript: getInspectorScript(), iconPacks, fonts, uploadedFonts });
                 if (fullscreenIframeRef.current) fullscreenIframeRef.current.srcdoc = srcdoc;
               }}
               designTokens={designTokens}

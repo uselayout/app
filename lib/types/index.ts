@@ -100,6 +100,19 @@ export interface FontDeclaration {
   display: string;
 }
 
+export type FontFormat = "woff2" | "woff" | "ttf" | "otf";
+
+export interface UploadedFont {
+  id: string;
+  family: string;
+  weight: string;
+  style: string;
+  format: FontFormat;
+  url: string;
+  projectId: string;
+  orgId?: string;
+}
+
 export interface AnimationDefinition {
   name: string;
   cssText: string;
@@ -176,6 +189,7 @@ export interface Project {
   healthScore?: number;
   explorations?: ExplorationSession[];
   iconPacks?: string[];
+  uploadedFonts?: UploadedFont[];
   pendingCanvasImage?: string | null;
   createdAt: string;
   updatedAt: string;

@@ -25,7 +25,7 @@ import { useOnboardingStore } from "@/lib/store/onboarding";
 import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 import { DEFAULT_EXPLORE_MODEL, AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
-import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken } from "@/lib/types";
+import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont } from "@/lib/types";
 
 interface ExplorerCanvasProps {
   projectId: string;
@@ -38,6 +38,8 @@ interface ExplorerCanvasProps {
   initialContextFiles?: ContextFile[];
   onInitialImageConsumed?: () => void;
   extractedFonts?: string[];
+  extractedFontDeclarations?: FontDeclaration[];
+  uploadedFonts?: UploadedFont[];
   iconPacks?: string[];
   sourceUrl?: string;
 }
@@ -53,6 +55,8 @@ export function ExplorerCanvas({
   initialContextFiles,
   onInitialImageConsumed,
   extractedFonts = [],
+  extractedFontDeclarations,
+  uploadedFonts,
   iconPacks,
   sourceUrl,
 }: ExplorerCanvasProps) {
@@ -1005,6 +1009,8 @@ export function ExplorerCanvas({
                       layoutMd={layoutMd}
                       designTokens={allDesignTokens}
                       iconPacks={iconPacks}
+                      fonts={extractedFontDeclarations}
+                      uploadedFonts={uploadedFonts}
                       isProcessingImages={isProcessingImages}
                       onViewComparison={() => {
                         const comparisons = currentExploration?.comparisons?.filter(

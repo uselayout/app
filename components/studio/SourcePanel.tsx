@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes, Figma, Sparkles, Loader2 } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes, Figma, Sparkles, Loader2, Type } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
@@ -10,6 +10,7 @@ import { ConnectTab } from "@/components/studio/ConnectTab";
 import { FigmaEmbed } from "@/components/studio/FigmaEmbed";
 import { parseFigmaUrl } from "@/lib/figma/parse-url";
 import { IconPackSelector } from "@/components/studio/IconPackSelector";
+import { FontManager } from "@/components/studio/FontManager";
 import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
 import { resolveTokenValue } from "@/lib/util/color";
 import { useProjectStore } from "@/lib/store/project";
@@ -39,7 +40,7 @@ interface SourcePanelProps {
   onGenerateFromFigma?: (imageDataUrl: string, contextFiles?: ContextFile[]) => void;
 }
 
-type TabId = "tokens" | "components" | "screenshots" | "icons" | "quality" | "connect" | "figma";
+type TabId = "tokens" | "components" | "screenshots" | "icons" | "fonts" | "quality" | "connect" | "figma";
 
 function SourcePanelEmptyState({
   projectId,
@@ -145,6 +146,7 @@ function SourcePanelInner({
   const syncTokensFromLayoutMd = useProjectStore((s) => s.syncTokensFromLayoutMd);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
+  const currentProject = useProjectStore((s) => s.projects.find((p) => p.id === projectId));
   const [syncResult, setSyncResult] = useState<{ count: number } | null>(null);
 
   const handleDeleteScreenshot = useCallback(
@@ -179,6 +181,7 @@ function SourcePanelInner({
     { id: "components", label: "Components", icon: LayoutGrid },
     { id: "screenshots", label: "Screenshots", icon: Image },
     { id: "icons", label: "Icons", icon: Shapes },
+    { id: "fonts", label: "Fonts", icon: Type },
     { id: "quality", label: "Quality", icon: Gauge },
     { id: "figma", label: "Figma", icon: Figma },
     { id: "connect", label: "Connect", icon: Terminal },
@@ -246,6 +249,16 @@ function SourcePanelInner({
         )}
         {activeTab === "icons" && (
           <IconPackSelector projectId={projectId} />
+        )}
+        {activeTab === "fonts" && projectId && (
+          <div className="p-3">
+            <FontManager
+              projectId={projectId}
+              orgId={currentOrgId ?? undefined}
+              extractedFonts={extractionData?.fonts ?? []}
+              uploadedFonts={currentProject?.uploadedFonts ?? []}
+            />
+          </div>
         )}
         {activeTab === "quality" && extractionData && (
           <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} projectId={projectId} orgId={currentOrgId ?? undefined} />

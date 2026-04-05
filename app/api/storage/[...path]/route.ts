@@ -32,9 +32,17 @@ export async function GET(
       return new Response("Not found", { status: 404 });
     }
 
-    // Validate content type: only serve images
+    // Validate content type: only serve images and fonts
     const contentType = res.headers.get("content-type") ?? "application/octet-stream";
-    if (!contentType.startsWith("image/")) {
+    const isAllowed =
+      contentType.startsWith("image/") ||
+      contentType.startsWith("font/") ||
+      contentType === "application/font-woff" ||
+      contentType === "application/font-woff2" ||
+      contentType === "application/x-font-ttf" ||
+      contentType === "application/x-font-opentype" ||
+      contentType === "application/octet-stream" && storagePath.startsWith("layout-fonts/");
+    if (!isAllowed) {
       return new Response("Invalid content type", { status: 400 });
     }
 
@@ -51,13 +59,18 @@ export async function GET(
       return new Response("File too large", { status: 413 });
     }
 
-    return new Response(body, {
-      headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
+    const headers: Record<string, string> = {
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
+    };
+
+    // Font files need CORS headers for @font-face in srcdoc iframes
+    if (storagePath.startsWith("layout-fonts/")) {
+      headers["Access-Control-Allow-Origin"] = "*";
+    }
+
+    return new Response(body, { headers });
   } catch {
     return new Response("Storage unavailable", { status: 502 });
   }

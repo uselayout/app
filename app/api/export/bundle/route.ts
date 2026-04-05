@@ -9,7 +9,9 @@ import { generateTokensCss } from "@/lib/export/tokens-css";
 import { generateTokensJson } from "@/lib/export/tokens-json";
 import { generateTailwindConfig } from "@/lib/export/tailwind-config";
 import { logEvent } from "@/lib/logging/platform-event";
-import type { Project, ExportFormat } from "@/lib/types";
+import type { Project, ExportFormat, UploadedFont } from "@/lib/types";
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 
 const RequestSchema = z.object({
   project: z.object({
@@ -19,6 +21,16 @@ const RequestSchema = z.object({
     sourceUrl: z.string().optional(),
     layoutMd: z.string(),
     extractionData: z.unknown().optional(),
+    uploadedFonts: z.array(z.object({
+      id: z.string(),
+      family: z.string(),
+      weight: z.string(),
+      style: z.string(),
+      format: z.enum(["woff2", "woff", "ttf", "otf"]),
+      url: z.string(),
+      projectId: z.string(),
+      orgId: z.string().optional(),
+    })).optional(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
     tokenCount: z.number().optional(),
@@ -97,7 +109,45 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  void logEvent("export.bundle", "studio", { userId: session.user.id, metadata: { formats, projectId: project.id, hasScreenshots: !!proj.extractionData?.screenshots?.length } });
+  // Include uploaded font files
+  const uploadedFonts = (proj.uploadedFonts ?? []) as UploadedFont[];
+  if (uploadedFonts.length > 0) {
+    const fontsDir = zip.folder("fonts");
+    const fontFaceRules: string[] = [];
+
+    await Promise.all(
+      uploadedFonts.map(async (font) => {
+        try {
+          // Font URLs are proxy paths like /api/storage/layout-fonts/...
+          // Resolve to Supabase direct URL for server-side fetch
+          const storagePath = font.url.replace(/^\/api\/storage\//, "");
+          const url = `${SUPABASE_URL}/storage/v1/object/public/${storagePath}`;
+          const res = await fetch(url);
+          if (!res.ok) return;
+          const buffer = await res.arrayBuffer();
+
+          const safeName = font.family.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+          const filename = `${safeName}-${font.weight}-${font.style}.${font.format}`;
+          fontsDir?.file(filename, buffer);
+
+          const formatMap: Record<string, string> = {
+            woff2: "woff2", woff: "woff", ttf: "truetype", otf: "opentype",
+          };
+          fontFaceRules.push(
+            `@font-face {\n  font-family: "${font.family}";\n  src: url("./${filename}") format("${formatMap[font.format] ?? "woff2"}");\n  font-weight: ${font.weight};\n  font-style: ${font.style};\n  font-display: swap;\n}`
+          );
+        } catch {
+          // Skip failed font downloads
+        }
+      })
+    );
+
+    if (fontFaceRules.length > 0) {
+      fontsDir?.file("fonts.css", fontFaceRules.join("\n\n") + "\n");
+    }
+  }
+
+  void logEvent("export.bundle", "studio", { userId: session.user.id, metadata: { formats, projectId: project.id, hasScreenshots: !!proj.extractionData?.screenshots?.length, fontCount: uploadedFonts.length } });
 
   const zipBuffer = await zip.generateAsync({ type: "arraybuffer" });
   const safeName = project.name

@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 import { renameTokenInLayoutMd } from "@/lib/tokens/rename-token";
-import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType } from "@/lib/types";
+import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont } from "@/lib/types";
 
 /** Save a project via the server-side API (bypasses RLS). */
 function apiUpsertProject(project: Project, onError?: (msg: string) => void): void {
@@ -101,6 +101,7 @@ interface ProjectState {
   updateTokenCount: (id: string, count: number) => void;
   updateHealthScore: (id: string, score: number) => void;
   updateIconPacks: (id: string, iconPacks: string[]) => void;
+  updateUploadedFonts: (id: string, fonts: UploadedFont[]) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
   updateToken: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string) => void;
   renameToken: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string) => void;
@@ -232,6 +233,16 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === id ? { ...p, iconPacks } : p
+      ),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  updateUploadedFonts: (id, uploadedFonts) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id ? { ...p, uploadedFonts } : p
       ),
     }));
     const project = get().projects.find((p) => p.id === id);

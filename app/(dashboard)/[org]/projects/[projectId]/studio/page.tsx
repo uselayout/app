@@ -347,6 +347,7 @@ export default function StudioPage({
 
   const extractedFonts =
     project.extractionData?.fonts.map((f) => f.family) ?? [];
+  const extractedFontDeclarations = project.extractionData?.fonts ?? [];
 
   return (
     <>
@@ -415,6 +416,8 @@ export default function StudioPage({
               initialContextFiles={pendingFigmaContext ?? undefined}
               onInitialImageConsumed={() => { setPendingFigmaImage(null); setPendingFigmaContext(null); }}
               extractedFonts={extractedFonts}
+              extractedFontDeclarations={extractedFontDeclarations}
+              uploadedFonts={project.uploadedFonts}
               iconPacks={project.iconPacks}
             />
           }
