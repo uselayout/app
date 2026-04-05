@@ -132,6 +132,9 @@ export default function AntigravityPage() {
               <strong>get_screenshots</strong> — extraction screenshots for visual reference
             </li>
             <li>
+              <strong>push_tokens_to_figma</strong> — push tokens to Figma as native variables and styles
+            </li>
+            <li>
               <strong>check_setup</strong> — diagnose and fix MCP setup issues
             </li>
           </ul>

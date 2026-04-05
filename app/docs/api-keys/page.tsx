@@ -171,7 +171,7 @@ export default function ApiKeysPage() {
               href="https://console.anthropic.com/settings/keys"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               console.anthropic.com/settings/keys
             </a>
@@ -182,7 +182,7 @@ export default function ApiKeysPage() {
               href="https://aistudio.google.com/apikey"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               aistudio.google.com/apikey
             </a>
@@ -193,7 +193,7 @@ export default function ApiKeysPage() {
               href="https://www.figma.com/developers/api#access-tokens"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-indigo-600 hover:underline"
+              className="text-gray-900 hover:underline"
             >
               figma.com/developers/api
             </a>{" "}

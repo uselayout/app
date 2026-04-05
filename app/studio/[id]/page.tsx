@@ -94,7 +94,7 @@ export default function StudioPage({
   const extractionStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
   const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved" | "design-system">(
-    tabParam === "explorer" ? "canvas" : "editor"
+    tabParam === "editor" ? "editor" : "canvas"
   );
 
   // Figma push-to-canvas: pre-load screenshot as reference image

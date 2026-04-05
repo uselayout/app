@@ -292,19 +292,19 @@ export default function ComparePage() {
           {[
             {
               name: "Paper.design",
-              desc: "Agent-first design canvas built on real HTML/CSS. 24 MCP tools with read and write access. Founded by Stephen Haney (built Radix/Modulz). $4.2M seed. $20/user/month Pro.",
+              desc: "Agent-first design canvas built on real HTML/CSS. 24 MCP tools with read and write access. Founded by Stephen Haney (built Radix/Modulz).",
               relationship:
                 "Complementary \u2014 Paper is a canvas, Layout is a compiler. Layout context could feed into Paper\u2019s canvas.",
             },
             {
               name: "Magic Patterns",
-              desc: "AI prototype generator for product teams. Full design system import from Figma, Storybook, and Chrome Extension. Enterprise customers include DoorDash and KPMG. $6M Series A. SOC 2 + ISO 27001.",
+              desc: "AI prototype generator for product teams. Full design system import from Figma, Storybook, and Chrome Extension. Enterprise customers include DoorDash and KPMG. SOC 2 + ISO 27001.",
               relationship:
                 "Different category \u2014 Magic Patterns generates prototypes inside their platform. Layout feeds context to AI agents in your IDE.",
             },
             {
               name: "MagicPath.ai",
-              desc: "AI infinite canvas with \u201CFigma Connect\u201D \u2014 paste Figma designs in, preserving layout and styles. Design system token presets. By Pietro Schirano (ex-Uber). ~$14\u201320/month.",
+              desc: "AI infinite canvas with \u201CFigma Connect\u201D \u2014 paste Figma designs in, preserving layout and styles. Design system token presets. By Pietro Schirano (ex-Uber).",
               relationship:
                 "Different category \u2014 MagicPath is a design canvas with Figma import. Layout extracts and packages design systems for AI agents.",
             },
@@ -316,7 +316,7 @@ export default function ComparePage() {
             },
             {
               name: "Figma Dev Mode",
-              desc: "Native Figma developer experience with inspect, code snippets, and a 3-tool read-only MCP server. $12\u201335/seat/month.",
+              desc: "Native Figma developer experience with inspect, code snippets, and an 11-tool MCP server with read and write access.",
               relationship:
                 "Partial overlap \u2014 Figma MCP serves raw file data. Layout serves structured, LLM-optimised design system context.",
             },

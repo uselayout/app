@@ -471,9 +471,10 @@ export default function ApiReferencePage() {
             .cursorrules
           </code>{" "}
           instructing the agent to fetch design context before writing any UI
-          code. The exported bundle from AI Studio includes this instruction
+          code. The exported bundle from Layout Studio includes this instruction
           pre-written.
         </Callout>
+
       </section>
 
       {/* Tool Reference */}
