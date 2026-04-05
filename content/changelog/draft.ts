@@ -225,4 +225,31 @@ export const draftEntries: ChangelogEntry[] = [
     category: "fixed",
     date: "2026-04-05",
   },
+  {
+    id: "2026-w14-custom-fonts",
+    title: "Custom font support",
+    description:
+      "Upload custom font files (.woff2, .woff, .ttf, .otf) for your design system. Google Fonts are auto-detected from extractions. Both are injected into Explorer variant previews and included in export bundles.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-05",
+  },
+  {
+    id: "2026-w14-plugin-token-sync",
+    title: "Live token sync from Figma plugin",
+    description:
+      "When the Figma plugin pushes Variables to Layout, the Studio detects the update and prompts you to regenerate layout.md with a single click.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-05",
+  },
+  {
+    id: "2026-w14-plugin-explore-rename",
+    title: "Canvas renamed to Explore",
+    description:
+      "The Canvas tab in the Figma plugin and the Explorer empty state in the Studio now use consistent naming.",
+    product: "figma-plugin",
+    category: "improved",
+    date: "2026-04-05",
+  },
 ];
