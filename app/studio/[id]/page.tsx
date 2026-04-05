@@ -54,6 +54,7 @@ export default function StudioPage({
   const [pluginTokensUpdated, setPluginTokensUpdated] = useState(false);
   const [fontUploaded, setFontUploaded] = useState(false);
   const prevTokenSnapshotRef = useRef<string | null>(null);
+  const isFirstPollRef = useRef(true);
   const pendingImageConsumedRef = useRef(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   // Callback refs so the polling effect can call these without re-subscribing
@@ -65,6 +66,7 @@ export default function StudioPage({
     // Reset snapshot on project change to avoid false positives
     const snapshot = JSON.stringify(project.extractionData?.tokens ?? {});
     prevTokenSnapshotRef.current = snapshot;
+    isFirstPollRef.current = true;
     pendingImageConsumedRef.current = false;
     setPluginTokensUpdated(false);
     setFontUploaded(false);
@@ -75,7 +77,11 @@ export default function StudioPage({
 
       // Detect token changes from plugin
       const newSnapshot = JSON.stringify(updated?.extractionData?.tokens ?? {});
-      if (prevTokenSnapshotRef.current && newSnapshot !== prevTokenSnapshotRef.current) {
+      if (isFirstPollRef.current) {
+        // First poll establishes server baseline; don't trigger banner
+        isFirstPollRef.current = false;
+        prevTokenSnapshotRef.current = newSnapshot;
+      } else if (prevTokenSnapshotRef.current && newSnapshot !== prevTokenSnapshotRef.current) {
         setPluginTokensUpdated(true);
         prevTokenSnapshotRef.current = newSnapshot;
       }

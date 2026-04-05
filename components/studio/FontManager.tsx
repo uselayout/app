@@ -21,20 +21,26 @@ interface FontManagerProps {
 function parseFontsFromTypography(tokens: ExtractedToken[]): FontDeclaration[] {
   const families = new Map<string, Set<string>>();
   for (const t of tokens) {
-    // Typography tokens have values like "font-family: 'Circular', -apple-system, ..."
+    let primaryFamily: string | null = null;
+    let weight = "400";
+
+    // Case 1: composite token with "font-family: X" in value
     const match = t.value.match(/font-family:\s*([^;]+)/i);
-    if (!match) continue;
-    // Get the first font in the stack (primary family)
-    const raw = match[1].trim().split(",")[0].trim().replace(/['"]/g, "");
-    if (!raw || raw === "Unknown") continue;
+    if (match) {
+      primaryFamily = match[1].trim().split(",")[0].trim().replace(/['"]/g, "");
+      const weightMatch = t.value.match(/font-weight:\s*(\d+|normal|bold)/i);
+      weight = weightMatch?.[1] === "bold" ? "700" : weightMatch?.[1] === "normal" ? "400" : weightMatch?.[1] ?? "400";
+    }
+    // Case 2: token named "font-family" / "font-stack" with raw font stack as value
+    else if (/font[-_]?family|font[-_]?stack/i.test(t.name) && !/^\d/.test(t.value)) {
+      primaryFamily = t.value.trim().split(",")[0].trim().replace(/['"]/g, "");
+    }
 
-    // Try to extract weight from the same token value
-    const weightMatch = t.value.match(/font-weight:\s*(\d+|normal|bold)/i);
-    const weight = weightMatch?.[1] === "bold" ? "700" : weightMatch?.[1] === "normal" ? "400" : weightMatch?.[1] ?? "400";
+    if (!primaryFamily || primaryFamily === "Unknown") continue;
 
-    const existing = families.get(raw) ?? new Set<string>();
+    const existing = families.get(primaryFamily) ?? new Set<string>();
     existing.add(weight);
-    families.set(raw, existing);
+    families.set(primaryFamily, existing);
   }
 
   const result: FontDeclaration[] = [];
