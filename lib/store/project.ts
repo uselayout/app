@@ -421,10 +421,13 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (!fresh) return;
     set((state) => {
       const exists = state.projects.some((p) => p.id === id);
+      if (!exists) return { projects: [...state.projects, fresh] };
       return {
-        projects: exists
-          ? state.projects.map((p) => (p.id === id ? fresh : p))
-          : [...state.projects, fresh],
+        projects: state.projects.map((p) =>
+          p.id === id
+            ? { ...fresh, explorations: p.explorations ?? fresh.explorations }
+            : p
+        ),
       };
     });
   },
