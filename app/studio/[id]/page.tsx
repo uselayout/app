@@ -62,10 +62,12 @@ export default function StudioPage({
 
   useEffect(() => {
     if (!project?.id) return;
+    // Reset snapshot on project change to avoid false positives
     const snapshot = JSON.stringify(project.extractionData?.tokens ?? {});
-    if (prevTokenSnapshotRef.current === null) {
-      prevTokenSnapshotRef.current = snapshot;
-    }
+    prevTokenSnapshotRef.current = snapshot;
+    pendingImageConsumedRef.current = false;
+    setPluginTokensUpdated(false);
+    setFontUploaded(false);
 
     const interval = setInterval(async () => {
       await refreshProject(project.id);
