@@ -13,8 +13,7 @@ interface TopBarProps {
   onToggleSource?: () => void;
   sourcePanelOpen?: boolean;
   onExport?: () => void;
-  centreView?: "editor" | "canvas" | "saved";
-  onCentreViewChange?: (view: "editor" | "canvas" | "saved") => void;
+  showSourceToggle?: boolean;
 }
 
 export function TopBar({
@@ -26,8 +25,7 @@ export function TopBar({
   onToggleSource,
   sourcePanelOpen,
   onExport,
-  centreView = "editor",
-  onCentreViewChange,
+  showSourceToggle = true,
 }: TopBarProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(projectName);
@@ -62,17 +60,19 @@ export function TopBar({
     <div className="flex h-12 items-center justify-between border-b border-[rgba(255,255,255,0.07)] bg-[#0c0c0e] px-4">
       {/* Left: Source panel toggle + Project name + source */}
       <div className="flex flex-1 items-center gap-[17px]">
-        <button
-          onClick={onToggleSource}
-          className={`flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] transition-colors ${
-            sourcePanelOpen
-              ? "bg-[rgba(255,255,255,0.1)] text-white"
-              : "bg-[rgba(255,255,255,0.02)] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.06)]"
-          }`}
-          title="Toggle source panel"
-        >
-          <PanelLeft className="h-3.5 w-3.5" />
-        </button>
+        {showSourceToggle && (
+          <button
+            onClick={onToggleSource}
+            className={`flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] transition-colors ${
+              sourcePanelOpen
+                ? "bg-[rgba(255,255,255,0.1)] text-white"
+                : "bg-[rgba(255,255,255,0.02)] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.06)]"
+            }`}
+            title="Toggle source panel"
+          >
+            <PanelLeft className="h-3.5 w-3.5" />
+          </button>
+        )}
 
         {isEditing ? (
           <input
@@ -97,33 +97,8 @@ export function TopBar({
         </span>
       </div>
 
-      {/* Centre: Editor / Canvas toggle */}
-      <div className="flex flex-1 items-center justify-center">
-        {onCentreViewChange && (
-          <div className="flex items-center">
-            <button
-              onClick={() => onCentreViewChange("editor")}
-              className={`flex items-center h-7 px-[11px] rounded-l-[4px] border text-[12px] font-medium transition-colors ${
-                centreView === "editor"
-                  ? "bg-white border-white text-[#0c0c0e]"
-                  : "bg-transparent border-[#24282c] text-[#e8e8f0]"
-              }`}
-            >
-              Editor
-            </button>
-            <button
-              onClick={() => onCentreViewChange("canvas")}
-              className={`flex items-center h-7 px-[11px] rounded-r-[4px] border-y border-r text-[12px] font-medium transition-colors ${
-                centreView === "canvas"
-                  ? "bg-white border-white text-[#0c0c0e]"
-                  : "bg-transparent border-[#24282c] text-[#e8e8f0]"
-              }`}
-            >
-              Explore
-            </button>
-          </div>
-        )}
-      </div>
+      {/* Centre spacer */}
+      <div className="flex-1" />
 
       {/* Right: Actions */}
       <div className="flex flex-1 items-center justify-end gap-1.5">

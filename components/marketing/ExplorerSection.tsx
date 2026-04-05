@@ -29,10 +29,10 @@ export function ExplorerSection() {
               Every AI coding tool generates one answer. One layout. One guess. Layout Explorer generates up to six — each built on your design system.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Describe what you need. Explorer creates distinct variations: different layouts, different visual weight, different density. All on-brand. Pick the one that works.
+              Describe what you need. Explorer creates distinct variations: different layouts, different visual weight, different density. All on-brand. Pick a direction. Refine it. Ship something only your team could have designed.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Then push it to Figma. Your designer refines in the tool they already know. Import their changes back. The design system updates. The loop continues.
+              Then push it to Figma. Your designer brings the taste, the craft, the invisible details that make good design feel right. Import their changes back. The loop continues.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-accent)] tracking-[-0.165px]">
               Better than a new canvas

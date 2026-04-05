@@ -74,7 +74,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
   {
     feature: "MCP server for AI agents",
     values: {
-      Layout: "12 tools",
+      Layout: "13 tools",
       "Paper.design": "24 tools",
       "Magic Patterns": false,
       MagicPath: false,
@@ -93,6 +93,18 @@ const COMPARISON_DATA: ComparisonRow[] = [
       Variant: false,
       "Figma Dev Mode": "Raw JSON",
       "Pencil.dev": "Partial",
+    },
+  },
+  {
+    feature: "Custom font support",
+    values: {
+      Layout: "Upload + auto-detect",
+      "Paper.design": false,
+      "Magic Patterns": false,
+      MagicPath: false,
+      Variant: false,
+      "Figma Dev Mode": false,
+      "Pencil.dev": false,
     },
   },
   {
@@ -203,6 +215,12 @@ const OBJECTIONS: Objection[] = [
       "Pencil is an IDE-native design canvas \u2014 you design inside VS Code. Layout doesn\u2019t ask anyone to change tools. Designers stay in Figma, developers stay in their terminal. Layout is invisible infrastructure between them.",
   },
   {
+    question:
+      "Can\u2019t AI agents just use system fonts or Google Fonts?",
+    answer:
+      "They can \u2014 until your brand uses a custom typeface. Most design-to-code tools ignore fonts entirely, leaving AI agents to guess or fall back to system-ui. Layout extracts font declarations, lets you upload custom font files (.woff2, .ttf), and bundles them in the export. Your AI agent gets the actual font files alongside the design tokens, so generated components render with the right typeface from the start.",
+  },
+  {
     question: "We already have Storybook / Zeroheight.",
     answer:
       "Great for humans. Not built for LLMs. Storybook serves rendered component previews. Zeroheight serves prose documentation. Neither produces structured, token-level context that AI coding agents can consume. Layout bridges that gap.",
@@ -292,19 +310,19 @@ export default function ComparePage() {
           {[
             {
               name: "Paper.design",
-              desc: "Agent-first design canvas built on real HTML/CSS. 24 MCP tools with read and write access. Founded by Stephen Haney (built Radix/Modulz). $4.2M seed. $20/user/month Pro.",
+              desc: "Agent-first design canvas built on real HTML/CSS. 24 MCP tools with read and write access. Founded by Stephen Haney (built Radix/Modulz).",
               relationship:
                 "Complementary \u2014 Paper is a canvas, Layout is a compiler. Layout context could feed into Paper\u2019s canvas.",
             },
             {
               name: "Magic Patterns",
-              desc: "AI prototype generator for product teams. Full design system import from Figma, Storybook, and Chrome Extension. Enterprise customers include DoorDash and KPMG. $6M Series A. SOC 2 + ISO 27001.",
+              desc: "AI prototype generator for product teams. Full design system import from Figma, Storybook, and Chrome Extension. Enterprise customers include DoorDash and KPMG. SOC 2 + ISO 27001.",
               relationship:
                 "Different category \u2014 Magic Patterns generates prototypes inside their platform. Layout feeds context to AI agents in your IDE.",
             },
             {
               name: "MagicPath.ai",
-              desc: "AI infinite canvas with \u201CFigma Connect\u201D \u2014 paste Figma designs in, preserving layout and styles. Design system token presets. By Pietro Schirano (ex-Uber). ~$14\u201320/month.",
+              desc: "AI infinite canvas with \u201CFigma Connect\u201D \u2014 paste Figma designs in, preserving layout and styles. Design system token presets. By Pietro Schirano (ex-Uber).",
               relationship:
                 "Different category \u2014 MagicPath is a design canvas with Figma import. Layout extracts and packages design systems for AI agents.",
             },
@@ -316,7 +334,7 @@ export default function ComparePage() {
             },
             {
               name: "Figma Dev Mode",
-              desc: "Native Figma developer experience with inspect, code snippets, and a 3-tool read-only MCP server. $12\u201335/seat/month.",
+              desc: "Native Figma developer experience with inspect, code snippets, and an 11-tool MCP server with read and write access.",
               relationship:
                 "Partial overlap \u2014 Figma MCP serves raw file data. Layout serves structured, LLM-optimised design system context.",
             },

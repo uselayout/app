@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireMcpAuth } from "@/lib/api/mcp-auth";
 import { getOrganization } from "@/lib/supabase/organization";
 import { fetchAllProjects, upsertProject } from "@/lib/supabase/db";
-import type { Project, ExtractedTokens } from "@/lib/types";
+import type { Project, ExtractedTokens, TokenType } from "@/lib/types";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -21,6 +21,7 @@ const EMPTY_TOKENS = {
   spacing: [],
   radius: [],
   effects: [],
+  motion: [],
 };
 
 /** Map server ExtractedToken[] to the plugin's expected shape */
@@ -98,6 +99,7 @@ const ImportSchema = z.object({
     spacing: z.array(TokenEntrySchema).default([]),
     radius: z.array(TokenEntrySchema).default([]),
     effects: z.array(TokenEntrySchema).default([]),
+    motion: z.array(TokenEntrySchema).default([]),
   }),
   projectId: z.string().optional(),
 });
@@ -150,12 +152,13 @@ export async function POST(request: Request) {
 
   // Merge incoming tokens into extraction data
   const existing = (project.extractionData?.tokens ?? EMPTY_TOKENS) as ExtractedTokens;
-  const typeMap: Record<string, "color" | "typography" | "spacing" | "radius" | "effect"> = {
+  const typeMap: Record<string, TokenType> = {
     colors: "color",
     typography: "typography",
     spacing: "spacing",
     radius: "radius",
     effects: "effect",
+    motion: "motion",
   };
 
   let created = 0;
@@ -165,7 +168,7 @@ export async function POST(request: Request) {
   const mergeGroup = (
     existingArr: ExtractedTokens["colors"],
     incomingArr: typeof incoming.colors,
-    type: "color" | "typography" | "spacing" | "radius" | "effect"
+    type: TokenType
   ) => {
     const result = [...existingArr];
 
@@ -201,6 +204,7 @@ export async function POST(request: Request) {
     spacing: mergeGroup(existing.spacing, incoming.spacing, typeMap.spacing),
     radius: mergeGroup(existing.radius, incoming.radius, typeMap.radius),
     effects: mergeGroup(existing.effects, incoming.effects, typeMap.effects),
+    motion: mergeGroup(existing.motion ?? [], incoming.motion ?? [], "motion"),
   };
 
   const tokenCount =

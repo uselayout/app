@@ -7,7 +7,16 @@ export interface ImportedNodeData {
   colours: ExtractedColour[];
   typography: ExtractedTypography[];
   spacing: ExtractedSpacing[];
+  texts: ExtractedText[];
   layout: ExtractedLayout | null;
+  dimensions: { width: number; height: number } | null;
+}
+
+export interface ExtractedText {
+  layer: string;
+  content: string;
+  fontSize?: number;
+  fontWeight?: number;
 }
 
 export interface ExtractedColour {
@@ -34,6 +43,7 @@ export interface ExtractedLayout {
   direction: string;
   gap: number;
   padding: { top: number; right: number; bottom: number; left: number };
+  childCount: number;
 }
 
 /**
@@ -63,11 +73,14 @@ export async function importFigmaNode(
   const colours: ExtractedColour[] = [];
   const typography: ExtractedTypography[] = [];
   const spacing: ExtractedSpacing[] = [];
+  const texts: ExtractedText[] = [];
 
   // Recursively extract styles from the node tree
-  extractFromNode(node, colours, typography, spacing);
+  extractFromNode(node, colours, typography, spacing, texts);
 
   const layout = extractLayout(node);
+  const bbox = node.absoluteBoundingBox;
+  const dimensions = bbox ? { width: Math.round(bbox.width), height: Math.round(bbox.height) } : null;
 
   return {
     nodeId,
@@ -76,7 +89,9 @@ export async function importFigmaNode(
     colours,
     typography,
     spacing,
+    texts,
     layout,
+    dimensions,
   };
 }
 
@@ -86,7 +101,8 @@ function extractFromNode(
   node: FigmaNode,
   colours: ExtractedColour[],
   typography: ExtractedTypography[],
-  spacing: ExtractedSpacing[]
+  spacing: ExtractedSpacing[],
+  texts: ExtractedText[]
 ): void {
   // Extract fills
   if (node.fills) {
@@ -99,6 +115,16 @@ function extractFromNode(
         });
       }
     }
+  }
+
+  // Extract text content
+  if (node.characters && node.type === "TEXT") {
+    texts.push({
+      layer: node.name,
+      content: node.characters,
+      fontSize: node.style?.fontSize,
+      fontWeight: node.style?.fontWeight,
+    });
   }
 
   // Extract typography
@@ -135,7 +161,7 @@ function extractFromNode(
   // Recurse into children
   if (node.children) {
     for (const child of node.children) {
-      extractFromNode(child, colours, typography, spacing);
+      extractFromNode(child, colours, typography, spacing, texts);
     }
   }
 }
@@ -151,6 +177,7 @@ function extractLayout(node: FigmaNode): ExtractedLayout | null {
       bottom: node.paddingBottom ?? 0,
       left: node.paddingLeft ?? 0,
     },
+    childCount: node.children?.length ?? 0,
   };
 }
 
@@ -160,4 +187,55 @@ function rgbaToHex(c: { r: number; g: number; b: number; a: number }): string {
       .toString(16)
       .padStart(2, "0");
   return `#${toHex(c.r)}${toHex(c.g)}${toHex(c.b)}`.toUpperCase();
+}
+
+/**
+ * Format imported Figma node data as a structured context string for AI generation.
+ */
+export function formatAsContext(data: ImportedNodeData): string {
+  const lines: string[] = [];
+
+  const dims = data.dimensions ? ` (${data.dimensions.width}x${data.dimensions.height})` : "";
+  lines.push(`Frame: "${data.name}"${dims}`);
+
+  if (data.texts.length > 0) {
+    lines.push("", "Text content:");
+    for (const t of data.texts) {
+      const size = t.fontSize ? `${t.fontSize}px` : "";
+      const weight = t.fontWeight && t.fontWeight >= 700 ? "bold" : t.fontWeight ? `${t.fontWeight}` : "";
+      const meta = [size, weight].filter(Boolean).join(", ");
+      lines.push(`- "${t.content}"${meta ? ` (${meta})` : ""}`);
+    }
+  }
+
+  if (data.layout) {
+    const p = data.layout.padding;
+    const dir = data.layout.direction;
+    const dirLabel = dir === "row" ? "horizontal (row)" : "vertical (column)";
+    lines.push("", "Layout structure:");
+    lines.push(`- Root: ${dirLabel}, gap ${data.layout.gap}px, padding ${p.top}px ${p.right}px ${p.bottom}px ${p.left}px`);
+    if (data.layout.childCount > 0) {
+      lines.push(`- Children: ${data.layout.childCount} sections ${dir === "row" ? "side by side" : "stacked vertically"}`);
+    }
+    if (dir === "row") {
+      lines.push("- IMPORTANT: Preserve this horizontal layout at desktop/tablet. Only stack on mobile.");
+    }
+  }
+
+  if (data.colours.length > 0) {
+    const unique = [...new Set(data.colours.map((c) => c.hex))];
+    lines.push("", `Colours: ${unique.join(", ")}`);
+  }
+
+  if (data.typography.length > 0) {
+    const unique = [...new Set(data.typography.map((t) => `${t.fontFamily} ${t.fontSize}px/${t.fontWeight}`))];
+    lines.push("", `Typography: ${unique.join(", ")}`);
+  }
+
+  if (data.spacing.length > 0) {
+    const entries = data.spacing.map((s) => `${s.property}: ${s.value}px`);
+    lines.push("", `Spacing: ${entries.join(", ")}`);
+  }
+
+  return lines.join("\n");
 }

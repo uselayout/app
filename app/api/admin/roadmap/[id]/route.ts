@@ -7,7 +7,7 @@ const updateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(2000).optional(),
   product: z.enum(["studio", "cli", "figma-plugin", "chrome-extension"]).optional(),
-  status: z.enum(["planned", "in-progress", "shipped", "considering"]).optional(),
+  status: z.enum(["planned", "in_progress", "shipped", "considering"]).optional(),
   sortOrder: z.number().int().optional(),
 });
 

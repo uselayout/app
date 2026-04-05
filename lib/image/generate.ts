@@ -155,7 +155,7 @@ async function callGemini(
   const url = `${GEMINI_BASE_URL}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
+  const timeout = setTimeout(() => controller.abort(), 90_000);
 
   let res: Response;
   try {
@@ -297,19 +297,20 @@ export async function generateImage(
       });
 
     if (!uploadError) {
-      const { data: publicUrlData } = supabase.storage
-        .from("layout-images")
-        .getPublicUrl(filename);
-
-      return { url: publicUrlData.publicUrl, mimeType, prompt };
+      // Return relative proxy URL. The preview iframe's <base href> ensures
+      // this resolves correctly. API route at /api/storage/[...path] fetches
+      // from Supabase server-side, avoiding mixed content issues.
+      const proxyUrl = `/api/storage/layout-images/${filename}`;
+      return { url: proxyUrl, mimeType, prompt };
     }
 
-    console.warn(`[image/generate] Storage upload failed, using data URL: ${uploadError.message}`);
+    console.error(`[image/generate] Storage upload to bucket "layout-images" failed: ${uploadError.message}. Falling back to base64 data URL (will cause large code). Run migration 038_layout_images_bucket.sql to fix.`);
   } catch (storageErr) {
-    console.warn("[image/generate] Storage upload error, using data URL:", storageErr);
+    console.error("[image/generate] Storage upload to bucket \"layout-images\" error:", storageErr, "Falling back to base64 data URL. Run migration 038_layout_images_bucket.sql to fix.");
   }
 
-  // Fallback: return inline data URL (works in iframes without external storage)
+  // Fallback: return inline data URL. WARNING: base64 images are 300-400KB each
+  // and will make variant code too large for transpilation if multiple images are embedded.
   return {
     url: `data:${mimeType};base64,${data}`,
     mimeType,

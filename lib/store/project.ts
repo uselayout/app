@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 import { renameTokenInLayoutMd } from "@/lib/tokens/rename-token";
-import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType } from "@/lib/types";
+import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont } from "@/lib/types";
 
 /** Save a project via the server-side API (bypasses RLS). */
 function apiUpsertProject(project: Project, onError?: (msg: string) => void): void {
@@ -101,6 +101,7 @@ interface ProjectState {
   updateTokenCount: (id: string, count: number) => void;
   updateHealthScore: (id: string, score: number) => void;
   updateIconPacks: (id: string, iconPacks: string[]) => void;
+  updateUploadedFonts: (id: string, fonts: UploadedFont[]) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
   updateToken: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string) => void;
   renameToken: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string) => void;
@@ -238,6 +239,16 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
+  updateUploadedFonts: (id, uploadedFonts) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id ? { ...p, uploadedFonts } : p
+      ),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
   updateExplorations: (id, explorations) => {
     set((state) => ({
       projects: state.projects.map((p) =>
@@ -359,6 +370,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       spacing: mergeTokens(existing?.tokens.spacing, parsed.spacing),
       radius: mergeTokens(existing?.tokens.radius, parsed.radius),
       effects: mergeTokens(existing?.tokens.effects, parsed.effects),
+      motion: mergeTokens(existing?.tokens.motion, parsed.motion),
     };
 
     const mergedData: ExtractionResult = existing
@@ -409,10 +421,21 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (!fresh) return;
     set((state) => {
       const exists = state.projects.some((p) => p.id === id);
+      if (!exists) return { projects: [...state.projects, fresh] };
       return {
-        projects: exists
-          ? state.projects.map((p) => (p.id === id ? fresh : p))
-          : [...state.projects, fresh],
+        projects: state.projects.map((p) =>
+          p.id === id
+            ? {
+                ...fresh,
+                explorations: p.explorations ?? fresh.explorations,
+                // If we already consumed the canvas image locally (set to null), don't restore from server
+                pendingCanvasImage: p.pendingCanvasImage !== undefined ? p.pendingCanvasImage : fresh.pendingCanvasImage,
+                // Prefer server data if it has fonts, otherwise keep local (save may be in-flight)
+                uploadedFonts: fresh.uploadedFonts ?? p.uploadedFonts,
+                iconPacks: p.iconPacks ?? fresh.iconPacks,
+              }
+            : p
+        ),
       };
     });
   },

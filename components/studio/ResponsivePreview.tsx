@@ -104,6 +104,8 @@ function ViewportFrame({
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const onSrcdocReadyRef = useRef(onSrcdocReady);
+  onSrcdocReadyRef.current = onSrcdocReady;
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
@@ -152,7 +154,7 @@ function ViewportFrame({
         const componentName = extractComponentName(code);
         const srcdoc = buildSrcdoc(js, componentName);
 
-        onSrcdocReady(srcdoc);
+        onSrcdocReadyRef.current(srcdoc);
 
         if (iframeRef.current) {
           iframeRef.current.srcdoc = srcdoc;
@@ -169,7 +171,8 @@ function ViewportFrame({
     return () => {
       cancelled = true;
     };
-  }, [code, onSrcdocReady]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- onSrcdocReady is a callback ref, not a render dependency
+  }, [code]);
 
   return (
     <div className="flex flex-col items-center gap-3" ref={containerRef}>

@@ -122,9 +122,10 @@ export async function extractFromWebsite({
 }: WebsiteExtractionOptions): Promise<ExtractionResult> {
   const browser = await chromium.launch({ headless: true });
   registerBrowser(browser);
+  let page: Awaited<ReturnType<typeof browser.newPage>> | null = null;
 
   try {
-    const page = await browser.newPage();
+    page = await browser.newPage();
 
     onProgress?.("navigate", 10, `Navigating to ${url}...`);
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
@@ -176,15 +177,25 @@ export async function extractFromWebsite({
       onProgress?.("libraries", 65, `Detected ${libCount} ${libCount === 1 ? "library" : "libraries"}`);
     }
 
-    // Take screenshots
+    // Take screenshots (non-fatal — extraction continues without them)
     onProgress?.("screenshots", 70, "Capturing screenshots...");
-    const fullPageBuffer = await page.screenshot({ fullPage: true, type: "png" });
-    const viewportBuffer = await page.screenshot({ fullPage: false, type: "png" });
-
-    const screenshots = [
-      `data:image/png;base64,${fullPageBuffer.toString("base64")}`,
-      `data:image/png;base64,${viewportBuffer.toString("base64")}`,
-    ];
+    let screenshots: string[] = [];
+    try {
+      const fullPageBuffer = await page.screenshot({ fullPage: true, type: "png" });
+      const viewportBuffer = await page.screenshot({ fullPage: false, type: "png" });
+      screenshots = [
+        `data:image/png;base64,${fullPageBuffer.toString("base64")}`,
+        `data:image/png;base64,${viewportBuffer.toString("base64")}`,
+      ];
+    } catch {
+      // Retry once — Protocol errors can be transient
+      try {
+        const viewportBuffer = await page.screenshot({ fullPage: false, type: "png" });
+        screenshots = [`data:image/png;base64,${viewportBuffer.toString("base64")}`];
+      } catch {
+        onProgress?.("screenshots", 72, "Screenshots couldn't be captured for this site, but tokens and styles were extracted successfully.");
+      }
+    }
 
     // Classify CSS variables into tokens (no tokens are dropped)
     const colors: ExtractedToken[] = [];
@@ -192,6 +203,7 @@ export async function extractFromWebsite({
     const spacing: ExtractedToken[] = [];
     const radius: ExtractedToken[] = [];
     const effects: ExtractedToken[] = [];
+    const motion: ExtractedToken[] = [];
 
     for (const [name, value] of Object.entries(cssVariables)) {
       const token = cssVarToToken(name, value);
@@ -201,6 +213,20 @@ export async function extractFromWebsite({
         case "spacing": spacing.push(token); break;
         case "radius": radius.push(token); break;
         case "effect": effects.push(token); break;
+        case "motion": motion.push(token); break;
+      }
+    }
+
+    // Convert extracted animations to motion tokens
+    if (animations && animations.length > 0) {
+      for (const anim of animations) {
+        motion.push({
+          name: `--motion-${anim.name}`,
+          value: anim.cssText,
+          type: "motion",
+          category: "primitive",
+          description: `@keyframes ${anim.name}`,
+        });
       }
     }
 
@@ -264,7 +290,7 @@ export async function extractFromWebsite({
       sourceType: "website",
       sourceName: hostname,
       sourceUrl: url,
-      tokens: { colors, typography, spacing, radius, effects },
+      tokens: { colors, typography, spacing, radius, effects, motion },
       components: [],
       screenshots,
       fonts: allFonts,
@@ -277,6 +303,7 @@ export async function extractFromWebsite({
     };
   } finally {
     deregisterBrowser(browser);
+    if (page) { try { await page.close(); } catch { /* already closed or crashed */ } }
     await browser.close();
   }
 }

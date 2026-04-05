@@ -11,6 +11,7 @@ interface FigmaPushModalProps {
   variant: DesignVariant;
   onClose: () => void;
   onPushComplete?: (record: { fileKey: string; nodeId: string; viewports: string[] }) => void;
+  defaultFigmaUrl?: string;
 }
 
 type PushStep = "preview" | "pushing" | "done";
@@ -19,10 +20,11 @@ export function FigmaPushModal({
   variant,
   onClose,
   onPushComplete,
+  defaultFigmaUrl,
 }: FigmaPushModalProps) {
   const [step, setStep] = useState<PushStep>("preview");
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [figmaUrl, setFigmaUrl] = useState("");
+  const [figmaUrl, setFigmaUrl] = useState(defaultFigmaUrl ?? "");
   const [selectedViewports, setSelectedViewports] = useState<Set<string>>(
     () => new Set(["mobile", "tablet", "desktop"])
   );
@@ -483,8 +485,8 @@ function buildMcpCommand(variant: DesignVariant, viewports: string[], mode: "cap
   }
 
   const modeNote = mode === "native"
-    ? "Native mode creates editable Figma objects with auto-layout. No Playwright MCP needed."
-    : "The tool handles all viewports in a single call. Do NOT create temp HTML files or start HTTP servers.";
+    ? "Native mode creates editable Figma objects with auto-layout. No Playwright MCP needed. The component includes all styles inline."
+    : "The tool handles all viewports in a single call. Do NOT create temp HTML files or start HTTP servers. The component includes all styles inline.";
 
   return `Call the layout MCP server's push_to_figma tool once with these inputs:
 ${inputs.join("\n")}

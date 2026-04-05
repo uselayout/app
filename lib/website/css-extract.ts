@@ -75,6 +75,18 @@ export const extractComputedStylesScript = `() => {
     label: document.querySelector('label'),
     link: document.querySelector('a[href]:not([class*="nav"])'),
     card: document.querySelector('[class*="card"], [class*="Card"]'),
+    checkbox: document.querySelector('input[type="checkbox"], [role="checkbox"]'),
+    radio: document.querySelector('input[type="radio"], [role="radio"]'),
+    toggle: document.querySelector('[class*="toggle"], [class*="switch"], [role="switch"]'),
+    modal: document.querySelector('[class*="modal"], [class*="dialog"], dialog, [role="dialog"]'),
+    tab: document.querySelector('[role="tab"], [class*="tab"]:not([class*="table"])'),
+    badge: document.querySelector('[class*="badge"], [class*="pill"], [class*="tag"], [class*="chip"]'),
+    tooltip: document.querySelector('[class*="tooltip"], [role="tooltip"]'),
+    breadcrumb: document.querySelector('[class*="breadcrumb"], nav[aria-label*="breadcrumb"]'),
+    code: document.querySelector('code, pre, [class*="code"]'),
+    avatar: document.querySelector('[class*="avatar"], img[class*="profile"]'),
+    dropdown: document.querySelector('[class*="dropdown"], [class*="select"], select'),
+    alert: document.querySelector('[class*="alert"], [role="alert"], [class*="notification"]'),
   };
   const results = {};
   for (const [name, el] of Object.entries(targets)) {

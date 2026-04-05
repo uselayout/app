@@ -110,13 +110,20 @@ export async function POST(request: NextRequest) {
     ? buildStyleEditPrompt(code, styleEdits as StyleEdit[], layoutMd)
     : buildAnnotationPrompt(code, annotations as ElementAnnotation[], layoutMd);
 
-  const client = new Anthropic({ apiKey, timeout: 90_000 });
+  // Use Haiku for simple style edits (1-3 property changes, no annotations)
+  // Annotations and complex edits still use Sonnet for better reasoning
+  const isSimpleEdit = styleEdits && styleEdits.length <= 3 && !annotations?.length;
+  const model = isSimpleEdit ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-6";
+  const maxTokens = isSimpleEdit ? 8_000 : 32_000;
+  const timeout = isSimpleEdit ? 30_000 : 90_000;
+
+  const client = new Anthropic({ apiKey, timeout });
 
   let response: Anthropic.Message;
   try {
     response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 32_000,
+      model,
+      max_tokens: maxTokens,
       messages: [{ role: "user", content: prompt }],
     });
   } catch (err) {
@@ -153,7 +160,7 @@ export async function POST(request: NextRequest) {
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
     },
-    model: "claude-sonnet-4-6",
+    model,
   }).catch((err) => console.error("Usage logging failed:", err));
 
   return Response.json({ code: updatedCode });

@@ -144,7 +144,10 @@ export default function CliPage() {
         <CopyBlock
           code={`npx @layoutdesign/context install --target claude
 npx @layoutdesign/context install --target cursor
-npx @layoutdesign/context install --target windsurf`}
+npx @layoutdesign/context install --target windsurf
+npx @layoutdesign/context install --target vscode
+npx @layoutdesign/context install --target codex
+npx @layoutdesign/context install --target gemini`}
           language="bash"
         />
       </section>
@@ -186,7 +189,7 @@ npx @layoutdesign/context install
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Available MCP Tools</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The MCP server exposes 12 tools your AI agent can call automatically:
+          The MCP server exposes 13 tools your AI agent can call automatically:
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -224,7 +227,11 @@ npx @layoutdesign/context install
                 ],
                 [
                   "push_to_figma",
-                  "Renders a component at multiple viewports and pushes the frames to Figma (via Figma MCP)",
+                  "Renders a component and pushes frames to Figma. Supports capture mode (screenshot-based, default) and native mode (editable auto-layout objects via Figma MCP, no Playwright needed)",
+                ],
+                [
+                  "push_tokens_to_figma",
+                  "Pushes design system tokens to Figma as native variables and styles (via Figma MCP). Optionally specify a file key, or omit to create a new file",
                 ],
                 [
                   "url_to_figma",
@@ -237,6 +244,14 @@ npx @layoutdesign/context install
                 [
                   "update_tokens",
                   "Updates or adds design tokens in the loaded kit (CSS, JSON, or Tailwind format)",
+                ],
+                [
+                  "get_screenshots",
+                  "Returns reference screenshots captured during website extraction for visual comparison",
+                ],
+                [
+                  "check_setup",
+                  "Diagnoses and optionally fixes MCP server setup issues (registration, OAuth, reachability)",
                 ],
               ].map(([tool, desc]) => (
                 <tr key={tool} className="hover:bg-gray-50">

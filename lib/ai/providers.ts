@@ -50,6 +50,7 @@ export function createExploreStreamForModel(
       options.apiKey,
       options.imageDataUrl,
       options.contextFiles,
+      options.iconPacks,
     );
   }
 
@@ -81,6 +82,7 @@ export function createRefineStreamForModel(
       options.apiKey,
       options.contextFiles,
       options.imageDataUrl,
+      options.iconPacks,
     );
   }
 

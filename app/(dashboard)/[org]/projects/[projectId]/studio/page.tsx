@@ -17,8 +17,9 @@ import { ExportModal } from "@/components/studio/ExportModal";
 import { ExtractionDiffModal } from "@/components/studio/ExtractionDiffModal";
 import { diffExtractions } from "@/lib/extraction/diff";
 import type { ExtractionDiff } from "@/lib/extraction/diff";
-import type { DesignVariant, ExtractionResult, SourceType } from "@/lib/types";
+import type { DesignVariant, ExtractionResult, SourceType, ContextFile } from "@/lib/types";
 import { SavedLibraryView } from "@/components/studio/SavedLibraryView";
+import { DesignSystemPanel } from "@/components/studio/DesignSystemPanel";
 
 export default function StudioPage({
   params,
@@ -34,13 +35,14 @@ export default function StudioPage({
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateExplorations = useProjectStore((s) => s.updateExplorations);
   const refreshProject = useProjectStore((s) => s.refreshProject);
+  const syncTokensFromLayoutMd = useProjectStore((s) => s.syncTokensFromLayoutMd);
   const saveError = useProjectStore((s) => s.saveError);
   const clearSaveError = useProjectStore((s) => s.clearSaveError);
   const project = projects.find((p) => p.id === id);
 
-  // Fetch full project data if we only have summary data (list endpoint omits layout_md + extraction_data)
+  // Fetch full project data if we only have summary data (list endpoint omits layout_md, extraction_data, explorations)
   useEffect(() => {
-    if (project && !project.layoutMd && !project.extractionData) {
+    if (project && (!project.layoutMd || !project.extractionData || !project.explorations)) {
       refreshProject(id);
     }
   }, [id, project, refreshProject]);
@@ -51,6 +53,121 @@ export default function StudioPage({
     const timer = setTimeout(clearSaveError, 8000);
     return () => clearTimeout(timer);
   }, [saveError, clearSaveError]);
+
+  // Poll for external updates (e.g. Figma plugin pushing tokens or screenshots)
+  const [pluginTokensUpdated, setPluginTokensUpdated] = useState(false);
+  const [fontUploaded, setFontUploaded] = useState(false);
+  const prevTokenSnapshotRef = useRef<string | null>(null);
+  const isFirstPollRef = useRef(true);
+  const pendingImageConsumedRef = useRef(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const setPendingImageRef = useRef<((img: string) => void) | null>(null);
+  const switchToCanvasRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    if (!project?.id) return;
+    // Reset snapshot on project change to avoid false positives
+    const snapshot = JSON.stringify(project.extractionData?.tokens ?? {});
+    prevTokenSnapshotRef.current = snapshot;
+    isFirstPollRef.current = true;
+    pendingImageConsumedRef.current = false;
+    setPluginTokensUpdated(false);
+    setFontUploaded(false);
+
+    const interval = setInterval(async () => {
+      await refreshProject(project.id);
+      const updated = useProjectStore.getState().projects.find((p) => p.id === project.id);
+
+      // Detect token changes from plugin
+      const newSnapshot = JSON.stringify(updated?.extractionData?.tokens ?? {});
+      if (isFirstPollRef.current) {
+        // First poll establishes server baseline; don't trigger banner
+        isFirstPollRef.current = false;
+        prevTokenSnapshotRef.current = newSnapshot;
+      } else if (prevTokenSnapshotRef.current && newSnapshot !== prevTokenSnapshotRef.current) {
+        setPluginTokensUpdated(true);
+        prevTokenSnapshotRef.current = newSnapshot;
+      }
+
+      // Detect pending canvas image from plugin/extension push
+      const pending = updated?.pendingCanvasImage;
+      if (pending && !pendingImageConsumedRef.current) {
+        pendingImageConsumedRef.current = true;
+        setPendingImageRef.current?.(pending);
+        switchToCanvasRef.current?.();
+        // Clear from local store so refreshProject merge doesn't restore it
+        useProjectStore.setState((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === project.id ? { ...p, pendingCanvasImage: null } : p
+          ),
+        }));
+        fetch(`/api/projects/${project.id}/clear-canvas-image`, { method: "POST" }).catch((err) => {
+          console.error("Failed to clear canvas image:", err);
+        });
+      }
+    }, 10_000);
+    return () => clearInterval(interval);
+  }, [project?.id, refreshProject]);
+
+  const handleRegenerateLayoutMd = useCallback(async () => {
+    if (!project?.extractionData) return;
+    setIsRegenerating(true);
+    try {
+      const { getStoredApiKey } = await import("@/lib/hooks/use-api-key");
+      const apiKey = getStoredApiKey();
+      // Strip screenshots to avoid huge request body (base64 data URIs)
+      const { screenshots: _s, ...extractionWithoutScreenshots } = project.extractionData;
+      const payload = {
+        extractionData: { ...extractionWithoutScreenshots, screenshots: [] },
+        projectId: project.id,
+      };
+      const res = await fetch("/api/generate/layout-md", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(apiKey ? { "X-Api-Key": apiKey } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        let errMsg = "Failed to regenerate layout.md";
+        try {
+          const errJson = JSON.parse(errText);
+          errMsg = errJson.error ?? errMsg;
+        } catch { /* not JSON */ }
+        console.error("layout.md regeneration failed:", res.status, errText);
+        const { toast } = await import("sonner");
+        toast.error(errMsg);
+        return;
+      }
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let md = "";
+      let lastUpdate = 0;
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          md += decoder.decode(value, { stream: true });
+          const now = Date.now();
+          if (now - lastUpdate > 500) {
+            updateLayoutMd(id, md);
+            lastUpdate = now;
+          }
+        }
+      }
+      if (md) updateLayoutMd(id, md);
+    } catch (err) {
+      console.error("layout.md regeneration error:", err);
+      const { toast } = await import("sonner");
+      toast.error("Failed to regenerate layout.md");
+    } finally {
+      setIsRegenerating(false);
+      setPluginTokensUpdated(false);
+      setFontUploaded(false);
+    }
+  }, [project?.extractionData, project?.id, id, updateLayoutMd]);
 
   const extractionProjectId = useExtractionStore((s) => s.projectId);
   const extractionStatus = useExtractionStore((s) => s.status);
@@ -63,9 +180,15 @@ export default function StudioPage({
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
-  const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved">("editor");
+  const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved" | "design-system">("editor");
   const [showSourcePanel, setShowSourcePanel] = useState(true);
   const [whatsNextDismissed, setWhatsNextDismissed] = useState(false);
+  const [pendingFigmaImage, setPendingFigmaImage] = useState<string | null>(null);
+  const [pendingFigmaContext, setPendingFigmaContext] = useState<ContextFile[] | null>(null);
+
+  // Wire up callback refs for the polling effect (declared before state was available)
+  setPendingImageRef.current = setPendingFigmaImage;
+  switchToCanvasRef.current = () => setCentreView("canvas");
 
   // Sync centreView with ?view= query param
   const searchParams = useSearchParams();
@@ -74,21 +197,28 @@ export default function StudioPage({
 
   useEffect(() => {
     const view = searchParams.get("view");
-    if (view === "saved") {
+    if (view === "explore") {
+      setCentreView("canvas");
+    } else if (view === "saved") {
       setCentreView("saved");
-    } else if (centreView === "saved") {
+    } else if (view === "design-system") {
+      setCentreView("design-system");
+      // Sync tokens from layout.md to pick up any manual editor changes
+      syncTokensFromLayoutMd(id);
+    } else {
       setCentreView("editor");
     }
-  }, [searchParams]);
+  }, [searchParams, id, syncTokensFromLayoutMd]);
 
-  // Clean up URL when navigating away from saved view via TopBar toggle
+  // Sync URL when view changes programmatically (e.g. from saved library "Open in Canvas")
   const handleCentreViewChange = useCallback(
-    (view: "editor" | "canvas" | "saved") => {
+    (view: "editor" | "canvas" | "saved" | "design-system") => {
       setCentreView(view);
+      const viewParam = view === "canvas" ? "explore" : view === "editor" ? null : view;
       const currentView = searchParams.get("view");
-      if (view === "saved" && currentView !== "saved") {
-        router.replace(`${pathname}?view=saved`, { scroll: false });
-      } else if (view !== "saved" && currentView === "saved") {
+      if (viewParam && currentView !== viewParam) {
+        router.replace(`${pathname}?view=${viewParam}`, { scroll: false });
+      } else if (!viewParam && currentView) {
         router.replace(pathname, { scroll: false });
       }
     },
@@ -241,6 +371,12 @@ export default function StudioPage({
     navigator.clipboard.writeText(variant.code);
   }, []);
 
+  const handleGenerateFromFigma = useCallback((imageDataUrl: string, contextFiles?: ContextFile[]) => {
+    setPendingFigmaImage(imageDataUrl);
+    setPendingFigmaContext(contextFiles ?? null);
+    setCentreView("canvas");
+  }, []);
+
   const handleUpdateExplorations = useCallback(
     (explorations: import("@/lib/types").ExplorationSession[]) => {
       updateExplorations(id, explorations);
@@ -330,6 +466,7 @@ export default function StudioPage({
 
   const extractedFonts =
     project.extractionData?.fonts.map((f) => f.family) ?? [];
+  const extractedFontDeclarations = project.extractionData?.fonts ?? [];
 
   return (
     <>
@@ -359,13 +496,12 @@ export default function StudioPage({
         onToggleSource={() => setShowSourcePanel((prev) => !prev)}
         sourcePanelOpen={showSourcePanel}
         onExport={() => setShowExport(true)}
-        centreView={centreView}
-        onCentreViewChange={handleCentreViewChange}
+        showSourceToggle={centreView === "editor" || centreView === "canvas"}
       />
       <div className="flex-1 overflow-hidden">
         <StudioLayout
           centreView={centreView}
-          showSourcePanel={showSourcePanel && centreView !== "saved"}
+          showSourcePanel={showSourcePanel && (centreView === "editor" || centreView === "canvas")}
           sourcePanel={
             <SourcePanel
               extractionData={project.extractionData}
@@ -375,6 +511,8 @@ export default function StudioPage({
               projectId={project.id}
               onLayoutMdChange={handleLayoutMdChange}
               onExtract={handleExtractFromPanel}
+              onGenerateFromFigma={handleGenerateFromFigma}
+              onFontUploaded={() => setFontUploaded(true)}
             />
           }
           editorPanel={
@@ -394,7 +532,12 @@ export default function StudioPage({
               onUpdateExplorations={handleUpdateExplorations}
               onPushToFigma={handlePushToFigma}
               onLayoutMdUpdate={handleLayoutMdChange}
+              initialImage={pendingFigmaImage ?? undefined}
+              initialContextFiles={pendingFigmaContext ?? undefined}
+              onInitialImageConsumed={() => { setPendingFigmaImage(null); setPendingFigmaContext(null); }}
               extractedFonts={extractedFonts}
+              extractedFontDeclarations={extractedFontDeclarations}
+              uploadedFonts={project.uploadedFonts}
               iconPacks={project.iconPacks}
             />
           }
@@ -402,6 +545,13 @@ export default function StudioPage({
             <SavedLibraryView
               onNavigateToCanvas={() => handleCentreViewChange("canvas")}
               onOpenInCanvas={handleOpenSavedInCanvas}
+            />
+          }
+          designSystemPanel={
+            <DesignSystemPanel
+              extractionData={project.extractionData}
+              projectId={project.id}
+              onNavigateToEditor={() => handleCentreViewChange("editor")}
             />
           }
         />
@@ -423,6 +573,27 @@ export default function StudioPage({
         >
           <span className="text-xs text-red-400">Failed to save changes — your edits may be lost on refresh</span>
           <button className="text-[10px] text-red-400/60 hover:text-red-400 shrink-0">Dismiss</button>
+        </div>
+      )}
+      {(pluginTokensUpdated || fontUploaded) && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-5 py-3 backdrop-blur-md shadow-lg shadow-emerald-500/10 animate-in slide-in-from-bottom-2 fade-in duration-200">
+          <div className="h-2 w-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
+          <span className="text-sm text-[var(--text-primary)]">
+            {fontUploaded ? "Custom font added" : "Figma plugin updated your tokens"}
+          </span>
+          <button
+            onClick={handleRegenerateLayoutMd}
+            disabled={isRegenerating}
+            className="ml-1 px-3 py-1 text-xs font-medium rounded-md bg-emerald-500 text-white hover:bg-emerald-400 disabled:opacity-50 shrink-0 transition-colors"
+          >
+            {isRegenerating ? "Regenerating..." : "Regenerate layout.md"}
+          </button>
+          <button
+            onClick={() => { setPluginTokensUpdated(false); setFontUploaded(false); }}
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] shrink-0 ml-1"
+          >
+            Dismiss
+          </button>
         </div>
       )}
     </div>

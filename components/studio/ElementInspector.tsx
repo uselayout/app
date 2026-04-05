@@ -84,22 +84,47 @@ interface PropertyRowProps {
   tokenSuggestions?: TokenSuggestion[];
 }
 
+/** Parse a CSS value like "24px" into { num: 24, unit: "px" }. Returns null for non-numeric values. */
+function parseNumericValue(val: string): { num: number; unit: string } | null {
+  const match = val.match(/^(-?\d+(?:\.\d+)?)\s*(px|rem|em|%|vh|vw|pt|ch)$/);
+  if (!match) return null;
+  return { num: parseFloat(match[1]), unit: match[2] };
+}
+
 function PropertyRow({ label, value, cssProp, onApply, type = "text", options, tokenSuggestions }: PropertyRowProps) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const parsed = type === "text" ? parseNumericValue(value) : null;
+  const isNumeric = parsed !== null;
+
   useEffect(() => {
-    setEditValue(value);
+    if (isNumeric && parsed) {
+      setEditValue(String(parsed.num));
+    } else {
+      setEditValue(value);
+    }
     setEditing(false);
   }, [value]);
 
+  const commitNumeric = useCallback((numStr: string) => {
+    if (!parsed) return;
+    const full = `${numStr}${parsed.unit}`;
+    if (full !== value) {
+      onApply(cssProp, full);
+    }
+    setEditing(false);
+  }, [parsed, value, cssProp, onApply]);
+
   const commit = useCallback(() => {
-    if (editValue !== value) {
+    if (isNumeric) {
+      commitNumeric(editValue);
+    } else if (editValue !== value) {
       onApply(cssProp, editValue);
     }
     setEditing(false);
-  }, [editValue, value, cssProp, onApply]);
+  }, [editValue, value, cssProp, onApply, isNumeric, commitNumeric]);
 
   const [showTokens, setShowTokens] = useState(false);
   const matchingTokens = tokenSuggestions?.filter((t) => {
@@ -171,6 +196,55 @@ function PropertyRow({ label, value, cssProp, onApply, type = "text", options, t
     );
   }
 
+  // Numeric value with fixed unit suffix and arrow key stepping
+  if (isNumeric && parsed) {
+    const handleNumericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") { commit(); return; }
+      if (e.key === "Escape") { setEditValue(String(parsed.num)); setEditing(false); return; }
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        const current = parseFloat(editValue) || 0;
+        const next = e.key === "ArrowUp" ? current + step : current - step;
+        const nextStr = String(Math.round(next * 100) / 100);
+        setEditValue(nextStr);
+        onApply(cssProp, `${nextStr}${parsed.unit}`);
+      }
+    };
+
+    return (
+      <div className="flex items-center justify-between gap-2 py-1">
+        <span className="text-[10px] text-[var(--text-muted)] shrink-0 w-20 min-w-0 truncate">{label}</span>
+        {editing ? (
+          <div className="flex items-center gap-0">
+            <input
+              ref={inputRef}
+              type="text"
+              inputMode="numeric"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={commit}
+              onKeyDown={handleNumericKeyDown}
+              autoFocus
+              className="w-[68px] rounded-l bg-[var(--bg-surface)] border border-r-0 border-[var(--studio-border-focus)] px-1.5 py-0.5 text-[10px] text-right text-[var(--text-primary)] outline-none"
+            />
+            <span className="rounded-r bg-[var(--bg-surface)] border border-l-0 border-[var(--studio-border-focus)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] select-none">
+              {parsed.unit}
+            </span>
+          </div>
+        ) : (
+          <button
+            onClick={() => setEditing(true)}
+            className="w-[100px] text-right rounded px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors truncate"
+          >
+            {value || "—"}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // Non-numeric plain text input
   return (
     <div className="flex items-center justify-between gap-2 py-1">
       <span className="text-[10px] text-[var(--text-muted)] shrink-0 w-20 min-w-0 truncate">{label}</span>
@@ -408,12 +482,17 @@ export function ElementInspector({
         };
         setSelected(newSelected);
 
-        // Auto-select Image tab when clicking an image element,
-        // reset to Text tab when clicking a non-image element
+        // Auto-select tab based on element type
         if (msg.imagePrompt) {
           setActiveSection("image");
-        } else if (activeSectionRef.current === "image") {
-          setActiveSection("text");
+        } else {
+          const tag = (msg.elementTag ?? "").toLowerCase();
+          const textTags = new Set([
+            "p", "span", "h1", "h2", "h3", "h4", "h5", "h6",
+            "a", "label", "em", "strong", "b", "i", "small",
+            "code", "pre", "input", "textarea", "select", "button",
+          ]);
+          setActiveSection(textTags.has(tag) ? "text" : "spacing");
         }
 
         // Only clear pending edits when switching to a different element
@@ -826,6 +905,10 @@ export function ElementInspector({
             <PropertyRow label="Left" value={cs.marginLeft ?? ""} cssProp="marginLeft" onApply={applyStyle} tokenSuggestions={spacingTokens} />
             <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1 mt-2">Layout</div>
             <GapSelect value={cs.gap ?? ""} spacingTokens={spacingTokens} onApply={applyStyle} />
+            <PropertyRow label="Display" value={cs.display ?? ""} cssProp="display" onApply={applyStyle} type="select" options={["block", "flex", "grid", "inline", "inline-flex", "inline-block", "none"]} />
+            <PropertyRow label="Direction" value={cs.flexDirection ?? ""} cssProp="flexDirection" onApply={applyStyle} type="select" options={["row", "column", "row-reverse", "column-reverse"]} />
+            <PropertyRow label="Align" value={cs.alignItems ?? ""} cssProp="alignItems" onApply={applyStyle} type="select" options={["stretch", "flex-start", "flex-end", "center", "baseline"]} />
+            <PropertyRow label="Justify" value={cs.justifyContent ?? ""} cssProp="justifyContent" onApply={applyStyle} type="select" options={["flex-start", "flex-end", "center", "space-between", "space-around", "space-evenly"]} />
           </>
         )}
 
@@ -836,10 +919,6 @@ export function ElementInspector({
             <PropertyRow label="Max Width" value={cs.maxWidth ?? ""} cssProp="maxWidth" onApply={applyStyle} tokenSuggestions={spacingTokens} />
             <PropertyRow label="Radius" value={cs.borderRadius ?? ""} cssProp="borderRadius" onApply={applyStyle} />
             <PropertyRow label="Border Width" value={cs.borderWidth ?? ""} cssProp="borderWidth" onApply={applyStyle} />
-            <PropertyRow label="Display" value={cs.display ?? ""} cssProp="display" onApply={applyStyle} type="select" options={["block", "flex", "grid", "inline", "inline-flex", "inline-block", "none"]} />
-            <PropertyRow label="Direction" value={cs.flexDirection ?? ""} cssProp="flexDirection" onApply={applyStyle} type="select" options={["row", "column", "row-reverse", "column-reverse"]} />
-            <PropertyRow label="Align" value={cs.alignItems ?? ""} cssProp="alignItems" onApply={applyStyle} type="select" options={["stretch", "flex-start", "flex-end", "center", "baseline"]} />
-            <PropertyRow label="Justify" value={cs.justifyContent ?? ""} cssProp="justifyContent" onApply={applyStyle} type="select" options={["flex-start", "flex-end", "center", "space-between", "space-around", "space-evenly"]} />
           </>
         )}
 

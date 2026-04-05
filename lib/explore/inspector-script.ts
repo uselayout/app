@@ -114,7 +114,9 @@ export function getInspectorScript(): string {
     positionOverlay(hoverOverlay, rect);
   }, true);
 
-  document.addEventListener('click', function(e) {
+  // Use pointerdown (fires before click) to reliably intercept all elements,
+  // including buttons with React event handlers that may consume click events.
+  document.addEventListener('pointerdown', function(e) {
     if (!inspectActive) return;
 
     // If we're editing text, allow clicks inside the editable element
@@ -134,13 +136,23 @@ export function getInspectorScript(): string {
     e.stopImmediatePropagation();
 
     var el = e.target;
-    if (el === document.body || el === document.documentElement) return;
+    // Walk up from text nodes or SVG children to the nearest HTML element
+    while (el && el.nodeType !== 1) el = el.parentNode;
+    if (!el || el === document.body || el === document.documentElement) return;
 
     selected = el;
     var rect = el.getBoundingClientRect();
     positionOverlay(overlay, rect);
     hoverOverlay.style.display = 'none';
     sendSelection(el);
+  }, true);
+
+  // Also block click to prevent any button actions from firing
+  document.addEventListener('click', function(e) {
+    if (!inspectActive) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
   }, true);
 
   function exitTextEdit() {

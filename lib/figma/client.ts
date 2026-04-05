@@ -201,12 +201,21 @@ export interface FigmaNode {
   paddingBottom?: number;
   itemSpacing?: number;
   cornerRadius?: number;
+  strokes?: FigmaFill[];
+  strokeWeight?: number;
+  strokeAlign?: "INSIDE" | "OUTSIDE" | "CENTER";
+  characters?: string;
+  absoluteBoundingBox?: { x: number; y: number; width: number; height: number };
 }
 
 export interface FigmaFill {
   type: string;
   color?: { r: number; g: number; b: number; a: number };
   opacity?: number;
+  gradientStops?: Array<{
+    color: { r: number; g: number; b: number; a: number };
+    position: number;
+  }>;
 }
 
 export interface FigmaTypeStyle {

@@ -37,6 +37,8 @@ Reference Images
 - When a reference image/screenshot is provided, treat it as a CLOSE visual reference — match its layout structure, spacing proportions, typography hierarchy, and visual style as faithfully as possible.
 - Adapt colours and tokens to the design system, but preserve the reference's composition, element placement, and overall feel.
 - Each variant should interpret the reference slightly differently, but all must clearly derive from it.
+- When the reference shows a horizontal/side-by-side layout, generate it as flex-row at desktop (e.g. md:flex-row or lg:flex-row). Do not default to single-column if the reference is clearly multi-column.
+- Pay close attention to context files describing the Figma frame layout. If the context says "horizontal (row)" or "side by side", the desktop layout MUST reflect that.
 
 Interaction States (Mandatory)
 - Every interactive element MUST handle: default, hover, focus-visible, active, disabled states.
@@ -106,6 +108,8 @@ Design System Compliance (MANDATORY — verify before outputting each variant)
 - If the design system specifies specific fonts (e.g. CursorGothic, jjannon), use ONLY those fonts. Never substitute with Inter, Roboto, or system-ui.
 - Do NOT invent a product name, brand name, or company identity. If the design system names a brand, use that exact name. Otherwise use generic text like "Product" or "Company".
 - Do NOT use pure black (#000000) or pure white (#FFFFFF) unless the design system explicitly defines them.
+- If the design system defines border tokens (e.g. "1px solid #ccc"), use those exact values for borders and dividers. Do NOT hardcode border colours or widths.
+- If the design system defines motion/animation tokens, use them for transitions and animations instead of arbitrary durations or easings.
 - SELF-CHECK: Before writing each variant, mentally verify: Are my colours from the token list? Are my fonts correct? Are my border-radius values matching? Are my spacing values from the grid? If any answer is no, fix it before outputting.
 - EXCEPTION: If the user's prompt explicitly requests a specific style override (e.g. "use square buttons", "try serif fonts", "make it darker"), apply that override for the specified elements only. Keep all other design system tokens intact. The user is experimenting with alternatives.
 
@@ -213,6 +217,8 @@ Design System Compliance (MANDATORY — verify before outputting each variant)
 - If the design system specifies specific fonts (e.g. CursorGothic, jjannon), use ONLY those fonts. Never substitute with Inter, Roboto, or system-ui.
 - Do NOT invent a product name, brand name, or company identity. If the design system names a brand, use that exact name. Otherwise use generic text like "Product" or "Company".
 - Do NOT use pure black (#000000) or pure white (#FFFFFF) unless the design system explicitly defines them.
+- If the design system defines border tokens (e.g. "1px solid #ccc"), use those exact values for borders and dividers. Do NOT hardcode border colours or widths.
+- If the design system defines motion/animation tokens, use them for transitions and animations instead of arbitrary durations or easings.
 - SELF-CHECK: Before writing each variant, mentally verify: Are my colours from the token list? Are my fonts correct? Are my border-radius values matching? Are my spacing values from the grid? If any answer is no, fix it before outputting.
 - EXCEPTION: If the user's prompt explicitly requests a specific style override (e.g. "use square buttons", "try serif fonts", "make it darker"), apply that override for the specified elements only. Keep all other design system tokens intact. The user is experimenting with alternatives.
 
@@ -263,7 +269,7 @@ Rules:
  * Patch a base system prompt to allow icon library imports when packs are selected.
  * When no packs are provided, returns the original prompt unchanged.
  */
-function patchSystemPromptForIcons(basePrompt: string, iconPackIds?: string[]): string {
+export function patchSystemPromptForIcons(basePrompt: string, iconPackIds?: string[]): string {
   const addendum = buildIconPackAddendum(iconPackIds);
   if (!addendum) return basePrompt;
 

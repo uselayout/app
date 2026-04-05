@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes, Figma } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes, Figma, Sparkles, Loader2, Type } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
@@ -10,6 +10,7 @@ import { ConnectTab } from "@/components/studio/ConnectTab";
 import { FigmaEmbed } from "@/components/studio/FigmaEmbed";
 import { parseFigmaUrl } from "@/lib/figma/parse-url";
 import { IconPackSelector } from "@/components/studio/IconPackSelector";
+import { FontManager } from "@/components/studio/FontManager";
 import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
 import { resolveTokenValue } from "@/lib/util/color";
 import { useProjectStore } from "@/lib/store/project";
@@ -25,6 +26,7 @@ import type {
   ExtractedTokens,
   ExtractedComponent,
   SourceType,
+  ContextFile,
 } from "@/lib/types";
 
 interface SourcePanelProps {
@@ -35,9 +37,11 @@ interface SourcePanelProps {
   projectId?: string;
   onLayoutMdChange?: (value: string) => void;
   onExtract?: (url: string, sourceType: SourceType, pat?: string) => void;
+  onGenerateFromFigma?: (imageDataUrl: string, contextFiles?: ContextFile[]) => void;
+  onFontUploaded?: () => void;
 }
 
-type TabId = "tokens" | "components" | "screenshots" | "icons" | "quality" | "connect" | "figma";
+type TabId = "tokens" | "components" | "screenshots" | "icons" | "fonts" | "quality" | "connect" | "figma";
 
 function SourcePanelEmptyState({
   projectId,
@@ -137,11 +141,14 @@ function SourcePanelInner({
   projectId,
   onLayoutMdChange,
   onExtract,
+  onGenerateFromFigma,
+  onFontUploaded,
 }: SourcePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("tokens");
   const syncTokensFromLayoutMd = useProjectStore((s) => s.syncTokensFromLayoutMd);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
+  const currentProject = useProjectStore((s) => s.projects.find((p) => p.id === projectId));
   const [syncResult, setSyncResult] = useState<{ count: number } | null>(null);
 
   const handleDeleteScreenshot = useCallback(
@@ -176,6 +183,7 @@ function SourcePanelInner({
     { id: "components", label: "Components", icon: LayoutGrid },
     { id: "screenshots", label: "Screenshots", icon: Image },
     { id: "icons", label: "Icons", icon: Shapes },
+    { id: "fonts", label: "Fonts", icon: Type },
     { id: "quality", label: "Quality", icon: Gauge },
     { id: "figma", label: "Figma", icon: Figma },
     { id: "connect", label: "Connect", icon: Terminal },
@@ -236,7 +244,7 @@ function SourcePanelInner({
           <TokensTab tokens={extractionData.tokens} cssVariables={extractionData.cssVariables} projectId={projectId} sourceType={extractionData.sourceType} />
         )}
         {activeTab === "components" && extractionData && (
-          <ComponentsTab components={extractionData.components} />
+          <ComponentsTab components={extractionData.components} sourceType={extractionData.sourceType} />
         )}
         {activeTab === "screenshots" && extractionData && (
           <ScreenshotsTab screenshots={extractionData.screenshots} onDelete={handleDeleteScreenshot} onAdd={handleAddScreenshot} />
@@ -244,11 +252,27 @@ function SourcePanelInner({
         {activeTab === "icons" && (
           <IconPackSelector projectId={projectId} />
         )}
+        {activeTab === "fonts" && projectId && (
+          <div className="p-3">
+            <FontManager
+              projectId={projectId}
+              orgId={currentOrgId ?? undefined}
+              extractedFonts={extractionData?.fonts ?? []}
+              uploadedFonts={currentProject?.uploadedFonts ?? []}
+              typographyTokens={extractionData?.tokens.typography}
+              onFontUploaded={onFontUploaded}
+            />
+          </div>
+        )}
         {activeTab === "quality" && extractionData && (
           <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} projectId={projectId} orgId={currentOrgId ?? undefined} />
         )}
         {activeTab === "figma" && (
-          <FigmaTab sourceUrl={sourceType === "figma" ? sourceUrl : undefined} />
+          <FigmaTab
+            sourceUrl={sourceType === "figma" ? sourceUrl : undefined}
+            projectId={projectId}
+            onGenerateFromFigma={onGenerateFromFigma}
+          />
         )}
         {activeTab === "connect" && (
           <ConnectTab
@@ -261,8 +285,20 @@ function SourcePanelInner({
   );
 }
 
-function FigmaTab({ sourceUrl }: { sourceUrl?: string }) {
+function FigmaTab({
+  sourceUrl,
+  projectId,
+  onGenerateFromFigma,
+}: {
+  sourceUrl?: string;
+  projectId?: string;
+  onGenerateFromFigma?: (imageDataUrl: string, contextFiles?: ContextFile[]) => void;
+}) {
   const [customUrl, setCustomUrl] = useState("");
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [captureError, setCaptureError] = useState<string | null>(null);
+  const [showPatInput, setShowPatInput] = useState(false);
+  const [patValue, setPatValue] = useState("");
 
   // Try to get fileKey from the project's source URL or a custom URL
   const urlToUse = customUrl || sourceUrl || "";
@@ -271,6 +307,50 @@ function FigmaTab({ sourceUrl }: { sourceUrl?: string }) {
   // Also try a simpler parse for URLs without node-id
   const fileKeyMatch = urlToUse.match(/figma\.com\/design\/([^/]+)/);
   const fileKey = parsed?.fileKey ?? fileKeyMatch?.[1];
+  const hasNodeId = !!parsed?.nodeId;
+
+  const handleGenerateClick = useCallback(async () => {
+    if (!fileKey || !parsed?.nodeId || !onGenerateFromFigma) return;
+
+    const pat = getStoredFigmaApiKey() || sessionStorage.getItem(`pat-${projectId}`) || patValue;
+    if (!pat) {
+      setShowPatInput(true);
+      return;
+    }
+
+    // Persist the token for future use
+    if (patValue) {
+      localStorage.setItem("sd_figma_pat", patValue);
+    }
+
+    setIsCapturing(true);
+    setCaptureError(null);
+
+    try {
+      const res = await fetch("/api/figma/screenshot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Figma-Token": pat,
+        },
+        body: JSON.stringify({ fileKey, nodeId: parsed.nodeId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: "Request failed" }));
+        throw new Error(data.error || `Failed (${res.status})`);
+      }
+
+      const { imageDataUrl, context, frameName } = await res.json();
+      onGenerateFromFigma(imageDataUrl, [
+        { name: `${frameName || "figma-frame"}.md`, content: context },
+      ]);
+    } catch (err) {
+      setCaptureError(err instanceof Error ? err.message : "Failed to capture frame");
+    } finally {
+      setIsCapturing(false);
+    }
+  }, [fileKey, parsed?.nodeId, projectId, onGenerateFromFigma, patValue]);
 
   return (
     <div className="flex h-full flex-col gap-3 p-3">
@@ -298,6 +378,44 @@ function FigmaTab({ sourceUrl }: { sourceUrl?: string }) {
             height={500}
             className="flex-1 min-h-0"
           />
+
+          {onGenerateFromFigma && (
+            <div className="space-y-2">
+              {showPatInput && !getStoredFigmaApiKey() && (
+                <input
+                  type="password"
+                  value={patValue}
+                  onChange={(e) => setPatValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && patValue) handleGenerateClick(); }}
+                  placeholder="Paste Figma access token..."
+                  className="w-full rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+                  autoFocus
+                />
+              )}
+              <button
+                onClick={handleGenerateClick}
+                disabled={!hasNodeId || isCapturing || (showPatInput && !patValue && !getStoredFigmaApiKey())}
+                title={!hasNodeId ? "Select a frame in Figma and include its node-id in the URL" : "Capture this frame and generate code variants"}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)] hover:border-[var(--studio-border-strong)] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isCapturing ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
+                {isCapturing ? "Capturing frame..." : "Generate from this frame"}
+              </button>
+              {!hasNodeId && fileKey && (
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  Select a specific frame in Figma and update the URL with its node-id to enable generation.
+                </p>
+              )}
+              {captureError && (
+                <p className="text-[11px] text-red-400">{captureError}</p>
+              )}
+            </div>
+          )}
+
           <input
             type="url"
             value={customUrl || sourceUrl || ""}
@@ -911,13 +1029,22 @@ function TokenRow({
 
 function ComponentsTab({
   components,
+  sourceType,
 }: {
   components: ExtractedComponent[];
+  sourceType?: string;
 }) {
   if (components.length === 0) {
     return (
-      <div className="p-4 text-xs text-[var(--text-muted)]">
-        No components extracted.
+      <div className="p-4 space-y-2">
+        <p className="text-xs text-[var(--text-muted)]">
+          No components found.
+        </p>
+        <p className="text-[10px] leading-relaxed text-[var(--text-muted)]/70">
+          {sourceType === "website"
+            ? "Component detection is not available for website extractions. Use a Figma file to extract components."
+            : "Components are extracted from published Figma library components. Publish components in your Figma file to see them here."}
+        </p>
       </div>
     );
   }

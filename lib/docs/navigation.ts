@@ -60,6 +60,7 @@ export const docsNavigation: DocNavSection[] = [
       { title: "API Reference", href: "/docs/api-reference" },
       { title: "layout.md Spec", href: "/docs/layout-md" },
       { title: "Self-Hosting", href: "/docs/self-hosting" },
+      { title: "Data & Privacy", href: "/docs/data-handling" },
       { title: "How Layout Compares", href: "/docs/compare" },
     ],
   },

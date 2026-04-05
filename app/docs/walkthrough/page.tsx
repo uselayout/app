@@ -565,7 +565,7 @@ npx @layoutdesign/context install`}
           8. MCP Tools Reference
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          Once the MCP server is configured, your AI agent can call 12 tools
+          Once the MCP server is configured, your AI agent can call 13 tools
           automatically when building UI. You do not need to invoke them
           manually. The agent decides when to use them based on the task.
         </p>
@@ -609,7 +609,11 @@ npx @layoutdesign/context install`}
                 ],
                 [
                   "push_to_figma",
-                  "Sends a rendered component to Figma as editable frames via the Figma MCP",
+                  "Sends a rendered component to Figma as editable frames. Supports capture (default) and native mode (editable auto-layout objects, no Playwright needed)",
+                ],
+                [
+                  "push_tokens_to_figma",
+                  "Pushes design system tokens to Figma as native variables and styles via Figma MCP",
                 ],
                 [
                   "url_to_figma",

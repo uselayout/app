@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ExplorerToolbar } from "./ExplorerToolbar";
 import { VariantCard } from "./VariantCard";
 import { FigmaPushModal } from "./FigmaPushModal";
+import { PaperPushModal } from "./PaperPushModal";
 import { FigmaImportModal } from "./FigmaImportModal";
 import { ResponsivePreview } from "./ResponsivePreview";
 import { ComparisonView } from "./ComparisonView";
@@ -24,7 +25,7 @@ import { useOnboardingStore } from "@/lib/store/onboarding";
 import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 import { DEFAULT_EXPLORE_MODEL, AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
-import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken } from "@/lib/types";
+import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont, ComparisonResult } from "@/lib/types";
 
 interface ExplorerCanvasProps {
   projectId: string;
@@ -34,9 +35,13 @@ interface ExplorerCanvasProps {
   onPushToFigma: (variant: DesignVariant) => void;
   onLayoutMdUpdate?: (newMd: string) => void;
   initialImage?: string;
+  initialContextFiles?: ContextFile[];
   onInitialImageConsumed?: () => void;
   extractedFonts?: string[];
+  extractedFontDeclarations?: FontDeclaration[];
+  uploadedFonts?: UploadedFont[];
   iconPacks?: string[];
+  sourceUrl?: string;
 }
 
 export function ExplorerCanvas({
@@ -47,9 +52,13 @@ export function ExplorerCanvas({
   onPushToFigma: _onPushToFigma,
   onLayoutMdUpdate,
   initialImage,
+  initialContextFiles,
   onInitialImageConsumed,
   extractedFonts = [],
+  extractedFontDeclarations,
+  uploadedFonts,
   iconPacks,
+  sourceUrl,
 }: ExplorerCanvasProps) {
   // Parse design tokens from layoutMd for the inspector's token suggestions
   const allDesignTokens: ExtractedToken[] = useMemo(() => {
@@ -68,6 +77,7 @@ export function ExplorerCanvas({
   const [generationStatus, setGenerationStatus] = useState<string | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [pushVariant, setPushVariant] = useState<DesignVariant | null>(null);
+  const [paperPushVariant, setPaperPushVariant] = useState<DesignVariant | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [responsiveVariant, setResponsiveVariant] = useState<DesignVariant | null>(null);
   const [promoteVariant, setPromoteVariant] = useState<DesignVariant | null>(null);
@@ -495,6 +505,7 @@ export function ExplorerCanvas({
         variantCount: 0,
         variants: [],
         referenceImage: initialImage,
+        contextFiles: initialContextFiles,
         createdAt: new Date().toISOString(),
       };
       const updated = [...explorations, newExploration];
@@ -603,6 +614,10 @@ export function ExplorerCanvas({
 
   const handlePushToFigma = useCallback((variant: DesignVariant) => {
     setPushVariant(variant);
+  }, []);
+
+  const handlePushToPaper = useCallback((variant: DesignVariant) => {
+    setPaperPushVariant(variant);
   }, []);
 
   const handlePushComplete = useCallback(
@@ -745,6 +760,19 @@ export function ExplorerCanvas({
   const params = useParams();
   const orgSlug = (params?.org as string) ?? "";
 
+  const handleComparisonSave = useCallback((result: ComparisonResult) => {
+    if (!currentExploration) return;
+    // Tag to selected variant, or fall back to first variant in the exploration
+    const variantId = selectedVariantId ?? currentExploration.variants?.[0]?.id;
+    const taggedResult = { ...result, sourceVariantId: variantId };
+    const updated = explorations.map((e) =>
+      e.id === currentExploration.id
+        ? { ...e, comparisons: [...(e.comparisons ?? []), taggedResult] }
+        : e
+    );
+    onUpdateExplorations(updated);
+  }, [currentExploration, selectedVariantId, explorations, onUpdateExplorations]);
+
   const gridClassName = "grid grid-cols-2 gap-4";
 
   return (
@@ -855,10 +883,10 @@ export function ExplorerCanvas({
           <button
             onClick={handleNewExploration}
             disabled={isGenerating}
-            className="shrink-0 flex items-center justify-center size-6 rounded-md text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 transition-colors"
+            className="shrink-0 flex items-center justify-center size-7 rounded-md bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)] disabled:opacity-30 transition-colors"
             title="New exploration"
           >
-            <Plus size={13} />
+            <Plus size={14} />
           </button>
           <span className="shrink-0 text-[10px] text-[var(--text-muted)] tabular-nums">
             {explorationIndex + 1}/{explorations.length}
@@ -875,7 +903,7 @@ export function ExplorerCanvas({
             </div>
             <div>
               <h3 className="mb-1 text-sm font-semibold text-[var(--text-primary)]">
-                Canvas
+                Explorer
               </h3>
               <p className="max-w-xs text-xs text-[var(--text-secondary)]">
                 Describe what to explore. Layout will generate
@@ -978,6 +1006,7 @@ export function ExplorerCanvas({
                       onRate={(rating) => handleRateVariant(variant.id, rating)}
                       onCopyCode={() => navigator.clipboard.writeText(variant.code)}
                       onPushToFigma={() => handlePushToFigma(variant)}
+                      onPushToPaper={() => handlePushToPaper(variant)}
                       onRegenerate={(feedback) => {
                         if (feedback) {
                           handleRefineVariant(variant, feedback);
@@ -993,18 +1022,40 @@ export function ExplorerCanvas({
                       layoutMd={layoutMd}
                       designTokens={allDesignTokens}
                       iconPacks={iconPacks}
+                      fonts={extractedFontDeclarations}
+                      uploadedFonts={uploadedFonts}
                       isProcessingImages={isProcessingImages}
                       onViewComparison={() => {
                         const comparisons = currentExploration?.comparisons?.filter(
-                          (c) => c.sourceVariantId === variant.id
+                          (c) => c.sourceVariantId === variant.id || !c.sourceVariantId
                         );
                         if (comparisons?.length) setViewSavedComparison(comparisons[comparisons.length - 1]);
                       }}
                       comparisonCount={currentExploration?.comparisons?.filter(
-                        (c) => c.sourceVariantId === variant.id
+                        (c) => c.sourceVariantId === variant.id || !c.sourceVariantId
                       ).length ?? 0}
+                      isNewlyGenerated={variant.batchId === streamingBatchRef.current}
                     />
                   ))}
+                  {/* Shimmer skeletons for remaining slots — inline so cards stay in place */}
+                  {isGeneratingThisTab && batch.batchId === streamingBatchRef.current && skeletonCount > 0 &&
+                    Array.from({ length: skeletonCount }).map((_, i) => (
+                      <div key={`skeleton-${i}`} className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col">
+                        <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white p-6">
+                          <div className="flex h-full flex-col gap-3">
+                            <div className="h-[35%] w-full animate-shimmer rounded-lg bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
+                            <div className="h-4 w-[60%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "100ms" }} />
+                            <div className="h-3 w-[40%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "200ms" }} />
+                            <div className="mt-2 h-3 w-[90%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "300ms" }} />
+                            <div className="h-3 w-[75%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "400ms" }} />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-2.5">
+                          <div className="h-3 w-24 animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
+                        </div>
+                      </div>
+                    ))
+                  }
                 </div>
               </div>
             ))}
@@ -1017,8 +1068,8 @@ export function ExplorerCanvas({
               </div>
             )}
 
-            {/* Skeleton loaders for in-progress batch */}
-            {skeletonCount > 0 && (
+            {/* Shimmer skeletons when no batch variants exist yet (initial generation) */}
+            {isGeneratingThisTab && skeletonCount > 0 && !batches.some((b) => b.batchId === streamingBatchRef.current) && (
               <>
                 {batches.length > 0 && (
                   <div className="flex items-center gap-3 py-3">
@@ -1031,12 +1082,18 @@ export function ExplorerCanvas({
                 )}
                 <div className={gridClassName}>
                   {Array.from({ length: skeletonCount }).map((_, i) => (
-                    <div key={`skeleton-${i}`} className="rounded-xl border-2 border-dashed border-white/20 bg-white/[0.04] p-4 flex flex-col items-center justify-center">
-                      <div className="aspect-[4/3] w-full flex flex-col items-center justify-center gap-3">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white/60" />
-                        <p className="text-xs text-[var(--text-muted)] animate-pulse">
-                          Generating variant…
-                        </p>
+                    <div key={`skeleton-${i}`} className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col">
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white p-6">
+                        <div className="flex h-full flex-col gap-3">
+                          <div className="h-[35%] w-full animate-shimmer rounded-lg bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
+                          <div className="h-4 w-[60%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "100ms" }} />
+                          <div className="h-3 w-[40%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "200ms" }} />
+                          <div className="mt-2 h-3 w-[90%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "300ms" }} />
+                          <div className="h-3 w-[75%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "400ms" }} />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-2.5">
+                        <div className="h-3 w-24 animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
                       </div>
                     </div>
                   ))}
@@ -1090,6 +1147,7 @@ export function ExplorerCanvas({
         })}
         onRegenerate={handleRegenerate}
         onPushToFigma={() => selectedVariant && handlePushToFigma(selectedVariant)}
+        onPushToPaper={() => selectedVariant && handlePushToPaper(selectedVariant)}
         onImportFromFigma={() => setShowImport(true)}
         isGenerating={isGeneratingThisTab}
         hasVariants={variants.length > 0}
@@ -1097,6 +1155,7 @@ export function ExplorerCanvas({
         selectedVariantName={selectedVariant?.name}
         currentPrompt={currentExploration?.prompt}
         initialImage={initialImage}
+        initialContextFiles={initialContextFiles}
         modelId={modelId}
         onModelChange={setModelId}
         hasGoogleKey={hasGoogleKey}
@@ -1108,6 +1167,14 @@ export function ExplorerCanvas({
           variant={pushVariant}
           onClose={() => setPushVariant(null)}
           onPushComplete={handlePushComplete}
+          defaultFigmaUrl={sourceUrl}
+        />
+      )}
+
+      {paperPushVariant && (
+        <PaperPushModal
+          variant={paperPushVariant}
+          onClose={() => setPaperPushVariant(null)}
         />
       )}
 
@@ -1125,17 +1192,9 @@ export function ExplorerCanvas({
           imageDataUrl={compareData.image}
           contextFiles={compareData.contextFiles}
           layoutMd={layoutMd}
-          onSave={(result) => {
-            if (!currentExploration) return;
-            const taggedResult = { ...result, sourceVariantId: selectedVariantId ?? undefined };
-            const updated = explorations.map((e) =>
-              e.id === currentExploration.id
-                ? { ...e, comparisons: [...(e.comparisons ?? []), taggedResult] }
-                : e
-            );
-            onUpdateExplorations(updated);
-          }}
+          onSave={handleComparisonSave}
           onClose={() => setCompareData(null)}
+          orgSlug={orgSlug}
         />
       )}
       {viewSavedComparison && (
@@ -1144,6 +1203,7 @@ export function ExplorerCanvas({
           layoutMd={layoutMd}
           savedResult={viewSavedComparison}
           onClose={() => setViewSavedComparison(null)}
+          orgSlug={orgSlug}
         />
       )}
 

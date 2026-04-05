@@ -262,6 +262,23 @@ The app uses its own dark-first design system. Always use CSS variables, never h
 6. **Font:** Geist for UI, Geist Mono for code/editor/monospace content
 7. **No box-shadow** - elevation = background colour difference + border
 
+## Git Branching
+
+**Branches:**
+- `main` — production. Never push directly. Only merged from staging after testing.
+- `staging` — integration branch. Staging site deploys from here.
+- `staging/<feature>` — feature branches. All work happens here.
+
+**Workflow (ALL Claude Code sessions MUST follow this):**
+1. Start: `git checkout -b staging/<short-name> origin/staging`
+2. Work: commit and push to your feature branch
+3. Done: merge feature branch into staging, then delete it
+4. Never push directly to staging or main
+
+**Branch naming:** `staging/<short-description>` e.g. `staging/extraction-fixes`
+
+**Need another session's changes?** `git pull origin staging --rebase`
+
 ## Conventions
 
 - **TypeScript:** Strict mode, no `any` types
@@ -315,3 +332,6 @@ Preview draft entries in dev or with `?draft=true` on `/changelog`.
 - Figma Variables API returns 403 on non-Enterprise plans - treat as non-fatal, continue with styles
 - Zustand persist with complex types: store only serialisable data (no functions, no Blobs)
 - Next.js 15 + Tailwind v4: use `@import "tailwindcss"` not `@tailwind base/components/utilities`
+- Image src replacement: ALWAYS strip ALL existing `src` attributes before adding a new one. In JSX, duplicate attributes use the LAST value, so `src="real-url" src="fallback"` renders the fallback. Use `.replace(/\ssrc\s*=\s*"[^"]*"/gi, "")` (global, all formats) then add one clean `src`. Applies to both `lib/image/pipeline.ts` and `VariantCard.tsx` `applySrc()`
+- Staging Supabase is HTTP-only. Images are proxied through `/api/storage/[...path]` route to avoid mixed content. URLs must be absolute (not relative) for srcdoc iframes
+- Preview iframes use `<base href>` pointing to `window.location.origin` so relative URLs resolve correctly

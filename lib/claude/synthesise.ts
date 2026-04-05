@@ -104,9 +104,9 @@ Confidence level. Clustering method used for any reconstructed tokens.
 If Tailwind: note v3 (no CSS vars) vs v4 (CSS vars via @theme).`;
 
 // Synthesis caps — truncate at synthesis time, full data stays in project store
-const MAX_CSS_VARIABLES = 300;
-const MAX_COLOUR_TOKENS = 150;
-const MAX_TYPOGRAPHY_TOKENS = 50;
+const MAX_CSS_VARIABLES = 400;
+const MAX_COLOUR_TOKENS = 200;
+const MAX_TYPOGRAPHY_TOKENS = 75;
 const MAX_COMPUTED_STYLES = 30;
 const MAX_SCREENSHOTS = 3;
 
@@ -146,6 +146,12 @@ function buildUserContent(
     const sortedVars = Object.entries(data.cssVariables)
       .sort(([a], [b]) => cssVarPriority(a) - cssVarPriority(b));
     const allVars = sortedVars.slice(0, MAX_CSS_VARIABLES);
+    const cssVarsOmitted = sortedVars.length - allVars.length;
+    if (cssVarsOmitted > 0) {
+      sections.push(
+        `NOTE: ${cssVarsOmitted} CSS variables omitted for context budget (${sortedVars.length} total, showing top ${MAX_CSS_VARIABLES}). Full set available in tokens.css.`
+      );
+    }
 
     if (tokenSource === "extracted-css-vars") {
       sections.push(
@@ -191,6 +197,15 @@ function buildUserContent(
   if (data.fonts.length > 0) {
     sections.push(
       `--- EXTRACTED FONT DECLARATIONS ---\n${JSON.stringify(data.fonts, null, 2)}`
+    );
+  }
+
+  // Include uploaded custom fonts so Claude knows they're available
+  const uploadedFonts = (data as unknown as Record<string, unknown>)._uploadedFonts;
+  if (Array.isArray(uploadedFonts) && uploadedFonts.length > 0) {
+    const fontNames = uploadedFonts.map((f: Record<string, unknown>) => `${f.family} (${f.weight}, ${f.format})`).join(", ");
+    sections.push(
+      `--- CUSTOM FONT FILES AVAILABLE ---\nThe following custom font files have been uploaded and are available in the .layout/fonts/ directory with a fonts.css file containing @font-face declarations:\n${fontNames}\n\nIMPORTANT: In the Typography System section, include a note that custom font files are available at .layout/fonts/fonts.css and should be imported with @import './.layout/fonts/fonts.css' or a <link> tag. AI coding agents should reference this file to load the custom fonts.`
     );
   }
 
@@ -267,6 +282,29 @@ function buildUserContent(
     sections.push(
       `--- TYPOGRAPHY TOKENS (group these as composites in the layout.md — never list individually) ---\n${typo}` +
       (omitted > 0 ? `\n  /* ... ${omitted} additional typography tokens omitted for context budget */` : "")
+    );
+  }
+
+  // Include effect tokens that contain border definitions
+  const borderTokens = data.tokens.effects.filter((t) =>
+    t.value.includes("solid") || t.value.includes("dashed") || t.value.includes("dotted")
+  );
+  if (borderTokens.length > 0) {
+    const borders = borderTokens
+      .map((t) => `  ${t.name}: ${t.value}${t.description ? ` /* ${t.description} */` : ""}`)
+      .join("\n");
+    sections.push(
+      `--- BORDER TOKENS (use these for all border/divider styling — do not hardcode border values) ---\n${borders}`
+    );
+  }
+
+  // Include motion tokens
+  if (data.tokens.motion?.length > 0) {
+    const motionList = data.tokens.motion
+      .map((t) => `  ${t.name}: ${t.value}${t.description ? ` /* ${t.description} */` : ""}`)
+      .join("\n");
+    sections.push(
+      `--- MOTION TOKENS (use for transitions and animations) ---\n${motionList}`
     );
   }
 

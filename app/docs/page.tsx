@@ -48,7 +48,7 @@ const capabilities = [
     icon: Server,
     title: "CLI & MCP Server",
     description:
-      "Run npx @layoutdesign/context install and your AI agent gets 12 MCP tools — fetch design tokens, check compliance, preview components, and push to Figma. Works with Claude Code, Cursor, Copilot, Antigravity, and Windsurf. Three free starter kits bundled.",
+      "Run npx @layoutdesign/context install and your AI agent gets 13 MCP tools — fetch design tokens, check compliance, preview components, and push to Figma. Works with Claude Code, Cursor, Copilot, Antigravity, and Windsurf. Three free starter kits bundled.",
     href: "/docs/cli",
   },
   {
@@ -62,7 +62,7 @@ const capabilities = [
     icon: Download,
     title: "Export",
     description:
-      "Download a ZIP bundle with layout.md, tokens.css, tokens.json, tailwind.config.js, AGENTS.md, and Cursor rules. Or skip the export entirely and use MCP.",
+      "Download a ZIP bundle with layout.md, tokens.css, tokens.json, tailwind.config.js, AGENTS.md, Cursor rules, and custom font files. Or skip the export entirely and use MCP.",
     href: "#export-bundle",
   },
 ] as const;
@@ -81,6 +81,7 @@ export default function GettingStartedPage() {
           or a live website, lets you refine them in a studio editor with AI
           assistance, then serves the result directly to your coding agent via
           MCP so every component it builds is on-brand, every time.
+          Designers stay in control of the system. AI stays on-brand.
         </p>
       </div>
 

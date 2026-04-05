@@ -87,6 +87,9 @@ export async function POST(request: NextRequest) {
       let imageIndex = 0;
       let totalImages = 0;
       const requestSignal = request.signal;
+      const proto = request.headers.get("x-forwarded-proto") ?? "https";
+      const host = request.headers.get("host") ?? "localhost:3000";
+      const appOrigin = `${proto}://${host}`;
 
       const stream = new ReadableStream({
         async start(controller) {
@@ -131,9 +134,12 @@ export async function POST(request: NextRequest) {
               },
             });
 
+            // Convert relative proxy URLs to absolute so they work inside srcdoc iframes
+            const absoluteHtml = result.html.replaceAll("/api/storage/", `${appOrigin}/api/storage/`);
+
             sendEvent({
               type: "complete",
-              html: result.html,
+              html: absoluteHtml,
               totalCount: result.totalCount,
               failedCount: result.failedCount,
               errors: result.errors,
@@ -170,6 +176,13 @@ export async function POST(request: NextRequest) {
       orgId,
       googleApiKey,
     });
+
+    // Convert relative proxy URL to absolute so it works inside srcdoc iframes
+    if (result.url.startsWith("/api/storage/")) {
+      const proto = request.headers.get("x-forwarded-proto") ?? "https";
+      const host = request.headers.get("host") ?? "localhost:3000";
+      result.url = `${proto}://${host}${result.url}`;
+    }
 
     return NextResponse.json(result);
   } catch (err) {

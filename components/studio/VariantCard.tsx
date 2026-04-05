@@ -12,7 +12,9 @@ import { ElementInspector } from "@/components/studio/ElementInspector";
 import { EditHistoryPanel } from "@/components/studio/EditHistoryPanel";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { countPlaceholderImages } from "@/lib/image/placeholder";
-import type { DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotation, ExtractedToken } from "@/lib/types";
+import { PaperIcon } from "@/components/studio/PaperPushModal";
+import type { DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotation, ExtractedToken, FontDeclaration, UploadedFont } from "@/lib/types";
+
 
 // ---------------------------------------------------------------------------
 // Direct style edit — instant, no AI call
@@ -98,54 +100,161 @@ const TAILWIND_PREFIXES: Record<string, RegExp> = {
 };
 
 /**
- * Build a regex that finds a className attribute in source code matching the given
- * DOM classes, tolerating whitespace differences (multiline classNames, indentation).
- * Also handles className={"..."} and className={'...'} JSX expressions.
+ * Find all className attributes in source code and return the best match for
+ * the given DOM classes. Uses a scoring approach: a className attribute that
+ * contains more of the DOM classes ranks higher, and we require at least 2
+ * matching words (or 1 if the element only has 1 class).
  */
-function buildClassNameRegex(elementClasses: string): RegExp | null {
-  const classWords = elementClasses.split(/\s+/).filter(Boolean).slice(0, 8);
+function findBestClassNameMatch(code: string, elementClasses: string): { full: string; captured: string; index: number } | null {
+  const classWords = elementClasses.split(/\s+/).filter(Boolean);
   if (classWords.length === 0) return null;
-  const escapedWords = classWords.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-  const flexibleSnippet = escapedWords.join("[\\s]+");
-  // Match className="...", className='...', className={"..."}, className={'...'}
-  return new RegExp(
-    `className=(?:["']|\\{["'])([^"']*${flexibleSnippet}[^"']*)(?:["']|["']\\})`,
-    "s",
+  const minRequired = Math.min(classWords.length, 2);
+
+  // Find all className="...", className='...', className={"..."}, className={'...'}
+  const classNameRegex = /className=(?:["']|\{["'])([^"']*?)(?:["']|["']\})/g;
+  let best: { full: string; captured: string; index: number; score: number } | null = null;
+
+  let match: RegExpExecArray | null;
+  while ((match = classNameRegex.exec(code)) !== null) {
+    const captured = match[1];
+    const capturedWords = captured.split(/\s+/).filter(Boolean);
+    let score = 0;
+    for (const w of classWords) {
+      if (capturedWords.includes(w)) score++;
+    }
+    if (score >= minRequired && (!best || score > best.score)) {
+      best = { full: match[0], captured, index: match.index, score };
+    }
+  }
+
+  return best;
+}
+
+/** Map CSS camelCase property to its JSX style object key (same in most cases) */
+const CSS_TO_STYLE_KEY: Record<string, string> = {
+  fontWeight: "fontWeight", fontSize: "fontSize", lineHeight: "lineHeight",
+  letterSpacing: "letterSpacing", fontFamily: "fontFamily", textAlign: "textAlign",
+  display: "display", flexDirection: "flexDirection", alignItems: "alignItems",
+  justifyContent: "justifyContent", color: "color", backgroundColor: "backgroundColor",
+  borderColor: "borderColor", borderRadius: "borderRadius", borderWidth: "borderWidth",
+  opacity: "opacity", gap: "gap", width: "width", height: "height", maxWidth: "maxWidth",
+  paddingTop: "paddingTop", paddingRight: "paddingRight", paddingBottom: "paddingBottom",
+  paddingLeft: "paddingLeft", marginTop: "marginTop", marginRight: "marginRight",
+  marginBottom: "marginBottom", marginLeft: "marginLeft",
+};
+
+/**
+ * Try to apply a style edit by modifying an inline style={{ ... }} in the source code.
+ */
+function tryDirectInlineStyleEdit(code: string, edit: StyleEdit): string | null {
+  const { property, after } = edit;
+  const styleKey = CSS_TO_STYLE_KEY[property];
+  if (!styleKey) return null;
+
+  // Build regex to find styleKey: "value" or styleKey: 'value' or styleKey: number
+  const propRegex = new RegExp(
+    `(${styleKey}\\s*:\\s*)(?:"[^"]*"|'[^']*'|[^,}\\s]+)`,
+    "g",
   );
+
+  // Quote the new value appropriately
+  const isNumeric = /^\d+(\.\d+)?$/.test(after);
+  const quotedValue = isNumeric ? after : `"${after}"`;
+
+  let found = false;
+  const result = code.replace(propRegex, (match, prefix) => {
+    if (found) return match;
+    found = true;
+    return `${prefix}${quotedValue}`;
+  });
+
+  return found && result !== code ? result : null;
 }
 
 /**
- * Try to apply a single style edit directly in the source code by swapping Tailwind classes.
- * Returns the updated code, or null if direct editing isn't possible for this edit.
+ * Try to apply a textContent edit by finding and replacing the text in the source code.
+ */
+function tryDirectTextEdit(code: string, edit: StyleEdit): string | null {
+  if (edit.property !== "textContent" || !edit.before || !edit.after) return null;
+
+  const escapedBefore = edit.before.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  // Find the literal text in JSX (between > and <)
+  const textInJsx = new RegExp(`(>\\s*)${escapedBefore}(\\s*<)`, "g");
+  let found = false;
+  const result = code.replace(textInJsx, (match, prefix, suffix) => {
+    if (found) return match;
+    found = true;
+    return `${prefix}${edit.after}${suffix}`;
+  });
+  if (found) return result;
+
+  // Also try as a string literal (e.g. inside a variable or prop)
+  const asString = new RegExp(`(["'])${escapedBefore}\\1`);
+  const stringMatch = code.match(asString);
+  if (stringMatch) {
+    const quote = stringMatch[1];
+    return code.replace(stringMatch[0], `${quote}${edit.after}${quote}`);
+  }
+
+  return null;
+}
+
+/**
+ * Try to apply a single style edit directly in the source code.
+ * Attempts in order: text content replacement, Tailwind class swap, inline style edit.
+ * Returns the updated code, or null if all direct paths fail.
  */
 function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null {
   const { elementClasses, property, after } = edit;
-  if (!elementClasses || !CSS_TO_TAILWIND[property]) return null;
 
-  const classRegex = buildClassNameRegex(elementClasses);
-  if (!classRegex) return null;
-
-  const classMatch = code.match(classRegex);
-  if (!classMatch) return null;
-
-  const fullClassName = classMatch[1];
-  const prefix = TAILWIND_PREFIXES[property];
-  const newClass = CSS_TO_TAILWIND[property](after);
-
-  // Remove existing class for this property, add new one
-  let updatedClassName = fullClassName;
-  if (prefix) {
-    updatedClassName = updatedClassName.replace(prefix, "").replace(/\s{2,}/g, " ").trim();
+  // Handle text content edits separately
+  if (property === "textContent") {
+    const textResult = tryDirectTextEdit(code, edit);
+    if (textResult) {
+      console.debug("[direct-edit] textContent: replaced via direct text match");
+      return textResult;
+    }
+    console.debug("[direct-edit] textContent: no direct match found for:", edit.before?.substring(0, 50));
+    return null;
   }
-  updatedClassName = `${updatedClassName} ${newClass}`;
 
-  const result = code.replace(classMatch[0], `className="${updatedClassName}"`);
-  return result !== code ? result : null;
+  // Try Tailwind class swap first
+  if (elementClasses && CSS_TO_TAILWIND[property]) {
+    const classMatch = findBestClassNameMatch(code, elementClasses);
+    if (classMatch) {
+      const prefix = TAILWIND_PREFIXES[property];
+      const newClass = CSS_TO_TAILWIND[property](after);
+      let updatedClassName = classMatch.captured;
+      if (prefix) {
+        updatedClassName = updatedClassName.replace(prefix, "").replace(/\s{2,}/g, " ").trim();
+      }
+      updatedClassName = `${updatedClassName} ${newClass}`;
+      const result = code.replace(classMatch.full, `className="${updatedClassName}"`);
+      if (result !== code) {
+        console.debug(`[direct-edit] ${property}: Tailwind class swap succeeded`);
+        return result;
+      }
+    } else {
+      console.debug(`[direct-edit] ${property}: no className match in source for classes:`, elementClasses.substring(0, 80));
+    }
+  }
+
+  // Fall back to inline style editing
+  const inlineResult = tryDirectInlineStyleEdit(code, edit);
+  if (inlineResult) {
+    console.debug(`[direct-edit] ${property}: inline style edit succeeded`);
+    return inlineResult;
+  }
+
+  console.debug(`[direct-edit] ${property}: all direct edit paths failed, will use AI fallback`);
+  return null;
 }
 
 /**
- * Try to apply style edits directly in the source code by swapping Tailwind classes.
- * Returns { code, remaining } where remaining are edits that couldn't be applied directly.
+ * Try to apply style edits directly in the source code by swapping Tailwind classes
+ * or editing inline styles. Returns { code, remaining } where remaining are edits
+ * that couldn't be applied directly and need AI assistance.
  */
 function tryDirectStyleEdits(code: string, edits: StyleEdit[]): { code: string; remaining: StyleEdit[] } {
   let result = code;
@@ -171,7 +280,7 @@ function Tip({ label, children, wide }: { label: string; children: React.ReactNo
         <TooltipPrimitive.Content
           side="top"
           sideOffset={6}
-          className={`z-50 rounded-md bg-[var(--bg-elevated)] border border-[var(--studio-border)] px-2 py-1 text-[10px] text-[var(--text-secondary)] animate-in fade-in-0 zoom-in-95 ${wide ? "max-w-xs whitespace-normal leading-relaxed" : ""}`}
+          className={`z-50 rounded-md bg-[var(--bg-elevated)] border border-[var(--studio-border)] px-2 py-1 text-[10px] text-[var(--text-secondary)] animate-in fade-in-0 zoom-in-95 ${wide ? "max-w-xs whitespace-pre-line leading-relaxed" : ""}`}
         >
           {label}
         </TooltipPrimitive.Content>
@@ -187,6 +296,7 @@ interface VariantCardProps {
   onRate: (rating: "up" | "down") => void;
   onCopyCode: () => void;
   onPushToFigma: () => void;
+  onPushToPaper: () => void;
   onRegenerate: (feedback?: string) => void;
   onResponsive?: () => void;
   onPromoteToLibrary?: () => void;
@@ -199,6 +309,10 @@ interface VariantCardProps {
   layoutMd?: string;
   designTokens?: ExtractedToken[];
   iconPacks?: string[];
+  fonts?: FontDeclaration[];
+  uploadedFonts?: UploadedFont[];
+  /** When true, card animates in with a scale-up + fade-in entrance */
+  isNewlyGenerated?: boolean;
 }
 
 export function VariantCard({
@@ -208,6 +322,7 @@ export function VariantCard({
   onRate,
   onCopyCode,
   onPushToFigma,
+  onPushToPaper,
   onRegenerate,
   onResponsive,
   onPromoteToLibrary,
@@ -220,7 +335,15 @@ export function VariantCard({
   layoutMd,
   designTokens,
   iconPacks,
+  fonts,
+  uploadedFonts,
+  isNewlyGenerated = false,
 }: VariantCardProps) {
+  // Top-down clip-path reveal for newly generated variants.
+  // Starts fully clipped, reveals when preview iframe loads.
+  const [revealed, setRevealed] = useState(!isNewlyGenerated);
+  const revealedRef = useRef(!isNewlyGenerated);
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fullscreenIframeRef = useRef<HTMLIFrameElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -230,6 +353,7 @@ export function VariantCard({
   const refineInputRef = useRef<HTMLInputElement>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const [showRefineInput, setShowRefineInput] = useState(false);
   const [refineText, setRefineText] = useState("");
   const [inspectMode, setInspectMode] = useState(false);
@@ -262,7 +386,8 @@ export function VariantCard({
         });
 
         if (!res.ok) {
-          setPreviewError("Transpilation failed");
+          const errData = await res.json().catch(() => null);
+          setPreviewError(errData?.error || "Transpilation failed");
           return;
         }
 
@@ -274,15 +399,20 @@ export function VariantCard({
         componentNameRef.current = name;
 
         // Update the scaled card preview
-        const srcdoc = buildSrcdoc(js, name, undefined, variant.id, iconPacks);
+        const srcdoc = buildSrcdoc(js, name, { variantId: variant.id, iconPacks, fonts, uploadedFonts });
         if (iframeRef.current) {
           iframeRef.current.srcdoc = srcdoc;
           setPreviewReady(true);
+          // Trigger top-down reveal after a frame to let the iframe start rendering
+          if (!revealedRef.current) {
+            revealedRef.current = true;
+            requestAnimationFrame(() => setRevealed(true));
+          }
         }
 
         // Also update the fullscreen Inspector iframe if it's open
         if (inspectMode && fullscreenIframeRef.current) {
-          const inspectorSrcdoc = buildSrcdoc(js, name, getInspectorScript(), undefined, iconPacks);
+          const inspectorSrcdoc = buildSrcdoc(js, name, { inspectorScript: getInspectorScript(), iconPacks, fonts, uploadedFonts });
           fullscreenIframeRef.current.srcdoc = inspectorSrcdoc;
         }
       } catch (err) {
@@ -294,7 +424,7 @@ export function VariantCard({
 
     transpileAndRender();
     return () => { cancelled = true; };
-  }, [variant.code, inspectMode]);
+  }, [variant.code, inspectMode, retryKey]);
 
   // Listen for runtime errors from the preview iframe
   useEffect(() => {
@@ -316,13 +446,13 @@ export function VariantCard({
     if (!js) return;
     if (inspectMode) {
       // Fullscreen iframe gets the inspector script
-      const srcdoc = buildSrcdoc(js, componentNameRef.current, getInspectorScript(), undefined, iconPacks);
+      const srcdoc = buildSrcdoc(js, componentNameRef.current, { inspectorScript: getInspectorScript(), iconPacks, fonts, uploadedFonts });
       if (fullscreenIframeRef.current) {
         fullscreenIframeRef.current.srcdoc = srcdoc;
       }
     } else {
       // Exiting inspect mode — React mounts a fresh scaled iframe, restore its srcdoc
-      const srcdoc = buildSrcdoc(js, componentNameRef.current, undefined, variant.id, iconPacks);
+      const srcdoc = buildSrcdoc(js, componentNameRef.current, { variantId: variant.id, iconPacks, fonts, uploadedFonts });
       if (iframeRef.current) {
         iframeRef.current.srcdoc = srcdoc;
         setPreviewReady(true);
@@ -400,7 +530,7 @@ export function VariantCard({
     applyAbortRef.current?.abort();
     const abort = new AbortController();
     applyAbortRef.current = abort;
-    const timeout = setTimeout(() => abort.abort(), 60_000);
+    const timeout = setTimeout(() => abort.abort(), 120_000);
     setIsApplying(true);
     setApplyError(null);
     setApplyElapsed(0);
@@ -466,7 +596,7 @@ export function VariantCard({
     applyAbortRef.current?.abort();
     const abort = new AbortController();
     applyAbortRef.current = abort;
-    const timeout = setTimeout(() => abort.abort(), 60_000);
+    const timeout = setTimeout(() => abort.abort(), 120_000);
     setIsApplying(true);
     setApplyError(null);
     setApplyElapsed(0);
@@ -547,14 +677,13 @@ export function VariantCard({
 
       // Helper: replace src in a matched img tag and persist
       const applySrc = (match: { start: number; end: number; tag: string }) => {
-        let newTag = match.tag;
-        if (/\ssrc\s*=\s*"[^"]*"/i.test(newTag)) {
-          newTag = newTag.replace(/\ssrc\s*=\s*"[^"]*"/i, ` src="${imageUrl}"`);
-        } else if (/\ssrc\s*=\s*'[^']*'/i.test(newTag)) {
-          newTag = newTag.replace(/\ssrc\s*=\s*'[^']*'/i, ` src="${imageUrl}"`);
-        } else {
-          newTag = newTag.replace(/\/?\s*>$/, ` src="${imageUrl}" />`);
-        }
+        // Strip ALL existing src attributes (handles duplicates from pipeline fallbacks)
+        let newTag = match.tag
+          .replace(/\ssrc\s*=\s*"[^"]*"/gi, "")
+          .replace(/\ssrc\s*=\s*'[^']*'/gi, "")
+          .replace(/\ssrc\s*=\s*\{[^}]*\}/gi, "");
+        // Add single clean src attribute before the closing
+        newTag = newTag.replace(/\/?\s*>$/, ` src="${imageUrl}" />`);
         const updatedCode = code.slice(0, match.start) + newTag + code.slice(match.end);
         onCodeUpdate(updatedCode, editHistory);
       };
@@ -638,7 +767,7 @@ export function VariantCard({
       if (!res.ok) return;
       const { js } = await res.json();
       const componentName = extractComponentName(entry.codeAfter);
-      const srcdoc = buildSrcdoc(js, componentName, undefined, undefined, iconPacks);
+      const srcdoc = buildSrcdoc(js, componentName, { iconPacks, fonts, uploadedFonts });
       if (iframeRef.current) {
         iframeRef.current.srcdoc = srcdoc;
       }
@@ -653,25 +782,37 @@ export function VariantCard({
     setPreviewEntryId(undefined);
   }, []);
 
-  const healthBadge = variant.healthScore ? (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-        variant.healthScore.total >= 80
-          ? "bg-emerald-500/20 text-emerald-400"
-          : variant.healthScore.total >= 50
-            ? "bg-amber-500/20 text-amber-400"
-            : "bg-red-500/20 text-red-400"
-      }`}
-    >
-      {variant.healthScore.total}
-    </span>
-  ) : null;
+  const healthBadge = variant.healthScore ? (() => {
+    const hs = variant.healthScore;
+    const issueLines = hs.issues.slice(0, 8).map((issue) => `  - ${issue.rule}: ${issue.actual} (use ${issue.expected})`).join("\n");
+    const issuesSuffix = hs.issues.length > 8 ? `\n  ...and ${hs.issues.length - 8} more` : "";
+    const label = `Design system compliance: ${hs.total}/100\nToken faithfulness: ${hs.tokenFaithfulness}\nComponent accuracy: ${hs.componentAccuracy}\nAnti-pattern violations: ${hs.antiPatternViolations}${hs.issues.length > 0 ? `\n\nIssues:\n${issueLines}${issuesSuffix}` : ""}`;
+    return (
+      <Tip label={label} wide>
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold cursor-help ${
+            hs.total >= 80
+              ? "bg-emerald-500/20 text-emerald-400"
+              : hs.total >= 50
+                ? "bg-amber-500/20 text-amber-400"
+                : "bg-red-500/20 text-red-400"
+          }`}
+        >
+          {hs.total}
+        </span>
+      </Tip>
+    );
+  })() : null;
 
   return (
     <TooltipProvider>
     <div
       onClick={inspectMode ? undefined : onSelect}
-      className={`group relative flex flex-col rounded-xl border transition-all ${inspectMode ? "" : "cursor-pointer"} ${
+      style={isNewlyGenerated ? {
+        clipPath: revealed ? "inset(0 0 0 0)" : "inset(0 0 100% 0)",
+        transition: "clip-path 800ms ease-out",
+      } : undefined}
+      className={`group relative flex flex-col rounded-xl border transition-colors ${inspectMode ? "" : "cursor-pointer"} ${
         isSelected
           ? "border-[var(--studio-accent)] ring-1 ring-[var(--studio-accent)]/30 bg-[var(--bg-elevated)]"
           : "border-[var(--studio-border)] bg-[var(--bg-surface)] hover:border-[var(--studio-border-strong)]"
@@ -712,13 +853,13 @@ export function VariantCard({
               <AlertTriangle size={18} className="text-red-400" />
             </div>
             <p className="text-xs font-medium text-[var(--text-primary)]">Failed to render</p>
-            <p className="max-w-[220px] text-center text-[10px] leading-relaxed text-[var(--text-muted)] line-clamp-2">{previewError}</p>
+            <p className="max-w-[220px] text-center text-[10px] leading-relaxed text-red-400/70 line-clamp-2">{previewError}</p>
             <button
-              onClick={() => onRegenerate()}
+              onClick={(e) => { e.stopPropagation(); setRetryKey((k) => k + 1); }}
               className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-[var(--bg-hover)] px-3 py-1.5 text-[11px] text-[var(--text-primary)] transition-all hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)]"
             >
               <RotateCw size={12} />
-              Regenerate
+              Retry render
             </button>
           </div>
         ) : inspectMode ? (
@@ -773,7 +914,7 @@ export function VariantCard({
               onReset={() => {
                 const js = transpiledJsRef.current;
                 if (!js) return;
-                const srcdoc = buildSrcdoc(js, componentNameRef.current, getInspectorScript(), undefined, iconPacks);
+                const srcdoc = buildSrcdoc(js, componentNameRef.current, { inspectorScript: getInspectorScript(), iconPacks, fonts, uploadedFonts });
                 if (fullscreenIframeRef.current) fullscreenIframeRef.current.srcdoc = srcdoc;
               }}
               designTokens={designTokens}
@@ -834,7 +975,7 @@ export function VariantCard({
               </button>
             )}
             <button
-              onClick={toggleInspectMode}
+              onClick={(e) => { e.preventDefault(); toggleInspectMode(e); }}
               className="flex items-center gap-1.5 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
             >
               <X size={12} />
@@ -959,10 +1100,10 @@ export function VariantCard({
           </Tip>
         )}
         {onRegenerateImages && (
-          <Tip label="Generate images (Shift+click: regenerate all)">
+          <Tip label={variant.code.includes("data-generate-image") ? "Generate images (Shift+click: regenerate all)" : "No images to generate"}>
           <button
-            onClick={(e) => { e.stopPropagation(); onRegenerateImages(e.shiftKey); }}
-            disabled={isProcessingImages}
+            onClick={(e) => { e.stopPropagation(); if (variant.code.includes("data-generate-image")) onRegenerateImages(e.shiftKey); }}
+            disabled={isProcessingImages || !variant.code.includes("data-generate-image")}
             className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50"
           >
             <ImagePlus size={12} />
@@ -1002,6 +1143,14 @@ export function VariantCard({
           className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
         >
           <Figma size={12} />
+        </button>
+        </Tip>
+        <Tip label="Push to Paper">
+        <button
+          onClick={(e) => { e.stopPropagation(); onPushToPaper(); }}
+          className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+        >
+          <PaperIcon size={12} />
         </button>
         </Tip>
         {onPromoteToLibrary && (

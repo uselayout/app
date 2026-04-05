@@ -53,6 +53,15 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
           MCP-compatible agent automatically.
         </motion.p>
 
+        <motion.p
+          {...fadeUp}
+          transition={{ duration: 0.6, delay: 0.15, ease: [0.0, 0.0, 0.2, 1] }}
+          viewport={viewportConfig}
+          className="text-[14px] leading-[24px] tracking-[-0.165px] text-[var(--mkt-accent)]"
+        >
+          AI generates starting points. Designers make decisions. Layout keeps both on-brand.
+        </motion.p>
+
         {/* CTA row */}
         <motion.div
           {...fadeUp}

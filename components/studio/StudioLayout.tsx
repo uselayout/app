@@ -7,7 +7,8 @@ interface StudioLayoutProps {
   editorPanel: ReactNode;
   canvasPanel?: ReactNode;
   savedPanel?: ReactNode;
-  centreView: "editor" | "canvas" | "saved";
+  designSystemPanel?: ReactNode;
+  centreView: "editor" | "canvas" | "saved" | "design-system";
   showSourcePanel?: boolean;
 }
 
@@ -19,6 +20,7 @@ export function StudioLayout({
   editorPanel,
   canvasPanel,
   savedPanel,
+  designSystemPanel,
   centreView,
   showSourcePanel = true,
 }: StudioLayoutProps) {
@@ -81,11 +83,13 @@ export function StudioLayout({
 
       {/* Centre Panel */}
       <div className="min-w-0 flex-1 overflow-hidden">
-        {centreView === "saved" && savedPanel
-          ? savedPanel
-          : centreView === "canvas" && canvasPanel
-            ? canvasPanel
-            : editorPanel}
+        {centreView === "design-system" && designSystemPanel
+          ? designSystemPanel
+          : centreView === "saved" && savedPanel
+            ? savedPanel
+            : centreView === "canvas" && canvasPanel
+              ? canvasPanel
+              : editorPanel}
       </div>
 
     </div>

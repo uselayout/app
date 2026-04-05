@@ -40,7 +40,7 @@ export default function FigmaPluginPage() {
           Download Figma Plugin (Alpha)
         </a>
         <p className="text-sm text-gray-500">
-          v0.1.0 &middot; 145 KB &middot; Requires Figma desktop app
+          v0.1.0 &middot; 78 KB &middot; Requires Figma desktop app
         </p>
       </section>
 
