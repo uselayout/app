@@ -67,6 +67,7 @@ export default function StudioPage() {
                     ["Typography styles", "Font family, size, weight, line-height, letter-spacing as composites"],
                     ["Effect styles", "Shadows, blur"],
                     ["Component inventory", "Name, description, variant count, property definitions"],
+                    ["Font declarations", "Family, weight, style. Google Fonts auto-detected in previews"],
                     ["Variables", "Enterprise plans only. Gracefully skipped otherwise"],
                   ].map(([what, detail]) => (
                     <tr key={what} className="hover:bg-gray-50">
@@ -147,8 +148,8 @@ export default function StudioPage() {
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
               Shows the raw extracted data: colour tokens, typography styles,
-              spacing values, component inventory, screenshots, quality score,
-              and saved components. Use this to verify what was extracted before
+              spacing values, component inventory, screenshots, fonts, quality
+              score, and saved components. Use this to verify what was extracted before
               generating layout.md. If something looks wrong, you can re-extract
               with different options.
             </p>
@@ -244,6 +245,37 @@ export default function StudioPage() {
             <code className="text-xs bg-gray-100 rounded px-1 py-0.5">GOOGLE_AI_API_KEY</code>{" "}
             environment variable.
           </p>
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">Fonts</h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            Layout automatically detects fonts during extraction. From Figma,
+            font families and weights are captured from typography styles. From
+            websites, <code className="text-xs bg-gray-100 rounded px-1 py-0.5">@font-face</code> rules
+            and computed font declarations are scraped directly.
+          </p>
+          <p className="text-base text-gray-600 leading-relaxed">
+            For Google Fonts (the majority of design systems), Layout
+            auto-detects the font families and injects them into component
+            previews automatically. No configuration needed.
+          </p>
+          <p className="text-base text-gray-600 leading-relaxed">
+            For custom or corporate typefaces not available on Google Fonts, open
+            the <strong>Fonts</strong> tab in the Source Panel and upload your
+            font files (.woff2, .woff, .ttf, .otf, max 5MB each). Uploaded
+            fonts are:
+          </p>
+          <ul className="list-disc pl-6 space-y-1 text-base text-gray-600">
+            <li>Injected into Explorer variant previews via @font-face</li>
+            <li>Included in the export bundle under <code className="text-xs bg-gray-100 rounded px-1 py-0.5">fonts/</code> with a generated <code className="text-xs bg-gray-100 rounded px-1 py-0.5">fonts.css</code></li>
+            <li>Available for AI agents to use when generating components</li>
+          </ul>
+          <Callout type="info">
+            No other design-to-code tool packages custom font files as part of
+            the design system export. Most competitors assume fonts already exist
+            in your codebase or fall back to system fonts.
+          </Callout>
         </div>
 
         <Callout type="tip">
@@ -360,6 +392,7 @@ export default function StudioPage() {
                 ["CSS Tokens", "tokens.css", "Import directly into any stylesheet"],
                 ["JSON Tokens", "tokens.json", "W3C DTCG format for Style Dictionary, Theo, etc."],
                 ["Tailwind Config", "tailwind.config.js", "Theme extension with extracted colours, spacing, radii"],
+                ["Custom Fonts", "fonts/*.woff2 + fonts/fonts.css", "Uploaded font files with @font-face declarations"],
               ].map(([format, file, use]) => (
                 <tr key={format} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-[#0a0a0a] whitespace-nowrap">

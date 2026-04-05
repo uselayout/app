@@ -62,7 +62,7 @@ const capabilities = [
     icon: Download,
     title: "Export",
     description:
-      "Download a ZIP bundle with layout.md, tokens.css, tokens.json, tailwind.config.js, AGENTS.md, and Cursor rules. Or skip the export entirely and use MCP.",
+      "Download a ZIP bundle with layout.md, tokens.css, tokens.json, tailwind.config.js, AGENTS.md, Cursor rules, and custom font files. Or skip the export entirely and use MCP.",
     href: "#export-bundle",
   },
 ] as const;

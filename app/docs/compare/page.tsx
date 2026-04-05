@@ -96,6 +96,18 @@ const COMPARISON_DATA: ComparisonRow[] = [
     },
   },
   {
+    feature: "Custom font support",
+    values: {
+      Layout: "Upload + auto-detect",
+      "Paper.design": false,
+      "Magic Patterns": false,
+      MagicPath: false,
+      Variant: false,
+      "Figma Dev Mode": false,
+      "Pencil.dev": false,
+    },
+  },
+  {
     feature: "Multi-agent support",
     values: {
       Layout: "All major",
@@ -201,6 +213,12 @@ const OBJECTIONS: Objection[] = [
     question: "Pencil.dev does design-to-code in the IDE.",
     answer:
       "Pencil is an IDE-native design canvas \u2014 you design inside VS Code. Layout doesn\u2019t ask anyone to change tools. Designers stay in Figma, developers stay in their terminal. Layout is invisible infrastructure between them.",
+  },
+  {
+    question:
+      "Can\u2019t AI agents just use system fonts or Google Fonts?",
+    answer:
+      "They can \u2014 until your brand uses a custom typeface. Most design-to-code tools ignore fonts entirely, leaving AI agents to guess or fall back to system-ui. Layout extracts font declarations, lets you upload custom font files (.woff2, .ttf), and bundles them in the export. Your AI agent gets the actual font files alongside the design tokens, so generated components render with the right typeface from the start.",
   },
   {
     question: "We already have Storybook / Zeroheight.",
