@@ -232,6 +232,10 @@ export interface ExplorationSession {
   contextFiles?: ContextFile[];
   comparisons?: ComparisonResult[];
   createdAt: string;
+  /** Set when generation starts; cleared on completion. Used to detect interrupted generation. */
+  generatingBatchId?: string;
+  /** How many variants were requested for the active batch. */
+  generatingBatchExpected?: number;
 }
 
 export interface ContextFile {

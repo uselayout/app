@@ -86,6 +86,7 @@ export function ExplorerCanvas({
   const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null);
   const [activeExplorationIndex, setActiveExplorationIndex] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const clearGeneratingRef = useRef<((sessionId: string) => void) | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const streamingBatchRef = useRef<string | null>(null);
   const pendingBatchCountRef = useRef(0);
@@ -94,6 +95,14 @@ export function ExplorerCanvas({
   const { steps, markStep } = useOnboardingStore();
   const stepsRef = useRef(steps);
   stepsRef.current = steps;
+
+  // Keep clearGeneratingRef up to date with latest explorations/onUpdateExplorations
+  clearGeneratingRef.current = (sessionId: string) => {
+    const cleared = explorations.map((e) =>
+      e.id === sessionId ? { ...e, generatingBatchId: undefined, generatingBatchExpected: undefined } : e
+    );
+    onUpdateExplorations(cleared);
+  };
 
   // Warn user before navigating away during generation
   useEffect(() => {
@@ -387,7 +396,7 @@ export function ExplorerCanvas({
         // Update the exploration's prompt if it was empty (new tab)
         updatedExplorations = explorations.map((e) =>
           e.id === sessionId
-            ? { ...e, ...(e.prompt === "" && { prompt }), variantCount }
+            ? { ...e, ...(e.prompt === "" && { prompt }), variantCount, generatingBatchId: batchId, generatingBatchExpected: variantCount }
             : e
         );
         onUpdateExplorations(updatedExplorations);
@@ -403,6 +412,8 @@ export function ExplorerCanvas({
           referenceImage: imageDataUrl,
           contextFiles: resolvedContextFiles,
           createdAt: new Date().toISOString(),
+          generatingBatchId: batchId,
+          generatingBatchExpected: variantCount,
         };
         updatedExplorations = [...explorations, newExploration];
         onUpdateExplorations(updatedExplorations);
@@ -429,6 +440,9 @@ export function ExplorerCanvas({
         setGenerationStatus(null);
         abortRef.current = null;
         generatingSessionRef.current = null;
+        // Clear generation tracking from the exploration session.
+        // Use a ref to get latest explorations since this closure captures stale state.
+        clearGeneratingRef.current?.(sessionId);
       }
     },
     [isGenerating, projectId, layoutMd, modelId, explorations, currentExploration, onUpdateExplorations, runGeneration, fetchUrlsFromPrompt]
@@ -451,6 +465,12 @@ export function ExplorerCanvas({
       const sessionId = currentExploration.id;
       const existingVariants = currentExploration.variants;
 
+      // Persist generation tracking
+      const withTracking = explorations.map((e) =>
+        e.id === sessionId ? { ...e, generatingBatchId: batchId, generatingBatchExpected: variantCount } : e
+      );
+      onUpdateExplorations(withTracking);
+
       setSelectedVariantId(null);
       generatingSessionRef.current = sessionId;
 
@@ -460,7 +480,7 @@ export function ExplorerCanvas({
           existingVariants,
           batchId,
           batchPrompt,
-          explorations,
+          withTracking,
           {
             prompt: resolvedPrompt,
             layoutMd,
@@ -482,6 +502,7 @@ export function ExplorerCanvas({
         setGenerationStatus(null);
         abortRef.current = null;
         generatingSessionRef.current = null;
+        clearGeneratingRef.current?.(sessionId);
       }
     },
     [isGenerating, selectedVariant, currentExploration, projectId, layoutMd, explorations, runGeneration, fetchUrlsFromPrompt]
@@ -753,6 +774,30 @@ export function ExplorerCanvas({
   const skeletonCount = isGeneratingThisTab && streamingBatchRef.current
     ? Math.max(0, pendingBatchCountRef.current - variants.filter((v) => v.batchId === streamingBatchRef.current).length)
     : 0;
+
+  // Detect interrupted generation: session has generatingBatchId but we're not actively generating
+  const interruptedBatch = !isGenerating && currentExploration?.generatingBatchId
+    ? {
+        batchId: currentExploration.generatingBatchId,
+        expected: currentExploration.generatingBatchExpected ?? 0,
+        received: variants.filter((v) => v.batchId === currentExploration.generatingBatchId).length,
+      }
+    : null;
+  const interruptedSkeletonCount = interruptedBatch
+    ? Math.max(0, interruptedBatch.expected - interruptedBatch.received)
+    : 0;
+
+  // Auto-clear interrupted state after mount (the stream is dead, just acknowledge it)
+  useEffect(() => {
+    if (!interruptedBatch || !currentExploration) return;
+    const timer = setTimeout(() => {
+      const cleared = explorations.map((e) =>
+        e.id === currentExploration.id ? { ...e, generatingBatchId: undefined, generatingBatchExpected: undefined } : e
+      );
+      onUpdateExplorations(cleared);
+    }, 10_000); // Clear after 10s so user sees the interrupted state
+    return () => clearTimeout(timer);
+  }, [interruptedBatch?.batchId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const keyStatus = useKeyStatus();
   const { hasAnthropicKey, hasGoogleKey, hasLostKeys, lostKeys } = keyStatus;
@@ -1099,6 +1144,29 @@ export function ExplorerCanvas({
                   ))}
                 </div>
               </>
+            )}
+
+            {/* Interrupted generation: show faded skeletons with message */}
+            {interruptedSkeletonCount > 0 && interruptedBatch && (
+              <div className={gridClassName}>
+                {Array.from({ length: interruptedSkeletonCount }).map((_, i) => (
+                  <div key={`interrupted-${i}`} className="relative rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col opacity-50">
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white/50 p-6">
+                      <div className="flex h-full flex-col items-center justify-center gap-2">
+                        <span className="text-xs text-gray-400">Generation interrupted</span>
+                        {i === 0 && (
+                          <span className="text-[10px] text-gray-300">
+                            {interruptedBatch.received} of {interruptedBatch.expected} completed
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2.5">
+                      <div className="h-3 w-24 rounded bg-gray-100" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
 
             {isProcessingImages && (

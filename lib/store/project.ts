@@ -20,6 +20,9 @@ function stripBloatForSave(project: Project): Project {
       if (s.referenceImage && s.referenceImage.length > 1000) {
         delete s.referenceImage;
       }
+      // Remove transient generation tracking fields
+      delete s.generatingBatchId;
+      delete s.generatingBatchExpected;
       // Strip compiledJs and large data URIs from variants
       if (s.variants) {
         s.variants = s.variants.map((v) => {
