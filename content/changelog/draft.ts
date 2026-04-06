@@ -306,4 +306,31 @@ export const draftEntries: ChangelogEntry[] = [
     category: "improved",
     date: "2026-04-04",
   },
+  {
+    id: "2026-w14-large-figma-files",
+    title: "Large Figma files no longer crash extraction",
+    description:
+      "Figma files with hundreds of styles and variables now extract successfully instead of hitting a server memory limit.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-06",
+  },
+  {
+    id: "2026-w14-screenshot-size-limit",
+    title: "Reliable layout.md generation for all websites",
+    description:
+      "Websites with very large screenshots no longer fail during layout.md generation. Screenshots are automatically optimised to stay within API limits.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-06",
+  },
+  {
+    id: "2026-w14-figma-token-guidance",
+    title: "Clearer Figma token error messages",
+    description:
+      "If you accidentally paste an OAuth token instead of a Personal Access Token, the error message now tells you exactly what to do.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-06",
+  },
 ];
