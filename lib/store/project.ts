@@ -4,6 +4,44 @@ import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 import { renameTokenInLayoutMd } from "@/lib/tokens/rename-token";
 import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont } from "@/lib/types";
 
+/**
+ * Strip large base64 data from the project before sending to the API.
+ * referenceImage and compiledJs bloat the payload (often >10MB) and cause
+ * JSON parsing failures due to body size limits.
+ */
+function stripBloatForSave(project: Project): Project {
+  const stripped = { ...project };
+
+  // Strip referenceImage (base64 screenshots) from exploration sessions
+  if (stripped.explorations) {
+    stripped.explorations = stripped.explorations.map((session) => {
+      const s = { ...session };
+      // Remove base64 reference images - they're only needed client-side
+      if (s.referenceImage && s.referenceImage.length > 1000) {
+        delete s.referenceImage;
+      }
+      // Strip compiledJs from variants - it can be recompiled on demand
+      if (s.variants) {
+        s.variants = s.variants.map((v) => {
+          const { compiledJs, ...rest } = v;
+          return rest;
+        });
+      }
+      // Strip compiledJs from comparisons too
+      if (s.comparisons) {
+        s.comparisons = s.comparisons.map((c) => ({
+          ...c,
+          withDs: { ...c.withDs, compiledJs: undefined },
+          withoutDs: { ...c.withoutDs, compiledJs: undefined },
+        }));
+      }
+      return s;
+    });
+  }
+
+  return stripped;
+}
+
 /** Save a project via the server-side API (bypasses RLS). */
 function apiUpsertProject(project: Project, onError?: (msg: string) => void): void {
   if (!project.orgId) {
@@ -17,7 +55,7 @@ function apiUpsertProject(project: Project, onError?: (msg: string) => void): vo
       const res = await fetch(`/api/organizations/${project.orgId}/projects/${project.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(project),
+        body: JSON.stringify(stripBloatForSave(project)),
       });
       if (!res.ok) {
         const detail = await res.text().catch(() => "");
@@ -40,7 +78,7 @@ async function apiUpsertProjectAsync(project: Project): Promise<string | null> {
     const res = await fetch(`/api/organizations/${project.orgId}/projects/${project.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(project),
+      body: JSON.stringify(stripBloatForSave(project)),
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "");

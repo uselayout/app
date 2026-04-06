@@ -32,7 +32,17 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const authResult = await requireOrgAuth(orgId, "editProject");
     if (authResult instanceof NextResponse) return authResult;
 
-    const raw = await request.json();
+    let raw: unknown;
+    try {
+      raw = await request.json();
+    } catch (parseErr) {
+      const msg = parseErr instanceof Error ? parseErr.message : "Invalid JSON";
+      console.error("PUT project JSON parse error:", msg);
+      return NextResponse.json(
+        { error: `Invalid JSON body: ${msg}` },
+        { status: 400 }
+      );
+    }
 
     const ProjectUpdateSchema = z.object({
       id: z.string(),
