@@ -217,6 +217,7 @@ export async function POST(request: Request) {
   const updatedProject: Project = {
     ...project,
     tokenCount,
+    pluginTokensPushedAt: new Date().toISOString(),
     extractionData: {
       ...(project.extractionData ?? {
         sourceType: "figma",

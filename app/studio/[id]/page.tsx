@@ -53,9 +53,8 @@ export default function StudioPage({
   // Poll for external updates (e.g. Figma plugin pushing tokens or screenshots)
   const [pluginTokensUpdated, setPluginTokensUpdated] = useState(false);
   const [fontUploaded, setFontUploaded] = useState(false);
-  const prevTokenSnapshotRef = useRef<string | null>(null);
+  const prevPluginPushRef = useRef<string | null>(null);
   const isFirstPollRef = useRef(true);
-  const extractionCooldownRef = useRef(false);
   const pendingImageConsumedRef = useRef(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   // Callback refs so the polling effect can call these without re-subscribing
@@ -64,9 +63,7 @@ export default function StudioPage({
 
   useEffect(() => {
     if (!project?.id) return;
-    // Reset snapshot on project change to avoid false positives
-    const snapshot = JSON.stringify(project.extractionData?.tokens ?? {});
-    prevTokenSnapshotRef.current = snapshot;
+    prevPluginPushRef.current = project.pluginTokensPushedAt ?? null;
     isFirstPollRef.current = true;
     pendingImageConsumedRef.current = false;
     setPluginTokensUpdated(false);
@@ -76,18 +73,14 @@ export default function StudioPage({
       await refreshProject(project.id);
       const updated = useProjectStore.getState().projects.find((p) => p.id === project.id);
 
-      // Detect token changes from plugin
-      const newSnapshot = JSON.stringify(updated?.extractionData?.tokens ?? {});
+      // Detect plugin token push (only triggers when Figma plugin explicitly pushes)
+      const pushTs = updated?.pluginTokensPushedAt;
       if (isFirstPollRef.current) {
-        // First poll establishes server baseline; don't trigger banner
         isFirstPollRef.current = false;
-        prevTokenSnapshotRef.current = newSnapshot;
-      } else if (prevTokenSnapshotRef.current && newSnapshot !== prevTokenSnapshotRef.current) {
-        // Don't show banner if extraction just completed (save may still be propagating)
-        if (!extractionCooldownRef.current) {
-          setPluginTokensUpdated(true);
-        }
-        prevTokenSnapshotRef.current = newSnapshot;
+        prevPluginPushRef.current = pushTs ?? null;
+      } else if (pushTs && pushTs !== prevPluginPushRef.current) {
+        setPluginTokensUpdated(true);
+        prevPluginPushRef.current = pushTs;
       }
 
       // Detect pending canvas image from plugin/extension push
@@ -207,19 +200,6 @@ export default function StudioPage({
   const extractionError = useExtractionStore((s) => s.error);
   const streamingContent = useExtractionStore((s) => s.streamingContent);
   const isThisProjectExtracting = extractionProjectId === id;
-
-  // When extraction completes, suppress the "plugin updated" banner for 30s.
-  // refreshProject can briefly overwrite local tokens with stale server data
-  // before the save propagates, causing a false diff on the next poll.
-  useEffect(() => {
-    if (extractionStatus === "complete" && project?.id) {
-      extractionCooldownRef.current = true;
-      const fresh = useProjectStore.getState().projects.find((p) => p.id === project.id);
-      prevTokenSnapshotRef.current = JSON.stringify(fresh?.extractionData?.tokens ?? {});
-      const timer = setTimeout(() => { extractionCooldownRef.current = false; }, 30_000);
-      return () => clearTimeout(timer);
-    }
-  }, [extractionStatus, project?.id]);
 
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");

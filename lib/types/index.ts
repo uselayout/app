@@ -191,6 +191,7 @@ export interface Project {
   iconPacks?: string[];
   uploadedFonts?: UploadedFont[];
   pendingCanvasImage?: string | null;
+  pluginTokensPushedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

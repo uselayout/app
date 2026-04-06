@@ -138,6 +138,7 @@ export async function POST(request: Request) {
     ...project,
     tokenCount,
     sourceUrl: fileKey ?? project.sourceUrl,
+    pluginTokensPushedAt: new Date().toISOString(),
     extractionData: {
       sourceType: "figma",
       sourceName: fileName ?? project.name,
