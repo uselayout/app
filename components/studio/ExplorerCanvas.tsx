@@ -1071,8 +1071,13 @@ export function ExplorerCanvas({
                     />
                   ))}
                   {/* Shimmer skeletons for remaining slots — inline so cards stay in place */}
-                  {isGeneratingThisTab && batch.batchId === streamingBatchRef.current && skeletonCount > 0 &&
-                    Array.from({ length: skeletonCount }).map((_, i) => (
+                  {(() => {
+                    // Active generation: show skeletons for slots not yet filled
+                    const activeCount = isGeneratingThisTab && batch.batchId === streamingBatchRef.current ? skeletonCount : 0;
+                    // Remount case: show skeletons for the pending batch after navigating away and back
+                    const pendingCount = !isGeneratingThisTab && pendingBatch && batch.batchId === pendingBatch.batchId ? pendingSkeletonCount : 0;
+                    const inlineCount = activeCount || pendingCount;
+                    return inlineCount > 0 ? Array.from({ length: inlineCount }).map((_, i) => (
                       <div key={`skeleton-${i}`} className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col">
                         <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white p-6">
                           <div className="flex h-full flex-col gap-3">
@@ -1087,8 +1092,8 @@ export function ExplorerCanvas({
                           <div className="h-3 w-24 animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
                         </div>
                       </div>
-                    ))
-                  }
+                    )) : null;
+                  })()}
                 </div>
               </div>
             ))}
@@ -1134,8 +1139,8 @@ export function ExplorerCanvas({
               </>
             )}
 
-            {/* Shimmer skeletons for pending generation (user navigated away and back) */}
-            {pendingSkeletonCount > 0 && (
+            {/* Shimmer skeletons for pending generation when no batch exists yet (remount before any variant arrived) */}
+            {pendingSkeletonCount > 0 && !batches.some((b) => b.batchId === pendingBatch?.batchId) && (
               <div className={gridClassName}>
                 {Array.from({ length: pendingSkeletonCount }).map((_, i) => (
                   <div key={`pending-${i}`} className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col">

@@ -177,6 +177,16 @@ export default function StudioPage({
   const streamingContent = useExtractionStore((s) => s.streamingContent);
   const isThisProjectExtracting = extractionProjectId === id;
 
+  // When extraction completes, reset token snapshot so polling doesn't
+  // mistake extraction-caused changes for a Figma plugin push.
+  useEffect(() => {
+    if (extractionStatus === "complete" && project?.id) {
+      const fresh = useProjectStore.getState().projects.find((p) => p.id === project.id);
+      const snapshot = JSON.stringify(fresh?.extractionData?.tokens ?? {});
+      prevTokenSnapshotRef.current = snapshot;
+    }
+  }, [extractionStatus, project?.id]);
+
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
