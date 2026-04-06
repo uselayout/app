@@ -437,7 +437,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
         fetch(`/api/admin/dashboard/usage?days=${days}`).then((r) => r.json()),
         fetch(`/api/admin/dashboard/errors?hours=${errorHours}`).then((r) => r.json()),
         fetch("/api/admin/dashboard/funnel").then((r) => r.json()),
-        fetch("/api/admin/dashboard/users?sort=cost&limit=20").then((r) => r.json()),
+        fetch(`/api/admin/dashboard/users?sort=cost&limit=20&days=${days}`).then((r) => r.json()),
         fetch("/api/admin/dashboard/products").then((r) => r.json()),
       ]);
       setOverview(ov);

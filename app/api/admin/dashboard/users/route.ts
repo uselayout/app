@@ -25,6 +25,17 @@ export async function GET(request: NextRequest) {
     Math.max(parseInt(request.nextUrl.searchParams.get("limit") ?? "20", 10) || 20, 1),
     200
   );
+  const daysParam = parseInt(request.nextUrl.searchParams.get("days") ?? "0", 10);
+
+  let usageQuery = supabase
+    .from("layout_usage_log")
+    .select("user_id, endpoint, cost_estimate_gbp, created_at, mode")
+    .limit(10000);
+
+  if (daysParam > 0) {
+    const since = new Date(Date.now() - daysParam * 24 * 60 * 60 * 1000).toISOString();
+    usageQuery = usageQuery.gte("created_at", since);
+  }
 
   const [usersRes, usageRes, projectsRes, subscriptionsRes] =
     await Promise.all([
@@ -34,10 +45,7 @@ export async function GET(request: NextRequest) {
         .order("createdAt", { ascending: false })
         .limit(200),
 
-      supabase
-        .from("layout_usage_log")
-        .select("user_id, endpoint, cost_estimate_gbp, created_at, mode")
-        .limit(10000),
+      usageQuery,
 
       supabase.from("layout_projects").select("user_id"),
 
