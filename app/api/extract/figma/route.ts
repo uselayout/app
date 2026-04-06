@@ -96,7 +96,23 @@ export async function POST(request: NextRequest) {
         void logApiCall({ userId: session.user.id, endpoint: "extract/figma", statusCode: 200, durationMs, metadata: { figmaFileKey: fileKey } });
         void logEvent("extraction.complete", "studio", { userId: session.user.id, metadata: { sourceType: "figma", durationMs } });
 
-        send({ type: "complete", data: result });
+        try {
+          send({ type: "complete", data: result });
+        } catch (sendErr) {
+          if (sendErr instanceof Error && sendErr.message.includes("string longer than")) {
+            // Extraction result too large for single SSE message — trim heavy fields
+            const trimmed = {
+              ...result,
+              cssVariables: Object.fromEntries(
+                Object.entries(result.cssVariables).slice(0, 500)
+              ),
+              computedStyles: {},
+            };
+            send({ type: "complete", data: trimmed });
+          } else {
+            throw sendErr;
+          }
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
         void logApiCall({ userId: session.user.id, endpoint: "extract/figma", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: message, metadata: { figmaFileKey: fileKey } });

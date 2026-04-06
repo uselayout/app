@@ -2,6 +2,7 @@ import sharp from "sharp";
 
 const MAX_WIDTH = 1200;
 const MAX_HEIGHT = 4000;
+const MAX_BYTES = 4_500_000; // 4.5MB — leaves margin below Claude's 5MB image limit
 
 /**
  * Resize a screenshot for Claude's vision API.
@@ -39,8 +40,8 @@ export async function resizeScreenshot(
     const width = metadata.width ?? 0;
     const height = metadata.height ?? 0;
 
-    // Skip resize if already within bounds
-    if (width <= MAX_WIDTH && height <= MAX_HEIGHT) {
+    // Skip resize if already within bounds AND under size limit
+    if (width <= MAX_WIDTH && height <= MAX_HEIGHT && buffer.length <= MAX_BYTES) {
       return `data:image/${format};base64,${buffer.toString("base64")}`;
     }
 
@@ -62,8 +63,25 @@ export async function resizeScreenshot(
       });
     }
 
-    const outputBuffer = await pipeline.png().toBuffer();
-    const outputFormat = format === "png" ? "png" : format;
+    let outputBuffer = await pipeline.png().toBuffer();
+    let outputFormat = format === "png" ? "png" : format;
+
+    // If PNG is too large for Claude's 5MB limit, convert to JPEG
+    if (outputBuffer.length > MAX_BYTES) {
+      outputBuffer = await sharp(outputBuffer).jpeg({ quality: 80 }).toBuffer();
+      outputFormat = "jpeg";
+    }
+
+    // If still too large, halve dimensions and reduce quality
+    if (outputBuffer.length > MAX_BYTES) {
+      const meta = await sharp(outputBuffer).metadata();
+      outputBuffer = await sharp(outputBuffer)
+        .resize({ width: Math.round((meta.width ?? 600) / 2) })
+        .jpeg({ quality: 70 })
+        .toBuffer();
+      outputFormat = "jpeg";
+    }
+
     return `data:image/${outputFormat};base64,${outputBuffer.toString("base64")}`;
   } catch {
     return null;

@@ -181,8 +181,8 @@ export async function extractFromWebsite({
     onProgress?.("screenshots", 70, "Capturing screenshots...");
     let screenshots: string[] = [];
     try {
-      const fullPageBuffer = await page.screenshot({ fullPage: true, type: "png" });
-      const viewportBuffer = await page.screenshot({ fullPage: false, type: "png" });
+      const fullPageBuffer = await page.screenshot({ fullPage: true, type: "png", timeout: 15_000 });
+      const viewportBuffer = await page.screenshot({ fullPage: false, type: "png", timeout: 15_000 });
       screenshots = [
         `data:image/png;base64,${fullPageBuffer.toString("base64")}`,
         `data:image/png;base64,${viewportBuffer.toString("base64")}`,
@@ -190,7 +190,7 @@ export async function extractFromWebsite({
     } catch {
       // Retry once — Protocol errors can be transient
       try {
-        const viewportBuffer = await page.screenshot({ fullPage: false, type: "png" });
+        const viewportBuffer = await page.screenshot({ fullPage: false, type: "png", timeout: 15_000 });
         screenshots = [`data:image/png;base64,${viewportBuffer.toString("base64")}`];
       } catch {
         onProgress?.("screenshots", 72, "Screenshots couldn't be captured for this site, but tokens and styles were extracted successfully.");

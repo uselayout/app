@@ -166,10 +166,14 @@ export async function extractFromFigma({
     file = await client.getFile(fileKey, 1);
   } catch (err) {
     if (err instanceof FigmaApiError && err.statusCode === 403) {
+      const isOAuthScopeError = err.message.includes("Invalid scope");
+      const detail = isOAuthScopeError
+        ? "This looks like an OAuth token with incorrect scopes. Please use a Personal Access Token instead. Generate one at figma.com > Settings > Security > Personal access tokens."
+        : "Your Figma token doesn't have access to this file. Check the token is valid and has file_content:read scope enabled in Figma Settings > Security > Personal access tokens.";
       onProgress?.(
         "metadata",
         0,
-        "Your Figma token doesn't have access to this file. Check the token is valid and has file_content:read scope enabled in Figma Settings > Security > Personal access tokens."
+        detail
       );
       return {
         sourceType: "figma",
