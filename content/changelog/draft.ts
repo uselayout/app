@@ -333,4 +333,13 @@ export const draftEntries: ChangelogEntry[] = [
     category: "improved",
     date: "2026-04-06",
   },
+  {
+    id: "2026-w14-save-large-projects",
+    title: "Fixed saving projects with many generated variants",
+    description:
+      "Projects with lots of generated variants could fail to save with a cryptic error. The save payload is now optimised to strip temporary data, keeping saves fast and reliable.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-06",
+  },
 ];
