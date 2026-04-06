@@ -105,17 +105,17 @@ const TAILWIND_PREFIXES: Record<string, RegExp> = {
  * contains more of the DOM classes ranks higher, and we require at least 2
  * matching words (or 1 if the element only has 1 class).
  */
-function findBestClassNameMatch(code: string, elementClasses: string): { full: string; captured: string; index: number } | null {
+function findBestClassNameMatch(code: string, elementClasses: string): { full: string; captured: string; index: number; attrName: "className" | "class" } | null {
   const classWords = elementClasses.split(/\s+/).filter(Boolean);
   if (classWords.length === 0) return null;
   const minRequired = Math.min(classWords.length, 2);
 
-  // Find all className="...", className='...', className={"..."}, className={'...'}
-  const classNameRegex = /className=(?:["']|\{["'])([^"']*?)(?:["']|["']\})/g;
-  let best: { full: string; captured: string; index: number; score: number } | null = null;
+  // Find both className="..." (JSX) and class="..." (plain HTML) attributes
+  const classAttrRegex = /(?:className|class)=(?:["']|\{["'])([^"']*?)(?:["']|["']\})/g;
+  let best: { full: string; captured: string; index: number; score: number; attrName: "className" | "class" } | null = null;
 
   let match: RegExpExecArray | null;
-  while ((match = classNameRegex.exec(code)) !== null) {
+  while ((match = classAttrRegex.exec(code)) !== null) {
     const captured = match[1];
     const capturedWords = captured.split(/\s+/).filter(Boolean);
     let score = 0;
@@ -123,7 +123,8 @@ function findBestClassNameMatch(code: string, elementClasses: string): { full: s
       if (capturedWords.includes(w)) score++;
     }
     if (score >= minRequired && (!best || score > best.score)) {
-      best = { full: match[0], captured, index: match.index, score };
+      const attrName = match[0].startsWith("className") ? "className" as const : "class" as const;
+      best = { full: match[0], captured, index: match.index, score, attrName };
     }
   }
 
@@ -230,13 +231,13 @@ function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null 
         updatedClassName = updatedClassName.replace(prefix, "").replace(/\s{2,}/g, " ").trim();
       }
       updatedClassName = `${updatedClassName} ${newClass}`;
-      const result = code.replace(classMatch.full, `className="${updatedClassName}"`);
+      const result = code.replace(classMatch.full, `${classMatch.attrName}="${updatedClassName}"`);
       if (result !== code) {
-        console.debug(`[direct-edit] ${property}: Tailwind class swap succeeded`);
+        console.debug(`[direct-edit] ${property}: Tailwind class swap succeeded (${classMatch.attrName})`);
         return result;
       }
     } else {
-      console.debug(`[direct-edit] ${property}: no className match in source for classes:`, elementClasses.substring(0, 80));
+      console.debug(`[direct-edit] ${property}: no class match in source for classes:`, elementClasses.substring(0, 80));
     }
   }
 
