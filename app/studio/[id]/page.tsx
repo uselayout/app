@@ -55,6 +55,7 @@ export default function StudioPage({
   const [fontUploaded, setFontUploaded] = useState(false);
   const prevTokenSnapshotRef = useRef<string | null>(null);
   const isFirstPollRef = useRef(true);
+  const extractionCooldownRef = useRef(false);
   const pendingImageConsumedRef = useRef(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   // Callback refs so the polling effect can call these without re-subscribing
@@ -82,7 +83,10 @@ export default function StudioPage({
         isFirstPollRef.current = false;
         prevTokenSnapshotRef.current = newSnapshot;
       } else if (prevTokenSnapshotRef.current && newSnapshot !== prevTokenSnapshotRef.current) {
-        setPluginTokensUpdated(true);
+        // Don't show banner if extraction just completed (save may still be propagating)
+        if (!extractionCooldownRef.current) {
+          setPluginTokensUpdated(true);
+        }
         prevTokenSnapshotRef.current = newSnapshot;
       }
 
@@ -204,13 +208,16 @@ export default function StudioPage({
   const streamingContent = useExtractionStore((s) => s.streamingContent);
   const isThisProjectExtracting = extractionProjectId === id;
 
-  // When extraction completes, reset token snapshot so polling doesn't
-  // mistake extraction-caused changes for a Figma plugin push.
+  // When extraction completes, suppress the "plugin updated" banner for 30s.
+  // refreshProject can briefly overwrite local tokens with stale server data
+  // before the save propagates, causing a false diff on the next poll.
   useEffect(() => {
     if (extractionStatus === "complete" && project?.id) {
+      extractionCooldownRef.current = true;
       const fresh = useProjectStore.getState().projects.find((p) => p.id === project.id);
-      const snapshot = JSON.stringify(fresh?.extractionData?.tokens ?? {});
-      prevTokenSnapshotRef.current = snapshot;
+      prevTokenSnapshotRef.current = JSON.stringify(fresh?.extractionData?.tokens ?? {});
+      const timer = setTimeout(() => { extractionCooldownRef.current = false; }, 30_000);
+      return () => clearTimeout(timer);
     }
   }, [extractionStatus, project?.id]);
 
