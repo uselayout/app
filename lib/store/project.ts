@@ -20,10 +20,17 @@ function stripBloatForSave(project: Project): Project {
       if (s.referenceImage && s.referenceImage.length > 1000) {
         delete s.referenceImage;
       }
-      // Strip compiledJs from variants - it can be recompiled on demand
+      // Strip compiledJs and large data URIs from variants
       if (s.variants) {
         s.variants = s.variants.map((v) => {
           const { compiledJs, ...rest } = v;
+          // Strip large base64 data URIs from variant HTML (images regenerated client-side)
+          if (rest.code) {
+            rest.code = rest.code.replace(
+              /src\s*=\s*"data:image\/[^"]{500,}"/gi,
+              'src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27/%3E"'
+            );
+          }
           return rest;
         });
       }
@@ -34,6 +41,16 @@ function stripBloatForSave(project: Project): Project {
           withDs: { ...c.withDs, compiledJs: undefined },
           withoutDs: { ...c.withoutDs, compiledJs: undefined },
         }));
+      }
+      // Strip large context file content (only needed during generation)
+      if (s.contextFiles) {
+        s.contextFiles = s.contextFiles.map((cf) => {
+          const stripped = { ...cf };
+          if (typeof stripped.content === "string" && stripped.content.length > 1000) {
+            stripped.content = "[stripped]";
+          }
+          return stripped;
+        });
       }
       return s;
     });
@@ -52,10 +69,14 @@ function apiUpsertProject(project: Project, onError?: (msg: string) => void): vo
   }
   void (async () => {
     try {
+      const body = JSON.stringify(stripBloatForSave(project));
+      if (body.length > 5_000_000) {
+        console.warn(`[save] Payload is ${(body.length / 1_000_000).toFixed(1)}MB — may exceed proxy limits`);
+      }
       const res = await fetch(`/api/organizations/${project.orgId}/projects/${project.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(stripBloatForSave(project)),
+        body,
       });
       if (!res.ok) {
         const detail = await res.text().catch(() => "");
@@ -75,10 +96,14 @@ function apiUpsertProject(project: Project, onError?: (msg: string) => void): vo
 async function apiUpsertProjectAsync(project: Project): Promise<string | null> {
   if (!project.orgId) return "Cannot save project: missing orgId";
   try {
+    const body = JSON.stringify(stripBloatForSave(project));
+    if (body.length > 5_000_000) {
+      console.warn(`[save] Payload is ${(body.length / 1_000_000).toFixed(1)}MB — may exceed proxy limits`);
+    }
     const res = await fetch(`/api/organizations/${project.orgId}/projects/${project.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(stripBloatForSave(project)),
+      body,
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
