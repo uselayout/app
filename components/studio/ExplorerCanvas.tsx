@@ -264,8 +264,12 @@ export function ExplorerCanvas({
         healthScore: calculateHealthScore(v.code, extractedFonts, layoutMd),
       }));
       const scoredMerged = [...existingVariants, ...scored];
+      // Clear generation tracking atomically with the final variant update
+      // to avoid a race where clearGeneratingRef overwrites variants with stale state.
       const scoredExplorations = finalExplorations.map((e) =>
-        e.id === sessionId ? { ...e, variants: scoredMerged } : e
+        e.id === sessionId
+          ? { ...e, variants: scoredMerged, generatingBatchId: undefined, generatingBatchExpected: undefined }
+          : e
       );
       onUpdateExplorations(scoredExplorations);
       streamingBatchRef.current = null;
@@ -435,14 +439,14 @@ export function ExplorerCanvas({
         if ((err as Error).name === "AbortError") return;
         const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
         setGenerationError(message);
+        // Only clear generation tracking on error — successful completion
+        // clears it atomically inside streamVariants to avoid stale-state overwrite.
+        clearGeneratingRef.current?.(sessionId);
       } finally {
         setIsGenerating(false);
         setGenerationStatus(null);
         abortRef.current = null;
         generatingSessionRef.current = null;
-        // Clear generation tracking from the exploration session.
-        // Use a ref to get latest explorations since this closure captures stale state.
-        clearGeneratingRef.current?.(sessionId);
       }
     },
     [isGenerating, projectId, layoutMd, modelId, explorations, currentExploration, onUpdateExplorations, runGeneration, fetchUrlsFromPrompt]
@@ -497,12 +501,12 @@ export function ExplorerCanvas({
         if ((err as Error).name === "AbortError") return;
         const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
         setGenerationError(message);
+        clearGeneratingRef.current?.(sessionId);
       } finally {
         setIsGenerating(false);
         setGenerationStatus(null);
         abortRef.current = null;
         generatingSessionRef.current = null;
-        clearGeneratingRef.current?.(sessionId);
       }
     },
     [isGenerating, selectedVariant, currentExploration, projectId, layoutMd, explorations, runGeneration, fetchUrlsFromPrompt]
