@@ -775,29 +775,17 @@ export function ExplorerCanvas({
     ? Math.max(0, pendingBatchCountRef.current - variants.filter((v) => v.batchId === streamingBatchRef.current).length)
     : 0;
 
-  // Detect interrupted generation: session has generatingBatchId but we're not actively generating
-  const interruptedBatch = !isGenerating && currentExploration?.generatingBatchId
+  // Show skeletons for in-progress generation even after remount (user navigated away and back)
+  const pendingBatch = !isGenerating && currentExploration?.generatingBatchId
     ? {
         batchId: currentExploration.generatingBatchId,
         expected: currentExploration.generatingBatchExpected ?? 0,
         received: variants.filter((v) => v.batchId === currentExploration.generatingBatchId).length,
       }
     : null;
-  const interruptedSkeletonCount = interruptedBatch
-    ? Math.max(0, interruptedBatch.expected - interruptedBatch.received)
+  const pendingSkeletonCount = pendingBatch
+    ? Math.max(0, pendingBatch.expected - pendingBatch.received)
     : 0;
-
-  // Auto-clear interrupted state after mount (the stream is dead, just acknowledge it)
-  useEffect(() => {
-    if (!interruptedBatch || !currentExploration) return;
-    const timer = setTimeout(() => {
-      const cleared = explorations.map((e) =>
-        e.id === currentExploration.id ? { ...e, generatingBatchId: undefined, generatingBatchExpected: undefined } : e
-      );
-      onUpdateExplorations(cleared);
-    }, 10_000); // Clear after 10s so user sees the interrupted state
-    return () => clearTimeout(timer);
-  }, [interruptedBatch?.batchId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const keyStatus = useKeyStatus();
   const { hasAnthropicKey, hasGoogleKey, hasLostKeys, lostKeys } = keyStatus;
@@ -1146,23 +1134,22 @@ export function ExplorerCanvas({
               </>
             )}
 
-            {/* Interrupted generation: show faded skeletons with message */}
-            {interruptedSkeletonCount > 0 && interruptedBatch && (
+            {/* Shimmer skeletons for pending generation (user navigated away and back) */}
+            {pendingSkeletonCount > 0 && (
               <div className={gridClassName}>
-                {Array.from({ length: interruptedSkeletonCount }).map((_, i) => (
-                  <div key={`interrupted-${i}`} className="relative rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col opacity-50">
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white/50 p-6">
-                      <div className="flex h-full flex-col items-center justify-center gap-2">
-                        <span className="text-xs text-gray-400">Generation interrupted</span>
-                        {i === 0 && (
-                          <span className="text-[10px] text-gray-300">
-                            {interruptedBatch.received} of {interruptedBatch.expected} completed
-                          </span>
-                        )}
+                {Array.from({ length: pendingSkeletonCount }).map((_, i) => (
+                  <div key={`pending-${i}`} className="rounded-xl border border-[var(--studio-border)] bg-[var(--bg-surface)] flex flex-col">
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white p-6">
+                      <div className="flex h-full flex-col gap-3">
+                        <div className="h-[35%] w-full animate-shimmer rounded-lg bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
+                        <div className="h-4 w-[60%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "100ms" }} />
+                        <div className="h-3 w-[40%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "200ms" }} />
+                        <div className="mt-2 h-3 w-[90%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "300ms" }} />
+                        <div className="h-3 w-[75%] animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" style={{ animationDelay: "400ms" }} />
                       </div>
                     </div>
                     <div className="flex items-center gap-2 px-3 py-2.5">
-                      <div className="h-3 w-24 rounded bg-gray-100" />
+                      <div className="h-3 w-24 animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%]" />
                     </div>
                   </div>
                 ))}
