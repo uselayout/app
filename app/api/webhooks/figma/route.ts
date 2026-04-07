@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { createHash, timingSafeEqual } from "crypto";
 import { supabase } from "@/lib/supabase/client";
+import { extractFromFigma } from "@/lib/figma/extractor";
+import { diffExtractions } from "@/lib/extraction/diff";
+import { fetchProjectById } from "@/lib/supabase/db";
+import type { ExtractionResult } from "@/lib/types";
 
 /**
  * Figma Webhook Handler
@@ -101,6 +105,162 @@ async function verifyPasscode(
   return false;
 }
 
+// ---------------------------------------------------------------------------
+// Background re-extraction
+// ---------------------------------------------------------------------------
+
+/** Debounce map: projectId -> last extraction start timestamp (ms). */
+const extractionDebounce = new Map<string, number>();
+
+/** Minimum interval between re-extractions for the same project (ms). */
+const DEBOUNCE_INTERVAL_MS = 60_000;
+
+/**
+ * Resolve the Figma access token for extraction.
+ *
+ * Currently Figma PATs are stored client-side (localStorage) only, so
+ * webhook-triggered extractions rely on `FIGMA_DEFAULT_TOKEN` env var.
+ *
+ * When server-side per-org token storage is added, extend this function
+ * to look up the org's stored token first.
+ */
+function resolveFigmaToken(_orgId: string): string | null {
+  return process.env.FIGMA_DEFAULT_TOKEN ?? null;
+}
+
+/**
+ * Run re-extraction in the background. This is fire-and-forget from the
+ * webhook handler to keep the response fast.
+ */
+async function performBackgroundExtraction(
+  projectId: string,
+  orgId: string,
+  fileKey: string,
+  eventType: string,
+  triggeredBy: string
+): Promise<void> {
+  const logPrefix = `[figma-webhook:extract]`;
+
+  try {
+    // Resolve Figma access token
+    const accessToken = resolveFigmaToken(orgId);
+    if (!accessToken) {
+      console.warn(
+        `${logPrefix} No Figma access token available for org ${orgId}. ` +
+        `Set FIGMA_DEFAULT_TOKEN or configure an API key for this org.`
+      );
+      return;
+    }
+
+    // Fetch full project to get previous extraction data
+    const project = await fetchProjectById(projectId);
+    if (!project) {
+      console.warn(`${logPrefix} Project ${projectId} not found during background extraction`);
+      return;
+    }
+
+    const previousExtraction = project.extractionData as ExtractionResult | undefined;
+
+    console.info(
+      `${logPrefix} Starting re-extraction`,
+      JSON.stringify({ projectId, fileKey, eventType, triggeredBy })
+    );
+
+    const startMs = Date.now();
+
+    // Run extraction
+    const newExtraction = await extractFromFigma({
+      fileKey,
+      accessToken,
+      onProgress: (step, percent, detail) => {
+        if (percent === 80 || step === "complete") {
+          console.info(`${logPrefix} [${projectId}] ${step}: ${detail ?? ""}`);
+        }
+      },
+    });
+
+    const durationMs = Date.now() - startMs;
+
+    // Diff against previous extraction if available
+    let diffSummary = "No previous extraction to compare";
+    let hasChanges = true;
+
+    if (previousExtraction) {
+      const diff = diffExtractions(previousExtraction, newExtraction);
+      diffSummary = diff.summary;
+      hasChanges =
+        diff.tokens.added > 0 ||
+        diff.tokens.removed > 0 ||
+        diff.tokens.modified > 0 ||
+        diff.components.added > 0 ||
+        diff.components.removed > 0 ||
+        diff.components.modified > 0 ||
+        diff.fonts.added.length > 0 ||
+        diff.fonts.removed.length > 0;
+    }
+
+    if (!hasChanges) {
+      console.info(
+        `${logPrefix} No changes detected`,
+        JSON.stringify({ projectId, fileKey, durationMs })
+      );
+      return;
+    }
+
+    // Count tokens for the project record
+    const tokenCount =
+      newExtraction.tokens.colors.length +
+      newExtraction.tokens.typography.length +
+      newExtraction.tokens.spacing.length +
+      newExtraction.tokens.radius.length +
+      newExtraction.tokens.effects.length;
+
+    // Update the project's extraction_data in Supabase
+    const { error: updateError } = await supabase
+      .from("layout_projects")
+      .update({
+        extraction_data: newExtraction,
+        token_count: tokenCount,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", projectId);
+
+    if (updateError) {
+      console.error(
+        `${logPrefix} Failed to update project`,
+        JSON.stringify({ projectId, error: updateError.message })
+      );
+      return;
+    }
+
+    console.info(
+      `${logPrefix} Re-extraction complete`,
+      JSON.stringify({
+        projectId,
+        fileKey,
+        eventType,
+        triggeredBy,
+        durationMs,
+        tokenCount,
+        diff: diffSummary,
+      })
+    );
+  } catch (err) {
+    console.error(
+      `${logPrefix} Background extraction failed`,
+      JSON.stringify({
+        projectId,
+        fileKey,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Project lookup
+// ---------------------------------------------------------------------------
+
 /**
  * Look up a Layout project whose `source_url` contains the given Figma file key.
  */
@@ -180,8 +340,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: "ok" }, { status: 200 });
   }
 
-  // Only process FILE_UPDATE events for now
-  if (payload.event_type !== "FILE_UPDATE") {
+  // Only process FILE_UPDATE and LIBRARY_PUBLISH events
+  if (payload.event_type !== "FILE_UPDATE" && payload.event_type !== "LIBRARY_PUBLISH") {
     console.info(
       `[figma-webhook] Ignoring event type: ${payload.event_type}`
     );
@@ -201,25 +361,63 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // TODO: Queue background re-extraction + PR creation
-  // For now, log the event and return 200
+  const triggeredBy = payload.triggered_by?.handle ?? "unknown";
+
   console.info(
-    "[figma-webhook] FILE_UPDATE received",
+    `[figma-webhook] ${payload.event_type} received`,
     JSON.stringify({
       fileKey: payload.file_key,
       fileName: payload.file_name,
       projectId: project.id,
       projectName: project.name,
       orgId: project.org_id,
-      triggeredBy: payload.triggered_by?.handle ?? "unknown",
+      triggeredBy,
       timestamp: payload.timestamp,
     })
   );
 
+  // Debounce: skip if a re-extraction was started within the last 60 seconds
+  const lastExtraction = extractionDebounce.get(project.id);
+  const now = Date.now();
+
+  if (lastExtraction && now - lastExtraction < DEBOUNCE_INTERVAL_MS) {
+    const remainingSec = Math.ceil(
+      (DEBOUNCE_INTERVAL_MS - (now - lastExtraction)) / 1000
+    );
+    console.info(
+      `[figma-webhook] Debounced re-extraction for project ${project.id} (${remainingSec}s remaining)`
+    );
+    return NextResponse.json(
+      {
+        status: "ok",
+        message: `Debounced, retry in ${remainingSec}s`,
+        projectId: project.id,
+      },
+      { status: 200 }
+    );
+  }
+
+  // Mark debounce timestamp before firing background task
+  extractionDebounce.set(project.id, now);
+
+  // Fire and forget: run extraction in background so the webhook returns quickly
+  performBackgroundExtraction(
+    project.id,
+    project.org_id,
+    payload.file_key,
+    payload.event_type,
+    triggeredBy
+  ).catch((err) => {
+    console.error(
+      "[figma-webhook] Unhandled error in background extraction:",
+      err instanceof Error ? err.message : String(err)
+    );
+  });
+
   return NextResponse.json(
     {
       status: "ok",
-      message: "Webhook received — extraction queued",
+      message: "Webhook received, extraction queued",
       projectId: project.id,
     },
     { status: 200 }

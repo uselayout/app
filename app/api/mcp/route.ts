@@ -387,6 +387,21 @@ async function handleCheckCompliance(
     });
   }
 
+  // Fetch project extraction data (used by multiple rules)
+  const { data: projectData } = await supabase
+    .from("layout_projects")
+    .select("extraction_data")
+    .eq("org_id", orgId)
+    .not("extraction_data", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  const extraction = projectData?.extraction_data
+    ? (projectData.extraction_data as ExtractionResult)
+    : null;
+
+  // ── Rule 4: unknown-token ───────────────────────────────────────────────
   // Extract var() references and compare against known tokens
   const varPattern = /var\(--([^)]+)\)/g;
   const usedVars: string[] = [];
@@ -405,18 +420,7 @@ async function handleCheckCompliance(
       }
     }
 
-    // Also fetch project tokens if available
-    const { data: projectData } = await supabase
-      .from("layout_projects")
-      .select("extraction_data")
-      .eq("org_id", orgId)
-      .not("extraction_data", "is", null)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .single();
-
-    if (projectData?.extraction_data) {
-      const extraction = projectData.extraction_data as ExtractionResult;
+    if (extraction) {
       if (extraction.tokens) {
         const allTokens = [
           ...extraction.tokens.colors,
@@ -450,6 +454,210 @@ async function handleCheckCompliance(
         }
       }
     }
+  }
+
+  // ── Rule 5: spacing-compliance ──────────────────────────────────────────
+  // Flag arbitrary Tailwind spacing values not on the design system grid
+  if (extraction?.tokens?.spacing) {
+    const spacingScale = new Set<number>();
+    for (const token of extraction.tokens.spacing) {
+      const px = parseInt(token.value, 10);
+      if (!isNaN(px)) spacingScale.add(px);
+    }
+
+    if (spacingScale.size > 0) {
+      const spacingArbitraryPattern = /(?:p|px|py|pt|pr|pb|pl|m|mx|my|mt|mr|mb|ml|gap|gap-x|gap-y|space-x|space-y|inset|top|right|bottom|left|w|h|min-w|min-h|max-w|max-h)-\[(\d+)px\]/g;
+      let spacingMatch: RegExpExecArray | null;
+      while ((spacingMatch = spacingArbitraryPattern.exec(code)) !== null) {
+        const value = parseInt(spacingMatch[1], 10);
+        if (!spacingScale.has(value)) {
+          issues.push({
+            rule: "spacing-compliance",
+            message: `Arbitrary spacing "${spacingMatch[0]}" (${value}px) is not on the design system spacing scale`,
+            severity: "warning",
+          });
+        }
+      }
+    }
+  }
+
+  // ── Rule 6: font-family-compliance ──────────────────────────────────────
+  // Flag system fonts when the design system defines custom fonts
+  const designFonts = new Set<string>();
+  if (extraction?.fonts) {
+    for (const font of extraction.fonts) {
+      if (font.family) designFonts.add(font.family.toLowerCase().replace(/['"]/g, ""));
+    }
+  }
+  if (extraction?.tokens?.typography) {
+    for (const token of extraction.tokens.typography) {
+      const familyMatch = token.value.match(/font-family:\s*([^;]+)/);
+      if (familyMatch) {
+        const family = familyMatch[1].trim().toLowerCase().replace(/['"]/g, "");
+        designFonts.add(family.split(",")[0].trim());
+      }
+    }
+  }
+
+  if (designFonts.size > 0) {
+    const systemFontPattern = /font-family:\s*['"]?(\b(?:Arial|Helvetica|Times New Roman|Times|Courier New|Courier|Georgia|Verdana|Tahoma|Trebuchet MS)\b)['"]?/gi;
+    let fontMatch: RegExpExecArray | null;
+    while ((fontMatch = systemFontPattern.exec(code)) !== null) {
+      const usedFont = fontMatch[1].toLowerCase();
+      if (!designFonts.has(usedFont)) {
+        issues.push({
+          rule: "font-family-compliance",
+          message: `System font "${fontMatch[1]}" used but design system defines: ${[...designFonts].join(", ")}`,
+          severity: "warning",
+        });
+      }
+    }
+  }
+
+  // ── Rule 7: border-radius-compliance ────────────────────────────────────
+  // Flag arbitrary Tailwind radius values not on the design system scale
+  if (extraction?.tokens?.radius) {
+    const radiusScale = new Set<number>();
+    for (const token of extraction.tokens.radius) {
+      const px = parseInt(token.value, 10);
+      if (!isNaN(px)) radiusScale.add(px);
+    }
+
+    if (radiusScale.size > 0) {
+      const radiusArbitraryPattern = /rounded(?:-(?:t|r|b|l|tl|tr|br|bl|s|e|ss|se|es|ee))?-\[(\d+)px\]/g;
+      let radiusMatch: RegExpExecArray | null;
+      while ((radiusMatch = radiusArbitraryPattern.exec(code)) !== null) {
+        const value = parseInt(radiusMatch[1], 10);
+        if (!radiusScale.has(value)) {
+          issues.push({
+            rule: "border-radius-compliance",
+            message: `Arbitrary radius "${radiusMatch[0]}" (${value}px) is not on the design system radius scale`,
+            severity: "warning",
+          });
+        }
+      }
+    }
+  }
+
+  // ── Rule 12: motion-token-compliance ────────────────────────────────────
+  // Flag hardcoded transition/animation values when design system defines motion tokens
+  if (extraction?.tokens?.motion && extraction.tokens.motion.length > 0) {
+    const motionHardcodedPattern = /(?:transition-duration|transition-delay|animation-duration|animation-delay)\s*:\s*[\d.]+(?:ms|s)\b/g;
+    let motionMatch: RegExpExecArray | null;
+    while ((motionMatch = motionHardcodedPattern.exec(code)) !== null) {
+      // Skip if inside a var() call
+      const beforeMotion = code.slice(Math.max(0, motionMatch.index - 30), motionMatch.index);
+      if (!beforeMotion.includes("var(")) {
+        issues.push({
+          rule: "motion-token-compliance",
+          message: `Hardcoded motion value "${motionMatch[0]}" — design system defines motion tokens, use them instead`,
+          severity: "warning",
+        });
+      }
+    }
+
+    // Also check shorthand transition with hardcoded duration e.g. "transition: all 0.3s"
+    const shorthandPattern = /transition\s*:\s*[^;]*?\b[\d.]+(?:ms|s)\b/g;
+    let shorthandMatch: RegExpExecArray | null;
+    while ((shorthandMatch = shorthandPattern.exec(code)) !== null) {
+      const beforeShorthand = code.slice(Math.max(0, shorthandMatch.index - 30), shorthandMatch.index);
+      if (!beforeShorthand.includes("var(")) {
+        issues.push({
+          rule: "motion-token-compliance",
+          message: `Hardcoded transition "${shorthandMatch[0]}" — use design system motion tokens instead`,
+          severity: "warning",
+        });
+      }
+    }
+  }
+
+  // ── Rule 8: interactive-state-coverage ──────────────────────────────────
+  // Check interactive elements have hover and focus state handling
+  const interactivePattern = /<(?:button|a\s|input|select|textarea)\b|role=["']button["']/g;
+  const hasHoverState = /hover:|:hover|onMouseEnter/.test(code);
+  const hasFocusState = /focus:|:focus|onFocus/.test(code);
+  const interactiveCount = (code.match(interactivePattern) ?? []).length;
+
+  if (interactiveCount > 0) {
+    if (!hasHoverState) {
+      issues.push({
+        rule: "interactive-state-coverage",
+        message: `${interactiveCount} interactive element(s) found but no hover state handling detected (hover:, :hover, or onMouseEnter)`,
+        severity: "warning",
+      });
+    }
+    if (!hasFocusState) {
+      issues.push({
+        rule: "interactive-state-coverage",
+        message: `${interactiveCount} interactive element(s) found but no focus state handling detected (focus:, :focus, or onFocus)`,
+        severity: "warning",
+      });
+    }
+  }
+
+  // ── Rule 9: accessibility-alt-text ────────────────────────────────────────
+  // Check images have alt attributes
+  const imgWithoutAltPattern = /<(?:img|Image)\b(?:(?!alt=)[^>])*>/g;
+  let imgMatch: RegExpExecArray | null;
+  while ((imgMatch = imgWithoutAltPattern.exec(code)) !== null) {
+    if (!imgMatch[0].includes("alt=")) {
+      issues.push({
+        rule: "accessibility-alt-text",
+        message: `Image element without alt attribute: ${imgMatch[0].slice(0, 60)}${imgMatch[0].length > 60 ? "..." : ""}`,
+        severity: "error",
+      });
+    }
+  }
+
+  // Check role="img" without aria-label
+  const roleImgWithoutLabelPattern = /role=["']img["'](?:(?!aria-label)[^>])*>/g;
+  let roleImgMatch: RegExpExecArray | null;
+  while ((roleImgMatch = roleImgWithoutLabelPattern.exec(code)) !== null) {
+    if (!roleImgMatch[0].includes("aria-label")) {
+      issues.push({
+        rule: "accessibility-alt-text",
+        message: "Element with role=\"img\" missing aria-label",
+        severity: "error",
+      });
+    }
+  }
+
+  // ── Rule 10: accessibility-button-label ───────────────────────────────────
+  // Check icon-only buttons have accessible labels
+  const iconButtonPattern = /<button\b[^>]*>[\s\n]*(?:<svg\b|<(?:Icon|[A-Z]\w*Icon)\b)[^]*?<\/button>/g;
+  let iconBtnMatch: RegExpExecArray | null;
+  while ((iconBtnMatch = iconButtonPattern.exec(code)) !== null) {
+    const btnContent = iconBtnMatch[0];
+    const hasLabel = /aria-label|aria-labelledby|sr-only|visually-hidden/.test(btnContent);
+    // Check for visible text content outside of SVG/icon elements
+    const textContent = btnContent
+      .replace(/<button\b[^>]*>/, "")
+      .replace(/<\/button>/, "")
+      .replace(/<svg\b[^]*?<\/svg>/g, "")
+      .replace(/<[^>]+>/g, "")
+      .trim();
+
+    if (!hasLabel && textContent.length === 0) {
+      issues.push({
+        rule: "accessibility-button-label",
+        message: `Icon-only button without aria-label or aria-labelledby: ${btnContent.slice(0, 60)}...`,
+        severity: "warning",
+      });
+    }
+  }
+
+  // ── Rule 11: semantic-html ────────────────────────────────────────────────
+  // Suggest semantic HTML when code is div-heavy
+  const divCount = (code.match(/<div\b/g) ?? []).length;
+  const semanticElementPattern = /<(?:main|nav|section|article|header|footer|aside)\b/g;
+  const semanticCount = (code.match(semanticElementPattern) ?? []).length;
+
+  if (divCount >= 10 && semanticCount === 0) {
+    issues.push({
+      rule: "semantic-html",
+      message: `${divCount} <div> elements but no semantic HTML (<main>, <nav>, <section>, <article>, <header>, <footer>, <aside>). Consider using semantic elements for better accessibility`,
+      severity: "warning",
+    });
   }
 
   return {
