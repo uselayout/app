@@ -550,6 +550,24 @@ function TokensTab({
   const allTokensFlat = useMemo(() => flattenTokens(tokens), [tokens]);
   const showFigmaCallout = sourceType === "figma" && Object.keys(cssVariables).length < 15;
 
+  const [modeFilter, setModeFilter] = useState<string | null>(null);
+
+  const availableModes = useMemo(() => {
+    const modes = new Set<string>();
+    const allTokens = [
+      ...tokens.colors,
+      ...tokens.typography,
+      ...tokens.spacing,
+      ...tokens.radius,
+      ...tokens.effects,
+      ...tokens.motion,
+    ];
+    for (const t of allTokens) {
+      if (t.mode) modes.add(t.mode);
+    }
+    return [...modes].sort();
+  }, [tokens]);
+
   // Build a resolution map from cssVariables + all token values
   // This allows resolving var(--palette-purple-40) when --palette-purple-40 is itself a token
   const tokenVarMap = useMemo(() => {
@@ -608,12 +626,21 @@ function TokensTab({
     };
   }, [undoState]);
 
+  const filterByMode = useCallback(
+    (tokenList: ExtractedToken[]) => {
+      if (!modeFilter) return tokenList;
+      if (modeFilter === "default") return tokenList.filter((t) => !t.mode);
+      return tokenList.filter((t) => t.mode === modeFilter);
+    },
+    [modeFilter]
+  );
+
   const sections: { label: string; items: ExtractedToken[] }[] = [
-    { label: "Colours", items: tokens.colors },
-    { label: "Typography", items: tokens.typography },
-    { label: "Spacing", items: tokens.spacing },
-    { label: "Radius", items: tokens.radius },
-    { label: "Effects", items: tokens.effects },
+    { label: "Colours", items: filterByMode(tokens.colors) },
+    { label: "Typography", items: filterByMode(tokens.typography) },
+    { label: "Spacing", items: filterByMode(tokens.spacing) },
+    { label: "Radius", items: filterByMode(tokens.radius) },
+    { label: "Effects", items: filterByMode(tokens.effects) },
   ].filter((s) => s.items.length > 0);
 
   const [openSections, setOpenSections] = useState<Set<string>>(
@@ -681,6 +708,43 @@ function TokensTab({
   return (
     <div className="relative p-2">
       {showFigmaCallout && <FigmaPluginCallout />}
+      {availableModes.length > 0 && (
+        <div className="flex items-center gap-1 px-1 pb-2 border-b border-[var(--studio-border)] mb-2 flex-wrap">
+          <button
+            onClick={() => setModeFilter(null)}
+            className={`px-2 py-0.5 rounded-sm text-[10px] font-medium uppercase tracking-wider transition-colors ${
+              modeFilter === null
+                ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setModeFilter("default")}
+            className={`px-2 py-0.5 rounded-sm text-[10px] font-medium uppercase tracking-wider transition-colors ${
+              modeFilter === "default"
+                ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            }`}
+          >
+            Default
+          </button>
+          {availableModes.map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setModeFilter(mode)}
+              className={`px-2 py-0.5 rounded-sm text-[10px] font-medium uppercase tracking-wider transition-colors ${
+                modeFilter === mode
+                  ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              }`}
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
+      )}
       {sections.map((section) => (
         <div key={section.label} className="mb-1">
           <TokenSectionHeader

@@ -16,6 +16,7 @@ export interface TokenChange {
   previousValue?: string;
   currentValue?: string;
   cssVariable?: string;
+  mode?: string;
 }
 
 export interface ComponentChange {
@@ -47,7 +48,8 @@ export interface ExtractionDiff {
 // ─── Token Diffing ──────────────────────────────────────────────────────────
 
 function tokenKey(token: ExtractedToken): string {
-  return token.cssVariable ?? token.name;
+  const base = token.cssVariable ?? token.name;
+  return token.mode ? `${base}::${token.mode}` : base;
 }
 
 function diffTokenList(
@@ -76,6 +78,7 @@ function diffTokenList(
         change: "added",
         currentValue: token.value,
         cssVariable: token.cssVariable,
+        mode: token.mode,
       });
     } else if (prev.value !== token.value) {
       changes.push({
@@ -85,6 +88,7 @@ function diffTokenList(
         previousValue: prev.value,
         currentValue: token.value,
         cssVariable: token.cssVariable,
+        mode: token.mode,
       });
     }
   }
@@ -98,6 +102,7 @@ function diffTokenList(
         change: "removed",
         previousValue: token.value,
         cssVariable: token.cssVariable,
+        mode: token.mode,
       });
     }
   }

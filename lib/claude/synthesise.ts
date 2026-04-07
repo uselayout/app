@@ -3,7 +3,7 @@ import type {
   TextBlockParam,
   ImageBlockParam,
 } from "@anthropic-ai/sdk/resources/messages";
-import type { ExtractionResult } from "@/lib/types";
+import type { ExtractionResult, ExtractedToken } from "@/lib/types";
 import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
 import { isTransientError, friendlyApiError } from "@/lib/api-error";
 
@@ -286,14 +286,44 @@ function buildUserContent(
   if (data.tokens.colors.length > 0) {
     const allColours = data.tokens.colors;
     const capped = allColours.slice(0, MAX_COLOUR_TOKENS);
-    const colours = capped
-      .map((t) => `  ${t.name}: ${t.value}${t.description ? ` /* ${t.description} */` : ""}`)
-      .join("\n");
+
+    // Split by mode
+    const defaultTokens = capped.filter((t) => !t.mode);
+    const modeGroups = new Map<string, ExtractedToken[]>();
+    for (const t of capped) {
+      if (t.mode) {
+        const group = modeGroups.get(t.mode) ?? [];
+        group.push(t);
+        modeGroups.set(t.mode, group);
+      }
+    }
+
+    const formatTokens = (tokens: ExtractedToken[]) =>
+      tokens
+        .map((t) => `  ${t.name}: ${t.value}${t.description ? ` /* ${t.description} */` : ""}`)
+        .join("\n");
+
     const omitted = allColours.length - capped.length;
-    sections.push(
-      `--- COLOUR TOKENS (with descriptions where available) ---\n${colours}` +
-      (omitted > 0 ? `\n  /* ... ${omitted} additional colour tokens omitted for context budget */` : "")
-    );
+
+    if (modeGroups.size > 0) {
+      // Multi-mode: group by mode
+      let colourSection = `--- COLOUR TOKENS ---\n`;
+      if (defaultTokens.length > 0) {
+        colourSection += `/* Default / Light mode */\n${formatTokens(defaultTokens)}\n\n`;
+      }
+      for (const [mode, tokens] of modeGroups) {
+        colourSection += `/* ${mode} mode */\n${formatTokens(tokens)}\n\n`;
+      }
+      colourSection += `NOTE: This design system has multiple colour modes. Document all modes in the Colour System section. Use [data-theme="${[...modeGroups.keys()].join('"]/[data-theme="')}"] selectors for mode switching.`;
+      if (omitted > 0) colourSection += `\n/* ... ${omitted} additional colour tokens omitted */`;
+      sections.push(colourSection);
+    } else {
+      // Single mode: original behaviour
+      sections.push(
+        `--- COLOUR TOKENS (with descriptions where available) ---\n${formatTokens(defaultTokens)}` +
+        (omitted > 0 ? `\n  /* ... ${omitted} additional colour tokens omitted for context budget */` : "")
+      );
+    }
   }
 
   if (data.tokens.typography.length > 0) {

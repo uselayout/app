@@ -8,11 +8,13 @@ export function parseTokensFromLayoutMd(markdown: string): ExtractedTokens {
   const declarations = extractCSSDeclarations(markdown);
   const seen = new Map<string, ExtractedToken>();
 
-  for (const { name, value } of declarations) {
+  for (const { name, value, mode } of declarations) {
     const token = classifyToken(name, value);
     if (token) {
-      // Later declarations win (deduplication)
-      seen.set(name, token);
+      if (mode) token.mode = mode;
+      // Later declarations win (deduplication by name+mode)
+      const key = mode ? `${name}::${mode}` : name;
+      seen.set(key, token);
     }
   }
 
@@ -40,29 +42,70 @@ export function parseTokensFromLayoutMd(markdown: string): ExtractedTokens {
 interface CSSDeclaration {
   name: string;
   value: string;
+  mode?: string;
 }
 
 /**
  * Extract all `--name: value;` declarations from fenced CSS blocks in markdown.
+ * Detects dark-mode selectors ([data-theme="dark"], @media (prefers-color-scheme: dark))
+ * and tags those declarations with mode: "dark".
  */
 function extractCSSDeclarations(markdown: string): CSSDeclaration[] {
   const declarations: CSSDeclaration[] = [];
   const fencedBlockRegex = /```css\s*\n([\s\S]*?)```/gi;
-  const declarationRegex = /(--[\w-]+)\s*:\s*([^;]+);/g;
 
   let blockMatch: RegExpExecArray | null;
   while ((blockMatch = fencedBlockRegex.exec(markdown)) !== null) {
-    const blockContent = blockMatch[1];
-    let declMatch: RegExpExecArray | null;
-    while ((declMatch = declarationRegex.exec(blockContent)) !== null) {
-      declarations.push({
-        name: declMatch[1].trim(),
-        value: declMatch[2].trim(),
-      });
-    }
+    extractDeclarationsFromBlock(blockMatch[1], declarations);
   }
 
   return declarations;
+}
+
+/**
+ * Extract CSS declarations from a single fenced block, detecting dark-mode
+ * selectors and tagging declarations with the appropriate mode.
+ */
+function extractDeclarationsFromBlock(blockContent: string, declarations: CSSDeclaration[]): void {
+  const innerDeclRegex = /(--[\w-]+)\s*:\s*([^;]+);/g;
+
+  // Detect dark-mode selector blocks and their ranges
+  const darkSelectorPattern = /\[data-theme\s*=\s*["']dark["']\]\s*\{([^}]*)\}/gi;
+  const darkMediaPattern = /@media\s*\(prefers-color-scheme:\s*dark\)\s*\{[^{]*\{([^}]*)\}\s*\}/gi;
+
+  const darkRanges: Array<[number, number]> = [];
+
+  // Extract dark-mode declarations from [data-theme="dark"] blocks
+  let modeMatch: RegExpExecArray | null;
+  while ((modeMatch = darkSelectorPattern.exec(blockContent)) !== null) {
+    darkRanges.push([modeMatch.index, modeMatch.index + modeMatch[0].length]);
+    let declMatch: RegExpExecArray | null;
+    const re = new RegExp(innerDeclRegex.source, innerDeclRegex.flags);
+    while ((declMatch = re.exec(modeMatch[1])) !== null) {
+      declarations.push({ name: declMatch[1].trim(), value: declMatch[2].trim(), mode: "dark" });
+    }
+  }
+
+  // Extract dark-mode declarations from @media (prefers-color-scheme: dark) blocks
+  while ((modeMatch = darkMediaPattern.exec(blockContent)) !== null) {
+    darkRanges.push([modeMatch.index, modeMatch.index + modeMatch[0].length]);
+    let declMatch: RegExpExecArray | null;
+    const re = new RegExp(innerDeclRegex.source, innerDeclRegex.flags);
+    while ((declMatch = re.exec(modeMatch[1])) !== null) {
+      declarations.push({ name: declMatch[1].trim(), value: declMatch[2].trim(), mode: "dark" });
+    }
+  }
+
+  // Extract remaining (default/light) declarations, skipping those inside dark blocks
+  const topLevelRegex = new RegExp(innerDeclRegex.source, innerDeclRegex.flags);
+  let declMatch: RegExpExecArray | null;
+  while ((declMatch = topLevelRegex.exec(blockContent)) !== null) {
+    const pos = declMatch.index;
+    const inDarkBlock = darkRanges.some(([start, end]) => pos >= start && pos < end);
+    if (!inDarkBlock) {
+      declarations.push({ name: declMatch[1].trim(), value: declMatch[2].trim() });
+    }
+  }
 }
 
 const COLOR_PATTERNS = [
