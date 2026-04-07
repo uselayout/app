@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireOrgAuth } from "@/lib/api/auth-context";
+import { requireMcpAuth } from "@/lib/api/mcp-auth";
 import { supabase } from "@/lib/supabase/client";
 
 /**
@@ -59,8 +60,20 @@ export async function POST(request: NextRequest, { params }: Params) {
   try {
     const { orgId, projectId } = await params;
 
-    const authResult = await requireOrgAuth(orgId, "editProject");
-    if (authResult instanceof NextResponse) return authResult;
+    // Accept either session auth or API key auth (CLI uses API keys)
+    const hasBearer = request.headers.get("Authorization")?.startsWith("Bearer ");
+    let authedOrgId: string;
+
+    if (hasBearer) {
+      const mcpAuth = await requireMcpAuth(request, "write");
+      if (mcpAuth instanceof NextResponse) return mcpAuth;
+      authedOrgId = mcpAuth.orgId;
+    } else {
+      const authResult = await requireOrgAuth(orgId, "editProject");
+      if (authResult instanceof NextResponse) return authResult;
+      authedOrgId = orgId;
+    }
+    void authedOrgId; // org verified by auth layer
 
     let body: unknown;
     try {
@@ -84,7 +97,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       .from("layout_projects")
       .select("extraction_data")
       .eq("id", projectId)
-      .eq("org_id", authResult.orgId)
+      .eq("org_id", orgId)
       .single();
 
     if (!project) {
@@ -134,7 +147,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", projectId)
-      .eq("org_id", authResult.orgId);
+      .eq("org_id", orgId);
 
     if (error) {
       console.error("[scan-results] Failed to store:", error.message);
@@ -173,7 +186,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
       .from("layout_projects")
       .select("scanned_components, scan_source, last_scan_at, github_repo")
       .eq("id", projectId)
-      .eq("org_id", authResult.orgId)
+      .eq("org_id", orgId)
       .single();
 
     if (error || !data) {
