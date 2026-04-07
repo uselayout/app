@@ -7,6 +7,8 @@ import type { ExtractionResult, ExtractedToken, TokenCategory, TokenType } from 
 interface FigmaExtractionOptions {
   fileKey: string;
   accessToken: string;
+  /** Optional Figma node ID to scope extraction to a specific page/frame. */
+  pageNodeId?: string;
   onProgress?: (step: string, percent: number, detail?: string) => void;
 }
 
@@ -169,6 +171,7 @@ function mineNodeProperties(
 export async function extractFromFigma({
   fileKey,
   accessToken,
+  pageNodeId,
   onProgress,
 }: FigmaExtractionOptions): Promise<ExtractionResult> {
   const startTime = Date.now();
@@ -189,7 +192,8 @@ export async function extractFromFigma({
   });
 
   // Step 1: File metadata
-  onProgress?.("metadata", 5, "Fetching file metadata...");
+  const isPageScoped = !!pageNodeId;
+  onProgress?.("metadata", 5, isPageScoped ? `Fetching page ${pageNodeId}...` : "Fetching file metadata...");
   let file;
   try {
     file = await client.getFile(fileKey, 1);

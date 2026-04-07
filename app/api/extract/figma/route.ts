@@ -8,6 +8,7 @@ import { auth } from "@/lib/auth";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 import { logApiCall } from "@/lib/logging/api-log";
 import { logEvent } from "@/lib/logging/platform-event";
+import { sendResultChunked } from "@/lib/extraction/chunked-send";
 
 const RequestSchema = z.object({
   figmaUrl: z.string().url(),
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
 
   const { figmaUrl, accessToken } = parsed.data;
   const fileKey = FigmaClient.extractFileKey(figmaUrl);
+  const pageNodeId = FigmaClient.extractNodeId(figmaUrl) ?? undefined;
 
   if (!fileKey) {
     return Response.json(
@@ -87,6 +89,7 @@ export async function POST(request: NextRequest) {
         const result = await extractFromFigma({
           fileKey,
           accessToken,
+          pageNodeId,
           onProgress: (step, percent, detail) => {
             send({ type: "step", step, percent, detail });
           },
@@ -100,53 +103,8 @@ export async function POST(request: NextRequest) {
           send({ type: "complete", data: result });
         } catch (sendErr) {
           if (sendErr instanceof Error && sendErr.message.includes("string longer than")) {
-            // Progressive trimming: increasingly aggressive reductions
-            const trimmed = {
-              ...result,
-              cssVariables: Object.fromEntries(
-                Object.entries(result.cssVariables).slice(0, 200)
-              ),
-              computedStyles: {},
-              components: result.components.slice(0, 50).map(c => ({
-                ...c,
-                variants: c.variants?.slice(0, 10),
-              })),
-              layoutPatterns: result.layoutPatterns?.slice(0, 10),
-              warnings: [
-                ...(result.warnings ?? []),
-                "This Figma file is very large. Some data was trimmed to complete the extraction: variables capped at 200, components at 50, variants at 10 per component.",
-              ],
-            };
-
-            try {
-              send({ type: "complete", data: trimmed });
-            } catch {
-              // Nuclear option: bare minimum data
-              const minimal = {
-                ...result,
-                cssVariables: Object.fromEntries(
-                  Object.entries(result.cssVariables).slice(0, 50)
-                ),
-                computedStyles: {},
-                components: result.components.slice(0, 20).map(c => ({
-                  ...c, variants: undefined,
-                })),
-                layoutPatterns: undefined,
-                tokens: {
-                  ...result.tokens,
-                  colors: result.tokens.colors.slice(0, 100),
-                  typography: result.tokens.typography.slice(0, 50),
-                  spacing: result.tokens.spacing.slice(0, 50),
-                  radius: result.tokens.radius.slice(0, 20),
-                  effects: result.tokens.effects.slice(0, 20),
-                },
-                warnings: [
-                  ...(result.warnings ?? []),
-                  "This Figma file is extremely large. Data was significantly trimmed to complete the extraction. To get complete data, re-extract specific pages from your Figma file individually.",
-                ],
-              };
-              send({ type: "complete", data: minimal });
-            }
+            // Result too large for a single SSE message — send in chunks
+            sendResultChunked(send, result);
           } else {
             throw sendErr;
           }

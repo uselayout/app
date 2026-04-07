@@ -151,6 +151,23 @@ export class FigmaClient {
     const match = url.match(/figma\.com\/(file|design)\/([a-zA-Z0-9]+)/);
     return match ? match[2] : null;
   }
+
+  /**
+   * Extract the node-id query parameter from a Figma URL.
+   * URLs like `figma.com/design/ABC?node-id=123-456` or `node-id=123:456`
+   * return the node ID in Figma's colon format (e.g. "123:456").
+   */
+  static extractNodeId(url: string): string | null {
+    try {
+      const u = new URL(url);
+      const nodeId = u.searchParams.get("node-id");
+      if (!nodeId) return null;
+      // Figma URLs use hyphens in the query param but colons in the API
+      return nodeId.replace(/-/g, ":");
+    } catch {
+      return null;
+    }
+  }
 }
 
 export class FigmaApiError extends Error {
