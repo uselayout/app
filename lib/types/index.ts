@@ -76,6 +76,8 @@ export interface ExtractedToken {
   groupName?: string;
   /** Original name before extraction renamed it (e.g. mined radius tokens). */
   originalName?: string;
+  /** Mode name for multi-mode tokens (e.g. "light", "dark"). */
+  mode?: string;
 }
 
 export interface ComponentProperty {
@@ -167,6 +169,13 @@ export interface ExtractionResult {
   computedStyles: Record<string, ComputedStyleMap>;
   interactiveStates?: Record<string, Record<string, string>>;
   breakpoints?: string[];
+  warnings?: string[];
+  layoutPatterns?: Array<{
+    direction: string;
+    mainAxis: string;
+    crossAxis: string;
+    count: number;
+  }>;
 }
 
 export interface ExtractionStep {
