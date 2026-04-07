@@ -1204,7 +1204,7 @@ export function ExplorerCanvas({
         onGenerate={handleGenerate}
         onRefine={handleRefine}
         onCompare={(_toolbarPrompt, image, files) => setCompareData({
-          prompt: selectedVariant?.batchPrompt ?? currentExploration?.prompt ?? _toolbarPrompt,
+          prompt: selectedVariant?.batchPrompt || currentExploration?.prompt || _toolbarPrompt,
           image: image ?? currentExploration?.referenceImage,
           contextFiles: files,
           baseCode: selectedVariant?.code,
