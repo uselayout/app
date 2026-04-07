@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, ExternalLink, Loader2, Search } from "lucide-react";
+import { Check, Copy, ExternalLink } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 
 function CopyCommand({ command, label }: { command: string; label?: string }) {
@@ -43,36 +43,6 @@ interface ConnectTabProps {
 }
 
 export function ConnectTab({ hasLayoutMd, projectName }: ConnectTabProps) {
-  const [scanDir, setScanDir] = useState("");
-  const [scanType, setScanType] = useState<"storybook" | "codebase" | "both">("both");
-  const [scanning, setScanning] = useState(false);
-  const [scanResult, setScanResult] = useState<{ storybook?: { components: Array<{ componentName?: string; name?: string; filePath: string }> }; codebase?: { components: Array<{ name: string; filePath: string; props: string[] }> } } | null>(null);
-  const [scanError, setScanError] = useState<string | null>(null);
-
-  async function handleScan() {
-    if (!scanDir.trim()) return;
-    setScanning(true);
-    setScanError(null);
-    setScanResult(null);
-    try {
-      const res = await fetch("/api/integrations/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectDir: scanDir.trim(), type: scanType }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Scan failed");
-      }
-      const data = await res.json();
-      setScanResult(data.result);
-    } catch (err) {
-      setScanError(err instanceof Error ? err.message : "Scan failed");
-    } finally {
-      setScanning(false);
-    }
-  }
-
   if (hasLayoutMd) {
     return (
       <div className="space-y-5 p-3">
@@ -111,79 +81,6 @@ export function ConnectTab({ hasLayoutMd, projectName }: ConnectTabProps) {
           <p className="text-[10px] leading-[16px] text-[var(--text-muted)]">
             Done. Your AI agent now reads the design system automatically on every session.
           </p>
-        </div>
-
-        <div className="space-y-3 border-t border-[var(--studio-border)] pt-4">
-          <h3 className="text-xs font-semibold text-[var(--text-primary)]">
-            Scan existing components
-          </h3>
-          <p className="text-[10px] leading-[16px] text-[var(--text-muted)]">
-            Scan a project directory to find existing React components and Storybook stories. Matches them against your design system.
-          </p>
-          <div className="space-y-2">
-            <input
-              type="text"
-              placeholder="/path/to/your/project"
-              value={scanDir}
-              onChange={(e) => setScanDir(e.target.value)}
-              className="w-full rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)]"
-            />
-            <div className="flex items-center gap-2">
-              <select
-                value={scanType}
-                onChange={(e) => setScanType(e.target.value as "storybook" | "codebase" | "both")}
-                className="rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-2 py-1 text-[10px] text-[var(--text-primary)] outline-none"
-              >
-                <option value="both">Both</option>
-                <option value="storybook">Storybook only</option>
-                <option value="codebase">Codebase only</option>
-              </select>
-              <button
-                onClick={handleScan}
-                disabled={scanning || !scanDir.trim()}
-                className="flex items-center gap-1.5 rounded-md bg-[var(--studio-accent)] px-3 py-1 text-[10px] font-medium text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
-              >
-                {scanning ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
-                Scan
-              </button>
-            </div>
-          </div>
-          {scanError && (
-            <p className="text-[10px] text-red-400">{scanError}</p>
-          )}
-          {scanResult && (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {scanResult.codebase && scanResult.codebase.components.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-medium text-[var(--text-secondary)] mb-1">
-                    Codebase ({scanResult.codebase.components.length} components)
-                  </p>
-                  {scanResult.codebase.components.slice(0, 20).map((c) => (
-                    <div key={c.filePath} className="flex items-center gap-2 py-0.5">
-                      <span className="text-[10px] font-medium text-[var(--text-primary)]">{c.name}</span>
-                      <span className="text-[9px] text-[var(--text-muted)] truncate">{c.filePath}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {scanResult.storybook && scanResult.storybook.components.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-medium text-[var(--text-secondary)] mb-1">
-                    Storybook ({scanResult.storybook.components.length} stories)
-                  </p>
-                  {scanResult.storybook.components.slice(0, 20).map((c) => (
-                    <div key={c.filePath} className="flex items-center gap-2 py-0.5">
-                      <span className="text-[10px] font-medium text-[var(--text-primary)]">{c.componentName || c.name}</span>
-                      <span className="text-[9px] text-[var(--text-muted)] truncate">{c.filePath}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {(!scanResult.codebase?.components.length && !scanResult.storybook?.components.length) && (
-                <p className="text-[10px] text-[var(--text-muted)]">No components found in this directory.</p>
-              )}
-            </div>
-          )}
         </div>
 
         <div className="border-t border-[var(--studio-border)] pt-4">
