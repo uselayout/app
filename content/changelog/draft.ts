@@ -10,6 +10,33 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w15-large-figma-files",
+    title: "Large Figma files now extract successfully",
+    description:
+      "Extraction no longer crashes on very large Figma files. Data is now streamed in chunks when needed, so your full design system comes through with nothing lost.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-extraction-warnings",
+    title: "Extraction warnings for oversized files",
+    description:
+      "When a Figma file is too large to extract in one pass, you now see clear warnings explaining what happened and step-by-step instructions for extracting the rest using page-specific URLs.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-page-specific-extraction",
+    title: "Page-specific Figma extraction",
+    description:
+      "Paste a Figma URL with a specific page selected (containing ?node-id=) to scope your extraction. Useful for extracting large files page by page and merging the results.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-07",
+  },
+  {
     id: "2026-w15-compare-fix",
     title: "Compare view fixed",
     description:
