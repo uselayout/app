@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w15-standalone-comparisons",
+    title: "Standalone comparison cards",
+    description:
+      "When you run a comparison without selecting a variant first, the result now appears as its own card in the grid. Previously it was awkwardly attached to the first variant. Variant-specific comparisons still show on the variant card.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-07",
+  },
+  {
     id: "2026-w15-large-figma-files",
     title: "Large Figma files now extract successfully",
     description:

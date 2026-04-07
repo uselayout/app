@@ -11,6 +11,7 @@ import { PaperPushModal } from "./PaperPushModal";
 import { FigmaImportModal } from "./FigmaImportModal";
 import { ResponsivePreview } from "./ResponsivePreview";
 import { ComparisonView } from "./ComparisonView";
+import { ComparisonCard } from "./ComparisonCard";
 import { PromoteToLibraryModal } from "./PromoteToLibraryModal";
 import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-variants";
 import { friendlyError } from "@/lib/explore/friendly-error";
@@ -799,9 +800,10 @@ export function ExplorerCanvas({
 
   const handleComparisonSave = useCallback((result: ComparisonResult) => {
     if (!currentExploration) return;
-    // Tag to selected variant, or fall back to first variant in the exploration
-    const variantId = selectedVariantId ?? currentExploration.variants?.[0]?.id;
-    const taggedResult = { ...result, sourceVariantId: variantId };
+    // Only tag to variant if one is explicitly selected — otherwise standalone
+    const taggedResult = selectedVariantId
+      ? { ...result, sourceVariantId: selectedVariantId }
+      : result;
     const updated = explorations.map((e) =>
       e.id === currentExploration.id
         ? { ...e, comparisons: [...(e.comparisons ?? []), taggedResult] }
@@ -810,7 +812,22 @@ export function ExplorerCanvas({
     onUpdateExplorations(updated);
   }, [currentExploration, selectedVariantId, explorations, onUpdateExplorations]);
 
+  const handleDeleteComparison = useCallback((comparisonId: string) => {
+    if (!currentExploration) return;
+    const updated = explorations.map((e) =>
+      e.id === currentExploration.id
+        ? { ...e, comparisons: (e.comparisons ?? []).filter(c => c.id !== comparisonId) }
+        : e
+    );
+    onUpdateExplorations(updated);
+  }, [currentExploration, explorations, onUpdateExplorations]);
+
   const gridClassName = "grid grid-cols-2 gap-4";
+
+  const standaloneComparisons = useMemo(
+    () => currentExploration?.comparisons?.filter(c => !c.sourceVariantId) ?? [],
+    [currentExploration?.comparisons]
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -1064,12 +1081,12 @@ export function ExplorerCanvas({
                       isProcessingImages={isProcessingImages}
                       onViewComparison={() => {
                         const comparisons = currentExploration?.comparisons?.filter(
-                          (c) => c.sourceVariantId === variant.id || !c.sourceVariantId
+                          (c) => c.sourceVariantId === variant.id
                         );
                         if (comparisons?.length) setViewSavedComparison(comparisons[comparisons.length - 1]);
                       }}
                       comparisonCount={currentExploration?.comparisons?.filter(
-                        (c) => c.sourceVariantId === variant.id || !c.sourceVariantId
+                        (c) => c.sourceVariantId === variant.id
                       ).length ?? 0}
                       isNewlyGenerated={variant.batchId === streamingBatchRef.current}
                     />
@@ -1101,6 +1118,27 @@ export function ExplorerCanvas({
                 </div>
               </div>
             ))}
+
+            {/* Standalone comparisons (not tied to a variant) */}
+            {standaloneComparisons.length > 0 && (
+              <>
+                <div className="flex items-center gap-3 py-3">
+                  <div className="h-px flex-1 bg-[var(--studio-border)]" />
+                  <span className="shrink-0 text-[11px] text-[var(--text-muted)]">Comparisons</span>
+                  <div className="h-px flex-1 bg-[var(--studio-border)]" />
+                </div>
+                <div className={gridClassName}>
+                  {standaloneComparisons.map((c) => (
+                    <ComparisonCard
+                      key={c.id}
+                      comparison={c}
+                      onView={() => setViewSavedComparison(c)}
+                      onDelete={() => handleDeleteComparison(c.id)}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* URL fetch status */}
             {generationStatus && isGeneratingThisTab && skeletonCount === 0 && (
