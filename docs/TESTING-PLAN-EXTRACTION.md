@@ -300,13 +300,51 @@ Recommended files for testing (use your own Figma token):
 
 ---
 
+## UI Visibility Tests
+
+### Gradient swatch preview
+- [ ] Colour tokens with gradient values show a small coloured swatch (not truncated text)
+- [ ] Solid colour tokens still show normally (regression check)
+
+### Component property defaults
+- [ ] Components tab shows property pills (e.g. `size: VARIANT = medium`)
+- [ ] Components without properties still render correctly
+
+### Mode filter pills
+- [ ] Source Panel shows All/Default/Light/Dark pills when multi-mode tokens exist
+- [ ] Clicking a pill filters tokens to that mode only
+- [ ] "All" shows all tokens
+
+### Mode badges
+- [ ] Tokens with a mode show a small LIGHT/DARK badge
+- [ ] Re-extraction diff modal shows mode badges on changed tokens
+
+### Health tooltip
+- [ ] Hover a variant's health score badge
+- [ ] Tooltip groups issues by rule name with severity markers
+- [ ] Shows "Strong/Moderate/Needs work" label
+
+### Scan Project (Connect tab)
+- [ ] Open Source Panel > Connect tab
+- [ ] "Scan existing components" section visible
+- [ ] Enter a project path, select type, click Scan
+- [ ] Results show found components with file paths
+- [ ] Error state works (invalid path)
+
+### Quality tab (10 sections)
+- [ ] Open Quality tab
+- [ ] 10 sections visible: Quick Reference, Colours, Typography, Spacing, Components, Anti-patterns, Motion, Accessibility, Icons, Grid & Layout
+- [ ] Each section expandable with found/missing items
+
+---
+
 ## Quick Smoke Test (5 minutes)
 
-If you only have 5 minutes, test these:
-
 1. Extract a Figma file with typography and gradients
-2. Check that typography tokens show text-transform and gradients show full CSS
-3. Export as tailwind.config.js and verify it has fontFamily/fontSize/fontWeight
-4. Export as tokens.json and verify typography has `$type: "typography"` with structured values
-5. Generate a variant in Explorer and check the health score has the new checks
-6. Open Quality tab and verify 10 sections are scored
+2. Check typography tokens show text-transform; gradient tokens show swatch preview
+3. Check Components tab shows property defaults as pills
+4. Export tailwind.config.js: verify fontFamily/fontSize/fontWeight
+5. Export tokens.json: verify `$type: "typography"` with structured values
+6. Open Quality tab: verify 10 sections scored
+7. Generate a variant: hover health score, verify grouped issue breakdown
+8. If multi-mode: check mode filter pills and badges work
