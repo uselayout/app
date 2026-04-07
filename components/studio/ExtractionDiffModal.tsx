@@ -246,7 +246,7 @@ export function ExtractionDiffModal({
       />
 
       {/* Panel */}
-      <div className="relative z-10 w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-app)] shadow-2xl">
+      <div className="relative z-10 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-app)] shadow-2xl">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 px-5 py-4 border-b border-[var(--studio-border)]">
           <div className="flex-1 min-w-0">
