@@ -13,6 +13,31 @@ function rgbaToHex(r: number, g: number, b: number, a?: number): string {
   return hex;
 }
 
+/**
+ * Format gradient colour stops as CSS `color position%` strings.
+ */
+function formatGradientStops(
+  stops: Array<{ color: { r: number; g: number; b: number; a: number }; position: number }>
+): string {
+  return stops
+    .map((s) => `${rgbaToHex(s.color.r, s.color.g, s.color.b, s.color.a)} ${Math.round(s.position * 100)}%`)
+    .join(", ");
+}
+
+/**
+ * Calculate angle in degrees from Figma gradientHandlePositions.
+ * Figma provides start (index 0) and end (index 1) handles in normalised [0,1] space.
+ */
+function gradientAngle(handles: Array<{ x: number; y: number }>): number {
+  if (handles.length < 2) return 180;
+  const dx = handles[1].x - handles[0].x;
+  const dy = handles[1].y - handles[0].y;
+  // atan2 gives angle from positive-x axis; CSS linear-gradient 0deg = bottom-to-top
+  const rad = Math.atan2(dy, dx);
+  const deg = (rad * 180) / Math.PI + 90;
+  return Math.round(((deg % 360) + 360) % 360);
+}
+
 function parseFillColor(fills?: FigmaFill[]): string | null {
   if (!fills || fills.length === 0) return null;
   const fill = fills[0];
@@ -21,10 +46,26 @@ function parseFillColor(fills?: FigmaFill[]): string | null {
     return rgbaToHex(fill.color.r, fill.color.g, fill.color.b, fill.color.a);
   }
 
-  const gradientTypes = ["GRADIENT_LINEAR", "GRADIENT_RADIAL", "GRADIENT_ANGULAR", "GRADIENT_DIAMOND"];
-  if (gradientTypes.includes(fill.type) && fill.gradientStops && fill.gradientStops.length > 0) {
-    const stop = fill.gradientStops[0];
-    return rgbaToHex(stop.color.r, stop.color.g, stop.color.b, stop.color.a);
+  if (fill.gradientStops && fill.gradientStops.length > 0) {
+    const stops = formatGradientStops(fill.gradientStops);
+
+    switch (fill.type) {
+      case "GRADIENT_LINEAR": {
+        const angle = fill.gradientHandlePositions
+          ? gradientAngle(fill.gradientHandlePositions)
+          : 180;
+        return `linear-gradient(${angle}deg, ${stops})`;
+      }
+      case "GRADIENT_RADIAL":
+        return `radial-gradient(circle, ${stops})`;
+      case "GRADIENT_ANGULAR":
+        return `conic-gradient(${stops})`;
+      case "GRADIENT_DIAMOND":
+        // No direct CSS equivalent; fall back to linear
+        return `linear-gradient(${stops})`;
+      default:
+        break;
+    }
   }
 
   return null;
@@ -135,6 +176,7 @@ export async function parseStyles(
   colors: ExtractedToken[];
   typography: ExtractedToken[];
   effects: ExtractedToken[];
+  styleCount: number;
 }> {
   onProgress?.("Fetching style metadata...");
   const stylesResponse = await client.getStyles(fileKey);
@@ -215,7 +257,7 @@ export async function parseStyles(
     `Extracted: ${colors.length} colours, ${typography.length} typography, ${effects.length} effects`
   );
 
-  return { colors, typography, effects };
+  return { colors, typography, effects, styleCount: allNodeIds.length };
 }
 
 function formatTypographyValue(ts: FigmaTypeStyle): string {
@@ -224,8 +266,28 @@ function formatTypographyValue(ts: FigmaTypeStyle): string {
     `font-size: ${ts.fontSize}px`,
     `font-weight: ${ts.fontWeight}`,
   ];
-  if (ts.lineHeightPx) parts.push(`line-height: ${Math.round(ts.lineHeightPx)}px`);
+  if (ts.lineHeightPx) {
+    parts.push(`line-height: ${Math.round(ts.lineHeightPx)}px`);
+  } else if (ts.lineHeightPercent) {
+    parts.push(`line-height: ${ts.lineHeightPercent}%`);
+  }
   if (ts.letterSpacing) parts.push(`letter-spacing: ${ts.letterSpacing}px`);
+
+  // Text case
+  const textCaseMap: Record<string, string> = {
+    UPPER: "uppercase",
+    LOWER: "lowercase",
+    TITLE: "capitalize",
+  };
+  if (ts.textCase && textCaseMap[ts.textCase]) {
+    parts.push(`text-transform: ${textCaseMap[ts.textCase]}`);
+  }
+
+  // Text decoration
+  if (ts.textDecoration) {
+    parts.push(`text-decoration: ${ts.textDecoration.toLowerCase()}`);
+  }
+
   return parts.join("; ");
 }
 
@@ -243,6 +305,12 @@ function formatEffectValue(effects: FigmaEffect[]): string {
           : "rgba(0,0,0,0.25)";
         const inset = e.type === "INNER_SHADOW" ? "inset " : "";
         return `${inset}${x}px ${y}px ${r}px ${s}px ${c}`;
+      }
+      if (e.type === "LAYER_BLUR") {
+        return `blur(${e.radius ?? 0}px)`;
+      }
+      if (e.type === "BACKGROUND_BLUR") {
+        return `backdrop-blur(${e.radius ?? 0}px)`;
       }
       return e.type;
     })
