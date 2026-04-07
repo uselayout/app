@@ -947,6 +947,11 @@ function TokenRow({
                 ({token.originalName})
               </span>
             )}
+            {token.mode && (
+              <span className="ml-1 shrink-0 rounded-sm bg-[var(--bg-elevated)] px-1 py-0.5 text-[9px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                {token.mode}
+              </span>
+            )}
           </span>
         )}
 

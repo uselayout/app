@@ -42,6 +42,7 @@ export default function StudioPage({
   const onboardingSteps = useOnboardingStore((s) => s.steps);
 
   const [whatsNextDismissed, setWhatsNextDismissed] = useState(false);
+  const [extractionWarnings, setExtractionWarnings] = useState<string[]>([]);
 
   // Auto-dismiss save error after 8 seconds
   useEffect(() => {
@@ -318,6 +319,13 @@ export default function StudioPage({
     [id, project, updateProjectSource, updateProjectName, runExtraction]
   );
 
+  // Capture warnings when extraction completes
+  useEffect(() => {
+    if (extractionStatus === "complete" && project?.extractionData?.warnings?.length) {
+      setExtractionWarnings(project.extractionData.warnings);
+    }
+  }, [extractionStatus, project?.extractionData]);
+
   // Show diff modal when re-extraction completes
   useEffect(() => {
     if (
@@ -464,6 +472,7 @@ export default function StudioPage({
         steps={extractionSteps}
         error={extractionError}
         streamingContent={streamingContent ?? project.layoutMd}
+        warnings={extractionWarnings}
         onOpenEditor={() => {
           setCentreView("editor");
           setWhatsNextDismissed(true);

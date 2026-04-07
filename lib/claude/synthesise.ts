@@ -248,13 +248,37 @@ function buildUserContent(
     );
   }
 
+  if (data.layoutPatterns && data.layoutPatterns.length > 0) {
+    const patterns = data.layoutPatterns
+      .slice(0, 20)
+      .map(p => `  ${p.direction} | main-axis: ${p.mainAxis} | cross-axis: ${p.crossAxis} (${p.count} instances)`)
+      .join("\n");
+    sections.push(
+      `--- LAYOUT PATTERNS (from auto-layout analysis) ---\n` +
+      `These are the most common flex/layout patterns found in Figma components. Use these to inform Section 4 (Spacing & Layout):\n` +
+      patterns
+    );
+  }
+
   if (data.components.length > 0) {
     const comps = data.components
       .slice(0, 30)
-      .map((c) =>
-        `- ${c.name} (${c.variantCount} variants)${c.description ? `: ${c.description}` : ""}\n` +
-        `  REQUIRED states: default, hover, focus, active, disabled, loading, error`
-      )
+      .map((c) => {
+        let line = `- ${c.name} (${c.variantCount} variants)${c.description ? `: ${c.description}` : ""}`;
+        if (c.properties) {
+          const props = Object.entries(c.properties)
+            .map(([key, prop]) => {
+              let propStr = `${key}: ${prop.type}`;
+              if (prop.defaultValue) propStr += ` = ${prop.defaultValue}`;
+              if (prop.preferredValues?.length) propStr += ` [${prop.preferredValues.join(", ")}]`;
+              return propStr;
+            })
+            .join(", ");
+          if (props) line += `\n  Props: ${props}`;
+        }
+        line += `\n  REQUIRED states: default, hover, focus, active, disabled, loading, error`;
+        return line;
+      })
       .join("\n");
     sections.push(`--- COMPONENT INVENTORY ---\n${comps}`);
   }

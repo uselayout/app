@@ -14,6 +14,7 @@ interface ExtractionProgressProps {
   errorStep?: string | null;
   onRetry?: () => void;
   streamingContent?: string;
+  warnings?: string[];
   /** Called when extraction is complete and user picks "Open Editor" (or auto-advance fires) */
   onOpenEditor?: () => void;
   /** Called when extraction is complete and user picks "Explore the Canvas" */
@@ -181,6 +182,7 @@ export function ExtractionProgress({
   error,
   onRetry,
   streamingContent,
+  warnings,
   onOpenEditor,
   onOpenCanvas,
 }: ExtractionProgressProps) {
@@ -260,6 +262,17 @@ export function ExtractionProgress({
                 </div>
               ))}
             </div>
+
+            {warnings && warnings.length > 0 && (
+              <div className="space-y-2 mt-4">
+                {warnings.map((warning, i) => (
+                  <div key={i} className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-xs text-amber-200">{warning}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {showPreview && (
               <StreamingPreview content={streamingContent} />
