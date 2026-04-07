@@ -305,7 +305,7 @@ export function ExtractionDiffModal({
         )}
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3 min-h-0">
+        <div className="h-0 flex-1 overflow-y-scroll px-5 py-4 flex flex-col gap-3">
           {/* No changes state */}
           {tokenTotal === 0 && componentTotal === 0 && fontTotal === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
