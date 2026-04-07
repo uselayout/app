@@ -1,62 +1,91 @@
-import type { ExtractedTokens } from "@/lib/types";
+import type { ExtractedTokens, ExtractedToken } from "@/lib/types";
+
+function tokenToCssLine(token: ExtractedToken, prefix: string): string {
+  const varName =
+    token.cssVariable ||
+    `--${prefix}-${token.name.toLowerCase().replace(/[/\s]+/g, "-")}`;
+  return `  ${varName}: ${token.value};`;
+}
+
+function emitTokenBlock(
+  tokens: ExtractedToken[],
+  comment: string,
+  prefix: string,
+  lines: string[]
+): void {
+  // Only include tokens without a mode (default/root tokens)
+  const rootTokens = tokens.filter((t) => !t.mode);
+  if (rootTokens.length === 0) return;
+  lines.push(`  /* === ${comment} === */`);
+  for (const token of rootTokens) {
+    lines.push(tokenToCssLine(token, prefix));
+  }
+  lines.push("");
+}
 
 export function generateTokensCss(tokens: ExtractedTokens): string {
   const lines: string[] = [":root {"];
 
-  if (tokens.colors.length > 0) {
-    lines.push("  /* === COLOURS === */");
-    for (const token of tokens.colors) {
-      const varName = token.cssVariable || `--color-${token.name.toLowerCase().replace(/[/\s]+/g, "-")}`;
-      lines.push(`  ${varName}: ${token.value};`);
-    }
-    lines.push("");
-  }
-
-  if (tokens.typography.length > 0) {
-    lines.push("  /* === TYPOGRAPHY === */");
-    for (const token of tokens.typography) {
-      const varName = token.cssVariable || `--type-${token.name.toLowerCase().replace(/[/\s]+/g, "-")}`;
-      lines.push(`  ${varName}: ${token.value};`);
-    }
-    lines.push("");
-  }
-
-  if (tokens.spacing.length > 0) {
-    lines.push("  /* === SPACING === */");
-    for (const token of tokens.spacing) {
-      const varName = token.cssVariable || `--space-${token.name.toLowerCase().replace(/[/\s]+/g, "-")}`;
-      lines.push(`  ${varName}: ${token.value};`);
-    }
-    lines.push("");
-  }
-
-  if (tokens.radius.length > 0) {
-    lines.push("  /* === BORDER RADIUS === */");
-    for (const token of tokens.radius) {
-      const varName = token.cssVariable || `--radius-${token.name.toLowerCase().replace(/[/\s]+/g, "-")}`;
-      lines.push(`  ${varName}: ${token.value};`);
-    }
-    lines.push("");
-  }
-
-  if (tokens.effects.length > 0) {
-    lines.push("  /* === EFFECTS === */");
-    for (const token of tokens.effects) {
-      const varName = token.cssVariable || `--effect-${token.name.toLowerCase().replace(/[/\s]+/g, "-")}`;
-      lines.push(`  ${varName}: ${token.value};`);
-    }
-    lines.push("");
-  }
-
-  if (tokens.motion.length > 0) {
-    lines.push("  /* === MOTION === */");
-    for (const token of tokens.motion) {
-      const varName = token.cssVariable || `--motion-${token.name.toLowerCase().replace(/[/\s]+/g, "-")}`;
-      lines.push(`  ${varName}: ${token.value};`);
-    }
-    lines.push("");
-  }
+  emitTokenBlock(tokens.colors, "COLOURS", "color", lines);
+  emitTokenBlock(tokens.typography, "TYPOGRAPHY", "type", lines);
+  emitTokenBlock(tokens.spacing, "SPACING", "space", lines);
+  emitTokenBlock(tokens.radius, "BORDER RADIUS", "radius", lines);
+  emitTokenBlock(tokens.effects, "EFFECTS", "effect", lines);
+  emitTokenBlock(tokens.motion, "MOTION", "motion", lines);
 
   lines.push("}");
+
+  // Collect all tokens with mode fields across all categories
+  const allTokens: ExtractedToken[] = [
+    ...tokens.colors,
+    ...tokens.typography,
+    ...tokens.spacing,
+    ...tokens.radius,
+    ...tokens.effects,
+    ...tokens.motion,
+  ];
+
+  const modeTokens = allTokens.filter((t) => t.mode);
+  if (modeTokens.length > 0) {
+    // Group by mode
+    const byMode = new Map<string, ExtractedToken[]>();
+    for (const token of modeTokens) {
+      const mode = token.mode!;
+      const existing = byMode.get(mode);
+      if (existing) {
+        existing.push(token);
+      } else {
+        byMode.set(mode, [token]);
+      }
+    }
+
+    for (const [mode, modeGroup] of byMode) {
+      lines.push("");
+      lines.push(`[data-theme="${mode}"] {`);
+      for (const token of modeGroup) {
+        const varName =
+          token.cssVariable ||
+          `--${token.type === "color" ? "color" : "space"}-${token.name.toLowerCase().replace(/[/\s]+/g, "-")}`;
+        lines.push(`  ${varName}: ${token.value};`);
+      }
+      lines.push("}");
+
+      // Also emit @media block for dark mode tokens
+      if (mode === "dark") {
+        lines.push("");
+        lines.push("@media (prefers-color-scheme: dark) {");
+        lines.push("  :root {");
+        for (const token of modeGroup) {
+          const varName =
+            token.cssVariable ||
+            `--${token.type === "color" ? "color" : "space"}-${token.name.toLowerCase().replace(/[/\s]+/g, "-")}`;
+          lines.push(`    ${varName}: ${token.value};`);
+        }
+        lines.push("  }");
+        lines.push("}");
+      }
+    }
+  }
+
   return lines.join("\n");
 }

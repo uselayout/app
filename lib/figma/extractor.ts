@@ -2,7 +2,7 @@ import { FigmaClient, FigmaApiError } from "./client";
 import type { FigmaNode } from "./client";
 import { parseStyles } from "./parsers/styles";
 import { parseComponents } from "./parsers/components";
-import type { ExtractionResult, ExtractedToken } from "@/lib/types";
+import type { ExtractionResult, ExtractedToken, TokenCategory, TokenType } from "@/lib/types";
 
 interface FigmaExtractionOptions {
   fileKey: string;
@@ -26,7 +26,8 @@ interface PropertyCensus {
 function collectNodeProperties(
   node: FigmaNode,
   radiusCensus: Map<number, PropertyCensus>,
-  spacingCensus: Map<number, PropertyCensus>
+  spacingCensus: Map<number, PropertyCensus>,
+  layoutPatternCensus: Map<string, PropertyCensus>
 ): void {
   // Collect corner radius
   if (node.cornerRadius !== undefined && node.cornerRadius > 0) {
@@ -39,7 +40,7 @@ function collectNodeProperties(
     }
   }
 
-  // Collect spacing from auto-layout nodes
+  // Collect spacing and layout patterns from auto-layout nodes
   if (node.layoutMode) {
     const spacingValues = [
       node.itemSpacing,
@@ -58,29 +59,47 @@ function collectNodeProperties(
         spacingCensus.set(val, { count: 1, elements: [node.name] });
       }
     }
+
+    // Record layout pattern
+    const patternKey = `${node.layoutMode}|${node.primaryAxisAlignItems ?? "MIN"}|${node.counterAxisAlignItems ?? "MIN"}`;
+    const existingPattern = layoutPatternCensus.get(patternKey);
+    if (existingPattern) {
+      existingPattern.count++;
+      if (existingPattern.elements.length < 5) existingPattern.elements.push(node.name);
+    } else {
+      layoutPatternCensus.set(patternKey, { count: 1, elements: [node.name] });
+    }
   }
 
   // Recurse into children
   if (node.children) {
     for (const child of node.children) {
-      collectNodeProperties(child, radiusCensus, spacingCensus);
+      collectNodeProperties(child, radiusCensus, spacingCensus, layoutPatternCensus);
     }
   }
 }
 
+interface LayoutPattern {
+  direction: string;
+  mainAxis: string;
+  crossAxis: string;
+  count: number;
+}
+
 /**
- * Mine radius and spacing tokens from component node data.
+ * Mine radius, spacing, and layout pattern tokens from component node data.
  * Clusters distinct values into a token scale.
  */
 function mineNodeProperties(
   nodeData: Record<string, { document: FigmaNode }>
-): { radius: ExtractedToken[]; spacing: ExtractedToken[] } {
+): { radius: ExtractedToken[]; spacing: ExtractedToken[]; layoutPatterns: LayoutPattern[] } {
   const radiusCensus = new Map<number, PropertyCensus>();
   const spacingCensus = new Map<number, PropertyCensus>();
+  const layoutPatternCensus = new Map<string, PropertyCensus>();
 
   for (const entry of Object.values(nodeData)) {
     if (entry?.document) {
-      collectNodeProperties(entry.document, radiusCensus, spacingCensus);
+      collectNodeProperties(entry.document, radiusCensus, spacingCensus, layoutPatternCensus);
     }
   }
 
@@ -134,7 +153,15 @@ function mineNodeProperties(
     });
   }
 
-  return { radius, spacing };
+  // Build layout patterns from census
+  const layoutPatterns: LayoutPattern[] = Array.from(layoutPatternCensus.entries())
+    .map(([key, info]) => {
+      const [direction, mainAxis, crossAxis] = key.split("|");
+      return { direction, mainAxis, crossAxis, count: info.count };
+    })
+    .sort((a, b) => b.count - a.count);
+
+  return { radius, spacing, layoutPatterns };
 }
 
 // ─── Main extraction ─────────────────────────────────────────────────────────
@@ -153,6 +180,8 @@ export async function extractFromFigma({
       );
     }
   };
+
+  const warnings: string[] = [];
 
   const client = new FigmaClient({
     accessToken,
@@ -207,6 +236,9 @@ export async function extractFromFigma({
     colors = parsed.colors;
     typography = parsed.typography;
     effects = parsed.effects;
+    if (parsed.styleCount > 500) {
+      warnings.push(`${parsed.styleCount} styles found but only first 500 extracted. Some style tokens may be missing.`);
+    }
     onProgress?.("styles", 40, `Found ${colors.length} colours, ${typography.length} typography styles, ${effects.length} effects`);
   } catch (err) {
     if (err instanceof FigmaApiError && err.statusCode === 403) {
@@ -229,7 +261,8 @@ export async function extractFromFigma({
     const parsed = await parseComponents(
       fileKey,
       client,
-      (msg) => onProgress?.("components", 55, msg)
+      (msg) => onProgress?.("components", 55, msg),
+      (msg) => warnings.push(msg)
     );
     components = parsed.components;
     componentNodeData = parsed.nodeData;
@@ -249,7 +282,7 @@ export async function extractFromFigma({
   // Step 3b: Mine radius and spacing from component node trees
   checkTimeout("node-properties");
   onProgress?.("node-properties", 62, "Mining radius and spacing from components...");
-  const { radius, spacing } = mineNodeProperties(componentNodeData);
+  const { radius, spacing, layoutPatterns } = mineNodeProperties(componentNodeData);
   if (radius.length > 0 || spacing.length > 0) {
     onProgress?.("node-properties", 64, `Found ${radius.length} radius values, ${spacing.length} spacing values`);
   }
@@ -271,26 +304,101 @@ export async function extractFromFigma({
       }
     }
 
+    // Resolve variable aliases: build a lookup by variable ID
+    const varsById = new Map<string, typeof vars[string]>();
+    for (const [varId, v] of Object.entries(vars)) {
+      varsById.set(varId, v);
+    }
+
+    function resolveAliasValue(
+      modeValue: unknown,
+      modeId: string,
+      depth: number = 0
+    ): { resolved: unknown; aliasChain: string[] } {
+      if (depth > 10) return { resolved: modeValue, aliasChain: [] };
+      if (
+        typeof modeValue === "object" &&
+        modeValue !== null &&
+        "type" in modeValue &&
+        (modeValue as Record<string, unknown>).type === "VARIABLE_ALIAS" &&
+        "id" in modeValue
+      ) {
+        const aliasId = (modeValue as Record<string, string>).id;
+        const referencedVar = varsById.get(aliasId);
+        if (referencedVar) {
+          const refValue = referencedVar.valuesByMode[modeId];
+          if (refValue !== undefined) {
+            const deeper = resolveAliasValue(refValue, modeId, depth + 1);
+            return {
+              resolved: deeper.resolved,
+              aliasChain: [referencedVar.name, ...deeper.aliasChain],
+            };
+          }
+        }
+        return { resolved: modeValue, aliasChain: [] };
+      }
+      return { resolved: modeValue, aliasChain: [] };
+    }
+
+    // Multi-mode tokens stored as ExtractedToken entries with mode field
+    const modeTokens: ExtractedToken[] = [];
+
     for (const v of Object.values(vars)) {
       const modeEntries = Object.entries(v.valuesByMode);
       const hasMultipleModes = modeEntries.length > 1;
 
-      for (const [modeId, modeValue] of modeEntries) {
+      for (const [modeId, rawModeValue] of modeEntries) {
         const baseName = `--${v.name.toLowerCase().replace(/[/\s]+/g, "-")}`;
         const modeName = modeNames.get(modeId)?.toLowerCase().replace(/[/\s]+/g, "-");
         const varName = hasMultipleModes && modeName ? `${baseName}-${modeName}` : baseName;
+
+        // Resolve aliases
+        const { resolved: modeValue, aliasChain } = resolveAliasValue(rawModeValue, modeId);
+        const aliasDesc = aliasChain.length > 0
+          ? `Alias: ${v.name} → ${aliasChain.join(" → ")}`
+          : undefined;
+
+        let resolvedValue: string | undefined;
 
         if (v.resolvedType === "COLOR" && typeof modeValue === "object" && modeValue !== null) {
           const val = modeValue as { r?: number; g?: number; b?: number; a?: number };
           if (val.r !== undefined && val.g !== undefined && val.b !== undefined) {
             const hex = `#${Math.round(val.r * 255).toString(16).padStart(2, "0")}${Math.round(val.g * 255).toString(16).padStart(2, "0")}${Math.round(val.b * 255).toString(16).padStart(2, "0")}`;
             cssVariables[varName] = hex;
+            resolvedValue = hex;
           }
         } else if (v.resolvedType === "FLOAT" && typeof modeValue === "number") {
           cssVariables[varName] = `${modeValue}`;
+          resolvedValue = `${modeValue}`;
         } else if (v.resolvedType === "STRING" && typeof modeValue === "string") {
           cssVariables[varName] = modeValue;
+          resolvedValue = modeValue;
         }
+
+        // For multi-mode variables, create ExtractedToken entries with mode field
+        if (hasMultipleModes && resolvedValue !== undefined && modeName) {
+          const tokenType: TokenType =
+            v.resolvedType === "COLOR" ? "color" : "spacing";
+
+          modeTokens.push({
+            name: v.name,
+            value: resolvedValue,
+            type: tokenType,
+            category: "semantic" as TokenCategory,
+            cssVariable: baseName,
+            mode: modeName,
+            ...(aliasDesc ? { description: aliasDesc } : {}),
+          });
+        }
+      }
+    }
+
+    // Add mode tokens to the appropriate token arrays
+    for (const token of modeTokens) {
+      if (token.type === "color") {
+        colors.push(token);
+      } else {
+        spacing.push(token);
       }
     }
   } catch (err) {
@@ -349,5 +457,7 @@ export async function extractFromFigma({
     librariesDetected: {},
     cssVariables,
     computedStyles: {},
+    layoutPatterns,
+    warnings: warnings.length > 0 ? warnings : undefined,
   };
 }

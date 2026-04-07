@@ -10,7 +10,8 @@ export interface ParseComponentsResult {
 export async function parseComponents(
   fileKey: string,
   client: FigmaClient,
-  onProgress?: (msg: string) => void
+  onProgress?: (msg: string) => void,
+  onWarning?: (msg: string) => void
 ): Promise<ParseComponentsResult> {
   onProgress?.("Fetching components...");
   const [componentsRes, componentSetsRes] = await Promise.all([
@@ -22,6 +23,10 @@ export async function parseComponents(
   const componentSets = componentSetsRes.meta.component_sets;
 
   onProgress?.(`Found ${components.length} components, ${componentSets.length} component sets`);
+
+  if (components.length > 100) {
+    onWarning?.(`${components.length} components found but only first 100 enriched with full property data.`);
+  }
 
   const setNodeIds = componentSets.map((s) => s.node_id);
   const componentNodeIds = components.slice(0, 100).map((c) => c.node_id);
@@ -67,6 +72,10 @@ export async function parseComponents(
                   key,
                   {
                     type: val.type as "BOOLEAN" | "TEXT" | "VARIANT" | "INSTANCE_SWAP",
+                    defaultValue: val.defaultValue !== undefined
+                      ? String(val.defaultValue)
+                      : undefined,
+                    preferredValues: val.preferredValues?.map((pv) => pv.value),
                   },
                 ])
               )

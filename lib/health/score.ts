@@ -144,6 +144,128 @@ export function calculateHealthScore(
     }
   }
 
+  // ── Interactive state coverage ──────────────────────────────────────────────
+  const interactiveElementPattern = /\b(?:<button|<a\s|<input|<select|<textarea|Button|Link|Input|Select|Textarea)\b/i;
+  if (interactiveElementPattern.test(output)) {
+    const stateTypes: { name: string; pattern: RegExp }[] = [
+      { name: "hover", pattern: /:hover|onMouseEnter|hover:/i },
+      { name: "focus", pattern: /:focus|onFocus|focus:/i },
+      { name: "disabled", pattern: /\bdisabled\b|:disabled|disabled:|aria-disabled/i },
+      { name: "active", pattern: /:active|active:/i },
+    ];
+    const foundStates = stateTypes.filter((s) => s.pattern.test(output));
+    if (foundStates.length < 2) {
+      score -= 10;
+      issues.push({
+        severity: "warning",
+        rule: "Interactive state coverage",
+        actual: foundStates.length === 0
+          ? "No interactive states found"
+          : `Only ${foundStates.map((s) => s.name).join(", ")} found`,
+        expected: "At least 2 of: hover, focus, disabled, active states",
+      });
+    }
+  }
+
+  // ── Accessibility basics ──────────────────────────────────────────────────
+  const hasImages = /<(?:img|Image)\b/i.test(output);
+  if (hasImages) {
+    const imgWithoutAlt = /<(?:img|Image)\b(?![^>]*\balt\s*=)[^>]*>/i.test(output);
+    if (imgWithoutAlt) {
+      score -= 5;
+      issues.push({
+        severity: "warning",
+        rule: "Images must have alt attributes",
+        actual: "<img> or <Image> without alt attribute",
+        expected: "All images should have descriptive alt text",
+      });
+    }
+  }
+
+  // Icon-only buttons without aria-label
+  const iconOnlyButtonPattern = /<button[^>]*>[\s]*(?:<svg|<Icon|<\w+Icon)[^<]*<\/button>/i;
+  if (iconOnlyButtonPattern.test(output)) {
+    const hasAriaLabel = /<button[^>]*aria-label\s*=/i.test(output);
+    if (!hasAriaLabel) {
+      issues.push({
+        severity: "warning",
+        rule: "Icon-only buttons need aria-label",
+        actual: "Button with only icon content and no aria-label",
+        expected: "aria-label describing the button action",
+      });
+    }
+  }
+
+  // Semantic HTML bonus
+  const semanticTags = ["<main", "<nav", "<section", "<article", "<header", "<footer"];
+  const usesSemanticHtml = semanticTags.some((tag) => output.toLowerCase().includes(tag));
+  if (usesSemanticHtml) {
+    score += 5;
+  }
+
+  // ── Animation/motion compliance ───────────────────────────────────────────
+  if (layoutMd) {
+    const hasMotionTokens = /--(?:motion|duration|transition|ease)-[\w-]+/i.test(layoutMd);
+    if (hasMotionTokens) {
+      const hasTransitions = /\btransition\s*:|animation\s*:/i.test(output);
+      if (hasTransitions) {
+        const usesMotionVars = /var\(--(?:motion|duration|transition|ease)-/i.test(output);
+        if (usesMotionVars) {
+          score += 5;
+        } else {
+          score -= 5;
+          issues.push({
+            severity: "warning",
+            rule: "Use motion tokens for transitions",
+            actual: "Hardcoded transition/animation values",
+            expected: "var(--duration-*) or var(--ease-*) tokens",
+          });
+        }
+      }
+    }
+  }
+
+  // ── Typography compliance ─────────────────────────────────────────────────
+  if (layoutMd) {
+    const fontFamilyMatches = layoutMd.match(/font-family:\s*["']?([^"';,]+)/gi) ?? [];
+    const designFonts = fontFamilyMatches
+      .map((m) => m.replace(/font-family:\s*["']?/i, "").trim().toLowerCase())
+      .filter((f) => f.length > 0);
+
+    if (designFonts.length > 0) {
+      const systemFonts = ["arial", "helvetica", "sans-serif", "times new roman", "times", "serif", "verdana", "georgia", "tahoma"];
+      const outputLower = output.toLowerCase();
+      const usesSystemFont = systemFonts.some((sf) => {
+        const pattern = new RegExp(`font-family[^;]*\\b${sf.replace(/\s+/g, "\\s+")}\\b`, "i");
+        return pattern.test(output);
+      });
+      const usesDesignFont = designFonts.some((df) => outputLower.includes(df));
+
+      if (usesSystemFont && !usesDesignFont) {
+        score -= 5;
+        issues.push({
+          severity: "warning",
+          rule: "Use design system fonts",
+          actual: "System font used instead of design system font",
+          expected: `Design system fonts: ${designFonts.join(", ")}`,
+        });
+      }
+    }
+  }
+
+  // ── Responsive patterns ───────────────────────────────────────────────────
+  const hasResponsive = /\b(?:sm:|md:|lg:|xl:|2xl:)|@media/i.test(output);
+  const isComplexLayout = (output.match(/<div/gi) ?? []).length >= 5;
+  if (isComplexLayout && !hasResponsive) {
+    score -= 5;
+    issues.push({
+      severity: "warning",
+      rule: "Responsive design patterns",
+      actual: "No responsive breakpoints in complex layout",
+      expected: "Responsive classes (sm:, md:, lg:) or @media queries",
+    });
+  }
+
   const total = Math.max(0, Math.min(100, score));
 
   return {

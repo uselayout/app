@@ -206,6 +206,8 @@ export interface FigmaNode {
   strokeAlign?: "INSIDE" | "OUTSIDE" | "CENTER";
   characters?: string;
   absoluteBoundingBox?: { x: number; y: number; width: number; height: number };
+  primaryAxisAlignItems?: string;
+  counterAxisAlignItems?: string;
 }
 
 export interface FigmaFill {
@@ -216,6 +218,7 @@ export interface FigmaFill {
     color: { r: number; g: number; b: number; a: number };
     position: number;
   }>;
+  gradientHandlePositions?: Array<{ x: number; y: number }>;
 }
 
 export interface FigmaTypeStyle {
@@ -226,6 +229,7 @@ export interface FigmaTypeStyle {
   lineHeightPercent?: number;
   letterSpacing?: number;
   textCase?: string;
+  textDecoration?: string;
 }
 
 export interface FigmaEffect {
