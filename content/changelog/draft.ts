@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w15-compare-fix",
+    title: "Compare view fixed",
+    description:
+      "The before/after comparison (with vs without design system) was failing with 'Invalid request'. Now works correctly again.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-07",
+  },
+  {
     id: "2026-w14-paper-push",
     title: "Push designs to Paper.design",
     description:
