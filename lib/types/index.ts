@@ -94,6 +94,38 @@ export interface ExtractedComponent {
   properties?: Record<string, ComponentProperty>;
 }
 
+export interface ScannedComponent {
+  /** Component name (PascalCase) */
+  name: string;
+  /** File path relative to project root */
+  filePath: string;
+  /** Whether it's a default or named export */
+  exportType: "default" | "named";
+  /** Props interface/type name if found */
+  propsType?: string;
+  /** Extracted prop names */
+  props: string[];
+  /** Whether it uses forwardRef */
+  usesForwardRef: boolean;
+  /** Import path for code usage */
+  importPath: string;
+  /** Source: storybook story or codebase scan */
+  source: "storybook" | "codebase";
+  /** Storybook story names (if from storybook) */
+  stories?: string[];
+  /** Storybook arg types (if from storybook) */
+  args?: Array<{
+    name: string;
+    type?: string;
+    defaultValue?: string;
+    options?: string[];
+  }>;
+  /** Match against Figma design system component */
+  designSystemMatch?: string;
+  /** Match confidence 0-1 */
+  matchConfidence?: number;
+}
+
 export interface FontDeclaration {
   family: string;
   src?: string;
@@ -201,6 +233,10 @@ export interface Project {
   uploadedFonts?: UploadedFont[];
   pendingCanvasImage?: string | null;
   pluginTokensPushedAt?: string;
+  scannedComponents?: ScannedComponent[];
+  scanSource?: "cli" | "github";
+  lastScanAt?: string;
+  githubRepo?: string;
   createdAt: string;
   updatedAt: string;
 }
