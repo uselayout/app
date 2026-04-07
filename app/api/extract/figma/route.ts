@@ -112,6 +112,10 @@ export async function POST(request: NextRequest) {
                 variants: c.variants?.slice(0, 10),
               })),
               layoutPatterns: result.layoutPatterns?.slice(0, 10),
+              warnings: [
+                ...(result.warnings ?? []),
+                "This Figma file is very large. Some data was trimmed to complete the extraction: variables capped at 200, components at 50, variants at 10 per component.",
+              ],
             };
 
             try {
@@ -136,6 +140,10 @@ export async function POST(request: NextRequest) {
                   radius: result.tokens.radius.slice(0, 20),
                   effects: result.tokens.effects.slice(0, 20),
                 },
+                warnings: [
+                  ...(result.warnings ?? []),
+                  "This Figma file is extremely large. Data was significantly trimmed to complete the extraction. To get complete data, re-extract specific pages from your Figma file individually.",
+                ],
               };
               send({ type: "complete", data: minimal });
             }

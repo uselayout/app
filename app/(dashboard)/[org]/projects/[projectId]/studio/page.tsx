@@ -171,6 +171,7 @@ export default function StudioPage({
   const extractionProgress = useExtractionStore((s) => s.progress);
   const extractionSteps = useExtractionStore((s) => s.steps);
   const extractionError = useExtractionStore((s) => s.error);
+  const extractionWarnings = useExtractionStore((s) => s.warnings);
   const streamingContent = useExtractionStore((s) => s.streamingContent);
   const isThisProjectExtracting = extractionProjectId === id;
 
@@ -448,6 +449,7 @@ export default function StudioPage({
         progress={extractionProgress}
         steps={extractionSteps}
         error={extractionError}
+        warnings={extractionWarnings}
         streamingContent={streamingContent ?? project.layoutMd}
         onOpenEditor={() => {
           setCentreView("editor");

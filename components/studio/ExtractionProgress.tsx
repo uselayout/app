@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Check, X, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Loader2, Check, X, AlertTriangle, CheckCircle2, Info } from "lucide-react";
 import type { ExtractionStep, ExtractionStepStatus } from "@/lib/types";
 
 interface ExtractionProgressProps {
@@ -264,13 +264,32 @@ export function ExtractionProgress({
             </div>
 
             {warnings && warnings.length > 0 && (
-              <div className="space-y-2 mt-4">
+              <div className="space-y-3 mt-4">
                 {warnings.map((warning, i) => (
                   <div key={i} className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
                     <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
                     <span className="text-xs text-amber-200">{warning}</span>
                   </div>
                 ))}
+
+                {warnings.some(w => w.includes("trimmed")) && (
+                  <div className="rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Info className="h-4 w-4 text-[var(--text-secondary)] flex-shrink-0" />
+                      <span className="text-xs font-medium text-[var(--text-primary)]">How to get the rest of your data</span>
+                    </div>
+                    <div className="text-xs text-[var(--text-secondary)] space-y-1.5 pl-6">
+                      <p>Your core design tokens, typography, and components have been extracted. Your layout.md will still work well for AI coding.</p>
+                      <p>To extract the missing data without losing what you have:</p>
+                      <ol className="list-decimal pl-4 space-y-1">
+                        <li>Open your Figma file and navigate to a specific page</li>
+                        <li>Copy the page URL from your browser (it will include <code className="text-[var(--text-muted)] bg-[var(--bg-elevated)] px-1 rounded">?node-id=</code> in the URL)</li>
+                        <li>Use the <strong>Re-extract</strong> button in the toolbar and paste the page URL</li>
+                      </ol>
+                      <p>Each page extraction will show a diff screen where you can review and accept new tokens before they are added to your existing layout.md.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

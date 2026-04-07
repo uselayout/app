@@ -13,6 +13,7 @@ export function useExtraction() {
   const setProgress = useExtractionStore((s) => s.setProgress);
   const setStreamingContent = useExtractionStore((s) => s.setStreamingContent);
   const setError = useExtractionStore((s) => s.setError);
+  const setWarnings = useExtractionStore((s) => s.setWarnings);
   const completeExtraction = useExtractionStore((s) => s.completeExtraction);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateLayoutMd = useProjectStore((s) => s.updateLayoutMd);
@@ -131,6 +132,9 @@ export function useExtraction() {
 
         updateStep("extract", { status: "complete", detail: sizeSummary || "Extraction complete" });
         setProgress(70);
+        if (extractionData.warnings && extractionData.warnings.length > 0) {
+          setWarnings(extractionData.warnings);
+        }
         updateExtractionData(project.id, extractionData);
 
         // Step 2: Generate layout.md
@@ -259,6 +263,7 @@ export function useExtraction() {
       setProgress,
       setStreamingContent,
       setError,
+      setWarnings,
       completeExtraction,
       updateExtractionData,
       updateLayoutMd,
