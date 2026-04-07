@@ -11,6 +11,7 @@ import { SpacingScale } from "./design-system/SpacingScale";
 import { RadiusPreview } from "./design-system/RadiusPreview";
 import { EffectsPreview } from "./design-system/EffectsPreview";
 import { ScreenshotGallery } from "./design-system/ScreenshotGallery";
+import { ComponentsView } from "./design-system/ComponentsView";
 import { FontManager } from "./FontManager";
 import { useOrgStore } from "@/lib/store/organization";
 
@@ -28,6 +29,7 @@ const SECTIONS = [
   { id: "spacing", label: "Spacing" },
   { id: "radius", label: "Radius" },
   { id: "effects", label: "Effects" },
+  { id: "components", label: "Components" },
   { id: "screenshots", label: "Screenshots" },
 ] as const;
 
@@ -51,8 +53,11 @@ export function DesignSystemPanel({
     localStorage.setItem(GUIDANCE_DISMISSED_KEY, "true");
   }, []);
 
+  const project = useProjectStore((s) => s.projects.find((p) => p.id === projectId));
   const tokens = extractionData?.tokens;
   const screenshots = extractionData?.screenshots ?? [];
+  const scannedComponents = project?.scannedComponents ?? [];
+  const extractedComponents = extractionData?.components ?? [];
 
   const handleScrollTo = useCallback((sectionId: string) => {
     const el = document.getElementById(sectionId);
@@ -142,15 +147,17 @@ export function DesignSystemPanel({
         {SECTIONS.map((section) => {
           const count = section.id === "screenshots"
             ? screenshots.length
-            : section.id === "colours"
-              ? tokens.colors.length
-              : section.id === "typography"
-                ? tokens.typography.length
-                : section.id === "spacing"
-                  ? tokens.spacing.length
-                  : section.id === "radius"
-                    ? tokens.radius.length
-                    : tokens.effects.length;
+            : section.id === "components"
+              ? extractedComponents.length + scannedComponents.length
+              : section.id === "colours"
+                ? tokens.colors.length
+                : section.id === "typography"
+                  ? tokens.typography.length
+                  : section.id === "spacing"
+                    ? tokens.spacing.length
+                    : section.id === "radius"
+                      ? tokens.radius.length
+                      : tokens.effects.length;
 
           if (count === 0) return null;
 
@@ -252,6 +259,19 @@ export function DesignSystemPanel({
               tokens={tokens.effects}
               onUpdateToken={(name, value) => handleUpdateToken("effects", name, value)}
               onRemoveToken={(name) => handleRemoveToken("effects", [name])}
+            />
+          </DesignSystemSection>
+        )}
+
+        {(extractedComponents.length > 0 || scannedComponents.length > 0) && (
+          <DesignSystemSection
+            id="components"
+            title="Components"
+            count={extractedComponents.length + scannedComponents.length}
+          >
+            <ComponentsView
+              extractedComponents={extractedComponents}
+              scannedComponents={scannedComponents}
             />
           </DesignSystemSection>
         )}
