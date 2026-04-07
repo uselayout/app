@@ -100,6 +100,11 @@ function TokenRow({ token }: { token: TokenChange }) {
               {token.cssVariable}
             </span>
           )}
+          {token.mode && (
+            <span className="text-[9px] font-medium uppercase tracking-wider text-[var(--text-muted)] rounded-sm bg-[var(--bg-elevated)] px-1 py-0.5 flex-shrink-0">
+              {token.mode}
+            </span>
+          )}
           <span
             className="text-[var(--text-muted)] text-xs px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--studio-border)] flex-shrink-0"
           >

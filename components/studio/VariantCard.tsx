@@ -785,9 +785,24 @@ export function VariantCard({
 
   const healthBadge = variant.healthScore ? (() => {
     const hs = variant.healthScore;
-    const issueLines = hs.issues.slice(0, 8).map((issue) => `  - ${issue.rule}: ${issue.actual} (use ${issue.expected})`).join("\n");
-    const issuesSuffix = hs.issues.length > 8 ? `\n  ...and ${hs.issues.length - 8} more` : "";
-    const label = `Design system compliance: ${hs.total}/100\nToken faithfulness: ${hs.tokenFaithfulness}\nComponent accuracy: ${hs.componentAccuracy}\nAnti-pattern violations: ${hs.antiPatternViolations}${hs.issues.length > 0 ? `\n\nIssues:\n${issueLines}${issuesSuffix}` : ""}`;
+
+    // Group issues by rule
+    const ruleGroups = new Map<string, Array<{ actual: string; expected: string; severity: string }>>();
+    for (const issue of hs.issues) {
+      const group = ruleGroups.get(issue.rule) ?? [];
+      group.push({ actual: issue.actual, expected: issue.expected, severity: issue.severity });
+      ruleGroups.set(issue.rule, group);
+    }
+
+    const ruleLines = [...ruleGroups.entries()]
+      .map(([rule, issues]) => {
+        const severity = issues.some(i => i.severity === "error") ? "\u2718" : "\u26A0";
+        return `  ${severity} ${rule} (${issues.length})`;
+      })
+      .join("\n");
+
+    const passCount = hs.total >= 80 ? "Strong" : hs.total >= 50 ? "Moderate" : "Needs work";
+    const label = `Design system compliance: ${hs.total}/100 (${passCount})\n\nMetrics:\n  Token faithfulness: ${hs.tokenFaithfulness}\n  Component accuracy: ${hs.componentAccuracy}\n  Anti-pattern violations: ${hs.antiPatternViolations}${ruleGroups.size > 0 ? `\n\nIssues by rule:\n${ruleLines}` : "\n\nNo issues found \u2714"}`;
     return (
       <Tip label={label} wide>
         <span

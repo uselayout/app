@@ -1031,6 +1031,12 @@ function TokenRow({
             spellCheck={false}
             className="w-auto min-w-[96px] max-w-[160px] shrink-0 rounded border border-[var(--studio-border-focus)] bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-xs text-[var(--text-primary)] outline-none"
           />
+        ) : isColor && token.value.includes("gradient") ? (
+          <div
+            className="h-5 w-20 shrink-0 rounded-sm border border-[var(--studio-border)]"
+            style={{ background: token.value }}
+            title={token.value}
+          />
         ) : (
           <span
             onClick={!isColor && canEdit ? handleStartEdit : undefined}
@@ -1143,6 +1149,15 @@ function ComponentsTab({
               <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
                 {component.description}
               </p>
+            )}
+            {component.properties && Object.keys(component.properties).length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {Object.entries(component.properties).map(([key, prop]) => (
+                  <span key={key} className="rounded bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] font-mono">
+                    {key}: {prop.type}{prop.defaultValue ? ` = ${prop.defaultValue}` : ""}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
           <ExternalLink className="h-3 w-3 shrink-0 text-[var(--text-muted)]" />
