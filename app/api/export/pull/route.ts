@@ -104,7 +104,7 @@ export async function GET(request: Request) {
   }
 
   if (formats.includes("tailwind-config") && tokens) {
-    files["tailwind.config.js"] = generateTailwindConfig(tokens);
+    files["tailwind.config.js"] = generateTailwindConfig(tokens, project.extractionData?.breakpoints);
   }
 
   void logEvent("export.pull", "cli", { orgId, metadata: { formats, projectId: project.id } });

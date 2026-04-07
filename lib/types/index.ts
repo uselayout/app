@@ -78,6 +78,8 @@ export interface ExtractedToken {
   originalName?: string;
   /** Mode name for multi-mode tokens (e.g. "light", "dark"). */
   mode?: string;
+  /** Alias reference: if this token references another, e.g. "var(--primitive-red-400)". */
+  reference?: string;
 }
 
 export interface ComponentProperty {
@@ -191,6 +193,8 @@ export interface ExtractionResult {
   sourceType: SourceType;
   sourceName: string;
   sourceUrl?: string;
+  /** Where the extraction originated — drives confidence classification in synthesis. */
+  extractionSource?: "figma" | "website";
   tokens: ExtractedTokens;
   components: ExtractedComponent[];
   screenshots: string[];

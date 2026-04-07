@@ -99,8 +99,9 @@ Minimum items: hardcoded colours, arbitrary spacing, font defaults (Inter/Roboto
 Full CSS variable table — name, value, usage. All tiers. (Long is fine — this is reference material.)
 
 ## Appendix B: Token Source Metadata
-tokenSource: [extracted-css-vars | extracted-config | reconstructed-from-computed]
+tokenSource: [extracted-from-figma | extracted-css-vars | extracted-config | utility-class-based | reconstructed-from-computed]
 Confidence level. Clustering method used for any reconstructed tokens.
+If Figma: note that tokens are authoritative design intent, not reverse-engineered.
 If Tailwind: note v3 (no CSS vars) vs v4 (CSS vars via @theme).`;
 
 // Synthesis caps — truncate at synthesis time, full data stays in project store
@@ -128,18 +129,42 @@ function buildUserContent(
   // Token source metadata — classify confidence upfront
   const cssVarCount = Object.keys(data.cssVariables).length;
   const isTailwind = data.librariesDetected?.["tailwind-css"] === true;
-  const tokenSource = cssVarCount > 10
-    ? "extracted-css-vars"
-    : isTailwind
-      ? "utility-class-based"
-      : "reconstructed-from-computed";
+  const isFigma = data.extractionSource === "figma" || data.sourceType === "figma";
+  const totalTokenCount =
+    data.tokens.colors.length +
+    data.tokens.typography.length +
+    data.tokens.spacing.length +
+    data.tokens.radius.length +
+    data.tokens.effects.length +
+    data.tokens.motion.length;
+
+  const tokenSource = isFigma && totalTokenCount > 10
+    ? "extracted-from-figma"
+    : cssVarCount > 10
+      ? "extracted-css-vars"
+      : isTailwind
+        ? "utility-class-based"
+        : "reconstructed-from-computed";
+
+  const confidence = tokenSource === "extracted-from-figma"
+    ? (totalTokenCount > 30 ? "high" : "medium")
+    : cssVarCount > 20 ? "high" : cssVarCount > 5 ? "medium" : "low";
 
   sections.push(
     `Design system extracted from: ${data.sourceName}`,
     `Source type: ${data.sourceType}`,
     `Token source: ${tokenSource}`,
-    `Confidence: ${cssVarCount > 20 ? "high" : cssVarCount > 5 ? "medium" : "low"} (${cssVarCount} CSS custom properties found)`,
+    `Confidence: ${confidence} (${isFigma ? `${totalTokenCount} tokens extracted from Figma` : `${cssVarCount} CSS custom properties found`})`,
   );
+
+  if (tokenSource === "extracted-from-figma") {
+    sections.push(
+      `IMPORTANT: These tokens were extracted directly from a Figma design file. ` +
+      `They are authoritative — use exact values and names. ` +
+      `Annotate tokens with /* extracted */ not /* reconstructed */. ` +
+      `Confidence should be "high" for all Figma-sourced tokens.`
+    );
+  }
 
   if (cssVarCount > 0) {
     // Group CSS variables by category for structured synthesis
@@ -182,6 +207,28 @@ function buildUserContent(
       (spacingVars.length > 0 ? `/* SPACING & LAYOUT */\n${formatVars(spacingVars)}\n` : "") +
       (typographyVars.length > 0 ? `/* TYPOGRAPHY */\n${formatVars(typographyVars)}\n` : "") +
       (otherVars.length > 0 ? `/* OTHER */\n${formatVars(otherVars)}` : "")
+    );
+  } else if (tokenSource === "extracted-from-figma") {
+    // Figma extractions don't have CSS variables but have structured tokens.
+    // Present all tokens as the authoritative source.
+    const formatFigmaTokens = (label: string, tokens: ExtractedToken[]) => {
+      if (tokens.length === 0) return "";
+      return `/* ${label} */\n` + tokens
+        .map((t) => `  --${t.name}: ${t.value};${t.description ? ` /* ${t.description} */` : ""}`)
+        .join("\n") + "\n";
+    };
+
+    sections.push(
+      `--- FIGMA DESIGN TOKENS (Source of Truth) ---\n` +
+      `These tokens are extracted directly from Figma styles and variables. ` +
+      `Use these EXACT names as CSS custom properties. Do NOT rename or remap them. ` +
+      `Mark every token with "/* extracted */" in its comment.\n\n` +
+      formatFigmaTokens("COLOURS", data.tokens.colors.slice(0, MAX_COLOUR_TOKENS)) +
+      formatFigmaTokens("TYPOGRAPHY", data.tokens.typography.slice(0, MAX_TYPOGRAPHY_TOKENS)) +
+      formatFigmaTokens("SPACING", data.tokens.spacing) +
+      formatFigmaTokens("RADIUS", data.tokens.radius) +
+      formatFigmaTokens("EFFECTS", data.tokens.effects) +
+      formatFigmaTokens("MOTION", data.tokens.motion)
     );
   } else {
     sections.push(

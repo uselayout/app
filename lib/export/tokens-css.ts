@@ -4,7 +4,9 @@ function tokenToCssLine(token: ExtractedToken, prefix: string): string {
   const varName =
     token.cssVariable ||
     `--${prefix}-${token.name.toLowerCase().replace(/[/\s]+/g, "-")}`;
-  return `  ${varName}: ${token.value};`;
+  // Use reference (alias) if available, otherwise the resolved value
+  const value = token.reference || token.value;
+  return `  ${varName}: ${value};`;
 }
 
 function emitTokenBlock(

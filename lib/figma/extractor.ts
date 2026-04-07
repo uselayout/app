@@ -384,6 +384,10 @@ export async function extractFromFigma({
           const tokenType: TokenType =
             v.resolvedType === "COLOR" ? "color" : "spacing";
 
+          const aliasRef = aliasChain.length > 0
+            ? `var(--${aliasChain[0].toLowerCase().replace(/[/\s]+/g, "-")})`
+            : undefined;
+
           modeTokens.push({
             name: v.name,
             value: resolvedValue,
@@ -392,6 +396,7 @@ export async function extractFromFigma({
             cssVariable: baseName,
             mode: modeName,
             ...(aliasDesc ? { description: aliasDesc } : {}),
+            ...(aliasRef ? { reference: aliasRef } : {}),
           });
         }
       }
@@ -473,6 +478,7 @@ export async function extractFromFigma({
     })(),
     animations: [],
     librariesDetected: {},
+    extractionSource: "figma",
     cssVariables,
     computedStyles: {},
     layoutPatterns,

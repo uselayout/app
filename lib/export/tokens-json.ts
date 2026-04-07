@@ -4,6 +4,7 @@ interface DTCGTokenFlat {
   $type: string;
   $value: string;
   $description?: string;
+  $extensions?: { "com.layout.alias"?: string };
 }
 
 interface DTCGTokenTypography {
@@ -93,8 +94,9 @@ function tokenToDTCG(token: ExtractedToken): DTCGToken {
 
   return {
     $type: dtcgType,
-    $value: token.value,
+    $value: token.reference || token.value,
     ...(token.description ? { $description: token.description } : {}),
+    ...(token.reference ? { $extensions: { "com.layout.alias": token.reference } } : {}),
   };
 }
 

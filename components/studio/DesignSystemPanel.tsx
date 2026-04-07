@@ -109,6 +109,38 @@ export function DesignSystemPanel({
     [projectId, extractionData, updateExtractionData]
   );
 
+  // Deduplicate tokens that have the same resolved value within a category.
+  // Prefer tokens from Figma Variables (no "reconstructed"/"computed" in metadata) over mined ones.
+  const deduplicatedTokens = useMemo(() => {
+    if (!tokens) return null;
+    const dedup = (tokenList: typeof tokens.colors) => {
+      const byValue = new Map<string, typeof tokenList[0]>();
+      for (const t of tokenList) {
+        const key = t.value.trim().toLowerCase();
+        const existing = byValue.get(key);
+        if (!existing) {
+          byValue.set(key, t);
+        } else {
+          // Prefer the token without "reconstructed"/"computed" in description or originalName
+          const existingIsReconstructed = (existing.description ?? "").includes("reconstructed") || (existing.originalName ?? "").includes("computed");
+          const newIsReconstructed = (t.description ?? "").includes("reconstructed") || (t.originalName ?? "").includes("computed");
+          if (existingIsReconstructed && !newIsReconstructed) {
+            byValue.set(key, t);
+          }
+        }
+      }
+      return Array.from(byValue.values());
+    };
+    return {
+      colors: dedup(tokens.colors),
+      typography: tokens.typography, // Typography values are composites, rarely duplicate
+      spacing: dedup(tokens.spacing),
+      radius: dedup(tokens.radius),
+      effects: tokens.effects,
+      motion: tokens.motion,
+    };
+  }, [tokens]);
+
   const cssVariables = useMemo(() => {
     if (!tokens) return {};
     const vars: Record<string, string> = {};
@@ -144,6 +176,12 @@ export function DesignSystemPanel({
     <div className="flex h-full flex-col bg-[var(--bg-app)]">
       {/* Section nav */}
       <div className="sticky top-0 z-10 flex items-center gap-1 border-b border-[var(--studio-border)] bg-[var(--bg-app)] px-6 py-2">
+        <span
+          className="mr-2 rounded-md bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]"
+          title={`${tokens.colors.length} colours, ${tokens.typography.length} typography, ${tokens.spacing.length} spacing, ${tokens.radius.length} radius, ${tokens.effects.length} effects, ${tokens.motion.length} motion`}
+        >
+          {tokens.colors.length + tokens.typography.length + tokens.spacing.length + tokens.radius.length + tokens.effects.length + tokens.motion.length} tokens
+        </span>
         {SECTIONS.map((section) => {
           const count = section.id === "screenshots"
             ? screenshots.length
@@ -201,9 +239,9 @@ export function DesignSystemPanel({
       {/* Scrollable content */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-6">
         {tokens.colors.length > 0 && (
-          <DesignSystemSection id="colours" title="Colours" count={tokens.colors.length}>
+          <DesignSystemSection id="colours" title="Colours" count={deduplicatedTokens?.colors.length ?? tokens.colors.length}>
             <ColourPalette
-              tokens={tokens.colors}
+              tokens={deduplicatedTokens?.colors ?? tokens.colors}
               cssVariables={cssVariables}
               onUpdateToken={(name, value) => handleUpdateToken("colors", name, value)}
               onRemoveToken={(name) => handleRemoveToken("colors", [name])}
@@ -234,9 +272,9 @@ export function DesignSystemPanel({
         )}
 
         {tokens.spacing.length > 0 && (
-          <DesignSystemSection id="spacing" title="Spacing" count={tokens.spacing.length}>
+          <DesignSystemSection id="spacing" title="Spacing" count={deduplicatedTokens?.spacing.length ?? tokens.spacing.length}>
             <SpacingScale
-              tokens={tokens.spacing}
+              tokens={deduplicatedTokens?.spacing ?? tokens.spacing}
               onUpdateToken={(name, value) => handleUpdateToken("spacing", name, value)}
               onRemoveToken={(name) => handleRemoveToken("spacing", [name])}
             />
@@ -244,9 +282,9 @@ export function DesignSystemPanel({
         )}
 
         {tokens.radius.length > 0 && (
-          <DesignSystemSection id="radius" title="Radius" count={tokens.radius.length}>
+          <DesignSystemSection id="radius" title="Radius" count={deduplicatedTokens?.radius.length ?? tokens.radius.length}>
             <RadiusPreview
-              tokens={tokens.radius}
+              tokens={deduplicatedTokens?.radius ?? tokens.radius}
               onUpdateToken={(name, value) => handleUpdateToken("radius", name, value)}
               onRemoveToken={(name) => handleRemoveToken("radius", [name])}
             />

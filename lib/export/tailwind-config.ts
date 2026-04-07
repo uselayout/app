@@ -46,7 +46,7 @@ function weightName(weight: string): string {
   return map[weight] || `w${weight}`;
 }
 
-export function generateTailwindConfig(tokens: ExtractedTokens): string {
+export function generateTailwindConfig(tokens: ExtractedTokens, breakpoints?: string[]): string {
   const colors: Record<string, string> = {};
   const spacing: Record<string, string> = {};
   const borderRadius: Record<string, string> = {};
@@ -151,6 +151,17 @@ export function generateTailwindConfig(tokens: ExtractedTokens): string {
   if (Object.keys(boxShadow).length > 0) extend.boxShadow = boxShadow;
   if (Object.keys(transitionDuration).length > 0) extend.transitionDuration = transitionDuration;
   if (Object.keys(transitionTimingFunction).length > 0) extend.transitionTimingFunction = transitionTimingFunction;
+
+  // Breakpoints → screens
+  if (breakpoints && breakpoints.length > 0) {
+    const screens: Record<string, string> = {};
+    const sorted = [...breakpoints].sort((a, b) => parseInt(a) - parseInt(b));
+    const names = ["xs", "sm", "md", "lg", "xl", "2xl", "3xl"];
+    for (let i = 0; i < sorted.length && i < names.length; i++) {
+      screens[names[i]] = sorted[i];
+    }
+    if (Object.keys(screens).length > 0) extend.screens = screens;
+  }
 
   const config = {
     theme: {

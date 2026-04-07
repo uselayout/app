@@ -45,6 +45,15 @@ export async function parseComponents(
     setNamesMap.set(set.node_id, set.name);
   }
 
+  // Build a component key → name lookup for resolving instance swap targets
+  const componentKeyToName = new Map<string, string>();
+  for (const comp of components) {
+    if (comp.key) componentKeyToName.set(comp.key, comp.name);
+  }
+  for (const set of componentSets) {
+    if (set.key) componentKeyToName.set(set.key, set.name);
+  }
+
   const groupedBySet = new Map<string, ExtractedComponent>();
 
   for (const comp of components) {
@@ -75,7 +84,15 @@ export async function parseComponents(
                     defaultValue: val.defaultValue !== undefined
                       ? String(val.defaultValue)
                       : undefined,
-                    preferredValues: val.preferredValues?.map((pv) => pv.value),
+                    preferredValues: val.preferredValues?.map((pv) => {
+                      // For INSTANCE_SWAP, preferredValues contain { type, key }.
+                      // Resolve to component name if available, otherwise include key with type prefix.
+                      if (typeof pv === "object" && pv.type) {
+                        const resolvedName = componentKeyToName.get(pv.value);
+                        return resolvedName || `${pv.type.toLowerCase()}:${pv.value}`;
+                      }
+                      return pv.value;
+                    }),
                   },
                 ])
               )
