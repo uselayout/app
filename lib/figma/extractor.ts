@@ -420,9 +420,23 @@ export async function extractFromFigma({
     }
   }
 
-  const tokenCount = colors.length + typography.length + effects.length + radius.length + spacing.length;
+  // Cap variant names per component to prevent oversized payloads
+  for (const comp of components) {
+    if (comp.variants && comp.variants.length > 20) {
+      comp.variants = comp.variants.slice(0, 20);
+    }
+  }
+
+  // Cap cssVariables to 1000 entries for very large Enterprise files
   const varCount = Object.keys(cssVariables).length;
-  onProgress?.("complete", 80, `Extraction complete — ${tokenCount} tokens${varCount > 0 ? `, ${varCount} variables` : ""}`);
+  if (varCount > 1000) {
+    warnings.push(`${varCount} variables found but capped at 1000 to avoid payload limits.`);
+    cssVariables = Object.fromEntries(Object.entries(cssVariables).slice(0, 1000));
+  }
+
+  const tokenCount = colors.length + typography.length + effects.length + radius.length + spacing.length;
+  const cappedVarCount = Object.keys(cssVariables).length;
+  onProgress?.("complete", 80, `Extraction complete — ${tokenCount} tokens${cappedVarCount > 0 ? `, ${cappedVarCount} variables` : ""}`);
 
   return {
     sourceType: "figma",

@@ -54,7 +54,17 @@ export class FigmaClient {
         );
       }
 
-      return response.json() as Promise<T>;
+      try {
+        return await response.json() as T;
+      } catch (err) {
+        if (err instanceof Error && err.message.includes("string longer than")) {
+          throw new FigmaApiError(
+            "Figma API response too large to process. Try extracting from a smaller file or a specific page.",
+            413
+          );
+        }
+        throw err;
+      }
     }
 
     throw new FigmaApiError("Max retries exceeded", 429);

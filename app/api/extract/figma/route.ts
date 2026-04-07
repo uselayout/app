@@ -100,15 +100,45 @@ export async function POST(request: NextRequest) {
           send({ type: "complete", data: result });
         } catch (sendErr) {
           if (sendErr instanceof Error && sendErr.message.includes("string longer than")) {
-            // Extraction result too large for single SSE message — trim heavy fields
+            // Progressive trimming: increasingly aggressive reductions
             const trimmed = {
               ...result,
               cssVariables: Object.fromEntries(
-                Object.entries(result.cssVariables).slice(0, 500)
+                Object.entries(result.cssVariables).slice(0, 200)
               ),
               computedStyles: {},
+              components: result.components.slice(0, 50).map(c => ({
+                ...c,
+                variants: c.variants?.slice(0, 10),
+              })),
+              layoutPatterns: result.layoutPatterns?.slice(0, 10),
             };
-            send({ type: "complete", data: trimmed });
+
+            try {
+              send({ type: "complete", data: trimmed });
+            } catch {
+              // Nuclear option: bare minimum data
+              const minimal = {
+                ...result,
+                cssVariables: Object.fromEntries(
+                  Object.entries(result.cssVariables).slice(0, 50)
+                ),
+                computedStyles: {},
+                components: result.components.slice(0, 20).map(c => ({
+                  ...c, variants: undefined,
+                })),
+                layoutPatterns: undefined,
+                tokens: {
+                  ...result.tokens,
+                  colors: result.tokens.colors.slice(0, 100),
+                  typography: result.tokens.typography.slice(0, 50),
+                  spacing: result.tokens.spacing.slice(0, 50),
+                  radius: result.tokens.radius.slice(0, 20),
+                  effects: result.tokens.effects.slice(0, 20),
+                },
+              };
+              send({ type: "complete", data: minimal });
+            }
           } else {
             throw sendErr;
           }
