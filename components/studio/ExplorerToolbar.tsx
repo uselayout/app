@@ -76,6 +76,11 @@ export function ExplorerToolbar({
   const contextFileInputRef = useRef<HTMLInputElement>(null);
   const promptInputRef = useRef<HTMLInputElement>(null);
 
+  // Default to 1 variant when refining a selected variant, 2 for new generations
+  useEffect(() => {
+    setVariantCount(hasSelection ? 1 : 2);
+  }, [hasSelection]);
+
   // Clear prompt when switching between explorations
   // (don't pre-fill — Regenerate button handles that explicitly)
   useEffect(() => {
