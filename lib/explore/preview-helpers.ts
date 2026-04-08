@@ -111,7 +111,9 @@ export function buildCssTokenBlock(
     const lines = Array.from(vars.entries())
       .map(([name, value]) => `  ${name}: ${value};`)
       .join("\n");
-    return `:root {\n${lines}\n}`;
+    // Wrap in @layer so variant-defined :root variables always take priority.
+    // Unlayered CSS (from the variant's own <style>) beats @layer in the cascade.
+    return `@layer design-tokens {\n  :root {\n${lines}\n  }\n}`;
   } catch {
     // Graceful fallback — previews render without design tokens rather than breaking
     return "";
