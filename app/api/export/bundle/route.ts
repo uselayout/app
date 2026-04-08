@@ -196,7 +196,7 @@ function addFormatToZip(zip: JSZip, format: ExportFormat, project: Project) {
       if (project.extractionData?.tokens) {
         zip.file(
           "tailwind.config.js",
-          generateTailwindConfig(project.extractionData.tokens)
+          generateTailwindConfig(project.extractionData.tokens, project.extractionData.breakpoints)
         );
       }
       break;

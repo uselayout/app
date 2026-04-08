@@ -8,6 +8,7 @@ import { auth } from "@/lib/auth";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 import { logApiCall } from "@/lib/logging/api-log";
 import { logEvent } from "@/lib/logging/platform-event";
+import { sendResultChunked } from "@/lib/extraction/chunked-send";
 
 const RequestSchema = z.object({
   figmaUrl: z.string().url(),
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
 
   const { figmaUrl, accessToken } = parsed.data;
   const fileKey = FigmaClient.extractFileKey(figmaUrl);
+  const pageNodeId = FigmaClient.extractNodeId(figmaUrl) ?? undefined;
 
   if (!fileKey) {
     return Response.json(
@@ -87,6 +89,7 @@ export async function POST(request: NextRequest) {
         const result = await extractFromFigma({
           fileKey,
           accessToken,
+          pageNodeId,
           onProgress: (step, percent, detail) => {
             send({ type: "step", step, percent, detail });
           },
@@ -100,15 +103,8 @@ export async function POST(request: NextRequest) {
           send({ type: "complete", data: result });
         } catch (sendErr) {
           if (sendErr instanceof Error && sendErr.message.includes("string longer than")) {
-            // Extraction result too large for single SSE message — trim heavy fields
-            const trimmed = {
-              ...result,
-              cssVariables: Object.fromEntries(
-                Object.entries(result.cssVariables).slice(0, 500)
-              ),
-              computedStyles: {},
-            };
-            send({ type: "complete", data: trimmed });
+            // Result too large for a single SSE message — send in chunks
+            sendResultChunked(send, result);
           } else {
             throw sendErr;
           }

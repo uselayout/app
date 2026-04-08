@@ -10,7 +10,8 @@ import { getClientIp } from "@/lib/get-client-ip";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 import { logApiCall } from "@/lib/logging/api-log";
 import { logEvent } from "@/lib/logging/platform-event";
-import type { ExtractionResult } from "@/lib/types";
+import { fetchProjectById } from "@/lib/supabase/db";
+import type { ExtractionResult, ExtractedToken } from "@/lib/types";
 import type { AiMode } from "@/lib/types/billing";
 
 // Allow large request bodies for screenshot data (base64 images can be 2-5MB each)
@@ -39,6 +40,7 @@ const RequestSchema = z.object({
     sourceUrl: z.string().optional(),
     interactiveStates: z.record(z.string(), z.record(z.string(), z.string())).optional(),
     breakpoints: z.array(z.string()).optional(),
+    extractionSource: z.enum(["figma", "website"]).optional(),
   }),
   projectId: z.string().optional(),
 });
@@ -121,6 +123,36 @@ export async function POST(request: NextRequest) {
     }
 
     const extractionData = parsed.data.extractionData as unknown as ExtractionResult;
+
+    // Merge plugin-pushed tokens (Figma Variables) from the stored project.
+    // These are more authoritative than mined tokens, so they take priority.
+    if (parsed.data.projectId) {
+      const project = await fetchProjectById(parsed.data.projectId);
+      if (project?.extractionData?.tokens && project.pluginTokensPushedAt) {
+        const stored = project.extractionData.tokens;
+        const tokenCategories = ["colors", "typography", "spacing", "radius", "effects", "motion"] as const;
+        for (const cat of tokenCategories) {
+          const storedTokens = stored[cat] ?? [];
+          if (storedTokens.length === 0) continue;
+
+          const existingNames = new Set(extractionData.tokens[cat].map((t: ExtractedToken) => t.name));
+          const existingValues = new Set(extractionData.tokens[cat].map((t: ExtractedToken) => t.value));
+
+          for (const token of storedTokens) {
+            // Skip if already present by name
+            if (existingNames.has(token.name)) continue;
+            // Skip if the exact same value already exists (avoids duplicates like space-4: 16px + s&p-xl: 16)
+            if (existingValues.has(token.value)) continue;
+            extractionData.tokens[cat].push(token);
+          }
+        }
+
+        // Carry over extractionSource if not already set
+        if (!extractionData.extractionSource && project.extractionData.extractionSource) {
+          extractionData.extractionSource = project.extractionData.extractionSource;
+        }
+      }
+    }
 
     // Resize screenshots server-side to keep Claude token costs reasonable
     if (extractionData.screenshots.length > 0) {

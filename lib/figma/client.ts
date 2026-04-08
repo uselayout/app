@@ -54,7 +54,17 @@ export class FigmaClient {
         );
       }
 
-      return response.json() as Promise<T>;
+      try {
+        return await response.json() as T;
+      } catch (err) {
+        if (err instanceof Error && err.message.includes("string longer than")) {
+          throw new FigmaApiError(
+            "Figma API response too large to process. Try extracting from a smaller file or a specific page.",
+            413
+          );
+        }
+        throw err;
+      }
     }
 
     throw new FigmaApiError("Max retries exceeded", 429);
@@ -141,6 +151,23 @@ export class FigmaClient {
     const match = url.match(/figma\.com\/(file|design)\/([a-zA-Z0-9]+)/);
     return match ? match[2] : null;
   }
+
+  /**
+   * Extract the node-id query parameter from a Figma URL.
+   * URLs like `figma.com/design/ABC?node-id=123-456` or `node-id=123:456`
+   * return the node ID in Figma's colon format (e.g. "123:456").
+   */
+  static extractNodeId(url: string): string | null {
+    try {
+      const u = new URL(url);
+      const nodeId = u.searchParams.get("node-id");
+      if (!nodeId) return null;
+      // Figma URLs use hyphens in the query param but colons in the API
+      return nodeId.replace(/-/g, ":");
+    } catch {
+      return null;
+    }
+  }
 }
 
 export class FigmaApiError extends Error {
@@ -206,6 +233,8 @@ export interface FigmaNode {
   strokeAlign?: "INSIDE" | "OUTSIDE" | "CENTER";
   characters?: string;
   absoluteBoundingBox?: { x: number; y: number; width: number; height: number };
+  primaryAxisAlignItems?: string;
+  counterAxisAlignItems?: string;
 }
 
 export interface FigmaFill {
@@ -216,6 +245,7 @@ export interface FigmaFill {
     color: { r: number; g: number; b: number; a: number };
     position: number;
   }>;
+  gradientHandlePositions?: Array<{ x: number; y: number }>;
 }
 
 export interface FigmaTypeStyle {
@@ -226,6 +256,7 @@ export interface FigmaTypeStyle {
   lineHeightPercent?: number;
   letterSpacing?: number;
   textCase?: string;
+  textDecoration?: string;
 }
 
 export interface FigmaEffect {

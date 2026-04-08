@@ -244,7 +244,7 @@ function SourcePanelInner({
           <TokensTab tokens={extractionData.tokens} cssVariables={extractionData.cssVariables} projectId={projectId} sourceType={extractionData.sourceType} />
         )}
         {activeTab === "components" && extractionData && (
-          <ComponentsTab components={extractionData.components} sourceType={extractionData.sourceType} />
+          <ComponentsTab components={extractionData.components} sourceType={extractionData.sourceType} sourceUrl={extractionData.sourceUrl} />
         )}
         {activeTab === "screenshots" && extractionData && (
           <ScreenshotsTab screenshots={extractionData.screenshots} onDelete={handleDeleteScreenshot} onAdd={handleAddScreenshot} />
@@ -550,6 +550,24 @@ function TokensTab({
   const allTokensFlat = useMemo(() => flattenTokens(tokens), [tokens]);
   const showFigmaCallout = sourceType === "figma" && Object.keys(cssVariables).length < 15;
 
+  const [modeFilter, setModeFilter] = useState<string | null>(null);
+
+  const availableModes = useMemo(() => {
+    const modes = new Set<string>();
+    const allTokens = [
+      ...tokens.colors,
+      ...tokens.typography,
+      ...tokens.spacing,
+      ...tokens.radius,
+      ...tokens.effects,
+      ...tokens.motion,
+    ];
+    for (const t of allTokens) {
+      if (t.mode) modes.add(t.mode);
+    }
+    return [...modes].sort();
+  }, [tokens]);
+
   // Build a resolution map from cssVariables + all token values
   // This allows resolving var(--palette-purple-40) when --palette-purple-40 is itself a token
   const tokenVarMap = useMemo(() => {
@@ -608,12 +626,21 @@ function TokensTab({
     };
   }, [undoState]);
 
+  const filterByMode = useCallback(
+    (tokenList: ExtractedToken[]) => {
+      if (!modeFilter) return tokenList;
+      if (modeFilter === "default") return tokenList.filter((t) => !t.mode);
+      return tokenList.filter((t) => t.mode === modeFilter);
+    },
+    [modeFilter]
+  );
+
   const sections: { label: string; items: ExtractedToken[] }[] = [
-    { label: "Colours", items: tokens.colors },
-    { label: "Typography", items: tokens.typography },
-    { label: "Spacing", items: tokens.spacing },
-    { label: "Radius", items: tokens.radius },
-    { label: "Effects", items: tokens.effects },
+    { label: "Colours", items: filterByMode(tokens.colors) },
+    { label: "Typography", items: filterByMode(tokens.typography) },
+    { label: "Spacing", items: filterByMode(tokens.spacing) },
+    { label: "Radius", items: filterByMode(tokens.radius) },
+    { label: "Effects", items: filterByMode(tokens.effects) },
   ].filter((s) => s.items.length > 0);
 
   const [openSections, setOpenSections] = useState<Set<string>>(
@@ -681,6 +708,43 @@ function TokensTab({
   return (
     <div className="relative p-2">
       {showFigmaCallout && <FigmaPluginCallout />}
+      {availableModes.length > 0 && (
+        <div className="flex items-center gap-1 px-1 pb-2 border-b border-[var(--studio-border)] mb-2 flex-wrap">
+          <button
+            onClick={() => setModeFilter(null)}
+            className={`px-2 py-0.5 rounded-sm text-[10px] font-medium uppercase tracking-wider transition-colors ${
+              modeFilter === null
+                ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setModeFilter("default")}
+            className={`px-2 py-0.5 rounded-sm text-[10px] font-medium uppercase tracking-wider transition-colors ${
+              modeFilter === "default"
+                ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            }`}
+          >
+            Default
+          </button>
+          {availableModes.map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setModeFilter(mode)}
+              className={`px-2 py-0.5 rounded-sm text-[10px] font-medium uppercase tracking-wider transition-colors ${
+                modeFilter === mode
+                  ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              }`}
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
+      )}
       {sections.map((section) => (
         <div key={section.label} className="mb-1">
           <TokenSectionHeader
@@ -947,6 +1011,11 @@ function TokenRow({
                 ({token.originalName})
               </span>
             )}
+            {token.mode && (
+              <span className="ml-1 shrink-0 rounded-sm bg-[var(--bg-elevated)] px-1 py-0.5 text-[9px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                {token.mode}
+              </span>
+            )}
           </span>
         )}
 
@@ -961,6 +1030,12 @@ function TokenRow({
             onClick={(e) => e.stopPropagation()}
             spellCheck={false}
             className="w-auto min-w-[96px] max-w-[160px] shrink-0 rounded border border-[var(--studio-border-focus)] bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-xs text-[var(--text-primary)] outline-none"
+          />
+        ) : isColor && token.value.includes("gradient") ? (
+          <div
+            className="h-5 w-20 shrink-0 rounded-sm border border-[var(--studio-border)]"
+            style={{ background: token.value }}
+            title={token.value}
           />
         ) : (
           <span
@@ -1030,11 +1105,18 @@ function TokenRow({
 function ComponentsTab({
   components,
   sourceType,
+  sourceUrl,
 }: {
   components: ExtractedComponent[];
   sourceType?: string;
+  sourceUrl?: string;
 }) {
-  if (components.length === 0) {
+  // Filter out Figma icon components
+  const filteredComponents = components.filter(
+    (c) => !c.name.toLowerCase().startsWith("icon/") && !c.name.toLowerCase().startsWith("icon\\")
+  );
+
+  if (filteredComponents.length === 0) {
     return (
       <div className="p-4 space-y-2">
         <p className="text-xs text-[var(--text-muted)]">
@@ -1049,36 +1131,64 @@ function ComponentsTab({
     );
   }
 
+  // Link to the Figma file (component-level deep linking requires node_id which we don't store)
+  const figmaUrl = sourceUrl?.match(/figma\.com/) ? sourceUrl : undefined;
+
   return (
     <div className="p-2 space-y-1">
-      {components.map((component) => (
-        <div
-          key={component.name}
-          className="flex items-center gap-2 rounded px-2 py-2 transition-colors hover:bg-[var(--bg-hover)]"
-        >
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="truncate text-xs font-medium text-[var(--text-primary)]">
-                {component.name}
-              </span>
-              {component.variantCount > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="bg-[var(--bg-elevated)] text-[var(--text-muted)] text-[10px] px-1.5 py-0"
-                >
-                  {component.variantCount} variants
-                </Badge>
+      {filteredComponents.map((component) => {
+        const componentUrl = figmaUrl;
+
+        return (
+          <div
+            key={component.name}
+            className="flex items-center gap-2 rounded px-2 py-2 transition-colors hover:bg-[var(--bg-hover)]"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="truncate text-xs font-medium text-[var(--text-primary)]">
+                  {component.name}
+                </span>
+                {component.variantCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-[var(--bg-elevated)] text-[var(--text-muted)] text-[10px] px-1.5 py-0"
+                  >
+                    {component.variantCount} variants
+                  </Badge>
+                )}
+              </div>
+              {component.description && (
+                <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
+                  {component.description}
+                </p>
+              )}
+              {component.properties && Object.keys(component.properties).length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {Object.entries(component.properties).map(([key, prop]) => (
+                    <span key={key} className="rounded bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] font-mono">
+                      {key}: {prop.type}{prop.defaultValue ? ` = ${prop.defaultValue}` : ""}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
-            {component.description && (
-              <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
-                {component.description}
-              </p>
+            {componentUrl ? (
+              <a
+                href={componentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0"
+                title={`Open ${component.name} in Figma`}
+              >
+                <ExternalLink className="h-3 w-3 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors" />
+              </a>
+            ) : (
+              <ExternalLink className="h-3 w-3 shrink-0 text-[var(--text-muted)] opacity-30" />
             )}
           </div>
-          <ExternalLink className="h-3 w-3 shrink-0 text-[var(--text-muted)]" />
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

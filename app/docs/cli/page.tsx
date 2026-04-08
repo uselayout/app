@@ -189,7 +189,7 @@ npx @layoutdesign/context install
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Available MCP Tools</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The MCP server exposes 13 tools your AI agent can call automatically:
+          The MCP server exposes 14 tools your AI agent can call automatically:
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -252,6 +252,10 @@ npx @layoutdesign/context install
                 [
                   "check_setup",
                   "Diagnoses and optionally fixes MCP server setup issues (registration, OAuth, reachability)",
+                ],
+                [
+                  "scan_project",
+                  "Scans the project directory for React components and Storybook stories. Returns component names, file paths, props, import paths, and story associations. Auto-runs on MCP server startup.",
                 ],
               ].map(([tool, desc]) => (
                 <tr key={tool} className="hover:bg-gray-50">
@@ -399,6 +403,49 @@ npx @layoutdesign/context init --kit notion-lite`}
             Figma MCP docs
           </a>{" "}
           for setup instructions.
+        </Callout>
+      </section>
+
+      {/* Codebase Scanner */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Codebase Scanner</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Layout automatically detects React components and Storybook stories in
+          your project. The MCP server scans your project on startup
+          (~10&ndash;30ms). AI agents see your existing components via{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            list_components
+          </code>{" "}
+          and reuse them instead of generating duplicates.
+        </p>
+        <p className="text-base text-gray-600 leading-relaxed">
+          To run a manual scan and optionally upload results to Layout:
+        </p>
+        <CopyBlock
+          code={`npx @layoutdesign/context scan [path]
+  --sync          Upload results to Layout
+  --project <id>  Target project ID
+  --type <type>   storybook | codebase | both`}
+          language="bash"
+        />
+        <p className="text-base text-gray-600 leading-relaxed">
+          The scanner detects: function exports, const exports, forwardRef,
+          grouped exports, Props interfaces, and Storybook CSF3 stories.
+          Import paths are generated using the{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            @/
+          </code>{" "}
+          alias convention.
+        </p>
+        <Callout type="tip">
+          When codebase components are synced via{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            layout scan --sync
+          </code>
+          , the Explorer includes them in AI generation context. Generated code
+          includes production import comments showing exactly which components to
+          use from your codebase. The preview renders correctly while the code
+          shows your real import paths.
         </Callout>
       </section>
 

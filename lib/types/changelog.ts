@@ -27,11 +27,11 @@ export interface ChangelogItem {
   category: ChangelogCategory;
 }
 
-/** Published weekly changelog entry */
+/** Published changelog entry (one per publish date) */
 export interface ChangelogWeek {
-  /** ISO week identifier, e.g. "2026-W13" */
+  /** Date identifier, e.g. "2026-04-08" (or legacy "2026-W13") */
   weekId: string;
-  /** Human label, e.g. "Week of 24 March 2026" */
+  /** Human label, e.g. "8 April 2026" */
   label: string;
   /** Short prose intro (1-2 sentences) */
   summary: string;

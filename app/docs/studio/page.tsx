@@ -290,7 +290,7 @@ export default function StudioPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Quality Score</h2>
         <p className="text-base text-gray-600 leading-relaxed">
           The Quality tab in the Source Panel shows your layout.md completeness
-          score across 6 weighted categories:
+          score across 10 dimensions:
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -308,6 +308,10 @@ export default function StudioPage() {
                 ["Spacing", "10%"],
                 ["Components", "25%"],
                 ["Anti-patterns", "15%"],
+                ["Motion", "—"],
+                ["Accessibility", "—"],
+                ["Icons", "—"],
+                ["Grid & Layout", "—"],
               ].map(([category, weight]) => (
                 <tr key={category} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-[#0a0a0a]">{category}</td>

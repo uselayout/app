@@ -10,6 +10,7 @@ import { playwrightLimit } from "@/lib/concurrency";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 import { logApiCall } from "@/lib/logging/api-log";
 import { logEvent } from "@/lib/logging/platform-event";
+import { sendResultChunked } from "@/lib/extraction/chunked-send";
 
 const RequestSchema = z.object({
   url: z.url(),
@@ -111,7 +112,15 @@ export async function POST(request: NextRequest) {
         void logApiCall({ userId: session.user.id, endpoint: "extract/website", statusCode: 200, durationMs, metadata: { domain: new URL(url).hostname, projectId } });
         void logEvent("extraction.complete", "studio", { userId: session.user.id, metadata: { sourceType: "website", domain: new URL(url).hostname, screenshotCount: result.screenshots.length, durationMs } });
 
-        send({ type: "complete", data: result });
+        try {
+          send({ type: "complete", data: result });
+        } catch (sendErr) {
+          if (sendErr instanceof Error && sendErr.message.includes("string longer than")) {
+            sendResultChunked(send, result);
+          } else {
+            throw sendErr;
+          }
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
         void logApiCall({ userId: session.user.id, endpoint: "extract/website", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: message, metadata: { domain: new URL(url).hostname } });

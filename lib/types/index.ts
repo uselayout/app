@@ -76,6 +76,10 @@ export interface ExtractedToken {
   groupName?: string;
   /** Original name before extraction renamed it (e.g. mined radius tokens). */
   originalName?: string;
+  /** Mode name for multi-mode tokens (e.g. "light", "dark"). */
+  mode?: string;
+  /** Alias reference: if this token references another, e.g. "var(--primitive-red-400)". */
+  reference?: string;
 }
 
 export interface ComponentProperty {
@@ -90,6 +94,38 @@ export interface ExtractedComponent {
   variantCount: number;
   variants?: string[];
   properties?: Record<string, ComponentProperty>;
+}
+
+export interface ScannedComponent {
+  /** Component name (PascalCase) */
+  name: string;
+  /** File path relative to project root */
+  filePath: string;
+  /** Whether it's a default or named export */
+  exportType: "default" | "named";
+  /** Props interface/type name if found */
+  propsType?: string;
+  /** Extracted prop names */
+  props: string[];
+  /** Whether it uses forwardRef */
+  usesForwardRef: boolean;
+  /** Import path for code usage */
+  importPath: string;
+  /** Source: storybook story or codebase scan */
+  source: "storybook" | "codebase";
+  /** Storybook story names (if from storybook) */
+  stories?: string[];
+  /** Storybook arg types (if from storybook) */
+  args?: Array<{
+    name: string;
+    type?: string;
+    defaultValue?: string;
+    options?: string[];
+  }>;
+  /** Match against Figma design system component */
+  designSystemMatch?: string;
+  /** Match confidence 0-1 */
+  matchConfidence?: number;
 }
 
 export interface FontDeclaration {
@@ -157,6 +193,8 @@ export interface ExtractionResult {
   sourceType: SourceType;
   sourceName: string;
   sourceUrl?: string;
+  /** Where the extraction originated — drives confidence classification in synthesis. */
+  extractionSource?: "figma" | "website";
   tokens: ExtractedTokens;
   components: ExtractedComponent[];
   screenshots: string[];
@@ -167,6 +205,13 @@ export interface ExtractionResult {
   computedStyles: Record<string, ComputedStyleMap>;
   interactiveStates?: Record<string, Record<string, string>>;
   breakpoints?: string[];
+  warnings?: string[];
+  layoutPatterns?: Array<{
+    direction: string;
+    mainAxis: string;
+    crossAxis: string;
+    count: number;
+  }>;
 }
 
 export interface ExtractionStep {
@@ -192,6 +237,10 @@ export interface Project {
   uploadedFonts?: UploadedFont[];
   pendingCanvasImage?: string | null;
   pluginTokensPushedAt?: string;
+  scannedComponents?: ScannedComponent[];
+  scanSource?: "cli" | "github";
+  lastScanAt?: string;
+  githubRepo?: string;
   createdAt: string;
   updatedAt: string;
 }

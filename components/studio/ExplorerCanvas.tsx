@@ -25,7 +25,39 @@ import { useOnboardingStore } from "@/lib/store/onboarding";
 import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 import { DEFAULT_EXPLORE_MODEL, AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
-import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont, ComparisonResult } from "@/lib/types";
+import { useProjectStore } from "@/lib/store/project";
+import { useOrgStore } from "@/lib/store/organization";
+import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont, ComparisonResult, ScannedComponent } from "@/lib/types";
+
+// Build component context string from scanned + saved components
+function buildComponentContext(
+  scannedComponents: ScannedComponent[] | undefined,
+  savedComponents: Array<{ name: string; description: string | null; code: string }> | undefined
+): string {
+  const sections: string[] = [];
+
+  if (scannedComponents && scannedComponents.length > 0) {
+    const lines = scannedComponents
+      .slice(0, 50)
+      .map((c) => {
+        const propsStr = c.props.length > 0 ? ` props: ${c.props.join(", ")}` : "";
+        const importPath = c.importPath.startsWith("src/") ? "@/" + c.importPath.slice(4) : c.importPath;
+        return `- ${c.name} (import from '${importPath}')${propsStr}`;
+      });
+    sections.push(`### From Codebase\n${lines.join("\n")}`);
+  }
+
+  if (savedComponents && savedComponents.length > 0) {
+    const lines = savedComponents
+      .slice(0, 20)
+      .map((c) => `- ${c.name}${c.description ? `: ${c.description}` : ""}`);
+    sections.push(`### From Saved Library\n${lines.join("\n")}`);
+  }
+
+  if (sections.length === 0) return "";
+
+  return `\n\n## Existing Components (REUSE these, do NOT recreate)\n\n${sections.join("\n\n")}\n\nWhen building UI, import existing components instead of generating new ones. Use the exact import paths shown above.`;
+}
 
 interface ExplorerCanvasProps {
   projectId: string;
@@ -60,6 +92,28 @@ export function ExplorerCanvas({
   iconPacks,
   sourceUrl,
 }: ExplorerCanvasProps) {
+  // Scanned codebase components from the project store
+  const scannedComponents = useProjectStore(
+    (s) => s.projects.find((p) => p.id === projectId)?.scannedComponents
+  );
+
+  // Saved library components for the Explorer prompt
+  const orgId = useOrgStore((s) => s.currentOrgId);
+  const [savedLibraryComponents, setSavedLibraryComponents] = useState<
+    Array<{ name: string; description: string | null; code: string }>
+  >([]);
+  useEffect(() => {
+    if (!orgId) return;
+    fetch(`/api/organizations/${orgId}/components`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((comps: Array<{ name: string; description: string | null; code: string; status: string }>) => {
+        setSavedLibraryComponents(
+          comps.filter((c) => c.status === "approved").map((c) => ({ name: c.name, description: c.description, code: c.code }))
+        );
+      })
+      .catch(() => {});
+  }, [orgId]);
+
   // Parse design tokens from layoutMd for the inspector's token suggestions
   const allDesignTokens: ExtractedToken[] = useMemo(() => {
     if (!layoutMd) return [];
@@ -425,6 +479,8 @@ export function ExplorerCanvas({
       }
 
       generatingSessionRef.current = sessionId;
+      const componentContext = buildComponentContext(scannedComponents, savedLibraryComponents);
+      const enrichedLayoutMd = (layoutMd ?? "") + componentContext;
       try {
         await runGeneration(
           sessionId,
@@ -432,7 +488,7 @@ export function ExplorerCanvas({
           batchId,
           batchPrompt,
           updatedExplorations,
-          { prompt: resolvedPrompt, layoutMd, variantCount, projectId, imageDataUrl, contextFiles: resolvedContextFiles, iconPacks },
+          { prompt: resolvedPrompt, layoutMd: enrichedLayoutMd, variantCount, projectId, imageDataUrl, contextFiles: resolvedContextFiles, iconPacks },
           variantCount,
         );
       } catch (err) {
@@ -449,7 +505,7 @@ export function ExplorerCanvas({
         generatingSessionRef.current = null;
       }
     },
-    [isGenerating, projectId, layoutMd, modelId, explorations, currentExploration, onUpdateExplorations, runGeneration, fetchUrlsFromPrompt]
+    [isGenerating, projectId, layoutMd, modelId, explorations, currentExploration, onUpdateExplorations, runGeneration, fetchUrlsFromPrompt, scannedComponents, savedLibraryComponents]
   );
 
   const handleRefine = useCallback(
@@ -478,6 +534,8 @@ export function ExplorerCanvas({
       setSelectedVariantId(null);
       generatingSessionRef.current = sessionId;
 
+      const refineComponentContext = buildComponentContext(scannedComponents, savedLibraryComponents);
+      const refineEnrichedLayoutMd = (layoutMd ?? "") + refineComponentContext;
       try {
         await runGeneration(
           sessionId,
@@ -487,7 +545,7 @@ export function ExplorerCanvas({
           withTracking,
           {
             prompt: resolvedPrompt,
-            layoutMd,
+            layoutMd: refineEnrichedLayoutMd,
             variantCount,
             projectId,
             baseCode: selectedVariant.code,
@@ -509,7 +567,7 @@ export function ExplorerCanvas({
         generatingSessionRef.current = null;
       }
     },
-    [isGenerating, selectedVariant, currentExploration, projectId, layoutMd, explorations, runGeneration, fetchUrlsFromPrompt]
+    [isGenerating, selectedVariant, currentExploration, projectId, layoutMd, explorations, runGeneration, fetchUrlsFromPrompt, scannedComponents, savedLibraryComponents]
   );
 
   const handleRegenerate = useCallback(() => {
@@ -556,6 +614,9 @@ export function ExplorerCanvas({
 
       setSelectedVariantId(null);
 
+      const variantComponentContext = buildComponentContext(scannedComponents, savedLibraryComponents);
+      const variantEnrichedLayoutMd = (layoutMd ?? "") + variantComponentContext;
+
       try {
         await runGeneration(
           sessionId,
@@ -565,7 +626,7 @@ export function ExplorerCanvas({
           explorations,
           {
             prompt: feedback,
-            layoutMd,
+            layoutMd: variantEnrichedLayoutMd,
             variantCount: 1,
             projectId,
             baseCode: variant.code,
@@ -582,7 +643,7 @@ export function ExplorerCanvas({
         abortRef.current = null;
       }
     },
-    [isGenerating, currentExploration, projectId, layoutMd, explorations, runGeneration]
+    [isGenerating, currentExploration, projectId, layoutMd, explorations, runGeneration, scannedComponents, savedLibraryComponents]
   );
 
   const handleRateVariant = useCallback(
@@ -1204,7 +1265,7 @@ export function ExplorerCanvas({
         onGenerate={handleGenerate}
         onRefine={handleRefine}
         onCompare={(_toolbarPrompt, image, files) => setCompareData({
-          prompt: selectedVariant?.batchPrompt ?? currentExploration?.prompt ?? _toolbarPrompt,
+          prompt: selectedVariant?.batchPrompt || currentExploration?.prompt || _toolbarPrompt,
           image: image ?? currentExploration?.referenceImage,
           contextFiles: files,
           baseCode: selectedVariant?.code,

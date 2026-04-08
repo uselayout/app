@@ -74,7 +74,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
   {
     feature: "MCP server for AI agents",
     values: {
-      Layout: "13 tools",
+      Layout: "14 tools",
       "Paper.design": "24 tools",
       "Magic Patterns": false,
       MagicPath: false,

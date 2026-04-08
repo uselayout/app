@@ -11,6 +11,7 @@ import { SpacingScale } from "./design-system/SpacingScale";
 import { RadiusPreview } from "./design-system/RadiusPreview";
 import { EffectsPreview } from "./design-system/EffectsPreview";
 import { ScreenshotGallery } from "./design-system/ScreenshotGallery";
+import { ComponentsView } from "./design-system/ComponentsView";
 import { FontManager } from "./FontManager";
 import { useOrgStore } from "@/lib/store/organization";
 
@@ -28,6 +29,7 @@ const SECTIONS = [
   { id: "spacing", label: "Spacing" },
   { id: "radius", label: "Radius" },
   { id: "effects", label: "Effects" },
+  { id: "components", label: "Components" },
   { id: "screenshots", label: "Screenshots" },
 ] as const;
 
@@ -51,8 +53,11 @@ export function DesignSystemPanel({
     localStorage.setItem(GUIDANCE_DISMISSED_KEY, "true");
   }, []);
 
+  const project = useProjectStore((s) => s.projects.find((p) => p.id === projectId));
   const tokens = extractionData?.tokens;
   const screenshots = extractionData?.screenshots ?? [];
+  const scannedComponents = project?.scannedComponents ?? [];
+  const extractedComponents = extractionData?.components ?? [];
 
   const handleScrollTo = useCallback((sectionId: string) => {
     const el = document.getElementById(sectionId);
@@ -104,6 +109,38 @@ export function DesignSystemPanel({
     [projectId, extractionData, updateExtractionData]
   );
 
+  // Deduplicate tokens that have the same resolved value within a category.
+  // Prefer tokens from Figma Variables (no "reconstructed"/"computed" in metadata) over mined ones.
+  const deduplicatedTokens = useMemo(() => {
+    if (!tokens) return null;
+    const dedup = (tokenList: typeof tokens.colors) => {
+      const byValue = new Map<string, typeof tokenList[0]>();
+      for (const t of tokenList) {
+        const key = t.value.trim().toLowerCase();
+        const existing = byValue.get(key);
+        if (!existing) {
+          byValue.set(key, t);
+        } else {
+          // Prefer the token without "reconstructed"/"computed" in description or originalName
+          const existingIsReconstructed = (existing.description ?? "").includes("reconstructed") || (existing.originalName ?? "").includes("computed");
+          const newIsReconstructed = (t.description ?? "").includes("reconstructed") || (t.originalName ?? "").includes("computed");
+          if (existingIsReconstructed && !newIsReconstructed) {
+            byValue.set(key, t);
+          }
+        }
+      }
+      return Array.from(byValue.values());
+    };
+    return {
+      colors: dedup(tokens.colors),
+      typography: tokens.typography, // Typography values are composites, rarely duplicate
+      spacing: dedup(tokens.spacing),
+      radius: dedup(tokens.radius),
+      effects: tokens.effects,
+      motion: tokens.motion,
+    };
+  }, [tokens]);
+
   const cssVariables = useMemo(() => {
     if (!tokens) return {};
     const vars: Record<string, string> = {};
@@ -139,20 +176,29 @@ export function DesignSystemPanel({
     <div className="flex h-full flex-col bg-[var(--bg-app)]">
       {/* Section nav */}
       <div className="sticky top-0 z-10 flex items-center gap-1 border-b border-[var(--studio-border)] bg-[var(--bg-app)] px-6 py-2">
+        <span
+          className="mr-2 rounded-md bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]"
+          title={`${tokens.colors.length} colours, ${tokens.typography.length} typography, ${tokens.spacing.length} spacing, ${tokens.radius.length} radius, ${tokens.effects.length} effects, ${tokens.motion.length} motion`}
+        >
+          {tokens.colors.length + tokens.typography.length + tokens.spacing.length + tokens.radius.length + tokens.effects.length + tokens.motion.length} tokens
+        </span>
         {SECTIONS.map((section) => {
           const count = section.id === "screenshots"
             ? screenshots.length
-            : section.id === "colours"
-              ? tokens.colors.length
-              : section.id === "typography"
-                ? tokens.typography.length
-                : section.id === "spacing"
-                  ? tokens.spacing.length
-                  : section.id === "radius"
-                    ? tokens.radius.length
-                    : tokens.effects.length;
+            : section.id === "components"
+              ? extractedComponents.filter(c => !c.name.toLowerCase().startsWith("icon/")).length + scannedComponents.length
+              : section.id === "colours"
+                ? tokens.colors.length
+                : section.id === "typography"
+                  ? tokens.typography.length
+                  : section.id === "spacing"
+                    ? tokens.spacing.length
+                    : section.id === "radius"
+                      ? tokens.radius.length
+                      : tokens.effects.length;
 
-          if (count === 0) return null;
+          // Always show the Components nav item even when empty
+          if (count === 0 && section.id !== "components") return null;
 
           return (
             <button
@@ -161,7 +207,7 @@ export function DesignSystemPanel({
               className="rounded-md px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             >
               {section.label}
-              <span className="ml-1.5 text-[var(--text-muted)]">{count}</span>
+              {count > 0 && <span className="ml-1.5 text-[var(--text-muted)]">{count}</span>}
             </button>
           );
         })}
@@ -194,9 +240,9 @@ export function DesignSystemPanel({
       {/* Scrollable content */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-6">
         {tokens.colors.length > 0 && (
-          <DesignSystemSection id="colours" title="Colours" count={tokens.colors.length}>
+          <DesignSystemSection id="colours" title="Colours" count={deduplicatedTokens?.colors.length ?? tokens.colors.length}>
             <ColourPalette
-              tokens={tokens.colors}
+              tokens={deduplicatedTokens?.colors ?? tokens.colors}
               cssVariables={cssVariables}
               onUpdateToken={(name, value) => handleUpdateToken("colors", name, value)}
               onRemoveToken={(name) => handleRemoveToken("colors", [name])}
@@ -227,9 +273,9 @@ export function DesignSystemPanel({
         )}
 
         {tokens.spacing.length > 0 && (
-          <DesignSystemSection id="spacing" title="Spacing" count={tokens.spacing.length}>
+          <DesignSystemSection id="spacing" title="Spacing" count={deduplicatedTokens?.spacing.length ?? tokens.spacing.length}>
             <SpacingScale
-              tokens={tokens.spacing}
+              tokens={deduplicatedTokens?.spacing ?? tokens.spacing}
               onUpdateToken={(name, value) => handleUpdateToken("spacing", name, value)}
               onRemoveToken={(name) => handleRemoveToken("spacing", [name])}
             />
@@ -237,9 +283,9 @@ export function DesignSystemPanel({
         )}
 
         {tokens.radius.length > 0 && (
-          <DesignSystemSection id="radius" title="Radius" count={tokens.radius.length}>
+          <DesignSystemSection id="radius" title="Radius" count={deduplicatedTokens?.radius.length ?? tokens.radius.length}>
             <RadiusPreview
-              tokens={tokens.radius}
+              tokens={deduplicatedTokens?.radius ?? tokens.radius}
               onUpdateToken={(name, value) => handleUpdateToken("radius", name, value)}
               onRemoveToken={(name) => handleRemoveToken("radius", [name])}
             />
@@ -255,6 +301,34 @@ export function DesignSystemPanel({
             />
           </DesignSystemSection>
         )}
+
+        <DesignSystemSection
+          id="components"
+          title="Components"
+          count={extractedComponents.filter(c => !c.name.toLowerCase().startsWith("icon/")).length + scannedComponents.length}
+        >
+          {extractedComponents.length === 0 && scannedComponents.length === 0 ? (
+            <div className="px-4 py-6 text-center space-y-3">
+              <p className="text-xs text-[var(--text-muted)]">
+                No codebase components detected yet.
+              </p>
+              <div className="rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2">
+                <code className="text-[10px] font-mono text-[var(--text-secondary)]">
+                  npx @layoutdesign/context scan --sync
+                </code>
+              </div>
+              <p className="text-[10px] text-[var(--text-muted)]">
+                Run this in your project to detect existing components.
+                AI agents will then reuse them instead of generating duplicates.
+              </p>
+            </div>
+          ) : (
+            <ComponentsView
+              extractedComponents={extractedComponents}
+              scannedComponents={scannedComponents}
+            />
+          )}
+        </DesignSystemSection>
 
         {screenshots.length > 0 && (
           <DesignSystemSection id="screenshots" title="Screenshots" count={screenshots.length}>

@@ -10,6 +10,42 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w15-large-figma-files",
+    title: "Large Figma files now extract successfully",
+    description:
+      "Extraction no longer crashes on very large Figma files. Data is now streamed in chunks when needed, so your full design system comes through with nothing lost.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-extraction-warnings",
+    title: "Extraction warnings for oversized files",
+    description:
+      "When a Figma file is too large to extract in one pass, you now see clear warnings explaining what happened and step-by-step instructions for extracting the rest using page-specific URLs.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-page-specific-extraction",
+    title: "Page-specific Figma extraction",
+    description:
+      "Paste a Figma URL with a specific page selected (containing ?node-id=) to scope your extraction. Useful for extracting large files page by page and merging the results.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-compare-fix",
+    title: "Compare view fixed",
+    description:
+      "The before/after comparison (with vs without design system) was failing with 'Invalid request'. Now works correctly again.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-07",
+  },
+  {
     id: "2026-w14-paper-push",
     title: "Push designs to Paper.design",
     description:
@@ -341,5 +377,122 @@ export const draftEntries: ChangelogEntry[] = [
     product: "studio",
     category: "fixed",
     date: "2026-04-06",
+  },
+  {
+    id: "2026-w15-gradient-extraction",
+    title: "Full gradient extraction from Figma",
+    description:
+      "Linear, radial, and conic gradients now extract as complete CSS gradient strings with all colour stops and angles. Previously only the first colour stop was captured.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-typography-extraction",
+    title: "More complete typography extraction",
+    description:
+      "Text transforms (uppercase, lowercase, capitalize), percentage line heights, and text decorations are now extracted from Figma text styles.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-blur-effects",
+    title: "Blur effect extraction",
+    description:
+      "Layer blur and background blur effects now extract as CSS filter and backdrop-filter values, supporting glassmorphism and overlay designs.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-component-defaults",
+    title: "Component property defaults in extraction",
+    description:
+      "Figma component properties now include default values and options. Your layout.md shows that a Button's size defaults to 'medium' and accepts 'small', 'medium', 'large'.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-truncation-warnings",
+    title: "Extraction warnings for large design systems",
+    description:
+      "When your Figma file has 500+ styles or 100+ components, you now see clear warnings that some data was capped. No more silent data loss.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-dark-mode-tokens",
+    title: "Light/dark mode token support",
+    description:
+      "Figma Variables with multiple modes (light/dark) now extract as separate tokens. Filter by mode in the Source Panel, and exports include :root, [data-theme='dark'], and @media (prefers-color-scheme: dark) blocks.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-tailwind-config",
+    title: "Complete Tailwind config exports",
+    description:
+      "Exported tailwind.config.js now includes fontFamily, fontSize, fontWeight, lineHeight, letterSpacing, boxShadow, and transition values. Previously only colours, spacing, and border radius were exported.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-composite-typography",
+    title: "W3C DTCG composite typography tokens",
+    description:
+      "Typography tokens in tokens.json now export as structured objects with fontFamily, fontSize, fontWeight, lineHeight, and letterSpacing instead of flat strings. Compatible with Style Dictionary and Tokens Studio.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-quality-scoring",
+    title: "10-dimension quality scoring",
+    description:
+      "The Quality tab now scores your layout.md across 10 dimensions: Quick Reference, Colours, Typography, Spacing, Components, Anti-patterns, Motion, Accessibility, Icons, and Grid & Layout. Previously scored 6.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-health-checks",
+    title: "Smarter variant health checks",
+    description:
+      "Generated variants are now checked for interactive state coverage (hover, focus, disabled), accessibility (alt text, semantic HTML), motion token compliance, typography compliance, and responsive patterns. 12 checks total, up from 4.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-compliance-rules",
+    title: "12 MCP compliance rules",
+    description:
+      "The check_compliance MCP tool now validates 12 rules: spacing scale, font family, border radius, interactive states, alt text, button labels, semantic HTML, and motion tokens, in addition to the original 4.",
+    product: "cli",
+    category: "improved",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-figma-webhook-sync",
+    title: "Automatic re-extraction on Figma changes",
+    description:
+      "When a designer updates a Figma file, the webhook now triggers a background re-extraction automatically. Changes are debounced (60s) to avoid re-extracting on every save.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-07",
+  },
+  {
+    id: "2026-w15-variable-aliases",
+    title: "Figma variable alias resolution",
+    description:
+      "Figma Variables that reference other variables now resolve to their final values instead of being silently skipped.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-07",
   },
 ];

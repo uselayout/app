@@ -10,6 +10,7 @@ interface ExtractionState {
   error: string | null;
   errorStep: string | null;
   streamingContent: string | null;
+  warnings: string[];
 
   // Actions
   startExtraction: (projectId: string, steps: ExtractionStep[]) => void;
@@ -19,6 +20,7 @@ interface ExtractionState {
   ) => void;
   setProgress: (progress: number) => void;
   setStreamingContent: (content: string | null) => void;
+  setWarnings: (warnings: string[]) => void;
   setError: (error: string, step?: string) => void;
   completeExtraction: () => void;
   resetExtraction: () => void;
@@ -32,6 +34,7 @@ export const useExtractionStore = create<ExtractionState>()((set) => ({
   currentStep: null,
   error: null,
   errorStep: null,
+  warnings: [],
   streamingContent: null,
 
   startExtraction: (projectId, steps) =>
@@ -44,6 +47,7 @@ export const useExtractionStore = create<ExtractionState>()((set) => ({
       error: null,
       errorStep: null,
       streamingContent: null,
+      warnings: [],
     }),
 
   updateStep: (stepId, update) =>
@@ -59,6 +63,8 @@ export const useExtractionStore = create<ExtractionState>()((set) => ({
   setProgress: (progress) => set({ progress }),
 
   setStreamingContent: (content) => set({ streamingContent: content }),
+
+  setWarnings: (warnings) => set({ warnings }),
 
   setError: (error, step) =>
     set({
@@ -84,5 +90,6 @@ export const useExtractionStore = create<ExtractionState>()((set) => ({
       error: null,
       errorStep: null,
       streamingContent: null,
+      warnings: [],
     }),
 }));

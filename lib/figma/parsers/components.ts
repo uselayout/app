@@ -10,7 +10,8 @@ export interface ParseComponentsResult {
 export async function parseComponents(
   fileKey: string,
   client: FigmaClient,
-  onProgress?: (msg: string) => void
+  onProgress?: (msg: string) => void,
+  onWarning?: (msg: string) => void
 ): Promise<ParseComponentsResult> {
   onProgress?.("Fetching components...");
   const [componentsRes, componentSetsRes] = await Promise.all([
@@ -23,8 +24,12 @@ export async function parseComponents(
 
   onProgress?.(`Found ${components.length} components, ${componentSets.length} component sets`);
 
+  if (components.length > 75) {
+    onWarning?.(`${components.length} components found but only first 75 enriched with full property data.`);
+  }
+
   const setNodeIds = componentSets.map((s) => s.node_id);
-  const componentNodeIds = components.slice(0, 100).map((c) => c.node_id);
+  const componentNodeIds = components.slice(0, 75).map((c) => c.node_id);
   const allNodeIds = [...new Set([...setNodeIds, ...componentNodeIds])];
 
   let nodeData: Record<string, { document: FigmaNode }> = {};
@@ -38,6 +43,15 @@ export async function parseComponents(
   const setNamesMap = new Map<string, string>();
   for (const set of componentSets) {
     setNamesMap.set(set.node_id, set.name);
+  }
+
+  // Build a component key → name lookup for resolving instance swap targets
+  const componentKeyToName = new Map<string, string>();
+  for (const comp of components) {
+    if (comp.key) componentKeyToName.set(comp.key, comp.name);
+  }
+  for (const set of componentSets) {
+    if (set.key) componentKeyToName.set(set.key, set.name);
   }
 
   const groupedBySet = new Map<string, ExtractedComponent>();
@@ -67,6 +81,18 @@ export async function parseComponents(
                   key,
                   {
                     type: val.type as "BOOLEAN" | "TEXT" | "VARIANT" | "INSTANCE_SWAP",
+                    defaultValue: val.defaultValue !== undefined
+                      ? String(val.defaultValue)
+                      : undefined,
+                    preferredValues: val.preferredValues?.map((pv) => {
+                      // For INSTANCE_SWAP, preferredValues contain { type, key }.
+                      // Resolve to component name if available, otherwise include key with type prefix.
+                      if (typeof pv === "object" && pv.type) {
+                        const resolvedName = componentKeyToName.get(pv.value);
+                        return resolvedName || `${pv.type.toLowerCase()}:${pv.value}`;
+                      }
+                      return pv.value;
+                    }),
                   },
                 ])
               )

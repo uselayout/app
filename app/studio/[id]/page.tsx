@@ -42,6 +42,7 @@ export default function StudioPage({
   const onboardingSteps = useOnboardingStore((s) => s.steps);
 
   const [whatsNextDismissed, setWhatsNextDismissed] = useState(false);
+  const extractionWarnings = useExtractionStore((s) => s.warnings);
 
   // Auto-dismiss save error after 8 seconds
   useEffect(() => {
@@ -464,6 +465,7 @@ export default function StudioPage({
         steps={extractionSteps}
         error={extractionError}
         streamingContent={streamingContent ?? project.layoutMd}
+        warnings={extractionWarnings}
         onOpenEditor={() => {
           setCentreView("editor");
           setWhatsNextDismissed(true);

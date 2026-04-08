@@ -100,6 +100,11 @@ function TokenRow({ token }: { token: TokenChange }) {
               {token.cssVariable}
             </span>
           )}
+          {token.mode && (
+            <span className="text-[9px] font-medium uppercase tracking-wider text-[var(--text-muted)] rounded-sm bg-[var(--bg-elevated)] px-1 py-0.5 flex-shrink-0">
+              {token.mode}
+            </span>
+          )}
           <span
             className="text-[var(--text-muted)] text-xs px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--studio-border)] flex-shrink-0"
           >
@@ -241,7 +246,7 @@ export function ExtractionDiffModal({
       />
 
       {/* Panel */}
-      <div className="relative z-10 w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-app)] shadow-2xl">
+      <div className="relative z-10 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-app)] shadow-2xl">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 px-5 py-4 border-b border-[var(--studio-border)]">
           <div className="flex-1 min-w-0">
@@ -300,7 +305,7 @@ export function ExtractionDiffModal({
         )}
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3 min-h-0">
+        <div className="h-0 flex-1 overflow-y-scroll px-5 py-4 flex flex-col gap-3">
           {/* No changes state */}
           {tokenTotal === 0 && componentTotal === 0 && fontTotal === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">

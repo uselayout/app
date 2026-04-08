@@ -5,7 +5,7 @@ import { useExtractionStore } from "@/lib/store/extraction";
 import { useProjectStore } from "@/lib/store/project";
 import { getStoredApiKey, getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
 import { useOrgStore } from "@/lib/store/organization";
-import type { ExtractionResult, Project } from "@/lib/types";
+import type { ExtractionResult, ExtractedComponent, Project } from "@/lib/types";
 
 export function useExtraction() {
   const startExtraction = useExtractionStore((s) => s.startExtraction);
@@ -13,6 +13,7 @@ export function useExtraction() {
   const setProgress = useExtractionStore((s) => s.setProgress);
   const setStreamingContent = useExtractionStore((s) => s.setStreamingContent);
   const setError = useExtractionStore((s) => s.setError);
+  const setWarnings = useExtractionStore((s) => s.setWarnings);
   const completeExtraction = useExtractionStore((s) => s.completeExtraction);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateLayoutMd = useProjectStore((s) => s.updateLayoutMd);
@@ -131,6 +132,9 @@ export function useExtraction() {
 
         updateStep("extract", { status: "complete", detail: sizeSummary || "Extraction complete" });
         setProgress(70);
+        if (extractionData.warnings && extractionData.warnings.length > 0) {
+          setWarnings(extractionData.warnings);
+        }
         updateExtractionData(project.id, extractionData);
 
         // Step 2: Generate layout.md
@@ -259,6 +263,7 @@ export function useExtraction() {
       setProgress,
       setStreamingContent,
       setError,
+      setWarnings,
       completeExtraction,
       updateExtractionData,
       updateLayoutMd,
@@ -290,6 +295,11 @@ async function parseSSEStream(
   let buffer = "";
   let result: ExtractionResult | null = null;
 
+  // Chunked result accumulator (for large payloads sent in parts)
+  let chunkedResult: Partial<ExtractionResult> | null = null;
+  let chunkedComponents: ExtractedComponent[] = [];
+  let chunkedCssVariables: Record<string, string> = {};
+
   while (true) {
     if (signal.aborted) break;
     const { done, value } = await reader.read();
@@ -306,6 +316,31 @@ async function parseSSEStream(
         const event = JSON.parse(trimmed.slice(6)) as SSEEvent;
         if (event.type === "complete" && event.data) {
           result = event.data as ExtractionResult;
+        } else if (event.type === "result-start") {
+          // Begin accumulating chunked result
+          chunkedResult = {};
+          chunkedComponents = [];
+          chunkedCssVariables = {};
+        } else if (event.type === "result-chunk" && chunkedResult) {
+          const field = event.field as string;
+          const data = event.data;
+          if (field === "meta") {
+            Object.assign(chunkedResult, data as Record<string, unknown>);
+          } else if (field === "tokens") {
+            chunkedResult.tokens = data as ExtractionResult["tokens"];
+          } else if (field === "components") {
+            chunkedComponents.push(...(data as ExtractedComponent[]));
+          } else if (field === "cssVariables") {
+            Object.assign(chunkedCssVariables, data as Record<string, string>);
+          }
+        } else if (event.type === "result-end" && chunkedResult) {
+          // Assemble the full result from accumulated chunks
+          result = {
+            ...chunkedResult,
+            components: chunkedComponents,
+            cssVariables: chunkedCssVariables,
+          } as ExtractionResult;
+          chunkedResult = null;
         } else if (event.type === "error") {
           throw new Error((event.message as string) ?? "Extraction error");
         } else {

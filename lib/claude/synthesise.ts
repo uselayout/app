@@ -3,7 +3,7 @@ import type {
   TextBlockParam,
   ImageBlockParam,
 } from "@anthropic-ai/sdk/resources/messages";
-import type { ExtractionResult } from "@/lib/types";
+import type { ExtractionResult, ExtractedToken } from "@/lib/types";
 import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
 import { isTransientError, friendlyApiError } from "@/lib/api-error";
 
@@ -99,8 +99,9 @@ Minimum items: hardcoded colours, arbitrary spacing, font defaults (Inter/Roboto
 Full CSS variable table — name, value, usage. All tiers. (Long is fine — this is reference material.)
 
 ## Appendix B: Token Source Metadata
-tokenSource: [extracted-css-vars | extracted-config | reconstructed-from-computed]
+tokenSource: [extracted-from-figma | extracted-css-vars | extracted-config | utility-class-based | reconstructed-from-computed]
 Confidence level. Clustering method used for any reconstructed tokens.
+If Figma: note that tokens are authoritative design intent, not reverse-engineered.
 If Tailwind: note v3 (no CSS vars) vs v4 (CSS vars via @theme).`;
 
 // Synthesis caps — truncate at synthesis time, full data stays in project store
@@ -128,18 +129,42 @@ function buildUserContent(
   // Token source metadata — classify confidence upfront
   const cssVarCount = Object.keys(data.cssVariables).length;
   const isTailwind = data.librariesDetected?.["tailwind-css"] === true;
-  const tokenSource = cssVarCount > 10
-    ? "extracted-css-vars"
-    : isTailwind
-      ? "utility-class-based"
-      : "reconstructed-from-computed";
+  const isFigma = data.extractionSource === "figma" || data.sourceType === "figma";
+  const totalTokenCount =
+    data.tokens.colors.length +
+    data.tokens.typography.length +
+    data.tokens.spacing.length +
+    data.tokens.radius.length +
+    data.tokens.effects.length +
+    data.tokens.motion.length;
+
+  const tokenSource = isFigma && totalTokenCount > 10
+    ? "extracted-from-figma"
+    : cssVarCount > 10
+      ? "extracted-css-vars"
+      : isTailwind
+        ? "utility-class-based"
+        : "reconstructed-from-computed";
+
+  const confidence = tokenSource === "extracted-from-figma"
+    ? (totalTokenCount > 30 ? "high" : "medium")
+    : cssVarCount > 20 ? "high" : cssVarCount > 5 ? "medium" : "low";
 
   sections.push(
     `Design system extracted from: ${data.sourceName}`,
     `Source type: ${data.sourceType}`,
     `Token source: ${tokenSource}`,
-    `Confidence: ${cssVarCount > 20 ? "high" : cssVarCount > 5 ? "medium" : "low"} (${cssVarCount} CSS custom properties found)`,
+    `Confidence: ${confidence} (${isFigma ? `${totalTokenCount} tokens extracted from Figma` : `${cssVarCount} CSS custom properties found`})`,
   );
+
+  if (tokenSource === "extracted-from-figma") {
+    sections.push(
+      `IMPORTANT: These tokens were extracted directly from a Figma design file. ` +
+      `They are authoritative — use exact values and names. ` +
+      `Annotate tokens with /* extracted */ not /* reconstructed */. ` +
+      `Confidence should be "high" for all Figma-sourced tokens.`
+    );
+  }
 
   if (cssVarCount > 0) {
     // Group CSS variables by category for structured synthesis
@@ -182,6 +207,28 @@ function buildUserContent(
       (spacingVars.length > 0 ? `/* SPACING & LAYOUT */\n${formatVars(spacingVars)}\n` : "") +
       (typographyVars.length > 0 ? `/* TYPOGRAPHY */\n${formatVars(typographyVars)}\n` : "") +
       (otherVars.length > 0 ? `/* OTHER */\n${formatVars(otherVars)}` : "")
+    );
+  } else if (tokenSource === "extracted-from-figma") {
+    // Figma extractions don't have CSS variables but have structured tokens.
+    // Present all tokens as the authoritative source.
+    const formatFigmaTokens = (label: string, tokens: ExtractedToken[]) => {
+      if (tokens.length === 0) return "";
+      return `/* ${label} */\n` + tokens
+        .map((t) => `  --${t.name}: ${t.value};${t.description ? ` /* ${t.description} */` : ""}`)
+        .join("\n") + "\n";
+    };
+
+    sections.push(
+      `--- FIGMA DESIGN TOKENS (Source of Truth) ---\n` +
+      `These tokens are extracted directly from Figma styles and variables. ` +
+      `Use these EXACT names as CSS custom properties. Do NOT rename or remap them. ` +
+      `Mark every token with "/* extracted */" in its comment.\n\n` +
+      formatFigmaTokens("COLOURS", data.tokens.colors.slice(0, MAX_COLOUR_TOKENS)) +
+      formatFigmaTokens("TYPOGRAPHY", data.tokens.typography.slice(0, MAX_TYPOGRAPHY_TOKENS)) +
+      formatFigmaTokens("SPACING", data.tokens.spacing) +
+      formatFigmaTokens("RADIUS", data.tokens.radius) +
+      formatFigmaTokens("EFFECTS", data.tokens.effects) +
+      formatFigmaTokens("MOTION", data.tokens.motion)
     );
   } else {
     sections.push(
@@ -248,13 +295,37 @@ function buildUserContent(
     );
   }
 
+  if (data.layoutPatterns && data.layoutPatterns.length > 0) {
+    const patterns = data.layoutPatterns
+      .slice(0, 20)
+      .map(p => `  ${p.direction} | main-axis: ${p.mainAxis} | cross-axis: ${p.crossAxis} (${p.count} instances)`)
+      .join("\n");
+    sections.push(
+      `--- LAYOUT PATTERNS (from auto-layout analysis) ---\n` +
+      `These are the most common flex/layout patterns found in Figma components. Use these to inform Section 4 (Spacing & Layout):\n` +
+      patterns
+    );
+  }
+
   if (data.components.length > 0) {
     const comps = data.components
       .slice(0, 30)
-      .map((c) =>
-        `- ${c.name} (${c.variantCount} variants)${c.description ? `: ${c.description}` : ""}\n` +
-        `  REQUIRED states: default, hover, focus, active, disabled, loading, error`
-      )
+      .map((c) => {
+        let line = `- ${c.name} (${c.variantCount} variants)${c.description ? `: ${c.description}` : ""}`;
+        if (c.properties) {
+          const props = Object.entries(c.properties)
+            .map(([key, prop]) => {
+              let propStr = `${key}: ${prop.type}`;
+              if (prop.defaultValue) propStr += ` = ${prop.defaultValue}`;
+              if (prop.preferredValues?.length) propStr += ` [${prop.preferredValues.join(", ")}]`;
+              return propStr;
+            })
+            .join(", ");
+          if (props) line += `\n  Props: ${props}`;
+        }
+        line += `\n  REQUIRED states: default, hover, focus, active, disabled, loading, error`;
+        return line;
+      })
       .join("\n");
     sections.push(`--- COMPONENT INVENTORY ---\n${comps}`);
   }
@@ -262,14 +333,44 @@ function buildUserContent(
   if (data.tokens.colors.length > 0) {
     const allColours = data.tokens.colors;
     const capped = allColours.slice(0, MAX_COLOUR_TOKENS);
-    const colours = capped
-      .map((t) => `  ${t.name}: ${t.value}${t.description ? ` /* ${t.description} */` : ""}`)
-      .join("\n");
+
+    // Split by mode
+    const defaultTokens = capped.filter((t) => !t.mode);
+    const modeGroups = new Map<string, ExtractedToken[]>();
+    for (const t of capped) {
+      if (t.mode) {
+        const group = modeGroups.get(t.mode) ?? [];
+        group.push(t);
+        modeGroups.set(t.mode, group);
+      }
+    }
+
+    const formatTokens = (tokens: ExtractedToken[]) =>
+      tokens
+        .map((t) => `  ${t.name}: ${t.value}${t.description ? ` /* ${t.description} */` : ""}`)
+        .join("\n");
+
     const omitted = allColours.length - capped.length;
-    sections.push(
-      `--- COLOUR TOKENS (with descriptions where available) ---\n${colours}` +
-      (omitted > 0 ? `\n  /* ... ${omitted} additional colour tokens omitted for context budget */` : "")
-    );
+
+    if (modeGroups.size > 0) {
+      // Multi-mode: group by mode
+      let colourSection = `--- COLOUR TOKENS ---\n`;
+      if (defaultTokens.length > 0) {
+        colourSection += `/* Default / Light mode */\n${formatTokens(defaultTokens)}\n\n`;
+      }
+      for (const [mode, tokens] of modeGroups) {
+        colourSection += `/* ${mode} mode */\n${formatTokens(tokens)}\n\n`;
+      }
+      colourSection += `NOTE: This design system has multiple colour modes. Document all modes in the Colour System section. Use [data-theme="${[...modeGroups.keys()].join('"]/[data-theme="')}"] selectors for mode switching.`;
+      if (omitted > 0) colourSection += `\n/* ... ${omitted} additional colour tokens omitted */`;
+      sections.push(colourSection);
+    } else {
+      // Single mode: original behaviour
+      sections.push(
+        `--- COLOUR TOKENS (with descriptions where available) ---\n${formatTokens(defaultTokens)}` +
+        (omitted > 0 ? `\n  /* ... ${omitted} additional colour tokens omitted for context budget */` : "")
+      );
+    }
   }
 
   if (data.tokens.typography.length > 0) {

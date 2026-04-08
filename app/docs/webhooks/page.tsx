@@ -45,8 +45,8 @@ export default function WebhooksPage() {
             },
             {
               step: "3",
-              label: "Layout receives and logs the event",
-              desc: "The webhook is verified and recorded. You can then click Re-extract in the Studio to pull the latest tokens, styles, and components. A diff shows exactly what changed.",
+              label: "Layout automatically re-extracts the design system",
+              desc: "The webhook is verified and a background re-extraction is triggered for the matching project. A 60-second debounce prevents duplicate runs. A diff of what changed is available in the Studio.",
             },
           ].map(({ step, label, desc }) => (
             <div key={step} className="flex gap-4 px-5 py-4">
@@ -62,11 +62,14 @@ export default function WebhooksPage() {
         </div>
       </section>
 
-      {/* Coming Soon Notice */}
-      <Callout type="warning">
-        <strong>Note:</strong> Automatic re-extraction triggered by Figma webhooks is coming soon.
-        Currently, webhooks are received and logged, but re-extraction must be triggered manually
-        by clicking <strong>Re-extract</strong> in the Studio.
+      {/* Auto Re-extraction Notice */}
+      <Callout type="info">
+        <strong>Automatic re-extraction is now active.</strong> When Layout receives a{" "}
+        <code className="text-xs bg-gray-100 rounded px-1 py-0.5">FILE_UPDATE</code> or{" "}
+        <code className="text-xs bg-gray-100 rounded px-1 py-0.5">LIBRARY_PUBLISH</code> event,
+        it automatically triggers a background re-extraction for the matching project. A 60-second
+        debounce per project prevents duplicate runs from rapid successive publishes. GitHub push
+        webhooks are also supported for triggering re-extraction on code-driven design token changes.
       </Callout>
 
       {/* Setup */}
@@ -154,8 +157,9 @@ export default function WebhooksPage() {
                   FILE_UPDATE
                 </td>
                 <td className="px-4 py-3 text-gray-600">
-                  Logged when a file is saved or published. You can then
-                  manually re-extract to pull the latest tokens.
+                  Triggers automatic background re-extraction for the matching
+                  project. A 60-second debounce prevents duplicate runs from
+                  rapid successive saves.
                 </td>
               </tr>
               <tr className="hover:bg-gray-50 align-top">
@@ -163,8 +167,19 @@ export default function WebhooksPage() {
                   LIBRARY_PUBLISH
                 </td>
                 <td className="px-4 py-3 text-gray-600">
-                  Logged when a team library is published. Useful for
-                  shared design systems used across multiple files.
+                  Triggers automatic background re-extraction when a team
+                  library is published. Useful for shared design systems used
+                  across multiple files.
+                </td>
+              </tr>
+              <tr className="hover:bg-gray-50 align-top">
+                <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap pt-3.5">
+                  GitHub push
+                </td>
+                <td className="px-4 py-3 text-gray-600">
+                  Triggers re-extraction when a push to a configured branch is
+                  received. Useful when design tokens are managed as code and
+                  committed to a repository.
                 </td>
               </tr>
             </tbody>

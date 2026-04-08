@@ -15,6 +15,10 @@ interface ProjectRow {
   test_results: unknown | null;
   explorations: unknown | null;
   pending_canvas_image: string | null;
+  scanned_components: unknown | null;
+  scan_source: string | null;
+  last_scan_at: string | null;
+  github_repo: string | null;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -48,6 +52,12 @@ function rowToProject(row: ProjectRow): Project {
       ? (row.explorations as Project["explorations"])
       : undefined,
     pendingCanvasImage: row.pending_canvas_image ?? null,
+    scannedComponents: row.scanned_components
+      ? (row.scanned_components as Project["scannedComponents"])
+      : undefined,
+    scanSource: (row.scan_source as Project["scanSource"]) ?? undefined,
+    lastScanAt: (row.last_scan_at as string) ?? undefined,
+    githubRepo: (row.github_repo as string) ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -56,7 +66,7 @@ function rowToProject(row: ProjectRow): Project {
 function projectToRow(
   project: Project,
   userId: string
-): Omit<ProjectRow, "created_at"> & { updated_at: string } {
+): Omit<ProjectRow, "created_at" | "scanned_components" | "scan_source" | "last_scan_at" | "github_repo"> & { updated_at: string } {
   // Store uploadedFonts inside extraction_data to avoid a DB migration
   const fonts = project.uploadedFonts ?? [];
   const extractionData = project.extractionData
@@ -78,6 +88,11 @@ function projectToRow(
     test_results: null,
     explorations: project.explorations ?? null,
     pending_canvas_image: project.pendingCanvasImage ?? null,
+    // NOTE: scanned_components, scan_source, last_scan_at, github_repo are
+    // intentionally excluded. They are managed by the scan-results API endpoint
+    // only. Including them here would wipe scan data on every project save
+    // (extraction, layout.md edit, variant generation) since the browser store
+    // doesn't always have these fields loaded.
     user_id: userId,
     updated_at: new Date().toISOString(),
   };
@@ -98,7 +113,7 @@ export async function fetchProjectById(id: string): Promise<Project | null> {
 export async function fetchAllProjectsSummary(orgId: string): Promise<Project[]> {
   const { data, error } = await supabase
     .from("layout_projects")
-    .select("id, org_id, name, source_type, source_url, token_count, health_score, pending_canvas_image, user_id, created_at, updated_at")
+    .select("id, org_id, name, source_type, source_url, token_count, health_score, pending_canvas_image, scanned_components, scan_source, last_scan_at, github_repo, user_id, created_at, updated_at")
     .eq("org_id", orgId)
     .order("updated_at", { ascending: false });
 

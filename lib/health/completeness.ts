@@ -68,7 +68,7 @@ function hasMinOccurrences(body: string, pattern: RegExp, min: number): boolean 
 const SECTION_CHECKS: SectionCheck[] = [
   {
     name: "Quick Reference",
-    weight: 0.15,
+    weight: 0.10,
     headingPatterns: [/^#{1,3}\s*0[.)]\s*quick\s*reference/im],
     checks: [
       {
@@ -103,7 +103,7 @@ const SECTION_CHECKS: SectionCheck[] = [
   },
   {
     name: "Colours",
-    weight: 0.2,
+    weight: 0.15,
     headingPatterns: [
       /^#{1,3}\s*(?:\d+[.)]?\s*)?colou?r/im,
     ],
@@ -138,7 +138,7 @@ const SECTION_CHECKS: SectionCheck[] = [
   },
   {
     name: "Typography",
-    weight: 0.15,
+    weight: 0.12,
     headingPatterns: [
       /^#{1,3}\s*(?:\d+[.)]?\s*)?typography/im,
     ],
@@ -182,7 +182,7 @@ const SECTION_CHECKS: SectionCheck[] = [
   },
   {
     name: "Spacing",
-    weight: 0.1,
+    weight: 0.08,
     headingPatterns: [
       /^#{1,3}\s*(?:\d+[.)]?\s*)?spacing/im,
       /^#{1,3}\s*(?:\d+[.)]?\s*)?spacing\s*(?:&|and)\s*layout/im,
@@ -216,7 +216,7 @@ const SECTION_CHECKS: SectionCheck[] = [
   },
   {
     name: "Components",
-    weight: 0.25,
+    weight: 0.20,
     headingPatterns: [
       /^#{1,3}\s*(?:\d+[.)]?\s*)?component/im,
     ],
@@ -259,7 +259,7 @@ const SECTION_CHECKS: SectionCheck[] = [
   },
   {
     name: "Anti-patterns",
-    weight: 0.15,
+    weight: 0.10,
     headingPatterns: [
       /^#{1,3}\s*(?:\d+[.)]?\s*)?anti.?pattern/im,
       /^#{1,3}\s*(?:\d+[.)]?\s*)?constraint/im,
@@ -292,6 +292,96 @@ const SECTION_CHECKS: SectionCheck[] = [
         label: "Correct alternative shown",
         test: (b) => /instead|correct|prefer|use\s+(?:this|the)|do\s+this/i.test(b),
         suggestion: "Show the correct alternative for each anti-pattern (Rule -> Why it fails -> What to do instead).",
+      },
+    ],
+  },
+  {
+    name: "Motion",
+    weight: 0.08,
+    headingPatterns: [/^#{1,3}\s*(?:\d+[.)]?\s*)?(?:motion|animation)/im],
+    checks: [
+      {
+        label: "Duration tokens",
+        test: (b) => /(?:duration|timing|speed|ms|(?:0\.)?\d+s\b)/i.test(b),
+        suggestion: "Define transition duration tokens (e.g. --duration-fast: 150ms, --duration-normal: 300ms).",
+      },
+      {
+        label: "Easing functions",
+        test: (b) => /(?:ease|cubic-bezier|linear|easing)/i.test(b),
+        suggestion: "Define easing function tokens (e.g. --ease-out: cubic-bezier(0, 0, 0.2, 1)).",
+      },
+      {
+        label: "Motion principles",
+        test: (b) => /(?:subtle|smooth|responsive|purposeful|meaningful|micro-interaction|feedback)/i.test(b),
+        suggestion: "Describe motion design principles (e.g. 'subtle and purposeful, avoid decorative animation').",
+      },
+    ],
+  },
+  {
+    name: "Accessibility",
+    weight: 0.07,
+    headingPatterns: [
+      /^#{1,3}\s*(?:\d+[.)]?\s*)?accessib/im,
+      /^#{1,3}\s*(?:\d+[.)]?\s*)?a11y/im,
+    ],
+    checks: [
+      {
+        label: "Contrast requirements",
+        test: (b) => /(?:contrast|wcag|aa|aaa|readable)/i.test(b),
+        suggestion: "Document minimum contrast ratios (WCAG AA: 4.5:1 for normal text, 3:1 for large text).",
+      },
+      {
+        label: "Focus indicators",
+        test: (b) => /(?:focus|keyboard|tab|ring|outline)/i.test(b),
+        suggestion: "Document focus indicator styles (visible focus rings, keyboard navigation).",
+      },
+      {
+        label: "Screen reader guidance",
+        test: (b) => /(?:aria|screen.reader|alt|label|role|semantic)/i.test(b),
+        suggestion: "Include guidance on ARIA attributes, alt text, and semantic HTML usage.",
+      },
+    ],
+  },
+  {
+    name: "Icons",
+    weight: 0.05,
+    headingPatterns: [
+      /^#{1,3}\s*(?:\d+[.)]?\s*)?icon/im,
+    ],
+    checks: [
+      {
+        label: "Icon library specified",
+        test: (b) => /(?:lucide|heroicons|phosphor|feather|material|icon.?pack|icon.?set|icon.?library|svg)/i.test(b),
+        suggestion: "Specify the icon library to use (e.g. Lucide, Heroicons, Material Icons).",
+      },
+      {
+        label: "Icon sizing",
+        test: (b) => /(?:size|width|height|\d+px|\d+rem)/i.test(b),
+        suggestion: "Define icon sizes (e.g. sm: 16px, md: 20px, lg: 24px).",
+      },
+    ],
+  },
+  {
+    name: "Grid & Layout",
+    weight: 0.05,
+    headingPatterns: [
+      /^#{1,3}\s*(?:\d+[.)]?\s*)?(?:grid|layout|page\s*structure)/im,
+    ],
+    checks: [
+      {
+        label: "Breakpoints defined",
+        test: (b) => /(?:breakpoint|@media|screen|mobile|tablet|desktop|\d{3,4}px)/i.test(b),
+        suggestion: "Define responsive breakpoints (e.g. sm: 640px, md: 768px, lg: 1024px, xl: 1280px).",
+      },
+      {
+        label: "Max width / container",
+        test: (b) => /(?:max-width|container|content.?width|wrapper)/i.test(b),
+        suggestion: "Document container max-widths and content area dimensions.",
+      },
+      {
+        label: "Layout patterns",
+        test: (b) => /(?:flex|grid|column|sidebar|stack|flow)/i.test(b),
+        suggestion: "Document common layout patterns (sidebar + content, stacked sections, grid layouts).",
       },
     ],
   },

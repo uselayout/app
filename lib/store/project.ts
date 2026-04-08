@@ -132,11 +132,16 @@ async function apiFetchProject(id: string, orgId: string): Promise<Project | nul
   return res.json() as Promise<Project>;
 }
 
-/** Merge two token arrays, deduplicating by name (new values overwrite existing). */
+/** Create a unique key for a token, accounting for mode variants. */
+function modeAwareTokenKey(t: ExtractedToken): string {
+  return t.mode ? `${t.name}::${t.mode}` : t.name;
+}
+
+/** Merge two token arrays, deduplicating by name+mode (new values overwrite existing). */
 function mergeTokens(existing: ExtractedToken[] | undefined, parsed: ExtractedToken[]): ExtractedToken[] {
   const map = new Map<string, ExtractedToken>();
-  for (const t of existing ?? []) map.set(t.name, t);
-  for (const t of parsed) map.set(t.name, t);
+  for (const t of existing ?? []) map.set(modeAwareTokenKey(t), t);
+  for (const t of parsed) map.set(modeAwareTokenKey(t), t);
   return [...map.values()];
 }
 
@@ -169,9 +174,9 @@ interface ProjectState {
   updateIconPacks: (id: string, iconPacks: string[]) => void;
   updateUploadedFonts: (id: string, fonts: UploadedFont[]) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
-  updateToken: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string) => void;
-  renameToken: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string) => void;
-  removeTokens: (id: string, tokenType: keyof ExtractedTokens, tokenNames: string[]) => void;
+  updateToken: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string, mode?: string) => void;
+  renameToken: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string, mode?: string) => void;
+  removeTokens: (id: string, tokenType: keyof ExtractedTokens, tokenNames: string[], mode?: string) => void;
   syncTokensFromLayoutMd: (id: string) => number;
   refreshProject: (id: string) => Promise<void>;
   deleteProject: (id: string) => void;
@@ -327,13 +332,13 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
-  updateToken: (id, tokenType, tokenName, newValue) => {
+  updateToken: (id, tokenType, tokenName, newValue, mode) => {
     set((state) => ({
       projects: state.projects.map((p) => {
         if (p.id !== id || !p.extractionData) return p;
         const tokens = { ...p.extractionData.tokens };
         tokens[tokenType] = tokens[tokenType].map((t) =>
-          t.name === tokenName ? { ...t, value: newValue } : t
+          t.name === tokenName && t.mode === mode ? { ...t, value: newValue } : t
         );
         const updatedLayoutMd = replaceTokenInLayoutMd(p.layoutMd, tokenName, newValue) ?? p.layoutMd;
         return {
@@ -348,7 +353,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
-  renameToken: (id, tokenType, oldName, newName) => {
+  renameToken: (id, tokenType, oldName, newName, mode) => {
     set((state) => ({
       projects: state.projects.map((p) => {
         if (p.id !== id || !p.extractionData) return p;
@@ -358,8 +363,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
         const tokenTypeKey = tokenType as keyof ExtractedTokens;
         for (const key of Object.keys(tokens) as (keyof ExtractedTokens)[]) {
           tokens[key] = tokens[key].map((t) => {
-            // Rename the token itself
-            if (key === tokenTypeKey && t.name === oldName) {
+            // Rename the token itself (match by name + mode)
+            if (key === tokenTypeKey && t.name === oldName && t.mode === mode) {
               return {
                 ...t,
                 name: newName,
@@ -389,13 +394,16 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
-  removeTokens: (id, tokenType, tokenNames) => {
+  removeTokens: (id, tokenType, tokenNames, mode) => {
     const nameSet = new Set(tokenNames);
     set((state) => ({
       projects: state.projects.map((p) => {
         if (p.id !== id || !p.extractionData) return p;
         const tokens = { ...p.extractionData.tokens };
-        tokens[tokenType] = tokens[tokenType].filter((t) => !nameSet.has(t.name));
+        tokens[tokenType] = tokens[tokenType].filter((t) => {
+          const isTarget = nameSet.has(t.name) && t.mode === mode;
+          return !isTarget;
+        });
         const tokenCount =
           tokens.colors.length +
           tokens.typography.length +

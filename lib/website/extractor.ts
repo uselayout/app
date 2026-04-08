@@ -8,6 +8,7 @@ import {
   extractBreakpointsScript,
   extractRadiusCensusScript,
   extractInteractiveStatesScript,
+  extractComponentPatternsScript,
   detectLibrariesScript,
 } from "./css-extract";
 import type {
@@ -133,9 +134,14 @@ export async function extractFromWebsite({
     await page.waitForLoadState("load", { timeout: 15000 }).catch(() => {});
     await page.waitForTimeout(2000);
 
-    // Extract CSS variables
+    // Extract CSS variables (now returns both flat and mode-tagged versions)
     onProgress?.("css", 25, "Extracting CSS custom properties...");
-    const cssVariables: Record<string, string> = await page.evaluate(`(${extractCSSVariablesScript})()`);
+    const cssResult: {
+      flat: Record<string, string>;
+      moded: Array<{ name: string; value: string; mode: string; selector: string }>;
+    } = await page.evaluate(`(${extractCSSVariablesScript})()`);
+    const cssVariables = cssResult.flat;
+    const modedVariables = cssResult.moded;
     onProgress?.("css", 30, `Found ${Object.keys(cssVariables).length} CSS custom properties`);
 
     // Extract fonts
@@ -177,6 +183,19 @@ export async function extractFromWebsite({
       onProgress?.("libraries", 65, `Detected ${libCount} ${libCount === 1 ? "library" : "libraries"}`);
     }
 
+    // Discover component patterns from the DOM
+    onProgress?.("components", 67, "Discovering component patterns...");
+    const componentPatterns: Array<{
+      name: string;
+      type: string;
+      variantCount: number;
+      totalInstances: number;
+      variants: Array<Record<string, unknown>>;
+    }> = await page.evaluate(`(${extractComponentPatternsScript})()`);
+    if (componentPatterns.length > 0) {
+      onProgress?.("components", 69, `Found ${componentPatterns.length} component patterns`);
+    }
+
     // Take screenshots (non-fatal — extraction continues without them)
     onProgress?.("screenshots", 70, "Capturing screenshots...");
     let screenshots: string[] = [];
@@ -197,7 +216,7 @@ export async function extractFromWebsite({
       }
     }
 
-    // Classify CSS variables into tokens (no tokens are dropped)
+    // Classify CSS variables into tokens using mode-tagged data
     const colors: ExtractedToken[] = [];
     const typography: ExtractedToken[] = [];
     const spacing: ExtractedToken[] = [];
@@ -205,8 +224,19 @@ export async function extractFromWebsite({
     const effects: ExtractedToken[] = [];
     const motion: ExtractedToken[] = [];
 
+    // Build a mode lookup from moded variables
+    const modeByVar = new Map<string, string>();
+    for (const mv of modedVariables) {
+      // Last occurrence wins (dark overrides default for same var)
+      modeByVar.set(mv.name, mv.mode);
+    }
+
     for (const [name, value] of Object.entries(cssVariables)) {
       const token = cssVarToToken(name, value);
+      const mode = modeByVar.get(name);
+      if (mode && mode !== "default") {
+        token.mode = mode;
+      }
       switch (token.type) {
         case "color": colors.push(token); break;
         case "typography": typography.push(token); break;
@@ -214,6 +244,65 @@ export async function extractFromWebsite({
         case "radius": radius.push(token); break;
         case "effect": effects.push(token); break;
         case "motion": motion.push(token); break;
+      }
+    }
+
+    // Also create tokens for dark-mode-specific variables that override default ones
+    const defaultVarNames = new Set(
+      modedVariables.filter(mv => mv.mode === "default").map(mv => mv.name)
+    );
+    for (const mv of modedVariables) {
+      if (mv.mode === "default") continue;
+      if (!defaultVarNames.has(mv.name)) continue; // Only add overrides
+      // Check if we already have a mode-tagged version
+      const exists = colors.some(t => t.name === mv.name && t.mode === mv.mode)
+        || typography.some(t => t.name === mv.name && t.mode === mv.mode)
+        || spacing.some(t => t.name === mv.name && t.mode === mv.mode);
+      if (exists) continue;
+
+      const token = cssVarToToken(mv.name, mv.value);
+      token.mode = mv.mode;
+      switch (token.type) {
+        case "color": colors.push(token); break;
+        case "typography": typography.push(token); break;
+        case "spacing": spacing.push(token); break;
+        case "radius": radius.push(token); break;
+        case "effect": effects.push(token); break;
+        case "motion": motion.push(token); break;
+      }
+    }
+
+    // Extract gradients and blur from computed styles (Issues 9-10)
+    for (const [element, style] of Object.entries(computedStyles)) {
+      const s = style as Record<string, string>;
+      // Gradient extraction
+      if (s.backgroundImage && s.backgroundImage !== "none" && s.backgroundImage.includes("gradient")) {
+        colors.push({
+          name: `--gradient-${element}-bg`,
+          value: s.backgroundImage,
+          type: "color",
+          category: "primitive",
+          description: `Gradient from ${element} background /* reconstructed */`,
+        });
+      }
+      // Blur extraction
+      if (s.filter && s.filter !== "none" && s.filter.includes("blur")) {
+        effects.push({
+          name: `--filter-${element}`,
+          value: s.filter,
+          type: "effect",
+          category: "primitive",
+          description: `Filter from ${element} /* reconstructed */`,
+        });
+      }
+      if (s.backdropFilter && s.backdropFilter !== "" && s.backdropFilter !== "none" && s.backdropFilter.includes("blur")) {
+        effects.push({
+          name: `--backdrop-filter-${element}`,
+          value: `backdrop-filter: ${s.backdropFilter}`,
+          type: "effect",
+          category: "primitive",
+          description: `Backdrop filter from ${element} /* reconstructed */`,
+        });
       }
     }
 
@@ -286,12 +375,24 @@ export async function extractFromWebsite({
     const tokenCount = colors.length + typography.length + spacing.length + radius.length + effects.length;
     onProgress?.("complete", 80, `Extraction complete — ${tokenCount} tokens, ${allFonts.length} fonts`);
 
+    // Map discovered component patterns to ExtractedComponent format
+    const components = componentPatterns.map((cp) => ({
+      name: cp.name,
+      description: `${cp.type} pattern (${cp.totalInstances} instances found)`,
+      variantCount: cp.variantCount,
+      variants: cp.variants.map((v) => {
+        const classes = (v.classes as string) || "";
+        return classes.slice(0, 80) || (v.tag as string) || cp.name;
+      }),
+    }));
+
     return {
       sourceType: "website",
       sourceName: hostname,
       sourceUrl: url,
+      extractionSource: "website" as const,
       tokens: { colors, typography, spacing, radius, effects, motion },
-      components: [],
+      components,
       screenshots,
       fonts: allFonts,
       animations,
