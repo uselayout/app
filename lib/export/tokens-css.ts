@@ -33,7 +33,7 @@ export function generateTokensCss(tokens: ExtractedTokens): string {
   emitTokenBlock(tokens.spacing, "SPACING", "space", lines);
   emitTokenBlock(tokens.radius, "BORDER RADIUS", "radius", lines);
   emitTokenBlock(tokens.effects, "EFFECTS", "effect", lines);
-  emitTokenBlock(tokens.motion, "MOTION", "motion", lines);
+  emitTokenBlock(tokens.motion ?? [], "MOTION", "motion", lines);
 
   lines.push("}");
 
@@ -44,7 +44,7 @@ export function generateTokensCss(tokens: ExtractedTokens): string {
     ...tokens.spacing,
     ...tokens.radius,
     ...tokens.effects,
-    ...tokens.motion,
+    ...(tokens.motion ?? []),
   ];
 
   const modeTokens = allTokens.filter((t) => t.mode);

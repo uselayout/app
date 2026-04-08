@@ -137,7 +137,7 @@ export function DesignSystemPanel({
       spacing: dedup(tokens.spacing),
       radius: dedup(tokens.radius),
       effects: tokens.effects,
-      motion: tokens.motion,
+      motion: tokens.motion ?? [],
     };
   }, [tokens]);
 
@@ -178,9 +178,9 @@ export function DesignSystemPanel({
       <div className="sticky top-0 z-10 flex items-center gap-1 border-b border-[var(--studio-border)] bg-[var(--bg-app)] px-6 py-2">
         <span
           className="mr-2 rounded-md bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]"
-          title={`${tokens.colors.length} colours, ${tokens.typography.length} typography, ${tokens.spacing.length} spacing, ${tokens.radius.length} radius, ${tokens.effects.length} effects, ${tokens.motion.length} motion`}
+          title={`${tokens.colors.length} colours, ${tokens.typography.length} typography, ${tokens.spacing.length} spacing, ${tokens.radius.length} radius, ${tokens.effects.length} effects, ${(tokens.motion ?? []).length} motion`}
         >
-          {tokens.colors.length + tokens.typography.length + tokens.spacing.length + tokens.radius.length + tokens.effects.length + tokens.motion.length} tokens
+          {tokens.colors.length + tokens.typography.length + tokens.spacing.length + tokens.radius.length + tokens.effects.length + (tokens.motion ?? []).length} tokens
         </span>
         {SECTIONS.map((section) => {
           const count = section.id === "screenshots"

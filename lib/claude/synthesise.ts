@@ -136,7 +136,7 @@ function buildUserContent(
     data.tokens.spacing.length +
     data.tokens.radius.length +
     data.tokens.effects.length +
-    data.tokens.motion.length;
+    (data.tokens.motion ?? []).length;
 
   const tokenSource = isFigma && totalTokenCount > 10
     ? "extracted-from-figma"
@@ -228,7 +228,7 @@ function buildUserContent(
       formatFigmaTokens("SPACING", data.tokens.spacing) +
       formatFigmaTokens("RADIUS", data.tokens.radius) +
       formatFigmaTokens("EFFECTS", data.tokens.effects) +
-      formatFigmaTokens("MOTION", data.tokens.motion)
+      formatFigmaTokens("MOTION", data.tokens.motion ?? [])
     );
   } else {
     sections.push(

@@ -560,7 +560,7 @@ function TokensTab({
       ...tokens.spacing,
       ...tokens.radius,
       ...tokens.effects,
-      ...tokens.motion,
+      ...(tokens.motion ?? []),
     ];
     for (const t of allTokens) {
       if (t.mode) modes.add(t.mode);

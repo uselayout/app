@@ -39,7 +39,7 @@ function toPluginTokens(tokens: ExtractedTokens) {
     spacing: map(tokens.spacing),
     radius: map(tokens.radius),
     effects: map(tokens.effects),
-    motion: map(tokens.motion),
+    motion: map(tokens.motion ?? []),
   };
 }
 
