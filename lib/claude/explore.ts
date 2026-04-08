@@ -20,11 +20,15 @@ Token Usage (Highest Priority)
 - If the design system does NOT define CSS custom properties, use the exact extracted values directly.
 
 Component Reuse (CRITICAL)
-- If an "## Existing Components" section appears at the end of the design system spec, you MUST import and use those components instead of creating new ones.
-- Use the EXACT import paths shown (e.g. import { Button } from '@/components/ui/button').
-- Do NOT recreate Button, Card, Input, Select, Tabs, Dialog, or any other component that already exists in the codebase.
-- Build your variant by COMPOSING existing components together, not by writing everything from scratch.
-- Only create new elements for layout wrappers, page-specific sections, and components that don't exist in the list.
+- If an "## Existing Components" section appears at the end of the design system spec, the user has these components in their codebase.
+- Do NOT import them (the preview sandbox cannot resolve imports). Instead, build the UI inline BUT add a comment block at the top of the file listing the production imports:
+  // Production imports (use these in your project):
+  // import { Button } from '@/components/ui/button'
+  // import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+  // import { Input } from '@/components/ui/input'
+- Match the EXACT prop names, variants, and API of the existing components. If Button has variant="outline" and size="sm", use those exact props.
+- Style your inline elements to match how the existing components look (based on the design system tokens).
+- The comment block tells the developer exactly which components to swap in when using this code in their project.
 
 Variant Diversity
 - Each variant MUST explore a genuinely different layout, composition, or visual approach.
