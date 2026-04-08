@@ -565,7 +565,7 @@ npx @layoutdesign/context install`}
           8. MCP Tools Reference
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          Once the MCP server is configured, your AI agent can call 13 tools
+          Once the MCP server is configured, your AI agent can call 14 tools
           automatically when building UI. You do not need to invoke them
           manually. The agent decides when to use them based on the task.
         </p>
@@ -630,6 +630,10 @@ npx @layoutdesign/context install`}
                 [
                   "get_screenshots",
                   "Returns screenshots captured during website extraction for visual reference",
+                ],
+                [
+                  "scan_project",
+                  "Scans for React components and Storybook stories. Auto-runs on startup so agents reuse existing code.",
                 ],
                 [
                   "check_setup",
