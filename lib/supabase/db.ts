@@ -66,7 +66,7 @@ function rowToProject(row: ProjectRow): Project {
 function projectToRow(
   project: Project,
   userId: string
-): Omit<ProjectRow, "created_at"> & { updated_at: string } {
+): Omit<ProjectRow, "created_at" | "scanned_components" | "scan_source" | "last_scan_at" | "github_repo"> & { updated_at: string } {
   // Store uploadedFonts inside extraction_data to avoid a DB migration
   const fonts = project.uploadedFonts ?? [];
   const extractionData = project.extractionData
@@ -88,10 +88,11 @@ function projectToRow(
     test_results: null,
     explorations: project.explorations ?? null,
     pending_canvas_image: project.pendingCanvasImage ?? null,
-    scanned_components: project.scannedComponents ?? null,
-    scan_source: project.scanSource ?? null,
-    last_scan_at: project.lastScanAt ?? null,
-    github_repo: project.githubRepo ?? null,
+    // NOTE: scanned_components, scan_source, last_scan_at, github_repo are
+    // intentionally excluded. They are managed by the scan-results API endpoint
+    // only. Including them here would wipe scan data on every project save
+    // (extraction, layout.md edit, variant generation) since the browser store
+    // doesn't always have these fields loaded.
     user_id: userId,
     updated_at: new Date().toISOString(),
   };
