@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireMcpAuth } from "@/lib/api/mcp-auth";
-import { fetchAllProjects, upsertProject } from "@/lib/supabase/db";
+import { fetchAllProjects, fetchProjectById, upsertProject } from "@/lib/supabase/db";
 import { getUserOrganizations, getOrganization } from "@/lib/supabase/organization";
 import type { Project } from "@/lib/types";
 
@@ -27,6 +27,28 @@ export async function GET(request: Request) {
 
   try {
     const url = new URL(request.url);
+
+    // Single project fetch by ID (used by Health panel)
+    const projectId = url.searchParams.get("id");
+    if (projectId) {
+      const project = await fetchProjectById(projectId);
+      if (!project || project.orgId !== auth.orgId) {
+        // Check if user has access via another org
+        const userOrgs = await getUserOrganizations(auth.userId);
+        const hasAccess = project && userOrgs.some((o) => o.id === project.orgId);
+        if (!hasAccess) {
+          return NextResponse.json(
+            { error: "Project not found" },
+            { status: 404, headers: CORS }
+          );
+        }
+      }
+      return NextResponse.json(
+        { project: { id: project!.id, name: project!.name, layoutMd: project!.layoutMd } },
+        { headers: CORS }
+      );
+    }
+
     const requestedOrgId = url.searchParams.get("orgId");
 
     // If a different org is requested, verify the user belongs to it
