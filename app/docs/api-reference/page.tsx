@@ -100,7 +100,7 @@ const components = await mcp.call("list_components");
   {
     name: "check_compliance",
     description:
-      "Validates a code snippet against the design system rules defined in the Anti-Patterns section of layout.md. Returns a compliance score, a list of violations with line references, and suggested fixes. Run this before submitting any UI code.",
+      "Validates a code snippet against the design system rules defined in the Anti-Patterns section of layout.md. Returns a compliance score, a list of violations with line references, and suggested fixes. Run this before submitting any UI code. Runs 12 rules covering colours, spacing, typography, accessibility, and motion.",
     parameters: [
       {
         name: "code",
@@ -111,7 +111,7 @@ const components = await mcp.call("list_components");
         name: "rules",
         type: "string[] (optional)",
         description:
-          "Specific rule IDs to check against. Omit to run all rules.",
+          "Specific rule IDs to check against. Omit to run all rules. Available rules: no-hardcoded-colours, use-design-tokens, no-hardcoded-spacing, no-unknown-components, spacing-compliance, font-family-compliance, border-radius-compliance, interactive-state-coverage, accessibility-alt-text, accessibility-button-label, semantic-html, motion-token-compliance.",
       },
     ],
     example: `const result = await mcp.call("check_compliance", {
@@ -359,6 +359,45 @@ const viewport = await mcp.call("get_screenshots", {
 });`,
   },
   {
+    name: "scan_project",
+    description:
+      "Scans the project directory for React components and Storybook stories. Returns component names, file paths, props, import paths, and story associations. Auto-runs on MCP server startup so AI agents see your existing codebase components via list_components and reuse them instead of generating duplicates.",
+    parameters: [
+      {
+        name: "path",
+        type: "string (optional)",
+        description:
+          "Directory to scan. Defaults to the current working directory.",
+      },
+      {
+        name: "type",
+        type: '"storybook" | "codebase" | "both" (optional)',
+        description:
+          'What to scan for. "storybook" finds CSF3 story files, "codebase" finds React component exports, "both" (default) scans for all.',
+      },
+    ],
+    example: `// Scan the current directory for all components and stories
+const result = await mcp.call("scan_project");
+
+// Scan a specific path for Storybook stories only
+const stories = await mcp.call("scan_project", {
+  path: "./src",
+  type: "storybook"
+});
+
+// Returns:
+// {
+//   components: [
+//     { name: "Button", path: "src/components/Button.tsx", importPath: "@/components/Button", props: [...] },
+//     ...
+//   ],
+//   stories: [
+//     { name: "ButtonStory", component: "Button", path: "src/stories/Button.stories.tsx" },
+//     ...
+//   ]
+// }`,
+  },
+  {
     name: "check_setup",
     description:
       "Diagnoses and optionally fixes MCP server setup issues. Call this when Figma tools (push_to_figma, design_in_figma, url_to_figma) are not working. Checks MCP registration, transport type, OAuth status, and endpoint reachability. With fix enabled, attempts to re-register missing or misconfigured servers.",
@@ -425,7 +464,7 @@ export default function ApiReferencePage() {
       <div className="space-y-4">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">API Reference</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Layout CLI exposes 13 MCP tools that AI agents call automatically during
+          Layout CLI exposes 14 MCP tools that AI agents call automatically during
           development. These tools give your agent structured access to design
           tokens, component specs, compliance checking, live preview, and a
           two-way Figma bridge: everything needed to build UI that stays on

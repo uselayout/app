@@ -125,6 +125,22 @@ export default function ExplorerPage() {
             </p>
           </div>
 
+          <div className="rounded-xl border border-gray-200 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              Component Reuse
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              When codebase components are synced via{" "}
+              <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+                layout scan --sync
+              </code>
+              , the Explorer includes them in the AI generation context.
+              Generated code includes production import comments showing exactly
+              which components to use from your codebase. The preview renders
+              correctly while the code shows your real import paths.
+            </p>
+          </div>
+
         </div>
       </section>
 
