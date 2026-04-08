@@ -20,7 +20,8 @@ interface MergedComponent {
 export function ComponentsView({ extractedComponents, scannedComponents }: ComponentsViewProps) {
   const [copiedPath, setCopiedPath] = useState<string | null>(null);
 
-  const handleCopyImport = (name: string, importPath: string) => {
+  const handleCopyImport = (name: string, rawPath: string) => {
+    const importPath = rawPath.startsWith("src/") ? "@/" + rawPath.slice(4) : rawPath;
     const importStatement = `import { ${name} } from '${importPath}'`;
     copyToClipboard(importStatement);
     setCopiedPath(`${name}::${importPath}`);

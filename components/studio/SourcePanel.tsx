@@ -1131,15 +1131,13 @@ function ComponentsTab({
     );
   }
 
-  // Build Figma component URL if we have the source URL
-  const figmaFileKey = sourceUrl?.match(/figma\.com\/(?:file|design)\/([a-zA-Z0-9]+)/)?.[1];
+  // Link to the Figma file (component-level deep linking requires node_id which we don't store)
+  const figmaUrl = sourceUrl?.match(/figma\.com/) ? sourceUrl : undefined;
 
   return (
     <div className="p-2 space-y-1">
       {filteredComponents.map((component) => {
-        const componentUrl = figmaFileKey
-          ? `https://www.figma.com/design/${figmaFileKey}?node-id=${encodeURIComponent(component.name)}`
-          : undefined;
+        const componentUrl = figmaUrl;
 
         return (
           <div
