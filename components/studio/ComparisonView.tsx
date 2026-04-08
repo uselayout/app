@@ -13,6 +13,7 @@ import type { DesignVariant, ContextFile, ComparisonResult } from "@/lib/types";
 interface ComparisonViewProps {
   prompt: string;
   layoutMd: string;
+  cssTokenBlock?: string;
   baseCode?: string;
   imageDataUrl?: string;
   contextFiles?: ContextFile[];
@@ -25,6 +26,7 @@ interface ComparisonViewProps {
 export function ComparisonView({
   prompt,
   layoutMd,
+  cssTokenBlock,
   baseCode,
   imageDataUrl,
   contextFiles,
@@ -264,7 +266,7 @@ export function ComparisonView({
               ) : withDsError ? (
                 <PanelError error={withDsError} orgSlug={orgSlug} />
               ) : withDs ? (
-                <PreviewFrame code={withDs.code} />
+                <PreviewFrame code={withDs.code} cssTokenBlock={cssTokenBlock} />
               ) : (
                 <div className="flex h-full items-center justify-center">
                   <p className="text-xs text-[var(--text-muted)]">No result</p>
@@ -327,7 +329,7 @@ function PanelError({ error, orgSlug }: { error: string; orgSlug?: string }) {
   );
 }
 
-function PreviewFrame({ code }: { code: string }) {
+function PreviewFrame({ code, cssTokenBlock }: { code: string; cssTokenBlock?: string }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
 
@@ -350,7 +352,7 @@ function PreviewFrame({ code }: { code: string }) {
 
         const name = extractComponentName(code);
         if (iframeRef.current) {
-          iframeRef.current.srcdoc = buildSrcdoc(js, name);
+          iframeRef.current.srcdoc = buildSrcdoc(js, name, { cssTokenBlock });
           setReady(true);
         }
       } catch {

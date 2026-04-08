@@ -8,6 +8,7 @@ import type { DesignVariant } from "@/lib/types";
 interface ResponsivePreviewProps {
   variant: DesignVariant;
   onClose: () => void;
+  cssTokenBlock?: string;
 }
 
 const VIEWPORTS = [
@@ -16,7 +17,7 @@ const VIEWPORTS = [
   { key: "desktop", label: "Desktop", width: 1280, height: 900, icon: Monitor },
 ] as const;
 
-export function ResponsivePreview({ variant, onClose }: ResponsivePreviewProps) {
+export function ResponsivePreview({ variant, onClose, cssTokenBlock }: ResponsivePreviewProps) {
   const [activeViewport, setActiveViewport] = useState<string>("desktop");
   const active = VIEWPORTS.find((v) => v.key === activeViewport) ?? VIEWPORTS[2];
   const srcdocRef = useRef<string | null>(null);
@@ -85,6 +86,7 @@ export function ResponsivePreview({ variant, onClose }: ResponsivePreviewProps) 
           width={active.width}
           height={active.height}
           onSrcdocReady={(s) => { srcdocRef.current = s; }}
+          cssTokenBlock={cssTokenBlock}
         />
       </div>
     </div>
@@ -96,11 +98,13 @@ function ViewportFrame({
   width,
   height,
   onSrcdocReady,
+  cssTokenBlock,
 }: {
   code: string;
   width: number;
   height: number;
   onSrcdocReady: (srcdoc: string) => void;
+  cssTokenBlock?: string;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -152,7 +156,7 @@ function ViewportFrame({
         if (cancelled) return;
 
         const componentName = extractComponentName(code);
-        const srcdoc = buildSrcdoc(js, componentName);
+        const srcdoc = buildSrcdoc(js, componentName, { cssTokenBlock });
 
         onSrcdocReadyRef.current(srcdoc);
 

@@ -311,6 +311,7 @@ interface VariantCardProps {
   onCodeUpdate?: (code: string, editHistory: EditHistory) => void;
   layoutMd?: string;
   designTokens?: ExtractedToken[];
+  cssTokenBlock?: string;
   iconPacks?: string[];
   fonts?: FontDeclaration[];
   uploadedFonts?: UploadedFont[];
@@ -337,6 +338,7 @@ export function VariantCard({
   onCodeUpdate,
   layoutMd,
   designTokens,
+  cssTokenBlock,
   iconPacks,
   fonts,
   uploadedFonts,
@@ -402,7 +404,7 @@ export function VariantCard({
         componentNameRef.current = name;
 
         // Update the scaled card preview
-        const srcdoc = buildSrcdoc(js, name, { variantId: variant.id, iconPacks, fonts, uploadedFonts });
+        const srcdoc = buildSrcdoc(js, name, { variantId: variant.id, iconPacks, fonts, uploadedFonts, cssTokenBlock });
         if (iframeRef.current) {
           iframeRef.current.srcdoc = srcdoc;
           setPreviewReady(true);
@@ -415,7 +417,7 @@ export function VariantCard({
 
         // Also update the fullscreen Inspector iframe if it's open
         if (inspectMode && fullscreenIframeRef.current) {
-          const inspectorSrcdoc = buildSrcdoc(js, name, { inspectorScript: getInspectorScript(), iconPacks, fonts, uploadedFonts });
+          const inspectorSrcdoc = buildSrcdoc(js, name, { inspectorScript: getInspectorScript(), iconPacks, fonts, uploadedFonts, cssTokenBlock });
           fullscreenIframeRef.current.srcdoc = inspectorSrcdoc;
         }
       } catch (err) {
@@ -449,13 +451,13 @@ export function VariantCard({
     if (!js) return;
     if (inspectMode) {
       // Fullscreen iframe gets the inspector script
-      const srcdoc = buildSrcdoc(js, componentNameRef.current, { inspectorScript: getInspectorScript(), iconPacks, fonts, uploadedFonts });
+      const srcdoc = buildSrcdoc(js, componentNameRef.current, { inspectorScript: getInspectorScript(), iconPacks, fonts, uploadedFonts, cssTokenBlock });
       if (fullscreenIframeRef.current) {
         fullscreenIframeRef.current.srcdoc = srcdoc;
       }
     } else {
       // Exiting inspect mode — React mounts a fresh scaled iframe, restore its srcdoc
-      const srcdoc = buildSrcdoc(js, componentNameRef.current, { variantId: variant.id, iconPacks, fonts, uploadedFonts });
+      const srcdoc = buildSrcdoc(js, componentNameRef.current, { variantId: variant.id, iconPacks, fonts, uploadedFonts, cssTokenBlock });
       if (iframeRef.current) {
         iframeRef.current.srcdoc = srcdoc;
         setPreviewReady(true);
@@ -770,7 +772,7 @@ export function VariantCard({
       if (!res.ok) return;
       const { js } = await res.json();
       const componentName = extractComponentName(entry.codeAfter);
-      const srcdoc = buildSrcdoc(js, componentName, { iconPacks, fonts, uploadedFonts });
+      const srcdoc = buildSrcdoc(js, componentName, { iconPacks, fonts, uploadedFonts, cssTokenBlock });
       if (iframeRef.current) {
         iframeRef.current.srcdoc = srcdoc;
       }
@@ -932,7 +934,7 @@ export function VariantCard({
               onReset={() => {
                 const js = transpiledJsRef.current;
                 if (!js) return;
-                const srcdoc = buildSrcdoc(js, componentNameRef.current, { inspectorScript: getInspectorScript(), iconPacks, fonts, uploadedFonts });
+                const srcdoc = buildSrcdoc(js, componentNameRef.current, { inspectorScript: getInspectorScript(), iconPacks, fonts, uploadedFonts, cssTokenBlock });
                 if (fullscreenIframeRef.current) fullscreenIframeRef.current.srcdoc = srcdoc;
               }}
               designTokens={designTokens}

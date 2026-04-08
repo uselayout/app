@@ -25,6 +25,7 @@ import { useOnboardingStore } from "@/lib/store/onboarding";
 import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 import { DEFAULT_EXPLORE_MODEL, AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
+import { buildCssTokenBlock } from "@/lib/explore/preview-helpers";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
 import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont, ComparisonResult, ScannedComponent } from "@/lib/types";
@@ -120,6 +121,15 @@ export function ExplorerCanvas({
     const parsed = parseTokensFromLayoutMd(layoutMd);
     return [...parsed.colors, ...parsed.typography, ...parsed.spacing, ...parsed.radius, ...parsed.effects];
   }, [layoutMd]);
+
+  // Build CSS :root block from extraction data so preview iframes resolve var(--token) refs
+  const extractionData = useProjectStore(
+    (s) => s.projects.find((p) => p.id === projectId)?.extractionData
+  );
+  const cssTokenBlock = useMemo(
+    () => buildCssTokenBlock(extractionData?.cssVariables, extractionData?.tokens),
+    [extractionData?.cssVariables, extractionData?.tokens]
+  );
 
   const [modelId, setModelId] = useState<AiModelId>(DEFAULT_EXPLORE_MODEL);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -1119,6 +1129,7 @@ export function ExplorerCanvas({
                       onCodeUpdate={(code, editHistory) => handleCodeUpdate(variant.id, code, editHistory)}
                       layoutMd={layoutMd}
                       designTokens={allDesignTokens}
+                      cssTokenBlock={cssTokenBlock}
                       iconPacks={iconPacks}
                       fonts={extractedFontDeclarations}
                       uploadedFonts={uploadedFonts}
@@ -1307,6 +1318,7 @@ export function ExplorerCanvas({
         <ResponsivePreview
           variant={responsiveVariant}
           onClose={() => setResponsiveVariant(null)}
+          cssTokenBlock={cssTokenBlock}
         />
       )}
 
@@ -1317,6 +1329,7 @@ export function ExplorerCanvas({
           imageDataUrl={compareData.image}
           contextFiles={compareData.contextFiles}
           layoutMd={layoutMd}
+          cssTokenBlock={cssTokenBlock}
           onSave={handleComparisonSave}
           onClose={() => setCompareData(null)}
           orgSlug={orgSlug}
@@ -1326,6 +1339,7 @@ export function ExplorerCanvas({
         <ComparisonView
           prompt={viewSavedComparison.prompt}
           layoutMd={layoutMd}
+          cssTokenBlock={cssTokenBlock}
           savedResult={viewSavedComparison}
           onClose={() => setViewSavedComparison(null)}
           orgSlug={orgSlug}
