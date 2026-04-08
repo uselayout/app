@@ -127,6 +127,52 @@ export default function ExplorerPage() {
 
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              Push to Paper
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Select any variant and push it to{" "}
+              <a
+                href="https://paper.design"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-900 underline"
+              >
+                Paper.design
+              </a>{" "}
+              as editable HTML/CSS. Paper is a design canvas with full MCP write
+              access, so your AI agent can create artboards and place content
+              directly. The push modal generates the MCP command, you copy it into
+              Claude Code or another AI agent with the{" "}
+              <a
+                href="https://paper.design/docs/mcp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-900 underline"
+              >
+                Paper MCP server
+              </a>{" "}
+              connected, and the variant lands on your canvas as live HTML. The
+              artboard is auto-named from your variant name.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              Health Scoring
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Each generated variant shows a 0 to 100 health score measuring how
+              faithfully it uses your design system tokens. Hover the score badge
+              to see a grouped breakdown by rule type: colour token usage,
+              spacing compliance, typography, accessibility, and motion. Variants
+              scoring 80 or above are ready for production use. Lower scores
+              highlight specific issues to fix, such as hardcoded hex values or
+              missing interactive states.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
               Component Reuse
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
@@ -134,10 +180,16 @@ export default function ExplorerPage() {
               <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
                 layout scan --sync
               </code>
-              , the Explorer includes them in the AI generation context.
-              Generated code includes production import comments showing exactly
-              which components to use from your codebase. The preview renders
-              correctly while the code shows your real import paths.
+              , the Explorer includes them in the AI generation context. This
+              covers both React component exports and{" "}
+              <Link href="/docs/cli" className="text-gray-900 underline">
+                Storybook stories
+              </Link>
+              . The AI sees what you already have and generates code with
+              production import comments showing exactly which components to
+              reuse from your codebase, preventing duplicate implementations.
+              The preview renders correctly while the code shows your real
+              import paths.
             </p>
           </div>
 

@@ -407,7 +407,7 @@ npx @layoutdesign/context init --kit notion-lite`}
       </section>
 
       {/* Codebase Scanner */}
-      <section className="space-y-4">
+      <section className="space-y-6">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Codebase Scanner</h2>
         <p className="text-base text-gray-600 leading-relaxed">
           Layout automatically detects React components and Storybook stories in
@@ -416,27 +416,110 @@ npx @layoutdesign/context init --kit notion-lite`}
           <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
             list_components
           </code>{" "}
-          and reuse them instead of generating duplicates.
+          which merges design system components from Figma with codebase
+          components into a single unified list. This prevents AI agents from
+          generating duplicates of components you already have.
         </p>
-        <p className="text-base text-gray-600 leading-relaxed">
-          To run a manual scan and optionally upload results to Layout:
-        </p>
-        <CopyBlock
-          code={`npx @layoutdesign/context scan [path]
-  --sync          Upload results to Layout
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">Manual Scanning</h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            To run a manual scan and optionally upload results to Layout Studio:
+          </p>
+          <CopyBlock
+            code={`npx @layoutdesign/context scan [path]
+  --sync          Upload results to Layout Studio
   --project <id>  Target project ID
   --type <type>   storybook | codebase | both`}
-          language="bash"
-        />
-        <p className="text-base text-gray-600 leading-relaxed">
-          The scanner detects: function exports, const exports, forwardRef,
-          grouped exports, Props interfaces, and Storybook CSF3 stories.
-          Import paths are generated using the{" "}
-          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
-            @/
-          </code>{" "}
-          alias convention.
-        </p>
+            language="bash"
+          />
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">What Gets Detected</h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            The React component detector finds six patterns in your source files:
+          </p>
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                  <th className="px-4 py-3 font-semibold text-[#0a0a0a]">Pattern</th>
+                  <th className="px-4 py-3 font-semibold text-[#0a0a0a]">Example</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {[
+                  ["Function exports", "export function Button() {}"],
+                  ["Const exports", "export const Card = () => {}"],
+                  ["forwardRef", "export const Input = forwardRef(...)"],
+                  ["Grouped exports", "export { Button, Card } from './components'"],
+                  ["Props interfaces", "interface ButtonProps { variant: string }"],
+                  ["Default exports", "export default function Page() {}"],
+                ].map(([pattern, example]) => (
+                  <tr key={pattern} className="hover:bg-gray-50 align-top">
+                    <td className="px-4 py-3 font-medium text-[#0a0a0a] whitespace-nowrap">
+                      {pattern}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-600">
+                      {example}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-base text-gray-600 leading-relaxed">
+            Import paths are generated using the{" "}
+            <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+              @/
+            </code>{" "}
+            alias convention. For each component, the scanner extracts: name,
+            file path, import path, props interface (if found), and whether it
+            has associated Storybook stories.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">Storybook Integration</h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            The scanner parses Storybook CSF3 story files (
+            <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+              .stories.ts
+            </code>{" "}
+            and{" "}
+            <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+              .stories.tsx
+            </code>
+            ) and extracts rich metadata for each story:
+          </p>
+          <ul className="list-disc pl-6 space-y-1 text-base text-gray-600">
+            <li><strong>Component metadata</strong> from the default export (title, component reference)</li>
+            <li><strong>argTypes</strong> defining the available props and their controls</li>
+            <li><strong>args</strong> specifying default prop values for each story</li>
+            <li><strong>Story names</strong> (Primary, Secondary, Disabled, Loading, etc.)</li>
+            <li><strong>Tags</strong> for categorisation and filtering</li>
+          </ul>
+          <p className="text-base text-gray-600 leading-relaxed">
+            Stories are fuzzy-matched against detected React components by name.
+            When a match is found, the component entry in{" "}
+            <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+              list_components
+            </code>{" "}
+            includes the story count and story names. This means AI agents know
+            that your Button component already has Primary, Secondary, Disabled,
+            Loading, and Icon variants defined in Storybook, and will avoid
+            regenerating those variants from scratch.
+          </p>
+          <p className="text-base text-gray-600 leading-relaxed">
+            To scan only Storybook stories without the full component scan:
+          </p>
+          <CopyBlock
+            code="npx @layoutdesign/context scan . --type storybook"
+            language="bash"
+          />
+        </div>
+
         <Callout type="tip">
           When codebase components are synced via{" "}
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
@@ -444,8 +527,9 @@ npx @layoutdesign/context init --kit notion-lite`}
           </code>
           , the Explorer includes them in AI generation context. Generated code
           includes production import comments showing exactly which components to
-          use from your codebase. The preview renders correctly while the code
-          shows your real import paths.
+          use from your codebase. In the Studio, scanned components appear in the
+          Design System page alongside Figma components, with a copy import path
+          button for each.
         </Callout>
       </section>
 

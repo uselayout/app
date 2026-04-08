@@ -222,7 +222,7 @@ const sections = [
     title: "Colour System",
     badge: "Three tiers",
     description:
-      "Colour tokens are structured across three tiers to enforce correct usage. Agents should only ever reference Tier 2 (semantic) or Tier 3 (component) tokens in generated code, never Tier 1 primitives directly. This mirrors how professional design systems work and prevents hardcoded values from creeping into components.",
+      "Colour tokens are structured across three tiers to enforce correct usage. Agents should only ever reference Tier 2 (semantic) or Tier 3 (component) tokens in generated code, never Tier 1 primitives directly. This mirrors how professional design systems work and prevents hardcoded values from creeping into components. When the source design system uses multiple modes (e.g. light and dark), tokens include a mode field and are grouped by mode. Each mode defines its own set of semantic values for the same token names, enabling theme-aware code generation.",
     callout: {
       type: "warning" as const,
       text: "Tier 1 primitive tokens (raw hex values) are listed for reference only. They should never appear in component code. Always use the semantic alias.",
@@ -270,7 +270,7 @@ const sections = [
     title: "Component Patterns",
     badge: "5–10 components",
     description:
-      "The most detailed section. Each component entry includes: anatomy (the DOM structure), token mappings for every state (default, hover, focus, active, disabled, loading, error), and one complete TSX example using the design system tokens. Agents should always call get_component before building a component that exists here. This section defines the canonical implementation.",
+      "The most detailed section. Each component entry includes: anatomy (the DOM structure), token mappings for every state (default, hover, focus, active, disabled, loading, error), property defaults and preferred values, and one complete TSX example using the design system tokens. Property defaults tell agents what the initial prop values should be (e.g. variant='primary', size='md'), and preferred values list the valid options for each prop. Agents should always call get_component before building a component that exists here. This section defines the canonical implementation.",
     callout: {
       type: "info" as const,
       text: "Every state must be mapped. Components with unmapped states (e.g. no disabled token defined) are considered incomplete and will be flagged in the compliance check.",
