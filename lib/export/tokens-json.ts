@@ -130,7 +130,7 @@ export function generateTokensJson(tokens: ExtractedTokens): string {
   if (tokens.effects.length > 0) {
     output.effect = groupTokens(tokens.effects);
   }
-  if (tokens.motion.length > 0) {
+  if ((tokens.motion ?? []).length > 0) {
     output.motion = groupTokens(tokens.motion);
   }
 

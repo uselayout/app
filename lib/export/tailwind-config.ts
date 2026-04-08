@@ -127,7 +127,7 @@ export function generateTailwindConfig(tokens: ExtractedTokens, breakpoints?: st
   }
 
   // Motion → transitionDuration and transitionTimingFunction
-  for (const token of tokens.motion) {
+  for (const token of tokens.motion ?? []) {
     const key = sanitiseKey(token.name);
     const varName = token.cssVariable || `--motion-${key}`;
     const val = token.value.toLowerCase();
