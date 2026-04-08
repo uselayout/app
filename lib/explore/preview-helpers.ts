@@ -71,42 +71,51 @@ export function buildCssTokenBlock(
   cssVariables?: Record<string, string>,
   tokens?: ExtractedTokens,
 ): string {
-  const vars = new Map<string, string>();
+  try {
+    const vars = new Map<string, string>();
 
-  // 1. Raw CSS variables from extraction (highest priority — original names)
-  if (cssVariables) {
-    for (const [name, value] of Object.entries(cssVariables)) {
-      const varName = name.startsWith("--") ? name : `--${name}`;
-      vars.set(varName, value);
+    // 1. Raw CSS variables from extraction (highest priority — original names)
+    if (cssVariables) {
+      for (const [name, value] of Object.entries(cssVariables)) {
+        // Skip values with angle brackets — they break the HTML <style> tag
+        if (value.includes("<") || value.includes(">")) continue;
+        // Skip values with unmatched braces that could break CSS parsing
+        if (value.includes("}")) continue;
+        const varName = name.startsWith("--") ? name : `--${name}`;
+        vars.set(varName, value);
+      }
     }
-  }
 
-  // 2. Structured tokens with cssVariable set (fill gaps from Figma extractions)
-  if (tokens) {
-    const allTokens = [
-      ...tokens.colors,
-      ...tokens.typography,
-      ...tokens.spacing,
-      ...tokens.radius,
-      ...tokens.effects,
-      ...(tokens.motion ?? []),
-    ];
-    for (const t of allTokens) {
-      if (t.cssVariable && t.value) {
-        const varName = t.cssVariable.startsWith("--") ? t.cssVariable : `--${t.cssVariable}`;
-        if (!vars.has(varName)) {
-          vars.set(varName, t.value);
+    // 2. Structured tokens with cssVariable set (fill gaps from Figma extractions)
+    if (tokens) {
+      const allTokens = [
+        ...(tokens.colors ?? []),
+        ...(tokens.typography ?? []),
+        ...(tokens.spacing ?? []),
+        ...(tokens.radius ?? []),
+        ...(tokens.effects ?? []),
+        ...(tokens.motion ?? []),
+      ];
+      for (const t of allTokens) {
+        if (t.cssVariable && t.value && !t.value.includes("<") && !t.value.includes(">") && !t.value.includes("}")) {
+          const varName = t.cssVariable.startsWith("--") ? t.cssVariable : `--${t.cssVariable}`;
+          if (!vars.has(varName)) {
+            vars.set(varName, t.value);
+          }
         }
       }
     }
+
+    if (vars.size === 0) return "";
+
+    const lines = Array.from(vars.entries())
+      .map(([name, value]) => `  ${name}: ${value};`)
+      .join("\n");
+    return `:root {\n${lines}\n}`;
+  } catch {
+    // Graceful fallback — previews render without design tokens rather than breaking
+    return "";
   }
-
-  if (vars.size === 0) return "";
-
-  const lines = Array.from(vars.entries())
-    .map(([name, value]) => `  ${name}: ${value};`)
-    .join("\n");
-  return `:root {\n${lines}\n}`;
 }
 
 export interface BuildSrcdocOptions {
@@ -168,7 +177,8 @@ ${fontResult.linkTags}
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></${"script"}>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></${"script"}>
 ${iconScriptTags}
-<style>${fontResult.fontFaceCSS ? fontResult.fontFaceCSS + "\n" : ""}${opts.cssTokenBlock ? opts.cssTokenBlock + "\n" : ""}body{margin:0;font-family:${bodyFont}}a[href]{cursor:default}</style>
+<style>${fontResult.fontFaceCSS ? fontResult.fontFaceCSS + "\n" : ""}body{margin:0;font-family:${bodyFont}}a[href]{cursor:default}</style>
+${opts.cssTokenBlock ? `<style>${opts.cssTokenBlock}</style>` : ""}
 </head><body>
 <div id="root"></div>
 <script>
