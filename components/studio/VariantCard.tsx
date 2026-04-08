@@ -76,7 +76,7 @@ const TAILWIND_PREFIXES: Record<string, RegExp> = {
   fontFamily: /\bfont-(?:sans|serif|mono|\[[^\]]+\])\b/g,
   textAlign: /\btext-(?:left|center|right|justify)\b/g,
   display: /\b(?:block|flex|grid|inline|inline-flex|inline-block|hidden)\b/g,
-  flexDirection: /\bflex-(?:row|col|row-reverse|col-reverse)\b/g,
+  flexDirection: /(?<![:\w])flex-(?:row|col|row-reverse|col-reverse)\b/g,
   alignItems: /\bitems-(?:start|end|center|baseline|stretch)\b/g,
   justifyContent: /\bjustify-(?:start|end|center|between|around|evenly)\b/g,
   color: /\btext-\[(?:rgb|rgba|#)[^\]]*\]\b/g,
@@ -220,7 +220,16 @@ function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null 
     return null;
   }
 
-  // Try Tailwind class swap first
+  // Try inline style edit FIRST — inline styles override Tailwind classes in
+  // specificity, so if both exist we must edit the inline style for the change
+  // to actually take effect in the rendered output.
+  const inlineResult = tryDirectInlineStyleEdit(code, edit);
+  if (inlineResult) {
+    console.debug(`[direct-edit] ${property}: inline style edit succeeded`);
+    return inlineResult;
+  }
+
+  // Fall back to Tailwind class swap only if no inline style exists for this property
   if (elementClasses && CSS_TO_TAILWIND[property]) {
     const classMatch = findBestClassNameMatch(code, elementClasses);
     if (classMatch) {
@@ -239,13 +248,6 @@ function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null 
     } else {
       console.debug(`[direct-edit] ${property}: no class match in source for classes:`, elementClasses.substring(0, 80));
     }
-  }
-
-  // Fall back to inline style editing
-  const inlineResult = tryDirectInlineStyleEdit(code, edit);
-  if (inlineResult) {
-    console.debug(`[direct-edit] ${property}: inline style edit succeeded`);
-    return inlineResult;
   }
 
   console.debug(`[direct-edit] ${property}: all direct edit paths failed, will use AI fallback`);
