@@ -7,7 +7,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Webhooks | Layout Docs",
   description:
-    "Receive notifications when Figma files change. Set up webhooks to know when to re-extract your design system.",
+    "Receive notifications when Figma files or GitHub repos change. Set up webhooks to automatically re-extract your design system.",
 };
 
 export default function WebhooksPage() {
@@ -19,9 +19,10 @@ export default function WebhooksPage() {
       <div className="space-y-3">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Webhooks</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Get notified when Figma files change. Connect Layout to
-          Figma&apos;s webhook system so that every time a designer publishes
-          updates, you know it&apos;s time to re-extract.
+          Get notified when Figma files or GitHub repos change. Connect Layout
+          to Figma&apos;s webhook system or your GitHub repository so that every
+          time a designer publishes updates or tokens are committed to code,
+          Layout automatically re-extracts your design system.
         </p>
       </div>
 
@@ -187,6 +188,93 @@ export default function WebhooksPage() {
         </div>
       </section>
 
+      {/* GitHub Webhooks */}
+      <section className="space-y-8">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">GitHub Webhooks</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          If your design tokens are managed as code (e.g. CSS custom properties
+          or JSON tokens committed to a repository), you can connect a GitHub
+          webhook to trigger automatic re-extraction when tokens change.
+        </p>
+
+        {/* GitHub Step 1 */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">
+            Step 1: Configure in Layout
+          </h3>
+          <ol className="list-decimal pl-6 space-y-2 text-gray-600 text-base">
+            <li>
+              Go to{" "}
+              <strong className="font-semibold text-[#0a0a0a]">
+                Settings &gt; Webhooks
+              </strong>{" "}
+              in your organisation dashboard.
+            </li>
+            <li>
+              In the <strong className="font-semibold text-[#0a0a0a]">GitHub</strong>{" "}
+              section, enter your GitHub Personal Access Token (PAT).
+            </li>
+            <li>
+              Set the repository owner, name, and branch to watch (e.g.{" "}
+              <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+                main
+              </code>
+              ).
+            </li>
+            <li>
+              Copy the GitHub webhook endpoint URL:{" "}
+              <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+                https://studio.yourdomain.com/api/webhooks/github
+              </code>
+            </li>
+          </ol>
+        </div>
+
+        {/* GitHub Step 2 */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">
+            Step 2: Configure in GitHub
+          </h3>
+          <ol className="list-decimal pl-6 space-y-2 text-gray-600 text-base">
+            <li>
+              Go to your repository&apos;s{" "}
+              <strong className="font-semibold text-[#0a0a0a]">
+                Settings &gt; Webhooks
+              </strong>
+              .
+            </li>
+            <li>Click <strong className="font-semibold text-[#0a0a0a]">Add webhook</strong>.</li>
+            <li>Paste your Layout GitHub webhook URL as the Payload URL.</li>
+            <li>
+              Set content type to{" "}
+              <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+                application/json
+              </code>
+              .
+            </li>
+            <li>
+              Enter a webhook secret. This is used for HMAC-SHA256 verification
+              of incoming requests.
+            </li>
+            <li>
+              Under events, select{" "}
+              <strong className="font-semibold text-[#0a0a0a]">Just the push event</strong>.
+            </li>
+          </ol>
+        </div>
+
+        <Callout type="info">
+          GitHub webhook payloads are verified using HMAC-SHA256 signatures. The{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            X-Hub-Signature-256
+          </code>{" "}
+          header is checked against your webhook secret on every request.
+          Requests with invalid or missing signatures are rejected. A 60-second
+          debounce per project prevents duplicate re-extractions from rapid
+          successive pushes.
+        </Callout>
+      </section>
+
       {/* Security */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Security</h2>
@@ -201,8 +289,12 @@ export default function WebhooksPage() {
               desc: "The passcode is never stored in plaintext. It is hashed before being saved to the database.",
             },
             {
+              label: "GitHub HMAC verification",
+              desc: "GitHub webhook payloads are verified using HMAC-SHA256 signatures via the X-Hub-Signature-256 header. Invalid signatures are rejected with a 401 response.",
+            },
+            {
               label: "HTTPS only",
-              desc: "Figma only delivers webhooks to HTTPS endpoints. Your Layout instance must be served over TLS for webhooks to work.",
+              desc: "Figma only delivers webhooks to HTTPS endpoints. GitHub strongly recommends HTTPS. Your Layout instance must be served over TLS for webhooks to work.",
             },
           ].map(({ label, desc }) => (
             <div key={label} className="flex gap-4 px-5 py-4">
