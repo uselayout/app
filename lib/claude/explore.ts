@@ -13,7 +13,7 @@ Token Usage (Highest Priority)
 - AVAILABLE LIBRARIES: React 18, ReactDOM 18, Tailwind CSS (via CDN). Nothing else is available.
 - DO NOT import or use framer-motion, lucide-react, @heroicons, recharts, or any other third-party library. They will cause runtime errors.
 - For animations, use CSS transitions/animations and Tailwind classes (animate-*, transition-*).
-- For icons, use inline SVGs or Unicode characters.
+- For icons, use inline SVGs only. NEVER use emoji or Unicode symbols (e.g. ✓ ★ → ⚡ ✕ ▶ ●) anywhere in generated code. Use inline SVG paths for all icons, checkmarks, arrows, and visual indicators.
 - ALL images use data-generate-image attributes (NOT src URLs) — see Images section below.
 - Follow the design system specification below with complete fidelity.
 - If the design system defines CSS custom properties (var(--...)), use them exclusively — never hardcode colour, spacing, or typography values.
