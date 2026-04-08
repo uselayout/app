@@ -71,9 +71,10 @@ export async function POST(request: NextRequest, { params }: Params) {
     } else {
       const authResult = await requireOrgAuth(orgId, "editProject");
       if (authResult instanceof NextResponse) return authResult;
-      authedOrgId = orgId;
+      authedOrgId = authResult.orgId;
     }
-    void authedOrgId; // org verified by auth layer
+    // Use the resolved org ID for DB queries (slug → UUID)
+    const resolvedOrgId = authedOrgId;
 
     let body: unknown;
     try {
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       .from("layout_projects")
       .select("extraction_data")
       .eq("id", projectId)
-      .eq("org_id", orgId)
+      .eq("org_id", resolvedOrgId)
       .single();
 
     if (!project) {
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", projectId)
-      .eq("org_id", orgId);
+      .eq("org_id", resolvedOrgId);
 
     if (error) {
       console.error("[scan-results] Failed to store:", error.message);
@@ -179,14 +180,24 @@ export async function GET(_request: NextRequest, { params }: Params) {
   try {
     const { orgId, projectId } = await params;
 
-    const authResult = await requireOrgAuth(orgId, "viewProject");
-    if (authResult instanceof NextResponse) return authResult;
+    const hasBearer = _request.headers.get("Authorization")?.startsWith("Bearer ");
+    let getOrgId: string;
+
+    if (hasBearer) {
+      const mcpAuth = await requireMcpAuth(_request, "read");
+      if (mcpAuth instanceof NextResponse) return mcpAuth;
+      getOrgId = mcpAuth.orgId;
+    } else {
+      const authResult = await requireOrgAuth(orgId, "viewProject");
+      if (authResult instanceof NextResponse) return authResult;
+      getOrgId = authResult.orgId;
+    }
 
     const { data, error } = await supabase
       .from("layout_projects")
       .select("scanned_components, scan_source, last_scan_at, github_repo")
       .eq("id", projectId)
-      .eq("org_id", orgId)
+      .eq("org_id", getOrgId)
       .single();
 
     if (error || !data) {
