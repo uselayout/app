@@ -63,12 +63,14 @@ export default function StudioPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {[
-                    ["Colour styles", "Fill values resolved via node API, not just metadata"],
-                    ["Typography styles", "Font family, size, weight, line-height, letter-spacing as composites"],
-                    ["Effect styles", "Shadows, blur"],
-                    ["Component inventory", "Name, description, variant count, property definitions"],
+                    ["Colour styles", "Fill values resolved via node API, not just metadata. Includes gradients (linear, radial, conic with angle and all stops)"],
+                    ["Typography styles", "Font family, size, weight, line-height, letter-spacing, textCase, textDecoration, lineHeightPercent as composites"],
+                    ["Effect styles", "Shadows, blur effects (both filter and backdrop-filter)"],
+                    ["Component inventory", "Name, description, variant count, property definitions with defaults and preferred values"],
+                    ["Auto-layout patterns", "Stack direction, spacing, padding, alignment detected from component structures"],
                     ["Font declarations", "Family, weight, style. Google Fonts auto-detected in previews"],
-                    ["Variables", "Enterprise plans only. Gracefully skipped otherwise"],
+                    ["Variables & modes", "Variable collections with light/dark mode support. Alias resolution with cycle detection. Enterprise plans only for direct variable access; gracefully skipped otherwise"],
+                    ["Motion tokens", "Transition durations, timing functions, and easing values"],
                   ].map(([what, detail]) => (
                     <tr key={what} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium text-[#0a0a0a] whitespace-nowrap">
@@ -129,6 +131,13 @@ export default function StudioPage() {
           serverless. Self-hosted deployments (Coolify, Hetzner, Railway) work
           fine.
         </Callout>
+
+        <Callout type="warning">
+          If extraction reaches internal caps (e.g. very large design files with
+          hundreds of styles), amber truncation warnings appear in the progress
+          overlay showing exactly what was capped and at what count. The
+          extraction still completes with the data it captured.
+        </Callout>
       </section>
 
       {/* Studio Workspace */}
@@ -152,6 +161,24 @@ export default function StudioPage() {
               score, and saved components. Use this to verify what was extracted before
               generating layout.md. If something looks wrong, you can re-extract
               with different options.
+            </p>
+            <p className="text-base text-gray-600 leading-relaxed">
+              When your design system uses multiple modes (e.g. light and dark),
+              the Source Panel shows mode filter pills at the top of the token
+              list. Select a mode to see only tokens from that mode, or choose
+              All to see everything. Individual tokens display a mode badge
+              indicating which mode they belong to. Modes are preserved across
+              all export formats (CSS, JSON, Tailwind).
+            </p>
+            <p className="text-base text-gray-600 leading-relaxed">
+              If your codebase is connected via{" "}
+              <Link href="/docs/cli" className="text-gray-900 underline">
+                the CLI scanner
+              </Link>
+              , the Components tab shows a merged view of Figma components and
+              codebase components side by side. Each component displays its
+              source (Figma, Code, or both), import path, and Storybook story
+              count if detected. Icons are automatically filtered from the list.
             </p>
           </div>
 
@@ -220,7 +247,12 @@ export default function StudioPage() {
           <p className="text-base text-gray-600 leading-relaxed">
             Each generated variant shows a 0 to 100 health score measuring
             token faithfulness, component accuracy, and anti-pattern violations.
-            Aim for 80+ before exporting.
+            Hover the score badge to see a grouped breakdown by rule type:
+            colour token usage, spacing compliance, typography, accessibility,
+            motion tokens, and more. The score runs 12 compliance checks
+            covering hardcoded values, missing interactive states, semantic HTML,
+            and accessibility attributes. Aim for 80+ before exporting to
+            production.
           </p>
         </div>
 

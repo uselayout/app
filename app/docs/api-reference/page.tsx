@@ -601,6 +601,55 @@ export default function ApiReferencePage() {
         ))}
       </section>
 
+      {/* Compliance Rules Reference */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          Compliance Rules Reference
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            check_compliance
+          </code>{" "}
+          tool runs 12 rules against your code. Each rule returns violations
+          with line references and suggested fixes. You can run all rules at
+          once or target specific ones by ID.
+        </p>
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">Rule ID</th>
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">What It Checks</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {[
+                ["no-hardcoded-colours", "Flags hex, rgb, and hsl colour values that should reference design tokens instead"],
+                ["use-design-tokens", "Checks that CSS properties use var(--token) references rather than raw values"],
+                ["no-hardcoded-spacing", "Flags pixel spacing values that are not on the design system's spacing scale (e.g. 4px grid)"],
+                ["no-unknown-components", "Warns when code references component names not found in the design system inventory"],
+                ["spacing-compliance", "Validates that margin, padding, and gap values match the token scale"],
+                ["font-family-compliance", "Checks that font-family declarations match the design system's typography tokens"],
+                ["border-radius-compliance", "Validates that border-radius values use the design system's radius tokens"],
+                ["interactive-state-coverage", "Checks that interactive elements have hover, focus, and disabled states defined"],
+                ["accessibility-alt-text", "Flags img elements missing alt attributes"],
+                ["accessibility-button-label", "Flags button elements without accessible text content or aria-label"],
+                ["semantic-html", "Checks for semantic element usage (e.g. nav, main, section) instead of generic divs"],
+                ["motion-token-compliance", "Validates that transitions and animations reference motion tokens for duration and easing"],
+              ].map(([rule, desc]) => (
+                <tr key={rule} className="hover:bg-gray-50 align-top">
+                  <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap pt-3.5">
+                    {rule}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{desc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       {/* Prev / Next */}
       <nav className="flex items-center justify-between pt-8 border-t border-gray-200">
         {prev ? (
