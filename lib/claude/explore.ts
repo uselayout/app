@@ -63,6 +63,7 @@ Responsive Design (Mandatory)
 - Grid columns adapt: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3".
 - Hide/show elements per breakpoint when it improves the layout: "hidden md:block".
 - The component will be previewed at 375px, 768px, and 1280px — it must look intentional at ALL three.
+- NEVER mix inline style={{}} with Tailwind responsive classes on the same CSS property. Inline styles always override Tailwind at any breakpoint. WRONG: style={{ flexDirection: 'column' }} className="md:flex-row" — the md:flex-row will never apply. RIGHT: className="flex flex-col md:flex-row" — Tailwind handles both base and responsive states.
 - Navigation: MUST use a hamburger/mobile menu on mobile AND tablet. On base through md: (up to 1023px): show ONLY the logo and a hamburger icon — hide ALL nav links, CTA buttons, search bars, and secondary actions behind the hamburger menu. On lg: (1024px) and up: show full horizontal nav with CTAs. NEVER show nav links or buttons inline at 768px — they WILL overflow and squash together.
 - Mobile/tablet header rule: At 375px AND 768px the header must contain ONLY: logo (left) + hamburger icon (right). Everything else uses hidden lg:flex or hidden lg:block. No exceptions.
 
