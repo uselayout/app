@@ -15,6 +15,10 @@ interface ProjectRow {
   test_results: unknown | null;
   explorations: unknown | null;
   pending_canvas_image: string | null;
+  scanned_components: unknown | null;
+  scan_source: string | null;
+  last_scan_at: string | null;
+  github_repo: string | null;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -48,6 +52,12 @@ function rowToProject(row: ProjectRow): Project {
       ? (row.explorations as Project["explorations"])
       : undefined,
     pendingCanvasImage: row.pending_canvas_image ?? null,
+    scannedComponents: row.scanned_components
+      ? (row.scanned_components as Project["scannedComponents"])
+      : undefined,
+    scanSource: (row.scan_source as Project["scanSource"]) ?? undefined,
+    lastScanAt: (row.last_scan_at as string) ?? undefined,
+    githubRepo: (row.github_repo as string) ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -78,6 +88,10 @@ function projectToRow(
     test_results: null,
     explorations: project.explorations ?? null,
     pending_canvas_image: project.pendingCanvasImage ?? null,
+    scanned_components: project.scannedComponents ?? null,
+    scan_source: project.scanSource ?? null,
+    last_scan_at: project.lastScanAt ?? null,
+    github_repo: project.githubRepo ?? null,
     user_id: userId,
     updated_at: new Date().toISOString(),
   };
