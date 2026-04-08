@@ -23,7 +23,7 @@ export function ComponentsView({ extractedComponents, scannedComponents }: Compo
   const handleCopyImport = (name: string, importPath: string) => {
     const importStatement = `import { ${name} } from '${importPath}'`;
     copyToClipboard(importStatement);
-    setCopiedPath(importPath);
+    setCopiedPath(`${name}::${importPath}`);
     setTimeout(() => setCopiedPath(null), 1500);
   };
 
@@ -153,7 +153,7 @@ export function ComponentsView({ extractedComponents, scannedComponents }: Compo
                 className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                 title={`Copy: import { ${comp.name} } from '${comp.code.importPath}'`}
               >
-                {copiedPath === comp.code.importPath ? (
+                {copiedPath === `${comp.name}::${comp.code.importPath}` ? (
                   <Check className="h-3 w-3 text-emerald-400" />
                 ) : (
                   <Copy className="h-3 w-3 text-[var(--text-muted)]" />

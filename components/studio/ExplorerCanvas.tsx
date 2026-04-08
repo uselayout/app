@@ -486,7 +486,7 @@ export function ExplorerCanvas({
         generatingSessionRef.current = null;
       }
     },
-    [isGenerating, projectId, layoutMd, modelId, explorations, currentExploration, onUpdateExplorations, runGeneration, fetchUrlsFromPrompt]
+    [isGenerating, projectId, layoutMd, modelId, explorations, currentExploration, onUpdateExplorations, runGeneration, fetchUrlsFromPrompt, scannedComponents]
   );
 
   const handleRefine = useCallback(
@@ -548,7 +548,7 @@ export function ExplorerCanvas({
         generatingSessionRef.current = null;
       }
     },
-    [isGenerating, selectedVariant, currentExploration, projectId, layoutMd, explorations, runGeneration, fetchUrlsFromPrompt]
+    [isGenerating, selectedVariant, currentExploration, projectId, layoutMd, explorations, runGeneration, fetchUrlsFromPrompt, scannedComponents]
   );
 
   const handleRegenerate = useCallback(() => {
@@ -595,6 +595,9 @@ export function ExplorerCanvas({
 
       setSelectedVariantId(null);
 
+      const variantComponentContext = buildComponentContext(scannedComponents, undefined);
+      const variantEnrichedLayoutMd = (layoutMd ?? "") + variantComponentContext;
+
       try {
         await runGeneration(
           sessionId,
@@ -604,7 +607,7 @@ export function ExplorerCanvas({
           explorations,
           {
             prompt: feedback,
-            layoutMd,
+            layoutMd: variantEnrichedLayoutMd,
             variantCount: 1,
             projectId,
             baseCode: variant.code,
@@ -621,7 +624,7 @@ export function ExplorerCanvas({
         abortRef.current = null;
       }
     },
-    [isGenerating, currentExploration, projectId, layoutMd, explorations, runGeneration]
+    [isGenerating, currentExploration, projectId, layoutMd, explorations, runGeneration, scannedComponents]
   );
 
   const handleRateVariant = useCallback(

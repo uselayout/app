@@ -43,23 +43,18 @@ function buildDraftFile(entries: ChangelogEntry[]): string {
   return DRAFT_HEADER + `export const draftEntries: ChangelogEntry[] = [\n${entriesJson},\n];\n`;
 }
 
-function getISOWeek(): { weekId: string; label: string } {
+function getPublishDate(): { weekId: string; label: string } {
   const now = new Date();
-  const jan4 = new Date(now.getFullYear(), 0, 4);
-  const dayOfYear = Math.floor(
-    (now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000
-  );
-  const weekNum = Math.ceil((dayOfYear + jan4.getDay() + 1) / 7);
-  const weekId = `${now.getFullYear()}-W${String(weekNum).padStart(2, "0")}`;
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const weekId = `${year}-${month}-${day}`;
 
-  const day = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((day + 6) % 7));
   const months = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
   ];
-  const label = `Week of ${monday.getDate()} ${months[monday.getMonth()]} ${monday.getFullYear()}`;
+  const label = `${now.getDate()} ${months[now.getMonth()]} ${year}`;
 
   return { weekId, label };
 }
@@ -124,7 +119,7 @@ export function compileDraft(entries: ChangelogEntry[]): {
   summary: string;
   items: ChangelogItem[];
 } {
-  const { weekId, label } = getISOWeek();
+  const { weekId, label } = getPublishDate();
 
   const items: ChangelogItem[] = entries.map((e) => ({
     text: e.title,
