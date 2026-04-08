@@ -113,7 +113,7 @@ export async function fetchProjectById(id: string): Promise<Project | null> {
 export async function fetchAllProjectsSummary(orgId: string): Promise<Project[]> {
   const { data, error } = await supabase
     .from("layout_projects")
-    .select("id, org_id, name, source_type, source_url, token_count, health_score, pending_canvas_image, user_id, created_at, updated_at")
+    .select("id, org_id, name, source_type, source_url, token_count, health_score, pending_canvas_image, scanned_components, scan_source, last_scan_at, github_repo, user_id, created_at, updated_at")
     .eq("org_id", orgId)
     .order("updated_at", { ascending: false });
 

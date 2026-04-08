@@ -115,23 +115,37 @@ export async function POST(request: NextRequest, { params }: Params) {
     const extractedComponents = (extractionData?.components ?? []) as Array<{
       name: string;
     }>;
-    const figmaNames = extractedComponents.map((c) => c.name.toLowerCase());
+    // Normalise names for matching: lowercase, remove hyphens/spaces/slashes
+    function normaliseName(name: string): string {
+      return name.toLowerCase().replace(/[/\-\s]+/g, "");
+    }
+
+    const figmaNormalised = extractedComponents.map((c) => ({
+      original: c.name,
+      normalised: normaliseName(c.name),
+    }));
 
     // Match scanned components against extracted (Figma) components
     const matched = components.map((c) => {
-      const nameLower = c.name.toLowerCase();
-      const exactMatch = figmaNames.find((f) => f === nameLower);
-      const partialMatch = !exactMatch
-        ? figmaNames.find(
-            (f) => f.includes(nameLower) || nameLower.includes(f)
-          )
-        : undefined;
+      const codeNorm = normaliseName(c.name);
 
-      return {
-        ...c,
-        designSystemMatch: exactMatch ?? partialMatch ?? undefined,
-        matchConfidence: exactMatch ? 1.0 : partialMatch ? 0.5 : undefined,
-      };
+      // Priority 1: Exact normalised match
+      const exact = figmaNormalised.find((f) => f.normalised === codeNorm);
+      if (exact) {
+        return { ...c, designSystemMatch: exact.original, matchConfidence: 1.0 };
+      }
+
+      // Priority 2: One starts with the other (min 4 chars to prevent "tab" matching "table")
+      const startsWith = figmaNormalised.find((f) => {
+        const shorter = f.normalised.length < codeNorm.length ? f.normalised : codeNorm;
+        const longer = f.normalised.length < codeNorm.length ? codeNorm : f.normalised;
+        return shorter.length >= 4 && longer.startsWith(shorter);
+      });
+      if (startsWith) {
+        return { ...c, designSystemMatch: startsWith.original, matchConfidence: 0.7 };
+      }
+
+      return { ...c, designSystemMatch: undefined, matchConfidence: undefined };
     });
 
     // Store on project

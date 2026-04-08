@@ -31,8 +31,13 @@ export function ComponentsView({ extractedComponents, scannedComponents }: Compo
     const result: MergedComponent[] = [];
     const usedScanned = new Set<string>();
 
+    // Filter out Figma icon components (not real UI components)
+    const filteredExtracted = extractedComponents.filter(
+      (c) => !c.name.toLowerCase().startsWith("icon/") && !c.name.toLowerCase().startsWith("icon\\")
+    );
+
     // Start with Figma components
-    for (const figma of extractedComponents) {
+    for (const figma of filteredExtracted) {
       const match = scannedComponents.find(
         (s) =>
           s.designSystemMatch?.toLowerCase() === figma.name.toLowerCase() ||
