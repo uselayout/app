@@ -244,7 +244,7 @@ function SourcePanelInner({
           <TokensTab tokens={extractionData.tokens} cssVariables={extractionData.cssVariables} projectId={projectId} sourceType={extractionData.sourceType} />
         )}
         {activeTab === "components" && extractionData && (
-          <ComponentsTab components={extractionData.components} sourceType={extractionData.sourceType} />
+          <ComponentsTab components={extractionData.components} sourceType={extractionData.sourceType} sourceUrl={extractionData.sourceUrl} />
         )}
         {activeTab === "screenshots" && extractionData && (
           <ScreenshotsTab screenshots={extractionData.screenshots} onDelete={handleDeleteScreenshot} onAdd={handleAddScreenshot} />
@@ -1105,11 +1105,18 @@ function TokenRow({
 function ComponentsTab({
   components,
   sourceType,
+  sourceUrl,
 }: {
   components: ExtractedComponent[];
   sourceType?: string;
+  sourceUrl?: string;
 }) {
-  if (components.length === 0) {
+  // Filter out Figma icon components
+  const filteredComponents = components.filter(
+    (c) => !c.name.toLowerCase().startsWith("icon/") && !c.name.toLowerCase().startsWith("icon\\")
+  );
+
+  if (filteredComponents.length === 0) {
     return (
       <div className="p-4 space-y-2">
         <p className="text-xs text-[var(--text-muted)]">
@@ -1124,45 +1131,66 @@ function ComponentsTab({
     );
   }
 
+  // Build Figma component URL if we have the source URL
+  const figmaFileKey = sourceUrl?.match(/figma\.com\/(?:file|design)\/([a-zA-Z0-9]+)/)?.[1];
+
   return (
     <div className="p-2 space-y-1">
-      {components.map((component) => (
-        <div
-          key={component.name}
-          className="flex items-center gap-2 rounded px-2 py-2 transition-colors hover:bg-[var(--bg-hover)]"
-        >
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="truncate text-xs font-medium text-[var(--text-primary)]">
-                {component.name}
-              </span>
-              {component.variantCount > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="bg-[var(--bg-elevated)] text-[var(--text-muted)] text-[10px] px-1.5 py-0"
-                >
-                  {component.variantCount} variants
-                </Badge>
+      {filteredComponents.map((component) => {
+        const componentUrl = figmaFileKey
+          ? `https://www.figma.com/design/${figmaFileKey}?node-id=${encodeURIComponent(component.name)}`
+          : undefined;
+
+        return (
+          <div
+            key={component.name}
+            className="flex items-center gap-2 rounded px-2 py-2 transition-colors hover:bg-[var(--bg-hover)]"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="truncate text-xs font-medium text-[var(--text-primary)]">
+                  {component.name}
+                </span>
+                {component.variantCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-[var(--bg-elevated)] text-[var(--text-muted)] text-[10px] px-1.5 py-0"
+                  >
+                    {component.variantCount} variants
+                  </Badge>
+                )}
+              </div>
+              {component.description && (
+                <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
+                  {component.description}
+                </p>
+              )}
+              {component.properties && Object.keys(component.properties).length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {Object.entries(component.properties).map(([key, prop]) => (
+                    <span key={key} className="rounded bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] font-mono">
+                      {key}: {prop.type}{prop.defaultValue ? ` = ${prop.defaultValue}` : ""}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
-            {component.description && (
-              <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
-                {component.description}
-              </p>
-            )}
-            {component.properties && Object.keys(component.properties).length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-1">
-                {Object.entries(component.properties).map(([key, prop]) => (
-                  <span key={key} className="rounded bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] font-mono">
-                    {key}: {prop.type}{prop.defaultValue ? ` = ${prop.defaultValue}` : ""}
-                  </span>
-                ))}
-              </div>
+            {componentUrl ? (
+              <a
+                href={componentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0"
+                title={`Open ${component.name} in Figma`}
+              >
+                <ExternalLink className="h-3 w-3 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors" />
+              </a>
+            ) : (
+              <ExternalLink className="h-3 w-3 shrink-0 text-[var(--text-muted)] opacity-30" />
             )}
           </div>
-          <ExternalLink className="h-3 w-3 shrink-0 text-[var(--text-muted)]" />
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

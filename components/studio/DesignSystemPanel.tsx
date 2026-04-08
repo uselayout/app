@@ -186,7 +186,7 @@ export function DesignSystemPanel({
           const count = section.id === "screenshots"
             ? screenshots.length
             : section.id === "components"
-              ? extractedComponents.length + scannedComponents.length
+              ? extractedComponents.filter(c => !c.name.toLowerCase().startsWith("icon/")).length + scannedComponents.length
               : section.id === "colours"
                 ? tokens.colors.length
                 : section.id === "typography"
@@ -305,7 +305,7 @@ export function DesignSystemPanel({
         <DesignSystemSection
           id="components"
           title="Components"
-          count={extractedComponents.length + scannedComponents.length}
+          count={extractedComponents.filter(c => !c.name.toLowerCase().startsWith("icon/")).length + scannedComponents.length}
         >
           {extractedComponents.length === 0 && scannedComponents.length === 0 ? (
             <div className="px-4 py-6 text-center space-y-3">
