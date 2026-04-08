@@ -77,9 +77,13 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       const send = (data: Record<string, unknown>) => {
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
-        );
+        try {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
+          );
+        } catch {
+          // Controller closed — client disconnected
+        }
       };
 
       // Heartbeat keeps the SSE connection alive while queued
