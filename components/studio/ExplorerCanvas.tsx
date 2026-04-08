@@ -25,7 +25,37 @@ import { useOnboardingStore } from "@/lib/store/onboarding";
 import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 import { DEFAULT_EXPLORE_MODEL, AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
-import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont, ComparisonResult } from "@/lib/types";
+import { useProjectStore } from "@/lib/store/project";
+import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont, ComparisonResult, ScannedComponent } from "@/lib/types";
+
+// Build component context string from scanned + saved components
+function buildComponentContext(
+  scannedComponents: ScannedComponent[] | undefined,
+  savedComponents: Array<{ name: string; description: string | null; code: string }> | undefined
+): string {
+  const sections: string[] = [];
+
+  if (scannedComponents && scannedComponents.length > 0) {
+    const lines = scannedComponents
+      .slice(0, 50)
+      .map((c) => {
+        const propsStr = c.props.length > 0 ? ` props: ${c.props.join(", ")}` : "";
+        return `- ${c.name} (import from '${c.importPath}')${propsStr}`;
+      });
+    sections.push(`### From Codebase\n${lines.join("\n")}`);
+  }
+
+  if (savedComponents && savedComponents.length > 0) {
+    const lines = savedComponents
+      .slice(0, 20)
+      .map((c) => `- ${c.name}${c.description ? `: ${c.description}` : ""}`);
+    sections.push(`### From Saved Library\n${lines.join("\n")}`);
+  }
+
+  if (sections.length === 0) return "";
+
+  return `\n\n## Existing Components (REUSE these, do NOT recreate)\n\n${sections.join("\n\n")}\n\nWhen building UI, import existing components instead of generating new ones. Use the exact import paths shown above.`;
+}
 
 interface ExplorerCanvasProps {
   projectId: string;
@@ -60,6 +90,11 @@ export function ExplorerCanvas({
   iconPacks,
   sourceUrl,
 }: ExplorerCanvasProps) {
+  // Scanned codebase components from the project store
+  const scannedComponents = useProjectStore(
+    (s) => s.projects.find((p) => p.id === projectId)?.scannedComponents
+  );
+
   // Parse design tokens from layoutMd for the inspector's token suggestions
   const allDesignTokens: ExtractedToken[] = useMemo(() => {
     if (!layoutMd) return [];
@@ -425,6 +460,8 @@ export function ExplorerCanvas({
       }
 
       generatingSessionRef.current = sessionId;
+      const componentContext = buildComponentContext(scannedComponents, undefined);
+      const enrichedLayoutMd = (layoutMd ?? "") + componentContext;
       try {
         await runGeneration(
           sessionId,
@@ -432,7 +469,7 @@ export function ExplorerCanvas({
           batchId,
           batchPrompt,
           updatedExplorations,
-          { prompt: resolvedPrompt, layoutMd, variantCount, projectId, imageDataUrl, contextFiles: resolvedContextFiles, iconPacks },
+          { prompt: resolvedPrompt, layoutMd: enrichedLayoutMd, variantCount, projectId, imageDataUrl, contextFiles: resolvedContextFiles, iconPacks },
           variantCount,
         );
       } catch (err) {
@@ -478,6 +515,8 @@ export function ExplorerCanvas({
       setSelectedVariantId(null);
       generatingSessionRef.current = sessionId;
 
+      const refineComponentContext = buildComponentContext(scannedComponents, undefined);
+      const refineEnrichedLayoutMd = (layoutMd ?? "") + refineComponentContext;
       try {
         await runGeneration(
           sessionId,
@@ -487,7 +526,7 @@ export function ExplorerCanvas({
           withTracking,
           {
             prompt: resolvedPrompt,
-            layoutMd,
+            layoutMd: refineEnrichedLayoutMd,
             variantCount,
             projectId,
             baseCode: selectedVariant.code,

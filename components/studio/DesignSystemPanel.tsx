@@ -197,7 +197,8 @@ export function DesignSystemPanel({
                       ? tokens.radius.length
                       : tokens.effects.length;
 
-          if (count === 0) return null;
+          // Always show the Components nav item even when empty
+          if (count === 0 && section.id !== "components") return null;
 
           return (
             <button
@@ -206,7 +207,7 @@ export function DesignSystemPanel({
               className="rounded-md px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             >
               {section.label}
-              <span className="ml-1.5 text-[var(--text-muted)]">{count}</span>
+              {count > 0 && <span className="ml-1.5 text-[var(--text-muted)]">{count}</span>}
             </button>
           );
         })}
@@ -301,18 +302,33 @@ export function DesignSystemPanel({
           </DesignSystemSection>
         )}
 
-        {(extractedComponents.length > 0 || scannedComponents.length > 0) && (
-          <DesignSystemSection
-            id="components"
-            title="Components"
-            count={extractedComponents.length + scannedComponents.length}
-          >
+        <DesignSystemSection
+          id="components"
+          title="Components"
+          count={extractedComponents.length + scannedComponents.length}
+        >
+          {extractedComponents.length === 0 && scannedComponents.length === 0 ? (
+            <div className="px-4 py-6 text-center space-y-3">
+              <p className="text-xs text-[var(--text-muted)]">
+                No codebase components detected yet.
+              </p>
+              <div className="rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2">
+                <code className="text-[10px] font-mono text-[var(--text-secondary)]">
+                  npx @layoutdesign/context scan --sync
+                </code>
+              </div>
+              <p className="text-[10px] text-[var(--text-muted)]">
+                Run this in your project to detect existing components.
+                AI agents will then reuse them instead of generating duplicates.
+              </p>
+            </div>
+          ) : (
             <ComponentsView
               extractedComponents={extractedComponents}
               scannedComponents={scannedComponents}
             />
-          </DesignSystemSection>
-        )}
+          )}
+        </DesignSystemSection>
 
         {screenshots.length > 0 && (
           <DesignSystemSection id="screenshots" title="Screenshots" count={screenshots.length}>

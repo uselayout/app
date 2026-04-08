@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
-import { Check, Minus } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, Minus, Copy } from "lucide-react";
+import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import type { ExtractedComponent, ScannedComponent } from "@/lib/types";
 
 interface ComponentsViewProps {
@@ -17,6 +18,15 @@ interface MergedComponent {
 }
 
 export function ComponentsView({ extractedComponents, scannedComponents }: ComponentsViewProps) {
+  const [copiedPath, setCopiedPath] = useState<string | null>(null);
+
+  const handleCopyImport = (name: string, importPath: string) => {
+    const importStatement = `import { ${name} } from '${importPath}'`;
+    copyToClipboard(importStatement);
+    setCopiedPath(importPath);
+    setTimeout(() => setCopiedPath(null), 1500);
+  };
+
   const merged = useMemo(() => {
     const result: MergedComponent[] = [];
     const usedScanned = new Set<string>();
@@ -72,7 +82,7 @@ export function ComponentsView({ extractedComponents, scannedComponents }: Compo
   return (
     <div className="space-y-1">
       {/* Header row */}
-      <div className="grid grid-cols-[1fr_60px_60px_1fr] gap-2 px-2 py-1">
+      <div className="grid grid-cols-[1fr_60px_60px_1fr_20px] gap-2 px-2 py-1">
         <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
           Component
         </span>
@@ -85,12 +95,13 @@ export function ComponentsView({ extractedComponents, scannedComponents }: Compo
         <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
           Details
         </span>
+        <span />
       </div>
 
       {merged.map((comp) => (
         <div
           key={comp.name + (comp.code?.filePath ?? "")}
-          className="grid grid-cols-[1fr_60px_60px_1fr] gap-2 items-center rounded px-2 py-1.5 hover:bg-[var(--bg-hover)] transition-colors"
+          className="group grid grid-cols-[1fr_60px_60px_1fr_20px] gap-2 items-center rounded px-2 py-1.5 hover:bg-[var(--bg-hover)] transition-colors"
         >
           <span className="text-xs font-medium text-[var(--text-primary)] truncate">
             {comp.name}
@@ -129,6 +140,25 @@ export function ComponentsView({ extractedComponents, scannedComponents }: Compo
                 {comp.code.props.slice(0, 5).join(", ")}
                 {comp.code.props.length > 5 ? "..." : ""}
               </span>
+            )}
+          </div>
+
+          <div className="flex items-center justify-center">
+            {comp.code && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyImport(comp.name, comp.code!.importPath);
+                }}
+                className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                title={`Copy: import { ${comp.name} } from '${comp.code.importPath}'`}
+              >
+                {copiedPath === comp.code.importPath ? (
+                  <Check className="h-3 w-3 text-emerald-400" />
+                ) : (
+                  <Copy className="h-3 w-3 text-[var(--text-muted)]" />
+                )}
+              </button>
             )}
           </div>
         </div>

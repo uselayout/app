@@ -141,6 +141,9 @@ export function PromoteToLibraryModal({
                 </button>
               ))}
             </div>
+            <p className="text-[10px] text-[var(--text-muted)] mt-2 leading-relaxed">
+              Tip: save individual components (Button, Card) separately for better reuse. Full pages work best as layout references.
+            </p>
           </div>
 
           {/* Name */}

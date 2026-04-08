@@ -324,6 +324,23 @@ async function handleListComponents(
     category,
   });
 
+  // Also include scanned codebase components if projectId provided
+  const projectId = typeof params.projectId === "string" ? params.projectId : null;
+  let scannedComponents: Array<Record<string, unknown>> = [];
+
+  if (projectId) {
+    const { data: projectData } = await supabase
+      .from("layout_projects")
+      .select("scanned_components")
+      .eq("id", projectId)
+      .eq("org_id", orgId)
+      .single();
+
+    if (projectData?.scanned_components) {
+      scannedComponents = projectData.scanned_components as Array<Record<string, unknown>>;
+    }
+  }
+
   return {
     result: {
       components: components.map((c) => ({
@@ -338,6 +355,13 @@ async function handleListComponents(
         statesCount: c.states.length,
         version: c.version,
         codePreview: c.code.slice(0, 200) + (c.code.length > 200 ? "..." : ""),
+      })),
+      codebaseComponents: scannedComponents.map((c) => ({
+        name: c.name,
+        filePath: c.filePath,
+        props: c.props,
+        source: c.source,
+        importPath: c.importPath,
       })),
     },
   };
