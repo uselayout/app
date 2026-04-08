@@ -74,14 +74,18 @@ export function buildCssTokenBlock(
   try {
     const vars = new Map<string, string>();
 
+    // Valid CSS custom property names: only letters, numbers, hyphens, underscores after --
+    const validNameRe = /^--[a-zA-Z0-9_-]+$/;
+    const hasBadChars = (s: string) => s.includes("<") || s.includes(">") || s.includes("}") || s.includes("{");
+
     // 1. Raw CSS variables from extraction (highest priority — original names)
     if (cssVariables) {
       for (const [name, value] of Object.entries(cssVariables)) {
-        // Skip values with angle brackets — they break the HTML <style> tag
-        if (value.includes("<") || value.includes(">")) continue;
-        // Skip values with unmatched braces that could break CSS parsing
-        if (value.includes("}")) continue;
         const varName = name.startsWith("--") ? name : `--${name}`;
+        // Skip malformed names (e.g. "--size);width: var(--size)" from broken extraction)
+        if (!validNameRe.test(varName)) continue;
+        // Skip values that could break HTML/CSS parsing
+        if (hasBadChars(value)) continue;
         vars.set(varName, value);
       }
     }
@@ -97,11 +101,12 @@ export function buildCssTokenBlock(
         ...(tokens.motion ?? []),
       ];
       for (const t of allTokens) {
-        if (t.cssVariable && t.value && !t.value.includes("<") && !t.value.includes(">") && !t.value.includes("}")) {
-          const varName = t.cssVariable.startsWith("--") ? t.cssVariable : `--${t.cssVariable}`;
-          if (!vars.has(varName)) {
-            vars.set(varName, t.value);
-          }
+        if (!t.cssVariable || !t.value) continue;
+        const varName = t.cssVariable.startsWith("--") ? t.cssVariable : `--${t.cssVariable}`;
+        if (!validNameRe.test(varName)) continue;
+        if (hasBadChars(t.value)) continue;
+        if (!vars.has(varName)) {
+          vars.set(varName, t.value);
         }
       }
     }
