@@ -208,6 +208,7 @@ window.addEventListener('load',function(){
     var moduleCode=${jsStr};
     var s=document.createElement('script');
     s.textContent=[
+      'var {useState,useEffect,useRef,useCallback,useMemo,useContext,useReducer,useId,useLayoutEffect,createContext,forwardRef,memo,Fragment,Children,cloneElement,isValidElement,lazy,Suspense,startTransition,useTransition,useDeferredValue}=React;',
       'var _exp={};',
       'var _motionProxy=new Proxy({},{get:function(_,tag){return function(props){return React.createElement(tag,props)}}});',
       'var _framerShim={motion:_motionProxy,AnimatePresence:function(p){return React.createElement(React.Fragment,null,p.children)}};',
