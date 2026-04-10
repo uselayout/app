@@ -31,9 +31,14 @@ export async function sendEmail({ to, subject, html, from, replyTo, headers }: S
   const emailMatch = fromAddr.match(/<(.+)>/);
   const resolvedReplyTo = replyTo || (emailMatch ? emailMatch[1] : fromAddr);
 
+  // Resend requires an array for multiple recipients
+  const toAddresses = to.includes(",")
+    ? to.split(",").map((e) => e.trim()).filter(Boolean)
+    : to;
+
   const { data, error } = await resend.emails.send({
     from: fromAddr,
-    to,
+    to: toAddresses,
     subject,
     html,
     replyTo: resolvedReplyTo,
