@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
-import { forgetPassword } from "@/lib/auth-client";
+import { requestPasswordReset } from "@/lib/auth-client";
 
 export function ForgotPasswordClient() {
   return (
@@ -24,7 +24,7 @@ function ForgotPasswordContent() {
     setIsLoading(true);
 
     try {
-      const { error: err } = await forgetPassword({
+      const { error: err } = await requestPasswordReset({
         email,
         redirectTo: "/reset-password",
       });
