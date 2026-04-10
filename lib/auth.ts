@@ -1,5 +1,7 @@
 import { betterAuth } from "better-auth";
 import { Pool } from "pg";
+import { sendEmail } from "@/lib/email/send";
+import { resetPasswordEmailHtml } from "@/lib/email/templates/reset-password";
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
@@ -27,6 +29,16 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
+    sendResetPassword: async ({ user, url }) => {
+      if (process.env.NODE_ENV === "development") {
+        console.log(`[auth] Password reset URL for ${user.email}: ${url}`);
+      }
+      void sendEmail({
+        to: user.email,
+        subject: "Reset your Layout password",
+        html: resetPasswordEmailHtml(url),
+      });
+    },
   },
   session: {
     modelName: "layout_session",

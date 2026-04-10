@@ -148,6 +148,13 @@ function LoginContent() {
                 className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors"
               />
 
+              <Link
+                href="/forgot-password"
+                className="text-[12px] text-[#99a1af] hover:text-white transition-colors self-end -mt-1"
+              >
+                Forgot password?
+              </Link>
+
               {error && (
                 <p className="rounded-[6px] bg-red-500/10 border border-red-500/20 px-3 py-2 text-[12px] text-red-400">
                   {error}

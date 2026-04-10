@@ -4,7 +4,7 @@ import { isMaintenanceMode } from "@/lib/maintenance";
 
 // All /api/ routes handle their own auth and return JSON 401 responses.
 // Redirecting them to /login would return HTML, breaking client-side JSON parsing.
-const PUBLIC_PATHS = ["/login", "/signup", "/request-access", "/api/", "/docs", "/pricing", "/invite", "/showcase", "/terms", "/privacy", "/changelog", "/roadmap"];
+const PUBLIC_PATHS = ["/login", "/signup", "/request-access", "/forgot-password", "/reset-password", "/api/", "/docs", "/pricing", "/invite", "/showcase", "/terms", "/privacy", "/changelog", "/roadmap"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
