@@ -1085,7 +1085,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                                 </span>
                               )}
                               {actions.length > 0 && (
-                                <div className="relative">
+                                <div className="relative" data-email-dropdown>
                                   <div className="flex items-center">
                                     <button
                                       onClick={() => void handleResend(row, actions[0].type, actions[0].label)}
