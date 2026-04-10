@@ -30,14 +30,13 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false,
     sendResetPassword: async ({ user, url }) => {
-      if (process.env.NODE_ENV === "development") {
-        console.log(`[auth] Password reset URL for ${user.email}: ${url}`);
-      }
-      void sendEmail({
+      console.log(`[auth] Sending password reset email to ${user.email}`);
+      const result = await sendEmail({
         to: user.email,
         subject: "Reset your Layout password",
         html: resetPasswordEmailHtml(url),
       });
+      console.log(`[auth] Password reset email result:`, JSON.stringify(result));
     },
   },
   session: {
