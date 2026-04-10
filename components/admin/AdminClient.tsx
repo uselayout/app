@@ -703,9 +703,9 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
     if (row.status !== "approved" || row.signedUp) return [];
     const types = getEmailTypes(row);
     const hasWelcome = types.includes("welcome") || row.inviteCode != null;
-    if (types.includes("final_reminder")) return [];
-    if (types.includes("reminder")) return [{ type: "final_reminder", label: "Send final reminder" }];
-    if (hasWelcome) return [{ type: "reminder", label: "Send reminder" }];
+    if (types.includes("final_reminder")) return [{ type: "welcome", label: "Resend welcome" }];
+    if (types.includes("reminder")) return [{ type: "final_reminder", label: "Send final reminder" }, { type: "welcome", label: "Resend welcome" }];
+    if (hasWelcome) return [{ type: "reminder", label: "Send reminder" }, { type: "welcome", label: "Resend welcome" }];
     return [{ type: "welcome", label: "Send welcome" }];
   };
 
@@ -1085,20 +1085,62 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                                 </span>
                               )}
                               {actions.length > 0 && (
-                                <button
-                                  onClick={() => void handleResend(row, actions[0].type, actions[0].label)}
-                                  disabled={resending === row.id}
-                                  className="px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap"
-                                  style={{
-                                    background: "rgba(96,165,250,0.1)",
-                                    color: "#60a5fa",
-                                    border: "1px solid rgba(96,165,250,0.2)",
-                                    opacity: resending === row.id ? 0.5 : 1,
-                                    cursor: resending === row.id ? "not-allowed" : "pointer",
-                                  }}
-                                >
-                                  {resending === row.id ? "Sending..." : actions[0].label}
-                                </button>
+                                <div className="relative">
+                                  <div className="flex items-center">
+                                    <button
+                                      onClick={() => void handleResend(row, actions[0].type, actions[0].label)}
+                                      disabled={resending === row.id}
+                                      className="px-3 py-1 rounded-l-md text-xs font-medium transition-all whitespace-nowrap"
+                                      style={{
+                                        background: "rgba(96,165,250,0.1)",
+                                        color: "#60a5fa",
+                                        border: "1px solid rgba(96,165,250,0.2)",
+                                        borderRight: actions.length > 1 ? "none" : undefined,
+                                        borderRadius: actions.length > 1 ? "6px 0 0 6px" : "6px",
+                                        opacity: resending === row.id ? 0.5 : 1,
+                                        cursor: resending === row.id ? "not-allowed" : "pointer",
+                                      }}
+                                    >
+                                      {resending === row.id ? "Sending..." : actions[0].label}
+                                    </button>
+                                    {actions.length > 1 && (
+                                      <button
+                                        onClick={() => setOpenDropdown(openDropdown === row.id ? null : row.id)}
+                                        className="px-1.5 py-1 rounded-r-md text-xs transition-all"
+                                        style={{
+                                          background: "rgba(96,165,250,0.1)",
+                                          color: "#60a5fa",
+                                          border: "1px solid rgba(96,165,250,0.2)",
+                                          borderLeft: "1px solid rgba(96,165,250,0.3)",
+                                          cursor: "pointer",
+                                        }}
+                                      >
+                                        ▾
+                                      </button>
+                                    )}
+                                  </div>
+                                  {openDropdown === row.id && actions.length > 1 && (
+                                    <div
+                                      className="absolute right-0 top-full mt-1 z-50 rounded-md py-1"
+                                      style={{
+                                        background: "var(--bg-elevated)",
+                                        border: "1px solid var(--studio-border-strong)",
+                                        minWidth: "140px",
+                                      }}
+                                    >
+                                      {actions.slice(1).map((action) => (
+                                        <button
+                                          key={action.type}
+                                          onClick={() => void handleResend(row, action.type, action.label)}
+                                          className="w-full text-left px-3 py-1.5 text-xs transition-colors hover:bg-[var(--bg-hover)]"
+                                          style={{ color: "#60a5fa" }}
+                                        >
+                                          {action.label}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
                           );
