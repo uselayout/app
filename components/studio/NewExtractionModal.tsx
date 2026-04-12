@@ -92,7 +92,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/95 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
       <div className="relative z-10 w-full max-w-lg rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] p-6 shadow-[0_0_80px_rgba(0,0,0,0.6)]">

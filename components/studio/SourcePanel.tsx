@@ -1283,7 +1283,7 @@ function ScreenshotsTab({
 
       {lightboxIdx !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
           onClick={() => setLightboxIdx(null)}
         >
           <button

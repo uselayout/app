@@ -30,7 +30,7 @@ export function ResponsivePreview({ variant, onClose, cssTokenBlock }: Responsiv
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/60 backdrop-blur-sm">
       {/* Header */}
       <div className="relative flex items-center border-b border-[var(--studio-border)] bg-[var(--bg-panel)] px-5 py-3">
         {/* Left — title */}

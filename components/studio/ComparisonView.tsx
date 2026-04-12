@@ -180,7 +180,7 @@ export function ComparisonView({
   }, [prompt, layoutMd, baseCode, imageDataUrl, contextFiles, savedResult]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[var(--bg-app)]/95 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/60 backdrop-blur-sm">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--studio-border)] bg-[var(--bg-panel)] px-5 py-3">
         <div>

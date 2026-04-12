@@ -107,7 +107,7 @@ export function FigmaImportModal({
   }, [changes, onUpdateLayoutMd]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="relative w-full max-w-xl rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-panel)] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-5 py-4">

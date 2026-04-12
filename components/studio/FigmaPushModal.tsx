@@ -64,7 +64,7 @@ export function FigmaPushModal({
   }, [figmaUrl, selectedViewports, onPushComplete]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className={`relative w-full rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] shadow-2xl ${step === "done" && parseFigmaUrl(figmaUrl) ? "max-w-2xl" : "max-w-lg"}`}>
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--studio-border)] px-5 py-4">
