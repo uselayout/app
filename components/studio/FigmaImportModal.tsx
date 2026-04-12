@@ -312,7 +312,7 @@ function ChangeRow({
   const typeColours: Record<string, string> = {
     colour: "bg-violet-500/15 text-violet-400",
     typography: "bg-sky-500/15 text-sky-400",
-    spacing: "bg-amber-500/15 text-amber-400",
+    spacing: "bg-[var(--status-warning)]/15 text-[var(--status-warning)]",
     layout: "bg-emerald-500/15 text-emerald-400",
     content: "bg-rose-500/15 text-rose-400",
   };

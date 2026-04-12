@@ -913,9 +913,9 @@ export function ExplorerCanvas({
 
       {/* Key-loss warning banner */}
       {hasLostKeys && (
-        <div className="mx-4 mt-4 flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-          <KeyRound size={14} className="mt-0.5 shrink-0 text-amber-400" />
-          <p className="flex-1 text-xs text-amber-300">
+        <div className="mx-4 mt-4 flex items-start gap-2.5 rounded-lg border border-[var(--status-warning)]/20 bg-[var(--status-warning)]/10 px-4 py-3">
+          <KeyRound size={14} className="mt-0.5 shrink-0 text-[var(--status-warning)]" />
+          <p className="flex-1 text-xs text-[var(--status-warning)]">
             Your {lostKeys.map((k) => k.charAt(0).toUpperCase() + k.slice(1)).join(" and ")} API {lostKeys.length === 1 ? "key is" : "keys are"} no longer available.
             This can happen when switching browser windows or profiles.
             {orgSlug && (
@@ -923,7 +923,7 @@ export function ExplorerCanvas({
                 {" "}
                 <Link
                   href={`/${orgSlug}/settings/api-keys`}
-                  className="underline text-amber-200 hover:text-amber-100"
+                  className="underline text-[var(--status-warning)] hover:text-[var(--status-warning)]"
                 >
                   Re-add them in Settings
                 </Link>
@@ -932,7 +932,7 @@ export function ExplorerCanvas({
           </p>
           <button
             onClick={dismissKeyLoss}
-            className="shrink-0 text-amber-400 hover:text-amber-300 transition-colors"
+            className="shrink-0 text-[var(--status-warning)] hover:text-[var(--status-warning)] transition-colors"
           >
             <X size={14} />
           </button>
@@ -1255,11 +1255,11 @@ export function ExplorerCanvas({
             )}
 
             {imageNotice && !isProcessingImages && (
-              <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2.5">
-                <span className="text-xs text-amber-400">{imageNotice}</span>
+              <div className="flex items-center gap-2 rounded-lg border border-[var(--status-warning)]/30 bg-[var(--status-warning)]/10 px-4 py-2.5">
+                <span className="text-xs text-[var(--status-warning)]">{imageNotice}</span>
                 <button
                   onClick={() => setImageNotice(null)}
-                  className="ml-auto text-amber-400/60 hover:text-amber-400 transition-colors"
+                  className="ml-auto text-[var(--status-warning)]/60 hover:text-[var(--status-warning)] transition-colors"
                 >
                   <X size={14} />
                 </button>

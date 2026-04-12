@@ -139,7 +139,7 @@ export function ComponentsView({ extractedComponents, scannedComponents }: Compo
               </span>
             )}
             {comp.figma && !comp.code && (
-              <span className="text-[10px] text-amber-400/70">Not built yet</span>
+              <span className="text-[10px] text-[var(--status-warning)]/70">Not built yet</span>
             )}
             {comp.code && comp.code.props.length > 0 && (
               <span className="text-[9px] text-[var(--text-muted)] opacity-70">

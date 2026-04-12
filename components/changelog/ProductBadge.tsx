@@ -21,8 +21,8 @@ const productConfig: Record<
   },
   "chrome-extension": {
     label: "Chrome Extension",
-    bg: "bg-amber-500/15",
-    text: "text-amber-400",
+    bg: "bg-[var(--status-warning)]/15",
+    text: "text-[var(--status-warning)]",
   },
 };
 

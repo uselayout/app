@@ -17,19 +17,19 @@ interface CompletenessPanelProps {
 
 function scoreColour(score: number): string {
   if (score >= 70) return 'text-emerald-400';
-  if (score >= 40) return 'text-amber-400';
+  if (score >= 40) return 'text-[var(--status-warning)]';
   return 'text-red-400';
 }
 
 function scoreBarColour(score: number): string {
   if (score >= 70) return 'bg-emerald-400';
-  if (score >= 40) return 'bg-amber-400';
+  if (score >= 40) return 'bg-[var(--status-warning)]';
   return 'bg-red-400';
 }
 
 function scoreStrokeColour(score: number): string {
   if (score >= 70) return '#34d399'; // emerald-400
-  if (score >= 40) return '#fbbf24'; // amber-400
+  if (score >= 40) return 'var(--status-warning)';
   return '#f87171'; // red-400
 }
 

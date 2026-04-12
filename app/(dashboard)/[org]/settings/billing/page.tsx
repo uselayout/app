@@ -49,7 +49,7 @@ const TIER_ALLOCATIONS: Record<string, { layoutMd: number; aiQuery: number }> = 
 
 const STATUS_STYLES: Record<string, string> = {
   active: "bg-emerald-500/10 text-emerald-400",
-  past_due: "bg-amber-500/10 text-amber-400",
+  past_due: "bg-[var(--status-warning)]/10 text-[var(--status-warning)]",
   cancelled: "bg-red-500/10 text-red-400",
   trialing: "bg-blue-500/10 text-blue-400",
 };
@@ -250,7 +250,7 @@ export default function BillingPage() {
                   {!hasGoogleKey && " Add a Google AI key to enable image generation."}
                 </p>
                 {isPaid && (
-                  <p className="text-[10px] text-amber-400/80">
+                  <p className="text-[10px] text-[var(--status-warning)]/80">
                     Your {TIER_LABELS[tier]} credits are preserved while using your own keys.
                   </p>
                 )}

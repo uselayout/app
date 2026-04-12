@@ -42,8 +42,8 @@ export function ChangelogClient({
 
       <div className="mt-16 flex flex-col gap-16">
         {filteredDraft && (
-          <div className="rounded-lg border border-dashed border-amber-500/30 p-6">
-            <span className="mb-4 inline-block rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-amber-400">
+          <div className="rounded-lg border border-dashed border-[var(--status-warning)]/30 p-6">
+            <span className="mb-4 inline-block rounded-full bg-[var(--status-warning)]/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--status-warning)]">
               Draft
             </span>
             <ChangelogWeekGroup week={filteredDraft} />

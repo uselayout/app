@@ -254,8 +254,8 @@ export function ExplorerToolbar({
       <div className="p-2.5">
         {hasSelection && selectedVariantName ? (
           <div className="relative">
-            <div className="flex min-h-[68px] items-start rounded-md border border-amber-500/30 bg-amber-500/5 px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
-              <Wand2 size={14} className="mt-0.5 shrink-0 text-amber-400" />
+            <div className="flex min-h-[68px] items-start rounded-md border border-[var(--status-warning)]/30 bg-[var(--status-warning)]/5 px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
+              <Wand2 size={14} className="mt-0.5 shrink-0 text-[var(--status-warning)]" />
               {/* Image chip */}
               {imageDataUrl && (
                 <div className="ml-2 mr-1 flex shrink-0 items-center gap-1.5 rounded-md bg-[var(--bg-hover)] px-1.5 py-0.5" title={imageName ?? "Attached image"}>
@@ -287,7 +287,7 @@ export function ExplorerToolbar({
                 onKeyDown={handleRefineKeyDown}
                 onPaste={handlePaste}
                 disabled={isGenerating}
-                className="ml-2 flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-amber-400/50 outline-none disabled:opacity-50"
+                className="ml-2 flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--status-warning)]/50 outline-none disabled:opacity-50"
               />
             </div>
             {fileError && (
@@ -298,7 +298,7 @@ export function ExplorerToolbar({
               <button
                 onClick={() => contextFileInputRef.current?.click()}
                 disabled={isGenerating || contextFiles.length >= MAX_CONTEXT_FILES}
-                className="flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors hover:text-amber-400/60 disabled:opacity-40"
+                className="flex items-center justify-center size-6 rounded-full bg-transparent border border-[var(--studio-border)] text-[var(--text-muted)] transition-colors hover:text-[var(--status-warning)]/60 disabled:opacity-40"
                 title={contextFiles.length >= MAX_CONTEXT_FILES ? `Maximum ${MAX_CONTEXT_FILES} files` : "Attach context files"}
               >
                 <Paperclip size={12} />
@@ -306,7 +306,7 @@ export function ExplorerToolbar({
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isGenerating}
-                className="flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors hover:text-amber-400/60 disabled:opacity-40"
+                className="flex items-center justify-center size-6 rounded-full bg-transparent border border-[var(--studio-border)] text-[var(--text-muted)] transition-colors hover:text-[var(--status-warning)]/60 disabled:opacity-40"
                 title="Attach reference image"
               >
                 <ImagePlus size={12} />
@@ -314,7 +314,7 @@ export function ExplorerToolbar({
               <button
                 onClick={handleRefineSubmit}
                 disabled={!refinePrompt.trim() || isGenerating}
-                className="flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-20 disabled:cursor-not-allowed"
+                className="flex items-center justify-center size-6 rounded-full bg-transparent border border-[var(--studio-border)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-20 disabled:cursor-not-allowed"
               >
                 <ArrowUp size={12} strokeWidth={2.5} />
               </button>
@@ -391,7 +391,7 @@ export function ExplorerToolbar({
               <button
                 onClick={() => contextFileInputRef.current?.click()}
                 disabled={isGenerating || contextFiles.length >= MAX_CONTEXT_FILES}
-                className="flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)] disabled:opacity-40"
+                className="flex items-center justify-center size-6 rounded-full bg-transparent border border-[var(--studio-border)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)] disabled:opacity-40"
                 title={contextFiles.length >= MAX_CONTEXT_FILES ? `Maximum ${MAX_CONTEXT_FILES} files` : "Attach context files (.md, .txt, .css, etc.)"}
               >
                 <Paperclip size={12} />
@@ -399,7 +399,7 @@ export function ExplorerToolbar({
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isGenerating}
-                className="flex items-center justify-center size-6 rounded-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)] disabled:opacity-40"
+                className="flex items-center justify-center size-6 rounded-full bg-transparent border border-[var(--studio-border)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)] disabled:opacity-40"
                 title="Attach reference image"
               >
                 <ImagePlus size={12} />
@@ -474,7 +474,7 @@ export function ExplorerToolbar({
             {(!hasAnthropicKey || !hasGoogleKey) && orgSlug && (
               <Link
                 href={`/${orgSlug}/settings/api-keys`}
-                className="inline-flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 transition-colors"
+                className="inline-flex items-center gap-1 text-[10px] text-[var(--status-warning)] hover:text-[var(--status-warning)] transition-colors"
               >
                 <KeyRound size={10} />
                 Add keys

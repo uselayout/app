@@ -1080,13 +1080,13 @@ function TokenRow({
       )}
 
       {renameConfirm && (
-        <div className="mx-2 mb-1 flex items-center gap-2 rounded border border-amber-500/30 bg-amber-500/5 px-2 py-1.5">
-          <span className="flex-1 text-[10px] text-amber-300">
+        <div className="mx-2 mb-1 flex items-center gap-2 rounded border border-[var(--status-warning)]/30 bg-[var(--status-warning)]/5 px-2 py-1.5">
+          <span className="flex-1 text-[10px] text-[var(--status-warning)]">
             Will update {renameConfirm.refCount} reference{renameConfirm.refCount !== 1 ? "s" : ""} in layout.md
           </span>
           <button
             onClick={(e) => { e.stopPropagation(); handleConfirmRename(); }}
-            className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium text-amber-300 hover:bg-amber-500/30 transition-colors"
+            className="rounded bg-[var(--status-warning)]/20 px-2 py-0.5 text-[10px] font-medium text-[var(--status-warning)] hover:bg-[var(--status-warning)]/30 transition-colors"
           >
             Rename
           </button>

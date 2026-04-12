@@ -180,7 +180,7 @@ export function ComparisonView({
   }, [prompt, layoutMd, baseCode, imageDataUrl, contextFiles, savedResult]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex flex-col bg-[var(--bg-app)]/95 backdrop-blur-sm">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--studio-border)] bg-[var(--bg-panel)] px-5 py-3">
         <div>
@@ -212,9 +212,9 @@ export function ComparisonView({
         {/* Without design system */}
         {focusedPanel !== "right" && (
           <div className={`flex flex-1 flex-col ${focusedPanel !== "left" ? "border-r border-[var(--studio-border)]" : ""}`}>
-            <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-red-500/5 px-4 py-2.5">
-              <span className="h-2 w-2 rounded-full bg-red-400" />
-              <span className="text-xs font-semibold text-red-400">
+            <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-[var(--status-error)]/5 px-4 py-2.5">
+              <span className="h-2 w-2 rounded-full bg-[var(--status-error)]" />
+              <span className="text-xs font-semibold text-[var(--status-error)]">
                 Without Design System
               </span>
               <div className="flex-1" />
@@ -245,12 +245,12 @@ export function ComparisonView({
         {/* With design system */}
         {focusedPanel !== "left" && (
           <div className="flex flex-1 flex-col">
-            <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-emerald-500/5 px-4 py-2.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              <span className="text-xs font-semibold text-emerald-400">
+            <div className="flex items-center gap-2 border-b border-[var(--studio-border)] bg-[var(--status-success)]/5 px-4 py-2.5">
+              <span className="h-2 w-2 rounded-full bg-[var(--status-success)]" />
+              <span className="text-xs font-semibold text-[var(--status-success)]">
                 With Design System
               </span>
-              <Sparkles size={12} className="text-emerald-400" />
+              <Sparkles size={12} className="text-[var(--status-success)]" />
               <div className="flex-1" />
               <button
                 onClick={() => setFocusedPanel(focusedPanel === "right" ? null : "right")}
