@@ -55,9 +55,9 @@ function LoginContent() {
 
       {/* Card */}
       <div className="relative z-10 flex items-center justify-center px-4 min-h-screen">
-        <div className="w-full max-w-[399px] bg-[#282826] border border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)]">
+        <div className="w-full max-w-[399px] bg-[var(--bg-elevated)] border border-[var(--studio-border)] rounded-[10px] shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)]">
           {/* Card header */}
-          <div className="flex items-center justify-between h-[69px] px-5 border-b border-[rgba(255,255,255,0.07)]">
+          <div className="flex items-center justify-between h-[69px] px-5 border-b border-[var(--studio-border)]">
             <div className="flex items-center gap-[10px]">
               <div className="flex items-center justify-center w-8 h-8">
                 <img
@@ -69,10 +69,10 @@ function LoginContent() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-[14px] font-semibold leading-[20px] text-[#ededf4]">
+                <span className="text-[14px] font-semibold leading-[20px] text-[var(--text-primary)]">
                   Welcome to Layout
                 </span>
-                <span className="text-[12px] leading-[16px] text-[#99a1af]">
+                <span className="text-[12px] leading-[16px] text-[var(--text-secondary)]">
                   Sign in to your account
                 </span>
               </div>
@@ -97,7 +97,7 @@ function LoginContent() {
                   <button
                     type="button"
                     onClick={() => signIn.social({ provider: "google", callbackURL: next })}
-                    className="flex items-center justify-center gap-[6px] w-full h-[40px] bg-white border border-[#4a4343] rounded-[6px] text-[12px] font-medium text-[#010101] hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-center gap-[6px] w-full h-[40px] bg-white border border-[var(--studio-border-strong)] rounded-[6px] text-[12px] font-medium text-[#010101] hover:bg-gray-50 transition-colors"
                   >
                     <svg width="19" height="19" viewBox="0 0 48 48">
                       <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -110,7 +110,7 @@ function LoginContent() {
                   <button
                     type="button"
                     onClick={() => signIn.social({ provider: "github", callbackURL: next })}
-                    className="flex items-center justify-center gap-[6px] w-full h-[40px] bg-white border border-[#4a4343] rounded-[6px] text-[12px] font-medium text-[#010101] hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-center gap-[6px] w-full h-[40px] bg-white border border-[var(--studio-border-strong)] rounded-[6px] text-[12px] font-medium text-[#010101] hover:bg-gray-50 transition-colors"
                   >
                     <svg width="20" height="20" viewBox="0 0 98 96" fill="#010101">
                       <path fillRule="evenodd" clipRule="evenodd" d="M48.854 0C21.839 0 0 22 0 49.217c0 21.756 13.993 40.172 33.405 46.69 2.427.49 3.316-1.059 3.316-2.362 0-1.141-.08-5.052-.08-9.127-13.59 2.934-16.42-5.867-16.42-5.867-2.184-5.704-5.42-7.17-5.42-7.17-4.448-3.015.324-3.015.324-3.015 4.934.326 7.523 5.052 7.523 5.052 4.367 7.496 11.404 5.378 14.235 4.074.404-3.178 1.699-5.378 3.074-6.6-10.839-1.141-22.243-5.378-22.243-24.283 0-5.378 1.94-9.778 5.014-13.2-.485-1.222-2.184-6.275.486-13.038 0 0 4.125-1.304 13.426 5.052a46.97 46.97 0 0 1 12.214-1.63c4.125 0 8.33.571 12.213 1.63 9.302-6.356 13.427-5.052 13.427-5.052 2.67 6.763.97 11.816.485 13.038 3.155 3.422 5.015 7.822 5.015 13.2 0 18.905-11.404 23.06-22.324 24.283 1.78 1.548 3.316 4.481 3.316 9.126 0 6.6-.08 11.897-.08 13.526 0 1.304.89 2.853 3.316 2.364 19.412-6.52 33.405-24.935 33.405-46.691C97.707 22 75.788 0 48.854 0z"/>
@@ -121,9 +121,9 @@ function LoginContent() {
 
                 {/* Divider */}
                 <div className="flex items-center gap-[10px] py-[9px]">
-                  <div className="flex-1 h-px bg-[#373735]" />
-                  <span className="text-[12px] text-[#ededf4]">Or</span>
-                  <div className="flex-1 h-px bg-[#373735]" />
+                  <div className="flex-1 h-px bg-[var(--studio-border)]" />
+                  <span className="text-[12px] text-[var(--text-primary)]">Or</span>
+                  <div className="flex-1 h-px bg-[var(--studio-border)]" />
                 </div>
               </>
             )}
@@ -136,7 +136,7 @@ function LoginContent() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors"
+                className="w-full h-[40px] bg-[var(--bg-app)] border border-[var(--studio-border)] rounded-[6px] px-3 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-strong)] transition-colors"
               />
               <input
                 type="password"
@@ -145,12 +145,12 @@ function LoginContent() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors"
+                className="w-full h-[40px] bg-[var(--bg-app)] border border-[var(--studio-border)] rounded-[6px] px-3 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-strong)] transition-colors"
               />
 
               <Link
                 href="/forgot-password"
-                className="text-[12px] text-[#99a1af] hover:text-white transition-colors self-end -mt-1"
+                className="text-[12px] text-[var(--text-secondary)] hover:text-white transition-colors self-end -mt-1"
               >
                 Forgot password?
               </Link>
@@ -164,14 +164,14 @@ function LoginContent() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="mt-[14px] w-full h-[40px] bg-[#3c3c3c] border border-[#4a4343] rounded-[6px] text-[12px] font-medium text-white hover:bg-[#444] transition-colors disabled:opacity-50"
+                className="mt-[14px] w-full h-[40px] bg-[var(--bg-hover)] border border-[var(--studio-border-strong)] rounded-[6px] text-[12px] font-medium text-white hover:bg-[var(--bg-elevated)] transition-colors disabled:opacity-50"
               >
                 {isLoading ? "Signing in..." : "Sign In"}
               </button>
             </form>
 
             {/* Signup link */}
-            <p className="text-center text-[12px] text-[#99a1af]">
+            <p className="text-center text-[12px] text-[var(--text-secondary)]">
               New to Layout?{" "}
               <Link href="/signup" className="text-white hover:underline">
                 Get an invite →
@@ -180,8 +180,8 @@ function LoginContent() {
           </div>
 
           {/* Card footer */}
-          <div className="border-t border-[rgba(255,255,255,0.07)] px-5 py-[10px]">
-            <p className="text-[12px] leading-[16px] text-[#99999a] text-center">
+          <div className="border-t border-[var(--studio-border)] px-5 py-[10px]">
+            <p className="text-[12px] leading-[16px] text-[var(--text-muted)] text-center">
               By continuing you agree to our<br />
               <a href="/terms" className="text-white underline">Terms of Service</a>
               {" "}and{" "}

@@ -67,7 +67,7 @@ async function ChangelogPageInner({
   }
 
   return (
-    <div className="min-h-screen bg-[#080705] text-white">
+    <div className="dark min-h-screen bg-[var(--mkt-bg)] text-white">
       <header className="mx-auto flex max-w-[720px] items-center px-6 pt-12">
         <Link href="/" className="transition-opacity hover:opacity-80">
           <img

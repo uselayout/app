@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-[#080705] text-white">
+    <div className="dark min-h-screen bg-[var(--mkt-bg)] text-white">
       <header className="mx-auto max-w-3xl px-6 pt-12 pb-8">
         <Link href="/" className="inline-block">
           <Image

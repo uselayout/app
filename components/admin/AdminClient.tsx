@@ -1268,7 +1268,7 @@ const CATEGORIES = [
 ] as const;
 
 const productBadgeStyles: Record<string, { bg: string; text: string; label: string }> = {
-  studio: { bg: "rgba(255,255,255,0.1)", text: "rgba(255,255,255,0.8)", label: "Studio" },
+  studio: { bg: "var(--studio-border)", text: "var(--text-primary)", label: "Studio" },
   cli: { bg: "rgba(16,185,129,0.15)", text: "rgb(52,211,153)", label: "CLI" },
   "figma-plugin": { bg: "rgba(139,92,246,0.15)", text: "rgb(167,139,250)", label: "Figma Plugin" },
   "chrome-extension": { bg: "rgba(245,158,11,0.15)", text: "rgb(251,191,36)", label: "Chrome Extension" },

@@ -43,7 +43,7 @@ export function RoadmapStatusGroup({ label, colour, items, votedIds, votingId, o
         >
           {label}
         </h2>
-        <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           {items.length}
         </span>
       </div>

@@ -128,7 +128,7 @@ function PricingContent() {
   };
 
   return (
-    <>
+    <div className="dark">
       <div className="relative z-10 bg-[var(--mkt-bg)]">
         <AnnouncementBanner />
         <MarketingHeader />
@@ -194,7 +194,7 @@ function PricingContent() {
                           <span
                             className={`text-[14px] tracking-[0.14px] ${
                               plan.highlighted
-                                ? "text-[rgba(245,244,238,0.6)]"
+                                ? "text-[var(--mkt-text-secondary)]"
                                 : "text-[#7f7e7a]"
                             }`}
                           >
@@ -215,7 +215,7 @@ function PricingContent() {
                           <span
                             className={`text-[14px] tracking-[0.14px] ${
                               plan.highlighted
-                                ? "text-[rgba(245,244,238,0.5)]"
+                                ? "text-[var(--mkt-text-muted)]"
                                 : "text-[#7f7e7a]"
                             }`}
                           >
@@ -224,13 +224,13 @@ function PricingContent() {
                         </div>
 
                         {/* Divider */}
-                        <div className="h-px bg-[rgba(245,244,238,0.12)]" />
+                        <div className="h-px bg-[var(--studio-border)]" />
 
                         {/* Description */}
                         <p
                           className={`text-[17px] leading-[23px] ${
                             plan.highlighted
-                              ? "text-[rgba(245,244,238,0.65)]"
+                              ? "text-[var(--mkt-text-secondary)]"
                               : "text-[#c6c5bf]"
                           }`}
                         >
@@ -247,7 +247,7 @@ function PricingContent() {
                               <span
                                 className={`text-[12px] leading-[21px] tracking-[0.14px] ${
                                   plan.highlighted
-                                    ? "text-[rgba(245,244,238,0.4)]"
+                                    ? "text-[var(--mkt-text-muted)]"
                                     : "text-[#676662]"
                                 }`}
                               >
@@ -256,7 +256,7 @@ function PricingContent() {
                               <span
                                 className={`text-[14px] leading-[21px] tracking-[0.14px] ${
                                   plan.highlighted
-                                    ? "text-[rgba(245,244,238,0.8)]"
+                                    ? "text-[var(--mkt-text-primary)]"
                                     : "text-[#c6c5bf]"
                                 }`}
                               >
@@ -321,7 +321,7 @@ function PricingContent() {
 
               <div className="mt-[70px] grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* BYOK card */}
-                <div className="bg-[#282826] rounded-[4px] p-8 border border-[rgba(245,244,238,0.12)] flex flex-col gap-[27px]">
+                <div className="bg-[#282826] rounded-[4px] p-8 border border-[var(--studio-border)] flex flex-col gap-[27px]">
                   <span className="text-[14px] tracking-[0.14px] text-[#7f7e7a]">
                     Bring Your Own Key
                   </span>
@@ -333,7 +333,7 @@ function PricingContent() {
                       you pay Anthropic directly
                     </span>
                   </div>
-                  <div className="h-px bg-[rgba(245,244,238,0.12)]" />
+                  <div className="h-px bg-[var(--studio-border)]" />
                   <p className="text-[17px] leading-[23px] text-[#c6c5bf]">
                     Use your own Anthropic API key for unlimited usage at your own cost. Works on any plan — free or paid.
                   </p>
@@ -354,7 +354,7 @@ function PricingContent() {
                 </div>
 
                 {/* Self-hosted card */}
-                <div className="bg-[#282826] rounded-[4px] p-8 border border-[rgba(245,244,238,0.12)] flex flex-col gap-[27px]">
+                <div className="bg-[#282826] rounded-[4px] p-8 border border-[var(--studio-border)] flex flex-col gap-[27px]">
                   <span className="text-[14px] tracking-[0.14px] text-[#7f7e7a]">
                     Self-hosted
                   </span>
@@ -366,7 +366,7 @@ function PricingContent() {
                       forever — open source
                     </span>
                   </div>
-                  <div className="h-px bg-[rgba(245,244,238,0.12)]" />
+                  <div className="h-px bg-[var(--studio-border)]" />
                   <p className="text-[17px] leading-[23px] text-[#c6c5bf]">
                     Run the entire stack yourself. No account needed, no usage limits, no vendor dependency.
                   </p>
@@ -415,7 +415,7 @@ function PricingContent() {
                 {FAQS.map((faq) => (
                   <details
                     key={faq.q}
-                    className="group border border-[rgba(255,255,255,0.07)] rounded-[4px] bg-[#282826]"
+                    className="group border border-[var(--studio-border)] rounded-[4px] bg-[#282826]"
                   >
                     <summary className="cursor-pointer px-6 py-4 text-[14px] font-medium text-[#f5f4ee] list-none flex items-center justify-between">
                       {faq.q}
@@ -435,7 +435,7 @@ function PricingContent() {
       </div>
 
       <MarketingFooter />
-    </>
+    </div>
   );
 }
 

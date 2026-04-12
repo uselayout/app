@@ -100,10 +100,10 @@ export function RoadmapClient() {
   if (loading) {
     return (
       <div className="mt-12">
-        <div className="h-4 w-48 rounded bg-white/5 animate-pulse" />
+        <div className="h-4 w-48 rounded bg-[var(--studio-accent-subtle)] animate-pulse" />
         <div className="mt-6 space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 rounded-lg bg-white/5 animate-pulse" />
+            <div key={i} className="h-16 rounded-lg bg-[var(--studio-accent-subtle)] animate-pulse" />
           ))}
         </div>
       </div>
@@ -120,9 +120,9 @@ export function RoadmapClient() {
             onClick={() => setProductFilter(p.key)}
             className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
             style={{
-              background: productFilter === p.key ? "rgba(255,255,255,0.15)" : "transparent",
-              color: productFilter === p.key ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)",
-              border: `1px solid ${productFilter === p.key ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.08)"}`,
+              background: productFilter === p.key ? "var(--bg-hover)" : "transparent",
+              color: productFilter === p.key ? "var(--text-primary)" : "var(--text-muted)",
+              border: `1px solid ${productFilter === p.key ? "var(--studio-border-strong)" : "var(--studio-border)"}`,
             }}
           >
             {p.label}
@@ -140,7 +140,7 @@ export function RoadmapClient() {
 
             return (
               <section key={product.key}>
-                <h2 className="text-lg font-bold text-white mb-6">
+                <h2 className="text-lg font-bold text-[var(--text-primary)] mb-6">
                   {product.label}
                 </h2>
                 <div className="space-y-8">
@@ -156,7 +156,7 @@ export function RoadmapClient() {
                             {status.label}
                           </h3>
                         </div>
-                        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--studio-border)" }}>
                           <table className="w-full">
                             <thead className="sr-only">
                               <tr>
@@ -187,7 +187,7 @@ export function RoadmapClient() {
       </div>
 
       {items.length === 0 && (
-        <p className="text-sm text-white/40 text-center py-16">
+        <p className="text-sm text-[var(--text-muted)] text-center py-16">
           No roadmap items yet.
         </p>
       )}

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 const inputClass =
-  "w-full bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors";
+  "w-full bg-[var(--bg-app)] border border-[var(--studio-border)] rounded-[6px] px-3 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-strong)] transition-colors";
 
 export function RequestAccessClient() {
   const [name, setName] = useState("");
@@ -53,9 +53,9 @@ export function RequestAccessClient() {
 
       {/* Card */}
       <div className="relative z-10 flex items-center justify-center px-4 min-h-screen">
-        <div className="w-full max-w-[399px] bg-[#282826] border border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)]">
+        <div className="w-full max-w-[399px] bg-[var(--bg-elevated)] border border-[var(--studio-border)] rounded-[10px] shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)]">
           {/* Card header */}
-          <div className="flex items-center justify-between h-[69px] px-5 border-b border-[rgba(255,255,255,0.07)]">
+          <div className="flex items-center justify-between h-[69px] px-5 border-b border-[var(--studio-border)]">
             <div className="flex items-center gap-[10px]">
               <div className="flex items-center justify-center w-8 h-8">
                 <img
@@ -67,17 +67,17 @@ export function RequestAccessClient() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-[14px] font-semibold leading-[20px] text-[#ededf4]">
+                <span className="text-[14px] font-semibold leading-[20px] text-[var(--text-primary)]">
                   Request Early Access
                 </span>
-                <span className="text-[12px] leading-[16px] text-[#99a1af]">
+                <span className="text-[12px] leading-[16px] text-[var(--text-secondary)]">
                   Private beta — we review every request
                 </span>
               </div>
             </div>
             <Link
               href="/"
-              className="flex items-center justify-center w-7 h-7 rounded text-[#99a1af] hover:text-white transition-colors"
+              className="flex items-center justify-center w-7 h-7 rounded text-[var(--text-secondary)] hover:text-white transition-colors"
               aria-label="Back to layout.design"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -96,10 +96,10 @@ export function RequestAccessClient() {
             {submitted ? (
               <div className="flex flex-col items-center gap-3 py-6 text-center">
                 <span className="text-[20px]">✓</span>
-                <p className="text-[14px] font-semibold text-[#ededf4]">
+                <p className="text-[14px] font-semibold text-[var(--text-primary)]">
                   Request received
                 </p>
-                <p className="text-[12px] text-[#99a1af]">
+                <p className="text-[12px] text-[var(--text-secondary)]">
                   We&apos;ll be in touch within 24 hours.
                 </p>
               </div>
@@ -122,7 +122,7 @@ export function RequestAccessClient() {
                   className={`${inputClass} h-[40px]`}
                 />
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] text-[#99a1af] px-0.5">What are you building?</label>
+                  <label className="text-[11px] text-[var(--text-secondary)] px-0.5">What are you building?</label>
                   <textarea
                     rows={2}
                     placeholder='e.g. "A SaaS dashboard with a Figma design system"'
@@ -133,7 +133,7 @@ export function RequestAccessClient() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] text-[#99a1af] px-0.5">How did you hear about us?</label>
+                  <label className="text-[11px] text-[var(--text-secondary)] px-0.5">How did you hear about us?</label>
                   <input
                     type="text"
                     placeholder='e.g. "Cursor Discord", "@username on X", "Google"'
@@ -153,7 +153,7 @@ export function RequestAccessClient() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="mt-[14px] w-full h-[40px] bg-[#3c3c3c] border border-[#4a4343] rounded-[6px] text-[12px] font-medium text-white hover:bg-[#444] transition-colors disabled:opacity-50"
+                  className="mt-[14px] w-full h-[40px] bg-[var(--bg-hover)] border border-[var(--studio-border-strong)] rounded-[6px] text-[12px] font-medium text-white hover:bg-[var(--bg-elevated)] transition-colors disabled:opacity-50"
                 >
                   {isLoading ? "Submitting..." : "Request Access"}
                 </button>
@@ -162,8 +162,8 @@ export function RequestAccessClient() {
           </div>
 
           {/* Card footer */}
-          <div className="border-t border-[rgba(255,255,255,0.07)] px-5 py-[10px]">
-            <p className="text-[12px] leading-[16px] text-[#99999a] text-center">
+          <div className="border-t border-[var(--studio-border)] px-5 py-[10px]">
+            <p className="text-[12px] leading-[16px] text-[var(--text-muted)] text-center">
               By continuing you agree to our
               <br />
               <a href="/terms" className="text-white underline">

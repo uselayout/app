@@ -81,7 +81,7 @@ function SourcePanelEmptyState({
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
-            className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[var(--bg-app)] px-3 py-2 pr-8 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+            className="w-full rounded-lg border border-[var(--studio-border-strong)] bg-[var(--bg-app)] px-3 py-2 pr-8 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
           />
           {sourceType && (
             <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
@@ -101,7 +101,7 @@ function SourcePanelEmptyState({
             value={pat}
             onChange={(e) => setPat(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && isValid && handleExtract()}
-            className="w-full rounded-lg border border-[rgba(255,255,255,0.16)] bg-[var(--bg-app)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+            className="w-full rounded-lg border border-[var(--studio-border-strong)] bg-[var(--bg-app)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
           />
         )}
         {isFigma && storedFigmaPat && (
@@ -202,8 +202,8 @@ function SourcePanelInner({
               title={tab.label}
               className={`flex size-7 items-center justify-center rounded-md transition-all ${
                 activeTab === tab.id
-                  ? "bg-[rgba(255,255,255,0.1)] text-white"
-                  : "text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-secondary)]"
+                  ? "bg-[var(--studio-border)] text-[var(--text-primary)]"
+                  : "text-[var(--text-muted)] hover:bg-[var(--studio-accent-subtle)] hover:text-[var(--text-secondary)]"
               }`}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -215,7 +215,7 @@ function SourcePanelInner({
           <button
             onClick={handleSyncTokens}
             title="Sync tokens from layout.md"
-            className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] text-[var(--text-muted)] transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-secondary)]"
+            className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] text-[var(--text-muted)] transition-colors hover:bg-[var(--studio-accent-subtle)] hover:text-[var(--text-secondary)]"
           >
             <RefreshCw className="h-3 w-3" />
             Sync
@@ -1065,7 +1065,7 @@ function TokenRow({
               e.stopPropagation();
               onDelete();
             }}
-            className="shrink-0 rounded p-0.5 opacity-0 transition-opacity hover:bg-[rgba(255,255,255,0.06)] group-hover:opacity-100"
+            className="shrink-0 rounded p-0.5 opacity-0 transition-opacity hover:bg-[var(--studio-accent-subtle)] group-hover:opacity-100"
             title="Remove token"
           >
             <X className="h-3 w-3 text-[var(--text-muted)] hover:text-red-400 transition-colors" />

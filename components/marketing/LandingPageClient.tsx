@@ -24,7 +24,7 @@ export function LandingPageClient() {
   const openInstall = () => setShowInstallModal(true);
 
   return (
-    <>
+    <div className="dark">
       {/* Main content layers above sticky footer for reveal effect */}
       <div className="relative z-10 bg-[var(--mkt-bg)]">
         <AnnouncementBanner />
@@ -50,6 +50,6 @@ export function LandingPageClient() {
       {showInstallModal && (
         <InstallCLIModal onClose={() => setShowInstallModal(false)} />
       )}
-    </>
+    </div>
   );
 }

@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession, signOut } from "@/lib/auth-client";
-import { LogOut, Settings, CreditCard } from "lucide-react";
+import { LogOut, Settings, CreditCard, Sun, Moon, Monitor } from "lucide-react";
+import { useTheme } from "next-themes";
 
 interface UserMenuProps {
   collapsed?: boolean;
@@ -15,6 +16,7 @@ export function UserMenu({ collapsed }: UserMenuProps) {
   const router = useRouter();
   const params = useParams();
   const { data: session } = useSession();
+  const { theme, setTheme } = useTheme();
   const orgSlug = typeof params?.org === "string" ? params.org : "";
 
   const handleClickOutside = useCallback((e: MouseEvent) => {
@@ -102,6 +104,36 @@ export function UserMenu({ collapsed }: UserMenuProps) {
             <CreditCard className="h-3.5 w-3.5" />
             Billing
           </button>
+
+          <div className="my-1 border-t border-[var(--studio-border)]" />
+
+          <div className="px-3 py-2">
+            <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1.5">
+              Theme
+            </p>
+            <div className="flex gap-1 rounded-[var(--studio-radius-md)] bg-[var(--bg-surface)] p-0.5">
+              {([
+                { value: "light", icon: Sun, label: "Light" },
+                { value: "dark", icon: Moon, label: "Dark" },
+                { value: "system", icon: Monitor, label: "System" },
+              ] as const).map(({ value, icon: Icon, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setTheme(value)}
+                  title={label}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-[var(--studio-radius-sm)] px-2 py-1 text-[11px] transition-all duration-[var(--duration-base)] ${
+                    theme === value
+                      ? "bg-[var(--bg-hover)] text-[var(--text-primary)] font-medium"
+                      : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                  }`}
+                >
+                  <Icon className="h-3 w-3" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="my-1 border-t border-[var(--studio-border)]" />
 

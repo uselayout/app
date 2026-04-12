@@ -7,6 +7,7 @@ import { ProjectHydrator } from "@/components/ProjectHydrator";
 import { OrgProvider } from "@/components/OrgProvider";
 import { DeploymentBanner } from "@/components/DeploymentBanner";
 import { MaintenancePage } from "@/components/MaintenancePage";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script
           type="application/ld+json"
@@ -96,15 +97,17 @@ export default function RootLayout({
         <Script id="plausible-init" strategy="afterInteractive">
           {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
         </Script>
-        {process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "true" ? (
-          <MaintenancePage />
-        ) : (
-          <>
-            <ProjectHydrator />
-            <OrgProvider>{children}</OrgProvider>
-            <DeploymentBanner />
-          </>
-        )}
+        <ThemeProvider>
+          {process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "true" ? (
+            <MaintenancePage />
+          ) : (
+            <>
+              <ProjectHydrator />
+              <OrgProvider>{children}</OrgProvider>
+              <DeploymentBanner />
+            </>
+          )}
+        </ThemeProvider>
         <Toaster
           position="bottom-right"
           toastOptions={{

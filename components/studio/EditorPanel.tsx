@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import type { OnMount } from "@monaco-editor/react";
 import type * as monacoType from "monaco-editor";
 import { ArrowUp, Undo2, Loader2, History, X } from "lucide-react";
+import { useTheme } from "next-themes";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import type { LayoutMdVersion } from "@/lib/supabase/layout-md-versions";
 
@@ -30,7 +31,7 @@ interface EditorPanelProps {
   orgId?: string;
 }
 
-const STUDIO_THEME: monacoType.editor.IStandaloneThemeData = {
+const STUDIO_THEME_DARK: monacoType.editor.IStandaloneThemeData = {
   base: "vs-dark",
   inherit: true,
   rules: [
@@ -59,7 +60,37 @@ const STUDIO_THEME: monacoType.editor.IStandaloneThemeData = {
   },
 };
 
+const STUDIO_THEME_LIGHT: monacoType.editor.IStandaloneThemeData = {
+  base: "vs",
+  inherit: true,
+  rules: [
+    { token: "heading", foreground: "1A1A1A", fontStyle: "bold" },
+    { token: "emphasis", fontStyle: "italic" },
+    { token: "strong", fontStyle: "bold" },
+    { token: "keyword", foreground: "7c3aed" },
+    { token: "comment", foreground: "9CA3AF" },
+    { token: "string", foreground: "059669" },
+    { token: "variable", foreground: "7c3aed" },
+  ],
+  colors: {
+    "editor.background": "#FFFFFF",
+    "editor.foreground": "#1A1A1A",
+    "editor.lineHighlightBackground": "#F5F5F5",
+    "editor.selectionBackground": "#1A1A1A20",
+    "editorCursor.foreground": "#1A1A1A",
+    "editor.inactiveSelectionBackground": "#1A1A1A10",
+    "editorLineNumber.foreground": "#C0C0C0",
+    "editorGutter.background": "#FFFFFF",
+    "editorWidget.background": "#FAFAFA",
+    "editorWidget.border": "#E0E0E3",
+    "editorSuggestWidget.background": "#FAFAFA",
+    "editorSuggestWidget.border": "#E0E0E3",
+    "editorSuggestWidget.selectedBackground": "#EBEBED",
+  },
+};
+
 export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId, orgId }: EditorPanelProps) {
+  const { resolvedTheme } = useTheme();
   const editorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "idle">("idle");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -145,8 +176,9 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
 
   const handleMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
-    monaco.editor.defineTheme("studio-dark", STUDIO_THEME);
-    monaco.editor.setTheme("studio-dark");
+    monaco.editor.defineTheme("studio-dark", STUDIO_THEME_DARK);
+    monaco.editor.defineTheme("studio-light", STUDIO_THEME_LIGHT);
+    monaco.editor.setTheme(resolvedTheme === "light" ? "studio-light" : "studio-dark");
 
     // Register colour provider — shows inline swatches with a picker in CSS blocks
     monaco.languages.registerColorProvider("markdown", {
@@ -225,7 +257,16 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
         return { suggestions };
       },
     });
-  }, []);
+  }, [resolvedTheme]);
+
+  // Switch Monaco theme when app theme changes
+  useEffect(() => {
+    if (!editorRef.current) return;
+    const monaco = (window as unknown as Record<string, unknown>).monaco as typeof monacoType | undefined;
+    if (monaco) {
+      monaco.editor.setTheme(resolvedTheme === "light" ? "studio-light" : "studio-dark");
+    }
+  }, [resolvedTheme]);
 
   useEffect(() => {
     return () => {
@@ -495,9 +536,9 @@ function EditorChatBar({
 
   return (
     <div className="border-t border-[var(--studio-border)]">
-      <div className="mx-3 mb-3 mt-3 flex flex-col rounded-lg border border-[rgba(255,255,255,0.12)] bg-[var(--bg-surface)]">
+      <div className="mx-3 mb-3 mt-3 flex flex-col rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)]">
         <div className="relative p-2.5">
-          <div className="flex min-h-[68px] items-start rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.08)] px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
+          <div className="flex min-h-[68px] items-start rounded-md border border-[var(--studio-border)] bg-[var(--studio-accent-subtle)] px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
             <input
               ref={inputRef}
               type="text"
@@ -535,7 +576,7 @@ function EditorChatBar({
 
       {/* Undo toast */}
       {showUndo && (
-        <div className="mx-3 mb-3 flex items-center justify-between rounded-md border border-[rgba(255,255,255,0.08)] bg-[var(--bg-elevated)] px-3 py-2">
+        <div className="mx-3 mb-3 flex items-center justify-between rounded-md border border-[var(--studio-border)] bg-[var(--bg-elevated)] px-3 py-2">
           <span className="text-xs text-[var(--text-secondary)]">
             AI edit applied
           </span>

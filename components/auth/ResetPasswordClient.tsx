@@ -60,9 +60,9 @@ function ResetPasswordContent() {
 
       {/* Card */}
       <div className="relative z-10 flex items-center justify-center px-4 min-h-screen">
-        <div className="w-full max-w-[399px] bg-[#282826] border border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)]">
+        <div className="w-full max-w-[399px] bg-[var(--bg-elevated)] border border-[var(--studio-border)] rounded-[10px] shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)]">
           {/* Card header */}
-          <div className="flex items-center justify-between h-[69px] px-5 border-b border-[rgba(255,255,255,0.07)]">
+          <div className="flex items-center justify-between h-[69px] px-5 border-b border-[var(--studio-border)]">
             <div className="flex items-center gap-[10px]">
               <div className="flex items-center justify-center w-8 h-8">
                 <img
@@ -74,10 +74,10 @@ function ResetPasswordContent() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-[14px] font-semibold leading-[20px] text-[#ededf4]">
+                <span className="text-[14px] font-semibold leading-[20px] text-[var(--text-primary)]">
                   {success ? "Password updated" : isInvalidToken ? "Link expired" : "New password"}
                 </span>
-                <span className="text-[12px] leading-[16px] text-[#99a1af]">
+                <span className="text-[12px] leading-[16px] text-[var(--text-secondary)]">
                   {success
                     ? "You can now sign in"
                     : isInvalidToken
@@ -101,24 +101,24 @@ function ResetPasswordContent() {
           <div className="flex flex-col gap-4 px-4 py-[26px]">
             {success ? (
               <>
-                <p className="text-[13px] text-[#99a1af] leading-[1.5]">
+                <p className="text-[13px] text-[var(--text-secondary)] leading-[1.5]">
                   Your password has been updated successfully.
                 </p>
                 <Link
                   href="/login"
-                  className="mt-[14px] flex items-center justify-center w-full h-[40px] bg-[#3c3c3c] border border-[#4a4343] rounded-[6px] text-[12px] font-medium text-white hover:bg-[#444] transition-colors"
+                  className="mt-[14px] flex items-center justify-center w-full h-[40px] bg-[var(--bg-hover)] border border-[var(--studio-border-strong)] rounded-[6px] text-[12px] font-medium text-white hover:bg-[var(--bg-elevated)] transition-colors"
                 >
                   Sign in
                 </Link>
               </>
             ) : isInvalidToken ? (
               <>
-                <p className="text-[13px] text-[#99a1af] leading-[1.5]">
+                <p className="text-[13px] text-[var(--text-secondary)] leading-[1.5]">
                   This password reset link has expired or is invalid. Please request a new one.
                 </p>
                 <Link
                   href="/forgot-password"
-                  className="mt-[14px] flex items-center justify-center w-full h-[40px] bg-[#3c3c3c] border border-[#4a4343] rounded-[6px] text-[12px] font-medium text-white hover:bg-[#444] transition-colors"
+                  className="mt-[14px] flex items-center justify-center w-full h-[40px] bg-[var(--bg-hover)] border border-[var(--studio-border-strong)] rounded-[6px] text-[12px] font-medium text-white hover:bg-[var(--bg-elevated)] transition-colors"
                 >
                   Request a new link
                 </Link>
@@ -134,7 +134,7 @@ function ResetPasswordContent() {
                     required
                     minLength={8}
                     autoFocus
-                    className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors"
+                    className="w-full h-[40px] bg-[var(--bg-app)] border border-[var(--studio-border)] rounded-[6px] px-3 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-strong)] transition-colors"
                   />
                   <input
                     type="password"
@@ -143,7 +143,7 @@ function ResetPasswordContent() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     minLength={8}
-                    className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors"
+                    className="w-full h-[40px] bg-[var(--bg-app)] border border-[var(--studio-border)] rounded-[6px] px-3 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-strong)] transition-colors"
                   />
 
                   {error && (
@@ -155,13 +155,13 @@ function ResetPasswordContent() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="mt-[14px] w-full h-[40px] bg-[#3c3c3c] border border-[#4a4343] rounded-[6px] text-[12px] font-medium text-white hover:bg-[#444] transition-colors disabled:opacity-50"
+                    className="mt-[14px] w-full h-[40px] bg-[var(--bg-hover)] border border-[var(--studio-border-strong)] rounded-[6px] text-[12px] font-medium text-white hover:bg-[var(--bg-elevated)] transition-colors disabled:opacity-50"
                   >
                     {isLoading ? "Updating..." : "Reset password"}
                   </button>
                 </form>
 
-                <p className="text-center text-[12px] text-[#99a1af]">
+                <p className="text-center text-[12px] text-[var(--text-secondary)]">
                   Remember your password?{" "}
                   <Link href="/login" className="text-white hover:underline">
                     Sign in

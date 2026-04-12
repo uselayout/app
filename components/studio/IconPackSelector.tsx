@@ -34,7 +34,7 @@ function PackCard({
             <span className="text-sm font-medium text-[var(--text-primary)]">
               {pack.name}
             </span>
-            <span className="rounded bg-[rgba(255,255,255,0.06)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]">
+            <span className="rounded bg-[var(--studio-accent-subtle)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]">
               {pack.license}
             </span>
           </div>
@@ -66,7 +66,7 @@ function PackCard({
           {pack.commonIcons.slice(0, 12).map((name) => (
             <span
               key={name}
-              className="rounded bg-[rgba(255,255,255,0.06)] px-1.5 py-0.5 text-[10px] font-mono text-[var(--text-secondary)]"
+              className="rounded bg-[var(--studio-accent-subtle)] px-1.5 py-0.5 text-[10px] font-mono text-[var(--text-secondary)]"
             >
               {name}
             </span>

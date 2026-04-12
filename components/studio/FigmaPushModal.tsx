@@ -292,7 +292,7 @@ export function FigmaPushModal({
                 <p className="text-sm font-medium text-[var(--text-primary)]">
                   Waiting for Figma push...
                 </p>
-                <p className="text-xs leading-4 text-[#8e8e95]">
+                <p className="text-xs leading-4 text-[var(--text-muted)]">
                   Run the copied command in your AI agent. This modal will
                   update when the push is detected.
                 </p>
@@ -308,7 +308,7 @@ export function FigmaPushModal({
                   value={figmaUrl}
                   onChange={(e) => setFigmaUrl(e.target.value)}
                   placeholder="https://www.figma.com/design/..."
-                  className="w-full h-[34px] rounded-md border border-[rgba(255,255,255,0.07)] bg-[#010101] px-3 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
+                  className="w-full h-[34px] rounded-md border border-[var(--studio-border)] bg-[var(--bg-app)] px-3 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)] transition-colors"
                 />
               </div>
             </div>
@@ -392,7 +392,7 @@ export function FigmaPushModal({
               </button>
               <button
                 onClick={handleMarkDone}
-                className="flex items-center gap-1.5 h-7 rounded-md bg-[#009966] px-4 text-xs font-medium text-white hover:bg-[#00aa73] transition-colors"
+                className="flex items-center gap-1.5 h-7 rounded-md bg-emerald-600 px-4 text-xs font-medium text-white hover:bg-emerald-500 transition-colors"
               >
                 <Check size={12} />
                 Mark as pushed

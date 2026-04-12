@@ -57,16 +57,16 @@ export function TopBar({
   };
 
   return (
-    <div className="flex h-12 items-center justify-between border-b border-[rgba(255,255,255,0.07)] bg-[#0c0c0e] px-4">
+    <div className="flex h-12 items-center justify-between border-b border-[var(--studio-border)] bg-[var(--bg-app)] px-4">
       {/* Left: Source panel toggle + Project name + source */}
       <div className="flex flex-1 items-center gap-[17px]">
         {showSourceToggle && (
           <button
             onClick={onToggleSource}
-            className={`flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] transition-colors ${
+            className={`flex items-center justify-center size-7 rounded-[4px] border border-[var(--studio-border-strong)] transition-colors ${
               sourcePanelOpen
-                ? "bg-[rgba(255,255,255,0.1)] text-white"
-                : "bg-[rgba(255,255,255,0.02)] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.06)]"
+                ? "bg-[var(--studio-accent-subtle)] text-[var(--text-primary)]"
+                : "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
             }`}
             title="Toggle source panel"
           >
@@ -81,18 +81,18 @@ export function TopBar({
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
-            className="h-7 rounded-sm border border-[rgba(255,255,255,0.22)] bg-[#1A1A20] px-2 text-sm text-[#e8e8f0] outline-none focus:border-[var(--studio-border-focus)]"
+            className="h-7 rounded-sm border border-[var(--studio-border-strong)] bg-[var(--bg-surface)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--studio-border-focus)]"
           />
         ) : (
           <button
             onClick={() => setIsEditing(true)}
-            className="text-[14px] font-medium text-[#e8e8f0] transition-colors hover:text-white"
+            className="text-[14px] font-medium text-[var(--text-primary)] transition-colors hover:text-[var(--studio-accent-hover)]"
           >
             {projectName}
           </button>
         )}
 
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-transparent px-[9px] py-[3px] text-[12px] font-medium text-[#e8e8f0] overflow-hidden">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-transparent px-[9px] py-[3px] text-[12px] font-medium text-[var(--text-primary)] overflow-hidden">
           {sourceName || sourceType}
         </span>
       </div>
@@ -104,14 +104,14 @@ export function TopBar({
       <div className="flex flex-1 items-center justify-end gap-1.5">
         <button
           onClick={onReExtract}
-          className="flex items-center justify-center size-7 rounded-[4px] border border-[#24282c] bg-[rgba(255,255,255,0.02)] text-[#e8e8f0] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
+          className="flex items-center justify-center size-7 rounded-[4px] border border-[var(--studio-border-strong)] bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
           title="Re-extract"
         >
           <RefreshCw className="h-3.5 w-3.5" />
         </button>
         <button
           onClick={onExport}
-          className="flex items-center justify-center h-7 px-[13px] rounded-[4px] bg-[#e6e6e6] border border-[#e6e6e6] text-[12px] font-medium text-[#08090a] shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] hover:bg-[#d9d9d9] transition-colors"
+          className="flex items-center justify-center h-7 px-[13px] rounded-[4px] bg-[var(--studio-accent)] border border-[var(--studio-accent)] text-[12px] font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors"
         >
           Export
         </button>

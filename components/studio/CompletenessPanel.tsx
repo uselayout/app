@@ -54,7 +54,7 @@ function CircleScore({ score }: CircleScoreProps) {
             cy="48"
             r={CIRCLE_RADIUS}
             fill="none"
-            stroke="rgba(255,255,255,0.08)"
+            stroke="var(--studio-border)"
             strokeWidth="6"
           />
           {/* Progress */}

@@ -124,9 +124,9 @@ function SignupContent() {
 
       {/* Card */}
       <div className="relative z-10 flex items-center justify-center px-4 min-h-screen">
-        <div className="w-full max-w-[399px] bg-[#282826] border border-[rgba(255,255,255,0.07)] rounded-[10px] shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)]">
+        <div className="w-full max-w-[399px] bg-[var(--bg-elevated)] border border-[var(--studio-border)] rounded-[10px] shadow-[0px_25px_50px_0px_rgba(0,0,0,0.25)]">
           {/* Card header */}
-          <div className="flex items-center justify-between h-[69px] px-5 border-b border-[rgba(255,255,255,0.07)]">
+          <div className="flex items-center justify-between h-[69px] px-5 border-b border-[var(--studio-border)]">
             <div className="flex items-center gap-[10px]">
               <div className="flex items-center justify-center w-8 h-8">
                 <img
@@ -138,17 +138,17 @@ function SignupContent() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-[14px] font-semibold leading-[20px] text-[#ededf4]">
+                <span className="text-[14px] font-semibold leading-[20px] text-[var(--text-primary)]">
                   Join Layout
                 </span>
-                <span className="text-[12px] leading-[16px] text-[#99a1af]">
+                <span className="text-[12px] leading-[16px] text-[var(--text-secondary)]">
                   {BETA_ACTIVE ? "Private beta — invite required" : "Create your account"}
                 </span>
               </div>
             </div>
             <Link
               href="/"
-              className="flex items-center justify-center w-7 h-7 rounded text-[rgba(237,237,244,0.5)] hover:text-white transition-colors"
+              className="flex items-center justify-center w-7 h-7 rounded text-[var(--text-muted)] hover:text-white transition-colors"
               aria-label="Close"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -180,7 +180,7 @@ function SignupContent() {
                   required={BETA_ACTIVE}
                   autoComplete="off"
                   spellCheck={false}
-                  className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors font-mono tracking-wider"
+                  className="w-full h-[40px] bg-[var(--bg-app)] border border-[var(--studio-border)] rounded-[6px] px-3 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-strong)] transition-colors font-mono tracking-wider"
                 />
                 {codeStatus === "valid" && (
                   <p className="text-[11px] text-emerald-400 px-1">✓ Valid invite code</p>
@@ -197,7 +197,7 @@ function SignupContent() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors"
+                className="w-full h-[40px] bg-[var(--bg-app)] border border-[var(--studio-border)] rounded-[6px] px-3 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-strong)] transition-colors"
               />
 
               {/* Email */}
@@ -207,7 +207,7 @@ function SignupContent() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors"
+                className="w-full h-[40px] bg-[var(--bg-app)] border border-[var(--studio-border)] rounded-[6px] px-3 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-strong)] transition-colors"
               />
 
               {/* Password */}
@@ -218,7 +218,7 @@ function SignupContent() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="w-full h-[40px] bg-[#010101] border border-[rgba(255,255,255,0.07)] rounded-[6px] px-3 text-[12px] text-[#ededf4] placeholder:text-[rgba(237,237,244,0.5)] outline-none focus:border-[rgba(255,255,255,0.2)] transition-colors"
+                className="w-full h-[40px] bg-[var(--bg-app)] border border-[var(--studio-border)] rounded-[6px] px-3 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-strong)] transition-colors"
               />
 
               {error && (
@@ -230,7 +230,7 @@ function SignupContent() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="mt-[14px] w-full h-[40px] bg-[#3c3c3c] border border-[#4a4343] rounded-[6px] text-[12px] font-medium text-white hover:bg-[#444] transition-colors disabled:opacity-50"
+                className="mt-[14px] w-full h-[40px] bg-[var(--bg-hover)] border border-[var(--studio-border-strong)] rounded-[6px] text-[12px] font-medium text-white hover:bg-[var(--bg-elevated)] transition-colors disabled:opacity-50"
               >
                 {isLoading ? "Creating account..." : "Create account"}
               </button>
@@ -238,14 +238,14 @@ function SignupContent() {
 
             {/* Links */}
             <div className="flex flex-col gap-[6px] text-center">
-              <p className="text-[12px] text-[#99a1af]">
+              <p className="text-[12px] text-[var(--text-secondary)]">
                 Already have an account?{" "}
                 <Link href="/login" className="text-white hover:underline">
                   Sign in →
                 </Link>
               </p>
               {BETA_ACTIVE && (
-                <p className="text-[12px] text-[#99a1af]">
+                <p className="text-[12px] text-[var(--text-secondary)]">
                   Don&apos;t have a code?{" "}
                   <Link href="/request-access" className="text-white hover:underline">
                     Request early access →
@@ -256,8 +256,8 @@ function SignupContent() {
           </div>
 
           {/* Card footer */}
-          <div className="border-t border-[rgba(255,255,255,0.07)] px-5 py-[10px]">
-            <p className="text-[12px] leading-[16px] text-[#99999a] text-center">
+          <div className="border-t border-[var(--studio-border)] px-5 py-[10px]">
+            <p className="text-[12px] leading-[16px] text-[var(--text-muted)] text-center">
               By continuing you agree to our
               <br />
               <a href="/terms" className="text-white underline">

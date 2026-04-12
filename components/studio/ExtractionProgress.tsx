@@ -145,7 +145,7 @@ function WhatsNextScreen({
     <div className="flex flex-col items-center py-4">
       <CheckCircle2
         className="mx-auto mb-6 h-16 w-16"
-        style={{ color: "#22c55e" }}
+        style={{ color: "var(--status-success)" }}
       />
       <h2 className="text-2xl font-semibold text-[var(--text-primary)] text-center">
         Your layout.md is ready

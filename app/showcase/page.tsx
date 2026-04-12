@@ -42,9 +42,9 @@ const PLACEHOLDER_CARDS: PlaceholderCardData[] = [
 
 function PlaceholderCard({ name, description, tag, author }: { name: string; description: string; tag: string; author: string }) {
   return (
-    <div className="flex flex-col gap-4 rounded-[4px] border border-dashed border-[rgba(255,255,255,0.12)] bg-[#282826] overflow-hidden">
+    <div className="flex flex-col gap-4 rounded-[4px] border border-dashed border-[var(--studio-border)] bg-[var(--bg-elevated)] overflow-hidden">
       {/* Screenshot placeholder */}
-      <div className="w-full aspect-video bg-[#1e1e1c] flex items-center justify-center">
+      <div className="w-full aspect-video bg-[var(--bg-surface)] flex items-center justify-center">
         <svg
           width="32"
           height="32"
@@ -62,12 +62,12 @@ function PlaceholderCard({ name, description, tag, author }: { name: string; des
       {/* Card content */}
       <div className="flex flex-col gap-2 px-5 pb-5">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-[14px] font-medium text-[rgba(245,244,238,0.35)]">{name}</span>
-          <span className="border border-[rgba(255,255,255,0.1)] rounded-[3px] px-2 py-[2px] text-[11px] tracking-[0.2px] text-[rgba(245,244,238,0.25)]">
+          <span className="text-[14px] font-medium text-[var(--text-muted)]">{name}</span>
+          <span className="border border-[var(--studio-border)] rounded-[3px] px-2 py-[2px] text-[11px] tracking-[0.2px] text-[var(--text-muted)]">
             {tag}
           </span>
         </div>
-        <p className="text-[13px] leading-[19px] text-[rgba(245,244,238,0.2)]">{description}</p>
+        <p className="text-[13px] leading-[19px] text-[var(--text-muted)]">{description}</p>
         <p className="text-[13px] text-[var(--mkt-text-muted)]">Built by {author}</p>
       </div>
     </div>
@@ -76,7 +76,7 @@ function PlaceholderCard({ name, description, tag, author }: { name: string; des
 
 export default function ShowcasePage() {
   return (
-    <>
+    <div className="dark">
       <div className="relative z-10 bg-[var(--mkt-bg)]">
         <AnnouncementBanner />
         <MarketingHeader />
@@ -123,7 +123,7 @@ export default function ShowcasePage() {
           {/* CTA */}
           <section className="pb-[100px] lg:pb-[180px]">
             <div className="max-w-[1280px] mx-auto px-6">
-              <div className="rounded-[4px] border border-[rgba(255,255,255,0.08)] bg-[#282826] px-8 py-12 flex flex-col items-center text-center gap-4">
+              <div className="rounded-[4px] border border-[var(--studio-border)] bg-[var(--bg-elevated)] px-8 py-12 flex flex-col items-center text-center gap-4">
                 <p className="text-[28px] leading-[34px] md:text-[36px] md:leading-[42px] tracking-[-0.8px] font-normal text-[var(--mkt-text-primary)]">
                   Using Layout in your project?
                 </p>
@@ -143,6 +143,6 @@ export default function ShowcasePage() {
       </div>
 
       <MarketingFooter />
-    </>
+    </div>
   );
 }

@@ -151,6 +151,72 @@
   --sidebar-ring: rgba(224,224,230,0.4);
 }
 
+/* ===== LIGHT MODE OVERRIDES ===== */
+:root.light {
+  /* Backgrounds — Cursor-inspired clean whites */
+  --bg-app: #FAFAFA;
+  --bg-panel: #F0F0F2;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --bg-hover: #EBEBED;
+  --bg-active: #E0E0E3;
+  --bg-canvas: #F5F5F5;
+
+  /* Borders */
+  --studio-border: rgba(0,0,0,0.08);
+  --studio-border-strong: rgba(0,0,0,0.15);
+  --studio-border-focus: rgba(0,0,0,0.4);
+
+  /* Accent — dark on light */
+  --studio-accent: #1A1A1A;
+  --studio-accent-hover: #333333;
+  --studio-accent-subtle: rgba(0,0,0,0.06);
+
+  /* Text */
+  --text-primary: #1A1A1A;
+  --text-secondary: rgba(0,0,0,0.6);
+  --text-muted: rgba(0,0,0,0.45);
+  --text-on-accent: #FFFFFF;
+
+  /* Status — slightly deeper for light bg contrast */
+  --status-success: #22863a;
+  --status-warning: #d97706;
+  --status-error: #dc2626;
+
+  /* shadcn overrides for light mode */
+  --background: #FAFAFA;
+  --foreground: #1A1A1A;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A1A;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A1A;
+  --primary: #1A1A1A;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F0F0F2;
+  --secondary-foreground: #1A1A1A;
+  --muted: #F0F0F2;
+  --muted-foreground: rgba(0,0,0,0.5);
+  --accent: #F0F0F2;
+  --accent-foreground: #1A1A1A;
+  --destructive: #dc2626;
+  --border: rgba(0,0,0,0.08);
+  --input: rgba(0,0,0,0.08);
+  --ring: rgba(0,0,0,0.2);
+  --chart-1: #1A1A1A;
+  --chart-2: #22863a;
+  --chart-3: #d97706;
+  --chart-4: #dc2626;
+  --chart-5: #6d7a00;
+  --sidebar: #F5F5F5;
+  --sidebar-foreground: #1A1A1A;
+  --sidebar-primary: #1A1A1A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #EBEBED;
+  --sidebar-accent-foreground: #1A1A1A;
+  --sidebar-border: rgba(0,0,0,0.06);
+  --sidebar-ring: rgba(0,0,0,0.15);
+}
+
 /* Custom scrollbars — outside @layer for full specificity */
 * {
   scrollbar-width: thin;
@@ -174,12 +240,26 @@
   background: transparent;
 }
 
+/* Light mode scrollbars */
+.light * {
+  scrollbar-color: rgba(0,0,0,0.12) transparent;
+}
+.light *::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.12);
+}
+.light *::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.2);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   html {
     color-scheme: dark;
+  }
+  html.light {
+    color-scheme: light;
   }
   body {
     background-color: var(--bg-app);
