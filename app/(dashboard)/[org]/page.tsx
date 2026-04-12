@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Trash2, Plus } from "lucide-react";
 import { useProjectStore } from "@/lib/store/project";
 import { useOnboardingStore } from "@/lib/store/onboarding";
@@ -41,8 +41,16 @@ export default function OrgProjectsPage() {
   const deleteProject = useProjectStore((s) => s.deleteProject);
   const markStep = useOnboardingStore((s) => s.markStep);
 
+  const searchParams = useSearchParams();
   const [showNewExtraction, setShowNewExtraction] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+
+  // Open extraction modal if ?new=true is in the URL
+  useEffect(() => {
+    if (searchParams.get("new") === "true") {
+      setShowNewExtraction(true);
+    }
+  }, [searchParams]);
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
     name: string;
