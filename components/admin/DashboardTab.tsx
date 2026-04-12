@@ -791,7 +791,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
           style={{ background: "var(--bg-surface)", border: "1px solid var(--studio-border)" }}
         >
           <div className="text-sm font-medium mb-3" style={{ color: "var(--text-primary)" }}>
-            API Key Mode
+            API Key Mode (users)
           </div>
           <PillSplit
             a={{ label: "BYOK", count: products?.studio?.byokVsHosted?.byok ?? 0, color: "#8b5cf6" }}
@@ -801,7 +801,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
 
         {/* Model usage */}
         <BreakdownCard
-          title="Model Usage"
+          title="Model Usage (users)"
           items={toModelItems(products?.studio?.modelUsage)}
         />
 

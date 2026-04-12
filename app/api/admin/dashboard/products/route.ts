@@ -84,16 +84,21 @@ export async function GET(request: NextRequest) {
     sourceTypes[t] = (sourceTypes[t] ?? 0) + 1;
   }
 
-  // BYOK vs hosted
-  const byokCount = usageLogs.filter((r) => r.mode === "byok").length;
-  const hostedCount = usageLogs.filter((r) => r.mode === "hosted").length;
+  // BYOK vs hosted (unique users, not API call counts)
+  const byokUsers = new Set(usageLogs.filter((r) => r.mode === "byok").map((r) => r.user_id));
+  const hostedUsers = new Set(usageLogs.filter((r) => r.mode === "hosted").map((r) => r.user_id));
 
-  // Model usage
-  const modelUsage: Record<string, number> = {};
+  // Model usage (unique users per model)
+  const modelUserSets: Record<string, Set<string>> = {};
   for (const log of usageLogs) {
-    if (log.model) {
-      modelUsage[log.model] = (modelUsage[log.model] ?? 0) + 1;
+    if (log.model && log.user_id) {
+      if (!modelUserSets[log.model]) modelUserSets[log.model] = new Set();
+      modelUserSets[log.model].add(log.user_id);
     }
+  }
+  const modelUsage: Record<string, number> = {};
+  for (const [model, users] of Object.entries(modelUserSets)) {
+    modelUsage[model] = users.size;
   }
 
   // Component breakdown
@@ -178,7 +183,7 @@ export async function GET(request: NextRequest) {
       layoutMdsGenerated: layoutMdLogs.length,
       variantsGenerated: variantLogs.length,
       sourceTypes,
-      byokVsHosted: { byok: byokCount, hosted: hostedCount },
+      byokVsHosted: { byok: byokUsers.size, hosted: hostedUsers.size },
       modelUsage,
       componentTypes,
       componentSources,
