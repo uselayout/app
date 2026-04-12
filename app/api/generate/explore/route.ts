@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
   void usage
     .then((u) => {
       void logApiCall({ userId, endpoint: "generate/explore", statusCode: 200, durationMs: Date.now() - startTime, metadata: apiLogMetadata });
-      void logEvent("variant.generated", "studio", { userId, metadata: { variantCount, modelId, isRefinement, hasImageUpload: !!imageDataUrl } });
+      void logEvent("variant.generated", "studio", { userId, metadata: { variantCount, modelId, isRefinement, hasImageUpload: !!imageDataUrl, prompt } });
       return logUsage({
         userId,
         projectId: parsed.data.projectId,
