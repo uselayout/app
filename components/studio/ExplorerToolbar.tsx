@@ -242,7 +242,7 @@ export function ExplorerToolbar({
 
   return (
     <div
-      className="mx-3 mb-3 flex flex-col rounded-lg border border-[rgba(255,255,255,0.12)] bg-[var(--bg-surface)]"
+      className="mx-3 mb-3 flex flex-col rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)]"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
@@ -322,7 +322,7 @@ export function ExplorerToolbar({
           </div>
         ) : (
           <div className="relative">
-            <div className="flex min-h-[68px] items-start rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.08)] px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
+            <div className="flex min-h-[68px] items-start rounded-md border border-[var(--studio-border)] bg-[var(--studio-accent-subtle)] px-3.5 py-3 shadow-[0_0_0_1px_rgba(0,0,0,0.2)]">
               {/* Image thumbnail chip */}
               {imageDataUrl && (
                 <div className="mr-2 flex shrink-0 items-center gap-1.5 rounded-md bg-[var(--bg-hover)] px-1.5 py-0.5" title={imageName ?? "Attached image"}>
