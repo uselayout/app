@@ -166,9 +166,9 @@ export function FigmaImportModal({
               </div>
 
               {error && (
-                <div className="flex items-start gap-2 rounded-lg bg-red-500/10 px-3 py-2">
-                  <AlertTriangle size={14} className="mt-0.5 shrink-0 text-red-400" />
-                  <p className="text-xs text-red-400">{error}</p>
+                <div className="flex items-start gap-2 rounded-lg bg-[var(--status-error)]/10 px-3 py-2">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[var(--status-error)]" />
+                  <p className="text-xs text-[var(--status-error)]">{error}</p>
                 </div>
               )}
             </div>
@@ -230,8 +230,8 @@ export function FigmaImportModal({
 
           {step === "done" && (
             <div className="flex flex-col items-center gap-4 py-8">
-              <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <Check size={24} className="text-emerald-400" />
+              <div className="h-12 w-12 rounded-xl bg-[var(--status-success)]/10 flex items-center justify-center">
+                <Check size={24} className="text-[var(--status-success)]" />
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-[var(--text-primary)]">
@@ -277,7 +277,7 @@ export function FigmaImportModal({
               </button>
               <button
                 onClick={handleApply}
-                className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 transition-colors"
+                className="flex items-center gap-1.5 rounded-lg bg-[var(--status-success)] px-4 py-1.5 text-xs font-medium text-white hover:brightness-110 transition-all"
               >
                 <Check size={12} />
                 {acceptedCount > 0
@@ -313,7 +313,7 @@ function ChangeRow({
     colour: "bg-violet-500/15 text-violet-400",
     typography: "bg-sky-500/15 text-sky-400",
     spacing: "bg-[var(--status-warning)]/15 text-[var(--status-warning)]",
-    layout: "bg-emerald-500/15 text-emerald-400",
+    layout: "bg-[var(--status-success)]/15 text-[var(--status-success)]",
     content: "bg-rose-500/15 text-rose-400",
   };
 
@@ -322,7 +322,7 @@ function ChangeRow({
       onClick={onToggle}
       className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-all ${
         change.accepted
-          ? "border-emerald-500/30 bg-emerald-500/5"
+          ? "border-[var(--status-success)]/30 bg-[var(--status-success)]/5"
           : "border-[var(--studio-border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)]"
       }`}
     >
@@ -330,7 +330,7 @@ function ChangeRow({
       <div
         className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
           change.accepted
-            ? "border-emerald-500 bg-emerald-500"
+            ? "border-[var(--status-success)] bg-[var(--status-success)]"
             : "border-[var(--studio-border-strong)] bg-transparent"
         }`}
       >
@@ -353,12 +353,12 @@ function ChangeRow({
         </p>
         <div className="flex items-center gap-1.5 mt-0.5">
           {change.before && (
-            <code className="text-[10px] text-red-400/80 line-through font-mono">
+            <code className="text-[10px] text-[var(--status-error)]/80 line-through font-mono">
               {change.before}
             </code>
           )}
           {change.before && <ArrowRight size={8} className="text-[var(--text-muted)]" />}
-          <code className="text-[10px] text-emerald-400 font-mono">
+          <code className="text-[10px] text-[var(--status-success)] font-mono">
             {change.after}
           </code>
         </div>

@@ -132,7 +132,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
                 {isFigma ? (
                   <Layers className="h-4 w-4 text-[var(--studio-accent)]" />
                 ) : (
-                  <Globe className="h-4 w-4 text-emerald-400" />
+                  <Globe className="h-4 w-4 text-[var(--status-success)]" />
                 )}
               </div>
             )}
@@ -192,7 +192,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
 
         {/* Error */}
         {saveError && (
-          <p className="mt-3 text-xs text-red-400">{saveError}</p>
+          <p className="mt-3 text-xs text-[var(--status-error)]">{saveError}</p>
         )}
 
         {/* Actions */}

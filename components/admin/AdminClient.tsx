@@ -768,7 +768,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
 
   const statusBadge = (status: AccessRequestRow["status"]) => {
     const styles: Record<string, { bg: string; color: string; border: string }> = {
-      pending: { bg: "rgba(251,191,36,0.1)", color: "#fbbf24", border: "rgba(251,191,36,0.2)" },
+      pending: { bg: "rgba(251,191,36,0.1)", color: "var(--status-warning)", border: "rgba(251,191,36,0.2)" },
       approved: { bg: "rgba(52,211,153,0.1)", color: "#34d399", border: "rgba(52,211,153,0.2)" },
       rejected: { bg: "rgba(100,100,120,0.15)", color: "var(--text-muted)", border: "rgba(100,100,120,0.2)" },
     };
@@ -1081,7 +1081,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                           return (
                             <div className="flex items-center gap-2">
                               {statusInfo && (
-                                <span className="text-[10px] whitespace-nowrap" style={{ color: statusInfo.label === "1st reminder" ? "#fbbf24" : statusInfo.label === "Final sent" ? "#f87171" : "var(--text-muted)" }}>
+                                <span className="text-[10px] whitespace-nowrap" style={{ color: statusInfo.label === "1st reminder" ? "var(--status-warning)" : statusInfo.label === "Final sent" ? "#f87171" : "var(--text-muted)" }}>
                                   {statusInfo.label}{statusInfo.daysAgo != null ? ` (${statusInfo.daysAgo}d ago)` : ""}
                                 </span>
                               )}
@@ -1215,7 +1215,7 @@ function AdminStats({ stats }: { stats: AdminStatsData | null }) {
   return (
     <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
       <StatCard label="Total requests" value={stats.totalRequests} />
-      <StatCard label="Pending" value={stats.pending} accent="#fbbf24" />
+      <StatCard label="Pending" value={stats.pending} accent="var(--status-warning)" />
       <StatCard label="Approved" value={stats.approved} accent="#34d399" />
       <StatCard label="Rejected" value={stats.rejected} />
       <StatCard label="Signed up" value={stats.signedUp} accent="#60a5fa" />
@@ -1643,7 +1643,7 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
                 <div className="space-y-3">
                   {group.byCategory.map((catGroup) => (
                     <div key={catGroup.category}>
-                      <span className="text-[10px] font-semibold block mb-1" style={{ color: catGroup.category === "new" ? "#34d399" : catGroup.category === "improved" ? "#60a5fa" : "#fbbf24" }}>
+                      <span className="text-[10px] font-semibold block mb-1" style={{ color: catGroup.category === "new" ? "#34d399" : catGroup.category === "improved" ? "#60a5fa" : "var(--status-warning)" }}>
                         {catGroup.label}
                       </span>
                       <div className="space-y-1.5 pl-2">
@@ -1690,7 +1690,7 @@ function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "erro
                 Draft entries
               </h3>
               {draft.length > 0 && (
-                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-[var(--status-warning)]/20 text-[var(--status-warning)] border border-[var(--status-warning)]/30">
                   {draft.length}
                 </span>
               )}
@@ -2398,7 +2398,7 @@ export function AdminClient() {
             >
               {tab.label}
               {tab.key === "requests" && pendingCount > 0 && (
-                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-[var(--status-warning)]/20 text-[var(--status-warning)] border border-[var(--status-warning)]/30">
                   {pendingCount}
                 </span>
               )}

@@ -31,7 +31,7 @@ function entryBadgeColour(type: EditEntry["type"]): string {
     case "ai-refine":
       return "bg-purple-500/15 text-purple-400";
     case "rollback":
-      return "bg-amber-500/15 text-amber-400";
+      return "bg-[var(--status-warning)]/15 text-[var(--status-warning)]";
   }
 }
 
@@ -73,9 +73,9 @@ function DiffView({ before, after, onClose }: { before: string; after: string; o
             key={i}
             className={`px-3 py-px whitespace-pre ${
               line.type === "removed"
-                ? "bg-red-500/10 text-red-400"
+                ? "bg-[var(--status-error)]/10 text-[var(--status-error)]"
                 : line.type === "added"
-                  ? "bg-emerald-500/10 text-emerald-400"
+                  ? "bg-[var(--status-success)]/10 text-[var(--status-success)]"
                   : "text-[var(--text-muted)]"
             }`}
           >
@@ -165,7 +165,7 @@ export function EditHistoryPanel({
                 </button>
                 <button
                   onClick={() => onRestore(entry)}
-                  className="rounded p-0.5 text-[var(--text-muted)] hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                  className="rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--status-warning)] hover:bg-[var(--status-warning)]/10 transition-colors"
                   title="Restore this version"
                 >
                   <RotateCcw size={10} />

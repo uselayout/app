@@ -28,7 +28,7 @@ function CopyCommand({ command, label }: { command: string; label?: string }) {
           {command}
         </code>
         {copied ? (
-          <Check className="h-3 w-3 shrink-0 text-emerald-400" />
+          <Check className="h-3 w-3 shrink-0 text-[var(--status-success)]" />
         ) : (
           <Copy className="h-3 w-3 shrink-0 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]" />
         )}

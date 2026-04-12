@@ -21,22 +21,22 @@ interface ExtractionDiffModalProps {
 function changeColour(change: "added" | "removed" | "modified"): string {
   switch (change) {
     case "added":
-      return "text-emerald-400";
+      return "text-[var(--status-success)]";
     case "removed":
-      return "text-red-400";
+      return "text-[var(--status-error)]";
     case "modified":
-      return "text-amber-400";
+      return "text-[var(--status-warning)]";
   }
 }
 
 function changeBg(change: "added" | "removed" | "modified"): string {
   switch (change) {
     case "added":
-      return "bg-emerald-400/10";
+      return "bg-[var(--status-success)]/10";
     case "removed":
-      return "bg-red-400/10";
+      return "bg-[var(--status-error)]/10";
     case "modified":
-      return "bg-amber-400/10";
+      return "bg-[var(--status-warning)]/10";
   }
 }
 
@@ -348,8 +348,8 @@ export function ExtractionDiffModal({
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-md ${changeBg("added")}`}
                 >
                   <div className="flex items-center gap-1.5">
-                    <Plus className="w-3 h-3 text-emerald-400" />
-                    <span className="text-xs font-medium text-emerald-400">Added</span>
+                    <Plus className="w-3 h-3 text-[var(--status-success)]" />
+                    <span className="text-xs font-medium text-[var(--status-success)]">Added</span>
                   </div>
                   <span className="text-[var(--text-primary)] text-sm font-medium">{font}</span>
                 </div>
@@ -360,8 +360,8 @@ export function ExtractionDiffModal({
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-md ${changeBg("removed")}`}
                 >
                   <div className="flex items-center gap-1.5">
-                    <Minus className="w-3 h-3 text-red-400" />
-                    <span className="text-xs font-medium text-red-400">Removed</span>
+                    <Minus className="w-3 h-3 text-[var(--status-error)]" />
+                    <span className="text-xs font-medium text-[var(--status-error)]">Removed</span>
                   </div>
                   <span className="text-[var(--text-primary)] text-sm font-medium">{font}</span>
                 </div>

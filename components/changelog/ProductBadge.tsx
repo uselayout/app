@@ -11,8 +11,8 @@ const productConfig: Record<
   },
   cli: {
     label: "CLI",
-    bg: "bg-emerald-500/15",
-    text: "text-emerald-400",
+    bg: "bg-[var(--status-success)]/15",
+    text: "text-[var(--status-success)]",
   },
   "figma-plugin": {
     label: "Figma Plugin",

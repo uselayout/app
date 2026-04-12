@@ -88,7 +88,7 @@ function SourcePanelEmptyState({
               {isFigma ? (
                 <Layers className="h-3.5 w-3.5 text-[var(--studio-accent)]" />
               ) : (
-                <Globe className="h-3.5 w-3.5 text-emerald-400" />
+                <Globe className="h-3.5 w-3.5 text-[var(--status-success)]" />
               )}
             </div>
           )}
@@ -223,7 +223,7 @@ function SourcePanelInner({
         )}
       </div>
       {syncResult && (
-        <div className={`px-2 py-1.5 text-xs ${syncResult.count > 0 ? "text-emerald-400 bg-emerald-500/5" : "text-[var(--text-muted)] bg-[var(--bg-surface)]"}`}>
+        <div className={`px-2 py-1.5 text-xs ${syncResult.count > 0 ? "text-[var(--status-success)] bg-[var(--status-success)]/5" : "text-[var(--text-muted)] bg-[var(--bg-surface)]"}`}>
           {syncResult.count > 0
             ? `Synced ${syncResult.count} tokens from layout.md`
             : "No tokens found in layout.md"}
@@ -411,7 +411,7 @@ function FigmaTab({
                 </p>
               )}
               {captureError && (
-                <p className="text-[11px] text-red-400">{captureError}</p>
+                <p className="text-[11px] text-[var(--status-error)]">{captureError}</p>
               )}
             </div>
           )}
@@ -481,7 +481,7 @@ function TokenSectionHeader({
         title={`Copy all ${label.toLowerCase()}`}
       >
         {copied ? (
-          <Check className="h-3 w-3 text-emerald-400" />
+          <Check className="h-3 w-3 text-[var(--status-success)]" />
         ) : (
           <Copy className="h-3 w-3 text-[var(--text-muted)]" />
         )}
@@ -967,7 +967,7 @@ function TokenRow({
         onClick={handleCopy}
         className={`flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-[var(--bg-hover)] ${
           editing || editingName ? "bg-[var(--bg-elevated)] border-l-2 border-l-[var(--studio-border-focus)]" : ""
-        } ${justSaved ? "bg-emerald-500/5" : ""}`}
+        } ${justSaved ? "bg-[var(--status-success)]/5" : ""}`}
       >
         {isColor && canEdit ? (
           <ColorPickerPopover value={resolvedValue} onChange={handleColorChange}>
@@ -1051,9 +1051,9 @@ function TokenRow({
 
         <span className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
           {copied ? (
-            <Check className="h-3 w-3 text-emerald-400" />
+            <Check className="h-3 w-3 text-[var(--status-success)]" />
           ) : justSaved ? (
-            <Check className="h-3 w-3 text-emerald-400" />
+            <Check className="h-3 w-3 text-[var(--status-success)]" />
           ) : (
             <Copy className="h-3 w-3 text-[var(--text-muted)]" />
           )}

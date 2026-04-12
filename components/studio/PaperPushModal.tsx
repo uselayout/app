@@ -108,7 +108,7 @@ export function PaperPushModal({ variant, onClose }: PaperPushModalProps) {
                   >
                     {copiedField === "command" ? (
                       <>
-                        <Check size={10} className="text-emerald-400" />
+                        <Check size={10} className="text-[var(--status-success)]" />
                         Copied
                       </>
                     ) : (
@@ -138,7 +138,7 @@ export function PaperPushModal({ variant, onClose }: PaperPushModalProps) {
                     >
                       {copiedField === "code" ? (
                         <>
-                          <Check size={10} className="text-emerald-400" />
+                          <Check size={10} className="text-[var(--status-success)]" />
                           Copied
                         </>
                       ) : (
@@ -177,8 +177,8 @@ export function PaperPushModal({ variant, onClose }: PaperPushModalProps) {
           {step === "done" && (
             <div className="flex flex-col items-center gap-4 py-4">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                  <Check size={16} className="text-emerald-400" />
+                <div className="h-8 w-8 rounded-lg bg-[var(--status-success)]/10 flex items-center justify-center">
+                  <Check size={16} className="text-[var(--status-success)]" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-[var(--text-primary)]">

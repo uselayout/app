@@ -141,8 +141,8 @@ function SavedCard({
         >
           {copiedId === comp.id ? (
             <>
-              <Check size={12} className="text-emerald-400" />
-              <span className="text-emerald-400">Copied</span>
+              <Check size={12} className="text-[var(--status-success)]" />
+              <span className="text-[var(--status-success)]">Copied</span>
             </>
           ) : (
             <>

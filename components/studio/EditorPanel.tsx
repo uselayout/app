@@ -131,10 +131,10 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
   const tokenCount = useMemo(() => Math.round(value.length / 4), [value]);
   const tokenColour =
     tokenCount < 4000
-      ? "text-emerald-400"
+      ? "text-[var(--status-success)]"
       : tokenCount < 8000
         ? "text-yellow-400"
-        : "text-red-400";
+        : "text-[var(--status-error)]";
 
   const handleChange = useCallback(
     (newValue: string | undefined) => {
@@ -286,7 +286,7 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
             <span className="text-xs text-[var(--text-muted)]">Saving...</span>
           )}
           {saveStatus === "saved" && (
-            <span className="text-xs text-emerald-400">Saved</span>
+            <span className="text-xs text-[var(--status-success)]">Saved</span>
           )}
           {projectId && orgId && (
             <button

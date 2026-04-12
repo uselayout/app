@@ -846,7 +846,7 @@ export function ElementInspector({
               </div>
             </div>
             {!getStoredGoogleApiKey() ? (
-              <p className="mt-auto rounded border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[10px] text-amber-400">
+              <p className="mt-auto rounded border border-[var(--status-warning)]/30 bg-[var(--status-warning)]/10 px-3 py-2 text-[10px] text-[var(--status-warning)]">
                 Add a Google AI API key in Settings to generate images.
               </p>
             ) : (

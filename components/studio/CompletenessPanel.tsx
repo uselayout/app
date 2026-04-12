@@ -16,21 +16,21 @@ interface CompletenessPanelProps {
 }
 
 function scoreColour(score: number): string {
-  if (score >= 70) return 'text-emerald-400';
+  if (score >= 70) return 'text-[var(--status-success)]';
   if (score >= 40) return 'text-[var(--status-warning)]';
-  return 'text-red-400';
+  return 'text-[var(--status-error)]';
 }
 
 function scoreBarColour(score: number): string {
-  if (score >= 70) return 'bg-emerald-400';
+  if (score >= 70) return 'bg-[var(--status-success)]';
   if (score >= 40) return 'bg-[var(--status-warning)]';
-  return 'bg-red-400';
+  return 'bg-[var(--status-error)]';
 }
 
 function scoreStrokeColour(score: number): string {
-  if (score >= 70) return '#34d399'; // emerald-400
+  if (score >= 70) return 'var(--status-success)';
   if (score >= 40) return 'var(--status-warning)';
-  return '#f87171'; // red-400
+  return 'var(--status-error)';
 }
 
 const CIRCLE_RADIUS = 36;
@@ -127,13 +127,13 @@ function SectionRow({ section }: SectionRowProps) {
         <div className="px-3 pb-3 pt-2 bg-[var(--bg-panel)] flex flex-col gap-1.5">
           {section.found.map((item) => (
             <div key={item} className="flex items-start gap-2">
-              <Check size={13} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+              <Check size={13} className="text-[var(--status-success)] flex-shrink-0 mt-0.5" />
               <span className="text-xs text-[var(--text-secondary)] leading-snug">{item}</span>
             </div>
           ))}
           {section.missing.map((item) => (
             <div key={item} className="flex items-start gap-2">
-              <X size={13} className="text-red-400 flex-shrink-0 mt-0.5" />
+              <X size={13} className="text-[var(--status-error)] flex-shrink-0 mt-0.5" />
               <span className="text-xs text-[var(--text-muted)] leading-snug">{item}</span>
             </div>
           ))}

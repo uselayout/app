@@ -75,7 +75,7 @@ function CodeRow({ code }: { code: InviteCode }) {
         className="ml-auto flex items-center gap-1.5 rounded-md border border-[var(--studio-border)] bg-[var(--bg-elevated)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-all duration-[var(--duration-base)] ease-[var(--ease-out)] hover:border-[var(--studio-border-strong)] hover:text-[var(--text-primary)]"
       >
         {copied ? (
-          <Check size={12} className="text-emerald-400" aria-hidden={true} />
+          <Check size={12} className="text-[var(--status-success)]" aria-hidden={true} />
         ) : (
           <Copy size={12} aria-hidden={true} />
         )}
@@ -129,7 +129,7 @@ export function InviteCodesPanel() {
       </p>
 
       {error && (
-        <p className="mt-2 text-sm text-red-400">{error}</p>
+        <p className="mt-2 text-sm text-[var(--status-error)]">{error}</p>
       )}
 
       {!error && (

@@ -289,11 +289,11 @@ export default function MembersPage() {
             </button>
           </div>
           {atSeatLimit && (
-            <p className="mt-2 text-xs text-amber-400">
+            <p className="mt-2 text-xs text-[var(--status-warning)]">
               All seats are in use.{" "}
               <a
                 href={`/${activeOrg?.slug || ""}/settings/billing`}
-                className="underline hover:text-amber-300"
+                className="underline hover:text-[var(--status-warning)]"
               >
                 Add more seats
               </a>{" "}

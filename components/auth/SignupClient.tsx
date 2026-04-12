@@ -183,10 +183,10 @@ function SignupContent() {
                   className="w-full h-[40px] bg-[var(--bg-app)] border border-[var(--studio-border)] rounded-[6px] px-3 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-strong)] transition-colors font-mono tracking-wider"
                 />
                 {codeStatus === "valid" && (
-                  <p className="text-[11px] text-emerald-400 px-1">✓ Valid invite code</p>
+                  <p className="text-[11px] text-[var(--status-success)] px-1">✓ Valid invite code</p>
                 )}
                 {codeStatus === "invalid" && (
-                  <p className="text-[11px] text-red-400 px-1">Invalid or already used</p>
+                  <p className="text-[11px] text-[var(--status-error)] px-1">Invalid or already used</p>
                 )}
               </div>
 
@@ -222,7 +222,7 @@ function SignupContent() {
               />
 
               {error && (
-                <p className="rounded-[6px] bg-red-500/10 border border-red-500/20 px-3 py-2 text-[12px] text-red-400">
+                <p className="rounded-[6px] bg-[var(--status-error)]/10 border border-[var(--status-error)]/20 px-3 py-2 text-[12px] text-[var(--status-error)]">
                   {error}
                 </p>
               )}
