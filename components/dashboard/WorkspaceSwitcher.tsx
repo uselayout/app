@@ -79,6 +79,7 @@ export function WorkspaceSwitcher({ collapsed }: WorkspaceSwitcherProps) {
           setOpen((prev) => !prev);
           setShowOrgList(false);
         }}
+        title={activeProject ? `${orgName} / ${activeProject.name}` : orgName}
         className={`flex w-full items-center gap-2 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] transition-all duration-[var(--duration-base)] hover:bg-[var(--bg-hover)] ${
           collapsed ? "justify-center" : ""
         }`}
@@ -89,15 +90,16 @@ export function WorkspaceSwitcher({ collapsed }: WorkspaceSwitcherProps) {
         </div>
         {!collapsed && (
           <>
-            <div className="flex min-w-0 flex-1 items-center gap-1 truncate">
-              <span className="truncate">{orgName}</span>
-              {activeProject && (
+            <div className="flex min-w-0 flex-1 flex-col">
+              {activeProject ? (
                 <>
-                  <ChevronRight className="h-3 w-3 shrink-0 text-[var(--text-muted)]" />
-                  <span className="truncate text-[var(--text-secondary)]">
+                  <span className="truncate text-[11px] text-[var(--text-muted)]">{orgName}</span>
+                  <span className="truncate text-sm font-medium text-[var(--text-primary)]">
                     {activeProject.name}
                   </span>
                 </>
+              ) : (
+                <span className="truncate text-sm font-medium text-[var(--text-primary)]">{orgName}</span>
               )}
             </div>
             <svg
@@ -156,6 +158,25 @@ export function WorkspaceSwitcher({ collapsed }: WorkspaceSwitcherProps) {
               )}
 
               <div className="my-1 border-t border-[var(--studio-border)]" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  router.push(`/${orgSlug}?new=true`);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[var(--text-muted)] transition-all duration-[var(--duration-base)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path
+                    d="M7 3v8M3 7h8"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                New project
+              </button>
 
               <button
                 type="button"

@@ -659,6 +659,8 @@ export function ExplorerCanvas({
   const handleRateVariant = useCallback(
     (variantId: string, rating: "up" | "down") => {
       if (!currentExploration) return;
+      const variant = currentExploration.variants.find((v) => v.id === variantId);
+      const isToggleOff = variant?.rating === rating;
       const updated = explorations.map((e) =>
         e.id === currentExploration.id
           ? {
@@ -672,6 +674,20 @@ export function ExplorerCanvas({
           : e
       );
       onUpdateExplorations(updated);
+
+      // Log rating (only when setting, not when toggling off)
+      if (!isToggleOff) {
+        void fetch("/api/log/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            variantId,
+            variantName: variant?.name,
+            rating,
+            prompt: variant?.batchPrompt,
+          }),
+        });
+      }
     },
     [currentExploration, explorations, onUpdateExplorations]
   );

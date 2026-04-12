@@ -26,7 +26,7 @@ export default function StudioPage({
 }: {
   params: Promise<{ org: string; projectId: string }>;
 }) {
-  const { projectId: id } = use(params);
+  const { org: orgSlug, projectId: id } = use(params);
   const projects = useProjectStore((s) => s.projects);
   const hydrating = useProjectStore((s) => s.hydrating);
   const updateProjectName = useProjectStore((s) => s.updateProjectName);
@@ -175,7 +175,8 @@ export default function StudioPage({
   const streamingContent = useExtractionStore((s) => s.streamingContent);
   const isThisProjectExtracting = extractionProjectId === id;
 
-  const { runExtraction } = useExtraction();
+  const { runExtraction, abort: abortExtraction } = useExtraction();
+  const resetExtraction = useExtractionStore((s) => s.resetExtraction);
   const extractionStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
   const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved" | "design-system">("editor");
@@ -451,6 +452,13 @@ export default function StudioPage({
         error={extractionError}
         warnings={extractionWarnings}
         streamingContent={streamingContent ?? project.layoutMd}
+        onCancel={() => {
+          abortExtraction();
+          resetExtraction();
+          if (!project.extractionData) {
+            router.push(`/${orgSlug}`);
+          }
+        }}
         onOpenEditor={() => {
           setCentreView("editor");
           setWhatsNextDismissed(true);

@@ -15,6 +15,14 @@ interface PromptEntry {
   createdAt: string;
 }
 
+interface FeedbackEntry {
+  rating: string | null;
+  variantName: string | null;
+  prompt: string | null;
+  userEmail: string;
+  createdAt: string;
+}
+
 interface SavedComponent {
   id: string;
   name: string;
@@ -67,6 +75,7 @@ function SectionHeader({ title }: { title: string }) {
 
 export function VariantsTab() {
   const [prompts, setPrompts] = useState<PromptEntry[] | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackEntry[] | null>(null);
   const [components, setComponents] = useState<SavedComponent[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);
@@ -77,11 +86,13 @@ export function VariantsTab() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [promptsRes, componentsRes] = await Promise.all([
+      const [promptsRes, feedbackRes, componentsRes] = await Promise.all([
         fetch(`/api/admin/prompts?days=${days}`).then((r) => r.json()),
+        fetch(`/api/admin/feedback?days=${days}`).then((r) => r.json()),
         fetch("/api/admin/components").then((r) => r.json()),
       ]);
       setPrompts(promptsRes.prompts ?? []);
+      setFeedback(feedbackRes.feedback ?? []);
       setComponents(componentsRes.components ?? []);
     } catch (err) {
       console.error("Failed to fetch variants data:", err);
@@ -204,6 +215,99 @@ export function VariantsTab() {
           </tbody>
         </table>
       </div>
+
+      {/* --- Variant Feedback --- */}
+      {(() => {
+        const entries = feedback ?? [];
+        const upCount = entries.filter((f) => f.rating === "up").length;
+        const downCount = entries.filter((f) => f.rating === "down").length;
+        const total = upCount + downCount;
+        return (
+          <>
+            <div className="flex items-center justify-between mb-3">
+              <SectionHeader title="Variant Feedback" />
+              {total > 0 && (
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  {upCount} positive, {downCount} negative ({total > 0 ? Math.round((upCount / total) * 100) : 0}% positive)
+                </span>
+              )}
+            </div>
+
+            <div
+              className="rounded-lg overflow-x-auto mb-8"
+              style={{ border: "1px solid var(--studio-border)" }}
+            >
+              <table className="w-full text-xs min-w-[600px]">
+                <thead>
+                  <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--studio-border)" }}>
+                    {["Time", "User", "Variant", "Prompt", "Rating"].map((h) => (
+                      <th
+                        key={h}
+                        className="px-3 py-2.5 text-left font-medium"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading && !feedback && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-4 text-center" style={{ color: "var(--text-muted)", background: "var(--bg-panel)" }}>
+                        Loading...
+                      </td>
+                    </tr>
+                  )}
+                  {entries.length === 0 && feedback && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-4 text-center" style={{ color: "var(--text-muted)", background: "var(--bg-panel)" }}>
+                        No feedback in last {days} days
+                      </td>
+                    </tr>
+                  )}
+                  {entries.map((f, i) => (
+                    <tr
+                      key={i}
+                      className="transition-colors"
+                      style={{
+                        background: "var(--bg-panel)",
+                        borderBottom: "1px solid var(--studio-border)",
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-panel)"; }}
+                    >
+                      <td className="px-3 py-2 whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                        {formatRelativeTime(f.createdAt)}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap font-mono" style={{ color: "var(--text-secondary)" }}>
+                        {f.userEmail}
+                      </td>
+                      <td className="px-3 py-2" style={{ color: "var(--text-primary)" }}>
+                        {f.variantName ?? <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>-</span>}
+                      </td>
+                      <td className="px-3 py-2" style={{ color: "var(--text-secondary)", maxWidth: 300 }}>
+                        {f.prompt ? truncate(f.prompt, 60) : <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>-</span>}
+                      </td>
+                      <td className="px-3 py-2">
+                        {f.rating === "up" ? (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>
+                            Good
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: "rgba(239,68,68,0.15)", color: "#f87171" }}>
+                            Bad
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        );
+      })()}
 
       {/* --- Saved Components --- */}
       <div className="flex items-center justify-between mb-3">

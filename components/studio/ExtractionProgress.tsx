@@ -13,6 +13,7 @@ interface ExtractionProgressProps {
   error?: string | null;
   errorStep?: string | null;
   onRetry?: () => void;
+  onCancel?: () => void;
   streamingContent?: string;
   warnings?: string[];
   /** Called when extraction is complete and user picks "Open Editor" (or auto-advance fires) */
@@ -181,6 +182,7 @@ export function ExtractionProgress({
   steps,
   error,
   onRetry,
+  onCancel,
   streamingContent,
   warnings,
   onOpenEditor,
@@ -228,7 +230,18 @@ export function ExtractionProgress({
             <div className="space-y-2">
               <Progress value={progress} className="h-2" />
               <div className="flex justify-between text-xs text-[var(--text-muted)]">
-                <span>{Math.round(progress)}%</span>
+                <div className="flex items-center gap-3">
+                  <span>{Math.round(progress)}%</span>
+                  {onCancel && !error && progress < 100 && (
+                    <button
+                      type="button"
+                      onClick={onCancel}
+                      className="text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
                 {progress < 100 && (
                   <span>{elapsed >= 60 ? `${Math.floor(elapsed / 60)}m ${elapsed % 60}s` : `${elapsed}s`} elapsed &middot; typically 3-5 minutes</span>
                 )}
