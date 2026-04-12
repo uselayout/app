@@ -38,6 +38,8 @@ function isColourValue(value: string): boolean {
     "grey", "gray", "navy", "teal", "aqua", "maroon", "lime",
   ]);
   if (named.has(v)) return true;
+  // Bare HSL triple (shadcn format: "222.2 84% 4.9%")
+  if (/^[\d.]+\s+[\d.]+%\s+[\d.]+%$/.test(v)) return true;
   return false;
 }
 
@@ -74,6 +76,10 @@ function cssVarToToken(name: string, value: string): ExtractedToken {
     return { name, value, type: "radius", category: "semantic", cssVariable: name };
   }
   if (lower.includes("font") || lower.includes("line-height") || lower.includes("letter-spacing") || lower.includes("tracking") || lower.includes("leading")) {
+    return { name, value, type: "typography", category: "semantic", cssVariable: name };
+  }
+  // Value references a font variable (e.g. var(--font-inter))
+  if (/var\(--font-/i.test(resolvedValue)) {
     return { name, value, type: "typography", category: "semantic", cssVariable: name };
   }
   if (lower.includes("spacing") || lower.includes("space") || lower.includes("gap") || lower.includes("padding") || lower.includes("margin") || lower.includes("inset")) {

@@ -53,6 +53,10 @@ const COLOR_GROUPS: GroupDef[] = [
       (n.includes("-text-") || n.endsWith("-text") || n.includes("label") || n.includes("heading") || n.includes("placeholder") || n.includes("caption")),
   },
   {
+    label: "Foreground",
+    match: (n) => n.includes("foreground"),
+  },
+  {
     label: "Borders",
     match: (n) =>
       !isComponentToken(n) &&
@@ -76,6 +80,13 @@ const COLOR_GROUPS: GroupDef[] = [
       n.includes("status") || n.includes("success") || n.includes("error") || n.includes("warning") || n.includes("info") || n.includes("danger") || n.includes("callout"),
   },
   {
+    label: "Palette",
+    match: (n) => {
+      const stripped = n.replace(/^--/, "");
+      return /^(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|grey|zinc|neutral|stone|magenta|white|black|current)(-\d+)?$/.test(stripped);
+    },
+  },
+  {
     label: "Components",
     match: (n) => isComponentToken(n),
   },
@@ -85,6 +96,18 @@ const TYPOGRAPHY_GROUPS: GroupDef[] = [
   {
     label: "Font Families",
     match: (n) => n.includes("font-family") || n.includes("font-sans") || n.includes("font-serif") || n.includes("font-mono") || n.includes("font-display") || n.includes("font-body") || n.includes("font-code"),
+  },
+  {
+    label: "Display Sizes",
+    match: (n) => n.includes("display") && (n.includes("size") || n.includes("font")),
+  },
+  {
+    label: "Heading Sizes",
+    match: (n) => n.includes("heading") && (n.includes("size") || n.includes("font")),
+  },
+  {
+    label: "Body Sizes",
+    match: (n) => (n.includes("body") || n.includes("paragraph") || n.includes("description")) && (n.includes("size") || n.includes("font")),
   },
   {
     label: "Sizes",

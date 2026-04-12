@@ -62,7 +62,11 @@ function TypographySpecimenRow({
 
   const specimenStyle: React.CSSProperties = {};
   if (isFontSize && numericValue) {
-    specimenStyle.fontSize = `${Math.min(numericValue, 48)}px`;
+    const unit = token.value.match(/(px|rem|em|%|vh|vw)/)?.[1] || "px";
+    // Cap at sensible max: 3rem/em ≈ 48px, 48px for px
+    const maxVal = unit === "rem" || unit === "em" ? 3 : 48;
+    const capped = Math.min(numericValue, maxVal);
+    specimenStyle.fontSize = `${capped}${unit}`;
   } else if (isFontFamily) {
     specimenStyle.fontFamily = token.value;
   } else if (isFontWeight && numericValue) {
@@ -283,7 +287,7 @@ export function TypographyScale({
 
   // Sort font-size tokens by numeric value (largest first)
   const sortedGroups = displayGroups.map((group) => {
-    if (group.label === "Sizes" || group.label === "Font Sizes") {
+    if (group.label.includes("Sizes") || group.label === "Font Sizes") {
       const sorted = [...group.tokens].sort((a, b) => {
         const aVal = parseNumericValue(a.value) ?? 0;
         const bVal = parseNumericValue(b.value) ?? 0;

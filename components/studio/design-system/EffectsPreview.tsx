@@ -25,7 +25,12 @@ function EffectCard({
   const [justCopied, setJustCopied] = useState(false);
 
   const displayName = token.cssVariable ?? `--${token.name}`;
-  const isShadow = token.value.includes("px") && (token.value.includes("rgba") || token.value.includes("#") || token.value.includes("rgb("));
+  const trimmedValue = token.value.trim();
+  const lowerValue = trimmedValue.toLowerCase();
+  const isShadow = trimmedValue.includes("px") && (trimmedValue.includes("rgba") || trimmedValue.includes("#") || trimmedValue.includes("rgb("));
+  const isColour = /^(#|rgb|hsl|oklch|oklab|lch|lab|color\()/i.test(lowerValue)
+    || /^[\d.]+\s+[\d.]+%\s+[\d.]+%$/.test(trimmedValue);
+  const isFont = /var\(--font-/i.test(trimmedValue);
 
   const handleCopy = useCallback(() => {
     copyToClipboard(displayName);
@@ -59,6 +64,24 @@ function EffectCard({
             className="h-16 w-24 rounded-lg bg-[#e8e8e8]"
             style={{ boxShadow: token.value }}
           />
+        </div>
+      )}
+      {!isShadow && isColour && (
+        <div className="mb-3 flex justify-center">
+          <div
+            className="h-8 w-8 rounded-full border border-[var(--studio-border)]"
+            style={{ backgroundColor: trimmedValue }}
+          />
+        </div>
+      )}
+      {!isShadow && !isColour && isFont && (
+        <div className="mb-3 flex justify-center">
+          <span
+            className="text-xl text-[var(--text-primary)]"
+            style={{ fontFamily: trimmedValue.replace(/var\(--font-([^)]+)\)/, "$1") }}
+          >
+            Aa
+          </span>
         </div>
       )}
 
