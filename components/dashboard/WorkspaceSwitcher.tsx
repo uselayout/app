@@ -90,7 +90,7 @@ export function WorkspaceSwitcher({ collapsed }: WorkspaceSwitcherProps) {
         </div>
         {!collapsed && (
           <>
-            <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex min-w-0 flex-1 flex-col items-start">
               {activeProject ? (
                 <>
                   <span className="truncate text-[11px] text-[var(--text-muted)]">{orgName}</span>
