@@ -36,11 +36,7 @@ export async function uploadScreenshots(
       continue;
     }
 
-    const { data: urlData } = supabase.storage
-      .from(BUCKET)
-      .getPublicUrl(path);
-
-    urls.push(urlData.publicUrl);
+    urls.push(`/api/storage/${BUCKET}/${path}`);
   }
 
   return urls;
