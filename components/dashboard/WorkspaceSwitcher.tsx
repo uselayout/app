@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useRouter, useParams, usePathname } from "next/navigation";
+import { useRouter, useParams, usePathname, useSearchParams } from "next/navigation";
 import { useOrgStore } from "@/lib/store/organization";
 import { useProjectStore } from "@/lib/store/project";
 import { ChevronRight } from "lucide-react";
@@ -17,6 +17,7 @@ export function WorkspaceSwitcher({ collapsed }: WorkspaceSwitcherProps) {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const organizations = useOrgStore((s) => s.organizations);
   const currentOrg = useOrgStore((s) => s.currentOrg);
@@ -58,7 +59,8 @@ export function WorkspaceSwitcher({ collapsed }: WorkspaceSwitcherProps) {
     setOpen(false);
     setShowOrgList(false);
     const subPage = currentSubPage();
-    router.push(`/${orgSlug}/projects/${id}/${subPage}`);
+    const viewParam = searchParams.get("view");
+    router.push(`/${orgSlug}/projects/${id}/${subPage}${viewParam ? `?view=${viewParam}` : ""}`);
   }
 
   function handleSelectOrg(slug: string) {

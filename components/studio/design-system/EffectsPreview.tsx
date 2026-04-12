@@ -88,7 +88,7 @@ function EffectCard({
       {/* Name */}
       <button
         onClick={handleCopy}
-        className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+        className="flex items-center gap-1.5 max-w-full overflow-hidden text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
       >
         {justCopied ? (
           <Check className="h-3 w-3 text-emerald-400 shrink-0" />

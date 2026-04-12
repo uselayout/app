@@ -17,6 +17,12 @@ function parsePixelValue(value: string): number | null {
   // rem → px (assume 16px base)
   const remMatch = value.match(/^([\d.]+)\s*rem/i);
   if (remMatch) return parseFloat(remMatch[1]) * 16;
+  // clamp(min, preferred, max) — use the min value for bar sizing
+  const clampMatch = value.match(/clamp\(\s*([\d.]+)\s*(px|rem)/i);
+  if (clampMatch) {
+    const num = parseFloat(clampMatch[1]);
+    return clampMatch[2].toLowerCase() === "rem" ? num * 16 : num;
+  }
   return null;
 }
 
@@ -70,7 +76,7 @@ function SpacingBar({
       {/* Token name */}
       <button
         onClick={handleCopy}
-        className="w-40 shrink-0 flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-left"
+        className="w-56 shrink-0 flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-left"
       >
         {justCopied ? (
           <Check className="h-3 w-3 text-emerald-400 shrink-0" />
@@ -160,7 +166,7 @@ export function SpacingScale({
   }, 0);
 
   return (
-    <div className="space-y-0.5">
+    <div className="space-y-1">
       {sorted.map((token) => (
         <SpacingBar
           key={token.cssVariable ?? token.name}
