@@ -600,7 +600,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
 
       {/* Loading skeleton */}
       {loading && !overview && (
-        <div className="grid grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
@@ -615,7 +615,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
       {(overview || !loading) && (
         <>
           <SectionHeader title="Headline Metrics" />
-          <div className="grid grid-cols-4 gap-3 mb-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
             <StatCard
               label="Total Users"
               value={formatNumber(overview?.totalUsers)}
@@ -635,7 +635,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
               value={formatNumber(overview?.totalProjects)}
             />
           </div>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <StatCard
               label="Layout.mds Created"
               value={formatNumber(overview?.layoutMdsCreated)}
@@ -666,7 +666,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
 
       {/* B. Product Breakdown */}
       <SectionHeader title="Product Breakdown" />
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {/* Studio */}
         <div
           className="rounded-lg p-4 border-t-2"
@@ -778,7 +778,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
 
       {/* D. Feature Adoption */}
       <SectionHeader title="Feature Adoption" />
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {/* Source types */}
         <BreakdownCard
           title="Source Type"
@@ -885,10 +885,10 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
       {/* F. Top Users */}
       <SectionHeader title="Top Users" />
       <div
-        className="rounded-lg overflow-hidden"
+        className="rounded-lg overflow-x-auto"
         style={{ border: "1px solid var(--studio-border)" }}
       >
-        <table className="w-full text-xs">
+        <table className="w-full text-xs min-w-[640px]">
           <thead>
             <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--studio-border)" }}>
               {(
@@ -973,7 +973,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
 
       {/* G. Billing Health */}
       <SectionHeader title="Billing Health" />
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Users at zero credits */}
         <div
           className="rounded-lg p-4"
@@ -1055,7 +1055,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
       </div>
 
       {/* H. Errors & Issues */}
-      <SectionHeader title="Errors & Issues (last 24h)" />
+      <SectionHeader title={`Errors & Issues (${timeRange === "today" ? "last 24h" : timeRange === "7d" ? "last 7 days" : timeRange === "90d" ? "last 90 days" : "last 30 days"})`} />
 
       {/* Endpoint badges */}
       {errors && Object.keys(errors.countByEndpoint).length > 0 && (
@@ -1093,10 +1093,10 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
       )}
 
       <div
-        className="rounded-lg overflow-hidden"
+        className="rounded-lg overflow-x-auto"
         style={{ border: "1px solid var(--studio-border)" }}
       >
-        <table className="w-full text-xs">
+        <table className="w-full text-xs min-w-[600px]">
           <thead>
             <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--studio-border)" }}>
               {["Time", "Endpoint", "Status", "Message", "User"].map((h) => (
@@ -1118,7 +1118,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
                   className="px-3 py-4 text-center"
                   style={{ color: "var(--text-muted)", background: "var(--bg-panel)" }}
                 >
-                  {errors ? "No errors in last 24h" : "Loading..."}
+                  {errors ? `No errors in ${timeRange === "today" ? "last 24h" : timeRange === "7d" ? "last 7 days" : timeRange === "90d" ? "last 90 days" : "last 30 days"}` : "Loading..."}
                 </td>
               </tr>
             )}
