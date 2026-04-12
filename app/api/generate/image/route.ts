@@ -134,8 +134,12 @@ export async function POST(request: NextRequest) {
               },
             });
 
-            // Convert relative proxy URLs to absolute so they work inside srcdoc iframes
-            const absoluteHtml = result.html.replaceAll("/api/storage/", `${appOrigin}/api/storage/`);
+            // Convert relative proxy URLs to absolute so they work inside srcdoc iframes.
+            // Only match URLs that START with /api/storage/ (after =" or =') to avoid
+            // double-prefixing already-absolute URLs from previous generations.
+            const absoluteHtml = result.html
+              .replaceAll('="/api/storage/', `="${appOrigin}/api/storage/`)
+              .replaceAll("='/api/storage/", `='${appOrigin}/api/storage/`);
 
             sendEvent({
               type: "complete",

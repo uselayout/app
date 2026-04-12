@@ -135,7 +135,7 @@ export function ExplorerCanvas({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessingImages, setIsProcessingImages] = useState(false);
   const [imageProgress, setImageProgress] = useState<{ completed: number; total: number } | null>(null);
-  const imageAbortRef = useRef<AbortController | null>(null);
+  const imageAbortMapRef = useRef<Map<string, AbortController>>(new Map());
   const [imageNotice, setImageNotice] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generationStatus, setGenerationStatus] = useState<string | null>(null);
@@ -781,10 +781,10 @@ export function ExplorerCanvas({
         return;
       }
 
-      // Cancel any in-progress image generation
-      imageAbortRef.current?.abort();
+      // Cancel any in-progress image generation for THIS variant only
+      imageAbortMapRef.current.get(variantId)?.abort();
       const controller = new AbortController();
-      imageAbortRef.current = controller;
+      imageAbortMapRef.current.set(variantId, controller);
 
       setIsProcessingImages(true);
       setImageProgress(null);
@@ -822,16 +822,17 @@ export function ExplorerCanvas({
       } catch (err) {
         if ((err as Error).name !== "AbortError") console.error("Image generation error:", err);
       } finally {
-        imageAbortRef.current = null;
-        setIsProcessingImages(false);
-        setImageProgress(null);
+        imageAbortMapRef.current.delete(variantId);
+        setIsProcessingImages(imageAbortMapRef.current.size > 0);
+        if (imageAbortMapRef.current.size === 0) setImageProgress(null);
       }
     },
     [currentExploration, explorations, onUpdateExplorations]
   );
 
   const handleCancelImages = useCallback(() => {
-    imageAbortRef.current?.abort();
+    imageAbortMapRef.current.forEach((c) => c.abort());
+    imageAbortMapRef.current.clear();
     setIsProcessingImages(false);
     setImageProgress(null);
     setImageNotice("Image generation stopped. Use 'Generate images' on any variant to continue.");
