@@ -934,7 +934,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
               <tr
                 key={user.email}
                 style={{
-                  background: i % 2 === 0 ? "var(--bg-panel)" : "rgba(20,20,24,0.6)",
+                  background: i % 2 === 0 ? "var(--bg-panel)" : "var(--bg-surface)",
                   borderBottom: "1px solid var(--studio-border)",
                 }}
               >
@@ -1135,7 +1135,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
                     })
                   }
                   style={{
-                    background: i % 2 === 0 ? "var(--bg-panel)" : "rgba(20,20,24,0.6)",
+                    background: i % 2 === 0 ? "var(--bg-panel)" : "var(--bg-surface)",
                     borderBottom: expandedErrors.has(i) ? "none" : "1px solid var(--studio-border)",
                   }}
                 >
@@ -1162,7 +1162,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
                   <tr
                     key={`${i}-expanded`}
                     style={{
-                      background: i % 2 === 0 ? "var(--bg-panel)" : "rgba(20,20,24,0.6)",
+                      background: i % 2 === 0 ? "var(--bg-panel)" : "var(--bg-surface)",
                       borderBottom: "1px solid var(--studio-border)",
                     }}
                   >
