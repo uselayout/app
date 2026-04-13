@@ -466,6 +466,7 @@ export function VariantCard({
   // Transpile when code changes (not on inspectMode toggle)
   useEffect(() => {
     if (!variant.code) return;
+    console.log('[TRANSPILE] effect fired, variant.code length:', variant.code.length);
     setPreviewReady(false);
     setPreviewError(null);
     setContentHeight(null);
@@ -604,8 +605,12 @@ export function VariantCard({
   const handleStyleEdits = useCallback(async (edits: StyleEdit[]) => {
     if (!onCodeUpdate || edits.length === 0) return;
 
+    console.log('[APPLY] handleStyleEdits called with', edits.length, 'edits:', edits.map(e => `${e.elementTag}.${e.property}: "${e.before}" → "${e.after}"`));
+
     // Apply as many edits as possible directly (instant Tailwind class swap)
     const { code: directCode, remaining } = tryDirectStyleEdits(variant.code, edits);
+
+    console.log('[APPLY] direct edit result:', { changed: directCode !== variant.code, remainingCount: remaining.length, codeLenBefore: variant.code.length, codeLenAfter: directCode.length });
 
     // If we applied some edits directly, commit them immediately
     if (directCode !== variant.code) {
@@ -614,6 +619,7 @@ export function VariantCard({
         .map((e) => `${e.property}: ${e.before} → ${e.after}`)
         .join(", ");
       const newHistory = pushManualEdit(editHistory, variant.code, directCode, directEdits, description);
+      console.log('[APPLY] direct edit succeeded, calling onCodeUpdate. Code diff sample:', directCode.substring(0, 300));
       onCodeUpdate(directCode, newHistory);
     }
 
@@ -621,6 +627,7 @@ export function VariantCard({
     if (remaining.length === 0) return;
 
     // Fall back to AI only for edits that couldn't be applied directly
+    console.log('[APPLY] falling back to AI for', remaining.length, 'edits');
     const codeForAi = directCode !== variant.code ? directCode : variant.code;
     applyAbortRef.current?.abort();
     const abort = new AbortController();
@@ -657,6 +664,7 @@ export function VariantCard({
       }
 
       const { code: updatedCode } = await res.json();
+      console.log('[APPLY] AI returned code, length:', updatedCode?.length, 'first 300 chars:', updatedCode?.substring(0, 300));
       const description = remaining
         .map((e) => `${e.property}: ${e.before} → ${e.after}`)
         .join(", ");

@@ -565,6 +565,7 @@ export function ElementInspector({
   );
 
   const handleApplyAll = useCallback(() => {
+    console.log('[APPLY] handleApplyAll called, pendingEdits:', pendingEdits.length, pendingEdits.map(e => `${e.property}: "${e.before}" → "${e.after}"`));
     if (pendingEdits.length > 0) {
       onStyleEdits(pendingEdits);
       setPendingEdits([]);
