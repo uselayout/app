@@ -100,31 +100,99 @@ const TAILWIND_PREFIXES: Record<string, RegExp> = {
 };
 
 /**
+ * Find the opening tag region in source code for a specific element identified
+ * by its tag name and CSS classes. Scores candidates by class overlap and
+ * returns null if the match is ambiguous (tied scores) or below threshold.
+ */
+function findElementRegion(
+  code: string,
+  elementTag: string,
+  elementClasses: string,
+): { tagStart: number; tagEnd: number; tagContent: string } | null {
+  if (!elementTag) return null;
+  const classWords = elementClasses.split(/\s+/).filter(Boolean);
+  // Match both self-closing and normal opening tags for this element type
+  const tagRegex = new RegExp(`<${elementTag}\\b(?:[^>"'{}]|"[^"]*"|'[^']*'|\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\})*(?:/>|>)`, "g");
+  const candidates: { tagStart: number; tagEnd: number; tagContent: string; score: number }[] = [];
+
+  let m: RegExpExecArray | null;
+  while ((m = tagRegex.exec(code)) !== null) {
+    const tagContent = m[0];
+    const tagStart = m.index;
+    const tagEnd = m.index + tagContent.length;
+
+    // Score by class overlap
+    let score = 0;
+    const classAttr = /(?:className|class)=(?:["']|\{["'])([^"']*?)(?:["']|["']\})/.exec(tagContent);
+    if (classAttr) {
+      const capturedWords = classAttr[1].split(/\s+/).filter(Boolean);
+      for (const w of classWords) {
+        if (capturedWords.includes(w)) score++;
+      }
+    }
+    candidates.push({ tagStart, tagEnd, tagContent, score });
+  }
+
+  if (candidates.length === 0) return null;
+  // If no classes to match, and only one element of this tag exists, use it
+  if (classWords.length === 0) {
+    if (candidates.length === 1) return candidates[0];
+    return null; // ambiguous
+  }
+
+  // Sort by score descending
+  candidates.sort((a, b) => b.score - a.score);
+  const minRequired = Math.min(classWords.length, 2);
+  if (candidates[0].score < minRequired) return null;
+  // Reject if tied with second-best (ambiguous)
+  if (candidates.length > 1 && candidates[0].score === candidates[1].score) return null;
+
+  return candidates[0];
+}
+
+/**
  * Find all className attributes in source code and return the best match for
  * the given DOM classes. Uses a scoring approach: a className attribute that
  * contains more of the DOM classes ranks higher, and we require at least 2
  * matching words (or 1 if the element only has 1 class).
+ * When elementTag is provided, only considers className attributes within
+ * opening tags of that element type.
  */
-function findBestClassNameMatch(code: string, elementClasses: string): { full: string; captured: string; index: number; attrName: "className" | "class" } | null {
+function findBestClassNameMatch(code: string, elementClasses: string, elementTag?: string): { full: string; captured: string; index: number; attrName: "className" | "class" } | null {
   const classWords = elementClasses.split(/\s+/).filter(Boolean);
   if (classWords.length === 0) return null;
   const minRequired = Math.min(classWords.length, 2);
+
+  // If we have an element tag, scope the search to opening tags of that type
+  const searchRegions: { text: string; offset: number }[] = [];
+  if (elementTag) {
+    const tagRegex = new RegExp(`<${elementTag}\\b(?:[^>"'{}]|"[^"]*"|'[^']*'|\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\})*(?:/>|>)`, "g");
+    let m: RegExpExecArray | null;
+    while ((m = tagRegex.exec(code)) !== null) {
+      searchRegions.push({ text: m[0], offset: m.index });
+    }
+  } else {
+    searchRegions.push({ text: code, offset: 0 });
+  }
 
   // Find both className="..." (JSX) and class="..." (plain HTML) attributes
   const classAttrRegex = /(?:className|class)=(?:["']|\{["'])([^"']*?)(?:["']|["']\})/g;
   let best: { full: string; captured: string; index: number; score: number; attrName: "className" | "class" } | null = null;
 
-  let match: RegExpExecArray | null;
-  while ((match = classAttrRegex.exec(code)) !== null) {
-    const captured = match[1];
-    const capturedWords = captured.split(/\s+/).filter(Boolean);
-    let score = 0;
-    for (const w of classWords) {
-      if (capturedWords.includes(w)) score++;
-    }
-    if (score >= minRequired && (!best || score > best.score)) {
-      const attrName = match[0].startsWith("className") ? "className" as const : "class" as const;
-      best = { full: match[0], captured, index: match.index, score, attrName };
+  for (const region of searchRegions) {
+    classAttrRegex.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = classAttrRegex.exec(region.text)) !== null) {
+      const captured = match[1];
+      const capturedWords = captured.split(/\s+/).filter(Boolean);
+      let score = 0;
+      for (const w of classWords) {
+        if (capturedWords.includes(w)) score++;
+      }
+      if (score >= minRequired && (!best || score > best.score)) {
+        const attrName = match[0].startsWith("className") ? "className" as const : "class" as const;
+        best = { full: match[0], captured, index: region.offset + match.index, score, attrName };
+      }
     }
   }
 
@@ -146,22 +214,44 @@ const CSS_TO_STYLE_KEY: Record<string, string> = {
 
 /**
  * Try to apply a style edit by modifying an inline style={{ ... }} in the source code.
+ * Scopes the search to the specific element identified by elementTag + elementClasses
+ * to avoid accidentally editing a different element's styles.
  */
 function tryDirectInlineStyleEdit(code: string, edit: StyleEdit): string | null {
-  const { property, after } = edit;
+  const { property, after, elementTag, elementClasses } = edit;
   const styleKey = CSS_TO_STYLE_KEY[property];
   if (!styleKey) return null;
-
-  // Build regex to find styleKey: "value" or styleKey: 'value' or styleKey: number
-  const propRegex = new RegExp(
-    `(${styleKey}\\s*:\\s*)(?:"[^"]*"|'[^']*'|[^,}\\s]+)`,
-    "g",
-  );
 
   // Quote the new value appropriately
   const isNumeric = /^\d+(\.\d+)?$/.test(after);
   const quotedValue = isNumeric ? after : `"${after}"`;
 
+  // Try to scope to the correct element using tag + classes
+  const region = findElementRegion(code, elementTag, elementClasses);
+  if (region) {
+    // Search only within the matched element's opening tag for the style property
+    const propRegex = new RegExp(
+      `(${styleKey}\\s*:\\s*)(?:"[^"]*"|'[^']*'|[^,}\\s]+)`,
+      "g",
+    );
+    let found = false;
+    const updatedTag = region.tagContent.replace(propRegex, (match, prefix) => {
+      if (found) return match;
+      found = true;
+      return `${prefix}${quotedValue}`;
+    });
+    if (found && updatedTag !== region.tagContent) {
+      return code.slice(0, region.tagStart) + updatedTag + code.slice(region.tagEnd);
+    }
+    // Element found but no inline style for this property — return null (try Tailwind next)
+    return null;
+  }
+
+  // Fallback: no element region found — search globally (single-element variants)
+  const propRegex = new RegExp(
+    `(${styleKey}\\s*:\\s*)(?:"[^"]*"|'[^']*'|[^,}\\s]+)`,
+    "g",
+  );
   let found = false;
   const result = code.replace(propRegex, (match, prefix) => {
     if (found) return match;
@@ -231,7 +321,7 @@ function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null 
 
   // Fall back to Tailwind class swap only if no inline style exists for this property
   if (elementClasses && CSS_TO_TAILWIND[property]) {
-    const classMatch = findBestClassNameMatch(code, elementClasses);
+    const classMatch = findBestClassNameMatch(code, elementClasses, edit.elementTag);
     if (classMatch) {
       const prefix = TAILWIND_PREFIXES[property];
       const newClass = CSS_TO_TAILWIND[property](after);
