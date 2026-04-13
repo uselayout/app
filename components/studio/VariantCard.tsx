@@ -292,8 +292,61 @@ function tryDirectTextEdit(code: string, edit: StyleEdit): string | null {
 }
 
 /**
+ * Add an inline style property to an element that doesn't already have one.
+ * This is used as a fallback when the element's style is defined in a <style>
+ * block — inline styles override all CSS classes regardless of specificity.
+ */
+function tryAddInlineStyle(code: string, edit: StyleEdit): string | null {
+  const { property, after, elementTag, elementClasses } = edit;
+  const styleKey = CSS_TO_STYLE_KEY[property];
+  if (!styleKey) return null;
+
+  const region = findElementRegion(code, elementTag, elementClasses);
+  if (!region) return null;
+
+  const isNumeric = /^\d+(\.\d+)?$/.test(after);
+  const quotedValue = isNumeric ? after : `"${after}"`;
+
+  // Check if element already has a style={{ }} block — append to it
+  const styleBlockMatch = /style=\{\{([^}]*(?:\{[^}]*\}[^}]*)*)\}\}/.exec(region.tagContent);
+  if (styleBlockMatch) {
+    const existing = styleBlockMatch[1].trim();
+    const separator = existing.endsWith(",") ? " " : ", ";
+    const newBlock = `style={{ ${existing}${separator}${styleKey}: ${quotedValue} }}`;
+    const updatedTag = region.tagContent.replace(styleBlockMatch[0], newBlock);
+    return code.slice(0, region.tagStart) + updatedTag + code.slice(region.tagEnd);
+  }
+
+  // Check for HTML-style style="..." attribute — append to it
+  const htmlStyleMatch = /style="([^"]*)"/.exec(region.tagContent);
+  if (htmlStyleMatch) {
+    const existing = htmlStyleMatch[1].trim();
+    const kebabProp = styleKey.replace(/([A-Z])/g, "-$1").toLowerCase();
+    const separator = existing.endsWith(";") ? " " : "; ";
+    const newStyle = `style="${existing}${separator}${kebabProp}: ${after}"`;
+    const updatedTag = region.tagContent.replace(htmlStyleMatch[0], newStyle);
+    return code.slice(0, region.tagStart) + updatedTag + code.slice(region.tagEnd);
+  }
+
+  // No style attribute at all — add one before the closing > or />
+  const closingMatch = region.tagContent.match(/(\/?>)\s*$/);
+  if (closingMatch) {
+    const insertPos = region.tagContent.lastIndexOf(closingMatch[1]);
+    const styleAttr = ` style={{ ${styleKey}: ${quotedValue} }}`;
+    const updatedTag = region.tagContent.slice(0, insertPos) + styleAttr + region.tagContent.slice(insertPos);
+    return code.slice(0, region.tagStart) + updatedTag + code.slice(region.tagEnd);
+  }
+
+  return null;
+}
+
+/**
  * Try to apply a single style edit directly in the source code.
- * Attempts in order: text content replacement, Tailwind class swap, inline style edit.
+ * Attempts in order:
+ *  1. Text content replacement
+ *  2. Modify existing inline style
+ *  3. Replace existing Tailwind class (not add new ones)
+ *  4. Add new inline style (overrides <style> blocks via specificity)
  * Returns the updated code, or null if all direct paths fail.
  */
 function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null {
@@ -319,25 +372,32 @@ function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null 
     return inlineResult;
   }
 
-  // Fall back to Tailwind class swap only if no inline style exists for this property
+  // Try Tailwind class REPLACEMENT (only if an existing class for this property exists)
   if (elementClasses && CSS_TO_TAILWIND[property]) {
     const classMatch = findBestClassNameMatch(code, elementClasses, edit.elementTag);
     if (classMatch) {
       const prefix = TAILWIND_PREFIXES[property];
-      const newClass = CSS_TO_TAILWIND[property](after);
-      let updatedClassName = classMatch.captured;
-      if (prefix) {
-        updatedClassName = updatedClassName.replace(prefix, "").replace(/\s{2,}/g, " ").trim();
+      // Only replace if an existing Tailwind class for this property is found.
+      // Adding a new Tailwind class doesn't work when a <style> block overrides it.
+      if (prefix && prefix.test(classMatch.captured)) {
+        prefix.lastIndex = 0; // Reset regex state after .test()
+        const newClass = CSS_TO_TAILWIND[property](after);
+        let updatedClassName = classMatch.captured.replace(prefix, "").replace(/\s{2,}/g, " ").trim();
+        updatedClassName = `${updatedClassName} ${newClass}`;
+        const result = code.replace(classMatch.full, `${classMatch.attrName}="${updatedClassName}"`);
+        if (result !== code) {
+          console.debug(`[direct-edit] ${property}: Tailwind class swap succeeded (${classMatch.attrName})`);
+          return result;
+        }
       }
-      updatedClassName = `${updatedClassName} ${newClass}`;
-      const result = code.replace(classMatch.full, `${classMatch.attrName}="${updatedClassName}"`);
-      if (result !== code) {
-        console.debug(`[direct-edit] ${property}: Tailwind class swap succeeded (${classMatch.attrName})`);
-        return result;
-      }
-    } else {
-      console.debug(`[direct-edit] ${property}: no class match in source for classes:`, elementClasses.substring(0, 80));
     }
+  }
+
+  // Fall back to adding an inline style — overrides <style> blocks via CSS specificity
+  const addResult = tryAddInlineStyle(code, edit);
+  if (addResult) {
+    console.debug(`[direct-edit] ${property}: added inline style (overrides <style> block)`);
+    return addResult;
   }
 
   console.debug(`[direct-edit] ${property}: all direct edit paths failed, will use AI fallback`);
@@ -466,7 +526,6 @@ export function VariantCard({
   // Transpile when code changes (not on inspectMode toggle)
   useEffect(() => {
     if (!variant.code) return;
-    console.log('[TRANSPILE] effect fired, variant.code length:', variant.code.length);
     setPreviewReady(false);
     setPreviewError(null);
     setContentHeight(null);
@@ -605,12 +664,8 @@ export function VariantCard({
   const handleStyleEdits = useCallback(async (edits: StyleEdit[]) => {
     if (!onCodeUpdate || edits.length === 0) return;
 
-    console.log('[APPLY] handleStyleEdits called with', edits.length, 'edits:', edits.map(e => `${e.elementTag}.${e.property}: "${e.before}" → "${e.after}"`));
-
     // Apply as many edits as possible directly (instant Tailwind class swap)
     const { code: directCode, remaining } = tryDirectStyleEdits(variant.code, edits);
-
-    console.log('[APPLY] direct edit result:', { changed: directCode !== variant.code, remainingCount: remaining.length, codeLenBefore: variant.code.length, codeLenAfter: directCode.length });
 
     // If we applied some edits directly, commit them immediately
     if (directCode !== variant.code) {
@@ -619,7 +674,6 @@ export function VariantCard({
         .map((e) => `${e.property}: ${e.before} → ${e.after}`)
         .join(", ");
       const newHistory = pushManualEdit(editHistory, variant.code, directCode, directEdits, description);
-      console.log('[APPLY] direct edit succeeded, calling onCodeUpdate. Code diff sample:', directCode.substring(0, 300));
       onCodeUpdate(directCode, newHistory);
     }
 
@@ -627,7 +681,6 @@ export function VariantCard({
     if (remaining.length === 0) return;
 
     // Fall back to AI only for edits that couldn't be applied directly
-    console.log('[APPLY] falling back to AI for', remaining.length, 'edits');
     const codeForAi = directCode !== variant.code ? directCode : variant.code;
     applyAbortRef.current?.abort();
     const abort = new AbortController();
@@ -664,7 +717,6 @@ export function VariantCard({
       }
 
       const { code: updatedCode } = await res.json();
-      console.log('[APPLY] AI returned code, length:', updatedCode?.length, 'first 300 chars:', updatedCode?.substring(0, 300));
       const description = remaining
         .map((e) => `${e.property}: ${e.before} → ${e.after}`)
         .join(", ");

@@ -708,7 +708,6 @@ export function ExplorerCanvas({
 
   const handleCodeUpdate = useCallback(
     (variantId: string, code: string, editHistory: import("@/lib/types").EditHistory) => {
-      console.log('[CODE-UPDATE] handleCodeUpdate called for variant', variantId, 'code length:', code.length, 'history entries:', editHistory.length);
       if (!currentExploration) return;
       const updated = explorations.map((e) =>
         e.id === currentExploration.id
