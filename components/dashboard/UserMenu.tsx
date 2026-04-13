@@ -66,11 +66,15 @@ export function UserMenu({ collapsed }: UserMenuProps) {
 
       {open && (
         <div
-          className={`absolute z-50 mb-1 rounded-[var(--studio-radius-lg)] border border-[var(--studio-border)] bg-[var(--bg-elevated)] py-1 shadow-lg ${
+          className={`absolute z-50 rounded-[var(--studio-radius-lg)] border border-[var(--studio-border)] bg-[var(--bg-elevated)] py-1 shadow-lg ${
             collapsed
-              ? "bottom-0 left-full ml-2 w-48"
-              : "bottom-full left-0 right-0"
+              ? "left-full ml-2 w-48"
+              : "left-0 right-0"
           }`}
+          style={collapsed
+            ? { bottom: 0 }
+            : { bottom: "100%", marginBottom: 4 }
+          }
         >
           <div className="px-3 py-2 border-b border-[var(--studio-border)]">
             <p className="text-xs font-medium text-[var(--text-primary)] truncate">
