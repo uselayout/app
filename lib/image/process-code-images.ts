@@ -19,6 +19,8 @@ const RELATIVE_SRC_RE = /\bsrc=["']\/[^"'\s>]+["']/i;
 const RELATIVE_SRC_RE_GLOBAL = /\bsrc=["']\/[^"'\s>]+["']/gi;
 // Avatar divs: <div className="...rounded-full...">Matt</div> (server-side converter handles these)
 const AVATAR_DIV_RE = /<(?:div|span)\s[^>]*className=["'][^"']*rounded-full[^"']*["'][^>]*>[^<]{1,5}<\/(?:div|span)>/i;
+// Corrupted URLs from double-prefix bug: src="https://domhttps://dom/api/storage/..."
+const CORRUPTED_URL_RE = /src=["']https?:\/\/[^"']*?https?:\/\/[^"']*\/api\/storage\//i;
 
 interface ProcessOptions {
   orgId?: string;
@@ -52,7 +54,7 @@ export async function processCodeImages(
   code: string,
   options: ProcessOptions = {}
 ): Promise<ProcessCodeImagesResult> {
-  const hasPlaceholders = IMAGE_PLACEHOLDER_RE.test(code) || PLACEHOLDER_URL_RE.test(code) || RELATIVE_SRC_RE.test(code) || AVATAR_DIV_RE.test(code);
+  const hasPlaceholders = IMAGE_PLACEHOLDER_RE.test(code) || PLACEHOLDER_URL_RE.test(code) || RELATIVE_SRC_RE.test(code) || AVATAR_DIV_RE.test(code) || CORRUPTED_URL_RE.test(code);
   if (!hasPlaceholders) return { code, skippedNoKey: false, placeholderCount: 0, failedCount: 0, errors: [] };
 
   // Count placeholders for reporting

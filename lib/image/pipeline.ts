@@ -56,6 +56,33 @@ export interface PipelineOptions {
 }
 
 // ---------------------------------------------------------------------------
+// Corrupted URL repair — fixes URLs broken by the double-prefix bug
+// ---------------------------------------------------------------------------
+
+/**
+ * Repair corrupted image URLs from a previous bug where replaceAll("/api/storage/", ...)
+ * double-prefixed already-absolute URLs, producing:
+ *   src="https://domhttps://dom/api/storage/..."
+ * Also replaces bare filenames (no path) with SVG fallback so they can be re-generated.
+ */
+function repairCorruptedImageUrls(html: string): string {
+  // Fix double-prefixed URLs: https://domhttps://dom/api/storage/... → keep last valid URL
+  let result = html.replace(
+    /src=(["'])(https?:\/\/[^"']*?)(https?:\/\/[^"']*\/api\/storage\/[^"']+)\1/gi,
+    'src="$3"'
+  );
+
+  // Replace bare filenames (no path, has data-generate-image) with SVG fallback
+  // so the pipeline treats them as un-generated and re-generates
+  result = result.replace(
+    /(<img\s[^>]*?data-generate-image=[^>]*?)src=(["'])(?!data:|https?:|\/)([^"'\/\s]+\.(?:jpg|jpeg|png|webp|gif))\2/gi,
+    '$1src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27/%3E"'
+  );
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
 // Placeholder detection
 // ---------------------------------------------------------------------------
 
@@ -83,11 +110,18 @@ export function findPlaceholders(
     const prompt = match[2];
     const fullTag = match[1] + match[3];
 
-    // Skip images that already have a real (non-fallback) src URL
+    // Skip images that already have a valid (non-fallback, non-corrupted) src URL
     if (options?.skipAlreadyGenerated) {
       const srcMatch = fullMatch.match(SRC_ATTR_REGEX);
-      if (srcMatch && !srcMatch[1].startsWith("data:image/svg+xml")) {
-        continue;
+      if (srcMatch) {
+        const src = srcMatch[1];
+        const isFallbackSvg = src.startsWith("data:image/svg+xml");
+        const isBareFilename = !src.includes("/") && /\.\w+$/.test(src);
+        const isDoublePrefix = /https?:\/\/.*https?:\/\//.test(src);
+        // Only skip if the URL looks valid — re-generate broken ones
+        if (!isFallbackSvg && !isBareFilename && !isDoublePrefix) {
+          continue;
+        }
       }
     }
 
@@ -239,8 +273,9 @@ export async function processImagePlaceholders(
     jsxErrors.push(...jsxResult.errors);
   }
 
-  // Phase 2: Convert avatar divs, placeholder URLs, and relative paths to data-generate-image attributes
-  const preprocessed = replaceRelativeSrcUrls(replacePlaceholderUrls(convertAvatarDivsToImgs(working)));
+  // Phase 2: Repair corrupted URLs from previous bugs, then convert placeholders
+  const repaired = repairCorruptedImageUrls(working);
+  const preprocessed = replaceRelativeSrcUrls(replacePlaceholderUrls(convertAvatarDivsToImgs(repaired)));
   const placeholders = findPlaceholders(preprocessed, {
     skipAlreadyGenerated: !options.forceRegenerate,
   });
