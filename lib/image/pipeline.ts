@@ -129,7 +129,7 @@ export interface PipelineResult {
  * Captures: (1) tag+attrs, (2) initials text, (3) size classes for reuse.
  */
 const AVATAR_INITIALS_RE =
-  /<(div|span)\s([^>]*?className=["'][^"']*rounded-full[^"']*["'][^>]*)>(?:\s*<span[^>]*>)?\s*([A-Z]{1,3})\s*(?:<\/span>\s*)?<\/\1>/gi;
+  /<(div|span)\s([^>]*?className=["'][^"']*rounded-full[^"']*["'][^>]*)>(?:\s*<span[^>]*>)?\s*([A-Za-z]{1,5})\s*(?:<\/span>\s*)?<\/\1>/gi;
 
 /**
  * Convert avatar placeholders using initials (e.g. <div className="...rounded-full...">SC</div>)
