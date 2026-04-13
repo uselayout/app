@@ -72,11 +72,29 @@ function repairCorruptedImageUrls(html: string): string {
     'src="$3"'
   );
 
-  // Replace bare filenames (no path, has data-generate-image) with SVG fallback
-  // so the pipeline treats them as un-generated and re-generates
+  // Replace bare filenames (no path) on ANY <img> tag with SVG fallback.
+  // If the tag has data-generate-image, the pipeline will re-generate it.
+  // If not, add data-generate-image using the alt text so it becomes re-generable.
   result = result.replace(
-    /(<img\s[^>]*?data-generate-image=[^>]*?)src=(["'])(?!data:|https?:|\/)([^"'\/\s]+\.(?:jpg|jpeg|png|webp|gif))\2/gi,
-    '$1src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27/%3E"'
+    /(<img\s[^>]*?)src=(["'])(?!data:|https?:|\/)([^"'\/\s]+\.(?:jpg|jpeg|png|webp|gif))\2([^>]*?)\/?>/gi,
+    (_match, before, _q, _filename, after) => {
+      const tag = before + after;
+      const hasGenerateAttr = tag.includes("data-generate-image");
+      const fallbackSrc = 'src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27/%3E"';
+
+      if (hasGenerateAttr) {
+        // Already has prompt — just fix the src
+        return `${before}${fallbackSrc}${after} />`;
+      }
+
+      // No data-generate-image — add one from alt text or generic prompt
+      const altMatch = tag.match(/alt=["']([^"']+)["']/i);
+      const prompt = altMatch?.[1] || "professional photograph for a modern website";
+      const isSmall = /(?:w-(?:8|10|12|14|16)|h-(?:8|10|12|14|16)|rounded-full|avatar)/i.test(tag);
+      const ratio = isSmall ? "1:1" : "16:9";
+      const style = isSmall ? "photo" : "photo";
+      return `${before}${fallbackSrc} data-generate-image="${prompt}" data-image-style="${style}" data-image-ratio="${ratio}"${after} />`;
+    }
   );
 
   return result;

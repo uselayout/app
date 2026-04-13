@@ -19,8 +19,8 @@ const RELATIVE_SRC_RE = /\bsrc=["']\/[^"'\s>]+["']/i;
 const RELATIVE_SRC_RE_GLOBAL = /\bsrc=["']\/[^"'\s>]+["']/gi;
 // Avatar divs: <div className="...rounded-full...">Matt</div> (server-side converter handles these)
 const AVATAR_DIV_RE = /<(?:div|span)\s[^>]*className=["'][^"']*rounded-full[^"']*["'][^>]*>[^<]{1,5}<\/(?:div|span)>/i;
-// Corrupted URLs from double-prefix bug: src="https://domhttps://dom/api/storage/..."
-const CORRUPTED_URL_RE = /src=["']https?:\/\/[^"']*?https?:\/\/[^"']*\/api\/storage\//i;
+// Corrupted URLs from double-prefix bug or bare filenames without path
+const CORRUPTED_URL_RE = /src=["'](?:https?:\/\/[^"']*?https?:\/\/[^"']*\/api\/storage\/|(?!data:|https?:|\/)[\w-]+\.(?:jpg|jpeg|png|webp|gif)["'])/i;
 
 interface ProcessOptions {
   orgId?: string;
