@@ -496,7 +496,7 @@ function InviteCodesTab({ toast }: { toast: (msg: string, type?: Toast["type"]) 
                     <tr
                       key={row.code}
                       style={{
-                        background: i % 2 === 0 ? "var(--bg-app)" : "var(--bg-surface)",
+                        background: i % 2 === 0 ? "var(--bg-surface)" : "var(--bg-panel)",
                         borderBottom: "1px solid var(--studio-border)",
                         opacity: used ? 0.6 : 1,
                       }}
@@ -931,7 +931,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                 <tr
                   key={row.id}
                   style={{
-                    background: i % 2 === 0 ? "var(--bg-app)" : "var(--bg-surface)",
+                    background: i % 2 === 0 ? "var(--bg-surface)" : "var(--bg-panel)",
                     borderBottom: "1px solid var(--studio-border)",
                   }}
                 >
