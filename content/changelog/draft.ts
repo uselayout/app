@@ -9,6 +9,152 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  * Bad:  "perf: optimise batch node fetching"
  */
 export const draftEntries: ChangelogEntry[] = [
+  // --- Week of 14 April 2026 ---
+  {
+    id: "2026-w16-theme-switching",
+    title: "Light, dark, and system theme",
+    description:
+      "Switch between light mode, dark mode, or follow your system preference. The entire Studio UI adapts, including modals, dropdowns, and variant previews.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-12",
+  },
+  {
+    id: "2026-w16-forgot-password",
+    title: "Forgot password flow",
+    description:
+      "Reset your password via email if you forget it. Click 'Forgot password?' on the login page to receive a reset link.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-10",
+  },
+  {
+    id: "2026-w16-workspace-switcher",
+    title: "Improved workspace switcher",
+    description:
+      "The sidebar workspace switcher now shows your organisation and project name stacked for clarity. Create new projects directly from the switcher dropdown.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-12",
+  },
+  {
+    id: "2026-w16-design-system-page-improvements",
+    title: "Better Design System page",
+    description:
+      "Token categorisation, grouping, and previews are now more accurate. Spacing and effect tokens display correctly, and the view is preserved when switching projects.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-12",
+  },
+  {
+    id: "2026-w16-image-generation-reliability",
+    title: "More reliable AI image generation",
+    description:
+      "Fixed several issues where generated images would show broken URLs or disappear on re-generation. Avatar placeholders and batch image generation now work reliably.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-13",
+  },
+  {
+    id: "2026-w16-inspector-fixes",
+    title: "Inspector style edits now target the correct element",
+    description:
+      "Fixed an issue where Inspector edits could apply styles to the wrong element. Edits now reliably target exactly what you selected.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-13",
+  },
+  {
+    id: "2026-w16-extraction-css-fix",
+    title: "Cleaner CSS token injection",
+    description:
+      "Extracted design tokens no longer conflict with existing styles in variant previews. Malformed CSS variable names from extractions are now filtered out automatically.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-08",
+  },
+  {
+    id: "2026-w16-variant-feedback",
+    title: "Rate generated variants",
+    description:
+      "Thumbs up or down on generated variants to help improve future results. Feedback is logged and visible in the admin dashboard.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-12",
+  },
+  {
+    id: "2026-w16-cancel-extraction",
+    title: "Cancel extractions in progress",
+    description:
+      "Long-running Figma or website extractions can now be cancelled mid-way instead of waiting for them to complete.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-12",
+  },
+  {
+    id: "2026-w16-preview-hooks-fix",
+    title: "Fixed React component previews",
+    description:
+      "Components using React hooks (useState, useEffect, etc.) now render correctly in variant previews instead of showing errors.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-09",
+  },
+  {
+    id: "2026-w16-light-mode-polish",
+    title: "Light mode polish",
+    description:
+      "Improved contrast, softer modal overlays, and consistent colours across the entire UI in light mode.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-12",
+  },
+  // --- Existing entries from week of 8 April ---
+  {
+    id: "2026-w15-codebase-scanner",
+    title: "Codebase Scanner",
+    description:
+      "Connect your GitHub repo to scan for existing components in your codebase. Scanned components appear in a new Components view in settings and are automatically fed into the Explorer, so AI knows what you already have before generating new code.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-08",
+  },
+  {
+    id: "2026-w15-component-reuse",
+    title: "Explorer suggests reusing your existing components",
+    description:
+      "The Explorer now knows about your codebase components and saved library items. Generated variants include production import comments showing exactly which components to swap in, so you get reusable code instead of one-off implementations.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-08",
+  },
+  {
+    id: "2026-w15-icon-filtering",
+    title: "Cleaner component lists",
+    description:
+      "Icon components no longer clutter the sidebar component list or inflate the component count. Only meaningful UI components are shown.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-08",
+  },
+  {
+    id: "2026-w15-diff-modal-scroll",
+    title: "Extraction diff modal now scrollable",
+    description:
+      "The token diff list was cut off when a re-extraction found many changes. The full list is now scrollable so you can review everything.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-08",
+  },
+  {
+    id: "2026-w15-plugin-motion-tokens",
+    title: "Motion tokens in Figma plugin",
+    description:
+      "The Figma plugin token endpoint now returns motion and transition tokens alongside colours, spacing, and typography.",
+    product: "figma-plugin",
+    category: "improved",
+    date: "2026-04-08",
+  },
   {
     id: "2026-w15-large-figma-files",
     title: "Large Figma files now extract successfully",
