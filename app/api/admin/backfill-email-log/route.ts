@@ -10,14 +10,6 @@ const SUBJECT_TO_TYPE: Record<string, EmailType> = {
   "Last chance: your Layout access code": "final_reminder",
 };
 
-interface ResendEmail {
-  id: string;
-  from: string;
-  to: string[];
-  subject: string;
-  created_at: string;
-}
-
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
@@ -35,7 +27,7 @@ export async function POST(request: NextRequest) {
     .select("id, email");
 
   if (arError || !accessRequests) {
-    return NextResponse.json({ error: "Failed to fetch access requests" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch access requests", details: arError?.message }, { status: 500 });
   }
 
   const emailToRequestId = new Map<string, string>();
@@ -44,9 +36,13 @@ export async function POST(request: NextRequest) {
   }
 
   // 2. Fetch existing email_log entries to avoid duplicates
-  const { data: existingLogs } = await supabase
+  const { data: existingLogs, error: logError } = await supabase
     .from("email_log")
     .select("access_request_id, email_type, resend_id");
+
+  if (logError) {
+    return NextResponse.json({ error: "Failed to fetch email_log", details: logError.message }, { status: 500 });
+  }
 
   const existingSet = new Set<string>();
   for (const log of existingLogs ?? []) {
@@ -55,10 +51,12 @@ export async function POST(request: NextRequest) {
   }
 
   // 3. Paginate through all Resend emails
-  const allEmails: ResendEmail[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const allEmails: any[] = [];
   let cursor: string | undefined;
   let pages = 0;
-  const MAX_PAGES = 50; // Safety limit
+  let lastError: string | null = null;
+  const MAX_PAGES = 50;
 
   while (pages < MAX_PAGES) {
     const listResult = await resend.emails.list({
@@ -66,20 +64,38 @@ export async function POST(request: NextRequest) {
       ...(cursor ? { after: cursor } : {}),
     });
 
-    if (listResult.error || !listResult.data?.data) break;
+    if (listResult.error) {
+      lastError = JSON.stringify(listResult.error);
+      break;
+    }
 
-    const batch = listResult.data.data as ResendEmail[];
+    // The Resend SDK returns { data: { data: Email[] } } or { data: Email[] }
+    // Handle both shapes
+    const responseData = listResult.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const batch: any[] = Array.isArray(responseData)
+      ? responseData
+      : Array.isArray((responseData as Record<string, unknown>)?.data)
+        ? (responseData as Record<string, unknown>).data as unknown[]
+        : [];
+
     if (batch.length === 0) break;
 
     allEmails.push(...batch);
-    cursor = batch[batch.length - 1].id;
+    cursor = batch[batch.length - 1]?.id;
     pages++;
 
-    // If we got fewer than 100, we've reached the end
     if (batch.length < 100) break;
   }
 
-  // 4. Filter and match
+  // 4. Collect diagnostics
+  const subjectCounts: Record<string, number> = {};
+  for (const email of allEmails) {
+    const subject = email.subject ?? "(no subject)";
+    subjectCounts[subject] = (subjectCounts[subject] ?? 0) + 1;
+  }
+
+  // 5. Filter and match
   const toInsert: Array<{
     access_request_id: string;
     email_type: EmailType;
@@ -90,19 +106,21 @@ export async function POST(request: NextRequest) {
 
   let matched = 0;
   let skipped = 0;
+  let noRecipient = 0;
+  let noRequestMatch = 0;
 
   for (const email of allEmails) {
     const emailType = SUBJECT_TO_TYPE[email.subject];
     if (!emailType) continue;
 
     matched++;
-    const recipientEmail = email.to[0]?.toLowerCase();
-    if (!recipientEmail) continue;
+    const to = email.to;
+    const recipientEmail = (Array.isArray(to) ? to[0] : to)?.toLowerCase?.();
+    if (!recipientEmail) { noRecipient++; continue; }
 
     const requestId = emailToRequestId.get(recipientEmail);
-    if (!requestId) continue;
+    if (!requestId) { noRequestMatch++; continue; }
 
-    // Check for duplicate
     if (existingSet.has(email.id) || existingSet.has(`${requestId}:${emailType}`)) {
       skipped++;
       continue;
@@ -112,34 +130,45 @@ export async function POST(request: NextRequest) {
       access_request_id: requestId,
       email_type: emailType,
       sent_at: email.created_at,
-      from_email: email.from,
+      from_email: email.from ?? "",
       resend_id: email.id,
     });
   }
 
-  // 5. Batch insert
+  // 6. Batch insert
   let inserted = 0;
+  let insertError: string | null = null;
   if (toInsert.length > 0) {
-    const { error: insertError } = await supabase
-      .from("email_log")
-      .insert(toInsert);
-
-    if (insertError) {
-      return NextResponse.json({
-        error: "Failed to insert email logs",
-        details: insertError.message,
-        fetched: allEmails.length,
-        matched,
-      }, { status: 500 });
+    const { error: err } = await supabase.from("email_log").insert(toInsert);
+    if (err) {
+      insertError = err.message;
+    } else {
+      inserted = toInsert.length;
     }
-    inserted = toInsert.length;
   }
 
   return NextResponse.json({
     fetched: allEmails.length,
+    pages,
     matched,
     inserted,
     skipped,
-    pages,
+    noRecipient,
+    noRequestMatch,
+    existingLogCount: existingLogs?.length ?? 0,
+    accessRequestCount: accessRequests.length,
+    resendError: lastError,
+    insertError,
+    // Show subject distribution so we can see what Resend returned
+    subjects: subjectCounts,
+    // Show first 3 raw emails for debugging
+    sampleEmails: allEmails.slice(0, 3).map((e) => ({
+      id: e.id,
+      subject: e.subject,
+      to: e.to,
+      from: e.from,
+      created_at: e.created_at,
+      keys: Object.keys(e),
+    })),
   });
 }

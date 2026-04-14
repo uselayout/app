@@ -848,11 +848,12 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
               setBackfilling(true);
               try {
                 const res = await fetch("/api/admin/backfill-email-log", { method: "POST" });
-                const json = await res.json() as { inserted?: number; fetched?: number; matched?: number; skipped?: number; error?: string };
+                const json = await res.json() as Record<string, unknown>;
+                console.log("[backfill-email-log] Full response:", json);
                 if (!res.ok) {
-                  toast(json.error || "Backfill failed", "error");
+                  toast((json.error as string) || "Backfill failed", "error");
                 } else {
-                  toast(`Backfill complete: ${json.inserted} inserted, ${json.skipped} skipped (${json.fetched} emails scanned)`);
+                  toast(`Backfill: ${json.inserted} inserted, ${json.skipped} skipped, ${json.matched} matched (${json.fetched} emails from Resend)`);
                   void fetchRequests();
                 }
               } catch {
