@@ -582,6 +582,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [whatBuildingWidth, setWhatBuildingWidth] = useState(320);
   const [searchQuery, setSearchQuery] = useState("");
+  const [backfilling, setBackfilling] = useState(false);
 
   const filteredRequests = useMemo(() => {
     if (!searchQuery.trim()) return requests;
@@ -841,6 +842,36 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
             }}
           >
             {sendingTest ? "Sending..." : "Send test email"}
+          </button>
+          <button
+            onClick={async () => {
+              setBackfilling(true);
+              try {
+                const res = await fetch("/api/admin/backfill-email-log", { method: "POST" });
+                const json = await res.json() as { inserted?: number; fetched?: number; matched?: number; skipped?: number; error?: string };
+                if (!res.ok) {
+                  toast(json.error || "Backfill failed", "error");
+                } else {
+                  toast(`Backfill complete: ${json.inserted} inserted, ${json.skipped} skipped (${json.fetched} emails scanned)`);
+                  void fetchRequests();
+                }
+              } catch {
+                toast("Backfill failed", "error");
+              } finally {
+                setBackfilling(false);
+              }
+            }}
+            disabled={backfilling}
+            className="text-xs px-3 py-1.5 rounded-lg transition-all"
+            style={{
+              background: "rgba(245,158,11,0.1)",
+              color: "#f59e0b",
+              border: "1px solid rgba(245,158,11,0.2)",
+              opacity: backfilling ? 0.5 : 1,
+              cursor: backfilling ? "not-allowed" : "pointer",
+            }}
+          >
+            {backfilling ? "Backfilling..." : "Sync from Resend"}
           </button>
           <input
             type="text"
