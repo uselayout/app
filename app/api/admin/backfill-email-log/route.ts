@@ -51,8 +51,16 @@ export async function POST(request: NextRequest) {
   }
 
   // 3. Paginate through all Resend emails
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const allEmails: any[] = [];
+  // SDK types: { data: { object: 'list', has_more: boolean, data: ListEmail[] }, error: null }
+  interface ResendEmail {
+    id: string;
+    from: string;
+    to: string[];
+    subject: string;
+    created_at: string;
+  }
+
+  const allEmails: ResendEmail[] = [];
   let cursor: string | undefined;
   let pages = 0;
   let lastError: string | null = null;
@@ -69,26 +77,23 @@ export async function POST(request: NextRequest) {
       break;
     }
 
-    // The Resend SDK returns { data: { data: Email[] } } or { data: Email[] }
-    // Handle both shapes
-    const responseData = listResult.data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const batch: any[] = Array.isArray(responseData)
-      ? responseData
-      : Array.isArray((responseData as Record<string, unknown>)?.data)
-        ? (responseData as Record<string, unknown>).data as unknown[]
-        : [];
+    if (!listResult.data) {
+      lastError = "listResult.data is null";
+      break;
+    }
 
-    if (batch.length === 0) break;
+    const batch = listResult.data.data;
+    if (!batch || batch.length === 0) break;
 
     allEmails.push(...batch);
-    cursor = batch[batch.length - 1]?.id;
+    cursor = batch[batch.length - 1].id;
     pages++;
 
-    if (batch.length < 100) break;
+    // Use has_more from the API response
+    if (!listResult.data.has_more) break;
   }
 
-  // 4. Collect diagnostics
+  // 4. Collect diagnostics - subject distribution
   const subjectCounts: Record<string, number> = {};
   for (const email of allEmails) {
     const subject = email.subject ?? "(no subject)";
@@ -106,7 +111,6 @@ export async function POST(request: NextRequest) {
 
   let matched = 0;
   let skipped = 0;
-  let noRecipient = 0;
   let noRequestMatch = 0;
 
   for (const email of allEmails) {
@@ -114,9 +118,8 @@ export async function POST(request: NextRequest) {
     if (!emailType) continue;
 
     matched++;
-    const to = email.to;
-    const recipientEmail = (Array.isArray(to) ? to[0] : to)?.toLowerCase?.();
-    if (!recipientEmail) { noRecipient++; continue; }
+    const recipientEmail = email.to[0]?.toLowerCase();
+    if (!recipientEmail) continue;
 
     const requestId = emailToRequestId.get(recipientEmail);
     if (!requestId) { noRequestMatch++; continue; }
@@ -130,7 +133,7 @@ export async function POST(request: NextRequest) {
       access_request_id: requestId,
       email_type: emailType,
       sent_at: email.created_at,
-      from_email: email.from ?? "",
+      from_email: email.from,
       resend_id: email.id,
     });
   }
@@ -153,22 +156,18 @@ export async function POST(request: NextRequest) {
     matched,
     inserted,
     skipped,
-    noRecipient,
     noRequestMatch,
     existingLogCount: existingLogs?.length ?? 0,
     accessRequestCount: accessRequests.length,
     resendError: lastError,
     insertError,
-    // Show subject distribution so we can see what Resend returned
     subjects: subjectCounts,
-    // Show first 3 raw emails for debugging
     sampleEmails: allEmails.slice(0, 3).map((e) => ({
       id: e.id,
       subject: e.subject,
       to: e.to,
       from: e.from,
       created_at: e.created_at,
-      keys: Object.keys(e),
     })),
   });
 }
