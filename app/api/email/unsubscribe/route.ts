@@ -55,3 +55,27 @@ export async function GET(request: NextRequest) {
     "You won't receive any more emails from Layout. If this was a mistake, just reply to any previous email from us."
   );
 }
+
+/** RFC 8058 one-click unsubscribe: Gmail sends POST to List-Unsubscribe URL */
+export async function POST(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const email = searchParams.get("email");
+  const token = searchParams.get("token");
+
+  if (!email || !token) {
+    return new Response("Invalid request", { status: 400 });
+  }
+
+  try {
+    const valid = verifyUnsubscribeToken(email, token);
+    if (!valid) {
+      return new Response("Invalid token", { status: 400 });
+    }
+  } catch {
+    return new Response("Invalid token", { status: 400 });
+  }
+
+  await addSuppression(email, "unsubscribe", "user");
+
+  return new Response("OK", { status: 200 });
+}

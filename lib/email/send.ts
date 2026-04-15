@@ -14,12 +14,34 @@ interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
+  text?: string;
   from?: string;
   replyTo?: string;
   headers?: Record<string, string>;
 }
 
-export async function sendEmail({ to, subject, html, from, replyTo, headers }: SendEmailOptions) {
+function htmlToText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<\/li>/gi, "\n")
+    .replace(/<\/tr>/gi, "\n")
+    .replace(/<\/h[1-6]>/gi, "\n\n")
+    .replace(/<li[^>]*>/gi, "- ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&ndash;/g, "-")
+    .replace(/&mdash;/g, "-")
+    .replace(/&middot;/g, ".")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#\d+;/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+export async function sendEmail({ to, subject, html, text, from, replyTo, headers }: SendEmailOptions) {
   const resend = getResend();
   if (!resend) {
     console.warn("RESEND_API_KEY not set - skipping email send to", to);
@@ -36,11 +58,14 @@ export async function sendEmail({ to, subject, html, from, replyTo, headers }: S
     ? to.split(",").map((e) => e.trim()).filter(Boolean)
     : to;
 
+  const plainText = text || htmlToText(html);
+
   const { data, error } = await resend.emails.send({
     from: fromAddr,
     to: toAddresses,
     subject,
     html,
+    text: plainText,
     replyTo: resolvedReplyTo,
     ...(headers ? { headers } : {}),
   });
