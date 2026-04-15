@@ -37,7 +37,7 @@ export function resetPasswordEmailHtml(resetUrl: string): string {
         <table width="560" cellpadding="0" cellspacing="0" style="background:#1A1A20;border-radius:12px;border:1px solid rgba(255,255,255,0.12);">
           <tr>
             <td style="padding:32px 32px 24px;">
-              <img src="https://layout.design/layout-logo-white.svg" alt="Layout" width="100" style="display:block;" />
+              <img src="https://layout.design/marketing/logo-white.svg" alt="Layout" width="100" style="display:block;" />
             </td>
           </tr>
           <tr>
