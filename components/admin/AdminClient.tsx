@@ -35,6 +35,7 @@ interface AccessRequestRow {
   status: "pending" | "approved" | "rejected";
   inviteCode: string | null;
   signedUp: boolean;
+  signedUpAt: string | null;
   createdAt: string;
   emailLog: EmailLogEntry[];
 }
@@ -553,7 +554,9 @@ function InviteCodesTab({ toast }: { toast: (msg: string, type?: Toast["type"]) 
 function applyClientFilter(requests: AccessRequestRow[], filter: string): AccessRequestRow[] {
   switch (filter) {
     case "signed_up":
-      return requests.filter((r) => r.status === "approved" && r.signedUp);
+      return requests
+        .filter((r) => r.status === "approved" && r.signedUp)
+        .sort((a, b) => (b.signedUpAt ?? "").localeCompare(a.signedUpAt ?? ""));
     case "not_signed_up":
       return requests.filter((r) => r.status === "approved" && !r.signedUp);
     case "no_reminder":
