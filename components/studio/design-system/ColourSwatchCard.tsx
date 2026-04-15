@@ -33,7 +33,7 @@ export function ColourSwatchCard({
   const [renameValue, setRenameValue] = useState(name);
 
   const displayHex = toHex(resolvedValue) ?? resolvedValue;
-  const swatchColour = toHex(resolvedValue) ?? "#000000";
+  const swatchColour = toHex(resolvedValue) ?? resolvedValue;
   const displayName = cssVariable ?? `--${name}`;
 
   const handleCopy = useCallback(() => {

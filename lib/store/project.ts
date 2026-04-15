@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 import { renameTokenInLayoutMd } from "@/lib/tokens/rename-token";
-import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont } from "@/lib/types";
+import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont, ProjectStandardisation, DesignSystemSnapshot } from "@/lib/types";
 
 /**
  * Strip large base64 data from the project before sending to the API.
@@ -181,6 +181,14 @@ interface ProjectState {
   refreshProject: (id: string) => Promise<void>;
   deleteProject: (id: string) => void;
   clearProjects: () => void;
+
+  // Standardisation
+  updateStandardisation: (id: string, data: ProjectStandardisation) => void;
+
+  // Snapshots
+  createSnapshot: (id: string, label: string) => string | null;
+  restoreSnapshot: (id: string, snapshotId: string) => boolean;
+  deleteSnapshot: (id: string, snapshotId: string) => void;
 }
 
 export const useProjectStore = create<ProjectState>()((set, get) => ({
@@ -525,4 +533,109 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   },
 
   clearProjects: () => set({ projects: [], currentProjectId: null, userId: null, orgId: null, hydrating: false, saveError: null }),
+
+  // ── Standardisation ─────────────────────────────────────────────────────
+
+  updateStandardisation: (id, data) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id
+          ? { ...p, standardisation: data, updatedAt: new Date().toISOString() }
+          : p
+      ),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  // ── Snapshots ───────────────────────────────────────────────────────────
+
+  createSnapshot: (id, label) => {
+    const project = get().projects.find((p) => p.id === id);
+    if (!project?.extractionData?.tokens) return null;
+
+    const snapshotId = `snap_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const allTokens = project.extractionData.tokens;
+    const tokenCount = Object.values(allTokens).reduce(
+      (sum, arr) => sum + (arr as ExtractedToken[]).length,
+      0
+    );
+
+    const snapshot: DesignSystemSnapshot = {
+      id: snapshotId,
+      label,
+      tokens: JSON.parse(JSON.stringify(allTokens)),
+      layoutMd: project.layoutMd,
+      healthScore: project.healthScore,
+      tokenCount,
+      standardisation: project.standardisation
+        ? JSON.parse(JSON.stringify(project.standardisation))
+        : undefined,
+      createdAt: new Date().toISOString(),
+    };
+
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id) return p;
+        const existing = p.snapshots ?? [];
+        // Keep max 5 snapshots, drop oldest if needed
+        const trimmed = existing.length >= 5 ? existing.slice(1) : existing;
+        return {
+          ...p,
+          snapshots: [...trimmed, snapshot],
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+
+    const updated = get().projects.find((p) => p.id === id);
+    if (updated) apiUpsertProject(updated, (msg) => set({ saveError: msg }));
+    return snapshotId;
+  },
+
+  restoreSnapshot: (id, snapshotId) => {
+    const project = get().projects.find((p) => p.id === id);
+    const snapshot = project?.snapshots?.find((s) => s.id === snapshotId);
+    if (!project || !snapshot) return false;
+
+    // Create a snapshot of current state before restoring (non-destructive)
+    get().createSnapshot(id, `Before restore (${new Date().toISOString().slice(0, 16)})`);
+
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id) return p;
+        return {
+          ...p,
+          layoutMd: snapshot.layoutMd,
+          extractionData: p.extractionData
+            ? { ...p.extractionData, tokens: JSON.parse(JSON.stringify(snapshot.tokens)) }
+            : undefined,
+          healthScore: snapshot.healthScore,
+          standardisation: snapshot.standardisation
+            ? JSON.parse(JSON.stringify(snapshot.standardisation))
+            : undefined,
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+
+    const updated = get().projects.find((p) => p.id === id);
+    if (updated) apiUpsertProject(updated, (msg) => set({ saveError: msg }));
+    return true;
+  },
+
+  deleteSnapshot: (id, snapshotId) => {
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id) return p;
+        return {
+          ...p,
+          snapshots: (p.snapshots ?? []).filter((s) => s.id !== snapshotId),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+    const updated = get().projects.find((p) => p.id === id);
+    if (updated) apiUpsertProject(updated, (msg) => set({ saveError: msg }));
+  },
 }));

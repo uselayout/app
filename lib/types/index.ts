@@ -80,6 +80,12 @@ export interface ExtractedToken {
   mode?: string;
   /** Alias reference: if this token references another, e.g. "var(--primitive-red-400)". */
   reference?: string;
+  /** Standard role key from Layout's canonical schema (e.g. "bg-app", "accent", "error"). */
+  standardRole?: string;
+  /** Standard CSS variable name: --{kit}-{role} (e.g. "--ada-bg-app"). */
+  standardName?: string;
+  /** Confidence of the standard role assignment. */
+  standardConfidence?: "high" | "medium" | "low";
 }
 
 export interface ComponentProperty {
@@ -242,8 +248,54 @@ export interface Project {
   scanSource?: "cli" | "github";
   lastScanAt?: string;
   githubRepo?: string;
+  /** Standardisation data: kit prefix, role assignments, unassigned tokens */
+  standardisation?: ProjectStandardisation;
+  /** Design system snapshots for rollback (max 5) */
+  snapshots?: DesignSystemSnapshot[];
   createdAt: string;
   updatedAt: string;
+}
+
+/** Serialisable version of StandardisedTokenMap for project storage */
+export interface ProjectStandardisation {
+  kitPrefix: string;
+  /** Role assignments keyed by role key */
+  assignments: Record<string, {
+    roleKey: string;
+    originalName: string;
+    originalCssVariable?: string;
+    value: string;
+    standardName: string;
+    confidence: "high" | "medium" | "low";
+    userConfirmed: boolean;
+  }>;
+  /** Tokens not assigned to any standard role */
+  unassigned: {
+    name: string;
+    cssVariable?: string;
+    value: string;
+    type: string;
+    hidden: boolean;
+  }[];
+  /** Auto-generated anti-patterns */
+  antiPatterns: {
+    rule: string;
+    reason: string;
+    fix: string;
+  }[];
+  /** When the standardisation was last run */
+  standardisedAt: string;
+}
+
+export interface DesignSystemSnapshot {
+  id: string;
+  label: string;
+  tokens: ExtractedTokens;
+  layoutMd: string;
+  healthScore?: number;
+  tokenCount: number;
+  standardisation?: ProjectStandardisation;
+  createdAt: string;
 }
 
 export interface HealthScore {
