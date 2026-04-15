@@ -3,7 +3,7 @@ import type {
   TextBlockParam,
   ImageBlockParam,
 } from "@anthropic-ai/sdk/resources/messages";
-import type { ExtractionResult, ExtractedToken } from "@/lib/types";
+import type { ExtractionResult, ExtractedToken, ProjectStandardisation } from "@/lib/types";
 import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
 import { isTransientError, friendlyApiError } from "@/lib/api-error";
 
@@ -122,7 +122,8 @@ function cssVarPriority(name: string): number {
 }
 
 function buildUserContent(
-  data: ExtractionResult
+  data: ExtractionResult,
+  standardisation?: ProjectStandardisation
 ): Array<TextBlockParam | ImageBlockParam> {
   const sections: string[] = [];
 
@@ -164,6 +165,55 @@ function buildUserContent(
       `Annotate tokens with /* extracted */ not /* reconstructed */. ` +
       `Confidence should be "high" for all Figma-sourced tokens.`
     );
+  }
+
+  // ── CURATED TOKEN SUMMARY (if standardisation has been run) ──
+  // This is the highest-quality signal: a curated set of ~25-30 tokens
+  // mapped to canonical roles. Use these as the PRIMARY token set for
+  // sections 0-6. The full extracted set follows below as supplementary.
+  if (standardisation && Object.keys(standardisation.assignments).length > 0) {
+    const kitPrefix = standardisation.kitPrefix;
+    sections.push(
+      `\n--- CURATED DESIGN SYSTEM (${Object.keys(standardisation.assignments).length} tokens mapped to standard roles, kit prefix: "${kitPrefix}") ---`,
+      `IMPORTANT: Use these curated tokens as the PRIMARY token set in the Quick Reference and all main sections. ` +
+      `Use the standard names (--${kitPrefix}-*) as the primary identifiers. ` +
+      `Document original CSS variable names as aliases where they differ.`
+    );
+
+    // Group assignments by category
+    const byCategory: Record<string, string[]> = {};
+    for (const [, assignment] of Object.entries(standardisation.assignments)) {
+      const cat = assignment.roleKey.split("-")[0] ?? "other";
+      const catKey =
+        ["bg", "text", "border", "accent", "surface"].includes(cat) ? "colours" :
+        ["success", "warning", "error", "info"].includes(cat) ? "status" :
+        ["font"].includes(cat) ? "typography" :
+        ["space"].includes(cat) ? "spacing" :
+        ["radius"].includes(cat) ? "radius" :
+        ["shadow"].includes(cat) ? "shadows" :
+        ["duration", "ease"].includes(cat) ? "motion" : "other";
+      if (!byCategory[catKey]) byCategory[catKey] = [];
+      const originalNote = assignment.originalCssVariable && assignment.originalCssVariable !== assignment.standardName
+        ? ` (original: ${assignment.originalCssVariable})`
+        : "";
+      byCategory[catKey].push(
+        `  ${assignment.standardName}: ${assignment.value};  /* ${assignment.roleKey}${originalNote} [${assignment.confidence}] */`
+      );
+    }
+
+    for (const [cat, lines] of Object.entries(byCategory)) {
+      sections.push(`/* ── Curated ${cat.toUpperCase()} ── */\n${lines.join("\n")}`);
+    }
+
+    // Anti-patterns from standardisation
+    if (standardisation.antiPatterns.length > 0) {
+      sections.push(`\n--- AUTO-DETECTED ANTI-PATTERNS (from extraction analysis) ---`);
+      for (const ap of standardisation.antiPatterns) {
+        sections.push(`NEVER: ${ap.rule}\n  → Why: ${ap.reason}\n  → Fix: ${ap.fix}`);
+      }
+    }
+
+    sections.push(`--- END CURATED TOKENS ---\n`);
   }
 
   if (cssVarCount > 0) {
@@ -484,10 +534,11 @@ function buildUserContent(
 
 export function createLayoutMdStream(
   extractionData: ExtractionResult,
-  apiKey?: string
+  apiKey?: string,
+  standardisation?: ProjectStandardisation
 ): StreamWithUsage {
   const anthropic = new Anthropic(apiKey ? { apiKey } : {});
-  const userContent = buildUserContent(extractionData);
+  const userContent = buildUserContent(extractionData, standardisation);
 
   let resolveUsage: (u: TokenUsageResult) => void;
   let rejectUsage: (err: unknown) => void;

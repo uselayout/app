@@ -43,6 +43,31 @@ const RequestSchema = z.object({
     extractionSource: z.enum(["figma", "website"]).optional(),
   }),
   projectId: z.string().optional(),
+  standardisation: z.object({
+    kitPrefix: z.string(),
+    assignments: z.record(z.string(), z.object({
+      roleKey: z.string(),
+      originalName: z.string(),
+      originalCssVariable: z.string().optional(),
+      value: z.string(),
+      standardName: z.string(),
+      confidence: z.enum(["high", "medium", "low"]),
+      userConfirmed: z.boolean(),
+    })),
+    unassigned: z.array(z.object({
+      name: z.string(),
+      cssVariable: z.string().optional(),
+      value: z.string(),
+      type: z.string(),
+      hidden: z.boolean(),
+    })),
+    antiPatterns: z.array(z.object({
+      rule: z.string(),
+      reason: z.string(),
+      fix: z.string(),
+    })),
+    standardisedAt: z.string(),
+  }).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -166,7 +191,7 @@ export async function POST(request: NextRequest) {
 
     const streamController = registerStream();
     const startTime = Date.now();
-    const { stream, usage } = createLayoutMdStream(extractionData, apiKey);
+    const { stream, usage } = createLayoutMdStream(extractionData, apiKey, parsed.data.standardisation);
 
     const apiLogMetadata = {
       projectId: parsed.data.projectId,

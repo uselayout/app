@@ -5,7 +5,8 @@ import { useExtractionStore } from "@/lib/store/extraction";
 import { useProjectStore } from "@/lib/store/project";
 import { getStoredApiKey, getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
 import { useOrgStore } from "@/lib/store/organization";
-import type { ExtractionResult, ExtractedComponent, Project } from "@/lib/types";
+import type { ExtractionResult, ExtractedComponent, Project, ProjectStandardisation } from "@/lib/types";
+import { standardiseTokens, applyStandardisation } from "@/lib/tokens/standardise";
 
 export function useExtraction() {
   const startExtraction = useExtractionStore((s) => s.startExtraction);
@@ -18,6 +19,8 @@ export function useExtraction() {
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateLayoutMd = useProjectStore((s) => s.updateLayoutMd);
   const syncTokensFromLayoutMd = useProjectStore((s) => s.syncTokensFromLayoutMd);
+  const updateStandardisation = useProjectStore((s) => s.updateStandardisation);
+  const createSnapshot = useProjectStore((s) => s.createSnapshot);
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -137,6 +140,25 @@ export function useExtraction() {
         }
         updateExtractionData(project.id, extractionData);
 
+        // Step 1b: Run standardisation (classify tokens against canonical schema)
+        let standardisationData: ProjectStandardisation | undefined;
+        try {
+          const source = project.sourceUrl ?? project.name;
+          const tokenMap = standardiseTokens(extractionData.tokens, source);
+          applyStandardisation(extractionData.tokens, tokenMap);
+          standardisationData = {
+            kitPrefix: tokenMap.kitPrefix,
+            assignments: Object.fromEntries(tokenMap.assignments),
+            unassigned: tokenMap.unassigned,
+            antiPatterns: tokenMap.antiPatterns,
+            standardisedAt: new Date().toISOString(),
+          };
+          updateStandardisation(project.id, standardisationData);
+        } catch {
+          // Non-fatal: synthesis works without standardisation
+          console.warn("[extraction] Standardisation failed, continuing without curated tokens");
+        }
+
         // Step 2: Generate layout.md
         updateStep("generate", { status: "running" });
 
@@ -149,6 +171,11 @@ export function useExtraction() {
           }).catch(() => {}); // Non-blocking — don't fail extraction if version save fails
         }
 
+        // Create a snapshot before generating new layout.md
+        if (project.layoutMd && project.layoutMd.length > 0) {
+          createSnapshot(project.id, "Before re-extraction");
+        }
+
         // Pass screenshots through — they're resized server-side before sending to Claude
         const extractionDataForSynthesis = extractionData;
 
@@ -159,7 +186,10 @@ export function useExtraction() {
             "Content-Type": "application/json",
             ...(apiKey ? { "X-Api-Key": apiKey } : {}),
           },
-          body: JSON.stringify({ extractionData: extractionDataForSynthesis }),
+          body: JSON.stringify({
+            extractionData: extractionDataForSynthesis,
+            standardisation: standardisationData,
+          }),
           signal: controller.signal,
         });
 
@@ -267,6 +297,8 @@ export function useExtraction() {
       completeExtraction,
       updateExtractionData,
       updateLayoutMd,
+      updateStandardisation,
+      createSnapshot,
       currentOrgId,
     ]
   );
