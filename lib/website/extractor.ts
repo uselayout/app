@@ -7,6 +7,7 @@ import {
   extractAnimationsScript,
   extractBreakpointsScript,
   extractRadiusCensusScript,
+  extractButtonColourCensusScript,
   extractInteractiveStatesScript,
   extractComponentPatternsScript,
   detectLibrariesScript,
@@ -132,7 +133,10 @@ export async function extractFromWebsite({
   let page: Awaited<ReturnType<typeof browser.newPage>> | null = null;
 
   try {
-    page = await browser.newPage();
+    page = await browser.newPage({
+      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      viewport: { width: 1440, height: 900 },
+    });
 
     onProgress?.("navigate", 10, `Navigating to ${url}...`);
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
@@ -175,6 +179,11 @@ export async function extractFromWebsite({
     onProgress?.("radius", 60, "Surveying border-radius usage...");
     const radiusCensus: Record<string, { count: number; elements: Array<{ tag: string; class: string; text: string }> }> =
       await page.evaluate(`(${extractRadiusCensusScript})()`);
+
+    // Survey button/CTA background colours for primary colour detection
+    onProgress?.("buttons", 61, "Surveying button colours...");
+    const buttonColourCensus: Record<string, { count: number; elements: Array<{ tag: string; text: string; area: number; color: string }> }> =
+      await page.evaluate(`(${extractButtonColourCensusScript})()`);
 
     // Extract interactive state styles (hover/focus/active) from CSS rules
     onProgress?.("states", 62, "Extracting interactive states...");
@@ -406,6 +415,7 @@ export async function extractFromWebsite({
       cssVariables,
       computedStyles,
       interactiveStates,
+      buttonColourCensus: Object.keys(buttonColourCensus).length > 0 ? buttonColourCensus : undefined,
       breakpoints: breakpoints.length > 0 ? breakpoints : undefined,
     };
   } finally {

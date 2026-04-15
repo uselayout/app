@@ -3,12 +3,15 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Smartphone, Tablet, Monitor, ExternalLink } from "lucide-react";
 import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
-import type { DesignVariant } from "@/lib/types";
+import type { DesignVariant, FontDeclaration, UploadedFont } from "@/lib/types";
 
 interface ResponsivePreviewProps {
   variant: DesignVariant;
   onClose: () => void;
   cssTokenBlock?: string;
+  iconPacks?: string[];
+  fonts?: FontDeclaration[];
+  uploadedFonts?: UploadedFont[];
 }
 
 const VIEWPORTS = [
@@ -17,7 +20,7 @@ const VIEWPORTS = [
   { key: "desktop", label: "Desktop", width: 1280, height: 900, icon: Monitor },
 ] as const;
 
-export function ResponsivePreview({ variant, onClose, cssTokenBlock }: ResponsivePreviewProps) {
+export function ResponsivePreview({ variant, onClose, cssTokenBlock, iconPacks, fonts, uploadedFonts }: ResponsivePreviewProps) {
   const [activeViewport, setActiveViewport] = useState<string>("desktop");
   const active = VIEWPORTS.find((v) => v.key === activeViewport) ?? VIEWPORTS[2];
   const srcdocRef = useRef<string | null>(null);
@@ -87,6 +90,9 @@ export function ResponsivePreview({ variant, onClose, cssTokenBlock }: Responsiv
           height={active.height}
           onSrcdocReady={(s) => { srcdocRef.current = s; }}
           cssTokenBlock={cssTokenBlock}
+          iconPacks={iconPacks}
+          fonts={fonts}
+          uploadedFonts={uploadedFonts}
         />
       </div>
     </div>
@@ -99,12 +105,18 @@ function ViewportFrame({
   height,
   onSrcdocReady,
   cssTokenBlock,
+  iconPacks,
+  fonts,
+  uploadedFonts,
 }: {
   code: string;
   width: number;
   height: number;
   onSrcdocReady: (srcdoc: string) => void;
   cssTokenBlock?: string;
+  iconPacks?: string[];
+  fonts?: FontDeclaration[];
+  uploadedFonts?: UploadedFont[];
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -156,7 +168,7 @@ function ViewportFrame({
         if (cancelled) return;
 
         const componentName = extractComponentName(code);
-        const srcdoc = buildSrcdoc(js, componentName, { cssTokenBlock });
+        const srcdoc = buildSrcdoc(js, componentName, { cssTokenBlock, iconPacks, fonts, uploadedFonts });
 
         onSrcdocReadyRef.current(srcdoc);
 

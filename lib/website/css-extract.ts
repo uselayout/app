@@ -57,7 +57,7 @@ export const extractCSSVariablesScript = `() => {
     const styleTags = document.querySelectorAll('style');
     for (const tag of styleTags) {
       const text = tag.textContent || '';
-      const matches = text.matchAll(/(--.+?)\\s*:\\s*([^;}{]+)/g);
+      const matches = text.matchAll(/(--[a-zA-Z0-9_-]+)\\s*:\\s*([^;}{]+)/g);
       for (const m of matches) {
         const prop = m[1].trim();
         const val = m[2].trim();
@@ -247,6 +247,48 @@ export const extractRadiusCensusScript = `() => {
     } catch(e) {}
   }
   return radiusMap;
+}`;
+
+/**
+ * Census of background colours on all button/CTA elements.
+ * Groups by colour value with frequency count and element context.
+ * Helps Claude determine the true primary brand colour.
+ */
+export const extractButtonColourCensusScript = `() => {
+  const selectors = [
+    'button:not([disabled])', 'a[class*="btn"]', 'a[class*="button"]',
+    'a[class*="cta"]', '[role="button"]', '[class*="btn-primary"]',
+    '[class*="button-primary"]', '[class*="btn-secondary"]',
+    '[class*="button-secondary"]',
+  ];
+  const colourMap = {};
+  const excluded = '[class*="cookie"], [class*="consent"], [class*="banner"], [id*="cookie"], [id*="consent"], dialog, [role="dialog"]';
+  for (const sel of selectors) {
+    try {
+      const els = document.querySelectorAll(sel);
+      for (const el of Array.from(els).slice(0, 30)) {
+        if (el.closest(excluded)) continue;
+        const cs = getComputedStyle(el);
+        const bg = cs.backgroundColor;
+        if (!bg || bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') continue;
+        // Skip white/near-white backgrounds
+        const m = bg.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);
+        if (m && parseInt(m[1]) > 240 && parseInt(m[2]) > 240 && parseInt(m[3]) > 240) continue;
+        if (!colourMap[bg]) colourMap[bg] = { count: 0, elements: [] };
+        colourMap[bg].count++;
+        if (colourMap[bg].elements.length < 3) {
+          const rect = el.getBoundingClientRect();
+          colourMap[bg].elements.push({
+            tag: el.tagName.toLowerCase(),
+            text: (el.textContent?.trim() || '').slice(0, 40),
+            area: Math.round(rect.width * rect.height),
+            color: cs.color,
+          });
+        }
+      }
+    } catch(e) {}
+  }
+  return colourMap;
 }`;
 
 export const extractInteractiveStatesScript = `() => {

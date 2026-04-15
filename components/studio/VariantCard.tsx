@@ -104,6 +104,11 @@ const TAILWIND_PREFIXES: Record<string, RegExp> = {
  * by its tag name and CSS classes. Scores candidates by class overlap and
  * returns null if the match is ambiguous (tied scores) or below threshold.
  */
+/**
+ * Find the opening tag region for an element by tag name + class matching.
+ * Uses a bracket-counting parser to handle arbitrarily nested JSX expressions
+ * that regex alone cannot parse reliably.
+ */
 function findElementRegion(
   code: string,
   elementTag: string,
@@ -111,15 +116,39 @@ function findElementRegion(
 ): { tagStart: number; tagEnd: number; tagContent: string } | null {
   if (!elementTag) return null;
   const classWords = elementClasses.split(/\s+/).filter(Boolean);
-  // Match both self-closing and normal opening tags for this element type
-  const tagRegex = new RegExp(`<${elementTag}\\b(?:[^>"'{}]|"[^"]*"|'[^']*'|\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\})*(?:/>|>)`, "g");
+
+  // Find all positions where this tag opens
+  const tagOpen = new RegExp(`<${elementTag}\\b`, "g");
   const candidates: { tagStart: number; tagEnd: number; tagContent: string; score: number }[] = [];
 
-  let m: RegExpExecArray | null;
-  while ((m = tagRegex.exec(code)) !== null) {
-    const tagContent = m[0];
-    const tagStart = m.index;
-    const tagEnd = m.index + tagContent.length;
+  let openMatch: RegExpExecArray | null;
+  while ((openMatch = tagOpen.exec(code)) !== null) {
+    const tagStart = openMatch.index;
+    // Walk forward, counting braces and handling strings, to find > or />
+    let i = tagStart + openMatch[0].length;
+    let braceDepth = 0;
+    let inString: string | false = false;
+    let tagEnd = -1;
+
+    while (i < code.length) {
+      const ch = code[i];
+      if (inString) {
+        if (ch === inString && code[i - 1] !== "\\") inString = false;
+        i++;
+        continue;
+      }
+      if (ch === '"' || ch === "'" || ch === "`") { inString = ch; i++; continue; }
+      if (ch === "{") { braceDepth++; i++; continue; }
+      if (ch === "}") { braceDepth--; i++; continue; }
+      if (braceDepth === 0) {
+        if (ch === "/" && code[i + 1] === ">") { tagEnd = i + 2; break; }
+        if (ch === ">") { tagEnd = i + 1; break; }
+      }
+      i++;
+    }
+    if (tagEnd === -1) continue;
+
+    const tagContent = code.slice(tagStart, tagEnd);
 
     // Score by class overlap
     let score = 0;
@@ -341,12 +370,74 @@ function tryAddInlineStyle(code: string, edit: StyleEdit): string | null {
 }
 
 /**
+ * Convert a camelCase JS style property to kebab-case CSS property.
+ * e.g. paddingTop → padding-top, backgroundColor → background-color
+ */
+function toKebabCase(prop: string): string {
+  return prop.replace(/([A-Z])/g, "-$1").toLowerCase();
+}
+
+/**
+ * Try to edit a CSS property value directly inside a <style> block.
+ * Matches CSS rules by the element's class names and replaces the property value.
+ * This is critical for AI-generated components that use <style> blocks instead of
+ * inline styles or Tailwind classes.
+ */
+function tryDirectStyleBlockEdit(code: string, edit: StyleEdit): string | null {
+  const { property, after, elementClasses } = edit;
+  const kebabProp = toKebabCase(property);
+  if (!kebabProp) return null;
+
+  // Find <style> or <style jsx> blocks in the code
+  const styleBlockRegex = /<style(?:\s[^>]*)?>([^]*?)<\/style>/gi;
+  let styleMatch: RegExpExecArray | null;
+  const classWords = elementClasses.split(/\s+/).filter(Boolean);
+  if (classWords.length === 0) return null;
+
+  while ((styleMatch = styleBlockRegex.exec(code)) !== null) {
+    const styleContent = styleMatch[1];
+    const styleStart = styleMatch.index + styleMatch[0].indexOf(styleContent);
+
+    // Try each class to find a matching CSS rule
+    for (const cls of classWords) {
+      // Match rules like .className { ... } - handle both exact and compound selectors
+      const escapedCls = cls.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const ruleRegex = new RegExp(
+        `(\\.${escapedCls}\\b[^{]*\\{)([^}]*)\\}`,
+        "g",
+      );
+      let ruleMatch: RegExpExecArray | null;
+      while ((ruleMatch = ruleRegex.exec(styleContent)) !== null) {
+        const ruleBody = ruleMatch[2];
+        // Find the property in this rule
+        const propRegex = new RegExp(
+          `(${kebabProp}\\s*:\\s*)([^;!}]+)(\\s*(?:!important)?\\s*[;}])`,
+        );
+        const propMatch = propRegex.exec(ruleBody);
+        if (propMatch) {
+          const newRuleBody = ruleBody.slice(0, propMatch.index) +
+            propMatch[1] + after + propMatch[3] +
+            ruleBody.slice(propMatch.index + propMatch[0].length);
+          const newStyleContent = styleContent.slice(0, ruleMatch.index + ruleMatch[1].length) +
+            newRuleBody + "}" +
+            styleContent.slice(ruleMatch.index + ruleMatch[0].length);
+          return code.slice(0, styleStart) + newStyleContent + code.slice(styleStart + styleContent.length);
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
  * Try to apply a single style edit directly in the source code.
  * Attempts in order:
  *  1. Text content replacement
  *  2. Modify existing inline style
  *  3. Replace existing Tailwind class (not add new ones)
  *  4. Add new inline style (overrides <style> blocks via specificity)
+ *  5. Edit CSS property in <style> block
  * Returns the updated code, or null if all direct paths fail.
  */
 function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null {
@@ -398,6 +489,13 @@ function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null 
   if (addResult) {
     console.debug(`[direct-edit] ${property}: added inline style (overrides <style> block)`);
     return addResult;
+  }
+
+  // Try editing CSS property directly in a <style> block
+  const styleBlockResult = tryDirectStyleBlockEdit(code, edit);
+  if (styleBlockResult) {
+    console.debug(`[direct-edit] ${property}: edited <style> block CSS rule`);
+    return styleBlockResult;
   }
 
   console.debug(`[direct-edit] ${property}: all direct edit paths failed, will use AI fallback`);

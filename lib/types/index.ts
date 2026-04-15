@@ -204,6 +204,7 @@ export interface ExtractionResult {
   cssVariables: Record<string, string>;
   computedStyles: Record<string, ComputedStyleMap>;
   interactiveStates?: Record<string, Record<string, string>>;
+  buttonColourCensus?: Record<string, { count: number; elements: Array<{ tag: string; text: string; area: number; color: string }> }>;
   breakpoints?: string[];
   warnings?: string[];
   layoutPatterns?: Array<{

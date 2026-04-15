@@ -1336,6 +1336,9 @@ export function ExplorerCanvas({
           variant={responsiveVariant}
           onClose={() => setResponsiveVariant(null)}
           cssTokenBlock={cssTokenBlock}
+          iconPacks={iconPacks}
+          fonts={extractedFontDeclarations}
+          uploadedFonts={uploadedFonts}
         />
       )}
 

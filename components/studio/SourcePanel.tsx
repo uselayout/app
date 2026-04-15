@@ -1250,8 +1250,9 @@ function ScreenshotsTab({
       )}
 
       {screenshots.length === 0 ? (
-        <div className="p-4 text-xs text-[var(--text-muted)]">
-          No screenshots captured. Add screenshots or extract from a website.
+        <div className="p-4 text-xs text-[var(--text-muted)] space-y-2">
+          <p>No screenshots captured. Some sites block automated screenshots.</p>
+          <p>Upload your own screenshots for better layout.md generation — they help the AI understand page structure and visual hierarchy.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2 p-2">

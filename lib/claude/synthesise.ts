@@ -277,6 +277,15 @@ function buildUserContent(
     );
   }
 
+  if (data.buttonColourCensus && Object.keys(data.buttonColourCensus).length > 0) {
+    sections.push(
+      `--- BUTTON/CTA COLOUR CENSUS (background colours from all buttons on the page) ---\n` +
+      `Use this to determine --color-primary. The most common non-white CTA background colour ` +
+      `with the largest element area is likely the brand primary, not necessarily the first button found.\n` +
+      JSON.stringify(data.buttonColourCensus, null, 2)
+    );
+  }
+
   if (data.interactiveStates && Object.keys(data.interactiveStates).length > 0) {
     const capped = Object.fromEntries(
       Object.entries(data.interactiveStates).slice(0, 50)
