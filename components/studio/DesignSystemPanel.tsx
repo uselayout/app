@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useCallback, useMemo, useState, useEffect } from "react";
-import { X } from "lucide-react";
-import type { ExtractionResult } from "@/lib/types";
+import { X, Sparkles } from "lucide-react";
+import type { ExtractionResult, ExtractedToken } from "@/lib/types";
 import { useProjectStore } from "@/lib/store/project";
 import { DesignSystemSection } from "./design-system/DesignSystemSection";
 import { ColourPalette } from "./design-system/ColourPalette";
@@ -12,8 +12,12 @@ import { RadiusPreview } from "./design-system/RadiusPreview";
 import { EffectsPreview } from "./design-system/EffectsPreview";
 import { ScreenshotGallery } from "./design-system/ScreenshotGallery";
 import { ComponentsView } from "./design-system/ComponentsView";
+import { CuratedTokenView } from "./design-system/CuratedTokenView";
 import { FontManager } from "./FontManager";
 import { useOrgStore } from "@/lib/store/organization";
+import { standardiseTokens, applyStandardisation } from "@/lib/tokens/standardise";
+import type { StandardisedTokenMap } from "@/lib/tokens/standard-schema";
+import type { ProjectStandardisation } from "@/lib/types";
 
 const GUIDANCE_DISMISSED_KEY = "layout_ds_guidance_dismissed";
 
@@ -54,10 +58,68 @@ export function DesignSystemPanel({
   }, []);
 
   const project = useProjectStore((s) => s.projects.find((p) => p.id === projectId));
+  const updateStandardisation = useProjectStore((s) => s.updateStandardisation);
+  const createSnapshot = useProjectStore((s) => s.createSnapshot);
   const tokens = extractionData?.tokens;
   const screenshots = extractionData?.screenshots ?? [];
   const scannedComponents = project?.scannedComponents ?? [];
   const extractedComponents = extractionData?.components ?? [];
+
+  // View mode: curated (standardised) vs all (raw)
+  const [viewMode, setViewMode] = useState<"curated" | "all">(
+    project?.standardisation ? "curated" : "all"
+  );
+
+  // Run standardisation if tokens exist but no standardisation data yet
+  useEffect(() => {
+    if (!tokens || !project || project.standardisation) return;
+    if (!project.sourceUrl) return;
+
+    const tokenMap = standardiseTokens(tokens, project.sourceUrl);
+    applyStandardisation(tokens, tokenMap);
+
+    // Convert Map to plain object for serialisation
+    const serialisable: ProjectStandardisation = {
+      kitPrefix: tokenMap.kitPrefix,
+      assignments: Object.fromEntries(tokenMap.assignments),
+      unassigned: tokenMap.unassigned,
+      antiPatterns: tokenMap.antiPatterns,
+      standardisedAt: new Date().toISOString(),
+    };
+
+    updateStandardisation(projectId, serialisable);
+    setViewMode("curated");
+  }, [tokens, project, projectId, updateStandardisation]);
+
+  // Re-standardise handler (for manual refresh)
+  const handleRestandardise = useCallback(() => {
+    if (!tokens || !project?.sourceUrl) return;
+    createSnapshot(projectId, "Before re-standardisation");
+    const tokenMap = standardiseTokens(tokens, project.sourceUrl);
+    applyStandardisation(tokens, tokenMap);
+    const serialisable: ProjectStandardisation = {
+      kitPrefix: tokenMap.kitPrefix,
+      assignments: Object.fromEntries(tokenMap.assignments),
+      unassigned: tokenMap.unassigned,
+      antiPatterns: tokenMap.antiPatterns,
+      standardisedAt: new Date().toISOString(),
+    };
+    updateStandardisation(projectId, serialisable);
+    setViewMode("curated");
+  }, [tokens, project, projectId, updateStandardisation, createSnapshot]);
+
+  // Flatten all tokens for the curated view lookup
+  const allTokensFlat = useMemo<ExtractedToken[]>(() => {
+    if (!tokens) return [];
+    return [
+      ...tokens.colors,
+      ...tokens.typography,
+      ...tokens.spacing,
+      ...tokens.radius,
+      ...tokens.effects,
+      ...(tokens.motion ?? []),
+    ];
+  }, [tokens]);
 
   const handleScrollTo = useCallback((sectionId: string) => {
     const el = document.getElementById(sectionId);
@@ -176,13 +238,40 @@ export function DesignSystemPanel({
     <div className="flex h-full flex-col bg-[var(--bg-app)]">
       {/* Section nav */}
       <div className="sticky top-0 z-10 flex items-center gap-1 border-b border-[var(--studio-border)] bg-[var(--bg-app)] px-6 py-2">
+        {/* Curated / All toggle */}
+        <div className="mr-2 flex items-center rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-0.5">
+          <button
+            onClick={() => setViewMode("curated")}
+            className={`flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium transition-colors ${
+              viewMode === "curated"
+                ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            }`}
+            title="Curated: standardised token roles for AI code generation"
+          >
+            <Sparkles className="h-3 w-3" />
+            Curated
+          </button>
+          <button
+            onClick={() => setViewMode("all")}
+            className={`rounded px-2 py-1 text-[10px] font-medium transition-colors ${
+              viewMode === "all"
+                ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            }`}
+            title="All: every extracted token"
+          >
+            All Tokens
+          </button>
+        </div>
+
         <span
           className="mr-2 rounded-md bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]"
           title={`${tokens.colors.length} colours, ${tokens.typography.length} typography, ${tokens.spacing.length} spacing, ${tokens.radius.length} radius, ${tokens.effects.length} effects, ${(tokens.motion ?? []).length} motion`}
         >
           {tokens.colors.length + tokens.typography.length + tokens.spacing.length + tokens.radius.length + tokens.effects.length + (tokens.motion ?? []).length} tokens
         </span>
-        {SECTIONS.map((section) => {
+        {viewMode === "all" && SECTIONS.map((section) => {
           const count = section.id === "screenshots"
             ? screenshots.length
             : section.id === "components"
@@ -239,7 +328,33 @@ export function DesignSystemPanel({
 
       {/* Scrollable content */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-6">
-        {tokens.colors.length > 0 && (
+        {/* Curated view */}
+        {viewMode === "curated" && project?.standardisation && (
+          <CuratedTokenView
+            standardisation={project.standardisation}
+            allTokens={allTokensFlat}
+            cssVariables={cssVariables}
+            onUpdateToken={handleUpdateToken}
+            onRemoveToken={(tokenType, names) => handleRemoveToken(tokenType, names)}
+            onRenameToken={handleRenameToken}
+          />
+        )}
+
+        {/* Curated view but no standardisation data */}
+        {viewMode === "curated" && !project?.standardisation && (
+          <div className="flex h-64 items-center justify-center">
+            <div className="text-center">
+              <Sparkles className="mx-auto h-8 w-8 text-[var(--text-muted)] mb-3" />
+              <p className="text-sm text-[var(--text-secondary)]">Standardising your design system...</p>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                Mapping extracted tokens to standard roles.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* All tokens view (original) */}
+        {viewMode === "all" && tokens.colors.length > 0 && (
           <DesignSystemSection id="colours" title="Colours" count={deduplicatedTokens?.colors.length ?? tokens.colors.length}>
             <ColourPalette
               tokens={deduplicatedTokens?.colors ?? tokens.colors}
@@ -251,7 +366,7 @@ export function DesignSystemPanel({
           </DesignSystemSection>
         )}
 
-        {tokens.typography.length > 0 && (
+        {viewMode === "all" && tokens.typography.length > 0 && (
           <DesignSystemSection id="typography" title="Typography" count={tokens.typography.length}>
             <TypographyScale
               tokens={tokens.typography}
@@ -272,7 +387,7 @@ export function DesignSystemPanel({
           </DesignSystemSection>
         )}
 
-        {tokens.spacing.length > 0 && (
+        {viewMode === "all" && tokens.spacing.length > 0 && (
           <DesignSystemSection id="spacing" title="Spacing" count={deduplicatedTokens?.spacing.length ?? tokens.spacing.length}>
             <SpacingScale
               tokens={deduplicatedTokens?.spacing ?? tokens.spacing}
@@ -282,7 +397,7 @@ export function DesignSystemPanel({
           </DesignSystemSection>
         )}
 
-        {tokens.radius.length > 0 && (
+        {viewMode === "all" && tokens.radius.length > 0 && (
           <DesignSystemSection id="radius" title="Radius" count={deduplicatedTokens?.radius.length ?? tokens.radius.length}>
             <RadiusPreview
               tokens={deduplicatedTokens?.radius ?? tokens.radius}
@@ -292,7 +407,7 @@ export function DesignSystemPanel({
           </DesignSystemSection>
         )}
 
-        {tokens.effects.length > 0 && (
+        {viewMode === "all" && tokens.effects.length > 0 && (
           <DesignSystemSection id="effects" title="Effects" count={tokens.effects.length}>
             <EffectsPreview
               tokens={tokens.effects}
@@ -302,7 +417,7 @@ export function DesignSystemPanel({
           </DesignSystemSection>
         )}
 
-        <DesignSystemSection
+        {viewMode === "all" && <DesignSystemSection
           id="components"
           title="Components"
           count={extractedComponents.filter(c => !c.name.toLowerCase().startsWith("icon/")).length + scannedComponents.length}
@@ -328,9 +443,9 @@ export function DesignSystemPanel({
               scannedComponents={scannedComponents}
             />
           )}
-        </DesignSystemSection>
+        </DesignSystemSection>}
 
-        {screenshots.length > 0 && (
+        {viewMode === "all" && screenshots.length > 0 && (
           <DesignSystemSection id="screenshots" title="Screenshots" count={screenshots.length}>
             <ScreenshotGallery
               screenshots={screenshots}
