@@ -259,7 +259,8 @@ export function CuratedTokenView({
               {roles.map((role) => {
                 const assignment = assignments[role.key];
                 const token = roleTokenMap.get(role.key);
-                const pxValue = token ? parseFloat(token.value) : 0;
+                const rawNum = token ? parseFloat(token.value) : 0;
+                const pxValue = token?.value.includes("rem") ? rawNum * 16 : rawNum;
 
                 return (
                   <div

@@ -94,7 +94,7 @@ export function AssignTokenPopover({
               autoFocus
               className="flex-1 bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
               onKeyDown={(e) => {
-                if (e.key === "Enter" && search.startsWith("#") && search.length >= 4) {
+                if (e.key === "Enter" && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(search)) {
                   handleSelect({
                     name: `custom-${role.suffix}`,
                     value: search,
@@ -104,7 +104,7 @@ export function AssignTokenPopover({
                 }
               }}
             />
-            {search.startsWith("#") && search.length >= 4 && (
+            {/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(search) && (
               <button
                 onClick={() =>
                   handleSelect({
