@@ -182,7 +182,7 @@ const COLOUR_ROLES: StandardRole[] = [
     suffix: "text-secondary",
     required: true,
     description: "Supporting text, descriptions, labels. Reduced emphasis.",
-    matchKeywords: ["text-secondary", "text-subtle", "text-sub", "text-description", "on-surface-variant", "text-label"],
+    matchKeywords: ["text-secondary", "text-subtle", "text-sub", "text-description", "on-surface-variant", "text-label", "text-hushed", "text-subdued"],
   },
   {
     key: "text-muted",
@@ -191,7 +191,7 @@ const COLOUR_ROLES: StandardRole[] = [
     suffix: "text-muted",
     required: true,
     description: "Lowest emphasis text: captions, timestamps, disabled labels.",
-    matchKeywords: ["text-muted", "text-disabled", "text-tertiary", "text-caption", "text-faint", "text-hint"],
+    matchKeywords: ["text-muted", "text-disabled", "text-tertiary", "text-caption", "text-faint", "text-hint", "text-hushed", "text-dim", "text-quiet"],
   },
   {
     key: "text-placeholder",
@@ -200,7 +200,7 @@ const COLOUR_ROLES: StandardRole[] = [
     suffix: "text-placeholder",
     required: false,
     description: "Input placeholder text colour.",
-    matchKeywords: ["placeholder", "text-placeholder", "input-placeholder"],
+    matchKeywords: ["placeholder", "text-placeholder", "input-placeholder", "text-reverse", "text-inverse", "hushedReverse"],
   },
 
   // ── Borders ──

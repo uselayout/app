@@ -59,6 +59,18 @@ function stripBloatForSave(project: Project): Project {
     });
   }
 
+  // Strip snapshots (client-only undo history, not needed on server)
+  delete stripped.snapshots;
+
+  // Strip standardisation bloat (only keep assignments + kitPrefix for server)
+  if (stripped.standardisation) {
+    stripped.standardisation = {
+      ...stripped.standardisation,
+      unassigned: [], // 100+ tokens, only needed client-side
+      antiPatterns: stripped.standardisation.antiPatterns.slice(0, 5),
+    };
+  }
+
   return stripped;
 }
 

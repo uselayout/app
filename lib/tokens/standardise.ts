@@ -63,6 +63,50 @@ export function standardiseTokens(
     }
   }
 
+  // Pass 3: Value-based fallback for unfilled colour roles
+  const colourFallbacks: { roleKey: string; picker: (tokens: { token: FlatToken; lightness: number }[]) => FlatToken | null }[] = [
+    { roleKey: "bg-app", picker: (ts) => ts.sort((a, b) => b.lightness - a.lightness)[0]?.token ?? null },
+    { roleKey: "bg-surface", picker: (ts) => { const sorted = ts.sort((a, b) => b.lightness - a.lightness); return sorted[1]?.token ?? null; } },
+    { roleKey: "text-primary", picker: (ts) => ts.sort((a, b) => a.lightness - b.lightness)[0]?.token ?? null },
+    { roleKey: "text-secondary", picker: (ts) => { const sorted = ts.sort((a, b) => a.lightness - b.lightness); return sorted.find((t) => t.lightness > 0.15 && t.lightness < 0.5)?.token ?? null; } },
+    { roleKey: "accent", picker: (ts) => {
+      const chromaTokens = ts
+        .map((t) => ({ ...t, chroma: parseChroma(t.token.value) ?? estimateChromaFromHex(t.token.value) }))
+        .filter((t) => t.chroma > 0.1 && t.lightness > 0.2 && t.lightness < 0.9)
+        .sort((a, b) => b.chroma - a.chroma);
+      return chromaTokens[0]?.token ?? null;
+    }},
+    { roleKey: "success", picker: (ts) => {
+      const greens = ts.filter((t) => { const rgb = parseHexToRgb(t.token.value); return rgb && rgb.g > rgb.r * 1.3 && rgb.g > rgb.b * 1.3; });
+      return greens[0]?.token ?? null;
+    }},
+    { roleKey: "warning", picker: (ts) => {
+      const oranges = ts.filter((t) => { const rgb = parseHexToRgb(t.token.value); return rgb && rgb.r > 180 && rgb.g > 100 && rgb.g < 200 && rgb.b < 100; });
+      return oranges[0]?.token ?? null;
+    }},
+    { roleKey: "error", picker: (ts) => {
+      const reds = ts.filter((t) => { const rgb = parseHexToRgb(t.token.value); return rgb && rgb.r > rgb.g * 1.5 && rgb.r > rgb.b * 1.5; });
+      return reds[0]?.token ?? null;
+    }},
+  ];
+
+  for (const fallback of colourFallbacks) {
+    if (assignments.has(fallback.roleKey)) continue;
+    const role = STANDARD_SCHEMA.roles.find((r) => r.key === fallback.roleKey);
+    if (!role) continue;
+
+    const unassignedColours = allTokens
+      .filter((t) => !assignedTokenNames.has(tokenKey(t)) && (t.sourceType === "color" || t.type === "color"))
+      .map((t) => ({ token: t, lightness: parseLightness(t.value) }))
+      .filter((x) => x.lightness !== null) as { token: FlatToken; lightness: number }[];
+
+    const picked = fallback.picker(unassignedColours);
+    if (picked) {
+      assignments.set(fallback.roleKey, buildAssignment(role, picked, prefix, "low"));
+      assignedTokenNames.add(tokenKey(picked));
+    }
+  }
+
   // Build unassigned list
   const unassigned: UnassignedToken[] = allTokens
     .filter((t) => !assignedTokenNames.has(tokenKey(t)))
@@ -131,9 +175,11 @@ function findBestNameMatch(
     if (assigned.has(tokenKey(token))) continue;
     if (!isCompatibleType(role, token)) continue;
 
-    const name = (token.cssVariable ?? token.name).toLowerCase();
-    const score = scoreNameMatch(role, name);
-    if (score < 3) continue; // Minimum score threshold
+    const rawName = (token.cssVariable ?? token.name).toLowerCase();
+    // Strip common prefixes for better matching (fides-overlay-background-color → background-color)
+    const name = stripCommonPrefixes(rawName);
+    const score = scoreNameMatch(role, name, rawName);
+    if (score < 2) continue; // Minimum score threshold
 
     // Cross-validate with lightness hints for colour roles
     if (role.matchHints?.lightness && token.type === "color") {
@@ -159,7 +205,7 @@ function findBestNameMatch(
   });
 
   const best = candidates[0];
-  const confidence: "high" | "medium" | "low" = best.score >= 3 ? "high" : best.score >= 2 ? "medium" : "low";
+  const confidence: "high" | "medium" | "low" = best.score >= 5 ? "high" : best.score >= 3 ? "medium" : "low";
   return { token: best.token, confidence };
 }
 
@@ -169,30 +215,41 @@ const NOISE_WORDS = new Set(["bg", "on", "sm", "md", "lg", "xl", "color", "colou
 /** Token name prefixes that indicate framework/utility tokens, not design system tokens */
 const FRAMEWORK_PREFIXES = ["grid-", "tw-", "transition-", "animation-", "container-width", "container-max", "webkit-", "moz-"];
 
-function scoreNameMatch(role: StandardRole, tokenName: string): number {
+/** Strip common vendor/framework prefixes from token names for matching. */
+function stripCommonPrefixes(name: string): string {
+  return name
+    .replace(/^--/, "")
+    .replace(/^(fides-overlay-|chakra-|mantine-|radix-|shadcn-|ant-|mui-|color-)/, "");
+}
+
+function scoreNameMatch(role: StandardRole, strippedName: string, rawName: string): number {
   let score = 0;
 
   // Penalise framework/utility tokens
-  const stripped = tokenName.replace(/^--/, "");
-  if (FRAMEWORK_PREFIXES.some((p) => stripped.startsWith(p))) {
+  if (FRAMEWORK_PREFIXES.some((p) => strippedName.startsWith(p))) {
     score -= 3;
   }
 
-  // Exact suffix match is highest signal
-  if (tokenName.endsWith(role.suffix) || tokenName.endsWith(`-${role.suffix}`)) {
+  // Exact suffix match on raw name (highest signal)
+  if (rawName.endsWith(role.suffix) || rawName.endsWith(`-${role.suffix}`)) {
     score += 5;
   }
 
-  // Full keyword matches (keyword must be 3+ chars to count)
+  // Contains suffix (e.g. --border-primary contains "border")
+  if (strippedName.includes(role.suffix) && role.suffix.length >= 4) {
+    score += 3;
+  }
+
+  // Full keyword matches (on both stripped and raw names)
   for (const keyword of role.matchKeywords) {
-    if (keyword.length >= 3 && tokenName.includes(keyword)) {
+    if (keyword.length >= 3 && (strippedName.includes(keyword) || rawName.includes(keyword))) {
       score += 3;
       break;
     }
   }
 
-  // Partial keyword matches: only count words that aren't noise
-  const nameWords = stripped.split(/[-_]/).filter((w) => w.length >= 3 && !NOISE_WORDS.has(w));
+  // Partial word overlap (only meaningful words)
+  const nameWords = strippedName.split(/[-_]/).filter((w) => w.length >= 3 && !NOISE_WORDS.has(w));
   const keywordWords = role.matchKeywords
     .flatMap((k) => k.split("-"))
     .filter((w) => w.length >= 3 && !NOISE_WORDS.has(w));

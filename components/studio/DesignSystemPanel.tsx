@@ -69,14 +69,15 @@ export function DesignSystemPanel({
   const [viewMode, setViewMode] = useState<"curated" | "all">(
     project?.standardisation ? "curated" : "all"
   );
-  const [standardising, setStandardising] = useState(false);
+  const didStandardiseRef = useRef(false);
 
-  // Run standardisation if tokens exist but no standardisation data yet
+  // Run standardisation once if tokens exist but no standardisation data yet
   useEffect(() => {
-    if (project?.standardisation || standardising) return;
+    if (didStandardiseRef.current) return;
+    if (project?.standardisation) return;
     if (!tokens || !project?.sourceUrl) return;
 
-    setStandardising(true);
+    didStandardiseRef.current = true;
     try {
       const tokenMap = standardiseTokens(tokens, project.sourceUrl);
       applyStandardisation(tokens, tokenMap);
@@ -94,10 +95,9 @@ export function DesignSystemPanel({
     } catch (e) {
       console.error("[standardise] Failed:", e);
       setViewMode("all");
-    } finally {
-      setStandardising(false);
     }
-  }, [tokens, project?.sourceUrl, project?.standardisation, standardising, projectId, updateStandardisation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokens, project?.sourceUrl, project?.standardisation]);
 
   // Re-standardise handler (for manual refresh)
   const handleRestandardise = useCallback(() => {
@@ -352,7 +352,7 @@ export function DesignSystemPanel({
         )}
 
         {/* Curated view loading */}
-        {viewMode === "curated" && !project?.standardisation && standardising && (
+        {viewMode === "curated" && !project?.standardisation && !didStandardiseRef.current && (
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
               <Sparkles className="mx-auto h-8 w-8 text-[var(--text-muted)] mb-3" />
@@ -365,7 +365,7 @@ export function DesignSystemPanel({
         )}
 
         {/* Curated view but standardisation failed or not available */}
-        {viewMode === "curated" && !project?.standardisation && !standardising && (
+        {viewMode === "curated" && !project?.standardisation && didStandardiseRef.current && (
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
               <p className="text-sm text-[var(--text-secondary)]">No standardisation data available.</p>
