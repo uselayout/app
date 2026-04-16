@@ -75,12 +75,13 @@ export function DesignSystemPanel({
   );
 
   // Run standardisation if tokens exist but no meaningful standardisation data
+  const sourceForStandardisation = project?.sourceUrl ?? extractionData?.sourceName ?? project?.name ?? "unknown";
   useEffect(() => {
     if (hasStandardisation) return;
-    if (!tokens || !project?.sourceUrl) return;
+    if (!tokens) return;
 
     try {
-      const tokenMap = standardiseTokens(tokens, project.sourceUrl);
+      const tokenMap = standardiseTokens(tokens, sourceForStandardisation);
       applyStandardisation(tokens, tokenMap);
 
       const serialisable: ProjectStandardisation = {
@@ -98,13 +99,13 @@ export function DesignSystemPanel({
       setViewMode("all");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasStandardisation, tokens, project?.sourceUrl]);
+  }, [hasStandardisation, tokens, sourceForStandardisation]);
 
   // Re-standardise handler (for manual refresh)
   const handleRestandardise = useCallback(() => {
-    if (!tokens || !project?.sourceUrl) return;
+    if (!tokens) return;
     createSnapshot(projectId, "Before re-standardisation");
-    const tokenMap = standardiseTokens(tokens, project.sourceUrl);
+    const tokenMap = standardiseTokens(tokens, sourceForStandardisation);
     applyStandardisation(tokens, tokenMap);
     const serialisable: ProjectStandardisation = {
       kitPrefix: tokenMap.kitPrefix,
