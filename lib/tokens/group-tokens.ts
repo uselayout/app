@@ -35,22 +35,51 @@ interface GroupDef {
   match: (name: string) => boolean;
 }
 
+/**
+ * Strip common vendor/framework prefixes from token names for grouping.
+ * e.g. "fides-overlay-background-color" → "background-color"
+ */
+function stripVendorPrefix(name: string): string {
+  return name.replace(/^--(fides-overlay-|chakra-|mantine-|radix-|shadcn-|ant-|mui-)/, "--");
+}
+
 const COLOR_GROUPS: GroupDef[] = [
   {
     label: "Primitives",
     match: (n) => n.includes("primitive"),
   },
+  // Status BEFORE Surfaces so error/warning/success get caught first
   {
-    label: "Surfaces",
-    match: (n) =>
-      !isComponentToken(n) &&
-      (n.includes("-bg") || n.includes("surface") || n.includes("elevated") || n.includes("overlay") || n.includes("panel")),
+    label: "Status",
+    match: (n) => {
+      const s = stripVendorPrefix(n);
+      return s.includes("status") || s.includes("success") || s.includes("error") || s.includes("warning") || s.includes("info") || s.includes("danger") || s.includes("callout");
+    },
+  },
+  // Primary/Secondary BEFORE Surfaces so primary-color doesn't get caught by "background"
+  {
+    label: "Primary",
+    match: (n) => {
+      const s = stripVendorPrefix(n);
+      return !isComponentToken(n) &&
+        (s.includes("primary") || s.includes("secondary") || s.includes("tertiary") || s.includes("brand"));
+    },
   },
   {
     label: "Text",
-    match: (n) =>
-      !isComponentToken(n) &&
-      (n.includes("-text-") || n.endsWith("-text") || n.includes("label") || n.includes("heading") || n.includes("placeholder") || n.includes("caption")),
+    match: (n) => {
+      const s = stripVendorPrefix(n);
+      return !isComponentToken(n) &&
+        (s.includes("-text-") || s.endsWith("-text") || s.includes("font-color") || s.includes("label") || s.includes("heading") || s.includes("placeholder") || s.includes("caption"));
+    },
+  },
+  {
+    label: "Surfaces",
+    match: (n) => {
+      const s = stripVendorPrefix(n);
+      return !isComponentToken(n) &&
+        (s.includes("background") || s.includes("-bg") || s.includes("surface") || s.includes("elevated") || s.includes("panel"));
+    },
   },
   {
     label: "Foreground",
@@ -58,15 +87,11 @@ const COLOR_GROUPS: GroupDef[] = [
   },
   {
     label: "Borders",
-    match: (n) =>
-      !isComponentToken(n) &&
-      (n.includes("border") || n.includes("divider") || n.includes("outline") || n.includes("separator") || n.includes("stroke")),
-  },
-  {
-    label: "Primary",
-    match: (n) =>
-      !isComponentToken(n) &&
-      (n.includes("primary") || n.includes("secondary") || n.includes("tertiary") || n.includes("brand")),
+    match: (n) => {
+      const s = stripVendorPrefix(n);
+      return !isComponentToken(n) &&
+        (s.includes("border") || s.includes("divider") || s.includes("outline") || s.includes("separator") || s.includes("stroke"));
+    },
   },
   {
     label: "Interactive",
@@ -75,15 +100,21 @@ const COLOR_GROUPS: GroupDef[] = [
       (n.includes("accent") || n.includes("action") || n.includes("link") || n.includes("focus") || n.includes("selected") || n.includes("cta")),
   },
   {
-    label: "Status",
-    match: (n) =>
-      n.includes("status") || n.includes("success") || n.includes("error") || n.includes("warning") || n.includes("info") || n.includes("danger") || n.includes("callout"),
-  },
-  {
     label: "Palette",
     match: (n) => {
       const stripped = n.replace(/^--/, "");
       return /^(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|grey|zinc|neutral|stone|magenta|white|black|current)(-\d+)?$/.test(stripped);
+    },
+  },
+  {
+    label: "Brand",
+    match: (n) => {
+      // Single-word or two-word colour names that aren't framework tokens
+      const stripped = n.replace(/^--/, "");
+      if (stripped.split("-").length > 2) return false; // too many segments = framework token
+      if (COMPONENT_PREFIXES.some((p) => stripped.startsWith(p))) return false;
+      // Must be a short, meaningful name (not a generic utility)
+      return stripped.length >= 3 && stripped.length <= 20 && /^[a-z]+(Light|Dark|Medium)?$/i.test(stripped);
     },
   },
   {

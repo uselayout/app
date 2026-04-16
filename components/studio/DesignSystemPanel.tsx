@@ -65,19 +65,20 @@ export function DesignSystemPanel({
   const scannedComponents = project?.scannedComponents ?? [];
   const extractedComponents = extractionData?.components ?? [];
 
+  // Check if standardisation has meaningful data (non-empty assignments)
+  const hasStandardisation = project?.standardisation &&
+    Object.keys(project.standardisation.assignments).length > 0;
+
   // View mode: curated (standardised) vs all (raw)
   const [viewMode, setViewMode] = useState<"curated" | "all">(
-    project?.standardisation ? "curated" : "all"
+    hasStandardisation ? "curated" : "all"
   );
-  const didStandardiseRef = useRef(false);
 
-  // Run standardisation once if tokens exist but no standardisation data yet
+  // Run standardisation if tokens exist but no meaningful standardisation data
   useEffect(() => {
-    if (didStandardiseRef.current) return;
-    if (project?.standardisation) return;
+    if (hasStandardisation) return;
     if (!tokens || !project?.sourceUrl) return;
 
-    didStandardiseRef.current = true;
     try {
       const tokenMap = standardiseTokens(tokens, project.sourceUrl);
       applyStandardisation(tokens, tokenMap);
@@ -97,7 +98,7 @@ export function DesignSystemPanel({
       setViewMode("all");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokens, project?.sourceUrl, project?.standardisation]);
+  }, [hasStandardisation, tokens, project?.sourceUrl]);
 
   // Re-standardise handler (for manual refresh)
   const handleRestandardise = useCallback(() => {
@@ -337,10 +338,10 @@ export function DesignSystemPanel({
       {/* Scrollable content */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-6">
         {/* Curated view */}
-        {viewMode === "curated" && project?.standardisation && (
+        {viewMode === "curated" && hasStandardisation && (
           <CuratedTokenView
             projectId={projectId}
-            standardisation={project.standardisation}
+            standardisation={project!.standardisation!}
             allTokens={allTokensFlat}
             cssVariables={cssVariables}
             snapshots={project.snapshots ?? []}
@@ -352,32 +353,24 @@ export function DesignSystemPanel({
         )}
 
         {/* Curated view loading */}
-        {viewMode === "curated" && !project?.standardisation && !didStandardiseRef.current && (
+        {/* Curated view but no data */}
+        {viewMode === "curated" && !hasStandardisation && (
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
-              <Sparkles className="mx-auto h-8 w-8 text-[var(--text-muted)] mb-3" />
-              <p className="text-sm text-[var(--text-secondary)]">Standardising your design system...</p>
-              <p className="mt-1 text-xs text-[var(--text-muted)]">
-                Mapping extracted tokens to standard roles.
+              <p className="text-sm text-[var(--text-secondary)]">
+                {tokens ? "Standardising your design system..." : "No standardisation data available."}
               </p>
-            </div>
-          </div>
-        )}
-
-        {/* Curated view but standardisation failed or not available */}
-        {viewMode === "curated" && !project?.standardisation && didStandardiseRef.current && (
-          <div className="flex h-64 items-center justify-center">
-            <div className="text-center">
-              <p className="text-sm text-[var(--text-secondary)]">No standardisation data available.</p>
               <p className="mt-1 text-xs text-[var(--text-muted)]">
-                Switch to All Tokens or re-extract to generate the curated view.
+                {tokens ? "Mapping extracted tokens to standard roles." : "Switch to All Tokens or re-extract to generate the curated view."}
               </p>
-              <button
-                onClick={() => setViewMode("all")}
-                className="mt-3 rounded-md bg-[var(--studio-accent)] px-3 py-1.5 text-xs font-medium text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)]"
-              >
-                View All Tokens
-              </button>
+              {!tokens && (
+                <button
+                  onClick={() => setViewMode("all")}
+                  className="mt-3 rounded-md bg-[var(--studio-accent)] px-3 py-1.5 text-xs font-medium text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)]"
+                >
+                  View All Tokens
+                </button>
+              )}
             </div>
           </div>
         )}
