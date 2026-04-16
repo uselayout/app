@@ -567,6 +567,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
                 // Prefer server data if it has fonts, otherwise keep local (save may be in-flight)
                 uploadedFonts: fresh.uploadedFonts ?? p.uploadedFonts,
                 iconPacks: p.iconPacks ?? fresh.iconPacks,
+                standardisation: p.standardisation ?? fresh.standardisation,
               }
             : p
         ),

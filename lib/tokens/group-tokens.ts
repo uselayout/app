@@ -48,29 +48,19 @@ const COLOR_GROUPS: GroupDef[] = [
     label: "Primitives",
     match: (n) => n.includes("primitive"),
   },
-  // Status BEFORE Surfaces so error/warning/success get caught first
+  // Brand & Primary first — the most important tokens for identity
   {
-    label: "Status",
+    label: "Brand",
     match: (n) => {
       const s = stripVendorPrefix(n);
-      return s.includes("status") || s.includes("success") || s.includes("error") || s.includes("warning") || s.includes("info") || s.includes("danger") || s.includes("callout");
-    },
-  },
-  // Primary/Secondary BEFORE Surfaces so primary-color doesn't get caught by "background"
-  {
-    label: "Primary",
-    match: (n) => {
-      const s = stripVendorPrefix(n);
-      return !isComponentToken(n) &&
-        (s.includes("primary") || s.includes("secondary") || s.includes("tertiary") || s.includes("brand"));
-    },
-  },
-  {
-    label: "Text",
-    match: (n) => {
-      const s = stripVendorPrefix(n);
-      return !isComponentToken(n) &&
-        (s.includes("-text-") || s.endsWith("-text") || s.includes("font-color") || s.includes("label") || s.includes("heading") || s.includes("placeholder") || s.includes("caption"));
+      if (isComponentToken(n)) return false;
+      // Named brand tokens (primary, secondary, tertiary, brand, accent)
+      if (s.includes("primary") || s.includes("secondary") || s.includes("tertiary") || s.includes("brand") || s.includes("accent")) return true;
+      // Single-word colour names (e.g. --coral, --midnight) — likely brand colours
+      const stripped = n.replace(/^--/, "");
+      if (stripped.split("-").length > 2) return false;
+      if (COMPONENT_PREFIXES.some((p) => stripped.startsWith(p))) return false;
+      return stripped.length >= 3 && stripped.length <= 20 && /^[a-z]+(Light|Dark|Medium)?$/i.test(stripped);
     },
   },
   {
@@ -82,8 +72,12 @@ const COLOR_GROUPS: GroupDef[] = [
     },
   },
   {
-    label: "Foreground",
-    match: (n) => n.includes("foreground"),
+    label: "Text",
+    match: (n) => {
+      const s = stripVendorPrefix(n);
+      return !isComponentToken(n) &&
+        (s.includes("-text-") || s.endsWith("-text") || s.includes("font-color") || s.includes("label") || s.includes("heading") || s.includes("placeholder") || s.includes("caption"));
+    },
   },
   {
     label: "Borders",
@@ -97,24 +91,24 @@ const COLOR_GROUPS: GroupDef[] = [
     label: "Interactive",
     match: (n) =>
       !isComponentToken(n) &&
-      (n.includes("accent") || n.includes("action") || n.includes("link") || n.includes("focus") || n.includes("selected") || n.includes("cta")),
+      (n.includes("action") || n.includes("link") || n.includes("focus") || n.includes("selected") || n.includes("cta")),
+  },
+  {
+    label: "Status",
+    match: (n) => {
+      const s = stripVendorPrefix(n);
+      return s.includes("status") || s.includes("success") || s.includes("error") || s.includes("warning") || s.includes("info") || s.includes("danger") || s.includes("callout");
+    },
+  },
+  {
+    label: "Foreground",
+    match: (n) => n.includes("foreground"),
   },
   {
     label: "Palette",
     match: (n) => {
       const stripped = n.replace(/^--/, "");
       return /^(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|grey|zinc|neutral|stone|magenta|white|black|current)(-\d+)?$/.test(stripped);
-    },
-  },
-  {
-    label: "Brand",
-    match: (n) => {
-      // Single-word or two-word colour names that aren't framework tokens
-      const stripped = n.replace(/^--/, "");
-      if (stripped.split("-").length > 2) return false; // too many segments = framework token
-      if (COMPONENT_PREFIXES.some((p) => stripped.startsWith(p))) return false;
-      // Must be a short, meaningful name (not a generic utility)
-      return stripped.length >= 3 && stripped.length <= 20 && /^[a-z]+(Light|Dark|Medium)?$/i.test(stripped);
     },
   },
   {
