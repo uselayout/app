@@ -89,14 +89,18 @@ export function DesignSystemPanel({
       const tokenMap = standardiseTokens(tokens, source);
       applyStandardisation(tokens, tokenMap);
 
+      const assignments = Object.fromEntries(tokenMap.assignments);
       updateStandardisation(projectId, {
         kitPrefix: tokenMap.kitPrefix,
-        assignments: Object.fromEntries(tokenMap.assignments),
+        assignments,
         unassigned: tokenMap.unassigned,
         antiPatterns: tokenMap.antiPatterns,
         standardisedAt: new Date().toISOString(),
       });
-      setViewMode("curated");
+      // Only switch to curated view if standardisation produced meaningful results
+      if (Object.keys(assignments).length > 0) {
+        setViewMode("curated");
+      }
     } catch (e) {
       console.error("[standardise] Failed:", e);
     }
@@ -356,25 +360,34 @@ export function DesignSystemPanel({
           />
         )}
 
-        {/* Curated view loading */}
-        {/* Curated view but no data */}
+        {/* Curated view but no standardisation data */}
         {viewMode === "curated" && !hasStandardisation && (
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
               <p className="text-sm text-[var(--text-secondary)]">
-                {tokens ? "Standardising your design system..." : "No standardisation data available."}
+                {tokens && !ranStandardisation.current ? "Standardising your design system..." : "No curated tokens available."}
               </p>
               <p className="mt-1 text-xs text-[var(--text-muted)]">
-                {tokens ? "Mapping extracted tokens to standard roles." : "Switch to All Tokens or re-extract to generate the curated view."}
+                {tokens && !ranStandardisation.current
+                  ? "Mapping extracted tokens to standard roles."
+                  : "Standardisation couldn't map tokens to roles. View all tokens or re-extract."}
               </p>
-              {!tokens && (
+              <div className="mt-3 flex items-center justify-center gap-2">
                 <button
                   onClick={() => setViewMode("all")}
-                  className="mt-3 rounded-md bg-[var(--studio-accent)] px-3 py-1.5 text-xs font-medium text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)]"
+                  className="rounded-md bg-[var(--studio-accent)] px-3 py-1.5 text-xs font-medium text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)]"
                 >
                   View All Tokens
                 </button>
-              )}
+                {tokens && (
+                  <button
+                    onClick={handleRestandardise}
+                    className="rounded-md border border-[var(--studio-border)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)]"
+                  >
+                    Re-standardise
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
