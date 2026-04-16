@@ -266,6 +266,10 @@ function findBestNameMatch(
     if (!isCompatibleType(role, token)) continue;
 
     const rawName = (token.cssVariable ?? token.name).toLowerCase();
+
+    // Skip known third-party overlay/consent/analytics tokens
+    if (THIRD_PARTY_PATTERNS.some((p) => rawName.includes(p))) continue;
+
     // Strip common prefixes for better matching (fides-overlay-background-color → background-color)
     const name = stripCommonPrefixes(rawName);
     const score = scoreNameMatch(role, name, rawName);
@@ -310,6 +314,9 @@ const NOISE_WORDS = new Set(["bg", "on", "sm", "md", "lg", "xl", "color", "colou
 /** Token name prefixes that indicate framework/utility tokens, not design system tokens */
 const FRAMEWORK_PREFIXES = ["grid-", "tw-", "transition-", "animation-", "container-width", "container-max", "webkit-", "moz-"];
 
+/** Third-party overlay/consent/analytics tokens to exclude from standardisation */
+const THIRD_PARTY_PATTERNS = ["fides-", "onetrust-", "iubenda-", "cookiebot-", "consent-", "cookie-banner", "hotjar-", "intercom-"];
+
 /** Strip common vendor/framework prefixes from token names for matching. */
 function stripCommonPrefixes(name: string): string {
   return name
@@ -323,6 +330,11 @@ function scoreNameMatch(role: StandardRole, strippedName: string, rawName: strin
   // Penalise framework/utility tokens
   if (FRAMEWORK_PREFIXES.some((p) => strippedName.startsWith(p))) {
     score -= 3;
+  }
+
+  // Penalise overlay/modal/popup tokens (likely not core design system)
+  if (rawName.includes("overlay") || rawName.includes("modal") || rawName.includes("popup") || rawName.includes("backdrop")) {
+    score -= 5;
   }
 
   // Exact suffix match on raw name (highest signal)

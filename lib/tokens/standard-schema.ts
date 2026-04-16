@@ -251,6 +251,7 @@ const COLOUR_ROLES: StandardRole[] = [
     required: true,
     description: "Hover state of the accent colour (slightly darker or lighter).",
     matchKeywords: ["accent-hover", "primary-hover", "brand-hover", "action-hover", "primary-dark"],
+    matchHints: { lightness: "accent" },
   },
   {
     key: "accent-subtle",
