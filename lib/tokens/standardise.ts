@@ -181,12 +181,17 @@ function findBestNameMatch(
     const score = scoreNameMatch(role, name, rawName);
     if (score < 2) continue; // Minimum score threshold
 
-    // Cross-validate with lightness hints for colour roles
+    // Cross-validate with lightness/chroma hints for colour roles
     if (role.matchHints?.lightness && token.type === "color") {
       const lightness = parseLightness(token.value);
       if (lightness !== null) {
         if (role.matchHints.lightness === "lightest" && lightness < 0.6) continue;
         if (role.matchHints.lightness === "darkest" && lightness > 0.4) continue;
+        // Accent must be colourful, not near-greyscale
+        if (role.matchHints.lightness === "accent") {
+          const chroma = parseChroma(token.value) ?? estimateChromaFromHex(token.value);
+          if (chroma < 0.1) continue; // Reject near-greyscale tokens
+        }
       }
     }
 

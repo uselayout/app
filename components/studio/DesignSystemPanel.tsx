@@ -66,46 +66,47 @@ export function DesignSystemPanel({
   const extractedComponents = extractionData?.components ?? [];
 
   // Check if standardisation has meaningful data (non-empty assignments)
-  const hasStandardisation = project?.standardisation &&
-    Object.keys(project.standardisation.assignments).length > 0;
+  const hasStandardisation = !!(project?.standardisation &&
+    Object.keys(project.standardisation.assignments).length > 0);
 
   // View mode: curated (standardised) vs all (raw)
   const [viewMode, setViewMode] = useState<"curated" | "all">(
     hasStandardisation ? "curated" : "all"
   );
 
-  // Run standardisation if tokens exist but no meaningful standardisation data
-  const sourceForStandardisation = project?.sourceUrl ?? extractionData?.sourceName ?? project?.name ?? "unknown";
+  // Run standardisation ONCE on mount if needed. useRef prevents infinite loops.
+  const ranStandardisation = useRef(false);
   useEffect(() => {
-    if (hasStandardisation) return;
+    if (ranStandardisation.current) return;
+    if (hasStandardisation) { ranStandardisation.current = true; return; }
     if (!tokens) return;
 
+    ranStandardisation.current = true;
+    const source = project?.sourceUrl ?? extractionData?.sourceName ?? project?.name ?? "unknown";
     try {
-      const tokenMap = standardiseTokens(tokens, sourceForStandardisation);
+      const tokenMap = standardiseTokens(tokens, source);
       applyStandardisation(tokens, tokenMap);
 
-      const serialisable: ProjectStandardisation = {
+      updateStandardisation(projectId, {
         kitPrefix: tokenMap.kitPrefix,
         assignments: Object.fromEntries(tokenMap.assignments),
         unassigned: tokenMap.unassigned,
         antiPatterns: tokenMap.antiPatterns,
         standardisedAt: new Date().toISOString(),
-      };
-
-      updateStandardisation(projectId, serialisable);
+      });
       setViewMode("curated");
     } catch (e) {
       console.error("[standardise] Failed:", e);
-      setViewMode("all");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasStandardisation, tokens, sourceForStandardisation]);
+  }, []);
 
   // Re-standardise handler (for manual refresh)
   const handleRestandardise = useCallback(() => {
     if (!tokens) return;
+    const source = project?.sourceUrl ?? extractionData?.sourceName ?? project?.name ?? "unknown";
     createSnapshot(projectId, "Before re-standardisation");
-    const tokenMap = standardiseTokens(tokens, sourceForStandardisation);
+    const tokenMap = standardiseTokens(tokens, source);
     applyStandardisation(tokens, tokenMap);
     const serialisable: ProjectStandardisation = {
       kitPrefix: tokenMap.kitPrefix,
