@@ -107,6 +107,96 @@ export function standardiseTokens(
     }
   }
 
+  // Pass 4: Value-based fallback for spacing roles
+  // Sort spacing tokens by pixel value and assign to scale positions
+  const spacingScale = ["space-xs", "space-sm", "space-md", "space-lg", "space-xl", "space-2xl", "space-3xl"];
+  const unassignedSpacing = allTokens
+    .filter((t) => !assignedTokenNames.has(tokenKey(t)) && (t.sourceType === "spacing" || t.type === "spacing"))
+    .map((t) => ({ token: t, px: parseFloat(t.value) || 0 }))
+    .filter((t) => t.px > 0)
+    .sort((a, b) => a.px - b.px);
+
+  if (unassignedSpacing.length > 0) {
+    // Pick evenly from the sorted list to fill the scale
+    const step = Math.max(1, Math.floor(unassignedSpacing.length / spacingScale.length));
+    for (let i = 0; i < spacingScale.length; i++) {
+      if (assignments.has(spacingScale[i])) continue;
+      const idx = Math.min(i * step, unassignedSpacing.length - 1);
+      const picked = unassignedSpacing[idx];
+      if (picked && !assignedTokenNames.has(tokenKey(picked.token))) {
+        const role = STANDARD_SCHEMA.roles.find((r) => r.key === spacingScale[i]);
+        if (role) {
+          assignments.set(role.key, buildAssignment(role, picked.token, prefix, "low"));
+          assignedTokenNames.add(tokenKey(picked.token));
+        }
+      }
+    }
+  }
+
+  // Pass 5: Value-based fallback for radius roles
+  const unassignedRadius = allTokens
+    .filter((t) => !assignedTokenNames.has(tokenKey(t)) && (t.sourceType === "radius" || t.type === "radius"))
+    .map((t) => ({ token: t, px: parseFloat(t.value) || 0 }))
+    .filter((t) => t.px > 0)
+    .sort((a, b) => a.px - b.px);
+
+  if (unassignedRadius.length > 0) {
+    const radiusScale: { key: string; pick: (sorted: typeof unassignedRadius) => typeof unassignedRadius[0] | undefined }[] = [
+      { key: "radius-sm", pick: (s) => s.find((t) => t.px >= 2 && t.px <= 6) ?? s[0] },
+      { key: "radius-md", pick: (s) => s.find((t) => t.px >= 7 && t.px <= 14) ?? s[Math.floor(s.length / 3)] },
+      { key: "radius-lg", pick: (s) => s.find((t) => t.px >= 15 && t.px <= 28) ?? s[Math.floor(s.length * 2 / 3)] },
+      { key: "radius-full", pick: (s) => s.find((t) => t.px >= 50) ?? s[s.length - 1] },
+    ];
+    for (const { key, pick } of radiusScale) {
+      if (assignments.has(key)) continue;
+      const picked = pick(unassignedRadius);
+      if (picked && !assignedTokenNames.has(tokenKey(picked.token))) {
+        const role = STANDARD_SCHEMA.roles.find((r) => r.key === key);
+        if (role) {
+          assignments.set(role.key, buildAssignment(role, picked.token, prefix, "low"));
+          assignedTokenNames.add(tokenKey(picked.token));
+        }
+      }
+    }
+  }
+
+  // Pass 6: Value-based fallback for typography roles
+  const unassignedTypography = allTokens
+    .filter((t) => !assignedTokenNames.has(tokenKey(t)) && (t.sourceType === "typography" || t.type === "typography"));
+
+  if (unassignedTypography.length > 0) {
+    const fontFamilies = unassignedTypography.filter((t) =>
+      t.value.includes(",") || t.name.toLowerCase().includes("font-family") || t.name.toLowerCase().includes("font-sans") || t.name.toLowerCase().includes("font-display")
+    );
+    // Assign sans-serif font
+    if (!assignments.has("font-sans")) {
+      const sans = fontFamilies.find((t) => t.value.toLowerCase().includes("sans") || t.value.toLowerCase().includes("inter") || t.value.toLowerCase().includes("roboto") || t.value.toLowerCase().includes("helvetica"));
+      if (sans) {
+        const role = STANDARD_SCHEMA.roles.find((r) => r.key === "font-sans");
+        if (role) { assignments.set(role.key, buildAssignment(role, sans, prefix, "low")); assignedTokenNames.add(tokenKey(sans)); }
+      } else if (fontFamilies.length > 0) {
+        const role = STANDARD_SCHEMA.roles.find((r) => r.key === "font-sans");
+        if (role) { assignments.set(role.key, buildAssignment(role, fontFamilies[0], prefix, "low")); assignedTokenNames.add(tokenKey(fontFamilies[0])); }
+      }
+    }
+    // Assign monospace font
+    if (!assignments.has("font-mono")) {
+      const mono = fontFamilies.find((t) => t.value.toLowerCase().includes("mono") || t.value.toLowerCase().includes("courier") || t.value.toLowerCase().includes("consolas"));
+      if (mono) {
+        const role = STANDARD_SCHEMA.roles.find((r) => r.key === "font-mono");
+        if (role) { assignments.set(role.key, buildAssignment(role, mono, prefix, "low")); assignedTokenNames.add(tokenKey(mono)); }
+      }
+    }
+    // Assign serif font
+    if (!assignments.has("font-serif")) {
+      const serif = fontFamilies.find((t) => t.value.toLowerCase().includes("serif") && !t.value.toLowerCase().includes("sans-serif") || t.value.toLowerCase().includes("georgia") || t.value.toLowerCase().includes("times"));
+      if (serif) {
+        const role = STANDARD_SCHEMA.roles.find((r) => r.key === "font-serif");
+        if (role) { assignments.set(role.key, buildAssignment(role, serif, prefix, "low")); assignedTokenNames.add(tokenKey(serif)); }
+      }
+    }
+  }
+
   // Build unassigned list
   const unassigned: UnassignedToken[] = allTokens
     .filter((t) => !assignedTokenNames.has(tokenKey(t)))
