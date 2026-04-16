@@ -1,36 +1,75 @@
 "use client";
 
-import { useMemo } from "react";
-import type { ExtractedToken, ProjectStandardisation } from "@/lib/types";
+import { useMemo, useState, useCallback } from "react";
+import type { ExtractedToken, ProjectStandardisation, DesignSystemSnapshot } from "@/lib/types";
 import {
   SCHEMA_CATEGORIES,
   getRolesByCategory,
   type StandardRoleCategory,
-  type StandardRole,
 } from "@/lib/tokens/standard-schema";
-import { toHex } from "@/lib/util/color";
 import { resolveTokenValue } from "@/lib/util/color";
 import { ColourSwatchCard } from "./ColourSwatchCard";
 import { DesignSystemSection } from "./DesignSystemSection";
+import { SnapshotManager } from "./SnapshotManager";
+import { LayoutMdCompareModal } from "./LayoutMdCompareModal";
+import { AssignTokenPopover } from "./AssignTokenPopover";
+import { useProjectStore } from "@/lib/store/project";
+import { buildStandardName } from "@/lib/tokens/standard-schema";
 
 interface CuratedTokenViewProps {
+  projectId: string;
   standardisation: ProjectStandardisation;
   allTokens: ExtractedToken[];
   cssVariables: Record<string, string>;
+  snapshots: DesignSystemSnapshot[];
+  currentLayoutMd: string;
   onUpdateToken: (tokenType: "colors" | "typography" | "spacing" | "radius" | "effects", name: string, value: string) => void;
   onRemoveToken: (tokenType: "colors" | "typography" | "spacing" | "radius" | "effects", names: string[]) => void;
   onRenameToken: (tokenType: "colors" | "typography" | "spacing" | "radius" | "effects", oldName: string, newName: string) => void;
 }
 
 export function CuratedTokenView({
+  projectId,
   standardisation,
   allTokens,
   cssVariables,
+  snapshots,
+  currentLayoutMd,
   onUpdateToken,
   onRemoveToken,
   onRenameToken,
 }: CuratedTokenViewProps) {
   const { assignments } = standardisation;
+  const assignTokenToRole = useProjectStore((s) => s.assignTokenToRole);
+  const unassignRole = useProjectStore((s) => s.unassignRole);
+
+  const handleAssignToken = useCallback(
+    (roleKey: string, roleSuffix: string, token: { name: string; cssVariable?: string; value: string }) => {
+      const stdName = buildStandardName(standardisation.kitPrefix, roleSuffix);
+      assignTokenToRole(projectId, roleKey, token.name, token.cssVariable, token.value, stdName);
+    },
+    [projectId, standardisation.kitPrefix, assignTokenToRole]
+  );
+
+  const handleUnassignRole = useCallback(
+    (roleKey: string) => {
+      unassignRole(projectId, roleKey);
+    },
+    [projectId, unassignRole]
+  );
+
+  // Compare modal state
+  const [compareData, setCompareData] = useState<{
+    snapshotMd: string;
+    currentMd: string;
+  } | null>(null);
+
+  const handleCompare = useCallback(
+    (snapshotMd: string, currentMd: string) => {
+      setCompareData({ snapshotMd, currentMd });
+    },
+    []
+  );
 
   // Build a lookup from role key to the actual token
   const roleTokenMap = useMemo(() => {
@@ -136,7 +175,7 @@ export function CuratedTokenView({
                         }
                       />
                       {/* Role label below the swatch */}
-                      <div className="mt-1 text-center">
+                      <div className="mt-1 text-center group/role">
                         <span className="text-[9px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
                           {role.label}
                         </span>
@@ -147,35 +186,52 @@ export function CuratedTokenView({
                                 ? "bg-amber-400"
                                 : "bg-red-400"
                             }`}
-                            title={`${assignment.confidence} confidence`}
+                            title={`${assignment.confidence} confidence. Click swatch to reassign.`}
                           />
+                        )}
+                        {!assignment.userConfirmed && (
+                          <button
+                            onClick={() => handleUnassignRole(role.key)}
+                            className="ml-1 inline-block h-3 w-3 rounded-full text-[8px] text-[var(--text-muted)] opacity-0 transition-opacity group-hover/role:opacity-100 hover:text-red-400"
+                            title="Unassign this token"
+                          >
+                            ×
+                          </button>
                         )}
                       </div>
                     </div>
                   );
                 }
 
-                // Empty slot
+                // Empty slot with assign popover
                 return (
-                  <div
+                  <AssignTokenPopover
                     key={role.key}
-                    className="flex flex-col items-center gap-2"
-                    title={role.description}
+                    role={role}
+                    unassigned={standardisation.unassigned}
+                    onAssign={(token) =>
+                      handleAssignToken(role.key, role.suffix, token)
+                    }
                   >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-[var(--studio-border)] text-[var(--text-muted)]">
-                      <span className="text-lg">+</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-[9px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
-                        {role.label}
-                      </span>
-                      {role.required && (
-                        <span className="text-[8px] text-[var(--text-muted)] opacity-50">
-                          required
+                    <div
+                      className="flex flex-col items-center gap-2 cursor-pointer group/slot"
+                      title={`Click to assign a token to ${role.label}`}
+                    >
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-[var(--studio-border)] text-[var(--text-muted)] transition-colors group-hover/slot:border-[var(--studio-border-strong)] group-hover/slot:text-[var(--text-secondary)]">
+                        <span className="text-lg">+</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className="text-[9px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                          {role.label}
                         </span>
-                      )}
+                        {role.required && (
+                          <span className="text-[8px] text-[var(--text-muted)] opacity-50">
+                            required
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  </AssignTokenPopover>
                 );
               })}
             </div>
@@ -296,6 +352,25 @@ export function CuratedTokenView({
             )}
           </div>
         </DesignSystemSection>
+      )}
+
+      {/* Version History & Snapshots */}
+      <div className="mt-4">
+        <SnapshotManager
+          projectId={projectId}
+          snapshots={snapshots}
+          currentLayoutMd={currentLayoutMd}
+          onCompare={handleCompare}
+        />
+      </div>
+
+      {/* Compare Modal */}
+      {compareData && (
+        <LayoutMdCompareModal
+          snapshotLayoutMd={compareData.snapshotMd}
+          currentLayoutMd={compareData.currentMd}
+          onClose={() => setCompareData(null)}
+        />
       )}
     </div>
   );

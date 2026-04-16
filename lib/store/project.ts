@@ -184,6 +184,8 @@ interface ProjectState {
 
   // Standardisation
   updateStandardisation: (id: string, data: ProjectStandardisation) => void;
+  assignTokenToRole: (id: string, roleKey: string, tokenName: string, tokenCssVariable: string | undefined, tokenValue: string, standardName: string) => void;
+  unassignRole: (id: string, roleKey: string) => void;
 
   // Snapshots
   createSnapshot: (id: string, label: string) => string | null;
@@ -543,6 +545,59 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           ? { ...p, standardisation: data, updatedAt: new Date().toISOString() }
           : p
       ),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  assignTokenToRole: (id, roleKey, tokenName, tokenCssVariable, tokenValue, standardName) => {
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id || !p.standardisation) return p;
+        const s = { ...p.standardisation };
+        s.assignments = { ...s.assignments };
+        s.assignments[roleKey] = {
+          roleKey,
+          originalName: tokenName,
+          originalCssVariable: tokenCssVariable,
+          value: tokenValue,
+          standardName,
+          confidence: "high" as const,
+          userConfirmed: true,
+        };
+        // Remove from unassigned
+        s.unassigned = s.unassigned.filter(
+          (u) => !((u.cssVariable ?? u.name) === (tokenCssVariable ?? tokenName) && u.value === tokenValue)
+        );
+        return { ...p, standardisation: s, updatedAt: new Date().toISOString() };
+      }),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  unassignRole: (id, roleKey) => {
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id || !p.standardisation) return p;
+        const s = { ...p.standardisation };
+        const assignment = s.assignments[roleKey];
+        if (!assignment) return p;
+        s.assignments = { ...s.assignments };
+        delete s.assignments[roleKey];
+        // Add back to unassigned
+        s.unassigned = [
+          ...s.unassigned,
+          {
+            name: assignment.originalName,
+            cssVariable: assignment.originalCssVariable,
+            value: assignment.value,
+            type: "color",
+            hidden: false,
+          },
+        ];
+        return { ...p, standardisation: s, updatedAt: new Date().toISOString() };
+      }),
     }));
     const project = get().projects.find((p) => p.id === id);
     if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));

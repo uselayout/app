@@ -331,9 +331,12 @@ export function DesignSystemPanel({
         {/* Curated view */}
         {viewMode === "curated" && project?.standardisation && (
           <CuratedTokenView
+            projectId={projectId}
             standardisation={project.standardisation}
             allTokens={allTokensFlat}
             cssVariables={cssVariables}
+            snapshots={project.snapshots ?? []}
+            currentLayoutMd={project.layoutMd}
             onUpdateToken={handleUpdateToken}
             onRemoveToken={(tokenType, names) => handleRemoveToken(tokenType, names)}
             onRenameToken={handleRenameToken}
