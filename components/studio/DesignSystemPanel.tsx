@@ -74,7 +74,9 @@ export function DesignSystemPanel({
     hasStandardisation ? "curated" : "all"
   );
 
-  // Run standardisation ONCE on mount if needed. useRef prevents infinite loops.
+  // Run standardisation ONCE when tokens are available. useRef prevents re-running
+  // after standardisation completes (even if deps change). Adding tokens to deps
+  // ensures we retry when tokens arrive after initial render.
   const ranStandardisation = useRef(false);
   useEffect(() => {
     if (ranStandardisation.current) return;
@@ -99,7 +101,7 @@ export function DesignSystemPanel({
       console.error("[standardise] Failed:", e);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tokens, hasStandardisation]);
 
   // Re-standardise handler (for manual refresh)
   const handleRestandardise = useCallback(() => {

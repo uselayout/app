@@ -25,14 +25,15 @@ interface ProjectRow {
 }
 
 function rowToProject(row: ProjectRow): Project {
-  // Extract _uploadedFonts from extraction_data before casting
+  // Extract piggy-backed fields from extraction_data before casting
   const rawExtraction = row.extraction_data as Record<string, unknown> | null;
   const uploadedFonts = (rawExtraction?._uploadedFonts as Project["uploadedFonts"]) ?? undefined;
+  const standardisation = (rawExtraction?._standardisation as Project["standardisation"]) ?? undefined;
 
-  // Strip _uploadedFonts from extraction data before casting to ExtractionResult
+  // Strip piggy-backed fields from extraction data before casting to ExtractionResult
   let extractionData: Project["extractionData"] | undefined;
   if (rawExtraction) {
-    const { _uploadedFonts: _, ...clean } = rawExtraction;
+    const { _uploadedFonts: _, _standardisation: __, ...clean } = rawExtraction;
     // Only treat as real extraction data if it has actual extraction fields
     extractionData = clean.sourceType ? (clean as unknown as Project["extractionData"]) : undefined;
   }
@@ -46,6 +47,7 @@ function rowToProject(row: ProjectRow): Project {
     layoutMd: row.layout_md,
     extractionData,
     uploadedFonts,
+    standardisation,
     tokenCount: row.token_count ?? undefined,
     healthScore: row.health_score ?? undefined,
     explorations: row.explorations
@@ -67,12 +69,14 @@ function projectToRow(
   project: Project,
   userId: string
 ): Omit<ProjectRow, "created_at" | "scanned_components" | "scan_source" | "last_scan_at" | "github_repo"> & { updated_at: string } {
-  // Store uploadedFonts inside extraction_data to avoid a DB migration
+  // Store uploadedFonts and standardisation inside extraction_data to avoid DB migrations
   const fonts = project.uploadedFonts ?? [];
+  const std = project.standardisation ?? undefined;
+  const hasExtra = fonts.length > 0 || std;
   const extractionData = project.extractionData
-    ? { ...project.extractionData, _uploadedFonts: fonts }
-    : fonts.length > 0
-      ? { _uploadedFonts: fonts }
+    ? { ...project.extractionData, _uploadedFonts: fonts, _standardisation: std }
+    : hasExtra
+      ? { _uploadedFonts: fonts, _standardisation: std }
       : null;
 
   return {
