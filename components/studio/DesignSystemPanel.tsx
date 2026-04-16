@@ -69,40 +69,35 @@ export function DesignSystemPanel({
   const [viewMode, setViewMode] = useState<"curated" | "all">(
     project?.standardisation ? "curated" : "all"
   );
+  const [standardising, setStandardising] = useState(false);
 
-  // Run standardisation once if tokens exist but no standardisation data yet
-  const hasStandardisedRef = useRef(!!project?.standardisation);
+  // Run standardisation if tokens exist but no standardisation data yet
   useEffect(() => {
-    if (hasStandardisedRef.current) return;
+    if (project?.standardisation || standardising) return;
     if (!tokens || !project?.sourceUrl) return;
-    if (project.standardisation) {
-      hasStandardisedRef.current = true;
-      return;
-    }
 
-    hasStandardisedRef.current = true;
-    const tokenMap = standardiseTokens(tokens, project.sourceUrl);
-    applyStandardisation(tokens, tokenMap);
+    setStandardising(true);
+    try {
+      const tokenMap = standardiseTokens(tokens, project.sourceUrl);
+      applyStandardisation(tokens, tokenMap);
 
-    const serialisable: ProjectStandardisation = {
-      kitPrefix: tokenMap.kitPrefix,
-      assignments: Object.fromEntries(tokenMap.assignments),
-      unassigned: tokenMap.unassigned,
-      antiPatterns: tokenMap.antiPatterns,
-      standardisedAt: new Date().toISOString(),
-    };
+      const serialisable: ProjectStandardisation = {
+        kitPrefix: tokenMap.kitPrefix,
+        assignments: Object.fromEntries(tokenMap.assignments),
+        unassigned: tokenMap.unassigned,
+        antiPatterns: tokenMap.antiPatterns,
+        standardisedAt: new Date().toISOString(),
+      };
 
-    updateStandardisation(projectId, serialisable);
-  }, [tokens, project?.sourceUrl, project?.standardisation, projectId, updateStandardisation]);
-
-  // Switch to curated view once standardisation becomes available
-  const prevStandardisationRef = useRef(project?.standardisation);
-  useEffect(() => {
-    if (!prevStandardisationRef.current && project?.standardisation) {
+      updateStandardisation(projectId, serialisable);
       setViewMode("curated");
+    } catch (e) {
+      console.error("[standardise] Failed:", e);
+      setViewMode("all");
+    } finally {
+      setStandardising(false);
     }
-    prevStandardisationRef.current = project?.standardisation;
-  }, [project?.standardisation]);
+  }, [tokens, project?.sourceUrl, project?.standardisation, standardising, projectId, updateStandardisation]);
 
   // Re-standardise handler (for manual refresh)
   const handleRestandardise = useCallback(() => {
@@ -356,8 +351,8 @@ export function DesignSystemPanel({
           />
         )}
 
-        {/* Curated view but no standardisation data */}
-        {viewMode === "curated" && !project?.standardisation && (
+        {/* Curated view loading */}
+        {viewMode === "curated" && !project?.standardisation && standardising && (
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
               <Sparkles className="mx-auto h-8 w-8 text-[var(--text-muted)] mb-3" />
@@ -365,6 +360,24 @@ export function DesignSystemPanel({
               <p className="mt-1 text-xs text-[var(--text-muted)]">
                 Mapping extracted tokens to standard roles.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Curated view but standardisation failed or not available */}
+        {viewMode === "curated" && !project?.standardisation && !standardising && (
+          <div className="flex h-64 items-center justify-center">
+            <div className="text-center">
+              <p className="text-sm text-[var(--text-secondary)]">No standardisation data available.</p>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                Switch to All Tokens or re-extract to generate the curated view.
+              </p>
+              <button
+                onClick={() => setViewMode("all")}
+                className="mt-3 rounded-md bg-[var(--studio-accent)] px-3 py-1.5 text-xs font-medium text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)]"
+              >
+                View All Tokens
+              </button>
             </div>
           </div>
         )}
