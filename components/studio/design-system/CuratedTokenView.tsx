@@ -118,17 +118,17 @@ export function CuratedTokenView({
         </div>
         <div className="flex items-center gap-2">
           {Object.values(assignments).filter((a) => a.confidence === "high").length > 0 && (
-            <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+            <span className="rounded-full border border-[var(--status-success)]/20 bg-[var(--status-success)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--status-success)]">
               {Object.values(assignments).filter((a) => a.confidence === "high").length} high
             </span>
           )}
           {Object.values(assignments).filter((a) => a.confidence === "medium").length > 0 && (
-            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-400">
+            <span className="rounded-full border border-[var(--status-warning)]/20 bg-[var(--status-warning)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--status-warning)]">
               {Object.values(assignments).filter((a) => a.confidence === "medium").length} medium
             </span>
           )}
           {Object.values(assignments).filter((a) => a.confidence === "low").length > 0 && (
-            <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-400">
+            <span className="rounded-full border border-[var(--status-error)]/20 bg-[var(--status-error)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--status-error)]">
               {Object.values(assignments).filter((a) => a.confidence === "low").length} low
             </span>
           )}
@@ -259,14 +259,37 @@ export function CuratedTokenView({
               {roles.map((role) => {
                 const assignment = assignments[role.key];
                 const token = roleTokenMap.get(role.key);
+                const pxValue = token ? parseFloat(token.value) : 0;
 
                 return (
                   <div
                     key={role.key}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2 ${
-                      assignment ? "" : "opacity-40"
+                    className={`group flex items-center gap-3 rounded-md px-3 py-2 ${
+                      assignment ? "hover:bg-[var(--bg-hover)]" : "opacity-40"
                     }`}
                   >
+                    {/* Visual indicator */}
+                    {catKey === "spacing" && token && (
+                      <div
+                        className="h-3 shrink-0 rounded-sm bg-[var(--studio-accent)]"
+                        style={{ width: `${Math.min(pxValue || 4, 64)}px`, minWidth: "4px" }}
+                      />
+                    )}
+                    {catKey === "radius" && token && (
+                      <div
+                        className="h-5 w-5 shrink-0 border-2 border-[var(--studio-accent)] bg-transparent"
+                        style={{ borderRadius: token.value }}
+                      />
+                    )}
+                    {catKey === "typography" && token && (
+                      <span
+                        className="w-5 shrink-0 text-center text-sm font-bold text-[var(--text-secondary)]"
+                        style={token.value.includes(",") ? { fontFamily: token.value } : {}}
+                      >
+                        Aa
+                      </span>
+                    )}
+
                     <span className="w-24 shrink-0 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
                       {role.label}
                     </span>
@@ -303,11 +326,11 @@ export function CuratedTokenView({
             {standardisation.antiPatterns.map((ap, i) => (
               <div
                 key={i}
-                className="rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2"
+                className="rounded-md border border-[var(--status-warning)]/30 bg-[var(--bg-surface)] px-3 py-2"
               >
-                <p className="text-xs font-medium text-amber-300">{ap.rule}</p>
-                <p className="mt-1 text-[10px] text-[var(--text-muted)]">{ap.reason}</p>
-                <p className="mt-1 text-[10px] text-[var(--text-secondary)]">{ap.fix}</p>
+                <p className="text-xs font-medium text-[var(--status-warning)]">{ap.rule}</p>
+                <p className="mt-1 text-[10px] text-[var(--text-secondary)]">{ap.reason}</p>
+                <p className="mt-1 text-[10px] text-[var(--text-muted)]">{ap.fix}</p>
               </div>
             ))}
           </div>

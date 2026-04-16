@@ -75,17 +75,66 @@ export function AssignTokenPopover({
           <p className="mt-0.5 text-[9px] text-[var(--text-muted)]">{role.description}</p>
         </div>
 
-        {/* Search */}
-        <div className="border-b border-[var(--studio-border)] px-3 py-2">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tokens..."
-            autoFocus
-            className="w-full bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
-          />
-        </div>
+        {/* Custom colour input */}
+        {isColourRole && (
+          <div className="flex items-center gap-2 border-b border-[var(--studio-border)] px-3 py-2">
+            <input
+              type="color"
+              value={search.startsWith("#") && /^#[0-9a-f]{6}$/i.test(search) ? search : "#6366f1"}
+              onChange={(e) => {
+                setSearch(e.target.value);
+              }}
+              className="h-6 w-6 shrink-0 cursor-pointer rounded border border-[var(--studio-border)] bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-sm [&::-webkit-color-swatch]:border-none"
+            />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search or enter #hex..."
+              autoFocus
+              className="flex-1 bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && search.startsWith("#") && search.length >= 4) {
+                  handleSelect({
+                    name: `custom-${role.suffix}`,
+                    value: search,
+                    type: "color",
+                    hidden: false,
+                  });
+                }
+              }}
+            />
+            {search.startsWith("#") && search.length >= 4 && (
+              <button
+                onClick={() =>
+                  handleSelect({
+                    name: `custom-${role.suffix}`,
+                    value: search,
+                    type: "color",
+                    hidden: false,
+                  })
+                }
+                className="shrink-0 rounded bg-[var(--studio-accent)] px-2 py-0.5 text-[9px] font-medium text-[var(--text-on-accent)]"
+              >
+                Add
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Search (non-colour roles) */}
+        {!isColourRole && (
+          <div className="border-b border-[var(--studio-border)] px-3 py-2">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search tokens..."
+              autoFocus
+              className="w-full bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
+            />
+          </div>
+        )}
 
         {/* Token list */}
         <div className="max-h-48 overflow-y-auto py-1">

@@ -133,9 +133,18 @@ function findBestNameMatch(
 
     const name = (token.cssVariable ?? token.name).toLowerCase();
     const score = scoreNameMatch(role, name);
-    if (score > 0) {
-      candidates.push({ token, score });
+    if (score < 3) continue; // Minimum score threshold
+
+    // Cross-validate with lightness hints for colour roles
+    if (role.matchHints?.lightness && token.type === "color") {
+      const lightness = parseLightness(token.value);
+      if (lightness !== null) {
+        if (role.matchHints.lightness === "lightest" && lightness < 0.6) continue;
+        if (role.matchHints.lightness === "darkest" && lightness > 0.4) continue;
+      }
     }
+
+    candidates.push({ token, score });
   }
 
   if (candidates.length === 0) return null;
@@ -154,25 +163,39 @@ function findBestNameMatch(
   return { token: best.token, confidence };
 }
 
+/** Words too generic to score on their own */
+const NOISE_WORDS = new Set(["bg", "on", "sm", "md", "lg", "xl", "color", "colour", "default", "base", "a", "the"]);
+
+/** Token name prefixes that indicate framework/utility tokens, not design system tokens */
+const FRAMEWORK_PREFIXES = ["grid-", "tw-", "transition-", "animation-", "container-width", "container-max", "webkit-", "moz-"];
+
 function scoreNameMatch(role: StandardRole, tokenName: string): number {
   let score = 0;
 
-  // Exact suffix match is highest signal
-  if (tokenName.endsWith(role.suffix) || tokenName.endsWith(`-${role.suffix}`)) {
-    score += 4;
+  // Penalise framework/utility tokens
+  const stripped = tokenName.replace(/^--/, "");
+  if (FRAMEWORK_PREFIXES.some((p) => stripped.startsWith(p))) {
+    score -= 3;
   }
 
-  // Keyword matches
+  // Exact suffix match is highest signal
+  if (tokenName.endsWith(role.suffix) || tokenName.endsWith(`-${role.suffix}`)) {
+    score += 5;
+  }
+
+  // Full keyword matches (keyword must be 3+ chars to count)
   for (const keyword of role.matchKeywords) {
-    if (tokenName.includes(keyword)) {
-      score += 2;
-      break; // Only count one keyword match
+    if (keyword.length >= 3 && tokenName.includes(keyword)) {
+      score += 3;
+      break;
     }
   }
 
-  // Partial keyword matches (individual words)
-  const nameWords = tokenName.replace(/^--/, "").split(/[-_]/);
-  const keywordWords = role.matchKeywords.flatMap((k) => k.split("-"));
+  // Partial keyword matches: only count words that aren't noise
+  const nameWords = stripped.split(/[-_]/).filter((w) => w.length >= 3 && !NOISE_WORDS.has(w));
+  const keywordWords = role.matchKeywords
+    .flatMap((k) => k.split("-"))
+    .filter((w) => w.length >= 3 && !NOISE_WORDS.has(w));
   const overlap = nameWords.filter((w) => keywordWords.includes(w)).length;
   if (overlap > 0) {
     score += Math.min(overlap, 2);
@@ -245,11 +268,22 @@ function findValueMatch(
     // Most saturated colour that isn't near-black or near-white
     const filtered = withLightness.filter((x) => x.lightness > 0.15 && x.lightness < 0.85);
     if (filtered.length === 0) return null;
-    // Sort by saturation (rough heuristic: furthest from grey)
+
+    // First: prefer tokens whose name contains "primary", "accent", or "brand"
+    const accentKeywords = ["primary", "accent", "brand", "action", "cta"];
+    const namedAccent = filtered.find((x) => {
+      const name = (x.token.cssVariable ?? x.token.name).toLowerCase();
+      return accentKeywords.some((kw) => name.includes(kw));
+    });
+    if (namedAccent) {
+      return { token: namedAccent.token, confidence: "medium" };
+    }
+
+    // Fallback: most saturated (lower chroma threshold)
     const withChroma = filtered
-      .map((x) => ({ ...x, chroma: parseChroma(x.token.value) ?? 0 }))
+      .map((x) => ({ ...x, chroma: parseChroma(x.token.value) ?? estimateChromaFromHex(x.token.value) }))
       .sort((a, b) => b.chroma - a.chroma);
-    if (withChroma.length > 0 && withChroma[0].chroma > 0.01) {
+    if (withChroma.length > 0 && withChroma[0].chroma > 0.001) {
       return { token: withChroma[0].token, confidence: "low" };
     }
   }
@@ -293,6 +327,15 @@ function parseLightness(value: string): number | null {
 function parseChroma(value: string): number | null {
   const match = value.trim().toLowerCase().match(/oklch\(\s*[\d.]+\s+([\d.]+)/);
   return match ? parseFloat(match[1]) : null;
+}
+
+/** Rough chroma estimate for hex/rgb colours (max channel difference / 255). */
+function estimateChromaFromHex(value: string): number {
+  const rgb = parseHexToRgb(value);
+  if (!rgb) return 0;
+  const max = Math.max(rgb.r, rgb.g, rgb.b);
+  const min = Math.min(rgb.r, rgb.g, rgb.b);
+  return (max - min) / 255;
 }
 
 function parseHexToRgb(hex: string): { r: number; g: number; b: number } | null {

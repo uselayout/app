@@ -70,15 +70,20 @@ export function DesignSystemPanel({
     project?.standardisation ? "curated" : "all"
   );
 
-  // Run standardisation if tokens exist but no standardisation data yet
+  // Run standardisation once if tokens exist but no standardisation data yet
+  const hasStandardisedRef = useRef(!!project?.standardisation);
   useEffect(() => {
-    if (!tokens || !project || project.standardisation) return;
-    if (!project.sourceUrl) return;
+    if (hasStandardisedRef.current) return;
+    if (!tokens || !project?.sourceUrl) return;
+    if (project.standardisation) {
+      hasStandardisedRef.current = true;
+      return;
+    }
 
+    hasStandardisedRef.current = true;
     const tokenMap = standardiseTokens(tokens, project.sourceUrl);
     applyStandardisation(tokens, tokenMap);
 
-    // Convert Map to plain object for serialisation
     const serialisable: ProjectStandardisation = {
       kitPrefix: tokenMap.kitPrefix,
       assignments: Object.fromEntries(tokenMap.assignments),
@@ -88,8 +93,16 @@ export function DesignSystemPanel({
     };
 
     updateStandardisation(projectId, serialisable);
-    setViewMode("curated");
-  }, [tokens, project, projectId, updateStandardisation]);
+  }, [tokens, project?.sourceUrl, project?.standardisation, projectId, updateStandardisation]);
+
+  // Switch to curated view once standardisation becomes available
+  const prevStandardisationRef = useRef(project?.standardisation);
+  useEffect(() => {
+    if (!prevStandardisationRef.current && project?.standardisation) {
+      setViewMode("curated");
+    }
+    prevStandardisationRef.current = project?.standardisation;
+  }, [project?.standardisation]);
 
   // Re-standardise handler (for manual refresh)
   const handleRestandardise = useCallback(() => {

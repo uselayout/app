@@ -132,6 +132,44 @@ async function apiFetchProject(id: string, orgId: string): Promise<Project | nul
   return res.json() as Promise<Project>;
 }
 
+/**
+ * Update the curated token block in layout.md's Quick Reference section.
+ * Replaces the CORE TOKENS css block with current standardisation assignments.
+ */
+function syncCuratedTokensToLayoutMd(layoutMd: string, standardisation: ProjectStandardisation): string {
+  const assignments = Object.values(standardisation.assignments);
+  if (assignments.length === 0) return layoutMd;
+
+  // Build the new token block
+  const lines: string[] = ["/* ── CORE TOKENS ── */", ""];
+  const colours = assignments.filter((a) => ["bg-", "text-", "border", "accent", "success", "warning", "error", "info"].some((k) => a.roleKey.startsWith(k) || a.roleKey.includes(k)));
+  const other = assignments.filter((a) => !colours.includes(a));
+
+  if (colours.length > 0) {
+    lines.push("/* Colours */");
+    for (const a of colours) {
+      lines.push(`${a.standardName}: ${a.value};`);
+    }
+  }
+  if (other.length > 0) {
+    lines.push("", "/* Other */");
+    for (const a of other) {
+      lines.push(`${a.standardName}: ${a.value};`);
+    }
+  }
+
+  const newBlock = "```css\n" + lines.join("\n") + "\n```";
+
+  // Try to replace existing CORE TOKENS block
+  const coreTokensRegex = /```css\s*\n\/\*\s*──?\s*CORE TOKENS[\s\S]*?```/;
+  if (coreTokensRegex.test(layoutMd)) {
+    return layoutMd.replace(coreTokensRegex, newBlock);
+  }
+
+  // If no CORE TOKENS block found, don't modify
+  return layoutMd;
+}
+
 /** Create a unique key for a token, accounting for mode variants. */
 function modeAwareTokenKey(t: ExtractedToken): string {
   return t.mode ? `${t.name}::${t.mode}` : t.name;
@@ -569,7 +607,9 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
         s.unassigned = s.unassigned.filter(
           (u) => !((u.cssVariable ?? u.name) === (tokenCssVariable ?? tokenName) && u.value === tokenValue)
         );
-        return { ...p, standardisation: s, updatedAt: new Date().toISOString() };
+        // Sync to layout.md
+        const updatedMd = syncCuratedTokensToLayoutMd(p.layoutMd, s);
+        return { ...p, standardisation: s, layoutMd: updatedMd, updatedAt: new Date().toISOString() };
       }),
     }));
     const project = get().projects.find((p) => p.id === id);
@@ -585,7 +625,6 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
         if (!assignment) return p;
         s.assignments = { ...s.assignments };
         delete s.assignments[roleKey];
-        // Add back to unassigned
         s.unassigned = [
           ...s.unassigned,
           {
@@ -596,7 +635,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
             hidden: false,
           },
         ];
-        return { ...p, standardisation: s, updatedAt: new Date().toISOString() };
+        const updatedMd = syncCuratedTokensToLayoutMd(p.layoutMd, s);
+        return { ...p, standardisation: s, layoutMd: updatedMd, updatedAt: new Date().toISOString() };
       }),
     }));
     const project = get().projects.find((p) => p.id === id);
