@@ -67,7 +67,12 @@ const CSS_TO_TAILWIND: Record<string, (val: string) => string> = {
   marginLeft: (v) => `ml-[${v}]`,
 };
 
-/** Tailwind class prefix patterns for each CSS property (for removal) */
+/**
+ * Tailwind class prefix patterns for each CSS property (for removal).
+ * Layout properties (display, flexDirection, alignItems, justifyContent) use
+ * negative lookbehind (?<![\w:]) to ONLY match base classes, preserving
+ * responsive variants like md:flex-row, lg:items-center, etc.
+ */
 const TAILWIND_PREFIXES: Record<string, RegExp> = {
   fontWeight: /\bfont-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black|\[\d+\])\b/g,
   fontSize: /\btext-(?:xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|\[[^\]]+\])\b/g,
@@ -75,10 +80,11 @@ const TAILWIND_PREFIXES: Record<string, RegExp> = {
   letterSpacing: /\btracking-(?:tighter|tight|normal|wide|wider|widest|\[[^\]]+\])\b/g,
   fontFamily: /\bfont-(?:sans|serif|mono|\[[^\]]+\])\b/g,
   textAlign: /\btext-(?:left|center|right|justify)\b/g,
-  display: /\b(?:block|flex|grid|inline|inline-flex|inline-block|hidden)\b/g,
-  flexDirection: /(?<![:\w])flex-(?:row|col|row-reverse|col-reverse)\b/g,
-  alignItems: /\bitems-(?:start|end|center|baseline|stretch)\b/g,
-  justifyContent: /\bjustify-(?:start|end|center|between|around|evenly)\b/g,
+  // Layout props: only match BASE class, not responsive variants (sm:flex, md:flex-row, etc.)
+  display: /(?<![\w:])(?:block|flex|grid|inline|inline-flex|inline-block|hidden)\b/g,
+  flexDirection: /(?<![\w:])flex-(?:row|col|row-reverse|col-reverse)\b/g,
+  alignItems: /(?<![\w:])items-(?:start|end|center|baseline|stretch)\b/g,
+  justifyContent: /(?<![\w:])justify-(?:start|end|center|between|around|evenly)\b/g,
   color: /\btext-\[(?:rgb|rgba|#)[^\]]*\]\b/g,
   backgroundColor: /\bbg-\[(?:rgb|rgba|#)[^\]]*\]\b/g,
   borderColor: /\bborder-\[(?:rgb|rgba|#)[^\]]*\]\b/g,
@@ -480,6 +486,21 @@ function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null 
           console.debug(`[direct-edit] ${property}: Tailwind class swap succeeded (${classMatch.attrName})`);
           return result;
         }
+      }
+    }
+  }
+
+  // Try adding a Tailwind class (when element uses Tailwind but lacks a class for this property).
+  // Preferred over inline style because it preserves responsive behaviour.
+  if (elementClasses && CSS_TO_TAILWIND[property]) {
+    const classMatch = findBestClassNameMatch(code, elementClasses, edit.elementTag);
+    if (classMatch) {
+      const newClass = CSS_TO_TAILWIND[property](after);
+      const updatedClassName = `${classMatch.captured} ${newClass}`;
+      const result = code.replace(classMatch.full, `${classMatch.attrName}="${updatedClassName}"`);
+      if (result !== code) {
+        console.debug(`[direct-edit] ${property}: added Tailwind class (preserves responsive)`);
+        return result;
       }
     }
   }
