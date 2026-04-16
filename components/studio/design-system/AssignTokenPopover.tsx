@@ -37,7 +37,10 @@ export function AssignTokenPopover({
   const colourCategories = ["backgrounds", "text", "borders", "accent", "status"];
   const isColourRole = colourCategories.includes(role.category);
 
-  const filteredTokens = useMemo(() => {
+  const INITIAL_LIMIT = 30;
+  const [showAll, setShowAll] = useState(false);
+
+  const { filteredTokens, totalCount } = useMemo(() => {
     let tokens = unassigned.filter((u) => !u.hidden);
     if (isColourRole) {
       tokens = tokens.filter((u) => u.type === "color");
@@ -51,8 +54,19 @@ export function AssignTokenPopover({
           u.value.toLowerCase().includes(q)
       );
     }
-    return tokens.slice(0, 20);
-  }, [unassigned, isColourRole, search]);
+    // Sort: resolved hex/named colours first, var() references last
+    if (isColourRole) {
+      tokens.sort((a, b) => {
+        const aIsRef = a.value.includes("var(");
+        const bIsRef = b.value.includes("var(");
+        if (aIsRef !== bIsRef) return aIsRef ? 1 : -1;
+        return a.name.localeCompare(b.name);
+      });
+    }
+    const total = tokens.length;
+    const limited = showAll ? tokens : tokens.slice(0, INITIAL_LIMIT);
+    return { filteredTokens: limited, totalCount: total };
+  }, [unassigned, isColourRole, search, showAll]);
 
   const handleSelect = (token: UnassignedItem) => {
     onAssign(token);
@@ -137,34 +151,44 @@ export function AssignTokenPopover({
         )}
 
         {/* Token list */}
-        <div className="max-h-48 overflow-y-auto py-1">
+        <div className="max-h-64 overflow-y-auto py-1">
           {filteredTokens.length === 0 ? (
             <p className="px-3 py-2 text-[10px] text-[var(--text-muted)]">
               No matching tokens found
             </p>
           ) : (
-            filteredTokens.map((token, i) => (
-              <button
-                key={i}
-                onClick={() => handleSelect(token)}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-[var(--bg-hover)]"
-              >
-                {isColourRole && (
-                  <div
-                    className="h-4 w-4 shrink-0 rounded border border-[var(--studio-border)]"
-                    style={{ backgroundColor: token.value }}
-                  />
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-mono text-[10px] text-[var(--text-secondary)]">
-                    {token.cssVariable ?? token.name}
-                  </p>
-                  <p className="truncate font-mono text-[9px] text-[var(--text-muted)]">
-                    {token.value}
-                  </p>
-                </div>
-              </button>
-            ))
+            <>
+              {filteredTokens.map((token, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSelect(token)}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-[var(--bg-hover)]"
+                >
+                  {isColourRole && (
+                    <div
+                      className="h-4 w-4 shrink-0 rounded border border-[var(--studio-border)]"
+                      style={{ backgroundColor: token.value }}
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-mono text-[10px] text-[var(--text-secondary)]">
+                      {token.cssVariable ?? token.name}
+                    </p>
+                    <p className="truncate font-mono text-[9px] text-[var(--text-muted)]">
+                      {token.value}
+                    </p>
+                  </div>
+                </button>
+              ))}
+              {!showAll && totalCount > INITIAL_LIMIT && (
+                <button
+                  onClick={() => setShowAll(true)}
+                  className="w-full px-3 py-1.5 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+                >
+                  + {totalCount - INITIAL_LIMIT} more
+                </button>
+              )}
+            </>
           )}
         </div>
       </PopoverContent>

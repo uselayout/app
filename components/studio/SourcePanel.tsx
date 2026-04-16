@@ -178,9 +178,10 @@ function SourcePanelInner({
 
   const hasLayoutMd = !!layoutMd && layoutMd.length > 0;
 
+  const isWebsite = extractionData?.sourceType === "website";
   const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
     { id: "tokens", label: "Tokens", icon: Palette },
-    { id: "components", label: "Components", icon: LayoutGrid },
+    { id: "components", label: isWebsite ? "Patterns" : "Components", icon: LayoutGrid },
     { id: "screenshots", label: "Screenshots", icon: Image },
     { id: "icons", label: "Icons", icon: Shapes },
     { id: "fonts", label: "Fonts", icon: Type },
@@ -1154,7 +1155,7 @@ function ComponentsTab({
                     variant="secondary"
                     className="bg-[var(--bg-elevated)] text-[var(--text-muted)] text-[10px] px-1.5 py-0"
                   >
-                    {component.variantCount} variants
+                    {component.variantCount} {sourceType === "website" ? "styles" : "variants"}
                   </Badge>
                 )}
               </div>
@@ -1173,7 +1174,7 @@ function ComponentsTab({
                 </div>
               )}
             </div>
-            {componentUrl ? (
+            {componentUrl && (
               <a
                 href={componentUrl}
                 target="_blank"
@@ -1183,8 +1184,6 @@ function ComponentsTab({
               >
                 <ExternalLink className="h-3 w-3 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors" />
               </a>
-            ) : (
-              <ExternalLink className="h-3 w-3 shrink-0 text-[var(--text-muted)] opacity-30" />
             )}
           </div>
         );
