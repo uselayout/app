@@ -8,7 +8,8 @@ import { generateTokensJson } from "@/lib/export/tokens-json";
 import { supabase } from "@/lib/supabase/client";
 
 import { logEvent } from "@/lib/logging/platform-event";
-import type { ExtractionResult } from "@/lib/types";
+import { summariseStorybookMetadata } from "@/lib/claude/scanned-component-prompt";
+import type { ExtractionResult, ScannedComponent } from "@/lib/types";
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
 
@@ -356,13 +357,18 @@ async function handleListComponents(
         version: c.version,
         codePreview: c.code.slice(0, 200) + (c.code.length > 200 ? "..." : ""),
       })),
-      codebaseComponents: scannedComponents.map((c) => ({
-        name: c.name,
-        filePath: c.filePath,
-        props: c.props,
-        source: c.source,
-        importPath: c.importPath,
-      })),
+      codebaseComponents: scannedComponents.map((raw) => {
+        const c = raw as unknown as ScannedComponent;
+        const meta = summariseStorybookMetadata(c);
+        return {
+          name: c.name,
+          filePath: c.filePath,
+          props: c.props,
+          source: c.source,
+          importPath: c.importPath,
+          ...meta,
+        };
+      }),
     },
   };
 }
