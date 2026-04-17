@@ -6,6 +6,7 @@ import { useProjectStore } from "@/lib/store/project";
 import { useExtractionStore } from "@/lib/store/extraction";
 import { useOnboardingStore } from "@/lib/store/onboarding";
 import { useExtraction } from "@/lib/hooks/use-extraction";
+import { capQuickReferenceInLayoutMd } from "@/lib/claude/layout-md-cap";
 import { useKeyboardShortcuts } from "@/lib/hooks/use-keyboard-shortcuts";
 import { TopBar } from "@/components/shared/TopBar";
 import { StudioLayout } from "@/components/studio/StudioLayout";
@@ -154,7 +155,7 @@ export default function StudioPage({
           }
         }
       }
-      if (md) updateLayoutMd(id, md);
+      if (md) updateLayoutMd(id, capQuickReferenceInLayoutMd(md));
     } catch (err) {
       console.error("layout.md regeneration error:", err);
       const { toast } = await import("sonner");

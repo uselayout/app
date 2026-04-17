@@ -49,7 +49,8 @@ OUTPUT FORMAT RULES:
 The layout.md section structure:
 
 ## 0. Quick Reference
-50-75 lines. Standalone injectable — copy-pasteable into CLAUDE.md or .cursorrules.
+HARD LIMIT: 75 lines max from the "## 0. Quick Reference" heading to the next "## 1." heading. If you approach 75 lines, cut — do not exceed. Content over the cap will be trimmed post-hoc and the reader will lose it.
+Standalone injectable — copy-pasteable into CLAUDE.md or .cursorrules.
 Structure: [1] Stack & styling approach + token source [2] Core tokens in ONE fenced CSS code block [3] ONE real component example in a tsx code block [4] 5-8 critical prohibitions as NEVER rules [5] "Full design system → see layout.md" link.
 This section alone must produce significantly better AI output than no context at all.
 

@@ -3,6 +3,7 @@
 import { use, useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
+import { capQuickReferenceInLayoutMd } from "@/lib/claude/layout-md-cap";
 import { useExtractionStore } from "@/lib/store/extraction";
 import { useOnboardingStore } from "@/lib/store/onboarding";
 import { useExtraction } from "@/lib/hooks/use-extraction";
@@ -153,8 +154,8 @@ export default function StudioPage({
           }
         }
       }
-      // Final update with complete content
-      if (md) updateLayoutMd(id, md);
+      // Final update with complete content — enforce the Quick Reference cap
+      if (md) updateLayoutMd(id, capQuickReferenceInLayoutMd(md));
     } catch (err) {
       console.error("layout.md regeneration error:", err);
       const { toast } = await import("sonner");
