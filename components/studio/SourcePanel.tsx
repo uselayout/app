@@ -444,12 +444,14 @@ function TokenSectionHeader({
   open,
   onToggle,
   onCopy,
+  onAdd,
 }: {
   label: string;
   count: number;
   open: boolean;
   onToggle: () => void;
   onCopy: () => void;
+  onAdd?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -461,6 +463,14 @@ function TokenSectionHeader({
       setTimeout(() => setCopied(false), 1500);
     },
     [onCopy]
+  );
+
+  const handleAdd = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onAdd?.();
+    },
+    [onAdd]
   );
 
   return (
@@ -476,6 +486,15 @@ function TokenSectionHeader({
       <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
         {label} ({count})
       </span>
+      {onAdd && (
+        <span
+          onClick={handleAdd}
+          className="shrink-0 rounded p-1 opacity-0 transition-opacity hover:bg-[var(--bg-hover)] group-hover:opacity-100"
+          title={`Add a new ${label.toLowerCase().replace(/s$/, "")} token`}
+        >
+          <Plus className="h-3 w-3 text-[var(--text-muted)]" />
+        </span>
+      )}
       <span
         onClick={handleCopy}
         className="shrink-0 rounded p-1 opacity-0 transition-opacity hover:bg-[var(--bg-hover)] group-hover:opacity-100"
@@ -488,6 +507,102 @@ function TokenSectionHeader({
         )}
       </span>
     </button>
+  );
+}
+
+const TYPE_FOR_SECTION: Record<string, import("@/lib/types").TokenType> = {
+  Colours: "color",
+  Typography: "typography",
+  Spacing: "spacing",
+  Radius: "radius",
+  Effects: "effect",
+};
+
+function AddTokenForm({
+  section,
+  onSubmit,
+  onCancel,
+}: {
+  section: string;
+  onSubmit: (token: ExtractedToken) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [value, setValue] = useState("");
+  const tokenType = TYPE_FOR_SECTION[section] ?? "color";
+  const isColor = tokenType === "color";
+
+  const canSubmit = name.trim().length > 0 && value.trim().length > 0;
+
+  const handleSubmit = useCallback(
+    (e?: React.FormEvent) => {
+      e?.preventDefault();
+      if (!canSubmit) return;
+      const cleanName = name.trim().replace(/^--/, "");
+      const cssVar = `--${cleanName}`;
+      onSubmit({
+        name: cleanName,
+        value: value.trim(),
+        type: tokenType,
+        category: "semantic",
+        cssVariable: cssVar,
+      });
+      setName("");
+      setValue("");
+    },
+    [canSubmit, name, value, tokenType, onSubmit]
+  );
+
+  const colourPreview = isColor && /^#([0-9a-f]{3}|[0-9a-f]{6,8})$/i.test(value.trim());
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="mx-2 mb-2 rounded-md border border-[var(--studio-border)] bg-[var(--bg-elevated)] p-2"
+    >
+      <div className="flex items-center gap-1.5">
+        {isColor && (
+          <input
+            type="color"
+            value={colourPreview ? value.trim() : "#6366f1"}
+            onChange={(e) => setValue(e.target.value)}
+            className="h-6 w-6 shrink-0 cursor-pointer rounded border border-[var(--studio-border)] bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-sm [&::-webkit-color-swatch]:border-none"
+            title="Pick a colour"
+          />
+        )}
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="name (e.g. brand-primary)"
+          autoFocus
+          className="min-w-0 flex-1 rounded bg-[var(--bg-surface)] px-2 py-1 font-mono text-[10px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={isColor ? "#e4f222" : "value"}
+          className="min-w-0 flex-1 rounded bg-[var(--bg-surface)] px-2 py-1 font-mono text-[10px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
+        />
+      </div>
+      <div className="mt-2 flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded px-2 py-0.5 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={!canSubmit}
+          className="rounded bg-[var(--studio-accent)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-on-accent)] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Add
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -547,6 +662,8 @@ function TokensTab({
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateToken = useProjectStore((s) => s.updateToken);
   const renameToken = useProjectStore((s) => s.renameToken);
+  const addToken = useProjectStore((s) => s.addToken);
+  const [adding, setAdding] = useState<string | null>(null);
 
   const allTokensFlat = useMemo(() => flattenTokens(tokens), [tokens]);
   const showFigmaCallout = sourceType === "figma" && Object.keys(cssVariables).length < 15;
@@ -636,13 +753,15 @@ function TokensTab({
     [modeFilter]
   );
 
-  const sections: { label: string; items: ExtractedToken[] }[] = [
+  const allSections: { label: string; items: ExtractedToken[] }[] = [
     { label: "Colours", items: filterByMode(tokens.colors) },
     { label: "Typography", items: filterByMode(tokens.typography) },
     { label: "Spacing", items: filterByMode(tokens.spacing) },
     { label: "Radius", items: filterByMode(tokens.radius) },
     { label: "Effects", items: filterByMode(tokens.effects) },
-  ].filter((s) => s.items.length > 0);
+  ];
+  // Keep non-empty sections, plus any section the user is actively adding to.
+  const sections = allSections.filter((s) => s.items.length > 0 || adding === s.label);
 
   const [openSections, setOpenSections] = useState<Set<string>>(
     () => new Set(sections.map((s) => s.label))
@@ -700,8 +819,32 @@ function TokensTab({
 
   if (sections.length === 0) {
     return (
-      <div className="p-4 text-xs text-[var(--text-muted)]">
-        No tokens extracted.
+      <div className="p-4 space-y-3">
+        <p className="text-xs text-[var(--text-muted)]">No tokens extracted.</p>
+        {projectId && (
+          <div className="space-y-1">
+            {Object.keys(TYPE_FOR_SECTION).map((label) => (
+              <button
+                key={label}
+                onClick={() => setAdding(label)}
+                className="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+                Add {label.toLowerCase().replace(/s$/, "")} token
+              </button>
+            ))}
+            {adding && (
+              <AddTokenForm
+                section={adding}
+                onSubmit={(token) => {
+                  addToken(projectId, token);
+                  setAdding(null);
+                }}
+                onCancel={() => setAdding(null)}
+              />
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -754,7 +897,22 @@ function TokensTab({
             open={openSections.has(section.label)}
             onToggle={() => toggleSection(section.label)}
             onCopy={() => copySection(section.items)}
+            onAdd={projectId ? () => {
+              setAdding(section.label);
+              // Ensure the section is expanded so the form is visible
+              if (!openSections.has(section.label)) toggleSection(section.label);
+            } : undefined}
           />
+          {openSections.has(section.label) && adding === section.label && projectId && (
+            <AddTokenForm
+              section={section.label}
+              onSubmit={(token) => {
+                addToken(projectId, token);
+                setAdding(null);
+              }}
+              onCancel={() => setAdding(null)}
+            />
+          )}
           {openSections.has(section.label) && (
             <div className="pl-2">
               {groupTokensByPurpose(section.items, SECTION_TYPE_MAP[section.label]).map((group) => {

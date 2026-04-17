@@ -10,6 +10,33 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w16-add-tokens",
+    title: "Add tokens manually",
+    description:
+      "Missed a colour, spacing, or radius value during extraction? Click the new + button in the Source Panel or Design System page to add tokens directly. New tokens sync to layout.md and export bundles automatically.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-17",
+  },
+  {
+    id: "2026-w16-custom-hex-persistence",
+    title: "Custom colours now persist",
+    description:
+      "When you enter a custom hex in the Design System role assignment popover, the token is now saved to your design system. Previously, custom colours were lost on refresh.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-17",
+  },
+  {
+    id: "2026-w16-token-delete-sync",
+    title: "Deleting tokens updates layout.md",
+    description:
+      "Removing a token from the Source Panel or Design System page now removes it from layout.md too. No more stale token references for AI agents to trip over.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-17",
+  },
+  {
     id: "2026-w16-theme-switching",
     title: "Light, dark, and system theme",
     description:

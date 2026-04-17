@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 import { renameTokenInLayoutMd } from "@/lib/tokens/rename-token";
-import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont, ProjectStandardisation, DesignSystemSnapshot } from "@/lib/types";
+import { addTokenToLayoutMd, removeTokenFromLayoutMd } from "@/lib/tokens/add-remove-token";
+import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont, ProjectStandardisation, DesignSystemSnapshot, TokenType } from "@/lib/types";
 
 /**
  * Strip large base64 data from the project before sending to the API.
@@ -227,6 +228,7 @@ interface ProjectState {
   updateToken: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string, mode?: string) => void;
   renameToken: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string, mode?: string) => void;
   removeTokens: (id: string, tokenType: keyof ExtractedTokens, tokenNames: string[], mode?: string) => void;
+  addToken: (id: string, token: ExtractedToken, options?: { assignToRole?: { roleKey: string; standardName: string } }) => void;
   syncTokensFromLayoutMd: (id: string) => number;
   refreshProject: (id: string) => Promise<void>;
   deleteProject: (id: string) => void;
@@ -460,6 +462,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       projects: state.projects.map((p) => {
         if (p.id !== id || !p.extractionData) return p;
         const tokens = { ...p.extractionData.tokens };
+        const removed = tokens[tokenType].filter((t) => nameSet.has(t.name) && t.mode === mode);
         tokens[tokenType] = tokens[tokenType].filter((t) => {
           const isTarget = nameSet.has(t.name) && t.mode === mode;
           return !isTarget;
@@ -470,10 +473,104 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           tokens.spacing.length +
           tokens.radius.length +
           tokens.effects.length;
+        // Sync layout.md: remove each deleted token's declaration from the CORE TOKENS block
+        let layoutMd = p.layoutMd;
+        for (const t of removed) {
+          layoutMd = removeTokenFromLayoutMd(layoutMd, { name: t.name, cssVariable: t.cssVariable });
+        }
         return {
           ...p,
           extractionData: { ...p.extractionData, tokens },
+          layoutMd,
           tokenCount,
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  addToken: (id, token, options) => {
+    const bucketForType = (type: TokenType): keyof ExtractedTokens => {
+      switch (type) {
+        case "color": return "colors";
+        case "typography": return "typography";
+        case "spacing": return "spacing";
+        case "radius": return "radius";
+        case "effect": return "effects";
+        case "motion": return "motion";
+      }
+    };
+
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id) return p;
+        const bucket = bucketForType(token.type);
+
+        const existing = p.extractionData ?? {
+          sourceType: "manual" as SourceType,
+          sourceName: "manual",
+          tokens: { colors: [], typography: [], spacing: [], radius: [], effects: [], motion: [] },
+          components: [],
+          screenshots: [],
+          fonts: [],
+          animations: [],
+          librariesDetected: {},
+          cssVariables: {},
+          computedStyles: {},
+        } as ExtractionResult;
+
+        const tokens = { ...existing.tokens };
+        // Avoid duplicates by name+mode within the same bucket
+        const isDuplicate = tokens[bucket].some(
+          (t) => t.name === token.name && t.mode === token.mode
+        );
+        if (!isDuplicate) {
+          tokens[bucket] = [...tokens[bucket], token];
+        }
+
+        const tokenCount =
+          tokens.colors.length +
+          tokens.typography.length +
+          tokens.spacing.length +
+          tokens.radius.length +
+          tokens.effects.length;
+
+        // Insert into CORE TOKENS block of layout.md
+        let layoutMd = addTokenToLayoutMd(p.layoutMd, token);
+
+        // Optionally assign to a standardised role
+        let standardisation = p.standardisation;
+        if (options?.assignToRole && standardisation) {
+          const { roleKey, standardName } = options.assignToRole;
+          standardisation = {
+            ...standardisation,
+            assignments: {
+              ...standardisation.assignments,
+              [roleKey]: {
+                roleKey,
+                originalName: token.name,
+                originalCssVariable: token.cssVariable,
+                value: token.value,
+                standardName,
+                confidence: "high" as const,
+                userConfirmed: true,
+              },
+            },
+            unassigned: standardisation.unassigned.filter(
+              (u) => !((u.cssVariable ?? u.name) === (token.cssVariable ?? token.name) && u.value === token.value)
+            ),
+          };
+          layoutMd = syncCuratedTokensToLayoutMd(layoutMd, standardisation);
+        }
+
+        return {
+          ...p,
+          extractionData: { ...existing, tokens },
+          layoutMd,
+          tokenCount,
+          standardisation,
           updatedAt: new Date().toISOString(),
         };
       }),

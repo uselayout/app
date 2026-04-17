@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
-import type { ExtractedToken, ProjectStandardisation, DesignSystemSnapshot } from "@/lib/types";
+import { Plus } from "lucide-react";
+import type { ExtractedToken, ProjectStandardisation, DesignSystemSnapshot, TokenType } from "@/lib/types";
 import {
   SCHEMA_CATEGORIES,
   getRolesByCategory,
@@ -15,6 +16,19 @@ import { LayoutMdCompareModal } from "./LayoutMdCompareModal";
 import { AssignTokenPopover } from "./AssignTokenPopover";
 import { useProjectStore } from "@/lib/store/project";
 import { buildStandardName } from "@/lib/tokens/standard-schema";
+
+const TOKEN_TYPE_FOR_CATEGORY: Record<StandardRoleCategory, TokenType> = {
+  backgrounds: "color",
+  text: "color",
+  borders: "color",
+  accent: "color",
+  status: "color",
+  typography: "typography",
+  spacing: "spacing",
+  radius: "radius",
+  shadows: "effect",
+  motion: "motion",
+};
 
 interface CuratedTokenViewProps {
   projectId: string;
@@ -42,13 +56,65 @@ export function CuratedTokenView({
   const { assignments } = standardisation;
   const assignTokenToRole = useProjectStore((s) => s.assignTokenToRole);
   const unassignRole = useProjectStore((s) => s.unassignRole);
+  const addToken = useProjectStore((s) => s.addToken);
 
   const handleAssignToken = useCallback(
-    (roleKey: string, roleSuffix: string, token: { name: string; cssVariable?: string; value: string }) => {
+    (
+      roleKey: string,
+      roleSuffix: string,
+      token: { name: string; cssVariable?: string; value: string; type?: string }
+    ) => {
       const stdName = buildStandardName(standardisation.kitPrefix, roleSuffix);
+      // If the token isn't in extractionData yet (e.g. user typed a custom hex in the
+      // popover), create it so it persists, exports, and appears in All Tokens.
+      const existsInExtraction = allTokens.some(
+        (t) => (t.cssVariable ?? t.name) === (token.cssVariable ?? token.name) && t.value === token.value
+      );
+      if (!existsInExtraction) {
+        const cssVar = token.cssVariable ?? `--${token.name}`;
+        const tokenType: TokenType =
+          (token.type as TokenType | undefined) === "typography" ||
+          token.type === "spacing" ||
+          token.type === "radius" ||
+          token.type === "effect" ||
+          token.type === "motion"
+            ? (token.type as TokenType)
+            : "color";
+        addToken(
+          projectId,
+          {
+            name: token.name,
+            value: token.value,
+            type: tokenType,
+            category: "semantic",
+            cssVariable: cssVar,
+          },
+          { assignToRole: { roleKey, standardName: stdName } }
+        );
+        return;
+      }
       assignTokenToRole(projectId, roleKey, token.name, token.cssVariable, token.value, stdName);
     },
-    [projectId, standardisation.kitPrefix, assignTokenToRole]
+    [projectId, standardisation.kitPrefix, assignTokenToRole, addToken, allTokens]
+  );
+
+  // Track which category has the inline Add Token form open.
+  const [addingToCategory, setAddingToCategory] = useState<StandardRoleCategory | null>(null);
+
+  const handleCreateToken = useCallback(
+    (category: StandardRoleCategory, name: string, value: string) => {
+      const cleanName = name.trim().replace(/^--/, "");
+      if (!cleanName || !value.trim()) return;
+      addToken(projectId, {
+        name: cleanName,
+        value: value.trim(),
+        type: TOKEN_TYPE_FOR_CATEGORY[category],
+        category: "semantic",
+        cssVariable: `--${cleanName}`,
+      });
+      setAddingToCategory(null);
+    },
+    [projectId, addToken]
   );
 
   const handleUnassignRole = useCallback(
@@ -151,6 +217,22 @@ export function CuratedTokenView({
             count={counts.assigned}
             subtitle={`${counts.assigned}/${counts.total}`}
           >
+            <div className="mb-4 flex items-center justify-end">
+              <button
+                onClick={() => setAddingToCategory(addingToCategory === catKey ? null : catKey)}
+                className="flex items-center gap-1 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+                Add token
+              </button>
+            </div>
+            {addingToCategory === catKey && (
+              <InlineAddTokenForm
+                category={catKey}
+                onSubmit={(name, value) => handleCreateToken(catKey, name, value)}
+                onCancel={() => setAddingToCategory(null)}
+              />
+            )}
             <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-4">
               {roles.map((role) => {
                 const assignment = assignments[role.key];
@@ -397,5 +479,81 @@ export function CuratedTokenView({
         />
       )}
     </div>
+  );
+}
+
+function InlineAddTokenForm({
+  category,
+  onSubmit,
+  onCancel,
+}: {
+  category: StandardRoleCategory;
+  onSubmit: (name: string, value: string) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [value, setValue] = useState("");
+  const isColor = TOKEN_TYPE_FOR_CATEGORY[category] === "color";
+  const canSubmit = name.trim().length > 0 && value.trim().length > 0;
+  const colourPreview = isColor && /^#([0-9a-f]{3}|[0-9a-f]{6,8})$/i.test(value.trim());
+
+  const placeholder =
+    TOKEN_TYPE_FOR_CATEGORY[category] === "color"
+      ? "#e4f222"
+      : TOKEN_TYPE_FOR_CATEGORY[category] === "spacing"
+      ? "16px"
+      : TOKEN_TYPE_FOR_CATEGORY[category] === "radius"
+      ? "8px"
+      : TOKEN_TYPE_FOR_CATEGORY[category] === "typography"
+      ? 'Inter, sans-serif'
+      : "value";
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (canSubmit) onSubmit(name, value);
+      }}
+      className="mb-4 flex items-center gap-2 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-2"
+    >
+      {isColor && (
+        <input
+          type="color"
+          value={colourPreview ? value.trim() : "#6366f1"}
+          onChange={(e) => setValue(e.target.value)}
+          className="h-7 w-7 shrink-0 cursor-pointer rounded border border-[var(--studio-border)] bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-sm [&::-webkit-color-swatch]:border-none"
+          title="Pick a colour"
+        />
+      )}
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="token-name"
+        autoFocus
+        className="min-w-0 flex-1 rounded bg-[var(--bg-elevated)] px-2 py-1 font-mono text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
+      />
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder}
+        className="min-w-0 flex-1 rounded bg-[var(--bg-elevated)] px-2 py-1 font-mono text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
+      />
+      <button
+        type="button"
+        onClick={onCancel}
+        className="rounded px-2 py-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        disabled={!canSubmit}
+        className="rounded bg-[var(--studio-accent)] px-3 py-1 text-[11px] font-medium text-[var(--text-on-accent)] disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        Add
+      </button>
+    </form>
   );
 }
