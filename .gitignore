@@ -72,3 +72,30 @@ migrations/
 
 # Backup scripts (may contain credentials)
 scripts/backup/
+
+# Video recording assets (not for repo)
+app/video/
+docs/VIDEO-SCRIPT.md
+
+# Strategy, investor, outreach, and pitch docs (not for public repo)
+docs/*.pptx
+docs/*.docx
+docs/*.xlsx
+docs/*.zip
+docs/codex/
+docs/drafts/
+docs/9-DAY-SPRINT.md
+docs/CLAUDE-PROJECT-CONTEXT.md
+docs/CO-FOUNDER-WALKTHROUGH.md
+docs/COMPETITIVE-ANALYSIS.md
+docs/DISCORD-ANNOUNCEMENT.md
+docs/FOUNDER-BIOS.md
+docs/MARKETING-PLAN-*.md
+docs/OUTREACH-*.md
+docs/REDDIT-STRATEGY.md
+docs/SEEDCAMP-APPLICATION.md
+docs/SOCIAL-POSTS-*.md
+docs/TESTING-GUIDE-*.md
+docs/TESTING-PLAN-*.md
+docs/TWITTER-ANNOUNCEMENT.md
+docs/YC-*.md
