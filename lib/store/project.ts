@@ -3,6 +3,7 @@ import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 import { renameTokenInLayoutMd } from "@/lib/tokens/rename-token";
 import { addTokenToLayoutMd, removeTokenFromLayoutMd } from "@/lib/tokens/add-remove-token";
+import { matchTokenToUnassignedRole } from "@/lib/tokens/standardise";
 import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont, ProjectStandardisation, DesignSystemSnapshot, TokenType } from "@/lib/types";
 
 /**
@@ -582,10 +583,25 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
         // Insert into CORE TOKENS block of layout.md
         let layoutMd = addTokenToLayoutMd(p.layoutMd, token);
 
-        // Optionally assign to a standardised role
+        // Assign to a standardised role — explicit option wins; otherwise try
+        // an automatic high-confidence name match against unassigned roles so
+        // inline-added tokens don't sit outside the curated map.
         let standardisation = p.standardisation;
-        if (options?.assignToRole && standardisation) {
-          const { roleKey, standardName } = options.assignToRole;
+        let autoAssigned: { roleKey: string; standardName: string } | null = null;
+        if (!options?.assignToRole && standardisation && !isDuplicate) {
+          const match = matchTokenToUnassignedRole(
+            token,
+            standardisation.assignments,
+            standardisation.kitPrefix,
+            "high"
+          );
+          if (match) {
+            autoAssigned = { roleKey: match.roleKey, standardName: match.standardName };
+          }
+        }
+        const assignment = options?.assignToRole ?? autoAssigned;
+        if (assignment && standardisation) {
+          const { roleKey, standardName } = assignment;
           standardisation = {
             ...standardisation,
             assignments: {
@@ -597,7 +613,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
                 value: token.value,
                 standardName,
                 confidence: "high" as const,
-                userConfirmed: true,
+                userConfirmed: Boolean(options?.assignToRole),
               },
             },
             unassigned: standardisation.unassigned.filter(

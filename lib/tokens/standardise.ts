@@ -683,36 +683,53 @@ export function applyStandardisation(
 }
 
 // ---------------------------------------------------------------------------
-// Get curated tokens for synthesis
+// Single-token matching (used when a user adds a token after initial standardisation)
 // ---------------------------------------------------------------------------
 
+export interface SingleTokenRoleMatch {
+  roleKey: string;
+  standardName: string;
+  confidence: "high" | "medium" | "low";
+}
+
 /**
- * Extract only the curated (role-assigned) tokens from extraction data,
- * organised by schema category. Used to feed a tighter token set to Claude.
+ * Try to match a single newly-added token to an unassigned role. Used by the
+ * Add Token flow in the curated view so inline-created tokens don't sit
+ * outside the role map. Returns null if nothing scores above the threshold.
+ *
+ * Only considers roles that aren't already filled in existingAssignments.
+ * Uses the same name-based matcher as the full standardisation pass.
  */
-export function getCuratedTokens(
-  tokens: ExtractedTokens
-): Record<string, ExtractedToken[]> {
-  const allTokens = [
-    ...tokens.colors,
-    ...tokens.typography,
-    ...tokens.spacing,
-    ...tokens.radius,
-    ...tokens.effects,
-    ...tokens.motion,
-  ];
+export function matchTokenToUnassignedRole(
+  token: ExtractedToken,
+  existingAssignments: Record<string, unknown>,
+  kitPrefix: string,
+  minConfidence: "high" | "medium" | "low" = "high"
+): SingleTokenRoleMatch | null {
+  const confidenceRank: Record<"high" | "medium" | "low", number> = { high: 3, medium: 2, low: 1 };
+  const minRank = confidenceRank[minConfidence];
 
-  const curated = allTokens.filter((t) => t.standardRole);
+  const flatToken: FlatToken = { ...token, sourceType: token.type };
+  let best: { role: StandardRole; confidence: "high" | "medium" | "low"; score: number } | null = null;
 
-  const grouped: Record<string, ExtractedToken[]> = {};
-  for (const token of curated) {
-    const role = STANDARD_SCHEMA.roles.find((r) => r.key === token.standardRole);
-    const category = role?.category ?? "other";
-    if (!grouped[category]) grouped[category] = [];
-    grouped[category].push(token);
+  for (const role of STANDARD_SCHEMA.roles) {
+    if (existingAssignments[role.key]) continue;
+    const match = findBestNameMatch(role, [flatToken], new Set());
+    if (!match) continue;
+    if (confidenceRank[match.confidence] < minRank) continue;
+
+    const score = confidenceRank[match.confidence];
+    if (!best || score > confidenceRank[best.confidence]) {
+      best = { role, confidence: match.confidence, score };
+    }
   }
 
-  return grouped;
+  if (!best) return null;
+  return {
+    roleKey: best.role.key,
+    standardName: buildStandardName(kitPrefix, best.role.suffix),
+    confidence: best.confidence,
+  };
 }
 
 /**
