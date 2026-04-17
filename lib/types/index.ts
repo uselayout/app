@@ -1,4 +1,11 @@
 // ─── AI Provider / Model ─────────────────────────────────────────────────────
+//
+// The canonical model registry lives in the `layout_ai_models` DB table,
+// managed via the admin panel. See lib/ai/models.ts for the async API.
+//
+// The synchronous constants below are kept for backwards compat and as
+// fallbacks when the DB is unreachable.
+// ─────────────────────────────────────────────────────────────────────────────
 
 export type AiProvider = "claude" | "gemini";
 
@@ -9,16 +16,17 @@ export interface AiModelDef {
   maxOutputTokens: number;
 }
 
-export const AI_MODELS = {
+/** Synchronous fallback model map. Prefer lib/ai/models.ts async API in new code. */
+export const AI_MODELS: Record<string, AiModelDef> = {
   "claude-sonnet-4-6": {
     id: "claude-sonnet-4-6",
     label: "Claude Sonnet 4.6",
     provider: "claude",
     maxOutputTokens: 64_000,
   },
-  "claude-opus-4-5": {
-    id: "claude-opus-4-5",
-    label: "Claude Opus 4.5",
+  "claude-opus-4-7": {
+    id: "claude-opus-4-7",
+    label: "Claude Opus 4.7",
     provider: "claude",
     maxOutputTokens: 32_000,
   },
@@ -28,15 +36,18 @@ export const AI_MODELS = {
     provider: "gemini",
     maxOutputTokens: 65_536,
   },
-} as const satisfies Record<string, AiModelDef>;
+};
 
-/** Models that require the user to provide their own API key (BYOK) */
-export const BYOK_ONLY_MODELS: ReadonlySet<AiModelId> = new Set([
-  "claude-opus-4-5",
+/**
+ * Models that require the user to provide their own API key (BYOK).
+ * Synchronous fallback. Prefer `isModelByokOnly()` from lib/ai/models.ts.
+ */
+export const BYOK_ONLY_MODELS: ReadonlySet<string> = new Set([
   "gemini-3.1-pro-preview",
 ]);
 
-export type AiModelId = keyof typeof AI_MODELS;
+/** Model ID type. Now a string to support DB-managed models. */
+export type AiModelId = string;
 
 export const DEFAULT_EXPLORE_MODEL: AiModelId = "claude-sonnet-4-6";
 

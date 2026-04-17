@@ -374,6 +374,12 @@ export function ExplorerCanvas({
         throw new Error(friendlyError(errBody));
       }
 
+      // Check if server fell back to a cheaper model due to insufficient credits
+      if (res.headers.get("X-Model-Fallback") === "true") {
+        const usedModel = res.headers.get("X-Model-Used") ?? "default model";
+        toast.info(`Switched to ${usedModel} — not enough credits for the selected model.`);
+      }
+
       await streamVariants(res, sessionId, latestExplorations, existingVariants, batchId, batchPrompt);
     },
     [streamVariants, modelId]

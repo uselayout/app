@@ -8,6 +8,14 @@ import { PaperIcon } from "@/components/studio/PaperPushModal";
 import type { ContextFile, AiModelId } from "@/lib/types";
 import { AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 
+interface ModelOption {
+  id: string;
+  label: string;
+  provider: string;
+  creditCost: number;
+  byokOnly: boolean;
+}
+
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_DIMENSION = 1600;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
@@ -65,6 +73,41 @@ export function ExplorerToolbar({
 }: ExplorerToolbarProps) {
   const params = useParams();
   const orgSlug = (params?.org as string) ?? "";
+
+  // Fetch model options from the DB-driven registry
+  const [modelOptions, setModelOptions] = useState<ModelOption[]>([]);
+  useEffect(() => {
+    fetch("/api/admin/ai-models?selectable=true")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.models?.length) {
+          setModelOptions(data.models);
+        } else {
+          // Fallback to hardcoded models
+          setModelOptions(
+            Object.values(AI_MODELS).map((m) => ({
+              id: m.id,
+              label: m.label,
+              provider: m.provider,
+              creditCost: 1,
+              byokOnly: BYOK_ONLY_MODELS.has(m.id),
+            }))
+          );
+        }
+      })
+      .catch(() => {
+        setModelOptions(
+          Object.values(AI_MODELS).map((m) => ({
+            id: m.id,
+            label: m.label,
+            provider: m.provider,
+            creditCost: 1,
+            byokOnly: BYOK_ONLY_MODELS.has(m.id),
+          }))
+        );
+      });
+  }, []);
+
   const [prompt, setPrompt] = useState("");
   const [refinePrompt, setRefinePrompt] = useState("");
   const [variantCount, setVariantCount] = useState(2);
@@ -453,18 +496,22 @@ export function ExplorerToolbar({
                 disabled={isGenerating}
                 className="appearance-none rounded-md border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.05)] pl-2 pr-6 py-0.5 text-xs text-[var(--text-primary)] outline-none transition-colors hover:bg-[var(--bg-hover)] disabled:opacity-40 cursor-pointer"
               >
-                {Object.values(AI_MODELS).map((m) => {
-                  const isByokOnly = BYOK_ONLY_MODELS.has(m.id as AiModelId);
+                {modelOptions.map((m) => {
                   const needsKey = m.provider === "gemini"
                     ? !hasGoogleKey
-                    : isByokOnly && !hasAnthropicKey;
+                    : m.byokOnly && !hasAnthropicKey;
+                  const creditLabel = m.byokOnly
+                    ? ""
+                    : m.creditCost > 1
+                    ? ` (${m.creditCost} credits)`
+                    : " (1 credit)";
                   return (
                     <option
                       key={m.id}
                       value={m.id}
                       disabled={needsKey}
                     >
-                      {m.label}{needsKey ? " (own key)" : ""}
+                      {m.label}{needsKey ? " (own key)" : creditLabel}
                     </option>
                   );
                 })}

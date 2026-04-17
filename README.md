@@ -182,7 +182,7 @@ The Studio is a two-panel workspace with an Editor/Canvas toggle:
 - **UI**: shadcn/ui + custom dark design system
 - **State**: Zustand with localStorage persistence
 - **Editor**: Monaco Editor (markdown mode)
-- **AI**: Anthropic SDK - Claude Sonnet 4.6
+- **AI**: Anthropic SDK - Claude Sonnet 4.6 (default), Opus 4.7 (premium)
 - **Extraction**: Playwright (websites), Figma REST API
 - **Export**: JSZip for bundle generation
 - **Auth**: Better Auth with PostgreSQL
