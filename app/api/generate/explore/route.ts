@@ -81,7 +81,8 @@ export async function POST(request: NextRequest) {
   // Resolve API key + billing mode based on provider
   let mode: AiMode;
   let effectiveApiKey: string | undefined;
-  let creditCost = await getModelCreditCost(modelId);
+  const perVariantCost = await getModelCreditCost(modelId);
+  let creditCost = perVariantCost * variantCount;
 
   if (model.provider === "gemini") {
     // Gemini: always BYOK for now (user or env key)
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
         // Auto-fallback: if this model costs more than 1 credit, try the default model
         if (creditCost > 1) {
           const defaultModel = await getDefaultModel();
-          const defaultCost = defaultModel.creditCost;
+          const defaultCost = defaultModel.creditCost * variantCount;
           const fallbackQuota = await checkQuota(userId, "explore", defaultCost);
           if (fallbackQuota.allowed) {
             // Switch to default model

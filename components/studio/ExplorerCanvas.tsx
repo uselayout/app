@@ -14,6 +14,7 @@ import { ComparisonView } from "./ComparisonView";
 import { PromoteToLibraryModal } from "./PromoteToLibraryModal";
 import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-variants";
 import { friendlyError } from "@/lib/explore/friendly-error";
+import { UpgradePrompt } from "@/components/billing/UpgradePrompt";
 import { applyChangesToLayoutMd } from "@/lib/figma/diff";
 import { getStoredApiKey, useKeyStatus, dismissKeyLoss } from "@/lib/hooks/use-api-key";
 import { processCodeImages } from "@/lib/image/process-code-images";
@@ -138,6 +139,7 @@ export function ExplorerCanvas({
   const imageAbortMapRef = useRef<Map<string, AbortController>>(new Map());
   const [imageNotice, setImageNotice] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [quotaError, setQuotaError] = useState<{ message: string; remaining?: { layoutMd: number; aiQuery: number } } | null>(null);
   const [generationStatus, setGenerationStatus] = useState<string | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [pushVariant, setPushVariant] = useState<DesignVariant | null>(null);
@@ -371,6 +373,10 @@ export function ExplorerCanvas({
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({ error: "Request failed" }));
+        if (errBody.code === "QUOTA_EXCEEDED" || errBody.code === "BYOK_REQUIRED") {
+          setQuotaError({ message: errBody.error, remaining: errBody.remaining });
+          return;
+        }
         throw new Error(friendlyError(errBody));
       }
 
@@ -449,6 +455,7 @@ export function ExplorerCanvas({
 
       setIsGenerating(true);
       setGenerationError(null);
+      setQuotaError(null);
       setSelectedVariantId(null);
       abortRef.current = new AbortController();
 
@@ -530,6 +537,7 @@ export function ExplorerCanvas({
 
       setIsGenerating(true);
       setGenerationError(null);
+      setQuotaError(null);
       abortRef.current = new AbortController();
 
       // Fetch any URLs in the refinement prompt
@@ -621,6 +629,7 @@ export function ExplorerCanvas({
 
       setIsGenerating(true);
       setGenerationError(null);
+      setQuotaError(null);
       abortRef.current = new AbortController();
 
       const batchId = crypto.randomUUID();
@@ -908,8 +917,20 @@ export function ExplorerCanvas({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Error banner */}
-      {generationError && (
+      {/* Credit exhaustion prompt */}
+      {quotaError && orgSlug && (
+        <div className="mx-4 mt-4">
+          <UpgradePrompt
+            orgSlug={orgSlug}
+            remaining={quotaError.remaining}
+            message={quotaError.message}
+            onDismiss={() => setQuotaError(null)}
+          />
+        </div>
+      )}
+
+      {/* Error banner (non-quota errors) */}
+      {generationError && !quotaError && (
         <div className="mx-4 mt-4 flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3">
           <p className="flex-1 text-xs text-red-300">
             {generationError}

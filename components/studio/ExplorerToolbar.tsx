@@ -502,9 +502,7 @@ export function ExplorerToolbar({
                     : m.byokOnly && !hasAnthropicKey;
                   const creditLabel = m.byokOnly
                     ? ""
-                    : m.creditCost > 1
-                    ? ` (${m.creditCost} credits)`
-                    : " (1 credit)";
+                    : ` (${m.creditCost}/variant)`;
                   return (
                     <option
                       key={m.id}
@@ -518,6 +516,18 @@ export function ExplorerToolbar({
               </select>
               <ChevronDown size={10} className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
             </div>
+            {/* Total credit cost */}
+            {(() => {
+              const selectedModel = modelOptions.find((m) => m.id === modelId);
+              const perVariant = selectedModel?.creditCost ?? 1;
+              const total = perVariant * variantCount;
+              if (selectedModel?.byokOnly) return null;
+              return (
+                <span className="text-[10px] text-[var(--text-muted)]">
+                  = {total} credit{total !== 1 ? "s" : ""}
+                </span>
+              );
+            })()}
             {(!hasAnthropicKey || !hasGoogleKey) && orgSlug && (
               <Link
                 href={`/${orgSlug}/settings/api-keys`}
