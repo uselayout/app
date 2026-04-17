@@ -6,6 +6,7 @@ import type {
 import type { ExtractionResult, ExtractedToken, ProjectStandardisation } from "@/lib/types";
 import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
 import { isTransientError, friendlyApiError } from "@/lib/api-error";
+import { buildLayoutDigest } from "./layout-digest";
 
 const SYSTEM_PROMPT = `You are a design system architect synthesizing extracted design data into a layout.md context file. This file will be consumed by AI coding agents (Claude Code, Cursor, Copilot) to generate pixel-accurate UI components.
 
@@ -48,7 +49,8 @@ OUTPUT FORMAT RULES:
 The layout.md section structure:
 
 ## 0. Quick Reference
-50-75 lines. Standalone injectable — copy-pasteable into CLAUDE.md or .cursorrules.
+HARD LIMIT: 75 lines max from the "## 0. Quick Reference" heading to the next "## 1." heading. If you approach 75 lines, cut — do not exceed. Content over the cap will be trimmed post-hoc and the reader will lose it.
+Standalone injectable — copy-pasteable into CLAUDE.md or .cursorrules.
 Structure: [1] Stack & styling approach + token source [2] Core tokens in ONE fenced CSS code block [3] ONE real component example in a tsx code block [4] 5-8 critical prohibitions as NEVER rules [5] "Full design system → see layout.md" link.
 This section alone must produce significantly better AI output than no context at all.
 
@@ -70,12 +72,13 @@ Base unit. Complete spacing scale. Grid system and breakpoints. Container widths
 Format as CSS code block.
 
 ## 5. Page Structure & Layout Patterns
-Derived from visual analysis of the page screenshots (if provided).
-5.1 Section Map: ordered table — section name, layout type, approximate height, key elements. This is the actual structure of the extracted page that agents MUST follow when building UI for this design system.
-5.2 Layout Patterns: how each section is laid out (grid, flex, full-width vs contained, column ratios, asymmetric splits).
-5.3 Visual Hierarchy: what is visually prominent, CTA placement, image positions, whitespace rhythm between sections.
+Derived from page screenshots when provided, otherwise from the LAYOUT DIGEST block below
+(auto-layout patterns, computed structural styles, component inventory, CTA census, breakpoints).
+5.1 Section Map: ordered table — section name, layout type, approximate height, key elements. With screenshots, base this on the real page; without, infer probable sections from the digest and the component inventory (nav, hero, feature grid, testimonials, pricing, CTA, footer etc.) and mark inferred rows with "(inferred)".
+5.2 Layout Patterns: how each section is laid out (grid, flex, full-width vs contained, column ratios). Anchor column ratios and gap sizes to the digest's computed-style values.
+5.3 Visual Hierarchy: what is visually prominent, CTA placement, image positions, whitespace rhythm between sections. Anchor CTA colour to the digest's button colour census.
 5.4 Content Patterns: repeating text/image/CTA arrangements that agents should replicate.
-If no screenshots are provided, omit this section entirely.
+If there are no screenshots AND no layout digest, omit this section entirely.
 
 ## 6. Component Patterns
 5-10 key components. Each MUST include:
@@ -485,6 +488,16 @@ function buildUserContent(
   }
 
   const hasScreenshots = data.screenshots.length > 0;
+  const layoutDigest = buildLayoutDigest(data);
+  const hasSection5 = hasScreenshots || layoutDigest !== null;
+
+  if (layoutDigest) {
+    sections.push(
+      `--- LAYOUT DIGEST ---\n` +
+      `Structural signals extracted from the source. When no page screenshots are supplied this is the authoritative source for Section 5 (Page Structure & Layout Patterns). Anchor probable section ordering, column ratios, gap sizes, and CTA colour to the digest rather than inventing generic defaults.\n` +
+      layoutDigest
+    );
+  }
 
   sections.push(
     `Generate a complete layout.md following the Layout specification:\n` +
@@ -493,7 +506,9 @@ function buildUserContent(
     `2. Colour System (three-tier: primitives → semantic → component)\n` +
     `3. Typography System (composite groups, never isolated properties)\n` +
     `4. Spacing & Layout\n` +
-    (hasScreenshots ? `5. Page Structure & Layout Patterns (from screenshots — section map, layout patterns, visual hierarchy, content patterns)\n` : "") +
+    (hasSection5
+      ? `5. Page Structure & Layout Patterns (${hasScreenshots ? "from screenshots" : "from layout digest"} — section map, layout patterns, visual hierarchy, content patterns)\n`
+      : "") +
     `6. Component Patterns (with code examples and full state coverage)\n` +
     `7. Elevation & Depth\n` +
     `8. Motion\n` +
@@ -525,7 +540,16 @@ function buildUserContent(
       type: "text",
       text: "Analyse the screenshots above to write Section 5 (Page Structure & Layout Patterns). " +
         "Document the actual page sections in order, their layout patterns, visual hierarchy, and content arrangements. " +
+        "Cross-reference the LAYOUT DIGEST to anchor column ratios, gap sizes, and CTA colours. " +
         "This section is critical — AI agents will use it to replicate the real page structure instead of generating generic layouts.",
+    });
+  } else if (layoutDigest) {
+    contentBlocks.push({
+      type: "text",
+      text: "No screenshots available. Write Section 5 (Page Structure & Layout Patterns) from the LAYOUT DIGEST above. " +
+        "Infer the likely section ordering from the component inventory and the probable-sections line, then anchor column ratios, gap sizes, and CTA colours to the computed-style and button-census values in the digest. " +
+        "Mark rows that are inferred rather than visually confirmed with \"(inferred)\" in the section map. " +
+        "Do not invent generic placeholder layouts.",
     });
   }
 

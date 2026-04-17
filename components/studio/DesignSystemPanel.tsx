@@ -15,7 +15,7 @@ import { ComponentsView } from "./design-system/ComponentsView";
 import { CuratedTokenView } from "./design-system/CuratedTokenView";
 import { FontManager } from "./FontManager";
 import { useOrgStore } from "@/lib/store/organization";
-import { standardiseTokens, applyStandardisation } from "@/lib/tokens/standardise";
+import { standardiseTokens } from "@/lib/tokens/standardise";
 import type { StandardisedTokenMap } from "@/lib/tokens/standard-schema";
 import type { ProjectStandardisation } from "@/lib/types";
 
@@ -87,7 +87,6 @@ export function DesignSystemPanel({
     const source = project?.sourceUrl ?? extractionData?.sourceName ?? project?.name ?? "unknown";
     try {
       const tokenMap = standardiseTokens(tokens, source);
-      applyStandardisation(tokens, tokenMap);
 
       const assignments = Object.fromEntries(tokenMap.assignments);
       updateStandardisation(projectId, {
@@ -113,7 +112,6 @@ export function DesignSystemPanel({
     const source = project?.sourceUrl ?? extractionData?.sourceName ?? project?.name ?? "unknown";
     createSnapshot(projectId, "Before re-standardisation");
     const tokenMap = standardiseTokens(tokens, source);
-    applyStandardisation(tokens, tokenMap);
     const serialisable: ProjectStandardisation = {
       kitPrefix: tokenMap.kitPrefix,
       assignments: Object.fromEntries(tokenMap.assignments),

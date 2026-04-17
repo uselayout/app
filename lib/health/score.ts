@@ -157,6 +157,50 @@ export function calculateHealthScore(
     }
   }
 
+  // ── Composite typography coupling ───────────────────────────────────────────
+  // Design systems treat typography as a bundle (family + size + weight +
+  // line-height). Setting font-family without line-height in the same block
+  // leaks away from the composite token and produces inconsistent text.
+  // Matches both kebab-case (CSS) and camelCase (JSX inline style).
+  if (layoutMd && /--[\w-]*(?:typography|typo|text|heading|body)/i.test(layoutMd)) {
+    const fontFamilyRe = /(?:font-family|fontFamily)\s*[:=]\s*[^;{},]+/g;
+    for (const ff of output.matchAll(fontFamilyRe)) {
+      const idx = ff.index ?? 0;
+      const window = output.slice(idx, Math.min(output.length, idx + 400));
+      const hasLineHeight = /line-height\s*[:=]|lineHeight\s*[:=]/i.test(window);
+      const usesTypoToken = /var\(--[^)]*(?:typography|typo|text|heading|body)/i.test(window);
+      if (!hasLineHeight && !usesTypoToken) {
+        score -= 5;
+        issues.push({
+          severity: "warning",
+          rule: "Composite typography",
+          actual: "font-family set without a matching line-height",
+          expected: "Use a composite typography token (family + size + weight + line-height bundled)",
+        });
+        break; // only penalise once
+      }
+    }
+  }
+
+  // ── Multi-mode coverage ────────────────────────────────────────────────────
+  // If the design system defines a dark-mode block, output using colour
+  // tokens should acknowledge dark mode. Warning only.
+  if (layoutMd && /\[data-theme\s*=\s*["']dark["']\]|\.dark\b\s*\{|@media\s*\(\s*prefers-color-scheme\s*:\s*dark/i.test(layoutMd)) {
+    const usesVarTokens = /var\(--/.test(output);
+    if (usesVarTokens) {
+      const acknowledgesMode = /\bdark:|data-theme\s*=\s*["']|className=\{[^}]*dark|prefers-color-scheme/i.test(output);
+      if (!acknowledgesMode) {
+        score -= 5;
+        issues.push({
+          severity: "warning",
+          rule: "Multi-mode coverage",
+          actual: "No dark-mode switch present",
+          expected: "Design system defines dark mode — use Tailwind dark:, data-theme, or prefers-color-scheme",
+        });
+      }
+    }
+  }
+
   // ── Interactive state coverage ──────────────────────────────────────────────
   const interactiveElementPattern = /\b(?:<button|<a\s|<input|<select|<textarea|Button|Link|Input|Select|Textarea)\b/i;
   if (interactiveElementPattern.test(output)) {

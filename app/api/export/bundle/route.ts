@@ -9,6 +9,7 @@ import { generateTokensCss } from "@/lib/export/tokens-css";
 import { generateTokensJson } from "@/lib/export/tokens-json";
 import { generateTailwindConfig } from "@/lib/export/tailwind-config";
 import { logEvent } from "@/lib/logging/platform-event";
+import { buildCuratedExtractedTokens } from "@/lib/tokens/curated-to-extracted";
 import type { Project, ExportFormat, UploadedFont } from "@/lib/types";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -182,21 +183,24 @@ function addFormatToZip(zip: JSZip, format: ExportFormat, project: Project) {
     }
     case "tokens-css": {
       if (project.extractionData?.tokens) {
-        zip.file("tokens.css", generateTokensCss(project.extractionData.tokens));
+        const tokens = buildCuratedExtractedTokens(project.standardisation) ?? project.extractionData.tokens;
+        zip.file("tokens.css", generateTokensCss(tokens));
       }
       break;
     }
     case "tokens-json": {
       if (project.extractionData?.tokens) {
-        zip.file("tokens.json", generateTokensJson(project.extractionData.tokens));
+        const tokens = buildCuratedExtractedTokens(project.standardisation) ?? project.extractionData.tokens;
+        zip.file("tokens.json", generateTokensJson(tokens));
       }
       break;
     }
     case "tailwind-config": {
       if (project.extractionData?.tokens) {
+        const tokens = buildCuratedExtractedTokens(project.standardisation) ?? project.extractionData.tokens;
         zip.file(
           "tailwind.config.js",
-          generateTailwindConfig(project.extractionData.tokens, project.extractionData.breakpoints)
+          generateTailwindConfig(tokens, project.extractionData.breakpoints)
         );
       }
       break;

@@ -30,6 +30,7 @@ import { buildCssTokenBlock } from "@/lib/explore/preview-helpers";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
 import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont, ComparisonResult, ScannedComponent } from "@/lib/types";
+import { formatScannedComponentForPrompt } from "@/lib/claude/scanned-component-prompt";
 
 // Build component context string from scanned + saved components
 function buildComponentContext(
@@ -39,14 +40,12 @@ function buildComponentContext(
   const sections: string[] = [];
 
   if (scannedComponents && scannedComponents.length > 0) {
-    const lines = scannedComponents
-      .slice(0, 50)
-      .map((c) => {
-        const propsStr = c.props.length > 0 ? ` props: ${c.props.join(", ")}` : "";
-        const importPath = c.importPath.startsWith("src/") ? "@/" + c.importPath.slice(4) : c.importPath;
-        return `- ${c.name} (import from '${importPath}')${propsStr}`;
-      });
-    sections.push(`### From Codebase\n${lines.join("\n")}`);
+    const hasStorybook = scannedComponents.some((c) => c.source === "storybook");
+    const entries = scannedComponents.slice(0, 50).map(formatScannedComponentForPrompt);
+    const heading = hasStorybook
+      ? "### From Codebase (with Storybook metadata)\nReuse the listed story variants and arg values before inventing new ones."
+      : "### From Codebase";
+    sections.push(`${heading}\n${entries.join("\n")}`);
   }
 
   if (savedComponents && savedComponents.length > 0) {
@@ -58,7 +57,7 @@ function buildComponentContext(
 
   if (sections.length === 0) return "";
 
-  return `\n\n## Existing Components (REUSE these, do NOT recreate)\n\n${sections.join("\n\n")}\n\nWhen building UI, import existing components instead of generating new ones. Use the exact import paths shown above.`;
+  return `\n\n## Existing Components (REUSE these, do NOT recreate)\n\n${sections.join("\n\n")}\n\nWhen building UI, import existing components instead of generating new ones. Use the exact import paths shown above. If a story variant already exists for what you need, prefer its configured arg values.`;
 }
 
 interface ExplorerCanvasProps {

@@ -8,7 +8,10 @@ import { generateTokensJson } from "@/lib/export/tokens-json";
 import { supabase } from "@/lib/supabase/client";
 
 import { logEvent } from "@/lib/logging/platform-event";
-import type { ExtractionResult } from "@/lib/types";
+import { summariseStorybookMetadata } from "@/lib/claude/scanned-component-prompt";
+import { buildCuratedExtractedTokens } from "@/lib/tokens/curated-to-extracted";
+import { resolveTokenAlias } from "@/lib/tokens/resolve-alias";
+import type { ExtractionResult, ScannedComponent, ProjectStandardisation } from "@/lib/types";
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
 
@@ -186,8 +189,17 @@ async function handleGetComponentWithContext(
     .limit(1)
     .single();
 
-  // Build token context: resolve actual values for tokens this component uses
-  const tokenContext: Array<{ variable: string; value: string; type: string }> = [];
+  // Build token context: resolve actual values for tokens this component uses.
+  // Follows the `reference` chain so primitive-to-semantic aliases return the
+  // concrete value the agent should emit, not an opaque var(--primary) hop.
+  const tokenContext: Array<{
+    variable: string;
+    value: string;
+    type: string;
+    isAlias?: boolean;
+    aliasChain?: string[];
+    partial?: boolean;
+  }> = [];
   if (projectData?.extraction_data && component.tokensUsed.length > 0) {
     const extraction = projectData.extraction_data as ExtractionResult;
     if (extraction.tokens) {
@@ -201,13 +213,15 @@ async function handleGetComponentWithContext(
 
       for (const tokenVar of component.tokensUsed) {
         const found = allTokens.find((t) => t.cssVariable === tokenVar);
-        if (found) {
-          tokenContext.push({
-            variable: tokenVar,
-            value: found.value,
-            type: found.type,
-          });
-        }
+        if (!found) continue;
+        const resolved = resolveTokenAlias(found, allTokens);
+        tokenContext.push({
+          variable: tokenVar,
+          value: resolved.resolvedValue,
+          type: found.type,
+          ...(resolved.isAlias ? { isAlias: true, aliasChain: resolved.chain } : {}),
+          ...(resolved.partial ? { partial: true } : {}),
+        });
       }
     }
   }
@@ -251,10 +265,15 @@ async function handleGetTokens(
   params: Record<string, unknown>
 ) {
   const format = params.format === "json" ? "json" : "css";
+  // source: "curated" (default when curation exists) | "raw" | "both"
+  const requestedSource =
+    params.source === "raw" || params.source === "both" || params.source === "curated"
+      ? (params.source as "curated" | "raw" | "both")
+      : "curated";
 
   const { data, error } = await supabase
     .from("layout_projects")
-    .select("id, name, extraction_data")
+    .select("id, name, extraction_data, standardisation")
     .eq("org_id", orgId)
     .not("extraction_data", "is", null)
     .order("updated_at", { ascending: false })
@@ -270,16 +289,39 @@ async function handleGetTokens(
     return { error: "Extraction data does not contain tokens" };
   }
 
+  const standardisation = (data.standardisation ?? undefined) as
+    | ProjectStandardisation
+    | undefined;
+  const curated = buildCuratedExtractedTokens(standardisation);
+  const effectiveSource: "curated" | "raw" | "both" =
+    requestedSource === "curated" && !curated ? "raw" : requestedSource;
+
+  const render = (tokens: ExtractionResult["tokens"]) =>
+    format === "json" ? generateTokensJson(tokens) : generateTokensCss(tokens);
+
+  if (effectiveSource === "both" && curated) {
+    return {
+      result: {
+        format,
+        source: "both",
+        curatedTokens: render(curated),
+        rawTokens: render(extraction.tokens),
+        projectName: data.name as string,
+        curatedAvailable: true,
+      },
+    };
+  }
+
   const tokens =
-    format === "json"
-      ? generateTokensJson(extraction.tokens)
-      : generateTokensCss(extraction.tokens);
+    effectiveSource === "curated" && curated ? curated : extraction.tokens;
 
   return {
     result: {
-      tokens,
+      tokens: render(tokens),
       format,
+      source: effectiveSource,
       projectName: data.name as string,
+      curatedAvailable: curated !== null,
     },
   };
 }
@@ -356,13 +398,18 @@ async function handleListComponents(
         version: c.version,
         codePreview: c.code.slice(0, 200) + (c.code.length > 200 ? "..." : ""),
       })),
-      codebaseComponents: scannedComponents.map((c) => ({
-        name: c.name,
-        filePath: c.filePath,
-        props: c.props,
-        source: c.source,
-        importPath: c.importPath,
-      })),
+      codebaseComponents: scannedComponents.map((raw) => {
+        const c = raw as unknown as ScannedComponent;
+        const meta = summariseStorybookMetadata(c);
+        return {
+          name: c.name,
+          filePath: c.filePath,
+          props: c.props,
+          source: c.source,
+          importPath: c.importPath,
+          ...meta,
+        };
+      }),
     },
   };
 }
@@ -378,17 +425,91 @@ async function handleCheckCompliance(
 
   const issues: Array<{ rule: string; message: string; severity: "error" | "warning" }> = [];
 
+  // Fetch project extraction data up front — several rules use it.
+  const { data: projectDataForPreChecks } = await supabase
+    .from("layout_projects")
+    .select("extraction_data, layout_md")
+    .eq("org_id", orgId)
+    .not("extraction_data", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .single();
+  const extractionForPreChecks = projectDataForPreChecks?.extraction_data
+    ? (projectDataForPreChecks.extraction_data as ExtractionResult)
+    : null;
+  const layoutMdForChecks = (projectDataForPreChecks?.layout_md ?? "") as string;
+
+  // Normalise hex to long-form lowercase so #fff and #FFFFFF compare equal.
+  const normHex = (h: string) => {
+    const lower = h.toLowerCase();
+    if (lower.length === 4) return `#${lower[1]}${lower[1]}${lower[2]}${lower[2]}${lower[3]}${lower[3]}`;
+    if (lower.length === 5) return `#${lower[1]}${lower[1]}${lower[2]}${lower[2]}${lower[3]}${lower[3]}${lower[4]}${lower[4]}`;
+    return lower;
+  };
+
+  // Build a lookup of hex → token CSS variable so we can suggest the right token
+  // when a hardcoded hex matches a known design-system value.
+  const hexToTokenVar = new Map<string, string>();
+  if (extractionForPreChecks?.tokens?.colors) {
+    for (const t of extractionForPreChecks.tokens.colors) {
+      if (!t.cssVariable || !t.value) continue;
+      const hex = t.value.match(/#[0-9a-fA-F]{3,8}\b/)?.[0];
+      if (hex) {
+        const key = normHex(hex);
+        if (!hexToTokenVar.has(key)) hexToTokenVar.set(key, t.cssVariable);
+      }
+    }
+  }
+
   // Check for hardcoded hex colours (not inside var() calls)
-  const hexPattern = /#[0-9a-fA-F]{3,8}\b/g;
-  let match: RegExpExecArray | null;
-  while ((match = hexPattern.exec(code)) !== null) {
-    // Check if this hex is inside a var() call
-    const before = code.slice(Math.max(0, match.index - 30), match.index);
-    if (!before.includes("var(")) {
+  for (const hit of code.matchAll(/#[0-9a-fA-F]{3,8}\b/g)) {
+    const idx = hit.index ?? 0;
+    const before = code.slice(Math.max(0, idx - 30), idx);
+    if (before.includes("var(")) continue;
+    const suggestion = hexToTokenVar.get(normHex(hit[0]));
+    issues.push({
+      rule: "no-hardcoded-colours",
+      message: suggestion
+        ? `Hardcoded colour "${hit[0]}" — use var(${suggestion}) from the design system instead`
+        : `Hardcoded colour "${hit[0]}" — use a design token instead`,
+      severity: "error",
+    });
+  }
+
+  // ── Rule (new): composite-typography-coupling ─────────────────────────────
+  // When typography tokens exist, CSS that sets font-family without a
+  // line-height (within the same declaration block or style object) leaks
+  // away from composite typography tokens and produces inconsistent text.
+  // Matches both kebab-case (CSS) and camelCase (JSX inline style).
+  if (extractionForPreChecks?.tokens?.typography && extractionForPreChecks.tokens.typography.length > 0) {
+    const fontFamilyRe = /(?:font-family|fontFamily)\s*[:=]\s*[^;{},]+/g;
+    for (const ff of code.matchAll(fontFamilyRe)) {
+      const idx = ff.index ?? 0;
+      const window = code.slice(idx, Math.min(code.length, idx + 400));
+      const hasLineHeight = /line-height\s*[:=]|lineHeight\s*[:=]/i.test(window);
+      const usesTypoToken = /var\(--[^)]*(?:typography|typo|text|heading|body)/i.test(window);
+      if (!hasLineHeight && !usesTypoToken) {
+        issues.push({
+          rule: "composite-typography-coupling",
+          message: `font-family set without an accompanying line-height — use a composite typography token (font-family + size + weight + line-height bundled)`,
+          severity: "warning",
+        });
+      }
+    }
+  }
+
+  // ── Rule (new): multi-mode-coverage ───────────────────────────────────────
+  // If layout.md defines a dark-mode block, code that uses colour tokens
+  // should acknowledge dark mode (either via Tailwind dark:, data-theme, or
+  // a prefers-color-scheme query). Warning only — not every snippet needs it.
+  const hasDarkModeInLayoutMd = /\[data-theme\s*=\s*["']dark["']\]|\.dark\b\s*\{|@media\s*\(\s*prefers-color-scheme\s*:\s*dark/i.test(layoutMdForChecks);
+  if (hasDarkModeInLayoutMd && /var\(--/.test(code)) {
+    const acknowledgesMode = /\bdark:|data-theme\s*=\s*["']|className=\{[^}]*dark|prefers-color-scheme/i.test(code);
+    if (!acknowledgesMode) {
       issues.push({
-        rule: "no-hardcoded-colours",
-        message: `Hardcoded colour "${match[0]}" — use a design token instead`,
-        severity: "error",
+        rule: "multi-mode-coverage",
+        message: "Design system defines a dark mode but this code contains no dark-mode switch (Tailwind `dark:` variant, data-theme, or prefers-color-scheme). Confirm the component works in both modes.",
+        severity: "warning",
       });
     }
   }
@@ -411,19 +532,8 @@ async function handleCheckCompliance(
     });
   }
 
-  // Fetch project extraction data (used by multiple rules)
-  const { data: projectData } = await supabase
-    .from("layout_projects")
-    .select("extraction_data")
-    .eq("org_id", orgId)
-    .not("extraction_data", "is", null)
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .single();
-
-  const extraction = projectData?.extraction_data
-    ? (projectData.extraction_data as ExtractionResult)
-    : null;
+  // Reuse the extraction fetched at the top of the handler.
+  const extraction = extractionForPreChecks;
 
   // ── Rule 4: unknown-token ───────────────────────────────────────────────
   // Extract var() references and compare against known tokens
