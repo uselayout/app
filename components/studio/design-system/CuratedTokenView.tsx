@@ -138,15 +138,15 @@ export function CuratedTokenView({
     []
   );
 
-  // Build a lookup from role key to the actual token
+  // Build a lookup from role key to the actual token.
+  // Match by cssVariable/name only — NOT by value. The assignment's value field is
+  // a frozen snapshot from assign-time; if the token's value legitimately changes
+  // (parser correction, user edit, etc.) we still want the role to resolve.
   const roleTokenMap = useMemo(() => {
     const map = new Map<string, ExtractedToken>();
     for (const [roleKey, assignment] of Object.entries(assignments)) {
-      const token = allTokens.find(
-        (t) =>
-          (t.cssVariable ?? t.name) === (assignment.originalCssVariable ?? assignment.originalName) &&
-          t.value === assignment.value
-      );
+      const target = assignment.originalCssVariable ?? assignment.originalName;
+      const token = allTokens.find((t) => (t.cssVariable ?? t.name) === target);
       if (token) {
         map.set(roleKey, token);
       }

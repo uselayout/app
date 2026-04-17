@@ -477,18 +477,18 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
         // Also drop any standardisation assignments that pointed at a removed token,
         // otherwise the curated-tokens sync would re-emit the standard-name declaration
         // into layout.md and syncTokensFromLayoutMd would resurrect the colour on reload.
+        // Match on cssVariable/name only — the assignment's `value` can be stale (see
+        // syncTokensFromLayoutMd reconciliation) so comparing values would miss matches.
         let standardisation = p.standardisation;
         const removedStandardNames: string[] = [];
         if (standardisation) {
           const nextAssignments = { ...standardisation.assignments };
-          for (const t of removed) {
-            const key = t.cssVariable ?? t.name;
-            for (const [roleKey, a] of Object.entries(nextAssignments)) {
-              const aKey = a.originalCssVariable ?? a.originalName;
-              if (aKey === key && a.value === t.value) {
-                removedStandardNames.push(a.standardName);
-                delete nextAssignments[roleKey];
-              }
+          const removedKeys = new Set(removed.map((t) => t.cssVariable ?? t.name));
+          for (const [roleKey, a] of Object.entries(nextAssignments)) {
+            const aKey = a.originalCssVariable ?? a.originalName;
+            if (removedKeys.has(aKey)) {
+              removedStandardNames.push(a.standardName);
+              delete nextAssignments[roleKey];
             }
           }
           standardisation = { ...standardisation, assignments: nextAssignments };
@@ -653,6 +653,38 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       mergedTokens.radius.length +
       mergedTokens.effects.length;
 
+    // Reconcile assignment values against the (possibly updated) tokens. Without this,
+    // role assignments keep frozen values from assign-time (e.g. "var(--orange-500)")
+    // and syncCuratedTokensToLayoutMd would re-emit those stale refs into layout.md
+    // even though the token itself now resolves to a concrete hex.
+    let reconciledStandardisation = project.standardisation;
+    if (reconciledStandardisation) {
+      const allMerged: ExtractedToken[] = [
+        ...mergedTokens.colors,
+        ...mergedTokens.typography,
+        ...mergedTokens.spacing,
+        ...mergedTokens.radius,
+        ...mergedTokens.effects,
+        ...mergedTokens.motion,
+      ];
+      const byKey = new Map<string, ExtractedToken>();
+      for (const t of allMerged) byKey.set(t.cssVariable ?? t.name, t);
+
+      const nextAssignments = { ...reconciledStandardisation.assignments };
+      let changed = false;
+      for (const [roleKey, a] of Object.entries(nextAssignments)) {
+        const target = a.originalCssVariable ?? a.originalName;
+        const token = byKey.get(target);
+        if (token && token.value !== a.value) {
+          nextAssignments[roleKey] = { ...a, value: token.value };
+          changed = true;
+        }
+      }
+      if (changed) {
+        reconciledStandardisation = { ...reconciledStandardisation, assignments: nextAssignments };
+      }
+    }
+
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === id
@@ -660,6 +692,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
               ...p,
               extractionData: mergedData,
               tokenCount: newCount,
+              standardisation: reconciledStandardisation,
               updatedAt: new Date().toISOString(),
             }
           : p
@@ -740,9 +773,11 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           confidence: "high" as const,
           userConfirmed: true,
         };
-        // Remove from unassigned
+        // Remove from unassigned. Match by cssVariable/name only — values can drift
+        // (stored unassigned values may be stale var() refs vs current hex).
+        const assignedKey = tokenCssVariable ?? tokenName;
         s.unassigned = s.unassigned.filter(
-          (u) => !((u.cssVariable ?? u.name) === (tokenCssVariable ?? tokenName) && u.value === tokenValue)
+          (u) => (u.cssVariable ?? u.name) !== assignedKey
         );
         // Sync to layout.md
         const updatedMd = syncCuratedTokensToLayoutMd(p.layoutMd, s);
