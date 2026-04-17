@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase/client";
 import { logEvent } from "@/lib/logging/platform-event";
 import { summariseStorybookMetadata } from "@/lib/claude/scanned-component-prompt";
 import { buildCuratedExtractedTokens } from "@/lib/tokens/curated-to-extracted";
+import { resolveTokenAlias } from "@/lib/tokens/resolve-alias";
 import type { ExtractionResult, ScannedComponent, ProjectStandardisation } from "@/lib/types";
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
@@ -188,8 +189,17 @@ async function handleGetComponentWithContext(
     .limit(1)
     .single();
 
-  // Build token context: resolve actual values for tokens this component uses
-  const tokenContext: Array<{ variable: string; value: string; type: string }> = [];
+  // Build token context: resolve actual values for tokens this component uses.
+  // Follows the `reference` chain so primitive-to-semantic aliases return the
+  // concrete value the agent should emit, not an opaque var(--primary) hop.
+  const tokenContext: Array<{
+    variable: string;
+    value: string;
+    type: string;
+    isAlias?: boolean;
+    aliasChain?: string[];
+    partial?: boolean;
+  }> = [];
   if (projectData?.extraction_data && component.tokensUsed.length > 0) {
     const extraction = projectData.extraction_data as ExtractionResult;
     if (extraction.tokens) {
@@ -203,13 +213,15 @@ async function handleGetComponentWithContext(
 
       for (const tokenVar of component.tokensUsed) {
         const found = allTokens.find((t) => t.cssVariable === tokenVar);
-        if (found) {
-          tokenContext.push({
-            variable: tokenVar,
-            value: found.value,
-            type: found.type,
-          });
-        }
+        if (!found) continue;
+        const resolved = resolveTokenAlias(found, allTokens);
+        tokenContext.push({
+          variable: tokenVar,
+          value: resolved.resolvedValue,
+          type: found.type,
+          ...(resolved.isAlias ? { isAlias: true, aliasChain: resolved.chain } : {}),
+          ...(resolved.partial ? { partial: true } : {}),
+        });
       }
     }
   }
