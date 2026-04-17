@@ -9,6 +9,7 @@ import { generateTokensCss } from "@/lib/export/tokens-css";
 import { generateTokensJson } from "@/lib/export/tokens-json";
 import { generateTailwindConfig } from "@/lib/export/tailwind-config";
 import { logEvent } from "@/lib/logging/platform-event";
+import { buildCuratedExtractedTokens } from "@/lib/tokens/curated-to-extracted";
 
 const QuerySchema = z.object({
   projectId: z.string().uuid().optional(),
@@ -93,7 +94,8 @@ export async function GET(request: Request) {
     files[".cursor/rules/components.mdc"] = rules.components;
   }
 
-  const tokens = project.extractionData?.tokens;
+  const rawTokens = project.extractionData?.tokens;
+  const tokens = buildCuratedExtractedTokens(project.standardisation) ?? rawTokens;
 
   if (formats.includes("tokens-css") && tokens) {
     files["tokens.css"] = generateTokensCss(tokens);

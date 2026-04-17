@@ -9,7 +9,8 @@ import { supabase } from "@/lib/supabase/client";
 
 import { logEvent } from "@/lib/logging/platform-event";
 import { summariseStorybookMetadata } from "@/lib/claude/scanned-component-prompt";
-import type { ExtractionResult, ScannedComponent } from "@/lib/types";
+import { buildCuratedExtractedTokens } from "@/lib/tokens/curated-to-extracted";
+import type { ExtractionResult, ScannedComponent, ProjectStandardisation } from "@/lib/types";
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
 
@@ -252,10 +253,15 @@ async function handleGetTokens(
   params: Record<string, unknown>
 ) {
   const format = params.format === "json" ? "json" : "css";
+  // source: "curated" (default when curation exists) | "raw" | "both"
+  const requestedSource =
+    params.source === "raw" || params.source === "both" || params.source === "curated"
+      ? (params.source as "curated" | "raw" | "both")
+      : "curated";
 
   const { data, error } = await supabase
     .from("layout_projects")
-    .select("id, name, extraction_data")
+    .select("id, name, extraction_data, standardisation")
     .eq("org_id", orgId)
     .not("extraction_data", "is", null)
     .order("updated_at", { ascending: false })
@@ -271,16 +277,39 @@ async function handleGetTokens(
     return { error: "Extraction data does not contain tokens" };
   }
 
+  const standardisation = (data.standardisation ?? undefined) as
+    | ProjectStandardisation
+    | undefined;
+  const curated = buildCuratedExtractedTokens(standardisation);
+  const effectiveSource: "curated" | "raw" | "both" =
+    requestedSource === "curated" && !curated ? "raw" : requestedSource;
+
+  const render = (tokens: ExtractionResult["tokens"]) =>
+    format === "json" ? generateTokensJson(tokens) : generateTokensCss(tokens);
+
+  if (effectiveSource === "both" && curated) {
+    return {
+      result: {
+        format,
+        source: "both",
+        curatedTokens: render(curated),
+        rawTokens: render(extraction.tokens),
+        projectName: data.name as string,
+        curatedAvailable: true,
+      },
+    };
+  }
+
   const tokens =
-    format === "json"
-      ? generateTokensJson(extraction.tokens)
-      : generateTokensCss(extraction.tokens);
+    effectiveSource === "curated" && curated ? curated : extraction.tokens;
 
   return {
     result: {
-      tokens,
+      tokens: render(tokens),
       format,
+      source: effectiveSource,
       projectName: data.name as string,
+      curatedAvailable: curated !== null,
     },
   };
 }
