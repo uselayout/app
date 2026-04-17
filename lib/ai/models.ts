@@ -226,3 +226,74 @@ export async function isModelByokOnly(modelId: string): Promise<boolean> {
   const model = await getModelById(modelId);
   return model?.byokOnly ?? false;
 }
+
+// ─── Task defaults ───────────────────────────────────────────────────────────
+
+export type AiTask = "extraction" | "editor" | "simple-edit";
+
+const TASK_FALLBACKS: Record<AiTask, string> = {
+  extraction: "claude-sonnet-4-6",
+  editor: "claude-sonnet-4-6",
+  "simple-edit": "claude-haiku-4-5-20251001",
+};
+
+let cachedTaskDefaults: Record<string, string> | null = null;
+let taskCacheTimestamp = 0;
+
+/** Clear task defaults cache (after admin update). */
+export function invalidateTaskDefaultsCache(): void {
+  cachedTaskDefaults = null;
+  taskCacheTimestamp = 0;
+}
+
+/**
+ * Get the model ID configured for a given task.
+ * Reads from `layout_ai_task_defaults` table (cached 60s).
+ * Falls back to hardcoded defaults if DB is unreachable.
+ */
+export async function getTaskModelId(task: AiTask): Promise<string> {
+  if (cachedTaskDefaults && Date.now() - taskCacheTimestamp < CACHE_TTL_MS) {
+    return cachedTaskDefaults[task] ?? TASK_FALLBACKS[task];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("layout_ai_task_defaults")
+      .select("task, model_id");
+
+    if (error || !data) {
+      return TASK_FALLBACKS[task];
+    }
+
+    cachedTaskDefaults = {};
+    for (const row of data as Array<{ task: string; model_id: string }>) {
+      cachedTaskDefaults[row.task] = row.model_id;
+    }
+    taskCacheTimestamp = Date.now();
+
+    return cachedTaskDefaults[task] ?? TASK_FALLBACKS[task];
+  } catch {
+    return TASK_FALLBACKS[task];
+  }
+}
+
+/** Get all task defaults (for admin panel). */
+export async function getAllTaskDefaults(): Promise<Array<{ task: string; modelId: string }>> {
+  try {
+    const { data, error } = await supabase
+      .from("layout_ai_task_defaults")
+      .select("task, model_id, updated_at")
+      .order("task");
+
+    if (error || !data) {
+      return Object.entries(TASK_FALLBACKS).map(([task, modelId]) => ({ task, modelId }));
+    }
+
+    return (data as Array<{ task: string; model_id: string }>).map((row) => ({
+      task: row.task,
+      modelId: row.model_id,
+    }));
+  } catch {
+    return Object.entries(TASK_FALLBACKS).map(([task, modelId]) => ({ task, modelId }));
+  }
+}

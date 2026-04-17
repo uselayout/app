@@ -10,6 +10,7 @@ import { getClientIp } from "@/lib/get-client-ip";
 import { logApiCall } from "@/lib/logging/api-log";
 import type { StyleEdit, ElementAnnotation } from "@/lib/types";
 import type { AiMode } from "@/lib/types/billing";
+import { getTaskModelId } from "@/lib/ai/models";
 
 const StyleEditSchema = z.object({
   elementId: z.string(),
@@ -113,7 +114,9 @@ export async function POST(request: NextRequest) {
   // Use Haiku for simple style edits (1-3 property changes, no annotations)
   // Annotations and complex edits still use Sonnet for better reasoning
   const isSimpleEdit = styleEdits && styleEdits.length <= 3 && !annotations?.length;
-  const model = isSimpleEdit ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-6";
+  const model = isSimpleEdit
+    ? await getTaskModelId("simple-edit")
+    : await getTaskModelId("editor");
   const maxTokens = isSimpleEdit ? 8_000 : 32_000;
   const timeout = isSimpleEdit ? 30_000 : 90_000;
 

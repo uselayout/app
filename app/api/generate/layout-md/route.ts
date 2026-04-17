@@ -13,6 +13,7 @@ import { logEvent } from "@/lib/logging/platform-event";
 import { fetchProjectById } from "@/lib/supabase/db";
 import type { ExtractionResult, ExtractedToken } from "@/lib/types";
 import type { AiMode } from "@/lib/types/billing";
+import { getTaskModelId } from "@/lib/ai/models";
 
 // Allow large request bodies for screenshot data (base64 images can be 2-5MB each)
 export const maxDuration = 120;
@@ -191,7 +192,8 @@ export async function POST(request: NextRequest) {
 
     const streamController = registerStream();
     const startTime = Date.now();
-    const { stream, usage } = createLayoutMdStream(extractionData, apiKey, parsed.data.standardisation);
+    const extractionModelId = await getTaskModelId("extraction");
+    const { stream, usage } = createLayoutMdStream(extractionData, apiKey, parsed.data.standardisation, extractionModelId);
 
     const apiLogMetadata = {
       projectId: parsed.data.projectId,
@@ -218,7 +220,7 @@ export async function POST(request: NextRequest) {
           endpoint: "layout-md",
           mode,
           usage: u,
-          model: "claude-sonnet-4-6",
+          model: extractionModelId,
         });
       })
       .catch(async (err) => {

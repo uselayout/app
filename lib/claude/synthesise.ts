@@ -535,7 +535,8 @@ function buildUserContent(
 export function createLayoutMdStream(
   extractionData: ExtractionResult,
   apiKey?: string,
-  standardisation?: ProjectStandardisation
+  standardisation?: ProjectStandardisation,
+  modelId: string = "claude-sonnet-4-6"
 ): StreamWithUsage {
   const anthropic = new Anthropic(apiKey ? { apiKey } : {});
   const userContent = buildUserContent(extractionData, standardisation);
@@ -571,7 +572,7 @@ export function createLayoutMdStream(
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
           try {
             const msgStream = anthropic.messages.stream({
-              model: "claude-sonnet-4-6",
+              model: modelId,
               max_tokens: 16384,
               system: SYSTEM_PROMPT,
               messages: [{ role: "user", content: userContent }],

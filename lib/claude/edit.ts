@@ -16,7 +16,8 @@ RULES:
 export function createEditStream(
   instruction: string,
   layoutMd: string,
-  apiKey?: string
+  apiKey?: string,
+  modelId: string = "claude-sonnet-4-6"
 ): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
 
@@ -31,7 +32,7 @@ export function createEditStream(
 
       try {
         const msgStream = anthropic.messages.stream({
-          model: "claude-sonnet-4-6",
+          model: modelId,
           max_tokens: 32768,
           system: SYSTEM_PROMPT,
           messages: [
@@ -83,7 +84,8 @@ RULES:
 export function createFixStream(
   instruction: string,
   layoutMd: string,
-  apiKey?: string
+  apiKey?: string,
+  modelId: string = "claude-sonnet-4-6"
 ): StreamWithUsage {
   const anthropic = new Anthropic({ apiKey });
 
@@ -98,7 +100,7 @@ export function createFixStream(
 
       try {
         const msgStream = anthropic.messages.stream({
-          model: "claude-sonnet-4-6",
+          model: modelId,
           max_tokens: 8192,
           system: FIX_SYSTEM_PROMPT,
           messages: [

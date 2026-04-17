@@ -17,6 +17,17 @@ interface AiModelRow {
   sortOrder: number;
 }
 
+interface TaskDefault {
+  task: string;
+  modelId: string;
+}
+
+const TASK_LABELS: Record<string, string> = {
+  extraction: "Extraction (layout.md synthesis)",
+  editor: "Editor (edit / fix layout.md)",
+  "simple-edit": "Simple edits (inspector style changes)",
+};
+
 interface CostStats {
   totalCost: number;
   totalInputTokens: number;
@@ -44,6 +55,7 @@ const emptyModel: AiModelRow = {
 export function AIModelsTab({ toast }: { toast: (msg: string, type?: "success" | "error") => void }) {
   const [models, setModels] = useState<AiModelRow[]>([]);
   const [costByModel, setCostByModel] = useState<Record<string, CostStats>>({});
+  const [taskDefaults, setTaskDefaults] = useState<TaskDefault[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<AiModelRow>>({});
@@ -59,6 +71,7 @@ export function AIModelsTab({ toast }: { toast: (msg: string, type?: "success" |
       const data = await res.json();
       setModels(data.models ?? []);
       setCostByModel(data.costByModel ?? {});
+      setTaskDefaults(data.taskDefaults ?? []);
     } catch {
       // ignore
     } finally {
@@ -170,6 +183,25 @@ export function AIModelsTab({ toast }: { toast: (msg: string, type?: "success" |
       if (res.ok) fetchModels();
     } catch {
       // ignore
+    }
+  };
+
+  const handleTaskDefaultChange = async (task: string, modelId: string) => {
+    try {
+      const res = await fetch("/api/admin/ai-models", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task, modelId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast(data.error ?? "Failed to update", "error");
+        return;
+      }
+      toast(data.message, "success");
+      fetchModels();
+    } catch {
+      toast("Network error", "error");
     }
   };
 
@@ -474,6 +506,43 @@ export function AIModelsTab({ toast }: { toast: (msg: string, type?: "success" |
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Task defaults */}
+      <div
+        className="rounded-lg overflow-hidden"
+        style={{ border: "1px solid var(--studio-border)" }}
+      >
+        <div className="px-5 py-3" style={{ background: "var(--bg-surface)" }}>
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Task Defaults</h3>
+          <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
+            Which model is used for each task. Changes take effect within 60 seconds.
+          </p>
+        </div>
+        <div style={{ background: "var(--bg-panel)" }}>
+          {taskDefaults.map((td) => (
+            <div
+              key={td.task}
+              className="flex items-center justify-between px-5 py-3 text-xs"
+              style={{ borderBottom: "1px solid var(--studio-border)" }}
+            >
+              <span className="text-[var(--text-primary)] font-medium">
+                {TASK_LABELS[td.task] ?? td.task}
+              </span>
+              <select
+                value={td.modelId}
+                onChange={(e) => handleTaskDefaultChange(td.task, e.target.value)}
+                className="appearance-none rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] outline-none cursor-pointer"
+              >
+                {models.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
         </div>
       </div>
     </div>

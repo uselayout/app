@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/api/admin-context";
 import { supabase } from "@/lib/supabase/client";
-import { invalidateModelCache } from "@/lib/ai/models";
+import { invalidateModelCache, invalidateTaskDefaultsCache, getAllTaskDefaults } from "@/lib/ai/models";
 
 const ModelSchema = z.object({
   id: z.string().min(1).max(100),
@@ -102,7 +102,10 @@ export async function GET(request: NextRequest) {
     costByModel[m].count += 1;
   }
 
-  return NextResponse.json({ models, costByModel });
+  // Fetch task defaults
+  const taskDefaults = await getAllTaskDefaults();
+
+  return NextResponse.json({ models, costByModel, taskDefaults });
 }
 
 /** POST: Add a new model */
@@ -229,4 +232,43 @@ export async function DELETE(request: NextRequest) {
 
   invalidateModelCache();
   return NextResponse.json({ message: `Model ${id} deleted` });
+}
+
+/** PATCH: Update task defaults */
+export async function PATCH(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const schema = z.object({
+    task: z.string().min(1),
+    modelId: z.string().min(1),
+  });
+
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+  }
+
+  const { task, modelId } = parsed.data;
+
+  const { error } = await supabase
+    .from("layout_ai_task_defaults")
+    .upsert(
+      { task, model_id: modelId, updated_at: new Date().toISOString() },
+      { onConflict: "task" }
+    );
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  invalidateTaskDefaultsCache();
+  return NextResponse.json({ message: `Task "${task}" now uses ${modelId}` });
 }
