@@ -6,7 +6,7 @@ import { useProjectStore } from "@/lib/store/project";
 import { getStoredApiKey, getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
 import { useOrgStore } from "@/lib/store/organization";
 import type { ExtractionResult, ExtractedComponent, Project, ProjectStandardisation } from "@/lib/types";
-import { standardiseTokens, applyStandardisation } from "@/lib/tokens/standardise";
+import { standardiseTokens } from "@/lib/tokens/standardise";
 import { capQuickReferenceInLayoutMd } from "@/lib/claude/layout-md-cap";
 
 export function useExtraction() {
@@ -146,7 +146,6 @@ export function useExtraction() {
         try {
           const source = project.sourceUrl ?? project.name;
           const tokenMap = standardiseTokens(extractionData.tokens, source);
-          applyStandardisation(extractionData.tokens, tokenMap);
           standardisationData = {
             kitPrefix: tokenMap.kitPrefix,
             assignments: Object.fromEntries(tokenMap.assignments),

@@ -637,50 +637,21 @@ function parsePixelValue(value: string): number | null {
 }
 
 // ---------------------------------------------------------------------------
-// Apply standardisation to extraction tokens (mutates in place)
+// (removed) applyStandardisation
+//
+// Previously this function mutated extraction tokens in place, stamping
+// standardRole / standardName / standardConfidence fields derived from the
+// StandardisedTokenMap. That mutation was the source of the re-run overwrite
+// bug called out in the enterprise audit: a second standardisation pass
+// would silently overwrite the previous role stamps with no rollback.
+//
+// The project.standardisation.assignments map is the canonical source of
+// truth for curated role data. Consumers (curated view, synthesis prompt,
+// MCP get_tokens, exports via buildCuratedExtractedTokens) read from there
+// rather than from the stamped token fields. The ExtractedToken fields are
+// retained for backward compatibility with persisted projects that still
+// carry them, but are no longer written at runtime.
 // ---------------------------------------------------------------------------
-
-/**
- * Apply a StandardisedTokenMap back to the extraction tokens,
- * setting standardRole, standardName, and standardConfidence fields.
- */
-export function applyStandardisation(
-  tokens: ExtractedTokens,
-  tokenMap: StandardisedTokenMap
-): void {
-  const allTokenArrays = [
-    tokens.colors,
-    tokens.typography,
-    tokens.spacing,
-    tokens.radius,
-    tokens.effects,
-    tokens.motion,
-  ];
-
-  // Build a lookup from original name → assignment
-  const assignmentByOriginal = new Map<string, TokenAssignment>();
-  for (const assignment of tokenMap.assignments.values()) {
-    const key = `${assignment.originalCssVariable ?? assignment.originalName}::${assignment.value}`;
-    assignmentByOriginal.set(key, assignment);
-  }
-
-  // Build a lookup for hidden tokens
-  const hiddenKeys = new Set(
-    tokenMap.unassigned.filter((u) => u.hidden).map((u) => `${u.cssVariable ?? u.name}::${u.value}`)
-  );
-
-  for (const tokenArray of allTokenArrays) {
-    for (const token of tokenArray) {
-      const key = `${token.cssVariable ?? token.name}::${token.value}`;
-      const assignment = assignmentByOriginal.get(key);
-      if (assignment) {
-        token.standardRole = assignment.roleKey;
-        token.standardName = assignment.standardName;
-        token.standardConfidence = assignment.confidence;
-      }
-    }
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Single-token matching (used when a user adds a token after initial standardisation)
