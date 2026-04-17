@@ -473,16 +473,43 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           tokens.spacing.length +
           tokens.radius.length +
           tokens.effects.length;
-        // Sync layout.md: remove each deleted token's declaration from the CORE TOKENS block
+
+        // Also drop any standardisation assignments that pointed at a removed token,
+        // otherwise the curated-tokens sync would re-emit the standard-name declaration
+        // into layout.md and syncTokensFromLayoutMd would resurrect the colour on reload.
+        let standardisation = p.standardisation;
+        const removedStandardNames: string[] = [];
+        if (standardisation) {
+          const nextAssignments = { ...standardisation.assignments };
+          for (const t of removed) {
+            const key = t.cssVariable ?? t.name;
+            for (const [roleKey, a] of Object.entries(nextAssignments)) {
+              const aKey = a.originalCssVariable ?? a.originalName;
+              if (aKey === key && a.value === t.value) {
+                removedStandardNames.push(a.standardName);
+                delete nextAssignments[roleKey];
+              }
+            }
+          }
+          standardisation = { ...standardisation, assignments: nextAssignments };
+        }
+
+        // Strip declarations from layout.md: original cssVariable AND any standardName
+        // the removed tokens had (otherwise the Core Tokens block keeps them).
         let layoutMd = p.layoutMd;
         for (const t of removed) {
           layoutMd = removeTokenFromLayoutMd(layoutMd, { name: t.name, cssVariable: t.cssVariable });
         }
+        for (const stdName of removedStandardNames) {
+          layoutMd = removeTokenFromLayoutMd(layoutMd, { name: stdName.replace(/^--/, ""), cssVariable: stdName });
+        }
+
         return {
           ...p,
           extractionData: { ...p.extractionData, tokens },
           layoutMd,
           tokenCount,
+          standardisation,
           updatedAt: new Date().toISOString(),
         };
       }),

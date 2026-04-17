@@ -7,7 +7,6 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import type { StandardRole } from "@/lib/tokens/standard-schema";
-import type { ProjectStandardisation } from "@/lib/types";
 
 interface UnassignedItem {
   name: string;
@@ -15,18 +14,21 @@ interface UnassignedItem {
   value: string;
   type: string;
   hidden: boolean;
+  /** Optional: existing role label this token is already assigned to. */
+  assignedToRole?: string;
 }
 
 interface AssignTokenPopoverProps {
   role: StandardRole;
-  unassigned: UnassignedItem[];
+  /** All available tokens to pick from, regardless of assignment state. */
+  availableTokens: UnassignedItem[];
   onAssign: (token: UnassignedItem) => void;
   children: React.ReactNode;
 }
 
 export function AssignTokenPopover({
   role,
-  unassigned,
+  availableTokens,
   onAssign,
   children,
 }: AssignTokenPopoverProps) {
@@ -37,11 +39,11 @@ export function AssignTokenPopover({
   const colourCategories = ["backgrounds", "text", "borders", "accent", "status"];
   const isColourRole = colourCategories.includes(role.category);
 
-  const INITIAL_LIMIT = 30;
+  const INITIAL_LIMIT = 50;
   const [showAll, setShowAll] = useState(false);
 
   const { filteredTokens, totalCount } = useMemo(() => {
-    let tokens = unassigned.filter((u) => !u.hidden);
+    let tokens = availableTokens.filter((u) => !u.hidden);
     if (isColourRole) {
       tokens = tokens.filter((u) => u.type === "color");
     }
@@ -54,19 +56,30 @@ export function AssignTokenPopover({
           u.value.toLowerCase().includes(q)
       );
     }
-    // Sort: resolved hex/named colours first, var() references last
+    // Sort: unassigned first, then already-assigned; resolved colours before var() refs
     if (isColourRole) {
       tokens.sort((a, b) => {
+        const aAssigned = !!a.assignedToRole;
+        const bAssigned = !!b.assignedToRole;
+        if (aAssigned !== bAssigned) return aAssigned ? 1 : -1;
         const aIsRef = a.value.includes("var(");
         const bIsRef = b.value.includes("var(");
         if (aIsRef !== bIsRef) return aIsRef ? 1 : -1;
         return a.name.localeCompare(b.name);
       });
     }
-    const total = tokens.length;
-    const limited = showAll ? tokens : tokens.slice(0, INITIAL_LIMIT);
+    // Dedupe by value+name to avoid showing the same token twice
+    const seen = new Set<string>();
+    const deduped = tokens.filter((t) => {
+      const key = `${t.cssVariable ?? t.name}::${t.value}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const total = deduped.length;
+    const limited = showAll ? deduped : deduped.slice(0, INITIAL_LIMIT);
     return { filteredTokens: limited, totalCount: total };
-  }, [unassigned, isColourRole, search, showAll]);
+  }, [availableTokens, isColourRole, search, showAll]);
 
   const handleSelect = (token: UnassignedItem) => {
     onAssign(token);
@@ -178,6 +191,11 @@ export function AssignTokenPopover({
                       {token.value}
                     </p>
                   </div>
+                  {token.assignedToRole && (
+                    <span className="shrink-0 rounded bg-[var(--bg-hover)] px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                      {token.assignedToRole}
+                    </span>
+                  )}
                 </button>
               ))}
               {!showAll && totalCount > INITIAL_LIMIT && (

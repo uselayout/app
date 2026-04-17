@@ -27,9 +27,12 @@ export function addTokenToLayoutMd(
 }
 
 /**
- * Remove a CSS custom property declaration from the CORE TOKENS block of layout.md.
- * Matches the line starting with the token's cssVariable (or --name fallback).
- * Returns the markdown unchanged if the declaration is not found.
+ * Remove a CSS custom property declaration from ALL fenced CSS blocks in layout.md.
+ * This is thorough on purpose: `parseTokensFromLayoutMd` reads every fenced CSS block,
+ * so leaving a declaration in any one of them would resurrect the deleted token when
+ * the Design System page re-syncs from markdown.
+ * Only removes declaration lines (`--name: value;`). `var(--name)` usage is left alone.
+ * Returns the markdown unchanged if no declaration is found.
  */
 export function removeTokenFromLayoutMd(
   markdown: string,
@@ -38,14 +41,12 @@ export function removeTokenFromLayoutMd(
   const cssVar = token.cssVariable ?? `--${token.name}`;
   const escaped = cssVar.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-  const coreTokensRegex = /```css\s*\n\/\*\s*──?\s*CORE TOKENS[\s\S]*?```/;
-  const match = markdown.match(coreTokensRegex);
-  if (!match) return markdown;
+  const fencedBlockRegex = /```css\s*\n([\s\S]*?)```/gi;
+  const lineRegex = new RegExp(`[ \\t]*${escaped}\\s*:[^\\n;]*;?[ \\t]*\\n?`, "g");
 
-  const block = match[0];
-  const lineRegex = new RegExp(`\\n\\s*${escaped}\\s*:[^\\n]*`, "g");
-  const updatedBlock = block.replace(lineRegex, "");
-  if (updatedBlock === block) return markdown;
-
-  return markdown.replace(coreTokensRegex, updatedBlock);
+  return markdown.replace(fencedBlockRegex, (fullMatch, content: string) => {
+    const cleaned = content.replace(lineRegex, "");
+    if (cleaned === content) return fullMatch;
+    return fullMatch.replace(content, cleaned);
+  });
 }

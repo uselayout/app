@@ -6,6 +6,7 @@ import type { ExtractedToken, ProjectStandardisation, DesignSystemSnapshot, Toke
 import {
   SCHEMA_CATEGORIES,
   getRolesByCategory,
+  STANDARD_SCHEMA,
   type StandardRoleCategory,
 } from "@/lib/tokens/standard-schema";
 import { resolveTokenValue } from "@/lib/util/color";
@@ -153,6 +154,56 @@ export function CuratedTokenView({
     return map;
   }, [assignments, allTokens]);
 
+  // Build the full pickable-tokens list for the assign popover.
+  // Sources: extractionData tokens (primary) + standardisation.unassigned (anything
+  // extra that isn't in extractionData, usually custom hex entries from earlier sessions).
+  // Each token is decorated with the role label it's already assigned to (if any) so
+  // users can see the implications of reassigning.
+  const availableTokens = useMemo(() => {
+    const roleToLabel = new Map<string, string>();
+    for (const r of STANDARD_SCHEMA.roles) roleToLabel.set(r.key, r.label);
+
+    const valueToRole = new Map<string, string>();
+    for (const [roleKey, a] of Object.entries(assignments)) {
+      const key = `${a.originalCssVariable ?? a.originalName}::${a.value}`;
+      valueToRole.set(key, roleToLabel.get(roleKey) ?? roleKey);
+    }
+
+    const items: Array<{
+      name: string;
+      cssVariable?: string;
+      value: string;
+      type: string;
+      hidden: boolean;
+      assignedToRole?: string;
+    }> = [];
+
+    for (const t of allTokens) {
+      const key = `${t.cssVariable ?? t.name}::${t.value}`;
+      items.push({
+        name: t.name,
+        cssVariable: t.cssVariable,
+        value: t.value,
+        type: t.type,
+        hidden: false,
+        assignedToRole: valueToRole.get(key),
+      });
+    }
+
+    // Also include any unassigned entries that aren't already in extractionData
+    // (e.g. custom hex entries from before the persistence fix).
+    const seen = new Set(items.map((i) => `${i.cssVariable ?? i.name}::${i.value}`));
+    for (const u of standardisation.unassigned) {
+      const key = `${u.cssVariable ?? u.name}::${u.value}`;
+      if (!seen.has(key)) {
+        items.push({ ...u, assignedToRole: valueToRole.get(key) });
+        seen.add(key);
+      }
+    }
+
+    return items;
+  }, [allTokens, assignments, standardisation.unassigned]);
+
   // Count assigned roles per category
   const categoryCounts = useMemo(() => {
     const counts: Record<string, { assigned: number; total: number }> = {};
@@ -290,7 +341,7 @@ export function CuratedTokenView({
                   <AssignTokenPopover
                     key={role.key}
                     role={role}
-                    unassigned={standardisation.unassigned}
+                    availableTokens={availableTokens}
                     onAssign={(token) =>
                       handleAssignToken(role.key, role.suffix, token)
                     }
