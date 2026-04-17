@@ -6,9 +6,17 @@ import { addTokenToLayoutMd, removeTokenFromLayoutMd } from "@/lib/tokens/add-re
 import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont, ProjectStandardisation, DesignSystemSnapshot, TokenType } from "@/lib/types";
 
 /**
+ * Hard ceiling above which we refuse to save and surface an error instead of
+ * silently dropping user data. Tuned to Supabase/Coolify proxy limits.
+ */
+const MAX_SAVE_BYTES = 5_000_000;
+
+/**
  * Strip large base64 data from the project before sending to the API.
  * referenceImage and compiledJs bloat the payload (often >10MB) and cause
- * JSON parsing failures due to body size limits.
+ * JSON parsing failures due to body size limits. We strip only ephemeral,
+ * client-only data — never user curation (standardisation.unassigned,
+ * antiPatterns), which is load-bearing for the curated-token UX.
  */
 function stripBloatForSave(project: Project): Project {
   const stripped = { ...project };
@@ -63,16 +71,23 @@ function stripBloatForSave(project: Project): Project {
   // Strip snapshots (client-only undo history, not needed on server)
   delete stripped.snapshots;
 
-  // Strip standardisation bloat (only keep assignments + kitPrefix for server)
-  if (stripped.standardisation) {
-    stripped.standardisation = {
-      ...stripped.standardisation,
-      unassigned: [], // 100+ tokens, only needed client-side
-      antiPatterns: stripped.standardisation.antiPatterns.slice(0, 5),
+  return stripped;
+}
+
+/**
+ * Produce the JSON body to save, or an error message explaining why we can't.
+ * Never silently drops user-authored data — if the payload is too large, the
+ * caller must surface the error so the user can prune Explorer sessions.
+ */
+function buildSaveBody(project: Project): { body: string } | { error: string } {
+  const body = JSON.stringify(stripBloatForSave(project));
+  if (body.length > MAX_SAVE_BYTES) {
+    const mb = (body.length / 1_000_000).toFixed(1);
+    return {
+      error: `Project too large to save (${mb}MB, limit ${(MAX_SAVE_BYTES / 1_000_000).toFixed(0)}MB). Delete old Explorer sessions or variants, then try again.`,
     };
   }
-
-  return stripped;
+  return { body };
 }
 
 /** Save a project via the server-side API (bypasses RLS). */
@@ -83,16 +98,18 @@ function apiUpsertProject(project: Project, onError?: (msg: string) => void): vo
     onError?.(msg);
     return;
   }
+  const built = buildSaveBody(project);
+  if ("error" in built) {
+    console.error("Failed to save project:", built.error);
+    onError?.(built.error);
+    return;
+  }
   void (async () => {
     try {
-      const body = JSON.stringify(stripBloatForSave(project));
-      if (body.length > 5_000_000) {
-        console.warn(`[save] Payload is ${(body.length / 1_000_000).toFixed(1)}MB — may exceed proxy limits`);
-      }
       const res = await fetch(`/api/organizations/${project.orgId}/projects/${project.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body,
+        body: built.body,
       });
       if (!res.ok) {
         const detail = await res.text().catch(() => "");
@@ -111,15 +128,13 @@ function apiUpsertProject(project: Project, onError?: (msg: string) => void): vo
 /** Save a project via the server-side API (awaitable version). */
 async function apiUpsertProjectAsync(project: Project): Promise<string | null> {
   if (!project.orgId) return "Cannot save project: missing orgId";
+  const built = buildSaveBody(project);
+  if ("error" in built) return built.error;
   try {
-    const body = JSON.stringify(stripBloatForSave(project));
-    if (body.length > 5_000_000) {
-      console.warn(`[save] Payload is ${(body.length / 1_000_000).toFixed(1)}MB — may exceed proxy limits`);
-    }
     const res = await fetch(`/api/organizations/${project.orgId}/projects/${project.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body,
+      body: built.body,
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
