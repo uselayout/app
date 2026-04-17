@@ -1,5 +1,18 @@
 import type { HealthScore, HealthIssue } from "@/lib/types";
 
+// Normalise a hex colour to long-form lowercase so `#fff` and `#FFFFFF` compare equal.
+// Expands 3-digit to 6-digit and 4-digit (with alpha) to 8-digit.
+function normaliseHex(hex: string): string {
+  const lower = hex.toLowerCase();
+  if (lower.length === 4) {
+    return `#${lower[1]}${lower[1]}${lower[2]}${lower[2]}${lower[3]}${lower[3]}`;
+  }
+  if (lower.length === 5) {
+    return `#${lower[1]}${lower[1]}${lower[2]}${lower[2]}${lower[3]}${lower[3]}${lower[4]}${lower[4]}`;
+  }
+  return lower;
+}
+
 export function calculateHealthScore(
   output: string,
   extractedFonts: string[] = [],
@@ -12,14 +25,14 @@ export function calculateHealthScore(
   // Documentation mentions like "--color: #value" without semicolons don't count
   const hasCssVars = /--[\w-]+:\s*[#\w0-9][^;\n]*;/.test(layoutMd ?? "");
   const approvedHex = new Set(
-    (layoutMd ?? "").match(/#[0-9a-fA-F]{3,8}\b/gi)?.map((h) => h.toLowerCase()) ?? []
+    (layoutMd ?? "").match(/#[0-9a-fA-F]{3,8}\b/gi)?.map(normaliseHex) ?? []
   );
 
   // Check for hardcoded hex values.
   // Design system has vars → all hardcoded hex is wrong.
   // Design system has no vars → only flag values absent from the spec.
   const hexMatches = output.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [];
-  const uniqueHex = [...new Set(hexMatches.map((h) => h.toLowerCase()))];
+  const uniqueHex = [...new Set(hexMatches.map(normaliseHex))];
   const rogueHex = uniqueHex.filter((h) => !approvedHex.has(h));
 
   if (rogueHex.length > 0) {
@@ -74,7 +87,7 @@ export function calculateHealthScore(
   let inlineMatch;
   let hasRogueInlineColor = false;
   while ((inlineMatch = inlineColorPattern.exec(output)) !== null) {
-    if (!approvedHex.has(`#${inlineMatch[1].toLowerCase()}`)) {
+    if (!approvedHex.has(normaliseHex(`#${inlineMatch[1]}`))) {
       hasRogueInlineColor = true;
       break;
     }

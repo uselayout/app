@@ -41,6 +41,24 @@ describe('calculateHealthScore', () => {
     expect(hexIssue).toBeUndefined();
   });
 
+  it('treats short-form and long-form hex as equivalent', () => {
+    // layout.md uses #FFFBFE (6-digit); output uses short-form equivalents and case-varied forms
+    const withShortForm = '<div style={{ background: "#fff", color: "#6750a4" }}>Text</div>';
+    const layoutMdWithShort = '```css\n--color-surface: #FFF;\n--color-primary: #6750A4;\n```';
+    const result = calculateHealthScore(withShortForm, [], layoutMdWithShort);
+    const hexIssue = result.issues.find((i) => i.rule === 'No hardcoded colours');
+    expect(hexIssue).toBeUndefined();
+  });
+
+  it('matches long-form output against short-form layout.md hex', () => {
+    // layout.md uses short-form, output uses long-form — should still match
+    const output = '<div style={{ color: "#ffffff" }}>Text</div>';
+    const layoutMd = '```css\n--color-surface: #fff;\n```';
+    const result = calculateHealthScore(output, [], layoutMd);
+    const hexIssue = result.issues.find((i) => i.rule === 'No hardcoded colours');
+    expect(hexIssue).toBeUndefined();
+  });
+
   it('awards a bonus when CSS variables are used and design system defines vars', () => {
     const withVars = '<div style={{ color: "var(--color-primary)" }}>Text</div>';
     const withoutVars = '<div style={{ color: "blue" }}>Text</div>';
