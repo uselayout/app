@@ -280,6 +280,7 @@ export function CuratedTokenView({
             {addingToCategory === catKey && (
               <InlineAddTokenForm
                 category={catKey}
+                availableTokens={allTokens}
                 onSubmit={(name, value) => handleCreateToken(catKey, name, value)}
                 onCancel={() => setAddingToCategory(null)}
               />
@@ -372,13 +373,13 @@ export function CuratedTokenView({
         );
       })}
 
-      {/* Non-colour categories: typography, spacing, radius */}
-      {(["typography", "spacing", "radius"] as StandardRoleCategory[]).map((catKey) => {
+      {/* Non-colour categories: typography, spacing, radius, shadows, motion */}
+      {(["typography", "spacing", "radius", "shadows", "motion"] as StandardRoleCategory[]).map((catKey) => {
         const catDef = SCHEMA_CATEGORIES.find((c) => c.key === catKey);
         if (!catDef) return null;
         const roles = getRolesByCategory(catKey);
         const counts = categoryCounts[catKey];
-        if (!counts || counts.assigned === 0) return null;
+        if (!counts) return null;
 
         return (
           <DesignSystemSection
@@ -388,6 +389,23 @@ export function CuratedTokenView({
             count={counts.assigned}
             subtitle={`${counts.assigned}/${counts.total}`}
           >
+            <div className="mb-4 flex items-center justify-end">
+              <button
+                onClick={() => setAddingToCategory(addingToCategory === catKey ? null : catKey)}
+                className="flex items-center gap-1 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+                Add token
+              </button>
+            </div>
+            {addingToCategory === catKey && (
+              <InlineAddTokenForm
+                category={catKey}
+                availableTokens={allTokens}
+                onSubmit={(name, value) => handleCreateToken(catKey, name, value)}
+                onCancel={() => setAddingToCategory(null)}
+              />
+            )}
             <div className="space-y-1">
               {roles.map((role) => {
                 const assignment = assignments[role.key];
@@ -395,12 +413,12 @@ export function CuratedTokenView({
                 const rawNum = token ? parseFloat(token.value) : 0;
                 const pxValue = token?.value.includes("rem") ? rawNum * 16 : rawNum;
 
-                return (
+                const rowInner = (
                   <div
-                    key={role.key}
-                    className={`group flex items-center gap-3 rounded-md px-3 py-2 ${
-                      assignment ? "hover:bg-[var(--bg-hover)]" : "opacity-40"
+                    className={`group flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-[var(--bg-hover)] ${
+                      assignment ? "" : "border border-dashed border-[var(--studio-border)]"
                     }`}
+                    title={assignment ? `${role.label}. Click to reassign.` : `Click to assign a token to ${role.label}`}
                   >
                     {/* Visual indicator */}
                     {catKey === "spacing" && token && (
@@ -417,34 +435,129 @@ export function CuratedTokenView({
                     )}
                     {catKey === "typography" && token && (
                       <span
-                        className="w-5 shrink-0 text-center text-sm font-bold text-[var(--text-secondary)]"
-                        style={token.value.includes(",") ? { fontFamily: token.value } : {}}
+                        className="flex h-9 w-12 shrink-0 items-center justify-center rounded bg-[var(--bg-surface)] text-lg leading-none text-[var(--text-primary)]"
+                        style={
+                          // When the token value looks like a font stack (has commas or quotes), render the preview in it.
+                          /[,"']/.test(token.value)
+                            ? { fontFamily: token.value }
+                            : {}
+                        }
                       >
-                        Aa
+                        Ag
                       </span>
                     )}
+                    {catKey === "shadows" && token && (
+                      <div
+                        className="h-6 w-6 shrink-0 rounded-md bg-[var(--bg-surface)]"
+                        style={{ boxShadow: token.value }}
+                      />
+                    )}
+                    {catKey === "motion" && token && (
+                      <span className="w-5 shrink-0 text-center text-xs text-[var(--text-muted)]">
 
-                    <span className="w-24 shrink-0 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                      </span>
+                    )}
+                    {!token && (
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-dashed border-[var(--studio-border)] text-[var(--text-muted)]">
+                        <span className="text-sm">+</span>
+                      </div>
+                    )}
+
+                    <span className="w-28 shrink-0 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
                       {role.label}
                     </span>
                     {token ? (
                       <>
-                        <code className="font-mono text-xs text-[var(--text-secondary)]">
+                        <code className="min-w-0 flex-1 truncate font-mono text-xs text-[var(--text-secondary)]">
                           {token.cssVariable ?? `--${token.name}`}
                         </code>
-                        <code className="font-mono text-xs text-[var(--text-muted)]">
-                          {token.value}
+                        <code className="shrink-0 font-mono text-xs text-[var(--text-muted)]">
+                          {token.value.length > 40 ? token.value.slice(0, 40) + "…" : token.value}
                         </code>
+                        {assignment && assignment.confidence !== "high" && (
+                          <span
+                            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                              assignment.confidence === "medium"
+                                ? "bg-amber-400"
+                                : "bg-red-400"
+                            }`}
+                            title={`${assignment.confidence} confidence. Click row to reassign.`}
+                          />
+                        )}
+                        {assignment && !assignment.userConfirmed && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnassignRole(role.key);
+                            }}
+                            className="h-4 w-4 shrink-0 rounded-full text-xs text-[var(--text-muted)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-400"
+                            title="Unassign this token"
+                          >
+                            ×
+                          </button>
+                        )}
                       </>
                     ) : (
                       <span className="text-xs text-[var(--text-muted)] italic">
-                        not assigned
+                        click to assign
+                        {role.required && (
+                          <span className="ml-1 text-[10px] opacity-60">(required)</span>
+                        )}
                       </span>
                     )}
                   </div>
                 );
+
+                return (
+                  <AssignTokenPopover
+                    key={role.key}
+                    role={role}
+                    availableTokens={availableTokens}
+                    onAssign={(token) =>
+                      handleAssignToken(role.key, role.suffix, token)
+                    }
+                  >
+                    {rowInner}
+                  </AssignTokenPopover>
+                );
               })}
             </div>
+
+            {/* Typography: enlarged sample specimen when a sans/mono/serif font token is set */}
+            {catKey === "typography" && (() => {
+              const sansToken = roleTokenMap.get("font-sans");
+              const serifToken = roleTokenMap.get("font-serif");
+              const monoToken = roleTokenMap.get("font-mono");
+              const specimens = [
+                { label: "Sans", token: sansToken },
+                { label: "Serif", token: serifToken },
+                { label: "Mono", token: monoToken },
+              ].filter((s) => s.token && /[,"']/.test(s.token.value));
+              if (specimens.length === 0) return null;
+              return (
+                <div className="mt-4 space-y-3 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4">
+                  {specimens.map((s) => (
+                    <div key={s.label} className="space-y-1">
+                      <div className="text-[9px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                        {s.label} — {s.token!.cssVariable ?? `--${s.token!.name}`}
+                      </div>
+                      <div
+                        className="text-2xl leading-tight text-[var(--text-primary)]"
+                        style={{ fontFamily: s.token!.value }}
+                      >
+                        The quick brown fox jumps over the lazy dog
+                      </div>
+                      <div
+                        className="text-sm text-[var(--text-secondary)]"
+                        style={{ fontFamily: s.token!.value }}
+                      >
+                        Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0 1 2 3 4 5 6 7 8 9
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </DesignSystemSection>
         );
       })}
@@ -535,29 +648,67 @@ export function CuratedTokenView({
 
 function InlineAddTokenForm({
   category,
+  availableTokens,
   onSubmit,
   onCancel,
 }: {
   category: StandardRoleCategory;
+  availableTokens: ExtractedToken[];
   onSubmit: (name: string, value: string) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState("");
   const [value, setValue] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const isColor = TOKEN_TYPE_FOR_CATEGORY[category] === "color";
   const canSubmit = name.trim().length > 0 && value.trim().length > 0;
   const colourPreview = isColor && /^#([0-9a-f]{3}|[0-9a-f]{6,8})$/i.test(value.trim());
+  const expectedType = TOKEN_TYPE_FOR_CATEGORY[category];
+
+  // Filter available tokens to the right type for this category.
+  const suggestions = useMemo(() => {
+    const q = name.trim().toLowerCase();
+    let list = availableTokens.filter((t) => t.type === expectedType);
+    if (q) {
+      list = list.filter(
+        (t) =>
+          t.name.toLowerCase().includes(q) ||
+          (t.cssVariable ?? "").toLowerCase().includes(q) ||
+          t.value.toLowerCase().includes(q)
+      );
+    }
+    // Dedupe by cssVariable/name + value
+    const seen = new Set<string>();
+    return list
+      .filter((t) => {
+        const key = `${t.cssVariable ?? t.name}::${t.value}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 12);
+  }, [availableTokens, expectedType, name]);
 
   const placeholder =
-    TOKEN_TYPE_FOR_CATEGORY[category] === "color"
+    expectedType === "color"
       ? "#e4f222"
-      : TOKEN_TYPE_FOR_CATEGORY[category] === "spacing"
+      : expectedType === "spacing"
       ? "16px"
-      : TOKEN_TYPE_FOR_CATEGORY[category] === "radius"
+      : expectedType === "radius"
       ? "8px"
-      : TOKEN_TYPE_FOR_CATEGORY[category] === "typography"
+      : expectedType === "typography"
       ? 'Inter, sans-serif'
+      : expectedType === "effect"
+      ? "0 1px 2px rgba(0,0,0,0.1)"
+      : expectedType === "motion"
+      ? "200ms"
       : "value";
+
+  const applySuggestion = (t: ExtractedToken) => {
+    setName(t.name);
+    setValue(t.value);
+    setShowSuggestions(false);
+  };
 
   return (
     <form
@@ -565,46 +716,93 @@ function InlineAddTokenForm({
         e.preventDefault();
         if (canSubmit) onSubmit(name, value);
       }}
-      className="mb-4 flex items-center gap-2 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-2"
+      className="relative mb-4 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-2"
     >
-      {isColor && (
+      <div className="flex items-center gap-2">
+        {isColor && (
+          <input
+            type="color"
+            value={colourPreview ? value.trim() : "#6366f1"}
+            onChange={(e) => setValue(e.target.value)}
+            className="h-7 w-7 shrink-0 cursor-pointer rounded border border-[var(--studio-border)] bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-sm [&::-webkit-color-swatch]:border-none"
+            title="Pick a colour"
+          />
+        )}
         <input
-          type="color"
-          value={colourPreview ? value.trim() : "#6366f1"}
-          onChange={(e) => setValue(e.target.value)}
-          className="h-7 w-7 shrink-0 cursor-pointer rounded border border-[var(--studio-border)] bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-sm [&::-webkit-color-swatch]:border-none"
-          title="Pick a colour"
+          type="text"
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            setShowSuggestions(true);
+          }}
+          onFocus={() => setShowSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+          placeholder="token-name (or pick from extracted below)"
+          autoFocus
+          className="min-w-0 flex-1 rounded bg-[var(--bg-elevated)] px-2 py-1 font-mono text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
         />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder}
+          className="min-w-0 flex-1 rounded bg-[var(--bg-elevated)] px-2 py-1 font-mono text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
+        />
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded px-2 py-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={!canSubmit}
+          className="rounded bg-[var(--studio-accent)] px-3 py-1 text-[11px] font-medium text-[var(--text-on-accent)] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Add
+        </button>
+      </div>
+
+      {showSuggestions && suggestions.length > 0 && (
+        <div className="absolute left-2 right-2 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-md border border-[var(--studio-border)] bg-[var(--bg-elevated)] shadow-lg">
+          <div className="border-b border-[var(--studio-border)] px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+            Extracted {expectedType} tokens ({suggestions.length})
+          </div>
+          {suggestions.map((t) => (
+            <button
+              key={`${t.cssVariable ?? t.name}::${t.value}`}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault(); // prevent blur before click
+                applySuggestion(t);
+              }}
+              className="flex w-full items-center gap-3 px-3 py-1.5 text-left hover:bg-[var(--bg-hover)] transition-colors"
+            >
+              {expectedType === "color" && /^#([0-9a-f]{3}|[0-9a-f]{6,8})$/i.test(t.value) && (
+                <span
+                  className="h-4 w-4 shrink-0 rounded border border-[var(--studio-border)]"
+                  style={{ backgroundColor: t.value }}
+                />
+              )}
+              {expectedType === "typography" && (
+                <span
+                  className="w-5 shrink-0 text-center text-sm font-semibold text-[var(--text-secondary)]"
+                  style={t.value.includes(",") ? { fontFamily: t.value } : {}}
+                >
+                  Aa
+                </span>
+              )}
+              <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-[var(--text-primary)]">
+                {t.cssVariable ?? `--${t.name}`}
+              </code>
+              <code className="shrink-0 font-mono text-[10px] text-[var(--text-muted)]">
+                {t.value.length > 30 ? t.value.slice(0, 30) + "…" : t.value}
+              </code>
+            </button>
+          ))}
+        </div>
       )}
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="token-name"
-        autoFocus
-        className="min-w-0 flex-1 rounded bg-[var(--bg-elevated)] px-2 py-1 font-mono text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
-      />
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
-        className="min-w-0 flex-1 rounded bg-[var(--bg-elevated)] px-2 py-1 font-mono text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
-      />
-      <button
-        type="button"
-        onClick={onCancel}
-        className="rounded px-2 py-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-      >
-        Cancel
-      </button>
-      <button
-        type="submit"
-        disabled={!canSubmit}
-        className="rounded bg-[var(--studio-accent)] px-3 py-1 text-[11px] font-medium text-[var(--text-on-accent)] disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        Add
-      </button>
     </form>
   );
 }
