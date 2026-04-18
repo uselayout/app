@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes, Figma, Sparkles, Loader2, Type, FileText } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes, Figma, Sparkles, Loader2, Type, FileText, ImagePlus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
@@ -12,6 +12,7 @@ import { parseFigmaUrl } from "@/lib/figma/parse-url";
 import { IconPackSelector } from "@/components/studio/IconPackSelector";
 import { FontManager } from "@/components/studio/FontManager";
 import { ContextDocsTab } from "@/components/studio/ContextDocsTab";
+import { BrandingTab } from "@/components/studio/BrandingTab";
 import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
 import { resolveTokenValue } from "@/lib/util/color";
 import { useProjectStore } from "@/lib/store/project";
@@ -42,7 +43,7 @@ interface SourcePanelProps {
   onFontUploaded?: () => void;
 }
 
-type TabId = "tokens" | "components" | "screenshots" | "icons" | "fonts" | "context" | "quality" | "connect" | "figma";
+type TabId = "tokens" | "components" | "screenshots" | "icons" | "fonts" | "branding" | "context" | "quality" | "connect" | "figma";
 
 function SourcePanelEmptyState({
   projectId,
@@ -186,6 +187,7 @@ function SourcePanelInner({
     { id: "screenshots", label: "Screenshots", icon: Image },
     { id: "icons", label: "Icons", icon: Shapes },
     { id: "fonts", label: "Fonts", icon: Type },
+    { id: "branding", label: "Branding", icon: ImagePlus },
     { id: "context", label: "Context", icon: FileText },
     { id: "quality", label: "Quality", icon: Gauge },
     { id: "figma", label: "Figma", icon: Figma },
@@ -266,6 +268,13 @@ function SourcePanelInner({
               onFontUploaded={onFontUploaded}
             />
           </div>
+        )}
+        {activeTab === "branding" && projectId && currentOrgId && (
+          <BrandingTab
+            projectId={projectId}
+            orgId={currentOrgId}
+            assets={currentProject?.brandingAssets ?? []}
+          />
         )}
         {activeTab === "context" && projectId && currentOrgId && (
           <ContextDocsTab

@@ -82,9 +82,15 @@ TWO types of visuals — use the RIGHT approach for each:
    - NEVER use placeholder services, empty src, or data URIs. Omit src entirely — the pipeline adds it.
 
 2. LOGOS, ICONS, and SIMPLE GRAPHICS (brand logos, UI icons, decorative marks, badges, social icons):
-   Do NOT use data-generate-image for these. Two options:
+   Do NOT use data-generate-image for these. Three options:
 
-   a) REAL BRAND LOGOS — use Simple Icons CDN for recognisable brands:
+   a0) THIS PROJECT'S OWN BRAND LOGO — only when the design system's layout.md contains a "## Branding Assets" section listing available slots:
+      <img data-brand-logo="primary" alt="Brand" className="h-8" />
+      Slot values are any listed in the Branding Assets section. Common slots: "primary", "secondary", "wordmark", "favicon", "mark".
+      Omit src entirely — the Layout runtime resolves the attribute to the real uploaded logo URL.
+      Use this anywhere the design shows the project's own brand (header nav, footer, favicon, login).
+
+   a) REAL BRAND LOGOS (third-party brands, not this project's own) — use Simple Icons CDN for recognisable brands:
       <img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/{slug}.svg" alt="Brand" className="h-6 opacity-60" />
       Common slugs: stripe, github, figma, openai, slack, discord, notion, shopify, vercel, react, nextdotjs, tailwindcss, typescript, linkedin, x, youtube, meta, apple, microsoft, google, nvidia, adobe, dropbox, netlify, railway, linear, asana, docker, kubernetes, postgresql, mongodb, redis, amazonaws, googlecloud, microsoftazure
       Styling: All Simple Icons are monochrome black. Apply opacity-40 to opacity-70 for subtle trust bars.
@@ -191,9 +197,15 @@ TWO types of visuals — use the RIGHT approach for each:
    - NEVER use placeholder services, empty src, or data URIs. Omit src entirely — the pipeline adds it.
 
 2. LOGOS, ICONS, and SIMPLE GRAPHICS (brand logos, UI icons, decorative marks, badges, social icons):
-   Do NOT use data-generate-image for these. Two options:
+   Do NOT use data-generate-image for these. Three options:
 
-   a) REAL BRAND LOGOS — use Simple Icons CDN for recognisable brands:
+   a0) THIS PROJECT'S OWN BRAND LOGO — only when the design system's layout.md contains a "## Branding Assets" section listing available slots:
+      <img data-brand-logo="primary" alt="Brand" className="h-8" />
+      Slot values are any listed in the Branding Assets section. Common slots: "primary", "secondary", "wordmark", "favicon", "mark".
+      Omit src entirely — the Layout runtime resolves the attribute to the real uploaded logo URL.
+      Use this anywhere the design shows the project's own brand (header nav, footer, favicon, login).
+
+   a) REAL BRAND LOGOS (third-party brands, not this project's own) — use Simple Icons CDN for recognisable brands:
       <img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/{slug}.svg" alt="Brand" className="h-6 opacity-60" />
       Common slugs: stripe, github, figma, openai, slack, discord, notion, shopify, vercel, react, nextdotjs, tailwindcss, typescript, linkedin, x, youtube, meta, apple, microsoft, google, nvidia, adobe, dropbox, netlify, railway, linear, asana, docker, kubernetes, postgresql, mongodb, redis, amazonaws, googlecloud, microsoftazure
       Styling: All Simple Icons are monochrome black. Apply opacity-40 to opacity-70 for subtle trust bars.

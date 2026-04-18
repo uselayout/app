@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireOrgAuth } from "@/lib/api/auth-context";
 import { supabase } from "@/lib/supabase/client";
 import { deleteFromBucket } from "@/lib/supabase/storage";
+import { syncBrandingSectionToLayoutMd } from "@/lib/branding/sync-to-layout-md";
 import type {
   BrandingAsset,
   BrandingSlot,
@@ -55,7 +56,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   const { data: project, error } = await supabase
     .from("layout_projects")
-    .select("branding_assets, context_documents")
+    .select("branding_assets, context_documents, layout_md")
     .eq("id", projectId)
     .eq("org_id", auth.orgId)
     .single();
@@ -75,9 +76,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Asset not found" }, { status: 404 });
     }
 
+    const layoutMd = (project.layout_md as string) ?? "";
+    const nextLayoutMd = syncBrandingSectionToLayoutMd(layoutMd, next);
+
     const { error: updateError } = await supabase
       .from("layout_projects")
-      .update({ branding_assets: next, updated_at: new Date().toISOString() })
+      .update({
+        branding_assets: next,
+        layout_md: nextLayoutMd,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", projectId)
       .eq("org_id", auth.orgId);
 
@@ -88,7 +96,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       );
     }
 
-    return NextResponse.json({ brandingAssets: next });
+    return NextResponse.json({ brandingAssets: next, layoutMd: nextLayoutMd });
   }
 
   const docs = (project.context_documents as ContextDocument[]) ?? [];
@@ -141,7 +149,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
   const { data: project, error } = await supabase
     .from("layout_projects")
-    .select("branding_assets, context_documents")
+    .select("branding_assets, context_documents, layout_md")
     .eq("id", projectId)
     .eq("org_id", auth.orgId)
     .single();
@@ -161,9 +169,16 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     if (storagePath) await deleteFromBucket("branding", [storagePath]);
 
     const next = assets.filter((a) => a.id !== assetId);
+    const layoutMd = (project.layout_md as string) ?? "";
+    const nextLayoutMd = syncBrandingSectionToLayoutMd(layoutMd, next);
+
     const { error: updateError } = await supabase
       .from("layout_projects")
-      .update({ branding_assets: next, updated_at: new Date().toISOString() })
+      .update({
+        branding_assets: next,
+        layout_md: nextLayoutMd,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", projectId)
       .eq("org_id", auth.orgId);
 
@@ -174,7 +189,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       );
     }
 
-    return NextResponse.json({ brandingAssets: next });
+    return NextResponse.json({ brandingAssets: next, layoutMd: nextLayoutMd });
   }
 
   const docs = (project.context_documents as ContextDocument[]) ?? [];

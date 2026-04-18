@@ -242,6 +242,8 @@ interface ProjectState {
   updateUploadedFonts: (id: string, fonts: UploadedFont[]) => void;
   updateBrandingAssets: (id: string, assets: BrandingAsset[]) => void;
   updateContextDocuments: (id: string, documents: ContextDocument[]) => void;
+  /** Mutate layoutMd in local state only (server already wrote it). */
+  setLayoutMdLocal: (id: string, layoutMd: string) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
   updateToken: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string, mode?: string) => void;
   renameToken: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string, mode?: string) => void;
@@ -416,6 +418,14 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === id ? { ...p, contextDocuments } : p
+      ),
+    }));
+  },
+
+  setLayoutMdLocal: (id, layoutMd) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id ? { ...p, layoutMd } : p
       ),
     }));
   },

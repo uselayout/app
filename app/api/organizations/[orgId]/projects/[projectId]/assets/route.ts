@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { requireOrgAuth } from "@/lib/api/auth-context";
 import { supabase } from "@/lib/supabase/client";
 import { uploadToBucket } from "@/lib/supabase/storage";
+import { syncBrandingSectionToLayoutMd } from "@/lib/branding/sync-to-layout-md";
 import type {
   BrandingAsset,
   BrandingSlot,
@@ -132,7 +133,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   // Load existing project to verify ownership and enforce per-project caps
   const { data: project, error: fetchError } = await supabase
     .from("layout_projects")
-    .select("branding_assets, context_documents")
+    .select("branding_assets, context_documents, layout_md")
     .eq("id", projectId)
     .eq("org_id", auth.orgId)
     .single();
@@ -143,6 +144,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const existingBranding = (project.branding_assets as BrandingAsset[]) ?? [];
   const existingContext = (project.context_documents as ContextDocument[]) ?? [];
+  const existingLayoutMd = (project.layout_md as string) ?? "";
 
   if (kind === "branding") {
     return handleBrandingUpload({
@@ -151,6 +153,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       projectId,
       orgId: auth.orgId,
       existing: existingBranding,
+      layoutMd: existingLayoutMd,
     });
   }
 
@@ -168,8 +171,9 @@ async function handleBrandingUpload(opts: {
   projectId: string;
   orgId: string;
   existing: BrandingAsset[];
+  layoutMd: string;
 }): Promise<NextResponse> {
-  const { file, projectId, orgId, existing } = opts;
+  const { file, projectId, orgId, existing, layoutMd } = opts;
 
   if (existing.length >= MAX_BRANDING_ITEMS) {
     return NextResponse.json(
@@ -216,10 +220,15 @@ async function handleBrandingUpload(opts: {
   };
 
   const next = [...existing, asset];
+  const nextLayoutMd = syncBrandingSectionToLayoutMd(layoutMd, next);
 
   const { error: updateError } = await supabase
     .from("layout_projects")
-    .update({ branding_assets: next, updated_at: new Date().toISOString() })
+    .update({
+      branding_assets: next,
+      layout_md: nextLayoutMd,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", projectId)
     .eq("org_id", orgId);
 
@@ -230,7 +239,11 @@ async function handleBrandingUpload(opts: {
     );
   }
 
-  return NextResponse.json({ asset, brandingAssets: next });
+  return NextResponse.json({
+    asset,
+    brandingAssets: next,
+    layoutMd: nextLayoutMd,
+  });
 }
 
 async function handleContextUpload(opts: {
