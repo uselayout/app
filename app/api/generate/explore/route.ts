@@ -11,6 +11,7 @@ import { getModelById, getDefaultModel, getModelCreditCost } from "@/lib/ai/mode
 import type { AiMode } from "@/lib/types/billing";
 import { AI_MODELS, BYOK_ONLY_MODELS, DEFAULT_EXPLORE_MODEL } from "@/lib/types";
 import type { AiModelId } from "@/lib/types";
+import { fetchProjectLayoutMd } from "@/lib/supabase/db";
 
 const RequestSchema = z.object({
   prompt: z.string().min(1),
@@ -70,13 +71,30 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: `Unknown model: ${modelId}` }, { status: 400 });
   }
 
-  if (!layoutMd || layoutMd.trim().length < 50) {
+  // Prefer the server-side copy of layout.md when we have a projectId, to
+  // prevent a stale Zustand/prop snapshot from being used when the user edits
+  // in Monaco and immediately clicks Generate. Falls back to the client payload
+  // if the project isn't found (projectless playground uses).
+  let effectiveLayoutMd = layoutMd;
+  if (parsed.data.projectId) {
+    const fresh = await fetchProjectLayoutMd(parsed.data.projectId);
+    if (fresh && fresh.layoutMd && fresh.layoutMd.trim().length > 0) {
+      const lengthDelta = Math.abs(fresh.layoutMd.length - layoutMd.length);
+      if (lengthDelta > 100) {
+        console.log(
+          `[explore] Using server layout.md (client delta: ${lengthDelta} chars, project ${parsed.data.projectId})`
+        );
+      }
+      effectiveLayoutMd = fresh.layoutMd;
+    }
+  }
+
+  if (!effectiveLayoutMd || effectiveLayoutMd.trim().length < 50) {
     return NextResponse.json(
-      { error: "No design system loaded. Extract from a Figma file or website first to generate on-brand variants." },
+      { error: "Add content to layout.md first. Extract a design system, start blank, or paste your own design guidelines." },
       { status: 400 }
     );
   }
-  const effectiveLayoutMd = layoutMd;
 
   // Resolve API key + billing mode based on provider
   let mode: AiMode;

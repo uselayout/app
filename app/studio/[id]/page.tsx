@@ -537,6 +537,7 @@ export default function StudioPage({
               tokenSuggestions={tokenSuggestions}
               projectId={project.id}
               orgId={project.orgId}
+              extractionData={project.extractionData}
             />
           }
           canvasPanel={

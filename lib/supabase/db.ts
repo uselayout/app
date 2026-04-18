@@ -19,6 +19,8 @@ interface ProjectRow {
   scan_source: string | null;
   last_scan_at: string | null;
   github_repo: string | null;
+  branding_assets: unknown | null;
+  context_documents: unknown | null;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -60,6 +62,12 @@ function rowToProject(row: ProjectRow): Project {
     scanSource: (row.scan_source as Project["scanSource"]) ?? undefined,
     lastScanAt: (row.last_scan_at as string) ?? undefined,
     githubRepo: (row.github_repo as string) ?? undefined,
+    brandingAssets: row.branding_assets
+      ? (row.branding_assets as Project["brandingAssets"])
+      : undefined,
+    contextDocuments: row.context_documents
+      ? (row.context_documents as Project["contextDocuments"])
+      : undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -68,7 +76,7 @@ function rowToProject(row: ProjectRow): Project {
 function projectToRow(
   project: Project,
   userId: string
-): Omit<ProjectRow, "created_at" | "scanned_components" | "scan_source" | "last_scan_at" | "github_repo"> & { updated_at: string } {
+): Omit<ProjectRow, "created_at" | "scanned_components" | "scan_source" | "last_scan_at" | "github_repo" | "branding_assets" | "context_documents"> & { updated_at: string } {
   // Store uploadedFonts and standardisation inside extraction_data to avoid DB migrations
   const fonts = project.uploadedFonts ?? [];
   const std = project.standardisation ?? undefined;
@@ -92,14 +100,32 @@ function projectToRow(
     test_results: null,
     explorations: project.explorations ?? null,
     pending_canvas_image: project.pendingCanvasImage ?? null,
-    // NOTE: scanned_components, scan_source, last_scan_at, github_repo are
-    // intentionally excluded. They are managed by the scan-results API endpoint
-    // only. Including them here would wipe scan data on every project save
-    // (extraction, layout.md edit, variant generation) since the browser store
-    // doesn't always have these fields loaded.
+    // NOTE: scanned_components, scan_source, last_scan_at, github_repo,
+    // branding_assets, context_documents are intentionally excluded. They are
+    // managed by dedicated API endpoints only. Including them here would wipe
+    // data on every project save (extraction, layout.md edit, variant
+    // generation) since the browser store doesn't always have these fields
+    // loaded (e.g. after fetchAllProjectsSummary).
     user_id: userId,
     updated_at: new Date().toISOString(),
   };
+}
+
+/**
+ * Fetch only the persisted layout_md for a project (+ its org_id for auth).
+ * Used by generate/explore to avoid a stale Zustand/prop copy racing a recent edit.
+ */
+export async function fetchProjectLayoutMd(
+  id: string
+): Promise<{ layoutMd: string; orgId: string } | null> {
+  const { data, error } = await supabase
+    .from("layout_projects")
+    .select("layout_md, org_id")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) return null;
+  return { layoutMd: (data.layout_md as string) ?? "", orgId: (data.org_id as string) ?? "" };
 }
 
 export async function fetchProjectById(id: string): Promise<Project | null> {

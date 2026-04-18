@@ -8,6 +8,8 @@ import { ArrowUp, Undo2, Loader2, History, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import type { LayoutMdVersion } from "@/lib/supabase/layout-md-versions";
+import type { ExtractionResult } from "@/lib/types";
+import { DivergenceBanner } from "./DivergenceBanner";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -29,6 +31,7 @@ interface EditorPanelProps {
   tokenSuggestions?: TokenSuggestion[];
   projectId?: string;
   orgId?: string;
+  extractionData?: ExtractionResult;
 }
 
 const STUDIO_THEME_DARK: monacoType.editor.IStandaloneThemeData = {
@@ -89,7 +92,7 @@ const STUDIO_THEME_LIGHT: monacoType.editor.IStandaloneThemeData = {
   },
 };
 
-export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId, orgId }: EditorPanelProps) {
+export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId, orgId, extractionData }: EditorPanelProps) {
   const { resolvedTheme } = useTheme();
   const editorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "idle">("idle");
@@ -303,6 +306,13 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
           </span>
         </div>
       </div>
+
+      {/* Token ↔ extraction data divergence warning */}
+      <DivergenceBanner
+        layoutMd={value}
+        extraction={extractionData}
+        storageKey={projectId}
+      />
 
       {/* Section navigator */}
       {sections.length > 0 && (

@@ -263,8 +263,41 @@ export interface Project {
   standardisation?: ProjectStandardisation;
   /** Design system snapshots for rollback (max 5) */
   snapshots?: DesignSystemSnapshot[];
+  /** Brand logos, wordmarks, favicons uploaded by the user */
+  brandingAssets?: BrandingAsset[];
+  /** Project-scoped context documents attached to every variant generation */
+  contextDocuments?: ContextDocument[];
   createdAt: string;
   updatedAt: string;
+}
+
+/** Slots a branding asset can occupy. Informs the `data-brand-logo` attribute Claude emits. */
+export type BrandingSlot =
+  | "primary"
+  | "secondary"
+  | "wordmark"
+  | "favicon"
+  | "mark"
+  | "other";
+
+export interface BrandingAsset {
+  id: string;
+  slot: BrandingSlot;
+  url: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  uploadedAt: string;
+}
+
+export interface ContextDocument {
+  id: string;
+  name: string;
+  content: string;
+  mimeType: string;
+  size: number;
+  addedAt: string;
+  pinned?: boolean;
 }
 
 /** Serialisable version of StandardisedTokenMap for project storage */
