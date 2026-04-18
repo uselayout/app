@@ -13,6 +13,7 @@ import { IconPackSelector } from "@/components/studio/IconPackSelector";
 import { FontManager } from "@/components/studio/FontManager";
 import { ContextDocsTab } from "@/components/studio/ContextDocsTab";
 import { BrandingTab } from "@/components/studio/BrandingTab";
+import { AddTokenForm } from "@/components/studio/AddTokenForm";
 import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
 import { resolveTokenValue } from "@/lib/util/color";
 import { useProjectStore } from "@/lib/store/project";
@@ -507,21 +508,21 @@ function TokenSectionHeader({
       {onAdd && (
         <span
           onClick={handleAdd}
-          className="shrink-0 rounded p-1 opacity-0 transition-opacity hover:bg-[var(--bg-hover)] group-hover:opacity-100"
+          className="shrink-0 rounded p-1 text-[var(--text-muted)] opacity-70 transition-opacity hover:bg-[var(--bg-hover)] hover:opacity-100"
           title={`Add a new ${label.toLowerCase().replace(/s$/, "")} token`}
         >
-          <Plus className="h-3 w-3 text-[var(--text-muted)]" />
+          <Plus className="h-3 w-3" />
         </span>
       )}
       <span
         onClick={handleCopy}
-        className="shrink-0 rounded p-1 opacity-0 transition-opacity hover:bg-[var(--bg-hover)] group-hover:opacity-100"
+        className="shrink-0 rounded p-1 text-[var(--text-muted)] opacity-70 transition-opacity hover:bg-[var(--bg-hover)] hover:opacity-100"
         title={`Copy all ${label.toLowerCase()}`}
       >
         {copied ? (
           <Check className="h-3 w-3 text-[var(--status-success)]" />
         ) : (
-          <Copy className="h-3 w-3 text-[var(--text-muted)]" />
+          <Copy className="h-3 w-3" />
         )}
       </span>
     </button>
@@ -535,94 +536,6 @@ const TYPE_FOR_SECTION: Record<string, import("@/lib/types").TokenType> = {
   Radius: "radius",
   Effects: "effect",
 };
-
-function AddTokenForm({
-  section,
-  onSubmit,
-  onCancel,
-}: {
-  section: string;
-  onSubmit: (token: ExtractedToken) => void;
-  onCancel: () => void;
-}) {
-  const [name, setName] = useState("");
-  const [value, setValue] = useState("");
-  const tokenType = TYPE_FOR_SECTION[section] ?? "color";
-  const isColor = tokenType === "color";
-
-  const canSubmit = name.trim().length > 0 && value.trim().length > 0;
-
-  const handleSubmit = useCallback(
-    (e?: React.FormEvent) => {
-      e?.preventDefault();
-      if (!canSubmit) return;
-      const cleanName = name.trim().replace(/^--/, "");
-      const cssVar = `--${cleanName}`;
-      onSubmit({
-        name: cleanName,
-        value: value.trim(),
-        type: tokenType,
-        category: "semantic",
-        cssVariable: cssVar,
-      });
-      setName("");
-      setValue("");
-    },
-    [canSubmit, name, value, tokenType, onSubmit]
-  );
-
-  const colourPreview = isColor && /^#([0-9a-f]{3}|[0-9a-f]{6,8})$/i.test(value.trim());
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="mx-2 mb-2 rounded-md border border-[var(--studio-border)] bg-[var(--bg-elevated)] p-2"
-    >
-      <div className="flex items-center gap-1.5">
-        {isColor && (
-          <input
-            type="color"
-            value={colourPreview ? value.trim() : "#6366f1"}
-            onChange={(e) => setValue(e.target.value)}
-            className="h-6 w-6 shrink-0 cursor-pointer rounded border border-[var(--studio-border)] bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-sm [&::-webkit-color-swatch]:border-none"
-            title="Pick a colour"
-          />
-        )}
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="name (e.g. brand-primary)"
-          autoFocus
-          className="min-w-0 flex-1 rounded bg-[var(--bg-surface)] px-2 py-1 font-mono text-[10px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
-        />
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={isColor ? "#e4f222" : "value"}
-          className="min-w-0 flex-1 rounded bg-[var(--bg-surface)] px-2 py-1 font-mono text-[10px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
-        />
-      </div>
-      <div className="mt-2 flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded px-2 py-0.5 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="rounded bg-[var(--studio-accent)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-on-accent)] disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Add
-        </button>
-      </div>
-    </form>
-  );
-}
 
 const SECTION_TYPE_MAP: Record<string, keyof import("@/lib/types").ExtractedTokens> = {
   Colours: "colors",
@@ -857,11 +770,10 @@ function TokensTab({
             ))}
             {adding && (
               <AddTokenForm
-                section={adding}
-                onSubmit={(token) => {
-                  addToken(projectId, token);
-                  setAdding(null);
-                }}
+                tokenType={TYPE_FOR_SECTION[adding] ?? "color"}
+                compact
+                autoKeepOpen
+                onSubmit={(token) => addToken(projectId, token)}
                 onCancel={() => setAdding(null)}
               />
             )}
@@ -927,11 +839,10 @@ function TokensTab({
           />
           {openSections.has(section.label) && adding === section.label && projectId && (
             <AddTokenForm
-              section={section.label}
-              onSubmit={(token) => {
-                addToken(projectId, token);
-                setAdding(null);
-              }}
+              tokenType={TYPE_FOR_SECTION[section.label] ?? "color"}
+              compact
+              autoKeepOpen
+              onSubmit={(token) => addToken(projectId, token)}
               onCancel={() => setAdding(null)}
             />
           )}

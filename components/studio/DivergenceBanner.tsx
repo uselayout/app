@@ -70,12 +70,12 @@ export function DivergenceBanner({
 
   return (
     <div
-      className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs"
+      className="border-b border-amber-500/40 bg-amber-500/10 px-4 py-2 text-xs text-[var(--text-primary)]"
       role="status"
     >
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-amber-200">
-          <AlertTriangle size={14} />
+        <div className="flex items-center gap-2">
+          <AlertTriangle size={14} className="text-amber-600 dark:text-amber-400" />
           <span>
             {total} token{total === 1 ? "" : "s"} in layout.md{" "}
             {total === 1 ? "diverges" : "diverge"} from extraction data.
@@ -85,7 +85,7 @@ export function DivergenceBanner({
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-amber-200/80 hover:bg-amber-500/20 hover:text-amber-100"
+            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[var(--text-secondary)] hover:bg-amber-500/20 hover:text-[var(--text-primary)]"
           >
             {expanded ? (
               <>
@@ -102,7 +102,7 @@ export function DivergenceBanner({
           <button
             type="button"
             onClick={handleDismiss}
-            className="rounded p-1 text-amber-200/70 hover:bg-amber-500/20 hover:text-amber-100"
+            className="rounded p-1 text-[var(--text-muted)] hover:bg-amber-500/20 hover:text-[var(--text-primary)]"
             title="Dismiss"
           >
             <X size={12} />
@@ -151,7 +151,7 @@ function Section({
 }) {
   return (
     <div>
-      <div className="font-medium text-amber-100">{heading}</div>
+      <div className="font-medium text-[var(--text-primary)]">{heading}</div>
       <ul className="mt-1 max-h-32 overflow-y-auto text-[10px] leading-relaxed text-[var(--text-muted)]">
         {items.slice(0, 20).map((item, i) => (
           <li key={i} className="font-mono">

@@ -183,9 +183,9 @@ function LoginContent() {
           <div className="border-t border-[var(--studio-border)] px-5 py-[10px]">
             <p className="text-[12px] leading-[16px] text-[var(--text-muted)] text-center">
               By continuing you agree to our<br />
-              <a href="/terms" className="text-white underline">Terms of Service</a>
+              <a href="/terms" className="text-[var(--text-primary)] underline">Terms of Service</a>
               {" "}and{" "}
-              <a href="/privacy" className="text-white underline">Privacy Policy</a>
+              <a href="/privacy" className="text-[var(--text-primary)] underline">Privacy Policy</a>
             </p>
           </div>
         </div>

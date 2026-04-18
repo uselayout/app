@@ -17,6 +17,7 @@ import { LayoutMdCompareModal } from "./LayoutMdCompareModal";
 import { AssignTokenPopover } from "./AssignTokenPopover";
 import { useProjectStore } from "@/lib/store/project";
 import { buildStandardName } from "@/lib/tokens/standard-schema";
+import { AddTokenForm } from "@/components/studio/AddTokenForm";
 
 const TOKEN_TYPE_FOR_CATEGORY: Record<StandardRoleCategory, TokenType> = {
   backgrounds: "color",
@@ -278,9 +279,12 @@ export function CuratedTokenView({
               </button>
             </div>
             {addingToCategory === catKey && (
-              <InlineAddTokenForm
-                category={catKey}
-                onSubmit={(name, value) => handleCreateToken(catKey, name, value)}
+              <AddTokenForm
+                tokenType={TOKEN_TYPE_FOR_CATEGORY[catKey]}
+                autoKeepOpen
+                onSubmit={(token) =>
+                  handleCreateToken(catKey, token.name, token.value)
+                }
                 onCancel={() => setAddingToCategory(null)}
               />
             )}
@@ -533,78 +537,3 @@ export function CuratedTokenView({
   );
 }
 
-function InlineAddTokenForm({
-  category,
-  onSubmit,
-  onCancel,
-}: {
-  category: StandardRoleCategory;
-  onSubmit: (name: string, value: string) => void;
-  onCancel: () => void;
-}) {
-  const [name, setName] = useState("");
-  const [value, setValue] = useState("");
-  const isColor = TOKEN_TYPE_FOR_CATEGORY[category] === "color";
-  const canSubmit = name.trim().length > 0 && value.trim().length > 0;
-  const colourPreview = isColor && /^#([0-9a-f]{3}|[0-9a-f]{6,8})$/i.test(value.trim());
-
-  const placeholder =
-    TOKEN_TYPE_FOR_CATEGORY[category] === "color"
-      ? "#e4f222"
-      : TOKEN_TYPE_FOR_CATEGORY[category] === "spacing"
-      ? "16px"
-      : TOKEN_TYPE_FOR_CATEGORY[category] === "radius"
-      ? "8px"
-      : TOKEN_TYPE_FOR_CATEGORY[category] === "typography"
-      ? 'Inter, sans-serif'
-      : "value";
-
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (canSubmit) onSubmit(name, value);
-      }}
-      className="mb-4 flex items-center gap-2 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-2"
-    >
-      {isColor && (
-        <input
-          type="color"
-          value={colourPreview ? value.trim() : "#6366f1"}
-          onChange={(e) => setValue(e.target.value)}
-          className="h-7 w-7 shrink-0 cursor-pointer rounded border border-[var(--studio-border)] bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-sm [&::-webkit-color-swatch]:border-none"
-          title="Pick a colour"
-        />
-      )}
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="token-name"
-        autoFocus
-        className="min-w-0 flex-1 rounded bg-[var(--bg-elevated)] px-2 py-1 font-mono text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
-      />
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
-        className="min-w-0 flex-1 rounded bg-[var(--bg-elevated)] px-2 py-1 font-mono text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
-      />
-      <button
-        type="button"
-        onClick={onCancel}
-        className="rounded px-2 py-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-      >
-        Cancel
-      </button>
-      <button
-        type="submit"
-        disabled={!canSubmit}
-        className="rounded bg-[var(--studio-accent)] px-3 py-1 text-[11px] font-medium text-[var(--text-on-accent)] disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        Add
-      </button>
-    </form>
-  );
-}
