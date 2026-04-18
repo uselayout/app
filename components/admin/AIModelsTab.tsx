@@ -41,7 +41,7 @@ const emptyModel: AiModelRow = {
   id: "",
   label: "",
   provider: "claude",
-  maxOutputTokens: 32000,
+  maxOutputTokens: 64000,
   creditCost: 1,
   inputCostPerM: 0,
   outputCostPerM: 0,

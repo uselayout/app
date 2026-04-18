@@ -366,7 +366,7 @@ export function createExploreStream(
         const msgStream = anthropic.messages.stream({
           model: modelId,
           max_tokens: 64000,
-          system: systemPrompt,
+          system: [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }],
           messages: [{ role: "user", content: userContent }],
         });
 
@@ -443,7 +443,7 @@ Refinement request: ${refinementPrompt}`;
         const msgStream = anthropic.messages.stream({
           model: modelId,
           max_tokens: 64000,
-          system: systemPrompt,
+          system: [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }],
           messages: [{ role: "user", content: userContent }],
         });
 

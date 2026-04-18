@@ -598,7 +598,7 @@ export function createLayoutMdStream(
             const msgStream = anthropic.messages.stream({
               model: modelId,
               max_tokens: 16384,
-              system: SYSTEM_PROMPT,
+              system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
               messages: [{ role: "user", content: userContent }],
             });
 
