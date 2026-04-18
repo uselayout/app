@@ -10,7 +10,7 @@ import { generateTokensJson } from "@/lib/export/tokens-json";
 import { generateTailwindConfig } from "@/lib/export/tailwind-config";
 import { logEvent } from "@/lib/logging/platform-event";
 import { buildCuratedExtractedTokens } from "@/lib/tokens/curated-to-extracted";
-import type { Project, ExportFormat, UploadedFont } from "@/lib/types";
+import type { Project, ExportFormat, UploadedFont, BrandingAsset, ContextDocument } from "@/lib/types";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 
@@ -31,6 +31,24 @@ const RequestSchema = z.object({
       url: z.string(),
       projectId: z.string(),
       orgId: z.string().optional(),
+    })).optional(),
+    brandingAssets: z.array(z.object({
+      id: z.string(),
+      slot: z.enum(["primary", "secondary", "wordmark", "favicon", "mark", "other"]),
+      url: z.string(),
+      name: z.string(),
+      mimeType: z.string(),
+      size: z.number(),
+      uploadedAt: z.string(),
+    })).optional(),
+    contextDocuments: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      content: z.string(),
+      mimeType: z.string(),
+      size: z.number(),
+      addedAt: z.string(),
+      pinned: z.boolean().optional(),
     })).optional(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
@@ -148,7 +166,79 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  void logEvent("export.bundle", "studio", { userId: session.user.id, metadata: { formats, projectId: project.id, hasScreenshots: !!proj.extractionData?.screenshots?.length, fontCount: uploadedFonts.length } });
+  // Include branding assets: fetch each from the Supabase URL and write into
+  // a branding/ folder alongside an index.json mapping slot -> filename so
+  // downstream consumers (CLI / MCP) can resolve data-brand-logo="..." slots.
+  const brandingAssets = (proj.brandingAssets ?? []) as BrandingAsset[];
+  if (brandingAssets.length > 0) {
+    const brandingDir = zip.folder("branding");
+    const manifest: Record<string, { filename: string; slot: string; url: string; mimeType: string }> = {};
+
+    await Promise.all(
+      brandingAssets.map(async (asset) => {
+        try {
+          const storagePath = asset.url.replace(/^\/api\/storage\//, "");
+          const url = `${SUPABASE_URL}/storage/v1/object/public/${storagePath}`;
+          const res = await fetch(url);
+          if (!res.ok) return;
+          const buffer = await res.arrayBuffer();
+          const ext = asset.name.includes(".")
+            ? asset.name.split(".").pop()
+            : undefined;
+          const safeName = asset.name
+            .toLowerCase()
+            .replace(/[^a-z0-9.]+/g, "-");
+          const filename = `${asset.slot}-${asset.id}${ext ? "" : ""}-${safeName}`;
+          brandingDir?.file(filename, buffer);
+          manifest[asset.id] = {
+            filename,
+            slot: asset.slot,
+            url: asset.url,
+            mimeType: asset.mimeType,
+          };
+        } catch {
+          // Skip failed downloads; continue bundling.
+        }
+      })
+    );
+
+    brandingDir?.file("index.json", JSON.stringify(manifest, null, 2));
+  }
+
+  // Include context documents: one .md per doc + a lightweight index.json.
+  const contextDocuments = (proj.contextDocuments ?? []) as ContextDocument[];
+  if (contextDocuments.length > 0) {
+    const contextDir = zip.folder("context");
+    const manifest: Record<string, { name: string; pinned: boolean; mimeType: string; addedAt: string }> = {};
+
+    for (const doc of contextDocuments) {
+      const safeName = doc.name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-");
+      const filename = safeName.endsWith(".md") || safeName.endsWith(".txt")
+        ? safeName
+        : `${safeName}.md`;
+      contextDir?.file(filename, doc.content);
+      manifest[doc.id] = {
+        name: filename,
+        pinned: Boolean(doc.pinned),
+        mimeType: doc.mimeType,
+        addedAt: doc.addedAt,
+      };
+    }
+
+    contextDir?.file("index.json", JSON.stringify(manifest, null, 2));
+  }
+
+  void logEvent("export.bundle", "studio", {
+    userId: session.user.id,
+    metadata: {
+      formats,
+      projectId: project.id,
+      hasScreenshots: !!proj.extractionData?.screenshots?.length,
+      fontCount: uploadedFonts.length,
+      brandingCount: brandingAssets.length,
+      contextDocCount: contextDocuments.length,
+    },
+  });
 
   const zipBuffer = await zip.generateAsync({ type: "arraybuffer" });
   const safeName = project.name

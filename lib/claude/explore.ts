@@ -487,9 +487,19 @@ function buildUserContent(
   imageDataUrl?: string,
   contextFiles?: Array<{ name: string; content: string }>,
 ): string | ContentBlockParam[] {
-  const contextBlock = contextFiles?.length
-    ? contextFiles.map((f) => `--- context: ${f.name} ---\n${f.content}\n--- end ---`).join("\n\n") + "\n\n"
-    : "";
+  let contextBlock = "";
+  if (contextFiles?.length) {
+    const preamble =
+      "--- PROJECT CONTEXT (supplementary, non-authoritative) ---\n" +
+      "Brand voice, product descriptions, and copy guidelines uploaded by the user.\n" +
+      "Use these to inform copy tone and wording. Design tokens above remain the source of truth.\n---\n\n";
+    contextBlock =
+      preamble +
+      contextFiles
+        .map((f) => `--- context: ${f.name} ---\n${f.content}\n--- end ---`)
+        .join("\n\n") +
+      "\n\n";
+  }
   const fullPrompt = contextBlock + prompt;
 
   if (!imageDataUrl) return fullPrompt;
