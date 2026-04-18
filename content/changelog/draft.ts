@@ -10,6 +10,42 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w16-start-blank",
+    title: "Start with a blank design system",
+    description:
+      "New projects no longer need a Figma file or live website. Pick \"Start blank\" in the New Project modal to get an empty kit with standard section headings, then add tokens, branding, and context from the Source Panel as you go.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-18",
+  },
+  {
+    id: "2026-w16-branding-assets",
+    title: "Upload brand logos and favicons",
+    description:
+      "Add your project's real logos, wordmarks, and favicons in a new Branding tab. AI-generated variants reference them via data-brand-logo attributes that resolve to your uploaded files, so mocks carry your actual identity rather than placeholder marks.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-18",
+  },
+  {
+    id: "2026-w16-context-docs",
+    title: "Attach project context documents",
+    description:
+      "Upload brand voice docs, copy guidelines, or product descriptions in the new Context tab. Every variant generation includes them alongside your design tokens automatically. Claude treats tokens as truth and context docs as wording and tone input.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-18",
+  },
+  {
+    id: "2026-w16-fresh-layout-md",
+    title: "Layout.md edits always reach AI generation",
+    description:
+      "Editing layout.md in Monaco and immediately clicking Generate no longer races saves. The explore route fetches the latest saved copy server-side before building the prompt. A new banner also surfaces when a manual layout.md section drifts from your extracted tokens.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-18",
+  },
+  {
     id: "2026-w16-add-tokens",
     title: "Add tokens manually",
     description:

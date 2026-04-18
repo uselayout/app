@@ -26,6 +26,17 @@ function emitTokenBlock(
 }
 
 export function generateTokensCss(tokens: ExtractedTokens): string {
+  // Blank projects: don't emit an empty `:root {}` file — the export route
+  // skips this entry when we return an empty string.
+  const total =
+    tokens.colors.length +
+    tokens.typography.length +
+    tokens.spacing.length +
+    tokens.radius.length +
+    tokens.effects.length +
+    (tokens.motion?.length ?? 0);
+  if (total === 0) return "";
+
   const lines: string[] = [":root {"];
 
   emitTokenBlock(tokens.colors, "COLOURS", "color", lines);

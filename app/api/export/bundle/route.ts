@@ -274,14 +274,16 @@ function addFormatToZip(zip: JSZip, format: ExportFormat, project: Project) {
     case "tokens-css": {
       if (project.extractionData?.tokens) {
         const tokens = buildCuratedExtractedTokens(project.standardisation) ?? project.extractionData.tokens;
-        zip.file("tokens.css", generateTokensCss(tokens));
+        const out = generateTokensCss(tokens);
+        if (out.length > 0) zip.file("tokens.css", out);
       }
       break;
     }
     case "tokens-json": {
       if (project.extractionData?.tokens) {
         const tokens = buildCuratedExtractedTokens(project.standardisation) ?? project.extractionData.tokens;
-        zip.file("tokens.json", generateTokensJson(tokens));
+        const out = generateTokensJson(tokens);
+        if (out.length > 0) zip.file("tokens.json", out);
       }
       break;
     }

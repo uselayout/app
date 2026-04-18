@@ -838,7 +838,11 @@ function TokensTab({
   if (sections.length === 0) {
     return (
       <div className="p-4 space-y-3">
-        <p className="text-xs text-[var(--text-muted)]">No tokens extracted.</p>
+        <p className="text-xs text-[var(--text-muted)]">
+          {sourceType === "manual"
+            ? "No tokens yet. Click a section below to add your first token."
+            : "No tokens extracted."}
+        </p>
         {projectId && (
           <div className="space-y-1">
             {Object.keys(TYPE_FOR_SECTION).map((label) => (
