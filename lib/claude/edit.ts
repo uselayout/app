@@ -1,73 +1,89 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
+import { applyPatches, parsePatches, type PatchApplyError } from "./edit-patches";
 
-const SYSTEM_PROMPT = `You are an expert design system editor. You receive a layout.md file (a structured design system specification) and a user instruction describing what to change.
+const EDIT_SYSTEM_PROMPT = `You are a surgical editor for a layout.md file (a structured design system specification). You receive the current file and a user instruction.
+
+OUTPUT FORMAT — this is strict:
+Return one or more search/replace blocks using exactly this format:
+
+<<<<<<< SEARCH
+exact text to find, copied verbatim from the file
+=======
+the replacement text
+>>>>>>> REPLACE
 
 RULES:
-- Return ONLY the complete updated layout.md — no explanation, no commentary, no code fences.
-- Preserve ALL existing structure, sections, and formatting exactly as-is.
-- Only modify what the user's instruction explicitly asks for.
-- Never remove sections, tokens, or content unless the user explicitly asks you to.
-- Maintain consistent formatting: same heading levels, same table structures, same code block styles.
-- If the instruction is ambiguous, make the most conservative reasonable interpretation.
-- Add new sections when the user asks for them — place them in the logical position within the document structure.
-- Keep token names consistent with existing naming conventions in the document.`;
+- Each SEARCH must match the file EXACTLY ONCE. Include enough surrounding context (a full line or two) to make it unique. NEVER paraphrase the SEARCH text.
+- Only produce the smallest blocks needed to satisfy the instruction. Do NOT rewrite unrelated prose, whitespace, or formatting.
+- To delete content: leave REPLACE empty.
+- To add a new section or new content: anchor SEARCH on an existing line (usually the nearest heading or the final line of the file) and include that line verbatim in REPLACE, followed by the new content.
+- For multiple independent edits, emit multiple blocks.
+- Do not emit code fences around the blocks. Do not wrap the output in any other container.
+- Short explanatory prose before the first block is allowed and will be ignored, but keep it under two sentences.
+- If the instruction is truly impossible to carry out with surgical edits, return NO blocks and a single sentence explaining why.`;
 
-export function createEditStream(
+export interface EditPlanSuccess {
+  ok: true;
+  newLayoutMd: string;
+  appliedCount: number;
+  rawModelOutput: string;
+  usage: TokenUsageResult;
+}
+
+export interface EditPlanFailure {
+  ok: false;
+  error: PatchApplyError;
+  rawModelOutput: string;
+  usage: TokenUsageResult;
+}
+
+export type EditPlanResult = EditPlanSuccess | EditPlanFailure;
+
+export async function planEdit(
   instruction: string,
   layoutMd: string,
   apiKey?: string,
   modelId: string = "claude-sonnet-4-6"
-): StreamWithUsage {
+): Promise<EditPlanResult> {
   const anthropic = new Anthropic({ apiKey });
 
-  let resolveUsage: (u: TokenUsageResult) => void;
-  const usage = new Promise<TokenUsageResult>((resolve) => {
-    resolveUsage = resolve;
+  const response = await anthropic.messages.create({
+    model: modelId,
+    max_tokens: 8192,
+    system: EDIT_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: `Here is the current layout.md:\n\n${layoutMd}\n\n---\n\nInstruction: ${instruction}\n\nReturn only SEARCH/REPLACE blocks.`,
+      },
+    ],
   });
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder();
+  const rawModelOutput = response.content
+    .filter((block): block is Anthropic.TextBlock => block.type === "text")
+    .map((block) => block.text)
+    .join("\n");
 
-      try {
-        const msgStream = anthropic.messages.stream({
-          model: modelId,
-          max_tokens: 32768,
-          system: SYSTEM_PROMPT,
-          messages: [
-            {
-              role: "user",
-              content: `Here is the current layout.md:\n\n${layoutMd}\n\n---\n\nInstruction: ${instruction}`,
-            },
-          ],
-        });
+  const usage: TokenUsageResult = {
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
+  };
 
-        for await (const event of msgStream) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            controller.enqueue(encoder.encode(event.delta.text));
-          }
-        }
+  const patches = parsePatches(rawModelOutput);
+  const applied = applyPatches(layoutMd, patches);
 
-        const finalMessage = await msgStream.finalMessage();
-        resolveUsage({
-          inputTokens: finalMessage.usage.input_tokens,
-          outputTokens: finalMessage.usage.output_tokens,
-        });
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Unknown error";
-        controller.enqueue(encoder.encode(`\n\n[Error: ${msg}]`));
-        resolveUsage({ inputTokens: 0, outputTokens: 0 });
-      } finally {
-        controller.close();
-      }
-    },
-  });
+  if (!applied.ok) {
+    return { ok: false, error: applied.error, rawModelOutput, usage };
+  }
 
-  return { stream, usage };
+  return {
+    ok: true,
+    newLayoutMd: applied.result.newLayoutMd,
+    appliedCount: applied.result.applied,
+    rawModelOutput,
+    usage,
+  };
 }
 
 const FIX_SYSTEM_PROMPT = `You are an expert design system editor. You receive a layout.md file and a list of missing content that needs to be added.
