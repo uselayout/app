@@ -33,7 +33,11 @@ export function createEditStream(
       try {
         const msgStream = anthropic.messages.stream({
           model: modelId,
-          max_tokens: 32768,
+          // 64k fits a ~12k-token layout.md rewrite with plenty of headroom.
+          // Sonnet 4.6 supports 64k output; Opus 4.7 supports 128k. Previously
+          // 32768, which silently truncated large-file rewrites (see the
+          // Ramp project incident, 2026-04-19).
+          max_tokens: 64_000,
           system: SYSTEM_PROMPT,
           messages: [
             {
@@ -53,6 +57,17 @@ export function createEditStream(
         }
 
         const finalMessage = await msgStream.finalMessage();
+        // If the model hit the output ceiling the response is truncated.
+        // Emit a structured marker so clients can reject the rewrite and
+        // restore the pre-edit version instead of silently accepting a
+        // partial file.
+        if (finalMessage.stop_reason === "max_tokens") {
+          controller.enqueue(
+            encoder.encode(
+              "\n\n[AI_EDIT_TRUNCATED: Response hit the output token limit. The rewrite is incomplete and MUST NOT be saved.]"
+            )
+          );
+        }
         resolveUsage({
           inputTokens: finalMessage.usage.input_tokens,
           outputTokens: finalMessage.usage.output_tokens,
@@ -69,6 +84,9 @@ export function createEditStream(
 
   return { stream, usage };
 }
+
+/** Structured marker the stream emits when the model runs out of output budget. */
+export const AI_EDIT_TRUNCATED_MARKER = "[AI_EDIT_TRUNCATED:";
 
 const FIX_SYSTEM_PROMPT = `You are an expert design system editor. You receive a layout.md file and a list of missing content that needs to be added.
 

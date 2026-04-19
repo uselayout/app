@@ -10,6 +10,7 @@ import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import type { LayoutMdVersion } from "@/lib/supabase/layout-md-versions";
 import type { ExtractionResult } from "@/lib/types";
 import { DivergenceBanner } from "./DivergenceBanner";
+import { AI_EDIT_TRUNCATED_MARKER } from "@/lib/claude/edit";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -136,7 +137,7 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
     tokenCount < 4000
       ? "text-[var(--status-success)]"
       : tokenCount < 8000
-        ? "text-yellow-400"
+        ? "text-[var(--status-warning)]"
         : "text-[var(--status-error)]";
 
   const handleChange = useCallback(
@@ -515,7 +516,17 @@ function EditorChatBar({
         editorRef.current?.setValue(accumulated);
       }
 
-      if (accumulated.startsWith("\n\n[Error:")) {
+      // Reject truncated rewrites — the model hit its output budget and
+      // the file is incomplete. Restore the pre-edit value and surface the
+      // error so the user doesn't silently save a partial file.
+      if (accumulated.includes(AI_EDIT_TRUNCATED_MARKER)) {
+        editorRef.current?.setValue(value);
+        throw new Error(
+          "AI rewrite hit the output limit. Your original layout.md has been restored. Try a narrower edit."
+        );
+      }
+
+      if (accumulated.startsWith("\n\n[Error:") || accumulated.includes("\n\n[Error:")) {
         // Restore on error
         editorRef.current?.setValue(value);
         throw new Error(accumulated);
