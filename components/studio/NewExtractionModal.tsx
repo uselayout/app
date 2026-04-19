@@ -1,7 +1,16 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Layers, Globe, ArrowRight, Loader2, Sparkles } from "lucide-react";
+import {
+  X,
+  Layers,
+  Globe,
+  ArrowRight,
+  Loader2,
+  Sparkles,
+  Lightbulb,
+  Info,
+} from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
@@ -258,6 +267,32 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
               </div>
             )}
 
+            {isFigma && (
+              <div className="flex items-start gap-2.5 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-app)] p-3">
+                <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--studio-accent)]" />
+                <div className="space-y-1.5 text-xs leading-relaxed text-[var(--text-secondary)]">
+                  <p className="font-medium text-[var(--text-primary)]">
+                    Tip: the Figma plugin extracts more
+                  </p>
+                  <p>
+                    This URL method uses Figma&apos;s REST API. It reads
+                    published styles only, and Variables require a Figma
+                    Enterprise plan. The plugin reads local styles, Variables,
+                    and multi-mode tokens on any plan.
+                  </p>
+                  <a
+                    href="/docs/figma-plugin"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[var(--studio-accent)] transition-colors hover:text-[var(--studio-accent-hover)]"
+                  >
+                    Get the plugin
+                    <ArrowRight className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+            )}
+
             {isFigma && !storedFigmaPat && (
               <div className="space-y-1.5">
                 <input
@@ -284,6 +319,16 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
               <p className="text-xs text-[var(--text-muted)]">
                 Using Figma token from Settings.
               </p>
+            )}
+
+            {sourceType === "website" && (
+              <div className="flex items-start gap-2.5 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-app)] p-3">
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" />
+                <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
+                  Website extraction works on publicly accessible pages only.
+                  Pages behind a login aren&apos;t supported from this flow.
+                </p>
+              </div>
             )}
           </div>
         ) : (
