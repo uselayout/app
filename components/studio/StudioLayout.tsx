@@ -12,10 +12,11 @@ interface StudioLayoutProps {
   showSourcePanel?: boolean;
 }
 
-const MIN_PANEL_WIDTH = 200;
-// Wider default to fit the expanded tab strip (Branding, Context) plus long
-// token names like `--manual-design-system-accent` without truncation.
-const DEFAULT_LEFT = 340;
+const MIN_PANEL_WIDTH = 320;
+// Wider floor and default so long token names (e.g.
+// `--ramp-accent-primary-hover`) and the hex value column fit without the
+// panel feeling cramped or clipping.
+const DEFAULT_LEFT = 400;
 
 export function StudioLayout({
   sourcePanel,
