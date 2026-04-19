@@ -45,6 +45,71 @@ function valueMatchesTypographyShape(value: string, shape: ReturnType<typeof typ
   return true;
 }
 
+/**
+ * Placeholder and validator for direct custom-value entry in the search box
+ * of a non-colour picker. Lets users type `16px`, `600`, `1.5`, `200ms`, etc.
+ * and press Enter to create a custom token for the role.
+ */
+function customValueHint(category: StandardRoleCategory, typoShape: ReturnType<typeof typographySubShape>): { placeholder: string; validate: (v: string) => boolean } | null {
+  if (category === "spacing") {
+    return {
+      placeholder: "Search or enter a value (e.g. 16px)…",
+      validate: (v) => /^-?\d+(?:\.\d+)?\s*(?:px|rem|em)\b/i.test(v.trim()),
+    };
+  }
+  if (category === "radius") {
+    return {
+      placeholder: "Search or enter a value (e.g. 8px, 50%)…",
+      validate: (v) => /^-?\d+(?:\.\d+)?\s*(?:px|rem|em|%)\b/i.test(v.trim()),
+    };
+  }
+  if (category === "motion") {
+    return {
+      placeholder: "Search or enter a value (e.g. 200ms, 0.3s, cubic-bezier(...))…",
+      validate: (v) => {
+        const t = v.trim();
+        return /^-?\d+(?:\.\d+)?\s*(?:ms|s)\b/i.test(t) || /^(?:ease|linear|step)|cubic-bezier\s*\(/i.test(t);
+      },
+    };
+  }
+  if (category === "shadows") {
+    return {
+      placeholder: "Search or paste a box-shadow value…",
+      validate: (v) => {
+        const t = v.trim();
+        return /\b(?:px|rgba?\(|inset)\b/i.test(t) && t.length > 3;
+      },
+    };
+  }
+  if (category === "typography") {
+    if (typoShape === "size") {
+      return {
+        placeholder: "Search or enter a size (e.g. 16px, 1.25rem)…",
+        validate: (v) => /^-?\d+(?:\.\d+)?\s*(?:px|rem|em)\b/i.test(v.trim()),
+      };
+    }
+    if (typoShape === "weight") {
+      return {
+        placeholder: "Search or enter a weight (e.g. 500)…",
+        validate: (v) => /^\d{3}$/.test(v.trim()) || /^(?:normal|bold|bolder|lighter)$/i.test(v.trim()),
+      };
+    }
+    if (typoShape === "lineHeight") {
+      return {
+        placeholder: "Search or enter line-height (e.g. 1.5)…",
+        validate: (v) => /^-?\d+(?:\.\d+)?$/.test(v.trim()) || /%$/.test(v.trim()),
+      };
+    }
+    if (typoShape === "family") {
+      return {
+        placeholder: 'Search or enter a font stack (e.g. "Inter", sans-serif)…',
+        validate: (v) => /[,"']/.test(v.trim()),
+      };
+    }
+  }
+  return null;
+}
+
 interface UnassignedItem {
   name: string;
   cssVariable?: string;
@@ -191,19 +256,46 @@ export function AssignTokenPopover({
           </div>
         )}
 
-        {/* Search (non-colour roles) */}
-        {!isColourRole && (
-          <div className="border-b border-[var(--studio-border)] px-3 py-2">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search tokens..."
-              autoFocus
-              className="w-full bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
-            />
-          </div>
-        )}
+        {/* Search (non-colour roles). Also accepts a direct value entry
+            (e.g. "16px", "600", "1.5", "200ms") that becomes a custom token. */}
+        {!isColourRole && (() => {
+          const hint = customValueHint(role.category, typoShape);
+          const canSubmitCustom = hint ? hint.validate(search) : false;
+          const submitCustom = () => {
+            handleSelect({
+              name: `custom-${role.suffix}`,
+              value: search.trim(),
+              type: expectedType,
+              hidden: false,
+            });
+          };
+          return (
+            <div className="flex items-center gap-2 border-b border-[var(--studio-border)] px-3 py-2">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={hint?.placeholder ?? "Search tokens..."}
+                autoFocus
+                className="min-w-0 flex-1 bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && canSubmitCustom) {
+                    submitCustom();
+                  }
+                }}
+              />
+              {canSubmitCustom && (
+                <button
+                  onClick={submitCustom}
+                  className="shrink-0 rounded bg-[var(--studio-accent)] px-2 py-0.5 text-[9px] font-medium text-[var(--text-on-accent)]"
+                  title="Create a custom token with this value and assign it to the role"
+                >
+                  Add
+                </button>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Token list */}
         <div className="max-h-64 overflow-y-auto py-1">
