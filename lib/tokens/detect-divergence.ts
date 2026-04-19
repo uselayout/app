@@ -29,6 +29,27 @@ function keyFor(t: { name: string; mode?: string }): string {
   return t.mode ? `${t.name}::${t.mode}` : t.name;
 }
 
+/**
+ * Normalise a CSS token value for semantic comparison. Two values that differ
+ * only in whitespace, hex case, or short- vs long-form hex are the same token
+ * value — so `rgba(0,0,0,0.06)` and `rgba(0, 0, 0, 0.06)` should not flag as
+ * divergent. Keeps comparison strict on anything that could actually change
+ * rendering.
+ */
+function normaliseValueForCompare(value: string): string {
+  let v = value.trim().toLowerCase();
+  // Expand 3-digit hex to 6-digit so #fff == #ffffff.
+  v = v.replace(/#([0-9a-f])([0-9a-f])([0-9a-f])\b/g, (_, r, g, b) => `#${r}${r}${g}${g}${b}${b}`);
+  // Expand 4-digit hex to 8-digit so #fff8 == #ffffff88.
+  v = v.replace(/#([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])\b/g, (_, r, g, b, a) => `#${r}${r}${g}${g}${b}${b}${a}${a}`);
+  // Drop spaces after commas and inside parens so rgba(0, 0, 0, 0.06) == rgba(0,0,0,0.06).
+  v = v.replace(/\s*,\s*/g, ",");
+  v = v.replace(/\(\s+/g, "(").replace(/\s+\)/g, ")");
+  // Collapse any remaining runs of whitespace to single spaces.
+  v = v.replace(/\s+/g, " ");
+  return v;
+}
+
 function flattenTokens(tokens: ExtractedTokens | undefined): ExtractedToken[] {
   if (!tokens) return [];
   return [
@@ -81,7 +102,7 @@ export function detectTokenDivergence(
       });
       continue;
     }
-    if (mdToken.value.trim() !== dataToken.value.trim()) {
+    if (normaliseValueForCompare(mdToken.value) !== normaliseValueForCompare(dataToken.value)) {
       valueDivergences.push({
         name: mdToken.name,
         type: mdToken.type,
