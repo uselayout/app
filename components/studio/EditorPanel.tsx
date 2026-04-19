@@ -133,12 +133,12 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
   }, [onChange]);
 
   const tokenCount = useMemo(() => Math.round(value.length / 4), [value]);
-  const tokenColour =
+  const tokenBadge =
     tokenCount < 4000
-      ? "text-[var(--status-success)]"
+      ? "bg-[var(--status-success)] text-white"
       : tokenCount < 8000
-        ? "text-yellow-400"
-        : "text-[var(--status-error)]";
+        ? "bg-[var(--status-warning)] text-black"
+        : "bg-[var(--status-error)] text-white";
 
   const handleChange = useCallback(
     (newValue: string | undefined) => {
@@ -317,7 +317,9 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
               History
             </button>
           )}
-          <span className={`text-xs ${tokenColour}`}>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium tabular-nums ${tokenBadge}`}
+          >
             ~{tokenCount.toLocaleString()} tokens
           </span>
         </div>
