@@ -97,6 +97,8 @@ export interface ExtractedToken {
   standardName?: string;
   /** Confidence of the standard role assignment. */
   standardConfidence?: "high" | "medium" | "low";
+  /** CSS variable names of other tokens that resolved to the same value at extraction time. Populated by lib/extraction/dedupe.ts. */
+  aliases?: string[];
 }
 
 export interface ComponentProperty {
@@ -230,6 +232,12 @@ export interface ExtractionResult {
     crossAxis: string;
     count: number;
   }>;
+  /**
+   * Tokens filtered out by lib/extraction/noise.ts (vendor libs, alpha-tint
+   * primitives). Kept here so users can inspect what was dropped and
+   * re-include anything they actually want.
+   */
+  droppedNoise?: Array<{ name: string; value: string; type: TokenType; reason: "vendor" | "alpha-tint" | "other" }>;
 }
 
 export interface ExtractionStep {

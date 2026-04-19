@@ -514,3 +514,177 @@ export const detectLibrariesScript = `() => ({
   heroicons: !!document.querySelector('svg[data-slot="icon"]'),
   nextJs: !!(window.__NEXT_DATA__ || document.getElementById('__NEXT_DATA__')),
 })`;
+
+/**
+ * Census of computed font-size / font-weight / line-height values across
+ * visible text-bearing elements. Groups by value and records frequency +
+ * sample context, same pattern as extractButtonColourCensusScript but for
+ * typography. Used by the extractor to emit a real type scale when the
+ * site doesn't expose one via CSS custom properties.
+ */
+export const extractTypographyCensusScript = `() => {
+  const excluded = '[class*="cookie"], [class*="consent"], [class*="banner"], [id*="cookie"], [id*="consent"], dialog, [role="dialog"], [aria-hidden="true"]';
+  const textSelectors = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'a', 'button', 'li', 'label', 'div[class*="heading"]', 'div[class*="title"]', 'div[class*="body"]', 'div[class*="text"]'];
+  const sizes = {};
+  const weights = {};
+  const lineHeights = {};
+  const letterSpacings = {};
+
+  function addSample(bucket, value, sampleTag, sampleText) {
+    if (!value) return;
+    const key = String(value).trim();
+    if (!key || key === 'normal' || key === '0px') return;
+    if (!bucket[key]) bucket[key] = { count: 0, samples: [] };
+    bucket[key].count++;
+    if (bucket[key].samples.length < 3) {
+      bucket[key].samples.push({ tag: sampleTag, text: sampleText.slice(0, 40) });
+    }
+  }
+
+  for (const sel of textSelectors) {
+    try {
+      const els = document.querySelectorAll(sel);
+      for (const el of Array.from(els).slice(0, 60)) {
+        if (el.closest(excluded)) continue;
+        const rect = el.getBoundingClientRect();
+        if (rect.width < 4 || rect.height < 4) continue; // skip invisible
+        const cs = getComputedStyle(el);
+        const tag = el.tagName.toLowerCase();
+        const text = (el.textContent || '').trim();
+        if (!text) continue;
+        addSample(sizes, cs.fontSize, tag, text);
+        addSample(weights, cs.fontWeight, tag, text);
+        addSample(lineHeights, cs.lineHeight, tag, text);
+        addSample(letterSpacings, cs.letterSpacing, tag, text);
+      }
+    } catch(e) {}
+  }
+
+  return { sizes, weights, lineHeights, letterSpacings };
+}`;
+
+/**
+ * Census of computed spacing values (gap / padding / margin blocks) across
+ * layout containers. Produces a ranked list of unique px values the
+ * extractor can slot into the spacing scale.
+ */
+export const extractSpacingCensusScript = `() => {
+  const excluded = '[class*="cookie"], [class*="consent"], [class*="banner"], [id*="cookie"], [id*="consent"], dialog, [role="dialog"], [aria-hidden="true"]';
+  const selectors = ['main', 'section', 'article', 'header', 'footer', 'nav', 'aside', '[class*="container"]', '[class*="wrapper"]', '[class*="grid"]', '[class*="flex"]', '[class*="stack"]', '[class*="card"]', '[class*="row"]', '[class*="col"]'];
+  const values = {};
+
+  function normalise(v) {
+    if (!v) return null;
+    const trimmed = String(v).trim();
+    // Collapse multi-value blocks (e.g. "16px 24px") to individual numerics
+    return trimmed.split(/\\s+/).filter(Boolean);
+  }
+
+  function addSample(px, sampleTag, sampleClass) {
+    if (px === null) return;
+    const n = parseFloat(px);
+    if (!isFinite(n) || n <= 0) return;
+    const key = \`\${Math.round(n * 100) / 100}px\`;
+    if (!values[key]) values[key] = { count: 0, samples: [] };
+    values[key].count++;
+    if (values[key].samples.length < 3) {
+      values[key].samples.push({ tag: sampleTag, cls: sampleClass.slice(0, 40) });
+    }
+  }
+
+  for (const sel of selectors) {
+    try {
+      const els = document.querySelectorAll(sel);
+      for (const el of Array.from(els).slice(0, 50)) {
+        if (el.closest(excluded)) continue;
+        const cs = getComputedStyle(el);
+        const display = cs.display;
+        const isLayout = display === 'flex' || display === 'grid' || display.includes('flex') || display.includes('grid');
+        const tag = el.tagName.toLowerCase();
+        const cls = (el.className && el.className.toString ? el.className.toString() : '') || '';
+
+        // Gap only makes sense on layout containers
+        if (isLayout) {
+          for (const v of (normalise(cs.gap) || [])) addSample(v, tag, cls);
+          for (const v of (normalise(cs.rowGap) || [])) addSample(v, tag, cls);
+          for (const v of (normalise(cs.columnGap) || [])) addSample(v, tag, cls);
+        }
+        for (const v of (normalise(cs.paddingTop) || [])) addSample(v, tag, cls);
+        for (const v of (normalise(cs.paddingBottom) || [])) addSample(v, tag, cls);
+        for (const v of (normalise(cs.paddingLeft) || [])) addSample(v, tag, cls);
+        for (const v of (normalise(cs.paddingRight) || [])) addSample(v, tag, cls);
+      }
+    } catch(e) {}
+  }
+
+  return values;
+}`;
+
+/**
+ * Census of non-trivial box-shadow values. Used to populate shadow tokens
+ * even when the site has no named shadow tokens in CSS custom properties.
+ */
+export const extractShadowCensusScript = `() => {
+  const excluded = '[class*="cookie"], [class*="consent"], [class*="banner"], [id*="cookie"], [id*="consent"], dialog, [role="dialog"], [aria-hidden="true"]';
+  const selectors = ['[class*="card"]', '[class*="dropdown"]', '[class*="menu"]', '[class*="modal"]', '[class*="dialog"]', '[class*="tooltip"]', '[class*="popover"]', 'button', '[role="button"]', '[class*="btn"]'];
+  const shadows = {};
+
+  for (const sel of selectors) {
+    try {
+      const els = document.querySelectorAll(sel);
+      for (const el of Array.from(els).slice(0, 20)) {
+        if (el.closest(excluded)) continue;
+        const cs = getComputedStyle(el);
+        const bs = cs.boxShadow;
+        if (!bs || bs === 'none') continue;
+        const key = bs.trim();
+        if (!shadows[key]) shadows[key] = { count: 0, samples: [] };
+        shadows[key].count++;
+        if (shadows[key].samples.length < 3) {
+          const cls = (el.className && el.className.toString ? el.className.toString() : '') || '';
+          shadows[key].samples.push({ tag: el.tagName.toLowerCase(), cls: cls.slice(0, 40) });
+        }
+      }
+    } catch(e) {}
+  }
+
+  return shadows;
+}`;
+
+/**
+ * Census of transition/animation duration + timing-function values across
+ * interactive elements. Used to emit motion tokens (durations + easings).
+ */
+export const extractMotionCensusScript = `() => {
+  const excluded = '[class*="cookie"], [class*="consent"], [class*="banner"], [id*="cookie"], [id*="consent"], dialog, [role="dialog"]';
+  const selectors = ['button', 'a', '[role="button"]', 'input', '[class*="btn"]', '[class*="link"]', '[class*="nav"]', '[class*="transition"]', '[class*="animate"]'];
+  const durations = {};
+  const easings = {};
+
+  function add(bucket, value, tag) {
+    if (!value) return;
+    const parts = String(value).split(',').map((s) => s.trim()).filter(Boolean);
+    for (const p of parts) {
+      if (p === '0s' || p === '0ms' || p === 'normal') continue;
+      if (!bucket[p]) bucket[p] = { count: 0, samples: [] };
+      bucket[p].count++;
+      if (bucket[p].samples.length < 3) bucket[p].samples.push({ tag });
+    }
+  }
+
+  for (const sel of selectors) {
+    try {
+      const els = document.querySelectorAll(sel);
+      for (const el of Array.from(els).slice(0, 30)) {
+        if (el.closest(excluded)) continue;
+        const cs = getComputedStyle(el);
+        add(durations, cs.transitionDuration, el.tagName.toLowerCase());
+        add(durations, cs.animationDuration, el.tagName.toLowerCase());
+        add(easings, cs.transitionTimingFunction, el.tagName.toLowerCase());
+        add(easings, cs.animationTimingFunction, el.tagName.toLowerCase());
+      }
+    } catch(e) {}
+  }
+
+  return { durations, easings };
+}`;

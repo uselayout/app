@@ -182,11 +182,14 @@ export async function parseStyles(
   const stylesResponse = await client.getStyles(fileKey);
   const styles = stylesResponse.meta.styles;
 
-  const MAX_STYLES = 500;
+  // Large Figma libraries routinely exceed 500 styles. 2000 is a safer
+  // ceiling that the Figma /v1/files/.../nodes batched endpoint handles
+  // comfortably via getNodesBatched (which chunks internally).
+  const MAX_STYLES = 2000;
   const allNodeIds = styles.map((s) => s.node_id);
   const nodeIds = allNodeIds.slice(0, MAX_STYLES);
   if (allNodeIds.length > MAX_STYLES) {
-    onProgress?.(`File has ${allNodeIds.length} styles. Extracting first ${MAX_STYLES} for performance.`);
+    onProgress?.(`File has ${allNodeIds.length} styles. Extracting first ${MAX_STYLES}; consider paginating a larger library.`);
   }
   onProgress?.(`Resolving ${nodeIds.length} style values...`);
   const nodesResponse = await client.getNodesBatched(fileKey, nodeIds);

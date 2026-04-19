@@ -24,12 +24,13 @@ export async function parseComponents(
 
   onProgress?.(`Found ${components.length} components, ${componentSets.length} component sets`);
 
-  if (components.length > 75) {
-    onWarning?.(`${components.length} components found but only first 75 enriched with full property data.`);
+  const COMPONENT_ENRICH_LIMIT = 200;
+  if (components.length > COMPONENT_ENRICH_LIMIT) {
+    onWarning?.(`${components.length} components found but only first ${COMPONENT_ENRICH_LIMIT} enriched with full property data.`);
   }
 
   const setNodeIds = componentSets.map((s) => s.node_id);
-  const componentNodeIds = components.slice(0, 75).map((c) => c.node_id);
+  const componentNodeIds = components.slice(0, COMPONENT_ENRICH_LIMIT).map((c) => c.node_id);
   const allNodeIds = [...new Set([...setNodeIds, ...componentNodeIds])];
 
   let nodeData: Record<string, { document: FigmaNode }> = {};

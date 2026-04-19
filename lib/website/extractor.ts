@@ -10,14 +10,28 @@ import {
   extractButtonColourCensusScript,
   extractInteractiveStatesScript,
   extractComponentPatternsScript,
+  extractTypographyCensusScript,
+  extractSpacingCensusScript,
+  extractShadowCensusScript,
+  extractMotionCensusScript,
   detectLibrariesScript,
 } from "./css-extract";
+import {
+  buildTypographyTokensFromCensus,
+  buildSpacingTokensFromCensus,
+  buildRadiusTokensFromCensus,
+  buildShadowTokensFromCensus,
+  buildMotionTokensFromCensus,
+} from "./scale-builder";
+import { partitionNoise } from "@/lib/extraction/noise";
+import { dedupeTokensByValue } from "@/lib/extraction/dedupe";
 import type {
   ExtractionResult,
   FontDeclaration,
   AnimationDefinition,
   ComputedStyleMap,
   ExtractedToken,
+  TokenType,
 } from "@/lib/types";
 
 interface WebsiteExtractionOptions {
@@ -185,6 +199,29 @@ export async function extractFromWebsite({
     const buttonColourCensus: Record<string, { count: number; elements: Array<{ tag: string; text: string; area: number; color: string }> }> =
       await page.evaluate(`(${extractButtonColourCensusScript})()`);
 
+    // Survey typography: distinct font-size / font-weight / line-height /
+    // letter-spacing values across visible text. Populates real type scale
+    // when the site doesn't expose one via CSS custom properties.
+    onProgress?.("typography-census", 62, "Surveying typography scale...");
+    type Samples = Array<{ tag: string; cls?: string; text?: string }>;
+    type CensusBucket = Record<string, { count: number; samples?: Samples }>;
+    const typographyCensus: {
+      sizes: CensusBucket;
+      weights: CensusBucket;
+      lineHeights: CensusBucket;
+      letterSpacings: CensusBucket;
+    } = await page.evaluate(`(${extractTypographyCensusScript})()`);
+
+    onProgress?.("spacing-census", 62, "Surveying spacing scale...");
+    const spacingCensus: CensusBucket = await page.evaluate(`(${extractSpacingCensusScript})()`);
+
+    onProgress?.("shadow-census", 63, "Surveying elevation...");
+    const shadowCensus: CensusBucket = await page.evaluate(`(${extractShadowCensusScript})()`);
+
+    onProgress?.("motion-census", 63, "Surveying motion...");
+    const motionCensus: { durations: CensusBucket; easings: CensusBucket } =
+      await page.evaluate(`(${extractMotionCensusScript})()`);
+
     // Extract interactive state styles (hover/focus/active) from CSS rules
     onProgress?.("states", 62, "Extracting interactive states...");
     const interactiveStates: Record<string, Record<string, string>> =
@@ -334,34 +371,60 @@ export async function extractFromWebsite({
       }
     }
 
-    // Mine radius tokens from census when CSS vars don't provide them
-    if (radius.length < 2 && radiusCensus) {
-      const seenRadii = new Set(radius.map((t) => t.value));
+    // Augment radius tokens from the census regardless of how many named
+    // radius vars were found. Previously this only ran when radius.length
+    // was below 2, which meant sites exposing 1-2 named radii never got the
+    // mined additions.
+    if (radiusCensus) {
+      const adapted: Record<string, { count: number; samples: Array<{ tag: string; cls?: string; text?: string }> }> = {};
       for (const [value, info] of Object.entries(radiusCensus)) {
-        if (seenRadii.has(value)) continue;
-        seenRadii.add(value);
-        const px = parseInt(value, 10);
-        if (isNaN(px)) continue;
-        let name = "--radius-xs";
-        if (px >= 100) name = "--radius-full";
-        else if (px >= 20) name = "--radius-xl";
-        else if (px >= 12) name = "--radius-lg";
-        else if (px >= 8) name = "--radius-md";
-        else if (px >= 4) name = "--radius-sm";
-
-        const examples = info.elements
-          .map((e) => `${e.tag}${e.text ? ` "${e.text}"` : ""}`)
-          .join(", ");
-
-        radius.push({
-          name,
-          value,
-          type: "radius",
-          category: "primitive",
-          originalName: `${value} (computed from ${info.count} elements)`,
-          description: `${info.count} elements (e.g. ${examples}) /* reconstructed */`,
-        });
+        adapted[value] = {
+          count: info.count,
+          samples: info.elements.map((e) => ({ tag: e.tag, cls: e.class, text: e.text })),
+        };
       }
+      const minedRadii = buildRadiusTokensFromCensus(adapted, radius);
+      radius.push(...minedRadii);
+    }
+
+    // Mine typography / spacing / shadow / motion from their censuses. These
+    // fill the many role slots that are otherwise empty on sites that don't
+    // expose their scale via CSS custom properties (the common case).
+    const minedTypography = buildTypographyTokensFromCensus(typographyCensus);
+    // Only add typography tokens whose names/values don't already exist
+    const seenTypoKeys = new Set(typography.map((t) => `${t.cssVariable ?? t.name}::${t.value}`));
+    for (const t of minedTypography) {
+      const key = `${t.cssVariable ?? t.name}::${t.value}`;
+      if (seenTypoKeys.has(key)) continue;
+      typography.push(t);
+      seenTypoKeys.add(key);
+    }
+
+    const minedSpacing = buildSpacingTokensFromCensus(spacingCensus);
+    const seenSpacingKeys = new Set(spacing.map((t) => `${t.cssVariable ?? t.name}::${t.value}`));
+    for (const t of minedSpacing) {
+      const key = `${t.cssVariable ?? t.name}::${t.value}`;
+      if (seenSpacingKeys.has(key)) continue;
+      spacing.push(t);
+      seenSpacingKeys.add(key);
+    }
+
+    const minedShadows = buildShadowTokensFromCensus(shadowCensus);
+    const seenShadowKeys = new Set(effects.map((t) => `${t.cssVariable ?? t.name}::${t.value}`));
+    for (const t of minedShadows) {
+      const key = `${t.cssVariable ?? t.name}::${t.value}`;
+      if (seenShadowKeys.has(key)) continue;
+      effects.push(t);
+      seenShadowKeys.add(key);
+    }
+
+    const minedMotion = buildMotionTokensFromCensus(motionCensus);
+    const seenMotionKeys = new Set(motion.map((t) => `${t.cssVariable ?? t.name}::${t.value}`));
+    for (const t of minedMotion) {
+      const key = `${t.cssVariable ?? t.name}::${t.value}`;
+      if (seenMotionKeys.has(key)) continue;
+      motion.push(t);
+      seenMotionKeys.add(key);
     }
 
     // Extract font info from computed styles
@@ -387,8 +450,31 @@ export async function extractFromWebsite({
 
     const hostname = new URL(url).hostname.replace("www.", "");
 
-    const tokenCount = colors.length + typography.length + spacing.length + radius.length + effects.length;
-    onProgress?.("complete", 80, `Extraction complete — ${tokenCount} tokens, ${allFonts.length} fonts`);
+    // Drop vendor / alpha-tint noise before dedupe. Stash the dropped tokens
+    // on the result so users can inspect what was filtered.
+    const droppedNoise: Array<{ name: string; value: string; type: TokenType; reason: "vendor" | "alpha-tint" | "other" }> = [];
+    function filterNoise<T extends ExtractedToken>(arr: T[]): T[] {
+      const { kept, dropped } = partitionNoise(arr);
+      for (const d of dropped) {
+        droppedNoise.push({
+          name: d.cssVariable ?? d.name,
+          value: d.value,
+          type: d.type,
+          reason: /rgba\(\s*var\(\s*--/.test(d.value) ? "alpha-tint" : "vendor",
+        });
+      }
+      return kept;
+    }
+
+    const finalColors = dedupeTokensByValue(filterNoise(colors));
+    const finalTypography = dedupeTokensByValue(filterNoise(typography));
+    const finalSpacing = dedupeTokensByValue(filterNoise(spacing));
+    const finalRadius = dedupeTokensByValue(filterNoise(radius));
+    const finalEffects = dedupeTokensByValue(filterNoise(effects));
+    const finalMotion = dedupeTokensByValue(filterNoise(motion));
+
+    const tokenCount = finalColors.length + finalTypography.length + finalSpacing.length + finalRadius.length + finalEffects.length;
+    onProgress?.("complete", 80, `Extraction complete — ${tokenCount} tokens, ${allFonts.length} fonts${droppedNoise.length > 0 ? `, ${droppedNoise.length} noise filtered` : ""}`);
 
     // Map discovered component patterns to ExtractedComponent format
     const components = componentPatterns.map((cp) => ({
@@ -406,7 +492,14 @@ export async function extractFromWebsite({
       sourceName: hostname,
       sourceUrl: url,
       extractionSource: "website" as const,
-      tokens: { colors, typography, spacing, radius, effects, motion },
+      tokens: {
+        colors: finalColors,
+        typography: finalTypography,
+        spacing: finalSpacing,
+        radius: finalRadius,
+        effects: finalEffects,
+        motion: finalMotion,
+      },
       components,
       screenshots,
       fonts: allFonts,
@@ -417,6 +510,7 @@ export async function extractFromWebsite({
       interactiveStates,
       buttonColourCensus: Object.keys(buttonColourCensus).length > 0 ? buttonColourCensus : undefined,
       breakpoints: breakpoints.length > 0 ? breakpoints : undefined,
+      droppedNoise: droppedNoise.length > 0 ? droppedNoise : undefined,
     };
   } finally {
     deregisterBrowser(browser);
