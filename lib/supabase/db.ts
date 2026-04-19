@@ -102,6 +102,24 @@ function projectToRow(
   };
 }
 
+/**
+ * Fetch only the persisted layout_md for a project (+ its org_id for auth).
+ * Used by generate/explore to avoid a stale Zustand/prop copy racing a recent
+ * Monaco edit that hasn't round-tripped to the client yet.
+ */
+export async function fetchProjectLayoutMd(
+  id: string
+): Promise<{ layoutMd: string; orgId: string } | null> {
+  const { data, error } = await supabase
+    .from("layout_projects")
+    .select("layout_md, org_id")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) return null;
+  return { layoutMd: (data.layout_md as string) ?? "", orgId: (data.org_id as string) ?? "" };
+}
+
 export async function fetchProjectById(id: string): Promise<Project | null> {
   const { data, error } = await supabase
     .from("layout_projects")
