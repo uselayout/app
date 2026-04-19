@@ -552,6 +552,7 @@ export default function StudioPage({
           }
           savedPanel={
             <SavedLibraryView
+              projectId={project.id}
               onNavigateToCanvas={() => handleCentreViewChange("canvas")}
               onOpenInCanvas={handleOpenSavedInCanvas}
             />

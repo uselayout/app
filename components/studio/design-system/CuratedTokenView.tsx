@@ -377,12 +377,14 @@ export function CuratedTokenView({
       })}
 
       {/* Non-colour categories: typography, spacing, radius */}
+      {/* Render even when empty so blank projects see the full schema and */}
+      {/* can add tokens via the per-section Add button, matching colour categories. */}
       {(["typography", "spacing", "radius"] as StandardRoleCategory[]).map((catKey) => {
         const catDef = SCHEMA_CATEGORIES.find((c) => c.key === catKey);
         if (!catDef) return null;
         const roles = getRolesByCategory(catKey);
         const counts = categoryCounts[catKey];
-        if (!counts || counts.assigned === 0) return null;
+        if (!counts) return null;
 
         return (
           <DesignSystemSection
@@ -392,6 +394,25 @@ export function CuratedTokenView({
             count={counts.assigned}
             subtitle={`${counts.assigned}/${counts.total}`}
           >
+            <div className="mb-3 flex items-center justify-end">
+              <button
+                onClick={() => setAddingToCategory(addingToCategory === catKey ? null : catKey)}
+                className="flex items-center gap-1 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+                Add token
+              </button>
+            </div>
+            {addingToCategory === catKey && (
+              <AddTokenForm
+                tokenType={TOKEN_TYPE_FOR_CATEGORY[catKey]}
+                autoKeepOpen
+                onSubmit={(token) =>
+                  handleCreateToken(catKey, token.name, token.value)
+                }
+                onCancel={() => setAddingToCategory(null)}
+              />
+            )}
             <div className="space-y-1">
               {roles.map((role) => {
                 const assignment = assignments[role.key];

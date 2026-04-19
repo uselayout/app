@@ -13,7 +13,9 @@ interface StudioLayoutProps {
 }
 
 const MIN_PANEL_WIDTH = 200;
-const DEFAULT_LEFT = 280;
+// Wider default to fit the expanded tab strip (Branding, Context) plus long
+// token names like `--manual-design-system-accent` without truncation.
+const DEFAULT_LEFT = 340;
 
 export function StudioLayout({
   sourcePanel,

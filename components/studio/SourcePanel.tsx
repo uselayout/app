@@ -684,18 +684,21 @@ function TokensTab({
     [modeFilter]
   );
 
-  const allSections: { label: string; items: ExtractedToken[] }[] = [
+  // Always show every section so the per-section "+" affordance is visible
+  // regardless of whether tokens exist yet. Previously this was filtered to
+  // populated sections only, which hid the path to adding a second type.
+  const sections: { label: string; items: ExtractedToken[] }[] = [
     { label: "Colours", items: filterByMode(tokens.colors) },
     { label: "Typography", items: filterByMode(tokens.typography) },
     { label: "Spacing", items: filterByMode(tokens.spacing) },
     { label: "Radius", items: filterByMode(tokens.radius) },
     { label: "Effects", items: filterByMode(tokens.effects) },
   ];
-  // Keep non-empty sections, plus any section the user is actively adding to.
-  const sections = allSections.filter((s) => s.items.length > 0 || adding === s.label);
 
+  // Open populated sections by default; empty sections stay collapsed but
+  // their header + button remains visible so users can expand on demand.
   const [openSections, setOpenSections] = useState<Set<string>>(
-    () => new Set(sections.map((s) => s.label))
+    () => new Set(sections.filter((s) => s.items.length > 0).map((s) => s.label))
   );
 
   const toggleSection = useCallback((label: string) => {
