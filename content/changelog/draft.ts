@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w16-surgical-layout-edits",
+    title: "AI chat edits layout.md surgically",
+    description:
+      "The editor chat no longer rewrites your entire layout.md when you ask for a small change. The AI now returns just the lines that need to change and they're applied in place, so untouched sections stay byte-identical and the \"Writing... 100 lines\" full-file rewrite is gone.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-19",
+  },
+  {
     id: "2026-w16-start-blank",
     title: "Start with a blank design system",
     description:

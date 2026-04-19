@@ -6,6 +6,7 @@ import type { OnMount } from "@monaco-editor/react";
 import type * as monacoType from "monaco-editor";
 import { ArrowUp, Undo2, Loader2, History, X } from "lucide-react";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import type { LayoutMdVersion } from "@/lib/supabase/layout-md-versions";
 import type { ExtractionResult } from "@/lib/types";
@@ -497,32 +498,17 @@ function EditorChatBar({
         throw new Error(errBody.error || `Request failed (${res.status})`);
       }
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No response body");
+      const newLayoutMd = await res.text();
+      const appliedCount = Number(res.headers.get("X-Applied-Edits")) || 0;
 
-      const decoder = new TextDecoder();
-      let accumulated = "";
-      let lineCount = 0;
-
-      while (true) {
-        const { done, value: chunk } = await reader.read();
-        if (done) break;
-        accumulated += decoder.decode(chunk, { stream: true });
-        lineCount = accumulated.split("\n").length;
-        setStreamStatus(`Writing... ${lineCount} lines`);
-
-        // Stream into editor progressively
-        editorRef.current?.setValue(accumulated);
-      }
-
-      if (accumulated.startsWith("\n\n[Error:")) {
-        // Restore on error
-        editorRef.current?.setValue(value);
-        throw new Error(accumulated);
-      }
-
-      onChange(accumulated);
+      // Apply once at the end — no progressive rewriting of the whole file.
+      editorRef.current?.setValue(newLayoutMd);
+      onChange(newLayoutMd);
       setInstruction("");
+
+      toast.success(
+        appliedCount === 1 ? "1 edit applied" : `${appliedCount} edits applied`
+      );
 
       // Show undo toast
       setShowUndo(true);
@@ -532,13 +518,13 @@ function EditorChatBar({
       }, 8000);
     } catch (err) {
       console.error("AI edit failed:", err);
-      // Restore previous value on error
+      toast.error(err instanceof Error ? err.message : "AI edit failed");
       setPreviousValue(null);
     } finally {
       setIsStreaming(false);
       setStreamStatus(null);
     }
-  }, [instruction, isStreaming, value, onChange, editorRef]);
+  }, [instruction, isStreaming, value, onChange, editorRef, projectId, orgId]);
 
   const handleUndo = useCallback(() => {
     if (previousValue === null) return;

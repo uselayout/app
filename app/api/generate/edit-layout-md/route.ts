@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
-import { createEditStream } from "@/lib/claude/edit";
+import { planEdit } from "@/lib/claude/edit";
 import { auth } from "@/lib/auth";
 import { checkQuota, deductCredit, refundCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
@@ -88,34 +88,70 @@ export async function POST(request: NextRequest) {
   const streamController = registerStream();
   const startTime = Date.now();
   const editorModelId = await getTaskModelId("editor");
-  const { stream, usage } = createEditStream(instruction, layoutMd, apiKey, editorModelId);
 
-  void usage
-    .then((u) => {
-      void logApiCall({ userId, endpoint: "generate/edit-layout-md", statusCode: 200, durationMs: Date.now() - startTime, metadata: { instructionLength: instruction.length } });
-      return logUsage({
+  try {
+    const result = await planEdit(instruction, layoutMd, apiKey, editorModelId);
+
+    void logUsage({
+      userId,
+      endpoint: "edit",
+      mode,
+      usage: result.usage,
+      model: editorModelId,
+    });
+
+    if (!result.ok) {
+      void logApiCall({
         userId,
-        endpoint: "edit",
-        mode,
-        usage: u,
-        model: editorModelId,
+        endpoint: "generate/edit-layout-md",
+        statusCode: 422,
+        durationMs: Date.now() - startTime,
+        metadata: { instructionLength: instruction.length, errorCode: result.error.code },
       });
-    })
-    .catch(async (err) => {
-      console.error("Stream failed, refunding credit:", err);
-      void logApiCall({ userId, endpoint: "generate/edit-layout-md", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: err instanceof Error ? err.message : String(err) });
+      // Refund the credit — the model produced no applicable edit.
       if (mode === "hosted") {
         await refundCredit(userId, "edit");
       }
-    })
-    .finally(() => {
-      deregisterStream(streamController);
+      return Response.json(
+        { error: result.error.message, code: result.error.code },
+        { status: 422 }
+      );
+    }
+
+    void logApiCall({
+      userId,
+      endpoint: "generate/edit-layout-md",
+      statusCode: 200,
+      durationMs: Date.now() - startTime,
+      metadata: {
+        instructionLength: instruction.length,
+        appliedCount: result.appliedCount,
+      },
     });
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "X-Accel-Buffering": "no",
-    },
-  });
+    return new Response(result.newLayoutMd, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Applied-Edits": String(result.appliedCount),
+      },
+    });
+  } catch (err) {
+    console.error("planEdit failed, refunding credit:", err);
+    void logApiCall({
+      userId,
+      endpoint: "generate/edit-layout-md",
+      statusCode: 500,
+      durationMs: Date.now() - startTime,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
+    if (mode === "hosted") {
+      await refundCredit(userId, "edit");
+    }
+    return Response.json(
+      { error: err instanceof Error ? err.message : "Edit failed", code: "INTERNAL" },
+      { status: 500 }
+    );
+  } finally {
+    deregisterStream(streamController);
+  }
 }
