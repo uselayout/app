@@ -504,12 +504,12 @@ export default function StudioPage({
         onToggleSource={() => setShowSourcePanel((prev) => !prev)}
         sourcePanelOpen={showSourcePanel}
         onExport={() => setShowExport(true)}
-        showSourceToggle={centreView === "editor" || centreView === "canvas"}
+        showSourceToggle={centreView === "editor"}
       />
       <div className="flex-1 overflow-hidden">
         <StudioLayout
           centreView={centreView}
-          showSourcePanel={showSourcePanel && (centreView === "editor" || centreView === "canvas")}
+          showSourcePanel={showSourcePanel && centreView === "editor"}
           sourcePanel={
             <SourcePanel
               extractionData={project.extractionData}
