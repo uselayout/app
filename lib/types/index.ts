@@ -271,8 +271,51 @@ export interface Project {
   standardisation?: ProjectStandardisation;
   /** Design system snapshots for rollback (max 5) */
   snapshots?: DesignSystemSnapshot[];
+  /** Brand logos, wordmarks, favicons uploaded by the user */
+  brandingAssets?: BrandingAsset[];
+  /** Project-scoped context documents attached to every variant generation */
+  contextDocuments?: ContextDocument[];
   createdAt: string;
   updatedAt: string;
+}
+
+/** Slots a branding asset can occupy. Informs the `data-brand-logo` attribute Claude emits. */
+export type BrandingSlot =
+  | "primary"
+  | "secondary"
+  | "wordmark"
+  | "favicon"
+  | "mark"
+  | "other";
+
+/**
+ * Context variant for a brand asset. A single brand typically has several
+ * visual treatments of the same logo (full colour, white for dark surfaces,
+ * black for mono prints). The generator picks the right variant at runtime
+ * based on the surface the logo is placed on.
+ */
+export type BrandingVariant = "colour" | "white" | "black" | "mono";
+
+export interface BrandingAsset {
+  id: string;
+  slot: BrandingSlot;
+  /** Defaults to "colour" for existing records written before variants shipped. */
+  variant?: BrandingVariant;
+  url: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  uploadedAt: string;
+}
+
+export interface ContextDocument {
+  id: string;
+  name: string;
+  content: string;
+  mimeType: string;
+  size: number;
+  addedAt: string;
+  pinned?: boolean;
 }
 
 /** Serialisable version of StandardisedTokenMap for project storage */

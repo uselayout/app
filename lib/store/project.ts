@@ -4,7 +4,7 @@ import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 import { renameTokenInLayoutMd } from "@/lib/tokens/rename-token";
 import { addTokenToLayoutMd, removeTokenFromLayoutMd } from "@/lib/tokens/add-remove-token";
 import { matchTokenToUnassignedRole } from "@/lib/tokens/standardise";
-import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont, ProjectStandardisation, DesignSystemSnapshot, TokenType } from "@/lib/types";
+import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont, ProjectStandardisation, DesignSystemSnapshot, TokenType, BrandingAsset, ContextDocument } from "@/lib/types";
 
 /**
  * Hard ceiling above which we refuse to save and surface an error instead of
@@ -240,6 +240,10 @@ interface ProjectState {
   updateHealthScore: (id: string, score: number) => void;
   updateIconPacks: (id: string, iconPacks: string[]) => void;
   updateUploadedFonts: (id: string, fonts: UploadedFont[]) => void;
+  updateBrandingAssets: (id: string, assets: BrandingAsset[]) => void;
+  updateContextDocuments: (id: string, documents: ContextDocument[]) => void;
+  /** Mutate layoutMd in local state only (server already wrote it). */
+  setLayoutMdLocal: (id: string, layoutMd: string) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
   updateToken: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string, mode?: string) => void;
   renameToken: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string, mode?: string) => void;
@@ -396,6 +400,34 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     }));
     const project = get().projects.find((p) => p.id === id);
     if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  // Branding assets and context documents are persisted via the dedicated
+  // /api/organizations/[orgId]/projects/[projectId]/assets endpoint. These
+  // setters only update local state — the server write has already happened
+  // (or will happen) via that endpoint.
+  updateBrandingAssets: (id, brandingAssets) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id ? { ...p, brandingAssets } : p
+      ),
+    }));
+  },
+
+  updateContextDocuments: (id, contextDocuments) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id ? { ...p, contextDocuments } : p
+      ),
+    }));
+  },
+
+  setLayoutMdLocal: (id, layoutMd) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id ? { ...p, layoutMd } : p
+      ),
+    }));
   },
 
   updateExplorations: (id, explorations) => {

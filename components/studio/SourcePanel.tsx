@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes, Figma, Sparkles, Loader2, Type } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes, Figma, Sparkles, Loader2, Type, FileText, ImagePlus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
@@ -11,6 +11,9 @@ import { FigmaEmbed } from "@/components/studio/FigmaEmbed";
 import { parseFigmaUrl } from "@/lib/figma/parse-url";
 import { IconPackSelector } from "@/components/studio/IconPackSelector";
 import { FontManager } from "@/components/studio/FontManager";
+import { ContextDocsTab } from "@/components/studio/ContextDocsTab";
+import { BrandingTab } from "@/components/studio/BrandingTab";
+import { AddTokenForm } from "@/components/studio/AddTokenForm";
 import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
 import { resolveTokenValue } from "@/lib/util/color";
 import { useProjectStore } from "@/lib/store/project";
@@ -41,7 +44,7 @@ interface SourcePanelProps {
   onFontUploaded?: () => void;
 }
 
-type TabId = "tokens" | "components" | "screenshots" | "icons" | "fonts" | "quality" | "connect" | "figma";
+type TabId = "tokens" | "components" | "screenshots" | "icons" | "fonts" | "branding" | "context" | "quality" | "connect" | "figma";
 
 function SourcePanelEmptyState({
   projectId,
@@ -185,6 +188,8 @@ function SourcePanelInner({
     { id: "screenshots", label: "Screenshots", icon: Image },
     { id: "icons", label: "Icons", icon: Shapes },
     { id: "fonts", label: "Fonts", icon: Type },
+    { id: "branding", label: "Branding", icon: ImagePlus },
+    { id: "context", label: "Context", icon: FileText },
     { id: "quality", label: "Quality", icon: Gauge },
     { id: "figma", label: "Figma", icon: Figma },
     { id: "connect", label: "Connect", icon: Terminal },
@@ -264,6 +269,20 @@ function SourcePanelInner({
               onFontUploaded={onFontUploaded}
             />
           </div>
+        )}
+        {activeTab === "branding" && projectId && currentOrgId && (
+          <BrandingTab
+            projectId={projectId}
+            orgId={currentOrgId}
+            assets={currentProject?.brandingAssets ?? []}
+          />
+        )}
+        {activeTab === "context" && projectId && currentOrgId && (
+          <ContextDocsTab
+            projectId={projectId}
+            orgId={currentOrgId}
+            documents={currentProject?.contextDocuments ?? []}
+          />
         )}
         {activeTab === "quality" && extractionData && (
           <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} projectId={projectId} orgId={currentOrgId ?? undefined} />
@@ -489,21 +508,21 @@ function TokenSectionHeader({
       {onAdd && (
         <span
           onClick={handleAdd}
-          className="shrink-0 rounded p-1 opacity-0 transition-opacity hover:bg-[var(--bg-hover)] group-hover:opacity-100"
+          className="shrink-0 rounded p-1 text-[var(--text-muted)] opacity-70 transition-opacity hover:bg-[var(--bg-hover)] hover:opacity-100"
           title={`Add a new ${label.toLowerCase().replace(/s$/, "")} token`}
         >
-          <Plus className="h-3 w-3 text-[var(--text-muted)]" />
+          <Plus className="h-3 w-3" />
         </span>
       )}
       <span
         onClick={handleCopy}
-        className="shrink-0 rounded p-1 opacity-0 transition-opacity hover:bg-[var(--bg-hover)] group-hover:opacity-100"
+        className="shrink-0 rounded p-1 text-[var(--text-muted)] opacity-70 transition-opacity hover:bg-[var(--bg-hover)] hover:opacity-100"
         title={`Copy all ${label.toLowerCase()}`}
       >
         {copied ? (
           <Check className="h-3 w-3 text-[var(--status-success)]" />
         ) : (
-          <Copy className="h-3 w-3 text-[var(--text-muted)]" />
+          <Copy className="h-3 w-3" />
         )}
       </span>
     </button>
@@ -517,94 +536,6 @@ const TYPE_FOR_SECTION: Record<string, import("@/lib/types").TokenType> = {
   Radius: "radius",
   Effects: "effect",
 };
-
-function AddTokenForm({
-  section,
-  onSubmit,
-  onCancel,
-}: {
-  section: string;
-  onSubmit: (token: ExtractedToken) => void;
-  onCancel: () => void;
-}) {
-  const [name, setName] = useState("");
-  const [value, setValue] = useState("");
-  const tokenType = TYPE_FOR_SECTION[section] ?? "color";
-  const isColor = tokenType === "color";
-
-  const canSubmit = name.trim().length > 0 && value.trim().length > 0;
-
-  const handleSubmit = useCallback(
-    (e?: React.FormEvent) => {
-      e?.preventDefault();
-      if (!canSubmit) return;
-      const cleanName = name.trim().replace(/^--/, "");
-      const cssVar = `--${cleanName}`;
-      onSubmit({
-        name: cleanName,
-        value: value.trim(),
-        type: tokenType,
-        category: "semantic",
-        cssVariable: cssVar,
-      });
-      setName("");
-      setValue("");
-    },
-    [canSubmit, name, value, tokenType, onSubmit]
-  );
-
-  const colourPreview = isColor && /^#([0-9a-f]{3}|[0-9a-f]{6,8})$/i.test(value.trim());
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="mx-2 mb-2 rounded-md border border-[var(--studio-border)] bg-[var(--bg-elevated)] p-2"
-    >
-      <div className="flex items-center gap-1.5">
-        {isColor && (
-          <input
-            type="color"
-            value={colourPreview ? value.trim() : "#6366f1"}
-            onChange={(e) => setValue(e.target.value)}
-            className="h-6 w-6 shrink-0 cursor-pointer rounded border border-[var(--studio-border)] bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-sm [&::-webkit-color-swatch]:border-none"
-            title="Pick a colour"
-          />
-        )}
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="name (e.g. brand-primary)"
-          autoFocus
-          className="min-w-0 flex-1 rounded bg-[var(--bg-surface)] px-2 py-1 font-mono text-[10px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
-        />
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={isColor ? "#e4f222" : "value"}
-          className="min-w-0 flex-1 rounded bg-[var(--bg-surface)] px-2 py-1 font-mono text-[10px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
-        />
-      </div>
-      <div className="mt-2 flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded px-2 py-0.5 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="rounded bg-[var(--studio-accent)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-on-accent)] disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Add
-        </button>
-      </div>
-    </form>
-  );
-}
 
 const SECTION_TYPE_MAP: Record<string, keyof import("@/lib/types").ExtractedTokens> = {
   Colours: "colors",
@@ -753,18 +684,21 @@ function TokensTab({
     [modeFilter]
   );
 
-  const allSections: { label: string; items: ExtractedToken[] }[] = [
+  // Always show every section so the per-section "+" affordance is visible
+  // regardless of whether tokens exist yet. Previously this was filtered to
+  // populated sections only, which hid the path to adding a second type.
+  const sections: { label: string; items: ExtractedToken[] }[] = [
     { label: "Colours", items: filterByMode(tokens.colors) },
     { label: "Typography", items: filterByMode(tokens.typography) },
     { label: "Spacing", items: filterByMode(tokens.spacing) },
     { label: "Radius", items: filterByMode(tokens.radius) },
     { label: "Effects", items: filterByMode(tokens.effects) },
   ];
-  // Keep non-empty sections, plus any section the user is actively adding to.
-  const sections = allSections.filter((s) => s.items.length > 0 || adding === s.label);
 
+  // Open populated sections by default; empty sections stay collapsed but
+  // their header + button remains visible so users can expand on demand.
   const [openSections, setOpenSections] = useState<Set<string>>(
-    () => new Set(sections.map((s) => s.label))
+    () => new Set(sections.filter((s) => s.items.length > 0).map((s) => s.label))
   );
 
   const toggleSection = useCallback((label: string) => {
@@ -820,7 +754,11 @@ function TokensTab({
   if (sections.length === 0) {
     return (
       <div className="p-4 space-y-3">
-        <p className="text-xs text-[var(--text-muted)]">No tokens extracted.</p>
+        <p className="text-xs text-[var(--text-muted)]">
+          {sourceType === "manual"
+            ? "No tokens yet. Click a section below to add your first token."
+            : "No tokens extracted."}
+        </p>
         {projectId && (
           <div className="space-y-1">
             {Object.keys(TYPE_FOR_SECTION).map((label) => (
@@ -835,11 +773,10 @@ function TokensTab({
             ))}
             {adding && (
               <AddTokenForm
-                section={adding}
-                onSubmit={(token) => {
-                  addToken(projectId, token);
-                  setAdding(null);
-                }}
+                tokenType={TYPE_FOR_SECTION[adding] ?? "color"}
+                compact
+                autoKeepOpen
+                onSubmit={(token) => addToken(projectId, token)}
                 onCancel={() => setAdding(null)}
               />
             )}
@@ -905,11 +842,10 @@ function TokensTab({
           />
           {openSections.has(section.label) && adding === section.label && projectId && (
             <AddTokenForm
-              section={section.label}
-              onSubmit={(token) => {
-                addToken(projectId, token);
-                setAdding(null);
-              }}
+              tokenType={TYPE_FOR_SECTION[section.label] ?? "color"}
+              compact
+              autoKeepOpen
+              onSubmit={(token) => addToken(projectId, token)}
               onCancel={() => setAdding(null)}
             />
           )}

@@ -14,8 +14,11 @@ import { ScreenshotGallery } from "./design-system/ScreenshotGallery";
 import { ComponentsView } from "./design-system/ComponentsView";
 import { CuratedTokenView } from "./design-system/CuratedTokenView";
 import { FontManager } from "./FontManager";
+import { AddTokenForm } from "./AddTokenForm";
 import { useOrgStore } from "@/lib/store/organization";
+import { Plus } from "lucide-react";
 import { standardiseTokens } from "@/lib/tokens/standardise";
+import type { TokenType } from "@/lib/types";
 import type { StandardisedTokenMap } from "@/lib/tokens/standard-schema";
 import type { ProjectStandardisation } from "@/lib/types";
 
@@ -46,6 +49,7 @@ export function DesignSystemPanel({
   const updateToken = useProjectStore((s) => s.updateToken);
   const renameToken = useProjectStore((s) => s.renameToken);
   const removeTokens = useProjectStore((s) => s.removeTokens);
+  const addToken = useProjectStore((s) => s.addToken);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
 
   const [guidanceDismissed, setGuidanceDismissed] = useState(true);
@@ -61,6 +65,7 @@ export function DesignSystemPanel({
   const updateStandardisation = useProjectStore((s) => s.updateStandardisation);
   const createSnapshot = useProjectStore((s) => s.createSnapshot);
   const tokens = extractionData?.tokens;
+  const isManual = extractionData?.sourceType === "manual";
   const screenshots = extractionData?.screenshots ?? [];
   const scannedComponents = project?.scannedComponents ?? [];
   const extractedComponents = extractionData?.components ?? [];
@@ -391,66 +396,108 @@ export function DesignSystemPanel({
         )}
 
         {/* All tokens view (original) */}
-        {viewMode === "all" && tokens.colors.length > 0 && (
+        {viewMode === "all" && (tokens.colors.length > 0 || isManual) && (
           <DesignSystemSection id="colours" title="Colours" count={deduplicatedTokens?.colors.length ?? tokens.colors.length}>
-            <ColourPalette
-              tokens={deduplicatedTokens?.colors ?? tokens.colors}
-              cssVariables={cssVariables}
-              onUpdateToken={(name, value) => handleUpdateToken("colors", name, value)}
-              onRemoveToken={(name) => handleRemoveToken("colors", [name])}
-              onRenameToken={(oldName, newName) => handleRenameToken("colors", oldName, newName)}
-            />
-          </DesignSystemSection>
-        )}
-
-        {viewMode === "all" && tokens.typography.length > 0 && (
-          <DesignSystemSection id="typography" title="Typography" count={tokens.typography.length}>
-            <TypographyScale
-              tokens={tokens.typography}
-              onUpdateToken={(name, value) => handleUpdateToken("typography", name, value)}
-              onRemoveToken={(name) => handleRemoveToken("typography", [name])}
-              extractedFonts={extractionData?.fonts ?? []}
-              uploadedFonts={useProjectStore.getState().projects.find((p) => p.id === projectId)?.uploadedFonts}
-            />
-            <div className="mt-6 pt-6 border-t border-[var(--studio-border)]">
-              <FontManager
-                projectId={projectId}
-                orgId={useOrgStore.getState().currentOrgId ?? undefined}
-                extractedFonts={extractionData?.fonts ?? []}
-                uploadedFonts={useProjectStore.getState().projects.find((p) => p.id === projectId)?.uploadedFonts ?? []}
-                typographyTokens={tokens.typography}
+            {tokens.colors.length > 0 && (
+              <ColourPalette
+                tokens={deduplicatedTokens?.colors ?? tokens.colors}
+                cssVariables={cssVariables}
+                onUpdateToken={(name, value) => handleUpdateToken("colors", name, value)}
+                onRemoveToken={(name) => handleRemoveToken("colors", [name])}
+                onRenameToken={(oldName, newName) => handleRenameToken("colors", oldName, newName)}
               />
-            </div>
+            )}
+            {isManual && (
+              <InlineAddRow
+                tokenType="color"
+                onAdd={(token) => addToken(projectId, token)}
+              />
+            )}
           </DesignSystemSection>
         )}
 
-        {viewMode === "all" && tokens.spacing.length > 0 && (
+        {viewMode === "all" && (tokens.typography.length > 0 || isManual) && (
+          <DesignSystemSection id="typography" title="Typography" count={tokens.typography.length}>
+            {tokens.typography.length > 0 && (
+              <TypographyScale
+                tokens={tokens.typography}
+                onUpdateToken={(name, value) => handleUpdateToken("typography", name, value)}
+                onRemoveToken={(name) => handleRemoveToken("typography", [name])}
+                extractedFonts={extractionData?.fonts ?? []}
+                uploadedFonts={useProjectStore.getState().projects.find((p) => p.id === projectId)?.uploadedFonts}
+              />
+            )}
+            {isManual && (
+              <InlineAddRow
+                tokenType="typography"
+                onAdd={(token) => addToken(projectId, token)}
+              />
+            )}
+            {tokens.typography.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-[var(--studio-border)]">
+                <FontManager
+                  projectId={projectId}
+                  orgId={useOrgStore.getState().currentOrgId ?? undefined}
+                  extractedFonts={extractionData?.fonts ?? []}
+                  uploadedFonts={useProjectStore.getState().projects.find((p) => p.id === projectId)?.uploadedFonts ?? []}
+                  typographyTokens={tokens.typography}
+                />
+              </div>
+            )}
+          </DesignSystemSection>
+        )}
+
+        {viewMode === "all" && (tokens.spacing.length > 0 || isManual) && (
           <DesignSystemSection id="spacing" title="Spacing" count={deduplicatedTokens?.spacing.length ?? tokens.spacing.length}>
-            <SpacingScale
-              tokens={deduplicatedTokens?.spacing ?? tokens.spacing}
-              onUpdateToken={(name, value) => handleUpdateToken("spacing", name, value)}
-              onRemoveToken={(name) => handleRemoveToken("spacing", [name])}
-            />
+            {tokens.spacing.length > 0 && (
+              <SpacingScale
+                tokens={deduplicatedTokens?.spacing ?? tokens.spacing}
+                onUpdateToken={(name, value) => handleUpdateToken("spacing", name, value)}
+                onRemoveToken={(name) => handleRemoveToken("spacing", [name])}
+              />
+            )}
+            {isManual && (
+              <InlineAddRow
+                tokenType="spacing"
+                onAdd={(token) => addToken(projectId, token)}
+              />
+            )}
           </DesignSystemSection>
         )}
 
-        {viewMode === "all" && tokens.radius.length > 0 && (
+        {viewMode === "all" && (tokens.radius.length > 0 || isManual) && (
           <DesignSystemSection id="radius" title="Radius" count={deduplicatedTokens?.radius.length ?? tokens.radius.length}>
-            <RadiusPreview
-              tokens={deduplicatedTokens?.radius ?? tokens.radius}
-              onUpdateToken={(name, value) => handleUpdateToken("radius", name, value)}
-              onRemoveToken={(name) => handleRemoveToken("radius", [name])}
-            />
+            {tokens.radius.length > 0 && (
+              <RadiusPreview
+                tokens={deduplicatedTokens?.radius ?? tokens.radius}
+                onUpdateToken={(name, value) => handleUpdateToken("radius", name, value)}
+                onRemoveToken={(name) => handleRemoveToken("radius", [name])}
+              />
+            )}
+            {isManual && (
+              <InlineAddRow
+                tokenType="radius"
+                onAdd={(token) => addToken(projectId, token)}
+              />
+            )}
           </DesignSystemSection>
         )}
 
-        {viewMode === "all" && tokens.effects.length > 0 && (
+        {viewMode === "all" && (tokens.effects.length > 0 || isManual) && (
           <DesignSystemSection id="effects" title="Effects" count={tokens.effects.length}>
-            <EffectsPreview
-              tokens={tokens.effects}
-              onUpdateToken={(name, value) => handleUpdateToken("effects", name, value)}
-              onRemoveToken={(name) => handleRemoveToken("effects", [name])}
-            />
+            {tokens.effects.length > 0 && (
+              <EffectsPreview
+                tokens={tokens.effects}
+                onUpdateToken={(name, value) => handleUpdateToken("effects", name, value)}
+                onRemoveToken={(name) => handleRemoveToken("effects", [name])}
+              />
+            )}
+            {isManual && (
+              <InlineAddRow
+                tokenType="effect"
+                onAdd={(token) => addToken(projectId, token)}
+              />
+            )}
           </DesignSystemSection>
         )}
 
@@ -492,6 +539,44 @@ export function DesignSystemPanel({
           </DesignSystemSection>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Inline Add-token row for the "all tokens" view on the Design System page.
+ * Mirrors the persistent Add-token affordance the curated view already
+ * provides, so manual (blank) projects can author tokens directly without
+ * bouncing to the Source Panel.
+ */
+function InlineAddRow({
+  tokenType,
+  onAdd,
+}: {
+  tokenType: TokenType;
+  onAdd: (token: ExtractedToken) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+
+  return (
+    <div className="mt-4">
+      {!adding ? (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="flex items-center gap-1 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)]"
+        >
+          <Plus className="h-3 w-3" />
+          Add token
+        </button>
+      ) : (
+        <AddTokenForm
+          tokenType={tokenType}
+          autoKeepOpen
+          onSubmit={onAdd}
+          onCancel={() => setAdding(false)}
+        />
+      )}
     </div>
   );
 }

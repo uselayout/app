@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 
   if (!effectiveLayoutMd || effectiveLayoutMd.trim().length < 50) {
     return NextResponse.json(
-      { error: "No design system loaded. Extract from a Figma file or website first to generate on-brand variants." },
+      { error: "Add content to layout.md first. Extract a design system, start blank, or paste your own design guidelines." },
       { status: 400 }
     );
   }

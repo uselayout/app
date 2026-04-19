@@ -30,8 +30,16 @@ function makeToken(
 }
 
 describe('generateTokensCss', () => {
-  it('wraps output in :root block', () => {
+  it('returns empty string when there are no tokens (blank project)', () => {
     const css = generateTokensCss(makeTokens());
+    expect(css).toBe('');
+  });
+
+  it('wraps non-empty output in a :root block', () => {
+    const tokens = makeTokens({
+      colors: [makeToken('Primary', '#6750A4', 'color', { cssVariable: '--color-primary' })],
+    });
+    const css = generateTokensCss(tokens);
     expect(css).toMatch(/^:root \{/);
     expect(css).toMatch(/\}$/);
   });

@@ -134,5 +134,8 @@ export function generateTokensJson(tokens: ExtractedTokens): string {
     output.motion = groupTokens(tokens.motion);
   }
 
+  // Blank projects: skip an empty {} file — the export route drops empty strings.
+  if (Object.keys(output).length === 0) return "";
+
   return JSON.stringify(output, null, 2);
 }

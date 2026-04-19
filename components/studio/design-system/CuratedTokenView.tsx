@@ -18,6 +18,7 @@ import { LayoutMdCompareModal } from "./LayoutMdCompareModal";
 import { AssignTokenPopover } from "./AssignTokenPopover";
 import { useProjectStore } from "@/lib/store/project";
 import { buildStandardName } from "@/lib/tokens/standard-schema";
+import { AddTokenForm } from "@/components/studio/AddTokenForm";
 
 const TOKEN_TYPE_FOR_CATEGORY: Record<StandardRoleCategory, TokenType> = {
   backgrounds: "color",
@@ -305,10 +306,12 @@ export function CuratedTokenView({
               </button>
             </div>
             {addingToCategory === catKey && (
-              <InlineAddTokenForm
-                category={catKey}
-                availableTokens={allTokens}
-                onSubmit={(name, value) => handleCreateToken(catKey, name, value)}
+              <AddTokenForm
+                tokenType={TOKEN_TYPE_FOR_CATEGORY[catKey]}
+                autoKeepOpen
+                onSubmit={(token) =>
+                  handleCreateToken(catKey, token.name, token.value)
+                }
                 onCancel={() => setAddingToCategory(null)}
               />
             )}
@@ -407,6 +410,8 @@ export function CuratedTokenView({
       })}
 
       {/* Non-colour categories: typography, spacing, radius, shadows, motion */}
+      {/* Render even when empty so blank projects see the full schema and */}
+      {/* can add tokens via the per-section Add button, matching colour categories. */}
       {(["typography", "spacing", "radius", "shadows", "motion"] as StandardRoleCategory[]).map((catKey) => {
         const catDef = SCHEMA_CATEGORIES.find((c) => c.key === catKey);
         if (!catDef) return null;
@@ -432,10 +437,12 @@ export function CuratedTokenView({
               </button>
             </div>
             {addingToCategory === catKey && (
-              <InlineAddTokenForm
-                category={catKey}
-                availableTokens={allTokens}
-                onSubmit={(name, value) => handleCreateToken(catKey, name, value)}
+              <AddTokenForm
+                tokenType={TOKEN_TYPE_FOR_CATEGORY[catKey]}
+                autoKeepOpen
+                onSubmit={(token) =>
+                  handleCreateToken(catKey, token.name, token.value)
+                }
                 onCancel={() => setAddingToCategory(null)}
               />
             )}

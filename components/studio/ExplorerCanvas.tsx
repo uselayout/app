@@ -16,6 +16,8 @@ import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-varian
 import { friendlyError } from "@/lib/explore/friendly-error";
 import { UpgradePrompt } from "@/components/billing/UpgradePrompt";
 import { applyChangesToLayoutMd } from "@/lib/figma/diff";
+import { mergeContextForGeneration } from "@/lib/context/merge";
+import { replaceBrandingPlaceholders } from "@/lib/branding/post-process";
 import { getStoredApiKey, useKeyStatus, dismissKeyLoss } from "@/lib/hooks/use-api-key";
 import { processCodeImages } from "@/lib/image/process-code-images";
 import { injectPlaceholderSvgs } from "@/lib/image/placeholder";
@@ -96,6 +98,16 @@ export function ExplorerCanvas({
   // Scanned codebase components from the project store
   const scannedComponents = useProjectStore(
     (s) => s.projects.find((p) => p.id === projectId)?.scannedComponents
+  );
+
+  // Project-scoped context documents (auto-attached to every generation)
+  const projectContextDocs = useProjectStore(
+    (s) => s.projects.find((p) => p.id === projectId)?.contextDocuments ?? []
+  );
+
+  // Project-scoped branding assets (resolved into data-brand-logo="..." slots)
+  const projectBrandingAssets = useProjectStore(
+    (s) => s.projects.find((p) => p.id === projectId)?.brandingAssets ?? []
   );
 
   // Saved library components for the Explorer prompt
@@ -304,13 +316,17 @@ export function ExplorerCanvas({
         markStep("generatedVariant");
       }
 
-      // Inject placeholder SVGs instead of auto-generating images.
+      // Resolve data-brand-logo="..." attributes to real Supabase URLs, then
+      // inject placeholder SVGs for any remaining data-generate-image slots.
       // Users can generate images later via Inspector, smart regenerate, or bulk generate.
       let totalPlaceholders = 0;
       const withPlaceholders = finalNew.map((v) => {
-        const { code: placeholderCode, count } = injectPlaceholderSvgs(v.code);
+        const branded = replaceBrandingPlaceholders(v.code, projectBrandingAssets);
+        const { code: placeholderCode, count } = injectPlaceholderSvgs(branded);
         totalPlaceholders += count;
-        return count > 0 ? { ...v, code: placeholderCode } : v;
+        return branded !== v.code || count > 0
+          ? { ...v, code: placeholderCode }
+          : v;
       });
 
       if (totalPlaceholders > 0) {
@@ -340,7 +356,7 @@ export function ExplorerCanvas({
       streamingBatchRef.current = null;
       pendingBatchCountRef.current = 0;
     },
-    [onUpdateExplorations, extractedFonts, layoutMd, markStep]
+    [onUpdateExplorations, extractedFonts, layoutMd, markStep, projectBrandingAssets]
   );
 
   /** Shared fetch + stream logic used by all generation handlers */
@@ -459,8 +475,18 @@ export function ExplorerCanvas({
       abortRef.current = new AbortController();
 
       // Fetch any URLs in the prompt before generation
-      const { prompt: resolvedPrompt, contextFiles: resolvedContextFiles } =
+      const { prompt: resolvedPrompt, contextFiles: urlResolvedContextFiles } =
         await fetchUrlsFromPrompt(prompt, contextFiles);
+
+      // Merge project-scoped context docs (pinned first) with session-scoped
+      // files. Session files win on name collision. Capped at the server's
+      // max of 3 context files total.
+      const resolvedContextFiles = mergeContextForGeneration({
+        projectDocs: projectContextDocs,
+        sessionFiles: urlResolvedContextFiles,
+        includeProjectContext: true,
+        maxFiles: 3,
+      });
 
       const batchId = crypto.randomUUID();
       const batchPrompt = prompt;
@@ -527,7 +553,7 @@ export function ExplorerCanvas({
         generatingSessionRef.current = null;
       }
     },
-    [isGenerating, projectId, layoutMd, modelId, explorations, currentExploration, onUpdateExplorations, runGeneration, fetchUrlsFromPrompt, scannedComponents, savedLibraryComponents]
+    [isGenerating, projectId, layoutMd, modelId, explorations, currentExploration, onUpdateExplorations, runGeneration, fetchUrlsFromPrompt, scannedComponents, savedLibraryComponents, projectContextDocs]
   );
 
   const handleRefine = useCallback(
@@ -540,8 +566,15 @@ export function ExplorerCanvas({
       abortRef.current = new AbortController();
 
       // Fetch any URLs in the refinement prompt
-      const { prompt: resolvedPrompt, contextFiles: resolvedContextFiles } =
+      const { prompt: resolvedPrompt, contextFiles: urlResolvedContextFiles } =
         await fetchUrlsFromPrompt(refinementPrompt, contextFiles);
+
+      const resolvedContextFiles = mergeContextForGeneration({
+        projectDocs: projectContextDocs,
+        sessionFiles: urlResolvedContextFiles,
+        includeProjectContext: true,
+        maxFiles: 3,
+      });
 
       const batchId = crypto.randomUUID();
       const batchPrompt = `Refine "${selectedVariant.name}": ${refinementPrompt}`;
@@ -590,7 +623,7 @@ export function ExplorerCanvas({
         generatingSessionRef.current = null;
       }
     },
-    [isGenerating, selectedVariant, currentExploration, projectId, layoutMd, explorations, runGeneration, fetchUrlsFromPrompt, scannedComponents, savedLibraryComponents]
+    [isGenerating, selectedVariant, currentExploration, projectId, layoutMd, explorations, runGeneration, fetchUrlsFromPrompt, scannedComponents, savedLibraryComponents, projectContextDocs]
   );
 
   const handleRegenerate = useCallback(() => {
@@ -812,6 +845,14 @@ export function ExplorerCanvas({
             setImageProgress({ completed, total });
           },
         });
+
+        // Re-apply branding assets so data-brand-logo="..." keeps resolving
+        // after an image regeneration pass. processCodeImages preserves the
+        // attribute but may have stripped or overwritten the src.
+        result.code = replaceBrandingPlaceholders(
+          result.code,
+          projectBrandingAssets
+        );
 
         if (controller.signal.aborted) return;
 

@@ -24,14 +24,17 @@ function makeToken(
 }
 
 describe('generateTokensJson', () => {
-  it('returns valid JSON', () => {
+  it('returns empty string when no tokens provided (blank project)', () => {
     const json = generateTokensJson(makeTokens());
-    expect(() => JSON.parse(json)).not.toThrow();
+    expect(json).toBe('');
   });
 
-  it('returns empty object when no tokens provided', () => {
-    const json = generateTokensJson(makeTokens());
-    expect(JSON.parse(json)).toEqual({});
+  it('returns valid parseable JSON when tokens are present', () => {
+    const tokens = makeTokens({
+      colors: [makeToken('Primary', '#6750A4', 'color')],
+    });
+    const json = generateTokensJson(tokens);
+    expect(() => JSON.parse(json)).not.toThrow();
   });
 
   it('groups colour tokens under top-level "color" key', () => {
