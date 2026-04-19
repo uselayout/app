@@ -17,6 +17,9 @@ import {
 } from "@/lib/tokens/add-remove-token";
 import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
+import { useOrgStore } from "@/lib/store/organization";
+
+const MERGE_CHUNK_SIZE = 40;
 
 interface DivergenceBannerProps {
   layoutMd: string;
@@ -45,6 +48,7 @@ export function DivergenceBanner({
   const addToken = useProjectStore((s) => s.addToken);
   const removeTokens = useProjectStore((s) => s.removeTokens);
   const updateToken = useProjectStore((s) => s.updateToken);
+  const orgId = useOrgStore((s) => s.currentOrgId);
 
   const [dismissedSignature, setDismissedSignature] = useState<string | null>(
     () => {
@@ -186,10 +190,11 @@ export function DivergenceBanner({
 
   // AI-backed bulk merge for `in extraction but not in layout.md`. Sends the
   // tokens plus the current layout.md to Claude, which returns a rewritten
-  // file with each token placed in its correct section (typography in §3,
-  // effects in §7, gradients get their own sub-block in §2, etc.) along
-  // with short semantic descriptions. Falls back to dumb append on error.
+  // file with each token placed in its correct section. Saves a version
+  // BEFORE streaming so a truncated / errored rewrite can be rolled back,
+  // and chunks large token sets so we don't blow past the output budget.
   const [aiBulkState, setAiBulkState] = useState<"idle" | "loading" | "error">("idle");
+  const [aiBulkProgress, setAiBulkProgress] = useState<string | null>(null);
   const [aiBulkError, setAiBulkError] = useState<string | null>(null);
 
   const aiBulkAddAllToLayoutMd = useCallback(async () => {
@@ -198,15 +203,52 @@ export function DivergenceBanner({
 
     setAiBulkState("loading");
     setAiBulkError(null);
+    setAiBulkProgress(null);
 
-    const tokensForPrompt = report.tokensInDataNotInMd
-      .map((t) => {
-        const cssVar = t.name.startsWith("--") ? t.name : `--${t.name}`;
-        return `- ${cssVar}: ${t.value} [${t.type}${t.mode ? `, mode:${t.mode}` : ""}]`;
-      })
-      .join("\n");
+    const preMergeLayoutMd = layoutMd;
 
-    const instruction = `Merge the following extracted tokens into the correct sections of this layout.md. Rules:
+    // Safety net #1: persist the current layout.md BEFORE we stream any
+    // rewrite. If the rewrite truncates or errors, we can restore locally
+    // and the user also has a recoverable row in layout_md_versions.
+    if (orgId) {
+      try {
+        await fetch(
+          `/api/organizations/${orgId}/projects/${projectId}/layout-md-versions`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ layoutMd: preMergeLayoutMd, source: "pre-ai-merge" }),
+          }
+        );
+      } catch {
+        // Non-fatal: we still have the in-memory rollback below.
+      }
+    }
+
+    // Chunk big merges to stay well inside the model's output budget. A
+    // 100-token merge on a 12k-char file has historically been enough to
+    // truncate at max_tokens=32k. Keep chunks ≤ MERGE_CHUNK_SIZE.
+    const chunks: DivergentToken[][] = [];
+    for (let i = 0; i < report.tokensInDataNotInMd.length; i += MERGE_CHUNK_SIZE) {
+      chunks.push(report.tokensInDataNotInMd.slice(i, i + MERGE_CHUNK_SIZE));
+    }
+
+    try {
+      let workingLayoutMd = preMergeLayoutMd;
+
+      for (let i = 0; i < chunks.length; i++) {
+        if (chunks.length > 1) {
+          setAiBulkProgress(`Merging batch ${i + 1} of ${chunks.length}…`);
+        }
+        const chunk = chunks[i];
+        const tokensForPrompt = chunk
+          .map((t) => {
+            const cssVar = t.name.startsWith("--") ? t.name : `--${t.name}`;
+            return `- ${cssVar}: ${t.value} [${t.type}${t.mode ? `, mode:${t.mode}` : ""}]`;
+          })
+          .join("\n");
+
+        const instruction = `Merge the following extracted tokens into the correct sections of this layout.md. Rules:
 
 - Place each token in the section matching its type:
   - color → Section 2 (Colour System). If a token's value is a linear-/radial-gradient, group them into a "Gradients" sub-block within Section 2.
@@ -221,51 +263,50 @@ export function DivergenceBanner({
 - Do NOT re-add any tokens that are already present in the file.
 - Use the existing naming conventions and formatting (fenced css blocks, table styles, heading levels).
 
-Tokens to add (${report.tokensInDataNotInMd.length} total):
+Tokens to add (${chunk.length}${chunks.length > 1 ? ` of ${report.tokensInDataNotInMd.length}, batch ${i + 1}/${chunks.length}` : ""}):
 
 ${tokensForPrompt}`;
 
-    try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      const apiKey = getStoredApiKey();
-      if (apiKey) headers["X-Api-Key"] = apiKey;
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        const apiKey = getStoredApiKey();
+        if (apiKey) headers["X-Api-Key"] = apiKey;
 
-      const res = await fetch("/api/generate/edit-layout-md", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ instruction, layoutMd }),
-      });
+        const res = await fetch("/api/generate/edit-layout-md", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ instruction, layoutMd: workingLayoutMd }),
+        });
 
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({ error: "Request failed" }));
-        throw new Error(errBody.error || `Request failed (${res.status})`);
-      }
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({ error: "Request failed" }));
+          updateLayoutMd(projectId, preMergeLayoutMd);
+          throw new Error(errBody.error || `Request failed (${res.status})`);
+        }
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No response body");
-      const decoder = new TextDecoder();
-      let accumulated = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        accumulated += decoder.decode(value, { stream: true });
-        // Progressive update so the editor shows the rewrite as it streams.
-        updateLayoutMd(projectId, accumulated);
-      }
+        const newLayoutMd = await res.text();
+        if (!newLayoutMd || newLayoutMd.length < workingLayoutMd.length / 2) {
+          updateLayoutMd(projectId, preMergeLayoutMd);
+          throw new Error(
+            `Rewrite returned a suspiciously short result on batch ${i + 1}/${chunks.length}. Your original layout.md has been restored.`
+          );
+        }
 
-      if (accumulated.startsWith("\n\n[Error:")) {
-        throw new Error(accumulated);
+        updateLayoutMd(projectId, newLayoutMd);
+        workingLayoutMd = newLayoutMd;
       }
 
       setAiBulkState("idle");
+      setAiBulkProgress(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "AI merge failed";
       console.error("AI divergence resolve failed:", err);
       setAiBulkError(msg);
       setAiBulkState("error");
-      // Don't fall back automatically — let the user choose to dump.
+      setAiBulkProgress(null);
+      // Ensure editor is at the pre-merge state on any failure.
+      updateLayoutMd(projectId, preMergeLayoutMd);
     }
-  }, [projectId, layoutMd, updateLayoutMd, report.tokensInDataNotInMd]);
+  }, [projectId, orgId, layoutMd, updateLayoutMd, report.tokensInDataNotInMd]);
 
   if (!extraction) return null;
   if (divergenceIsEmpty(report)) return null;
@@ -293,7 +334,7 @@ ${tokensForPrompt}`;
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <AlertTriangle size={14} className="text-amber-600 dark:text-amber-400" />
+          <AlertTriangle size={14} className="text-[var(--status-warning)]" />
           <span>
             {total} token{total === 1 ? "" : "s"} in layout.md{" "}
             {total === 1 ? "diverges" : "diverge"} from extraction data.
@@ -379,7 +420,7 @@ ${tokensForPrompt}`;
                 aiBulkState === "error"
                   ? `AI merge failed: ${aiBulkError}. Try "Dump without AI" as a fallback.`
                   : aiBulkState === "loading"
-                    ? "Rewriting layout.md — the editor will update progressively."
+                    ? aiBulkProgress ?? "Rewriting layout.md — the editor will update progressively. A version is saved before the rewrite so you can restore if anything goes wrong."
                     : null
               }
               items={report.tokensInDataNotInMd}
@@ -464,7 +505,7 @@ function ActionableSection<T>({
               type="button"
               onClick={primaryBulkAction.onClick}
               disabled={primaryBulkAction.disabled}
-              className="flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1 rounded-md border border-transparent bg-[var(--status-warning)] px-2 py-1 text-[10px] font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             >
               {primaryBulkAction.icon}
               {primaryBulkAction.label}
@@ -474,7 +515,7 @@ function ActionableSection<T>({
             <button
               type="button"
               onClick={bulkAction.onClick}
-              className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors"
+              className="rounded-md border border-transparent bg-[var(--status-warning)] px-2 py-1 text-[10px] font-medium text-white hover:opacity-90 transition-opacity"
             >
               {bulkAction.label}
             </button>
