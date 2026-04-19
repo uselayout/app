@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
-import { AlertTriangle, ChevronDown, ChevronUp, X } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, X, Sparkles, Loader2 } from "lucide-react";
 import type { ExtractionResult, ExtractedToken, TokenType } from "@/lib/types";
 import type { ExtractedTokens } from "@/lib/types";
 import {
@@ -16,6 +16,7 @@ import {
   removeTokenFromLayoutMd,
 } from "@/lib/tokens/add-remove-token";
 import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
+import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 
 interface DivergenceBannerProps {
   layoutMd: string;
@@ -183,6 +184,89 @@ export function DivergenceBanner({
     updateLayoutMd(projectId, next);
   }, [projectId, layoutMd, updateLayoutMd, report.valueDivergences]);
 
+  // AI-backed bulk merge for `in extraction but not in layout.md`. Sends the
+  // tokens plus the current layout.md to Claude, which returns a rewritten
+  // file with each token placed in its correct section (typography in §3,
+  // effects in §7, gradients get their own sub-block in §2, etc.) along
+  // with short semantic descriptions. Falls back to dumb append on error.
+  const [aiBulkState, setAiBulkState] = useState<"idle" | "loading" | "error">("idle");
+  const [aiBulkError, setAiBulkError] = useState<string | null>(null);
+
+  const aiBulkAddAllToLayoutMd = useCallback(async () => {
+    if (!projectId) return;
+    if (report.tokensInDataNotInMd.length === 0) return;
+
+    setAiBulkState("loading");
+    setAiBulkError(null);
+
+    const tokensForPrompt = report.tokensInDataNotInMd
+      .map((t) => {
+        const cssVar = t.name.startsWith("--") ? t.name : `--${t.name}`;
+        return `- ${cssVar}: ${t.value} [${t.type}${t.mode ? `, mode:${t.mode}` : ""}]`;
+      })
+      .join("\n");
+
+    const instruction = `Merge the following extracted tokens into the correct sections of this layout.md. Rules:
+
+- Place each token in the section matching its type:
+  - color → Section 2 (Colour System). If a token's value is a linear-/radial-gradient, group them into a "Gradients" sub-block within Section 2.
+  - typography → Section 3 (Typography System). Font metrics like ascent/descent/units-per-em belong here as a "Font Metrics" sub-block.
+  - spacing → Section 4 (Spacing & Layout).
+  - radius → Section 4 or wherever radius tokens already live.
+  - effect → Section 7 (Elevation & Depth).
+  - motion → Section 8 (Motion).
+- If a section doesn't exist, create it in the right position.
+- For each token, add a short one-line usage comment explaining when to use it, inferred from its name and value.
+- Do NOT touch sections, tokens, or prose that aren't related to the tokens being added.
+- Do NOT re-add any tokens that are already present in the file.
+- Use the existing naming conventions and formatting (fenced css blocks, table styles, heading levels).
+
+Tokens to add (${report.tokensInDataNotInMd.length} total):
+
+${tokensForPrompt}`;
+
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const apiKey = getStoredApiKey();
+      if (apiKey) headers["X-Api-Key"] = apiKey;
+
+      const res = await fetch("/api/generate/edit-layout-md", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ instruction, layoutMd }),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({ error: "Request failed" }));
+        throw new Error(errBody.error || `Request failed (${res.status})`);
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
+      const decoder = new TextDecoder();
+      let accumulated = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+        // Progressive update so the editor shows the rewrite as it streams.
+        updateLayoutMd(projectId, accumulated);
+      }
+
+      if (accumulated.startsWith("\n\n[Error:")) {
+        throw new Error(accumulated);
+      }
+
+      setAiBulkState("idle");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "AI merge failed";
+      console.error("AI divergence resolve failed:", err);
+      setAiBulkError(msg);
+      setAiBulkState("error");
+      // Don't fall back automatically — let the user choose to dump.
+    }
+  }, [projectId, layoutMd, updateLayoutMd, report.tokensInDataNotInMd]);
+
   if (!extraction) return null;
   if (divergenceIsEmpty(report)) return null;
   if (signature === dismissedSignature) return null;
@@ -272,11 +356,32 @@ export function DivergenceBanner({
           {report.tokensInDataNotInMd.length > 0 && (
             <ActionableSection
               heading="In extraction but not in layout.md"
-              description="Tokens the AI knows about that aren't documented in layout.md. Usually you want to add them so the exported design system matches what's extracted."
-              bulkAction={{
-                label: `Add all ${report.tokensInDataNotInMd.length} to layout.md`,
+              description="Tokens the AI knows about that aren't documented in layout.md. Merging with AI places each in the correct section (typography → §3, effects → §7, gradients as their own sub-block in §2) with short usage descriptions."
+              primaryBulkAction={{
+                label:
+                  aiBulkState === "loading"
+                    ? `Merging ${report.tokensInDataNotInMd.length}…`
+                    : `Merge ${report.tokensInDataNotInMd.length} with AI`,
+                icon:
+                  aiBulkState === "loading" ? (
+                    <Loader2 size={11} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={11} />
+                  ),
+                onClick: aiBulkAddAllToLayoutMd,
+                disabled: aiBulkState === "loading",
+              }}
+              secondaryBulkAction={{
+                label: "Dump without AI",
                 onClick: bulkAddAllToLayoutMd,
               }}
+              statusNote={
+                aiBulkState === "error"
+                  ? `AI merge failed: ${aiBulkError}. Try "Dump without AI" as a fallback.`
+                  : aiBulkState === "loading"
+                    ? "Rewriting layout.md — the editor will update progressively."
+                    : null
+              }
               items={report.tokensInDataNotInMd}
               renderItem={(t) => (
                 <Row
@@ -323,10 +428,16 @@ function ActionableSection<T>({
   bulkAction,
   items,
   renderItem,
+  primaryBulkAction,
+  secondaryBulkAction,
+  statusNote,
 }: {
   heading: string;
   description: string;
-  bulkAction: { label: string; onClick: () => void };
+  bulkAction?: { label: string; onClick: () => void };
+  primaryBulkAction?: { label: string; icon?: React.ReactNode; onClick: () => void; disabled?: boolean };
+  secondaryBulkAction?: { label: string; onClick: () => void };
+  statusNote?: string | null;
   items: T[];
   renderItem: (item: T) => React.ReactNode;
 }) {
@@ -337,14 +448,42 @@ function ActionableSection<T>({
           <div className="text-[11px] font-medium text-[var(--text-primary)]">{heading}</div>
           <div className="mt-0.5 text-[10px] text-[var(--text-muted)]">{description}</div>
         </div>
-        <button
-          type="button"
-          onClick={bulkAction.onClick}
-          className="shrink-0 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors"
-        >
-          {bulkAction.label}
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          {secondaryBulkAction && (
+            <button
+              type="button"
+              onClick={secondaryBulkAction.onClick}
+              className="rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+              title="Dump tokens into the CORE TOKENS block without AI rewrite"
+            >
+              {secondaryBulkAction.label}
+            </button>
+          )}
+          {primaryBulkAction && (
+            <button
+              type="button"
+              onClick={primaryBulkAction.onClick}
+              disabled={primaryBulkAction.disabled}
+              className="flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {primaryBulkAction.icon}
+              {primaryBulkAction.label}
+            </button>
+          )}
+          {!primaryBulkAction && bulkAction && (
+            <button
+              type="button"
+              onClick={bulkAction.onClick}
+              className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors"
+            >
+              {bulkAction.label}
+            </button>
+          )}
+        </div>
       </div>
+      {statusNote && (
+        <div className="text-[10px] text-[var(--text-muted)]">{statusNote}</div>
+      )}
       <div className="max-h-60 space-y-1 overflow-y-auto rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-2">
         {items.slice(0, 50).map((item) => renderItem(item))}
         {items.length > 50 && (
