@@ -3,8 +3,29 @@
 import { useState, useCallback } from "react";
 import { X, Copy, Check } from "lucide-react";
 import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
+import { AssignTokenPopover } from "./AssignTokenPopover";
+import type { StandardRole } from "@/lib/tokens/standard-schema";
 import { toHex } from "@/lib/util/color";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
+
+interface ReassignProps {
+  role: StandardRole;
+  availableTokens: Array<{
+    name: string;
+    cssVariable?: string;
+    value: string;
+    type: string;
+    hidden: boolean;
+    assignedToRole?: string;
+  }>;
+  onAssign: (token: {
+    name: string;
+    cssVariable?: string;
+    value: string;
+    type: string;
+    hidden: boolean;
+  }) => void;
+}
 
 interface ColourSwatchCardProps {
   name: string;
@@ -15,6 +36,13 @@ interface ColourSwatchCardProps {
   onUpdate: (newValue: string) => void;
   onRemove: () => void;
   onRename: (newName: string) => void;
+  /**
+   * Optional. When provided, clicking the swatch opens the AssignTokenPopover
+   * with the list of extracted tokens to choose from — same picker empty
+   * slots use. The popover's own hex input handles custom colours.
+   * When absent, falls back to the ColorPickerPopover (edit-value only).
+   */
+  reassign?: ReassignProps;
 }
 
 export function ColourSwatchCard({
@@ -26,6 +54,7 @@ export function ColourSwatchCard({
   onUpdate,
   onRemove,
   onRename,
+  reassign,
 }: ColourSwatchCardProps) {
   const [justCopied, setJustCopied] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -68,14 +97,31 @@ export function ColourSwatchCard({
         </button>
       )}
 
-      {/* Swatch */}
-      <ColorPickerPopover value={resolvedValue} onChange={onUpdate}>
-        <button
-          className="h-12 w-12 rounded-lg border border-[var(--studio-border)] transition-all hover:border-[var(--studio-border-strong)] hover:scale-105 cursor-pointer"
-          style={{ backgroundColor: swatchColour }}
-          title={description ?? `${displayName}: ${value}`}
-        />
-      </ColorPickerPopover>
+      {/* Swatch: when we know the role + available tokens, use the full
+          AssignTokenPopover so the user can swap to any extracted token
+          (consistent with empty slots). Otherwise fall back to the
+          ColorPickerPopover for plain value edits. */}
+      {reassign ? (
+        <AssignTokenPopover
+          role={reassign.role}
+          availableTokens={reassign.availableTokens}
+          onAssign={reassign.onAssign}
+        >
+          <button
+            className="h-12 w-12 rounded-lg border border-[var(--studio-border)] transition-all hover:border-[var(--studio-border-strong)] hover:scale-105 cursor-pointer"
+            style={{ backgroundColor: swatchColour }}
+            title={description ?? `${displayName}: ${value}. Click to reassign or pick a new colour.`}
+          />
+        </AssignTokenPopover>
+      ) : (
+        <ColorPickerPopover value={resolvedValue} onChange={onUpdate}>
+          <button
+            className="h-12 w-12 rounded-lg border border-[var(--studio-border)] transition-all hover:border-[var(--studio-border-strong)] hover:scale-105 cursor-pointer"
+            style={{ backgroundColor: swatchColour }}
+            title={description ?? `${displayName}: ${value}`}
+          />
+        </ColorPickerPopover>
+      )}
 
       {/* Name + value */}
       <div className="flex flex-col items-center gap-0.5">

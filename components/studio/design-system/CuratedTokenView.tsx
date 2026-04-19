@@ -334,6 +334,12 @@ export function CuratedTokenView({
                         onRename={(newName) =>
                           onRenameToken("colors", token.name, newName)
                         }
+                        reassign={{
+                          role,
+                          availableTokens,
+                          onAssign: (picked) =>
+                            handleAssignToken(role.key, role.suffix, picked),
+                        }}
                       />
                       {/* Role label below the swatch */}
                       <div className="mt-1 text-center group/role">
