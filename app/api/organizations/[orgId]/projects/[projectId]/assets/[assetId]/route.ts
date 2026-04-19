@@ -7,6 +7,7 @@ import { syncBrandingSectionToLayoutMd } from "@/lib/branding/sync-to-layout-md"
 import type {
   BrandingAsset,
   BrandingSlot,
+  BrandingVariant,
   ContextDocument,
 } from "@/lib/types";
 
@@ -17,6 +18,7 @@ type Params = {
 const PatchSchema = z.object({
   kind: z.enum(["branding", "context-doc"]),
   slot: z.enum(["primary", "secondary", "wordmark", "favicon", "mark", "other"]).optional(),
+  variant: z.enum(["colour", "white", "black", "mono"]).optional(),
   pinned: z.boolean().optional(),
   name: z.string().min(1).max(80).optional(),
 });
@@ -52,7 +54,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     );
   }
 
-  const { kind, slot, pinned, name } = parsed.data;
+  const { kind, slot, variant, pinned, name } = parsed.data;
 
   const { data: project, error } = await supabase
     .from("layout_projects")
@@ -69,7 +71,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const assets = (project.branding_assets as BrandingAsset[]) ?? [];
     const next = assets.map((a) =>
       a.id === assetId
-        ? { ...a, slot: (slot as BrandingSlot) ?? a.slot, name: name ?? a.name }
+        ? {
+            ...a,
+            slot: (slot as BrandingSlot) ?? a.slot,
+            variant: (variant as BrandingVariant) ?? a.variant,
+            name: name ?? a.name,
+          }
         : a
     );
     if (next.every((a) => a.id !== assetId)) {

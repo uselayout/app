@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { Upload, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useProjectStore } from "@/lib/store/project";
-import type { BrandingAsset, BrandingSlot } from "@/lib/types";
+import type { BrandingAsset, BrandingSlot, BrandingVariant } from "@/lib/types";
 
 interface BrandingTabProps {
   projectId: string;
@@ -17,12 +17,19 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_ASSETS = 10;
 
 const SLOT_OPTIONS: { value: BrandingSlot; label: string; hint: string }[] = [
-  { value: "primary", label: "Primary logo", hint: "Main full-colour logo" },
-  { value: "secondary", label: "Secondary logo", hint: "Inverted / one-colour" },
+  { value: "primary", label: "Primary logo", hint: "Main full logo" },
+  { value: "secondary", label: "Secondary logo", hint: "Alternate full logo" },
   { value: "wordmark", label: "Wordmark", hint: "Text-only lockup" },
   { value: "mark", label: "Icon mark", hint: "Symbol without text" },
   { value: "favicon", label: "Favicon", hint: "Browser tab / app icon" },
   { value: "other", label: "Other", hint: "Uncategorised" },
+];
+
+const VARIANT_OPTIONS: { value: BrandingVariant; label: string; hint: string }[] = [
+  { value: "colour", label: "Colour", hint: "Full-colour version for light surfaces" },
+  { value: "white", label: "White", hint: "White fill — use on dark surfaces" },
+  { value: "black", label: "Black", hint: "Black fill — use on light surfaces" },
+  { value: "mono", label: "Mono", hint: "Single-colour / outline treatment" },
 ];
 
 export function BrandingTab({ projectId, orgId, assets }: BrandingTabProps) {
@@ -32,7 +39,11 @@ export function BrandingTab({ projectId, orgId, assets }: BrandingTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const upload = useCallback(
-    async (files: FileList | null, initialSlot: BrandingSlot = "primary") => {
+    async (
+      files: FileList | null,
+      initialSlot: BrandingSlot = "primary",
+      initialVariant: BrandingVariant = "colour"
+    ) => {
       if (!files || files.length === 0) return;
       if (assets.length + files.length > MAX_ASSETS) {
         toast.error(`Max ${MAX_ASSETS} branding assets per project`);
@@ -51,6 +62,7 @@ export function BrandingTab({ projectId, orgId, assets }: BrandingTabProps) {
           form.set("kind", "branding");
           form.set("file", file);
           form.set("slot", initialSlot);
+          form.set("variant", initialVariant);
 
           const response = await fetch(
             `/api/organizations/${orgId}/projects/${projectId}/assets`,
@@ -79,9 +91,11 @@ export function BrandingTab({ projectId, orgId, assets }: BrandingTabProps) {
     [assets, orgId, projectId, updateBrandingAssets, setLayoutMdLocal]
   );
 
-  const setSlot = useCallback(
-    async (asset: BrandingAsset, slot: BrandingSlot) => {
-      if (asset.slot === slot) return;
+  const patchAsset = useCallback(
+    async (
+      asset: BrandingAsset,
+      patch: { slot?: BrandingSlot; variant?: BrandingVariant }
+    ) => {
       setBusy(true);
       try {
         const response = await fetch(
@@ -89,11 +103,11 @@ export function BrandingTab({ projectId, orgId, assets }: BrandingTabProps) {
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ kind: "branding", slot }),
+            body: JSON.stringify({ kind: "branding", ...patch }),
           }
         );
         if (!response.ok) {
-          toast.error("Failed to change slot");
+          toast.error("Failed to update asset");
           return;
         }
         const payload = (await response.json()) as {
@@ -198,12 +212,31 @@ export function BrandingTab({ projectId, orgId, assets }: BrandingTabProps) {
                   <select
                     value={asset.slot}
                     disabled={busy}
-                    onChange={(e) =>
-                      setSlot(asset, e.target.value as BrandingSlot)
-                    }
+                    onChange={(e) => {
+                      const slot = e.target.value as BrandingSlot;
+                      if (slot !== asset.slot) patchAsset(asset, { slot });
+                    }}
                     className="w-full rounded border border-[var(--studio-border)] bg-[var(--bg-panel)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)] focus:border-[var(--studio-border-focus)] focus:outline-none"
                   >
                     {SLOT_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label} — {opt.hint}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={asset.variant ?? "colour"}
+                    disabled={busy}
+                    onChange={(e) => {
+                      const variant = e.target.value as BrandingVariant;
+                      if (variant !== (asset.variant ?? "colour")) {
+                        patchAsset(asset, { variant });
+                      }
+                    }}
+                    className="w-full rounded border border-[var(--studio-border)] bg-[var(--bg-panel)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)] focus:border-[var(--studio-border-focus)] focus:outline-none"
+                    title="Variant — which surface this artwork suits"
+                  >
+                    {VARIANT_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
                         {opt.label} — {opt.hint}
                       </option>

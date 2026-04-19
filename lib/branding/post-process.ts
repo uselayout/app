@@ -1,38 +1,46 @@
-import type { BrandingAsset, BrandingSlot } from "@/lib/types";
+import type { BrandingAsset, BrandingSlot, BrandingVariant } from "@/lib/types";
 
-const BRAND_LOGO_ATTR_RE = /data-brand-logo=(?:["']([^"']+)["']|\{["']([^"']+)["']\})/;
-const BRAND_LOGO_IMG_RE = /<img\s[^>]*data-brand-logo=(?:["']([^"']+)["']|\{["']([^"']+)["']\})[^>]*\/?>/gi;
-
-type AssetMap = Partial<Record<BrandingSlot, BrandingAsset>>;
-
-function buildSlotMap(assets: BrandingAsset[]): AssetMap {
-  const map: AssetMap = {};
-  // Later uploads win on duplicate slot assignment.
-  for (const asset of assets) {
-    map[asset.slot] = asset;
-  }
-  return map;
-}
+const BRAND_LOGO_IMG_RE =
+  /<img\s[^>]*data-brand-logo=(?:["']([^"']+)["']|\{["']([^"']+)["']\})[^>]*\/?>/gi;
+const BRAND_VARIANT_ATTR_RE =
+  /data-brand-variant=(?:["']([^"']+)["']|\{["']([^"']+)["']\})/i;
 
 /**
- * Resolve the asset for a given slot. Falls back to "primary" when the
- * requested slot is unassigned, to "any" asset as a last resort, or null
- * when the project has no branding assets at all.
+ * Resolve the best asset for a requested slot + variant.
+ *
+ * Precedence:
+ *   1. Exact match (same slot, same variant)
+ *   2. Same slot, variant "colour" (the default fallback)
+ *   3. Same slot, any variant
+ *   4. Primary / wordmark / mark in order with any variant
+ *   5. Any asset
+ *   6. Null when the project has no branding uploads
  */
 function resolveAsset(
-  slot: string,
-  map: AssetMap,
+  slotRaw: string,
+  variantRaw: string,
   assets: BrandingAsset[]
 ): BrandingAsset | null {
-  const normalised = slot.trim().toLowerCase() as BrandingSlot;
-  return (
-    map[normalised] ??
-    map.primary ??
-    map.wordmark ??
-    map.mark ??
-    assets[0] ??
-    null
+  if (assets.length === 0) return null;
+
+  const slot = slotRaw.trim().toLowerCase() as BrandingSlot;
+  const variant = variantRaw.trim().toLowerCase() as BrandingVariant;
+
+  const sameSlot = assets.filter((a) => a.slot === slot);
+  const exact = sameSlot.find((a) => (a.variant ?? "colour") === variant);
+  if (exact) return exact;
+
+  const fallbackColour = sameSlot.find(
+    (a) => (a.variant ?? "colour") === "colour"
   );
+  if (fallbackColour) return fallbackColour;
+  if (sameSlot[0]) return sameSlot[0];
+
+  for (const fallbackSlot of ["primary", "wordmark", "mark"] as const) {
+    const candidate = assets.find((a) => a.slot === fallbackSlot);
+    if (candidate) return candidate;
+  }
+  return assets[0] ?? null;
 }
 
 /**
@@ -51,11 +59,13 @@ export function replaceBrandingPlaceholders(
   if (!assets || assets.length === 0) return code;
   if (!code.includes("data-brand-logo")) return code;
 
-  const map = buildSlotMap(assets);
-
   return code.replace(BRAND_LOGO_IMG_RE, (match, quotedSlot, exprSlot) => {
     const slotRaw = quotedSlot ?? exprSlot ?? "primary";
-    const asset = resolveAsset(slotRaw, map, assets);
+    const variantMatch = match.match(BRAND_VARIANT_ATTR_RE);
+    const variantRaw =
+      (variantMatch?.[1] ?? variantMatch?.[2] ?? "colour").trim();
+
+    const asset = resolveAsset(slotRaw, variantRaw, assets);
     if (!asset) return match;
 
     // Strip every existing src variant before adding a single clean one.
@@ -71,5 +81,5 @@ export function replaceBrandingPlaceholders(
 
 /** Quick check — skip the pipeline when the code has no branding placeholders. */
 export function hasBrandingPlaceholders(code: string): boolean {
-  return BRAND_LOGO_ATTR_RE.test(code);
+  return /data-brand-logo=/.test(code);
 }

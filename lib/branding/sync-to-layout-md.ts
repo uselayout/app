@@ -8,13 +8,17 @@ function formatSection(assets: BrandingAsset[]): string {
   if (assets.length === 0) return "";
 
   const rows = assets
-    .map(
-      (a) =>
-        `| \`${a.slot}\` | ${a.name} | ${a.mimeType} | \`data-brand-logo="${a.slot}"\` |`
-    )
+    .map((a) => {
+      const variant = a.variant ?? "colour";
+      const usage =
+        variant === "colour"
+          ? `\`data-brand-logo="${a.slot}"\``
+          : `\`data-brand-logo="${a.slot}" data-brand-variant="${variant}"\``;
+      return `| \`${a.slot}\` | \`${variant}\` | ${a.name} | ${a.mimeType} | ${usage} |`;
+    })
     .join("\n");
 
-  return `\n${SECTION_HEADING}\n\nUploaded brand assets resolved at runtime via the \`data-brand-logo\` attribute. Reference these slots in generated code — never hardcode logo URLs, and never use \`data-generate-image\` for the project's own brand logo.\n\n| Slot | File | Type | Usage |\n|------|------|------|-------|\n${rows}\n`;
+  return `\n${SECTION_HEADING}\n\nUploaded brand assets resolved at runtime via the \`data-brand-logo\` attribute. Reference these slots in generated code — never hardcode logo URLs, and never use \`data-generate-image\` for the project's own brand logo.\n\nVariants express the same logo tuned for a different surface: use \`colour\` on light backgrounds, \`white\` on dark surfaces, \`black\` for mono prints, \`mono\` for single-colour outlines. The runtime falls back to the \`colour\` variant of the same slot when a requested variant isn't uploaded.\n\n| Slot | Variant | File | Type | Usage |\n|------|---------|------|------|-------|\n${rows}\n`;
 }
 
 /**

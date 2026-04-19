@@ -87,6 +87,9 @@ TWO types of visuals — use the RIGHT approach for each:
    a0) THIS PROJECT'S OWN BRAND LOGO — only when the design system's layout.md contains a "## Branding Assets" section listing available slots:
       <img data-brand-logo="primary" alt="Brand" className="h-8" />
       Slot values are any listed in the Branding Assets section. Common slots: "primary", "secondary", "wordmark", "favicon", "mark".
+      MATCH THE VARIANT TO THE SURFACE: if the logo sits on a dark background (e.g. a dark navbar, dark hero, dark footer) add data-brand-variant="white". On a black-text-on-white print surface add data-brand-variant="black". Default (colour on light surfaces) needs no variant attribute.
+      <img data-brand-logo="primary" data-brand-variant="white" alt="Brand" className="h-8" />
+      Only use variants that the Branding Assets table actually lists; the runtime falls back to the colour variant automatically if a requested variant hasn't been uploaded.
       Omit src entirely — the Layout runtime resolves the attribute to the real uploaded logo URL.
       Use this anywhere the design shows the project's own brand (header nav, footer, favicon, login).
 
@@ -202,6 +205,9 @@ TWO types of visuals — use the RIGHT approach for each:
    a0) THIS PROJECT'S OWN BRAND LOGO — only when the design system's layout.md contains a "## Branding Assets" section listing available slots:
       <img data-brand-logo="primary" alt="Brand" className="h-8" />
       Slot values are any listed in the Branding Assets section. Common slots: "primary", "secondary", "wordmark", "favicon", "mark".
+      MATCH THE VARIANT TO THE SURFACE: if the logo sits on a dark background (e.g. a dark navbar, dark hero, dark footer) add data-brand-variant="white". On a black-text-on-white print surface add data-brand-variant="black". Default (colour on light surfaces) needs no variant attribute.
+      <img data-brand-logo="primary" data-brand-variant="white" alt="Brand" className="h-8" />
+      Only use variants that the Branding Assets table actually lists; the runtime falls back to the colour variant automatically if a requested variant hasn't been uploaded.
       Omit src entirely — the Layout runtime resolves the attribute to the real uploaded logo URL.
       Use this anywhere the design shows the project's own brand (header nav, footer, favicon, login).
 

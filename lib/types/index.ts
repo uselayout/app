@@ -280,9 +280,19 @@ export type BrandingSlot =
   | "mark"
   | "other";
 
+/**
+ * Context variant for a brand asset. A single brand typically has several
+ * visual treatments of the same logo (full colour, white for dark surfaces,
+ * black for mono prints). The generator picks the right variant at runtime
+ * based on the surface the logo is placed on.
+ */
+export type BrandingVariant = "colour" | "white" | "black" | "mono";
+
 export interface BrandingAsset {
   id: string;
   slot: BrandingSlot;
+  /** Defaults to "colour" for existing records written before variants shipped. */
+  variant?: BrandingVariant;
   url: string;
   name: string;
   mimeType: string;

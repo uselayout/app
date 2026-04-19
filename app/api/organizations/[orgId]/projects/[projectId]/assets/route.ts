@@ -7,6 +7,7 @@ import { syncBrandingSectionToLayoutMd } from "@/lib/branding/sync-to-layout-md"
 import type {
   BrandingAsset,
   BrandingSlot,
+  BrandingVariant,
   ContextDocument,
 } from "@/lib/types";
 
@@ -41,6 +42,13 @@ const VALID_SLOTS: ReadonlySet<BrandingSlot> = new Set<BrandingSlot>([
   "favicon",
   "mark",
   "other",
+]);
+
+const VALID_VARIANTS: ReadonlySet<BrandingVariant> = new Set<BrandingVariant>([
+  "colour",
+  "white",
+  "black",
+  "mono",
 ]);
 
 function safeFilename(name: string): string {
@@ -150,6 +158,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     return handleBrandingUpload({
       file,
       slot: formData.get("slot"),
+      variant: formData.get("variant"),
       projectId,
       orgId: auth.orgId,
       existing: existingBranding,
@@ -168,6 +177,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 async function handleBrandingUpload(opts: {
   file: File;
   slot: FormDataEntryValue | null;
+  variant: FormDataEntryValue | null;
   projectId: string;
   orgId: string;
   existing: BrandingAsset[];
@@ -199,9 +209,16 @@ async function handleBrandingUpload(opts: {
     ? (slotRaw as BrandingSlot)
     : "other";
 
+  const variantRaw = typeof opts.variant === "string" ? opts.variant : "colour";
+  const variant: BrandingVariant = VALID_VARIANTS.has(
+    variantRaw as BrandingVariant
+  )
+    ? (variantRaw as BrandingVariant)
+    : "colour";
+
   const id = nanoid();
   const ext = extensionFor(file.type, "bin");
-  const storagePath = `${orgId}/${projectId}/${slot}-${id}.${ext}`;
+  const storagePath = `${orgId}/${projectId}/${slot}-${variant}-${id}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const url = await uploadToBucket("branding", storagePath, buffer, file.type);
@@ -212,6 +229,7 @@ async function handleBrandingUpload(opts: {
   const asset: BrandingAsset = {
     id,
     slot,
+    variant,
     url,
     name: safeFilename(file.name || `${slot}.${ext}`),
     mimeType: file.type,

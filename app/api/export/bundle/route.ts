@@ -35,6 +35,7 @@ const RequestSchema = z.object({
     brandingAssets: z.array(z.object({
       id: z.string(),
       slot: z.enum(["primary", "secondary", "wordmark", "favicon", "mark", "other"]),
+      variant: z.enum(["colour", "white", "black", "mono"]).optional(),
       url: z.string(),
       name: z.string(),
       mimeType: z.string(),
