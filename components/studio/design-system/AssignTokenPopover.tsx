@@ -6,7 +6,44 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import type { StandardRole } from "@/lib/tokens/standard-schema";
+import type { StandardRole, StandardRoleCategory } from "@/lib/tokens/standard-schema";
+import type { TokenType } from "@/lib/types";
+
+// Which token.type a role's picker should filter to.
+const CATEGORY_TO_TYPE: Record<StandardRoleCategory, TokenType> = {
+  backgrounds: "color",
+  text: "color",
+  borders: "color",
+  accent: "color",
+  status: "color",
+  typography: "typography",
+  spacing: "spacing",
+  radius: "radius",
+  shadows: "effect",
+  motion: "motion",
+};
+
+/**
+ * Typography roles split into sub-shapes because "typography" covers family
+ * strings, pixel sizes, unitless line-heights, and numeric weights. A picker
+ * for font-size should not surface `Inter, sans-serif`, and vice versa.
+ */
+function typographySubShape(roleKey: string): "family" | "size" | "weight" | "lineHeight" | null {
+  if (roleKey.startsWith("font-size")) return "size";
+  if (roleKey.startsWith("font-weight")) return "weight";
+  if (roleKey.startsWith("line-height")) return "lineHeight";
+  if (roleKey.startsWith("font-sans") || roleKey.startsWith("font-serif") || roleKey.startsWith("font-mono") || roleKey.startsWith("font-family")) return "family";
+  return null;
+}
+
+function valueMatchesTypographyShape(value: string, shape: ReturnType<typeof typographySubShape>): boolean {
+  const v = value.trim();
+  if (shape === "family") return /[,"']/.test(v);
+  if (shape === "size") return /^-?\d+(?:\.\d+)?\s*(?:px|rem|em)\b/i.test(v);
+  if (shape === "weight") return /^\d{3}$/.test(v) || /^(?:normal|bold|bolder|lighter)$/i.test(v);
+  if (shape === "lineHeight") return /^-?\d+(?:\.\d+)?$/.test(v) || /%$/.test(v) || /^-?\d+(?:\.\d+)?\s*(?:px|rem|em)\b/i.test(v);
+  return true;
+}
 
 interface UnassignedItem {
   name: string;
@@ -35,17 +72,22 @@ export function AssignTokenPopover({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  // Filter to colour tokens for colour roles, or matching type
-  const colourCategories = ["backgrounds", "text", "borders", "accent", "status"];
-  const isColourRole = colourCategories.includes(role.category);
+  // Filter to the role's expected token type so a Font/Shadow/Radius picker
+  // doesn't surface colour tokens, and vice versa.
+  const expectedType = CATEGORY_TO_TYPE[role.category];
+  const isColourRole = expectedType === "color";
+  const typoShape = role.category === "typography" ? typographySubShape(role.key) : null;
 
   const INITIAL_LIMIT = 50;
   const [showAll, setShowAll] = useState(false);
 
   const { filteredTokens, totalCount } = useMemo(() => {
     let tokens = availableTokens.filter((u) => !u.hidden);
-    if (isColourRole) {
-      tokens = tokens.filter((u) => u.type === "color");
+    // Filter by the role's expected token type (colour / typography / spacing / radius / effect / motion).
+    tokens = tokens.filter((u) => u.type === expectedType);
+    // Typography sub-filter: family vs size vs weight vs line-height values.
+    if (typoShape) {
+      tokens = tokens.filter((u) => valueMatchesTypographyShape(u.value, typoShape));
     }
     if (search) {
       const q = search.toLowerCase();
@@ -79,7 +121,7 @@ export function AssignTokenPopover({
     const total = deduped.length;
     const limited = showAll ? deduped : deduped.slice(0, INITIAL_LIMIT);
     return { filteredTokens: limited, totalCount: total };
-  }, [availableTokens, isColourRole, search, showAll]);
+  }, [availableTokens, expectedType, isColourRole, typoShape, search, showAll]);
 
   const handleSelect = (token: UnassignedItem) => {
     onAssign(token);

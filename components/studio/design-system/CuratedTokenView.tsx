@@ -7,6 +7,7 @@ import {
   SCHEMA_CATEGORIES,
   getRolesByCategory,
   STANDARD_SCHEMA,
+  type StandardRole,
   type StandardRoleCategory,
 } from "@/lib/tokens/standard-schema";
 import { resolveTokenValue } from "@/lib/util/color";
@@ -58,6 +59,30 @@ export function CuratedTokenView({
   const assignTokenToRole = useProjectStore((s) => s.assignTokenToRole);
   const unassignRole = useProjectStore((s) => s.unassignRole);
   const addToken = useProjectStore((s) => s.addToken);
+  const updateStandardisation = useProjectStore((s) => s.updateStandardisation);
+
+  const dismissAntiPattern = useCallback(
+    (rule: string) => {
+      const existing = standardisation.dismissedAntiPatterns ?? [];
+      if (existing.includes(rule)) return;
+      updateStandardisation(projectId, {
+        ...standardisation,
+        dismissedAntiPatterns: [...existing, rule],
+      });
+    },
+    [projectId, standardisation, updateStandardisation]
+  );
+
+  const scrollToLayoutMdSection = useCallback((match: string) => {
+    window.dispatchEvent(
+      new CustomEvent("layout-scroll-to-section", { detail: { match } })
+    );
+  }, []);
+
+  const visibleAntiPatterns = useMemo(() => {
+    const dismissed = new Set(standardisation.dismissedAntiPatterns ?? []);
+    return standardisation.antiPatterns.filter((ap) => !dismissed.has(ap.rule));
+  }, [standardisation.antiPatterns, standardisation.dismissedAntiPatterns]);
 
   const handleAssignToken = useCallback(
     (
@@ -220,6 +245,8 @@ export function CuratedTokenView({
 
   return (
     <div className="space-y-8">
+      <ArchitectureHelp projectId={projectId} layoutMd={currentLayoutMd} />
+
       {/* Stats banner */}
       <div className="flex items-center gap-4 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-3">
         <div className="flex-1">
@@ -523,41 +550,21 @@ export function CuratedTokenView({
               })}
             </div>
 
-            {/* Typography: enlarged sample specimen when a sans/mono/serif font token is set */}
-            {catKey === "typography" && (() => {
-              const sansToken = roleTokenMap.get("font-sans");
-              const serifToken = roleTokenMap.get("font-serif");
-              const monoToken = roleTokenMap.get("font-mono");
-              const specimens = [
-                { label: "Sans", token: sansToken },
-                { label: "Serif", token: serifToken },
-                { label: "Mono", token: monoToken },
-              ].filter((s) => s.token && /[,"']/.test(s.token.value));
-              if (specimens.length === 0) return null;
-              return (
-                <div className="mt-4 space-y-3 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4">
-                  {specimens.map((s) => (
-                    <div key={s.label} className="space-y-1">
-                      <div className="text-[9px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
-                        {s.label} — {s.token!.cssVariable ?? `--${s.token!.name}`}
-                      </div>
-                      <div
-                        className="text-2xl leading-tight text-[var(--text-primary)]"
-                        style={{ fontFamily: s.token!.value }}
-                      >
-                        The quick brown fox jumps over the lazy dog
-                      </div>
-                      <div
-                        className="text-sm text-[var(--text-secondary)]"
-                        style={{ fontFamily: s.token!.value }}
-                      >
-                        Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0 1 2 3 4 5 6 7 8 9
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
+            {catKey === "typography" && (
+              <TypographySpecimen roleTokenMap={roleTokenMap} />
+            )}
+            {catKey === "shadows" && (
+              <ElevationSpecimen roleTokenMap={roleTokenMap} />
+            )}
+            {catKey === "spacing" && (
+              <SpacingRamp roleTokenMap={roleTokenMap} roles={roles} />
+            )}
+            {catKey === "radius" && (
+              <RadiusSpecimen roleTokenMap={roleTokenMap} roles={roles} />
+            )}
+            {catKey === "motion" && (
+              <MotionSpecimen roleTokenMap={roleTokenMap} roles={roles} />
+            )}
           </DesignSystemSection>
         );
       })}
@@ -567,61 +574,69 @@ export function CuratedTokenView({
         <DesignSystemSection
           id="curated-antipatterns"
           title="Anti-Patterns Detected"
-          count={standardisation.antiPatterns.length}
+          count={visibleAntiPatterns.length}
         >
           <div className="space-y-3">
-            {standardisation.antiPatterns.map((ap, i) => (
+            {visibleAntiPatterns.map((ap, i) => (
               <div
-                key={i}
-                className="rounded-md border border-[var(--status-warning)]/30 bg-[var(--bg-surface)] px-3 py-2"
+                key={`${ap.rule}-${i}`}
+                className="group rounded-md border border-[var(--status-warning)]/30 bg-[var(--bg-surface)] px-3 py-2"
               >
-                <p className="text-xs font-medium text-[var(--status-warning)]">{ap.rule}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="min-w-0 flex-1 text-xs font-medium text-[var(--status-warning)]">{ap.rule}</p>
+                  <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button
+                      onClick={() => scrollToLayoutMdSection("anti.?patterns|constraints")}
+                      className="rounded px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+                      title="Open the anti-patterns section in the layout.md editor"
+                    >
+                      Fix in layout.md
+                    </button>
+                    <button
+                      onClick={() => dismissAntiPattern(ap.rule)}
+                      className="rounded px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+                      title="Hide this anti-pattern until re-standardisation"
+                    >
+                      Hide
+                    </button>
+                  </div>
+                </div>
                 <p className="mt-1 text-[10px] text-[var(--text-secondary)]">{ap.reason}</p>
                 <p className="mt-1 text-[10px] text-[var(--text-muted)]">{ap.fix}</p>
               </div>
             ))}
+            <div className="flex items-center justify-between pt-1">
+              {(standardisation.dismissedAntiPatterns ?? []).length > 0 && (
+                <button
+                  onClick={() =>
+                    updateStandardisation(projectId, {
+                      ...standardisation,
+                      dismissedAntiPatterns: [],
+                    })
+                  }
+                  className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+                >
+                  Restore {(standardisation.dismissedAntiPatterns ?? []).length} dismissed
+                </button>
+              )}
+              <button
+                onClick={() => scrollToLayoutMdSection("anti.?patterns|constraints")}
+                className="ml-auto rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+              >
+                Add anti-pattern manually in layout.md
+              </button>
+            </div>
           </div>
         </DesignSystemSection>
       )}
 
       {/* Unassigned tokens */}
-      {standardisation.unassigned.filter((u) => !u.hidden).length > 0 && (
-        <DesignSystemSection
-          id="curated-unassigned"
-          title="Unassigned Tokens"
-          count={standardisation.unassigned.filter((u) => !u.hidden).length}
-        >
-          <p className="mb-3 text-[10px] text-[var(--text-muted)]">
-            These tokens were extracted but not mapped to a standard role. They are still available in All Tokens view and in the layout.md appendix.
-          </p>
-          <div className="space-y-1">
-            {standardisation.unassigned
-              .filter((u) => !u.hidden)
-              .slice(0, 30)
-              .map((u, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 rounded px-2 py-1 text-xs"
-                >
-                  {u.type === "color" && (
-                    <div
-                      className="h-4 w-4 shrink-0 rounded border border-[var(--studio-border)]"
-                      style={{ backgroundColor: u.value }}
-                    />
-                  )}
-                  <code className="font-mono text-[var(--text-secondary)]">
-                    {u.cssVariable ?? u.name}
-                  </code>
-                  <code className="font-mono text-[var(--text-muted)]">{u.value}</code>
-                </div>
-              ))}
-            {standardisation.unassigned.filter((u) => !u.hidden).length > 30 && (
-              <p className="px-2 text-[10px] text-[var(--text-muted)]">
-                + {standardisation.unassigned.filter((u) => !u.hidden).length - 30} more
-              </p>
-            )}
-          </div>
-        </DesignSystemSection>
+      {standardisation.unassigned.length > 0 && (
+        <UnassignedTokensSection
+          projectId={projectId}
+          standardisation={standardisation}
+          updateStandardisation={updateStandardisation}
+        />
       )}
 
       {/* Version History & Snapshots */}
@@ -804,5 +819,636 @@ function InlineAddTokenForm({
         </div>
       )}
     </form>
+  );
+}
+
+// ─── Specimens ──────────────────────────────────────────────────────────────
+
+/**
+ * Typography specimens: family rows, size scale, weight scale, line-height scale.
+ * Every block renders against the current surface so the sample matches what
+ * agents actually produce in generated UI.
+ */
+function TypographySpecimen({
+  roleTokenMap,
+}: {
+  roleTokenMap: Map<string, ExtractedToken>;
+}) {
+  const families = [
+    { key: "font-sans", label: "Sans" },
+    { key: "font-serif", label: "Serif" },
+    { key: "font-mono", label: "Mono" },
+  ]
+    .map((f) => ({ ...f, token: roleTokenMap.get(f.key) }))
+    .filter((f) => f.token && /[,"']/.test(f.token.value));
+
+  const sizeRoles = ["font-size-xs", "font-size-sm", "font-size-md", "font-size-lg", "font-size-xl", "font-size-2xl", "font-size-3xl"];
+  const sizes = sizeRoles
+    .map((key) => ({ key, token: roleTokenMap.get(key) }))
+    .filter((s) => s.token);
+
+  const weightRoles = ["font-weight-regular", "font-weight-medium", "font-weight-semibold", "font-weight-bold"];
+  const weights = weightRoles
+    .map((key) => ({ key, token: roleTokenMap.get(key) }))
+    .filter((w) => w.token);
+
+  const lineHeightRoles = ["line-height-tight", "line-height-normal", "line-height-loose"];
+  const lineHeights = lineHeightRoles
+    .map((key) => ({ key, token: roleTokenMap.get(key) }))
+    .filter((l) => l.token);
+
+  const defaultFamily = families[0]?.token?.value;
+  const anyFilled = families.length > 0 || sizes.length > 0 || weights.length > 0 || lineHeights.length > 0;
+  if (!anyFilled) return null;
+
+  return (
+    <div className="mt-4 space-y-6 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4">
+      {/* Family specimens */}
+      {families.length > 0 && (
+        <div className="space-y-4">
+          {families.map((f) => (
+            <div key={f.key} className="space-y-1">
+              <div className="text-[9px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                {f.label} — {f.token!.cssVariable ?? `--${f.token!.name}`}
+              </div>
+              <div
+                className="text-2xl leading-tight text-[var(--text-primary)]"
+                style={{ fontFamily: f.token!.value }}
+              >
+                The quick brown fox jumps over the lazy dog
+              </div>
+              <div
+                className="text-sm text-[var(--text-secondary)]"
+                style={{ fontFamily: f.token!.value }}
+              >
+                Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz · 0 1 2 3 4 5 6 7 8 9
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Size scale table */}
+      {sizes.length > 0 && (
+        <div className="space-y-3 border-t border-[var(--studio-border)] pt-4">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">Size scale</div>
+          <div className="space-y-2">
+            {sizes.map(({ key, token }) => (
+              <div key={key} className="flex items-baseline gap-4">
+                <div
+                  className="min-w-0 flex-1 leading-tight text-[var(--text-primary)]"
+                  style={{ fontFamily: defaultFamily, fontSize: token!.value }}
+                >
+                  The quick brown fox
+                </div>
+                <div className="shrink-0 text-right">
+                  <code className="block font-mono text-[10px] text-[var(--text-secondary)]">
+                    {token!.cssVariable ?? `--${token!.name}`}
+                  </code>
+                  <code className="block font-mono text-[10px] text-[var(--text-muted)]">{token!.value}</code>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Weight specimens */}
+      {weights.length > 0 && (
+        <div className="space-y-3 border-t border-[var(--studio-border)] pt-4">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">Weight scale</div>
+          <div className="flex flex-wrap gap-6">
+            {weights.map(({ key, token }) => (
+              <div key={key} className="space-y-1">
+                <div
+                  className="text-2xl leading-tight text-[var(--text-primary)]"
+                  style={{ fontFamily: defaultFamily, fontWeight: token!.value as React.CSSProperties["fontWeight"] }}
+                >
+                  Aa Grotesque
+                </div>
+                <code className="block font-mono text-[10px] text-[var(--text-muted)]">
+                  {token!.cssVariable ?? `--${token!.name}`} · {token!.value}
+                </code>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Line-height specimens */}
+      {lineHeights.length > 0 && (
+        <div className="space-y-3 border-t border-[var(--studio-border)] pt-4">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">Line-height scale</div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {lineHeights.map(({ key, token }) => (
+              <div key={key} className="space-y-1">
+                <div
+                  className="text-sm text-[var(--text-primary)]"
+                  style={{ fontFamily: defaultFamily, lineHeight: token!.value }}
+                >
+                  Design tokens travel from layout.md to every coding agent. Keep them tight, explicit, and canonical so generated UI stays on-brand.
+                </div>
+                <code className="block font-mono text-[10px] text-[var(--text-muted)]">
+                  {token!.cssVariable ?? `--${token!.name}`} · {token!.value}
+                </code>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Elevation gallery: real cards on a surface, one per shadow role. */
+function ElevationSpecimen({
+  roleTokenMap,
+}: {
+  roleTokenMap: Map<string, ExtractedToken>;
+}) {
+  const shadowRoles = ["shadow-sm", "shadow-md", "shadow-lg"];
+  const filled = shadowRoles
+    .map((key) => ({ key, token: roleTokenMap.get(key) }))
+    .filter((s) => s.token);
+  if (filled.length === 0) return null;
+
+  return (
+    <div className="mt-4 rounded-md border border-[var(--studio-border)] bg-[var(--bg-app)] p-6">
+      <div className="mb-4 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">Elevation</div>
+      <div className="flex flex-wrap gap-6">
+        {filled.map(({ key, token }) => (
+          <div key={key} className="space-y-2">
+            <div
+              className="h-20 w-36 rounded-lg bg-[var(--bg-surface)]"
+              style={{ boxShadow: token!.value }}
+            />
+            <div>
+              <code className="block font-mono text-[10px] text-[var(--text-secondary)]">
+                {token!.cssVariable ?? `--${token!.name}`}
+              </code>
+              <code className="block max-w-[200px] truncate font-mono text-[10px] text-[var(--text-muted)]" title={token!.value}>
+                {token!.value}
+              </code>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Spacing ramp: proportional horizontal bars stacked by size. */
+function SpacingRamp({
+  roleTokenMap,
+  roles,
+}: {
+  roleTokenMap: Map<string, ExtractedToken>;
+  roles: StandardRole[];
+}) {
+  const filled = roles
+    .map((r) => ({ role: r, token: roleTokenMap.get(r.key) }))
+    .filter((r) => r.token);
+  if (filled.length === 0) return null;
+
+  const MAX_BAR = 240;
+  const values = filled.map(({ token }) => {
+    const n = parseFloat(token!.value);
+    return token!.value.includes("rem") ? n * 16 : n;
+  });
+  const maxPx = Math.max(...values, 4);
+
+  return (
+    <div className="mt-4 space-y-2 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4">
+      <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">Spacing ramp</div>
+      {filled.map(({ role, token }, i) => {
+        const px = values[i];
+        const width = Math.min(px, MAX_BAR) * (MAX_BAR / Math.max(maxPx, MAX_BAR));
+        const overflowed = px > MAX_BAR;
+        return (
+          <div key={role.key} className="flex items-center gap-3">
+            <span className="w-20 shrink-0 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+              {role.label.replace("Extra ", "").replace(" Radius", "")}
+            </span>
+            <div
+              className="h-3 rounded-sm bg-[var(--studio-accent)]"
+              style={{ width: `${Math.max(width, 4)}px` }}
+            />
+            <code className="font-mono text-[10px] text-[var(--text-muted)]">
+              {token!.value}
+              {overflowed && " (bar capped)"}
+            </code>
+            <code className="font-mono text-[9px] text-[var(--text-muted)] opacity-70">
+              {token!.cssVariable ?? `--${token!.name}`}
+            </code>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Radius specimens: side-by-side 120×60 rectangles. */
+function RadiusSpecimen({
+  roleTokenMap,
+  roles,
+}: {
+  roleTokenMap: Map<string, ExtractedToken>;
+  roles: StandardRole[];
+}) {
+  const filled = roles
+    .map((r) => ({ role: r, token: roleTokenMap.get(r.key) }))
+    .filter((r) => r.token);
+  if (filled.length === 0) return null;
+
+  return (
+    <div className="mt-4 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4">
+      <div className="mb-3 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">Radius</div>
+      <div className="flex flex-wrap gap-6">
+        {filled.map(({ role, token }) => (
+          <div key={role.key} className="space-y-2">
+            <div
+              className="h-15 w-30 border border-[var(--studio-border)] bg-[var(--bg-elevated)]"
+              style={{ borderRadius: token!.value, height: 60, width: 120 }}
+            />
+            <div>
+              <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                {role.label}
+              </div>
+              <code className="block font-mono text-[10px] text-[var(--text-secondary)]">
+                {token!.cssVariable ?? `--${token!.name}`}
+              </code>
+              <code className="block font-mono text-[10px] text-[var(--text-muted)]">{token!.value}</code>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Motion specimens: pulsing dots for durations, sliding dots for easing curves. */
+function MotionSpecimen({
+  roleTokenMap,
+  roles,
+}: {
+  roleTokenMap: Map<string, ExtractedToken>;
+  roles: StandardRole[];
+}) {
+  const filled = roles
+    .map((r) => ({ role: r, token: roleTokenMap.get(r.key) }))
+    .filter((r) => r.token);
+  if (filled.length === 0) return null;
+
+  return (
+    <div className="mt-4 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4">
+      <style>{`
+        @keyframes layout-motion-pulse { 0%, 40%, 100% { transform: scale(1); opacity: 0.6; } 20% { transform: scale(1.6); opacity: 1; } }
+        @keyframes layout-motion-glide { 0% { transform: translateX(0); } 100% { transform: translateX(160px); } }
+      `}</style>
+      <div className="mb-3 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">Motion</div>
+      <div className="flex flex-wrap gap-8">
+        {filled.map(({ role, token }) => {
+          const isDuration = role.key.startsWith("duration");
+          const isEasing = role.key.startsWith("ease") || role.key.includes("easing");
+          return (
+            <div key={role.key} className="space-y-2">
+              {isDuration && (
+                <div className="flex h-6 items-center">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full bg-[var(--studio-accent)]"
+                    style={{
+                      animation: `layout-motion-pulse ${token!.value} ease-in-out infinite`,
+                    }}
+                  />
+                </div>
+              )}
+              {isEasing && (
+                <div className="relative h-6 w-44 overflow-hidden rounded-sm bg-[var(--bg-elevated)]">
+                  <span
+                    className="absolute top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-[var(--studio-accent)]"
+                    style={{
+                      animationName: "layout-motion-glide",
+                      animationDuration: "1.4s",
+                      animationIterationCount: "infinite",
+                      animationTimingFunction: token!.value,
+                      animationDirection: "alternate",
+                    }}
+                  />
+                </div>
+              )}
+              <div>
+                <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                  {role.label}
+                </div>
+                <code className="block font-mono text-[10px] text-[var(--text-secondary)]">
+                  {token!.cssVariable ?? `--${token!.name}`}
+                </code>
+                <code className="block font-mono text-[10px] text-[var(--text-muted)]">{token!.value}</code>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Unassigned tokens: grouped + searchable + bulk hide ────────────────────
+
+const NOISE_PATTERNS: { label: string; test: (name: string, value: string) => boolean }[] = [
+  {
+    label: "numeric tints (e.g. --white-100, --gray-500)",
+    test: (name) => /^--?(white|black|gray|grey|neutral|slate|zinc|stone)-\d{2,4}\b/i.test(name),
+  },
+  {
+    label: "rgba alpha primitives (rgba(var(--…)))",
+    test: (_name, value) => /^rgba\(\s*var\(--/i.test(value),
+  },
+  {
+    label: "vendor-prefix tokens (chakra-, mantine-, radix-, shadcn-, ant-, mui-, fides-)",
+    test: (name) => /^--?(chakra|mantine|radix|shadcn|ant|mui|fides|onetrust|iubenda|cookiebot|hotjar|intercom)[-_]/i.test(name),
+  },
+];
+
+function UnassignedTokensSection({
+  projectId,
+  standardisation,
+  updateStandardisation,
+}: {
+  projectId: string;
+  standardisation: ProjectStandardisation;
+  updateStandardisation: (id: string, data: ProjectStandardisation) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const visible = useMemo(
+    () => standardisation.unassigned.filter((u) => !u.hidden),
+    [standardisation.unassigned]
+  );
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return visible;
+    const q = search.toLowerCase();
+    return visible.filter(
+      (u) =>
+        u.name.toLowerCase().includes(q) ||
+        (u.cssVariable ?? "").toLowerCase().includes(q) ||
+        u.value.toLowerCase().includes(q)
+    );
+  }, [visible, search]);
+
+  const groups = useMemo(() => {
+    const buckets: Record<string, typeof filtered> = {};
+    for (const u of filtered) {
+      const key = u.type || "other";
+      (buckets[key] ??= []).push(u);
+    }
+    const order = ["color", "typography", "spacing", "radius", "effect", "motion", "other"];
+    return order
+      .filter((k) => buckets[k] && buckets[k].length > 0)
+      .map((k) => ({ type: k, items: buckets[k] }));
+  }, [filtered]);
+
+  const updateUnassigned = useCallback(
+    (next: ProjectStandardisation["unassigned"]) => {
+      updateStandardisation(projectId, { ...standardisation, unassigned: next });
+    },
+    [projectId, standardisation, updateStandardisation]
+  );
+
+  const hideOne = (target: ProjectStandardisation["unassigned"][number]) => {
+    const key = `${target.cssVariable ?? target.name}::${target.value}`;
+    updateUnassigned(
+      standardisation.unassigned.map((u) =>
+        `${u.cssVariable ?? u.name}::${u.value}` === key ? { ...u, hidden: true } : u
+      )
+    );
+  };
+
+  const hideByPattern = (test: (name: string, value: string) => boolean) => {
+    updateUnassigned(
+      standardisation.unassigned.map((u) =>
+        test(u.cssVariable ?? u.name, u.value) ? { ...u, hidden: true } : u
+      )
+    );
+  };
+
+  const restoreAllHidden = () => {
+    updateUnassigned(standardisation.unassigned.map((u) => ({ ...u, hidden: false })));
+  };
+
+  const hiddenCount = standardisation.unassigned.length - visible.length;
+
+  return (
+    <DesignSystemSection
+      id="curated-unassigned"
+      title="Unassigned Tokens"
+      count={visible.length}
+    >
+      <p className="mb-3 text-[10px] text-[var(--text-muted)]">
+        Extracted tokens not yet mapped to a standard role. They still appear in All Tokens and layout.md&apos;s Appendix A. Hide noise here to keep the curated view focused.
+      </p>
+
+      <div className="mb-3 space-y-2">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search unassigned tokens…"
+          className="w-full rounded bg-[var(--bg-elevated)] px-3 py-1.5 font-mono text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--studio-border-focus)]"
+        />
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] text-[var(--text-muted)]">Quick hide:</span>
+          {NOISE_PATTERNS.map((p) => {
+            const matchCount = visible.filter((u) => p.test(u.cssVariable ?? u.name, u.value)).length;
+            if (matchCount === 0) return null;
+            return (
+              <button
+                key={p.label}
+                onClick={() => hideByPattern(p.test)}
+                className="rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+                title={p.label}
+              >
+                Hide {matchCount} {p.label.split(" ")[0]}
+              </button>
+            );
+          })}
+          {hiddenCount > 0 && (
+            <button
+              onClick={restoreAllHidden}
+              className="ml-auto rounded-md border border-[var(--studio-border)] bg-transparent px-2 py-0.5 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+            >
+              Restore {hiddenCount} hidden
+            </button>
+          )}
+        </div>
+      </div>
+
+      {groups.length === 0 && (
+        <p className="text-[11px] text-[var(--text-muted)] italic">No unassigned tokens match &quot;{search}&quot;.</p>
+      )}
+
+      <div className="space-y-3">
+        {groups.map((group) => {
+          const collapsed = collapsedGroups.has(group.type);
+          return (
+            <div key={group.type} className="space-y-1">
+              <button
+                onClick={() => {
+                  const next = new Set(collapsedGroups);
+                  if (next.has(group.type)) next.delete(group.type);
+                  else next.add(group.type);
+                  setCollapsedGroups(next);
+                }}
+                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)] hover:bg-[var(--bg-hover)] transition-colors"
+              >
+                <span>{collapsed ? "▶" : "▼"}</span>
+                <span>{group.type}</span>
+                <span className="text-[var(--text-muted)] opacity-70">({group.items.length})</span>
+              </button>
+              {!collapsed && (
+                <div className="space-y-0.5">
+                  {group.items.map((u, i) => (
+                    <div
+                      key={`${u.cssVariable ?? u.name}-${i}`}
+                      className="group flex items-center gap-3 rounded px-2 py-1 text-xs hover:bg-[var(--bg-hover)]"
+                    >
+                      {u.type === "color" && (
+                        <div
+                          className="h-4 w-4 shrink-0 rounded border border-[var(--studio-border)]"
+                          style={{ backgroundColor: u.value }}
+                        />
+                      )}
+                      <code className="font-mono text-[var(--text-secondary)]">{u.cssVariable ?? u.name}</code>
+                      <code className="min-w-0 flex-1 truncate font-mono text-[var(--text-muted)]" title={u.value}>
+                        {u.value}
+                      </code>
+                      <button
+                        onClick={() => hideOne(u)}
+                        className="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-400"
+                        title="Hide from curated view"
+                      >
+                        Hide
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </DesignSystemSection>
+  );
+}
+
+// ─── Architecture help panel ────────────────────────────────────────────────
+
+function ArchitectureHelp({
+  projectId,
+  layoutMd,
+}: {
+  projectId: string;
+  layoutMd: string;
+}) {
+  const storageKey = `ds-help-dismissed:${projectId}`;
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(storageKey) === "1";
+  });
+  const [expanded, setExpanded] = useState(false);
+
+  // Extract layout.md's Quick Reference section for the "What the AI sees" preview.
+  const quickReferencePreview = useMemo(() => {
+    const qrMatch = layoutMd.match(/##\s*0\.\s*Quick\s+Reference\b([\s\S]*?)(?=\n##\s+\d+\.|$)/i);
+    if (!qrMatch) return null;
+    const body = qrMatch[1].trim();
+    // Cap at first 40 lines for the preview.
+    const lines = body.split("\n").slice(0, 40);
+    const truncated = body.split("\n").length > 40;
+    return lines.join("\n") + (truncated ? "\n\n…" : "");
+  }, [layoutMd]);
+
+  if (dismissed) {
+    return (
+      <button
+        onClick={() => {
+          setDismissed(false);
+          if (typeof window !== "undefined") window.localStorage.removeItem(storageKey);
+        }}
+        className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+      >
+        Show how the design system works
+      </button>
+    );
+  }
+
+  const dismiss = () => {
+    setDismissed(true);
+    if (typeof window !== "undefined") window.localStorage.setItem(storageKey, "1");
+  };
+
+  return (
+    <div className="rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-2 text-[11px] leading-relaxed text-[var(--text-secondary)]">
+          <p className="text-xs font-medium text-[var(--text-primary)]">
+            How this page feeds your coding agents
+          </p>
+          <p>
+            <strong className="text-[var(--text-primary)]">Curated tokens</strong>{" "}
+            are the canonical ~25–30 roles your AI coding agents and Explorer
+            see first. They become the{" "}
+            <code className="rounded bg-[var(--bg-elevated)] px-1 py-0.5 font-mono text-[10px]">
+              CORE TOKENS
+            </code>{" "}
+            block of <code className="rounded bg-[var(--bg-elevated)] px-1 py-0.5 font-mono text-[10px]">layout.md</code>,
+            the default response of the MCP{" "}
+            <code className="rounded bg-[var(--bg-elevated)] px-1 py-0.5 font-mono text-[10px]">
+              get_tokens
+            </code>{" "}
+            tool, and the content of the exported tokens.css / tokens.json /
+            tailwind.config.
+          </p>
+          <p>
+            <strong className="text-[var(--text-primary)]">All Tokens</strong>{" "}
+            (Source Panel) shows every extracted token — reference material
+            that appears in layout.md&apos;s Appendix A but is not the primary
+            signal to the AI.
+          </p>
+          <p>
+            <strong className="text-[var(--text-primary)]">Explorer</strong>{" "}
+            sends the full layout.md (freshly fetched from the server) plus
+            Storybook component context and the layout digest to Claude when
+            generating variants.
+          </p>
+        </div>
+        <button
+          onClick={dismiss}
+          className="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+          title="Dismiss"
+        >
+          ×
+        </button>
+      </div>
+
+      {quickReferencePreview && (
+        <div className="mt-3 border-t border-[var(--studio-border)] pt-3">
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="flex items-center gap-1 text-[10px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            <span>{expanded ? "▼" : "▶"}</span>
+            What the AI sees (Quick Reference, first 40 lines)
+          </button>
+          {expanded && (
+            <pre className="mt-2 max-h-80 overflow-y-auto rounded border border-[var(--studio-border)] bg-[var(--bg-app)] p-3 font-mono text-[10px] leading-relaxed text-[var(--text-secondary)]">
+              {quickReferencePreview}
+            </pre>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

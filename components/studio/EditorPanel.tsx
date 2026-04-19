@@ -174,6 +174,21 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
     editorRef.current?.focus();
   }, []);
 
+  // Cross-panel scroll: other components (e.g. the Design System page) can
+  // dispatch a `layout-scroll-to-section` CustomEvent with { match: RegExp }
+  // to jump the editor to a specific heading. Used by "Fix in layout.md".
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ match: string }>).detail;
+      if (!detail?.match) return;
+      const re = new RegExp(detail.match, "i");
+      const target = sections.find((s) => re.test(s.label));
+      if (target) scrollToLine(target.line);
+    };
+    window.addEventListener("layout-scroll-to-section", handler);
+    return () => window.removeEventListener("layout-scroll-to-section", handler);
+  }, [sections, scrollToLine]);
+
   const suggestionsRef = useRef(tokenSuggestions);
   suggestionsRef.current = tokenSuggestions;
 

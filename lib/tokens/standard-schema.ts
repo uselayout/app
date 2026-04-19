@@ -358,6 +358,7 @@ const COLOUR_ROLES: StandardRole[] = [
 ];
 
 const TYPOGRAPHY_ROLES: StandardRole[] = [
+  // Families
   {
     key: "font-sans",
     label: "Sans-serif Font",
@@ -385,6 +386,23 @@ const TYPOGRAPHY_ROLES: StandardRole[] = [
     description: "Serif font stack for editorial or content-heavy contexts.",
     matchKeywords: ["font-serif", "serif", "font-editorial", "font-display"],
   },
+  // Size scale
+  { key: "font-size-xs", label: "Size XS", category: "typography", suffix: "font-size-xs", required: false, description: "12px. Supporting metadata, tiny labels.", matchKeywords: ["font-size-xs", "text-xs", "type-xs", "size-xs", "font-size-12", "text-12"] },
+  { key: "font-size-sm", label: "Size SM", category: "typography", suffix: "font-size-sm", required: true, description: "14px. Secondary text, captions, dense UI.", matchKeywords: ["font-size-sm", "text-sm", "type-sm", "size-sm", "font-size-14", "text-14", "caption"] },
+  { key: "font-size-md", label: "Size MD (Body)", category: "typography", suffix: "font-size-md", required: true, description: "16px. Default body text size.", matchKeywords: ["font-size-md", "font-size-base", "text-base", "text-md", "body-size", "font-body-size", "type-body", "size-md", "font-size-16"] },
+  { key: "font-size-lg", label: "Size LG", category: "typography", suffix: "font-size-lg", required: false, description: "18-20px. Lead paragraphs, subheadings.", matchKeywords: ["font-size-lg", "text-lg", "type-lg", "size-lg", "lead", "subhead"] },
+  { key: "font-size-xl", label: "Size XL", category: "typography", suffix: "font-size-xl", required: false, description: "22-26px. Section headings.", matchKeywords: ["font-size-xl", "text-xl", "type-xl", "size-xl", "heading-sm", "h3-size"] },
+  { key: "font-size-2xl", label: "Size 2XL", category: "typography", suffix: "font-size-2xl", required: false, description: "30-36px. Page headings.", matchKeywords: ["font-size-2xl", "text-2xl", "type-2xl", "size-2xl", "heading-md", "h2-size"] },
+  { key: "font-size-3xl", label: "Size 3XL", category: "typography", suffix: "font-size-3xl", required: false, description: "40-56px. Hero and display headings.", matchKeywords: ["font-size-3xl", "text-3xl", "type-3xl", "size-3xl", "display", "heading-xl", "h1-size", "hero-size"] },
+  // Weight scale
+  { key: "font-weight-regular", label: "Weight Regular", category: "typography", suffix: "font-weight-regular", required: false, description: "400. Default body weight.", matchKeywords: ["font-weight-regular", "font-weight-normal", "font-weight-400", "weight-regular", "weight-normal"] },
+  { key: "font-weight-medium", label: "Weight Medium", category: "typography", suffix: "font-weight-medium", required: false, description: "500. Emphasised UI labels.", matchKeywords: ["font-weight-medium", "font-weight-500", "weight-medium"] },
+  { key: "font-weight-semibold", label: "Weight Semibold", category: "typography", suffix: "font-weight-semibold", required: false, description: "600. Subheadings and strong labels.", matchKeywords: ["font-weight-semibold", "font-weight-600", "weight-semibold"] },
+  { key: "font-weight-bold", label: "Weight Bold", category: "typography", suffix: "font-weight-bold", required: false, description: "700. Headings and high-emphasis text.", matchKeywords: ["font-weight-bold", "font-weight-700", "weight-bold"] },
+  // Line-height scale
+  { key: "line-height-tight", label: "Line-height Tight", category: "typography", suffix: "line-height-tight", required: false, description: "1.1-1.25. Headings and display text.", matchKeywords: ["line-height-tight", "leading-tight", "line-height-1", "lh-tight", "heading-leading"] },
+  { key: "line-height-normal", label: "Line-height Normal", category: "typography", suffix: "line-height-normal", required: false, description: "1.4-1.5. Default body reading.", matchKeywords: ["line-height-normal", "line-height-base", "leading-normal", "leading-base", "lh-normal", "body-leading"] },
+  { key: "line-height-loose", label: "Line-height Loose", category: "typography", suffix: "line-height-loose", required: false, description: "1.65-1.8. Long-form editorial reading.", matchKeywords: ["line-height-loose", "leading-loose", "lh-loose", "editorial-leading"] },
 ];
 
 const SPACING_ROLES: StandardRole[] = [

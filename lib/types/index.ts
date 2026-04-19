@@ -294,6 +294,8 @@ export interface ProjectStandardisation {
     reason: string;
     fix: string;
   }[];
+  /** Rule strings of anti-patterns the user has dismissed; hidden from the curated view until re-standardisation. */
+  dismissedAntiPatterns?: string[];
   /** When the standardisation was last run */
   standardisedAt: string;
 }
