@@ -195,21 +195,6 @@ export default function StudioPage({
     return () => clearTimeout(timer);
   }, [id, project]);
 
-  // Toast when the layout.md → extractionData auto-sync picks up new tokens.
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const count = (event as CustomEvent<{ count: number }>).detail?.count ?? 0;
-      if (count <= 0) return;
-      void import("sonner").then(({ toast }) => {
-        toast.success(
-          `Synced ${count} token${count === 1 ? "" : "s"} from layout.md`
-        );
-      });
-    };
-    window.addEventListener("layout:auto-synced", handler);
-    return () => window.removeEventListener("layout:auto-synced", handler);
-  }, []);
-
   const extractionProjectId = useExtractionStore((s) => s.projectId);
   const extractionStatus = useExtractionStore((s) => s.status);
   const extractionProgress = useExtractionStore((s) => s.progress);

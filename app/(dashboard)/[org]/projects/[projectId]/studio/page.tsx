@@ -167,23 +167,6 @@ export default function StudioPage({
     }
   }, [project?.extractionData, project?.id, id, updateLayoutMd]);
 
-  // Toast when the layout.md → extractionData auto-sync picks up new tokens.
-  // Event emitted by `updateLayoutMd` in the project store after a Monaco
-  // debounced edit adds declarations not already known to extractionData.
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const count = (event as CustomEvent<{ count: number }>).detail?.count ?? 0;
-      if (count <= 0) return;
-      void import("sonner").then(({ toast }) => {
-        toast.success(
-          `Synced ${count} token${count === 1 ? "" : "s"} from layout.md`
-        );
-      });
-    };
-    window.addEventListener("layout:auto-synced", handler);
-    return () => window.removeEventListener("layout:auto-synced", handler);
-  }, []);
-
   const extractionProjectId = useExtractionStore((s) => s.projectId);
   const extractionStatus = useExtractionStore((s) => s.status);
   const extractionProgress = useExtractionStore((s) => s.progress);

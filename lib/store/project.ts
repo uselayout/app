@@ -212,114 +212,6 @@ function mergeTokens(existing: ExtractedToken[] | undefined, parsed: ExtractedTo
   return [...map.values()];
 }
 
-/**
- * Parse any fenced CSS declarations in `project.layoutMd` and additively merge
- * them into `project.extractionData.tokens`. Returns the updated project plus
- * the count of tokens parsed. Additive only — declarations removed from
- * layout.md do NOT prune the extraction (the DivergenceBanner surfaces this
- * drift for explicit user resolution).
- *
- * Shared between the manual "Sync" button (`syncTokensFromLayoutMd`) and the
- * automatic sync that runs after a Monaco debounce (`updateLayoutMd`).
- */
-function applyLayoutMdSync(project: Project): { project: Project; syncedCount: number } {
-  if (!project.layoutMd) return { project, syncedCount: 0 };
-
-  const parsed = parseTokensFromLayoutMd(project.layoutMd);
-  const totalParsed =
-    parsed.colors.length +
-    parsed.typography.length +
-    parsed.spacing.length +
-    parsed.radius.length +
-    parsed.effects.length;
-
-  if (totalParsed === 0) return { project, syncedCount: 0 };
-
-  const existing = project.extractionData;
-  const mergedTokens: ExtractedTokens = {
-    colors: mergeTokens(existing?.tokens.colors, parsed.colors),
-    typography: mergeTokens(existing?.tokens.typography, parsed.typography),
-    spacing: mergeTokens(existing?.tokens.spacing, parsed.spacing),
-    radius: mergeTokens(existing?.tokens.radius, parsed.radius),
-    effects: mergeTokens(existing?.tokens.effects, parsed.effects),
-    motion: mergeTokens(existing?.tokens.motion, parsed.motion),
-  };
-
-  const mergedData: ExtractionResult = existing
-    ? { ...existing, tokens: mergedTokens }
-    : {
-        sourceType: "manual",
-        sourceName: "layout.md",
-        tokens: mergedTokens,
-        components: [],
-        screenshots: [],
-        fonts: [],
-        animations: [],
-        librariesDetected: {},
-        cssVariables: {},
-        computedStyles: {},
-      };
-
-  const newCount =
-    mergedTokens.colors.length +
-    mergedTokens.typography.length +
-    mergedTokens.spacing.length +
-    mergedTokens.radius.length +
-    mergedTokens.effects.length;
-
-  // Reconcile assignment values against the (possibly updated) tokens so
-  // standardised role assignments don't keep stale frozen values.
-  let reconciledStandardisation = project.standardisation;
-  if (reconciledStandardisation) {
-    const allMerged: ExtractedToken[] = [
-      ...mergedTokens.colors,
-      ...mergedTokens.typography,
-      ...mergedTokens.spacing,
-      ...mergedTokens.radius,
-      ...mergedTokens.effects,
-      ...mergedTokens.motion,
-    ];
-    const byKey = new Map<string, ExtractedToken>();
-    for (const t of allMerged) byKey.set(t.cssVariable ?? t.name, t);
-
-    const nextAssignments = { ...reconciledStandardisation.assignments };
-    let changed = false;
-    for (const [roleKey, a] of Object.entries(nextAssignments)) {
-      const target = a.originalCssVariable ?? a.originalName;
-      const token = byKey.get(target);
-      if (token && token.value !== a.value) {
-        nextAssignments[roleKey] = { ...a, value: token.value };
-        changed = true;
-      }
-    }
-    if (changed) {
-      reconciledStandardisation = { ...reconciledStandardisation, assignments: nextAssignments };
-    }
-  }
-
-  return {
-    project: {
-      ...project,
-      extractionData: mergedData,
-      tokenCount: newCount,
-      standardisation: reconciledStandardisation,
-      updatedAt: new Date().toISOString(),
-    },
-    syncedCount: totalParsed,
-  };
-}
-
-/**
- * Emit a synthetic DOM event so the studio page can toast `"Synced N tokens
- * from layout.md"` without the store needing a UI-facing field.
- */
-function emitAutoSyncedEvent(count: number): void {
-  if (count <= 0 || typeof window === "undefined") return;
-  window.dispatchEvent(
-    new CustomEvent("layout:auto-synced", { detail: { count } })
-  );
-}
-
 interface ProjectState {
   projects: Project[];
   currentProjectId: string | null;
@@ -423,37 +315,15 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   setCurrentProject: (id) => set({ currentProjectId: id }),
 
   updateLayoutMd: (id, layoutMd) => {
-    const before = get().projects.find((p) => p.id === id);
-    // No-op guard: skip work (and avoid echoing sync) when the markdown is
-    // unchanged from what's already in state. Covers React prop re-renders
-    // and programmatic writes that happen to pass the same string back.
-    if (before && before.layoutMd === layoutMd) return;
-
-    // Auto-sync parse layout.md → extractionData only when there's a chance
-    // of finding declarations. Keeps the happy-path cheap on non-token edits
-    // (e.g. editing anti-pattern prose).
-    const hasCssBlock = layoutMd.includes("```css");
-
     set((state) => ({
-      projects: state.projects.map((p) => {
-        if (p.id !== id) return p;
-        const next: Project = { ...p, layoutMd, updatedAt: new Date().toISOString() };
-        if (!hasCssBlock) return next;
-        // applyLayoutMdSync is additive and idempotent — safe to run every edit.
-        return applyLayoutMdSync(next).project;
-      }),
+      projects: state.projects.map((p) =>
+        p.id === id
+          ? { ...p, layoutMd, updatedAt: new Date().toISOString() }
+          : p
+      ),
     }));
-
-    const after = get().projects.find((p) => p.id === id);
-    if (after) apiUpsertProject(after, (msg) => set({ saveError: msg }));
-
-    // Diff the token count to toast only when genuinely new tokens arrived.
-    if (hasCssBlock && before && after) {
-      const beforeCount = before.tokenCount ?? 0;
-      const afterCount = after.tokenCount ?? 0;
-      const delta = afterCount - beforeCount;
-      if (delta > 0) emitAutoSyncedEvent(delta);
-    }
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
   updateExtractionData: (id, data) => {
@@ -801,17 +671,101 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
 
   syncTokensFromLayoutMd: (id) => {
     const project = get().projects.find((p) => p.id === id);
-    if (!project) return 0;
+    if (!project?.layoutMd) return 0;
 
-    const { project: synced, syncedCount } = applyLayoutMdSync(project);
-    if (syncedCount === 0) return 0;
+    const parsed = parseTokensFromLayoutMd(project.layoutMd);
+    const totalParsed =
+      parsed.colors.length +
+      parsed.typography.length +
+      parsed.spacing.length +
+      parsed.radius.length +
+      parsed.effects.length;
+
+    if (totalParsed === 0) return 0;
+
+    // Merge with existing extraction data, parsed tokens added after existing
+    const existing = project.extractionData;
+    const mergedTokens: ExtractedTokens = {
+      colors: mergeTokens(existing?.tokens.colors, parsed.colors),
+      typography: mergeTokens(existing?.tokens.typography, parsed.typography),
+      spacing: mergeTokens(existing?.tokens.spacing, parsed.spacing),
+      radius: mergeTokens(existing?.tokens.radius, parsed.radius),
+      effects: mergeTokens(existing?.tokens.effects, parsed.effects),
+      motion: mergeTokens(existing?.tokens.motion, parsed.motion),
+    };
+
+    const mergedData: ExtractionResult = existing
+      ? { ...existing, tokens: mergedTokens }
+      : {
+          sourceType: "manual",
+          sourceName: "layout.md",
+          tokens: mergedTokens,
+          components: [],
+          screenshots: [],
+          fonts: [],
+          animations: [],
+          librariesDetected: {},
+          cssVariables: {},
+          computedStyles: {},
+        };
+
+    const newCount =
+      mergedTokens.colors.length +
+      mergedTokens.typography.length +
+      mergedTokens.spacing.length +
+      mergedTokens.radius.length +
+      mergedTokens.effects.length;
+
+    // Reconcile assignment values against the (possibly updated) tokens. Without this,
+    // role assignments keep frozen values from assign-time (e.g. "var(--orange-500)")
+    // and syncCuratedTokensToLayoutMd would re-emit those stale refs into layout.md
+    // even though the token itself now resolves to a concrete hex.
+    let reconciledStandardisation = project.standardisation;
+    if (reconciledStandardisation) {
+      const allMerged: ExtractedToken[] = [
+        ...mergedTokens.colors,
+        ...mergedTokens.typography,
+        ...mergedTokens.spacing,
+        ...mergedTokens.radius,
+        ...mergedTokens.effects,
+        ...mergedTokens.motion,
+      ];
+      const byKey = new Map<string, ExtractedToken>();
+      for (const t of allMerged) byKey.set(t.cssVariable ?? t.name, t);
+
+      const nextAssignments = { ...reconciledStandardisation.assignments };
+      let changed = false;
+      for (const [roleKey, a] of Object.entries(nextAssignments)) {
+        const target = a.originalCssVariable ?? a.originalName;
+        const token = byKey.get(target);
+        if (token && token.value !== a.value) {
+          nextAssignments[roleKey] = { ...a, value: token.value };
+          changed = true;
+        }
+      }
+      if (changed) {
+        reconciledStandardisation = { ...reconciledStandardisation, assignments: nextAssignments };
+      }
+    }
 
     set((state) => ({
-      projects: state.projects.map((p) => (p.id === id ? synced : p)),
+      projects: state.projects.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              extractionData: mergedData,
+              tokenCount: newCount,
+              standardisation: reconciledStandardisation,
+              updatedAt: new Date().toISOString(),
+            }
+          : p
+      ),
     }));
 
-    apiUpsertProject(synced, (msg) => set({ saveError: msg }));
-    return syncedCount;
+    const updated = get().projects.find((p) => p.id === id);
+    if (updated) apiUpsertProject(updated, (msg) => set({ saveError: msg }));
+
+    return totalParsed;
   },
 
   refreshProject: async (id) => {

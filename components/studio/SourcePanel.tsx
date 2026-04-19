@@ -220,7 +220,7 @@ function SourcePanelInner({
         {hasLayoutMd && projectId && activeTab === "tokens" && (
           <button
             onClick={handleSyncTokens}
-            title="Re-sync tokens from layout.md (runs automatically on edit)"
+            title="Sync tokens from layout.md"
             className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] text-[var(--text-muted)] transition-colors hover:bg-[var(--studio-accent-subtle)] hover:text-[var(--text-secondary)]"
           >
             <RefreshCw className="h-3 w-3" />
