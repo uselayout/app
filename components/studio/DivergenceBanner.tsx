@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { AlertTriangle, ChevronDown, ChevronUp, X, Sparkles, Loader2 } from "lucide-react";
 import type { ExtractionResult, ExtractedToken, TokenType } from "@/lib/types";
 import type { ExtractedTokens } from "@/lib/types";
@@ -19,7 +19,15 @@ import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { useOrgStore } from "@/lib/store/organization";
 
-const MERGE_CHUNK_SIZE = 40;
+const MERGE_CHUNK_SIZE = 20;
+const MERGE_BATCH_TIMEOUT_MS = 180_000; // 3 min per batch
+
+function formatElapsed(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
 
 interface DivergenceBannerProps {
   layoutMd: string;
@@ -196,6 +204,25 @@ export function DivergenceBanner({
   const [aiBulkState, setAiBulkState] = useState<"idle" | "loading" | "error">("idle");
   const [aiBulkProgress, setAiBulkProgress] = useState<string | null>(null);
   const [aiBulkError, setAiBulkError] = useState<string | null>(null);
+  const [aiBulkElapsed, setAiBulkElapsed] = useState<number>(0);
+  const aiBulkStartRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (aiBulkState !== "loading") {
+      aiBulkStartRef.current = null;
+      setAiBulkElapsed(0);
+      return;
+    }
+    if (aiBulkStartRef.current === null) {
+      aiBulkStartRef.current = Date.now();
+    }
+    const id = setInterval(() => {
+      if (aiBulkStartRef.current !== null) {
+        setAiBulkElapsed(Date.now() - aiBulkStartRef.current);
+      }
+    }, 500);
+    return () => clearInterval(id);
+  }, [aiBulkState]);
 
   const aiBulkAddAllToLayoutMd = useCallback(async () => {
     if (!projectId) return;
@@ -237,9 +264,12 @@ export function DivergenceBanner({
       let workingLayoutMd = preMergeLayoutMd;
 
       for (let i = 0; i < chunks.length; i++) {
-        if (chunks.length > 1) {
-          setAiBulkProgress(`Merging batch ${i + 1} of ${chunks.length}…`);
-        }
+        const batchLabel =
+          chunks.length > 1
+            ? `Merging batch ${i + 1} of ${chunks.length} (${chunks[i].length} tokens)…`
+            : `Merging ${chunks[i].length} tokens…`;
+        setAiBulkProgress(batchLabel);
+
         const chunk = chunks[i];
         const tokensForPrompt = chunk
           .map((t) => {
@@ -271,19 +301,44 @@ ${tokensForPrompt}`;
         const apiKey = getStoredApiKey();
         if (apiKey) headers["X-Api-Key"] = apiKey;
 
-        const res = await fetch("/api/generate/edit-layout-md", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ instruction, layoutMd: workingLayoutMd }),
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), MERGE_BATCH_TIMEOUT_MS);
+        const batchStart = Date.now();
+        console.log(`[divergence-merge] batch ${i + 1}/${chunks.length} start: ${chunk.length} tokens, ${workingLayoutMd.length} chars layout.md`);
+
+        let res: Response;
+        try {
+          res = await fetch("/api/generate/edit-layout-md", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ instruction, layoutMd: workingLayoutMd }),
+            signal: controller.signal,
+          });
+        } catch (fetchErr) {
+          clearTimeout(timeoutId);
+          updateLayoutMd(projectId, preMergeLayoutMd);
+          if (fetchErr instanceof Error && fetchErr.name === "AbortError") {
+            throw new Error(
+              `Batch ${i + 1}/${chunks.length} timed out after ${Math.round(MERGE_BATCH_TIMEOUT_MS / 1000)}s. Your original layout.md has been restored. Try "Dump without AI" as a fallback.`
+            );
+          }
+          throw fetchErr;
+        }
+        clearTimeout(timeoutId);
+
+        const batchMs = Date.now() - batchStart;
+        console.log(`[divergence-merge] batch ${i + 1}/${chunks.length} response: ${res.status} in ${batchMs}ms`);
 
         if (!res.ok) {
           const errBody = await res.json().catch(() => ({ error: "Request failed" }));
           updateLayoutMd(projectId, preMergeLayoutMd);
+          console.error(`[divergence-merge] batch ${i + 1} failed:`, errBody);
           throw new Error(errBody.error || `Request failed (${res.status})`);
         }
 
         const newLayoutMd = await res.text();
+        console.log(`[divergence-merge] batch ${i + 1} applied edits: ${res.headers.get("X-Applied-Edits") ?? "?"}, new length: ${newLayoutMd.length}`);
+
         if (!newLayoutMd || newLayoutMd.length < workingLayoutMd.length / 2) {
           updateLayoutMd(projectId, preMergeLayoutMd);
           throw new Error(
@@ -401,7 +456,7 @@ ${tokensForPrompt}`;
               primaryBulkAction={{
                 label:
                   aiBulkState === "loading"
-                    ? `Merging ${report.tokensInDataNotInMd.length}…`
+                    ? `Merging ${report.tokensInDataNotInMd.length}… ${formatElapsed(aiBulkElapsed)}`
                     : `Merge ${report.tokensInDataNotInMd.length} with AI`,
                 icon:
                   aiBulkState === "loading" ? (
@@ -420,7 +475,7 @@ ${tokensForPrompt}`;
                 aiBulkState === "error"
                   ? `AI merge failed: ${aiBulkError}. Try "Dump without AI" as a fallback.`
                   : aiBulkState === "loading"
-                    ? aiBulkProgress ?? "Rewriting layout.md — the editor will update progressively. A version is saved before the rewrite so you can restore if anything goes wrong."
+                    ? `${aiBulkProgress ?? "Rewriting layout.md"} · ${formatElapsed(aiBulkElapsed)} elapsed · this is a slow operation (30–90s per batch). A version was saved before the rewrite so you can restore if anything goes wrong.`
                     : null
               }
               items={report.tokensInDataNotInMd}
