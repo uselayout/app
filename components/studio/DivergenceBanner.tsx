@@ -1,7 +1,16 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
-import { AlertTriangle, ChevronDown, ChevronUp, X } from "lucide-react";
+import {
+  AlertTriangle,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Plus,
+  Minus,
+  EyeOff,
+} from "lucide-react";
 import type { ExtractionResult, ExtractedToken, TokenType } from "@/lib/types";
 import type { ExtractedTokens } from "@/lib/types";
 import {
@@ -9,7 +18,9 @@ import {
   divergenceIsEmpty,
   type DivergentToken,
   type ValueDivergence,
+  type TokenDivergenceReport,
 } from "@/lib/tokens/detect-divergence";
+import { isCuratedTokenName } from "@/lib/tokens/curated-filter";
 import { useProjectStore } from "@/lib/store/project";
 import {
   addTokenToLayoutMd,
@@ -21,20 +32,81 @@ import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 interface DivergenceBannerProps {
   layoutMd: string;
   extraction: ExtractionResult | undefined | null;
-  /** Project id used as localStorage dismissal key and store-action target. */
   storageKey?: string;
 }
 
-/**
- * Amber banner shown above the Monaco editor when layout.md and the
- * structured extractionData disagree. Dismissible per project; re-appears
- * when a new divergence is detected.
- *
- * Every row is actionable: users can add missing tokens to layout.md,
- * remove stale tokens from layout.md, or pick which side of a value
- * conflict to keep. Bulk actions at each section header let them resolve
- * all divergences in a section at once.
- */
+type TypeTab = "all" | TokenType;
+
+const TYPE_LABEL: Record<TokenType, string> = {
+  color: "Colours",
+  typography: "Typography",
+  spacing: "Spacing",
+  radius: "Radius",
+  effect: "Effects",
+  motion: "Motion",
+};
+
+const TYPE_ORDER: TokenType[] = ["color", "typography", "spacing", "radius", "effect", "motion"];
+
+function normaliseName(name: string): string {
+  return name.replace(/^--/, "");
+}
+
+/** Per-project localStorage-backed ignore list for divergence rows. */
+function useIgnoreList(projectId: string | undefined) {
+  const storageKey = projectId ? `divergence-ignore:${projectId}` : null;
+  const [ignored, setIgnored] = useState<Set<string>>(() => {
+    if (typeof window === "undefined" || !storageKey) return new Set();
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) return new Set();
+      const arr = JSON.parse(raw);
+      return new Set(Array.isArray(arr) ? (arr as string[]) : []);
+    } catch {
+      return new Set();
+    }
+  });
+
+  const persist = useCallback(
+    (next: Set<string>) => {
+      if (typeof window === "undefined" || !storageKey) return;
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify([...next]));
+      } catch {
+        /* quota exhausted, non-fatal */
+      }
+    },
+    [storageKey]
+  );
+
+  const add = useCallback(
+    (name: string) => {
+      setIgnored((prev) => {
+        const next = new Set(prev);
+        next.add(normaliseName(name));
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
+  const clear = useCallback(() => {
+    setIgnored(() => {
+      const next = new Set<string>();
+      persist(next);
+      return next;
+    });
+  }, [persist]);
+
+  const isIgnored = useCallback(
+    (name: string) => ignored.has(normaliseName(name)),
+    [ignored]
+  );
+
+  return { ignoredCount: ignored.size, add, clear, isIgnored };
+}
+
 export function DivergenceBanner({
   layoutMd,
   extraction,
@@ -53,22 +125,82 @@ export function DivergenceBanner({
     }
   );
   const [expanded, setExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<TypeTab>("all");
+  const [showAll, setShowAll] = useState(false);
 
-  const report = useMemo(
+  const { ignoredCount, add: ignoreToken, clear: clearIgnored, isIgnored } =
+    useIgnoreList(projectId);
+
+  const rawReport = useMemo(
     () => detectTokenDivergence(layoutMd, extraction),
     [layoutMd, extraction]
   );
 
   const signature = useMemo(() => {
     const parts = [
-      ...report.tokensInMdNotInData.map((t) => `mdonly:${t.name}:${t.value}`),
-      ...report.tokensInDataNotInMd.map((t) => `dataonly:${t.name}:${t.value}`),
-      ...report.valueDivergences.map(
+      ...rawReport.tokensInMdNotInData.map((t) => `mdonly:${t.name}:${t.value}`),
+      ...rawReport.tokensInDataNotInMd.map((t) => `dataonly:${t.name}:${t.value}`),
+      ...rawReport.valueDivergences.map(
         (v) => `diff:${v.name}:${v.mdValue}:${v.dataValue}`
       ),
     ];
     return parts.sort().join("|");
-  }, [report]);
+  }, [rawReport]);
+
+  /**
+   * Apply the curated filter + ignore list. Tokens flagged as non-curated
+   * only appear when `showAll` is on. Ignored tokens never appear.
+   */
+  const filteredReport = useMemo<TokenDivergenceReport>(() => {
+    const keep = (name: string): boolean => {
+      if (isIgnored(name)) return false;
+      if (showAll) return true;
+      return isCuratedTokenName(name);
+    };
+    return {
+      tokensInMdNotInData: rawReport.tokensInMdNotInData.filter((d) => keep(d.name)),
+      tokensInDataNotInMd: rawReport.tokensInDataNotInMd.filter((d) => keep(d.name)),
+      valueDivergences: rawReport.valueDivergences.filter((v) => keep(v.name)),
+    };
+  }, [rawReport, showAll, isIgnored]);
+
+  /** Report scoped to the active type tab. `all` is the full filtered report. */
+  const scopedReport = useMemo<TokenDivergenceReport>(() => {
+    if (activeTab === "all") return filteredReport;
+    return {
+      tokensInMdNotInData: filteredReport.tokensInMdNotInData.filter((t) => t.type === activeTab),
+      tokensInDataNotInMd: filteredReport.tokensInDataNotInMd.filter((t) => t.type === activeTab),
+      valueDivergences: filteredReport.valueDivergences.filter((v) => v.type === activeTab),
+    };
+  }, [filteredReport, activeTab]);
+
+  /** Counts per tab label (including `all`). */
+  const countsByType = useMemo(() => {
+    const counts: Record<string, number> = { all: 0 };
+    for (const t of filteredReport.tokensInMdNotInData) {
+      counts[t.type] = (counts[t.type] ?? 0) + 1;
+      counts.all++;
+    }
+    for (const t of filteredReport.tokensInDataNotInMd) {
+      counts[t.type] = (counts[t.type] ?? 0) + 1;
+      counts.all++;
+    }
+    for (const v of filteredReport.valueDivergences) {
+      counts[v.type] = (counts[v.type] ?? 0) + 1;
+      counts.all++;
+    }
+    return counts;
+  }, [filteredReport]);
+
+  /** Non-curated items still hidden (for the "Show all (N)" toggle label). */
+  const nonCuratedHiddenCount = useMemo(() => {
+    if (showAll) return 0;
+    const count = (name: string) => !isCuratedTokenName(name) && !isIgnored(name);
+    const a = rawReport.tokensInMdNotInData.filter((d) => count(d.name)).length;
+    const b = rawReport.tokensInDataNotInMd.filter((d) => count(d.name)).length;
+    const c = rawReport.valueDivergences.filter((v) => count(v.name)).length;
+    return a + b + c;
+  }, [rawReport, showAll, isIgnored]);
 
   const bucketForType = useCallback((type: TokenType): keyof ExtractedTokens => {
     switch (type) {
@@ -109,14 +241,15 @@ export function DivergenceBanner({
   const addToLayoutMd = useCallback(
     (token: DivergentToken) => {
       if (!projectId) return;
-      const newToken: ExtractedToken = {
-        name: token.name.replace(/^--/, ""),
-        value: token.value,
-        type: token.type,
-        category: "semantic",
-        cssVariable: token.name.startsWith("--") ? token.name : `--${token.name}`,
-      };
-      const next = addTokenToLayoutMd(layoutMd, newToken);
+      const next = appendTokensToSections(layoutMd, [
+        {
+          name: token.name.replace(/^--/, ""),
+          value: token.value,
+          type: token.type,
+          category: "semantic",
+          cssVariable: token.name.startsWith("--") ? token.name : `--${token.name}`,
+        },
+      ]);
       updateLayoutMd(projectId, next);
     },
     [projectId, layoutMd, updateLayoutMd]
@@ -125,7 +258,12 @@ export function DivergenceBanner({
   const removeFromExtraction = useCallback(
     (token: DivergentToken) => {
       if (!projectId) return;
-      removeTokens(projectId, bucketForType(token.type), [token.name.replace(/^--/, "")], token.mode);
+      removeTokens(
+        projectId,
+        bucketForType(token.type),
+        [token.name.replace(/^--/, "")],
+        token.mode
+      );
     },
     [projectId, removeTokens, bucketForType]
   );
@@ -133,7 +271,13 @@ export function DivergenceBanner({
   const useLayoutMdValue = useCallback(
     (diff: ValueDivergence) => {
       if (!projectId) return;
-      updateToken(projectId, bucketForType(diff.type), diff.name.replace(/^--/, ""), diff.mdValue, diff.mode);
+      updateToken(
+        projectId,
+        bucketForType(diff.type),
+        diff.name.replace(/^--/, ""),
+        diff.mdValue,
+        diff.mode
+      );
     },
     [projectId, updateToken, bucketForType]
   );
@@ -148,23 +292,10 @@ export function DivergenceBanner({
     [projectId, layoutMd, updateLayoutMd]
   );
 
-  const bulkRemoveFromLayoutMd = useCallback(() => {
+  const bulkMergeScoped = useCallback(() => {
     if (!projectId) return;
-    let next = layoutMd;
-    for (const t of report.tokensInMdNotInData) {
-      next = removeTokenFromLayoutMd(next, { name: t.name });
-    }
-    updateLayoutMd(projectId, next);
-  }, [projectId, layoutMd, updateLayoutMd, report.tokensInMdNotInData]);
-
-  // Section-aware programmatic merge. Places each token in the CSS block
-  // of its type's section (colour \u2192 \u00a72, typography \u2192 \u00a73, spacing/radius \u2192 \u00a74,
-  // effect \u2192 \u00a77, motion \u2192 \u00a78). Tokens whose section is absent fall back
-  // to CORE TOKENS. Instant, deterministic, no AI.
-  const mergeAllIntoLayoutMd = useCallback(() => {
-    if (!projectId) return;
-    if (report.tokensInDataNotInMd.length === 0) return;
-    const asExtractedTokens: ExtractedToken[] = report.tokensInDataNotInMd.map((t) => ({
+    if (scopedReport.tokensInDataNotInMd.length === 0) return;
+    const asExtractedTokens: ExtractedToken[] = scopedReport.tokensInDataNotInMd.map((t) => ({
       name: t.name.replace(/^--/, ""),
       value: t.value,
       type: t.type,
@@ -173,37 +304,83 @@ export function DivergenceBanner({
     }));
     const next = appendTokensToSections(layoutMd, asExtractedTokens);
     updateLayoutMd(projectId, next);
-  }, [projectId, layoutMd, updateLayoutMd, report.tokensInDataNotInMd]);
+  }, [projectId, layoutMd, updateLayoutMd, scopedReport.tokensInDataNotInMd]);
 
-  const bulkUseExtractionForAllDiffs = useCallback(() => {
+  const bulkRemoveScoped = useCallback(() => {
     if (!projectId) return;
     let next = layoutMd;
-    for (const d of report.valueDivergences) {
+    for (const t of scopedReport.tokensInMdNotInData) {
+      next = removeTokenFromLayoutMd(next, { name: t.name });
+    }
+    updateLayoutMd(projectId, next);
+  }, [projectId, layoutMd, updateLayoutMd, scopedReport.tokensInMdNotInData]);
+
+  const bulkUseExtractionScoped = useCallback(() => {
+    if (!projectId) return;
+    let next = layoutMd;
+    for (const d of scopedReport.valueDivergences) {
       const cssVar = d.name.startsWith("--") ? d.name : `--${d.name}`;
       const after = replaceTokenInLayoutMd(next, cssVar, d.dataValue);
       if (after !== null) next = after;
     }
     updateLayoutMd(projectId, next);
-  }, [projectId, layoutMd, updateLayoutMd, report.valueDivergences]);
+  }, [projectId, layoutMd, updateLayoutMd, scopedReport.valueDivergences]);
 
   if (!extraction) return null;
-  if (divergenceIsEmpty(report)) return null;
+  if (divergenceIsEmpty(rawReport)) return null;
   if (signature === dismissedSignature) return null;
 
-  const total =
-    report.tokensInMdNotInData.length +
-    report.tokensInDataNotInMd.length +
-    report.valueDivergences.length;
+  const filteredTotal =
+    filteredReport.tokensInMdNotInData.length +
+    filteredReport.tokensInDataNotInMd.length +
+    filteredReport.valueDivergences.length;
+
+  // Everything is either ignored or non-curated → show a slim info bar only.
+  if (filteredTotal === 0) {
+    if (nonCuratedHiddenCount > 0) {
+      return (
+        <div className="border-b border-[var(--studio-border)] bg-[var(--bg-surface)] px-4 py-1.5 text-[10px] text-[var(--text-muted)]">
+          {nonCuratedHiddenCount} non-curated divergence{nonCuratedHiddenCount === 1 ? "" : "s"} hidden.{" "}
+          <button
+            type="button"
+            onClick={() => {
+              setShowAll(true);
+              setExpanded(true);
+            }}
+            className="underline hover:text-[var(--text-secondary)]"
+          >
+            Show all
+          </button>
+          {ignoredCount > 0 && (
+            <>
+              {" · "}
+              {ignoredCount} ignored.{" "}
+              <button
+                type="button"
+                onClick={clearIgnored}
+                className="underline hover:text-[var(--text-secondary)]"
+              >
+                Unignore all
+              </button>
+            </>
+          )}
+        </div>
+      );
+    }
+    return null;
+  }
 
   const handleDismiss = () => {
     setDismissedSignature(signature);
     if (typeof window !== "undefined" && storageKey) {
-      window.localStorage.setItem(
-        `divergence-dismissed:${storageKey}`,
-        signature
-      );
+      window.localStorage.setItem(`divergence-dismissed:${storageKey}`, signature);
     }
   };
+
+  const availableTabs: TypeTab[] = [
+    "all",
+    ...TYPE_ORDER.filter((t) => (countsByType[t] ?? 0) > 0),
+  ];
 
   return (
     <div
@@ -214,8 +391,8 @@ export function DivergenceBanner({
         <div className="flex items-center gap-2">
           <AlertTriangle size={14} className="text-[var(--status-warning)]" />
           <span>
-            {total} token{total === 1 ? "" : "s"} in layout.md{" "}
-            {total === 1 ? "diverges" : "diverge"} from extraction data.
+            {filteredTotal} token{filteredTotal === 1 ? "" : "s"} in layout.md{" "}
+            {filteredTotal === 1 ? "diverges" : "diverge"} from extraction data.
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -248,40 +425,96 @@ export function DivergenceBanner({
       </div>
 
       {expanded && (
-        <div className="mt-3 space-y-4 text-[var(--text-secondary)]">
-          {report.tokensInMdNotInData.length > 0 && (
-            <ActionableSection
-              heading="In layout.md but missing from extraction"
-              description="These are likely stale references the extraction no longer knows about. Either remove them from layout.md or register them in extraction so they round-trip."
+        <div className="mt-3 space-y-3 text-[var(--text-secondary)]">
+          {/* Tabs */}
+          <div className="flex flex-wrap items-center gap-1 border-b border-amber-500/30 pb-2">
+            {availableTabs.map((tab) => {
+              const isActive = activeTab === tab;
+              const label = tab === "all" ? "All" : TYPE_LABEL[tab];
+              const count = countsByType[tab] ?? 0;
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                    isActive
+                      ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]"
+                      : "text-[var(--text-secondary)] hover:bg-amber-500/10 hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  {label}
+                  <span className="ml-1.5 text-[var(--text-muted)]">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Toolbar: show-all + ignored count */}
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-[var(--text-muted)]">
+            <label className="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={showAll}
+                onChange={(e) => setShowAll(e.target.checked)}
+                className="h-3 w-3"
+              />
+              <span>
+                Show non-curated tokens
+                {nonCuratedHiddenCount > 0 && !showAll && (
+                  <span className="text-[var(--text-muted)]"> ({nonCuratedHiddenCount} hidden)</span>
+                )}
+              </span>
+            </label>
+            {ignoredCount > 0 && (
+              <button
+                type="button"
+                onClick={clearIgnored}
+                className="flex items-center gap-1 underline hover:text-[var(--text-secondary)]"
+                title="Clear the project's ignore list"
+              >
+                <EyeOff size={10} />
+                {ignoredCount} ignored · Unignore all
+              </button>
+            )}
+          </div>
+
+          {/* Severity-grouped sections for the scoped report */}
+          {scopedReport.valueDivergences.length > 0 && (
+            <SeveritySection
+              icon={<AlertCircle size={12} className="text-[var(--status-error)]" />}
+              heading="Value conflicts"
+              description="Same token name, different values. Pick which side is right."
+              count={scopedReport.valueDivergences.length}
               bulkAction={{
-                label: `Remove all ${report.tokensInMdNotInData.length} from layout.md`,
-                onClick: bulkRemoveFromLayoutMd,
+                label: `Use extraction for all ${scopedReport.valueDivergences.length}`,
+                onClick: bulkUseExtractionScoped,
               }}
-              items={report.tokensInMdNotInData}
-              renderItem={(t) => (
-                <Row
-                  key={`${t.name}:${t.value}`}
-                  name={t.name}
-                  value={t.value}
-                  actions={[
-                    { label: "Remove from layout.md", onClick: () => removeFromLayoutMd(t) },
-                    { label: "Add to extraction", onClick: () => addToExtraction(t), variant: "secondary" },
-                  ]}
+            >
+              {scopedReport.valueDivergences.map((d) => (
+                <DiffRow
+                  key={`${d.name}:${d.mdValue}:${d.dataValue}`}
+                  diff={d}
+                  onUseLayoutMd={() => useLayoutMdValue(d)}
+                  onUseExtraction={() => useExtractionValue(d)}
+                  onIgnore={() => ignoreToken(d.name)}
                 />
-              )}
-            />
+              ))}
+            </SeveritySection>
           )}
 
-          {report.tokensInDataNotInMd.length > 0 && (
-            <ActionableSection
-              heading="In extraction but not in layout.md"
-              description="Tokens that aren't documented in layout.md yet. Merging places each in the correct section (colour → §2, typography → §3, spacing → §4, effects → §7, motion → §8)."
+          {scopedReport.tokensInDataNotInMd.length > 0 && (
+            <SeveritySection
+              icon={<Plus size={12} className="text-[var(--status-warning)]" />}
+              heading="New from extraction"
+              description="Tokens the extraction knows about that aren't in layout.md yet."
+              count={scopedReport.tokensInDataNotInMd.length}
               bulkAction={{
-                label: `Merge ${report.tokensInDataNotInMd.length} into layout.md`,
-                onClick: mergeAllIntoLayoutMd,
+                label: `Merge ${scopedReport.tokensInDataNotInMd.length} into layout.md`,
+                onClick: bulkMergeScoped,
               }}
-              items={report.tokensInDataNotInMd}
-              renderItem={(t) => (
+            >
+              {scopedReport.tokensInDataNotInMd.map((t) => (
                 <Row
                   key={`${t.name}:${t.value}`}
                   name={t.name}
@@ -290,29 +523,36 @@ export function DivergenceBanner({
                     { label: "Add to layout.md", onClick: () => addToLayoutMd(t) },
                     { label: "Remove from extraction", onClick: () => removeFromExtraction(t), variant: "secondary" },
                   ]}
+                  onIgnore={() => ignoreToken(t.name)}
                 />
-              )}
-            />
+              ))}
+            </SeveritySection>
           )}
 
-          {report.valueDivergences.length > 0 && (
-            <ActionableSection
-              heading="Values differ"
-              description="Same token name but different values. Pick which side is right."
+          {scopedReport.tokensInMdNotInData.length > 0 && (
+            <SeveritySection
+              icon={<Minus size={12} className="text-[var(--text-muted)]" />}
+              heading="Removed upstream"
+              description="Tokens referenced in layout.md that the extraction no longer knows about."
+              count={scopedReport.tokensInMdNotInData.length}
               bulkAction={{
-                label: `Use extraction value for all ${report.valueDivergences.length}`,
-                onClick: bulkUseExtractionForAllDiffs,
+                label: `Remove ${scopedReport.tokensInMdNotInData.length} from layout.md`,
+                onClick: bulkRemoveScoped,
               }}
-              items={report.valueDivergences}
-              renderItem={(d) => (
-                <DiffRow
-                  key={`${d.name}:${d.mdValue}:${d.dataValue}`}
-                  diff={d}
-                  onUseLayoutMd={() => useLayoutMdValue(d)}
-                  onUseExtraction={() => useExtractionValue(d)}
+            >
+              {scopedReport.tokensInMdNotInData.map((t) => (
+                <Row
+                  key={`${t.name}:${t.value}`}
+                  name={t.name}
+                  value={t.value}
+                  actions={[
+                    { label: "Remove from layout.md", onClick: () => removeFromLayoutMd(t) },
+                    { label: "Add to extraction", onClick: () => addToExtraction(t), variant: "secondary" },
+                  ]}
+                  onIgnore={() => ignoreToken(t.name)}
                 />
-              )}
-            />
+              ))}
+            </SeveritySection>
           )}
         </div>
       )}
@@ -320,45 +560,42 @@ export function DivergenceBanner({
   );
 }
 
-function ActionableSection<T>({
+function SeveritySection({
+  icon,
   heading,
   description,
+  count,
   bulkAction,
-  items,
-  renderItem,
+  children,
 }: {
+  icon: React.ReactNode;
   heading: string;
   description: string;
-  bulkAction?: { label: string; onClick: () => void };
-  items: T[];
-  renderItem: (item: T) => React.ReactNode;
+  count: number;
+  bulkAction: { label: string; onClick: () => void };
+  children: React.ReactNode;
 }) {
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="text-[11px] font-medium text-[var(--text-primary)]">{heading}</div>
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-primary)]">
+            {icon}
+            {heading}
+            <span className="text-[var(--text-muted)]">{count}</span>
+          </div>
           <div className="mt-0.5 text-[10px] text-[var(--text-muted)]">{description}</div>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
-          {bulkAction && (
-            <button
-              type="button"
-              onClick={bulkAction.onClick}
-              className="rounded-md border border-transparent bg-[var(--status-warning)] px-2 py-1 text-[10px] font-medium text-white hover:opacity-90 transition-opacity"
-            >
-              {bulkAction.label}
-            </button>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={bulkAction.onClick}
+          className="shrink-0 rounded-md border border-transparent bg-[var(--status-warning)] px-2 py-1 text-[10px] font-medium text-white transition-opacity hover:opacity-90"
+        >
+          {bulkAction.label}
+        </button>
       </div>
       <div className="max-h-60 space-y-1 overflow-y-auto rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-2">
-        {items.slice(0, 50).map((item) => renderItem(item))}
-        {items.length > 50 && (
-          <div className="px-2 py-1 text-[10px] italic text-[var(--text-muted)]">
-            … and {items.length - 50} more. Use the bulk action above to resolve them all.
-          </div>
-        )}
+        {children}
       </div>
     </div>
   );
@@ -374,10 +611,12 @@ function Row({
   name,
   value,
   actions,
+  onIgnore,
 }: {
   name: string;
   value: string;
   actions: RowAction[];
+  onIgnore: () => void;
 }) {
   return (
     <div className="group flex items-center gap-3 rounded px-2 py-1 text-[11px] hover:bg-[var(--bg-hover)]">
@@ -400,6 +639,15 @@ function Row({
             {a.label}
           </button>
         ))}
+        <button
+          type="button"
+          onClick={onIgnore}
+          className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+          title="Ignore this token on this project forever"
+        >
+          <EyeOff size={10} />
+          Ignore
+        </button>
       </div>
     </div>
   );
@@ -409,14 +657,27 @@ function DiffRow({
   diff,
   onUseLayoutMd,
   onUseExtraction,
+  onIgnore,
 }: {
   diff: ValueDivergence;
   onUseLayoutMd: () => void;
   onUseExtraction: () => void;
+  onIgnore: () => void;
 }) {
   return (
     <div className="group space-y-1 rounded px-2 py-1.5 text-[11px] hover:bg-[var(--bg-hover)]">
-      <code className="block font-mono text-[var(--text-secondary)]">{diff.name}</code>
+      <div className="flex items-center justify-between gap-2">
+        <code className="font-mono text-[var(--text-secondary)]">{diff.name}</code>
+        <button
+          type="button"
+          onClick={onIgnore}
+          className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] opacity-0 transition-opacity hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] group-hover:opacity-100"
+          title="Ignore this token on this project forever"
+        >
+          <EyeOff size={10} />
+          Ignore
+        </button>
+      </div>
       <div className="flex flex-wrap items-center gap-2 pl-2">
         <div className="flex items-center gap-1 text-[10px]">
           <span className="text-[var(--text-muted)]">layout.md:</span>
