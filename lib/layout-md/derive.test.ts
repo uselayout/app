@@ -1,6 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { deriveLayoutMd, renderCoreTokensBlock } from "./derive";
-import type { Project, ProjectStandardisation } from "@/lib/types";
+import { deriveLayoutMd, renderAppendixA, renderCoreTokensBlock } from "./derive";
+import type { ExtractedToken, ExtractedTokens, Project, ProjectStandardisation } from "@/lib/types";
+
+function token(partial: Partial<ExtractedToken> & Pick<ExtractedToken, "name" | "value" | "type">): ExtractedToken {
+  return {
+    category: "semantic",
+    cssVariable: partial.cssVariable ?? `--${partial.name}`,
+    ...partial,
+  };
+}
+
+const fixtureTokens: ExtractedTokens = {
+  colors: [
+    token({ name: "pure-white", value: "#ffffff", type: "color", description: "App background" }),
+    token({ name: "offblack", value: "#091717", type: "color" }),
+  ],
+  typography: [token({ name: "font-display", value: '"Geist", sans-serif', type: "typography" })],
+  spacing: [token({ name: "space-1", value: "4px", type: "spacing" })],
+  radius: [token({ name: "radius-md", value: "12px", type: "radius" })],
+  effects: [],
+  motion: [],
+};
 
 const emptyStandardisation: ProjectStandardisation = {
   kitPrefix: "color",
@@ -166,5 +186,153 @@ describe("deriveLayoutMd", () => {
   it("handles an empty layoutMd without throwing", () => {
     const project = baseProject({ layoutMd: "", standardisation: curated });
     expect(deriveLayoutMd(project)).toBe("");
+  });
+});
+
+describe("renderAppendixA", () => {
+  it("returns an empty string when every category is empty", () => {
+    const empty: ExtractedTokens = { colors: [], typography: [], spacing: [], radius: [], effects: [], motion: [] };
+    expect(renderAppendixA(empty)).toBe("");
+  });
+
+  it("groups tokens by category with category counts", () => {
+    const rendered = renderAppendixA(fixtureTokens);
+    expect(rendered).toContain("/* Colours (2) */");
+    expect(rendered).toContain("/* Typography (1) */");
+    expect(rendered).toContain("/* Spacing (1) */");
+    expect(rendered).toContain("/* Radius (1) */");
+    // Empty categories are omitted entirely (no "Motion (0)" noise)
+    expect(rendered).not.toContain("Motion (0)");
+    expect(rendered).not.toContain("Effects (0)");
+  });
+
+  it("emits the cssVariable and value with optional description", () => {
+    const rendered = renderAppendixA(fixtureTokens);
+    expect(rendered).toContain("--pure-white: #ffffff; /* App background */");
+    expect(rendered).toContain("--offblack: #091717;");
+  });
+
+  it("appends mode to the comment for multi-mode tokens", () => {
+    const multi: ExtractedTokens = {
+      ...fixtureTokens,
+      colors: [
+        token({ name: "bg", value: "#ffffff", type: "color", mode: "light" }),
+        token({ name: "bg", value: "#000000", type: "color", mode: "dark" }),
+      ],
+    };
+    const rendered = renderAppendixA(multi);
+    expect(rendered).toContain("--bg: #ffffff; /* mode: light */");
+    expect(rendered).toContain("--bg: #000000; /* mode: dark */");
+  });
+
+  it("combines description and mode in a single trailing comment", () => {
+    const combined: ExtractedTokens = {
+      ...fixtureTokens,
+      colors: [token({ name: "bg", value: "#fff", type: "color", description: "App bg", mode: "light" })],
+    };
+    expect(renderAppendixA(combined)).toContain("--bg: #fff; /* App bg — mode: light */");
+  });
+});
+
+describe("deriveLayoutMd — Appendix A injection", () => {
+  const layoutMdWithAppendixA = `# layout.md
+
+## 1. Design Direction
+
+prose
+
+## Appendix A: Complete Token Reference
+
+stale old content that should be replaced
+
+\`\`\`css
+/* Old */
+--old: #000;
+\`\`\`
+
+## Appendix B: Token Source Metadata
+
+tokenSource: figma
+`;
+
+  const layoutMdWithoutAppendix = `# layout.md
+
+## 1. Design Direction
+
+prose
+`;
+
+  it("replaces an existing Appendix A in place, leaving Appendix B intact", () => {
+    const md = deriveLayoutMd(
+      baseProject({
+        layoutMd: layoutMdWithAppendixA,
+        extractionData: { tokens: fixtureTokens, sourceType: "figma" } as never,
+      })
+    );
+    expect(md).not.toContain("--old: #000;");
+    expect(md).not.toContain("stale old content");
+    expect(md).toContain("/* Colours (2) */");
+    expect(md).toContain("--pure-white: #ffffff");
+    // Appendix B preserved
+    expect(md).toContain("## Appendix B: Token Source Metadata");
+    expect(md).toContain("tokenSource: figma");
+  });
+
+  it("appends Appendix A when no such section exists", () => {
+    const md = deriveLayoutMd(
+      baseProject({
+        layoutMd: layoutMdWithoutAppendix,
+        extractionData: { tokens: fixtureTokens, sourceType: "figma" } as never,
+      })
+    );
+    expect(md).toContain("## 1. Design Direction");
+    expect(md).toContain("## Appendix A: Complete Token Reference");
+    expect(md.indexOf("## 1. Design Direction")).toBeLessThan(md.indexOf("## Appendix A"));
+  });
+
+  it("inserts Appendix A before an existing Appendix B when A is missing", () => {
+    const layoutMdOnlyB = `# layout.md
+
+## 1. Prose
+
+text
+
+## Appendix B: Token Source Metadata
+
+tokenSource: figma
+`;
+    const md = deriveLayoutMd(
+      baseProject({
+        layoutMd: layoutMdOnlyB,
+        extractionData: { tokens: fixtureTokens, sourceType: "figma" } as never,
+      })
+    );
+    expect(md.indexOf("## Appendix A")).toBeGreaterThan(md.indexOf("## 1. Prose"));
+    expect(md.indexOf("## Appendix A")).toBeLessThan(md.indexOf("## Appendix B"));
+  });
+
+  it("is a no-op when the project has no extraction data", () => {
+    const project = baseProject({ layoutMd: layoutMdWithoutAppendix });
+    expect(deriveLayoutMd(project)).toBe(layoutMdWithoutAppendix);
+  });
+
+  it("respects skipAppendixA option", () => {
+    const project = baseProject({
+      layoutMd: layoutMdWithAppendixA,
+      extractionData: { tokens: fixtureTokens, sourceType: "figma" } as never,
+    });
+    const md = deriveLayoutMd(project, { skipAppendixA: true });
+    expect(md).toContain("--old: #000;");
+    expect(md).toContain("stale old content");
+  });
+
+  it("regenerates Appendix A idempotently on repeat derive", () => {
+    const project = baseProject({
+      layoutMd: layoutMdWithoutAppendix,
+      extractionData: { tokens: fixtureTokens, sourceType: "figma" } as never,
+    });
+    const first = deriveLayoutMd(project);
+    const second = deriveLayoutMd({ ...project, layoutMd: first });
+    expect(second).toBe(first);
   });
 });

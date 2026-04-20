@@ -1,4 +1,4 @@
-import type { Project, ProjectStandardisation } from "@/lib/types";
+import type { ExtractedToken, ExtractedTokens, Project, ProjectStandardisation } from "@/lib/types";
 import { CORE_TOKENS_BLOCK_REGEX } from "@/lib/tokens/core-tokens-block";
 
 // The derive engine composes the canonical layout.md on every read from live
@@ -19,6 +19,9 @@ export interface DeriveOptions {
   // If true, skip the CORE TOKENS regeneration. Used by callers that want to
   // render authored prose only (e.g. for a diff view).
   skipCoreTokens?: boolean;
+  // If true, skip the Appendix A regeneration. Used when the caller already
+  // has its own token reference (e.g. MCP tools that return tokens separately).
+  skipAppendixA?: boolean;
 }
 
 export function deriveLayoutMd(project: Project, options: DeriveOptions = {}): string {
@@ -28,8 +31,11 @@ export function deriveLayoutMd(project: Project, options: DeriveOptions = {}): s
     md = injectCoreTokensBlock(md, project.standardisation);
   }
 
-  // Phase 1b will add:
-  //   md = injectAppendixA(md, project.extractionData);
+  if (!options.skipAppendixA && project.extractionData?.tokens) {
+    md = injectAppendixA(md, project.extractionData.tokens);
+  }
+
+  // Phase 3 will add:
   //   md = injectIconsBlock(md, project.iconPacks);
   //   md = injectBrandAssetsSection(md, project.brandingAssets);
   //   md = injectProductContextSection(md, project.contextDocuments);
@@ -78,4 +84,69 @@ function injectCoreTokensBlock(md: string, standardisation: ProjectStandardisati
     return md.replace(CORE_TOKENS_BLOCK_REGEX, rendered);
   }
   return md;
+}
+
+// Match "## Appendix A..." through the next "## " heading or end of document.
+// Multi-line flag required so `^## ` anchors at each line's start.
+const APPENDIX_A_SECTION_REGEX = /^## Appendix A[^\n]*\n[\s\S]*?(?=^## |$(?![\s\S]))/m;
+
+export function renderAppendixA(tokens: ExtractedTokens): string {
+  const lines: string[] = [];
+  const emitCategory = (label: string, toks: ExtractedToken[]) => {
+    if (toks.length === 0) return;
+    if (lines.length > 0) lines.push("");
+    lines.push(`/* ${label} (${toks.length}) */`);
+    for (const t of toks) {
+      const cssVar = t.cssVariable ?? `--${t.name}`;
+      const trailing = [
+        t.description ? t.description : null,
+        t.mode ? `mode: ${t.mode}` : null,
+      ].filter((s): s is string => Boolean(s));
+      const comment = trailing.length > 0 ? ` /* ${trailing.join(" — ")} */` : "";
+      lines.push(`${cssVar}: ${t.value};${comment}`);
+    }
+  };
+
+  emitCategory("Colours", tokens.colors);
+  emitCategory("Typography", tokens.typography);
+  emitCategory("Spacing", tokens.spacing);
+  emitCategory("Radius", tokens.radius);
+  emitCategory("Effects", tokens.effects);
+  emitCategory("Motion", tokens.motion ?? []);
+
+  if (lines.length === 0) return "";
+
+  return [
+    "## Appendix A: Complete Token Reference",
+    "",
+    "Every token extracted from the source. §0 CORE TOKENS is the primary AI signal; this appendix is reference material an AI can cross-check against when a curated role is missing.",
+    "",
+    "```css",
+    lines.join("\n"),
+    "```",
+  ].join("\n");
+}
+
+function injectAppendixA(md: string, tokens: ExtractedTokens): string {
+  const rendered = renderAppendixA(tokens);
+  if (!rendered) return md;
+
+  // Replace in place if the section exists.
+  if (APPENDIX_A_SECTION_REGEX.test(md)) {
+    return md.replace(APPENDIX_A_SECTION_REGEX, rendered + "\n\n");
+  }
+
+  // Insert before Appendix B if present — keeps the B/C/D… alphabetic order.
+  const appendixBIndex = md.search(/^## Appendix B\b/m);
+  if (appendixBIndex !== -1) {
+    return md.slice(0, appendixBIndex) + rendered + "\n\n" + md.slice(appendixBIndex);
+  }
+
+  // Otherwise append at end of document, trimming excessive trailing whitespace.
+  // Use "\n\n" as trailing so a follow-up derive replacing this section via
+  // APPENDIX_A_SECTION_REGEX (which consumes through EOF) produces the same
+  // string — i.e. the function is idempotent.
+  const trimmed = md.replace(/\s*$/, "");
+  const separator = trimmed.length > 0 ? "\n\n" : "";
+  return trimmed + separator + rendered + "\n\n";
 }
