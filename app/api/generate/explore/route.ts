@@ -29,6 +29,41 @@ const RequestSchema = z.object({
   iconPacks: z.array(z.string()).optional(),
 });
 
+const CONTEXT_FILE_MAX_CHARS = 50_000;
+const CONTEXT_FILE_MAX_COUNT = 3;
+
+function preValidateContextFiles(body: unknown): Response | null {
+  if (!body || typeof body !== "object" || !("contextFiles" in body)) return null;
+  const raw = (body as { contextFiles: unknown }).contextFiles;
+  if (!Array.isArray(raw)) return null;
+
+  if (raw.length > CONTEXT_FILE_MAX_COUNT) {
+    return Response.json(
+      {
+        error: `You attached ${raw.length} context files but the maximum is ${CONTEXT_FILE_MAX_COUNT}. Remove some and try again.`,
+      },
+      { status: 400 }
+    );
+  }
+
+  for (const file of raw) {
+    if (!file || typeof file !== "object") continue;
+    const content = (file as { content?: unknown }).content;
+    if (typeof content !== "string" || content.length <= CONTEXT_FILE_MAX_CHARS) continue;
+    const nameRaw = (file as { name?: unknown }).name;
+    const name = typeof nameRaw === "string" && nameRaw ? nameRaw : "(unnamed)";
+    const sizeKb = Math.round(content.length / 1024);
+    return Response.json(
+      {
+        error: `Context file "${name}" is ${sizeKb}KB. Each file must be ≤ ${CONTEXT_FILE_MAX_CHARS / 1000}KB. Trim the file and retry.`,
+      },
+      { status: 400 }
+    );
+  }
+
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   let body: unknown;
   try {
@@ -36,6 +71,12 @@ export async function POST(request: NextRequest) {
   } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
+
+  // Surface friendly errors for oversized context files BEFORE Zod, so the
+  // user sees which file is too big (and by how much) rather than a generic
+  // "Invalid request" with Zod issues they can't decode.
+  const preError = preValidateContextFiles(body);
+  if (preError) return preError;
 
   const parsed = RequestSchema.safeParse(body);
 

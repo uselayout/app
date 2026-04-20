@@ -48,13 +48,21 @@ function buildIconCdnScripts(iconPackIds?: string[]): { scriptTags: string; requ
     .map((p) => `<script src="${p.cdnUrl}"></${"script"}>`)
     .join("\n");
 
-  // Build require() mappings: n==="lucide-react"?window.LucideReact||_lucideShim
+  // Build require() mappings.
+  //
+  // Both npmPackage and cdnGlobalName are embedded inside a JavaScript string
+  // that runs in the iframe. Registry values are static today, but defence in
+  // depth: JSON.stringify the npm name so any future entry with quotes or
+  // backslashes can't break out of the comparison, and read the CDN global
+  // via bracket notation so an oddly-named global (e.g. containing hyphens)
+  // still resolves correctly.
   const mappings = packs.map((p) => {
+    const pkgLit = JSON.stringify(p.npmPackage);
     if (p.cdnUrl && p.cdnGlobalName) {
-      return `n==="${p.npmPackage}"?window.${p.cdnGlobalName}||_lucideShim`;
+      const globalLit = JSON.stringify(p.cdnGlobalName);
+      return `n===${pkgLit}?window[${globalLit}]||_lucideShim`;
     }
-    // No CDN available: fall back to the icon stub proxy
-    return `n==="${p.npmPackage}"?_lucideShim`;
+    return `n===${pkgLit}?_lucideShim`;
   });
 
   return {
@@ -76,7 +84,14 @@ export function buildCssTokenBlock(
 
     // Valid CSS custom property names: only letters, numbers, hyphens, underscores after --
     const validNameRe = /^--[a-zA-Z0-9_-]+$/;
-    const hasBadChars = (s: string) => s.includes("<") || s.includes(">") || s.includes("}") || s.includes("{");
+    // Reject characters that would break the enclosing <style> block or the
+    // inner `:root { ... }` declaration. Semicolons are the silent killer —
+    // a value like "1rem:2rem; color:red" from a malformed extraction would
+    // terminate the declaration early and inject rogue CSS. Colons are NOT
+    // rejected: they legitimately appear inside url(data:...) and protocol
+    // references.
+    const hasBadChars = (s: string) =>
+      s.includes("<") || s.includes(">") || s.includes("{") || s.includes("}") || s.includes(";");
 
     // 1. Raw CSS variables from extraction (highest priority — original names)
     if (cssVariables) {
