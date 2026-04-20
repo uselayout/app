@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { AlertTriangle, ChevronDown, ChevronUp, X, Sparkles, Loader2 } from "lucide-react";
+import { useMemo, useState, useCallback } from "react";
+import { AlertTriangle, ChevronDown, ChevronUp, X } from "lucide-react";
 import type { ExtractionResult, ExtractedToken, TokenType } from "@/lib/types";
 import type { ExtractedTokens } from "@/lib/types";
 import {
@@ -13,21 +13,10 @@ import {
 import { useProjectStore } from "@/lib/store/project";
 import {
   addTokenToLayoutMd,
+  appendTokensToSections,
   removeTokenFromLayoutMd,
 } from "@/lib/tokens/add-remove-token";
 import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
-import { getStoredApiKey } from "@/lib/hooks/use-api-key";
-import { useOrgStore } from "@/lib/store/organization";
-
-const MERGE_CHUNK_SIZE = 20;
-const MERGE_BATCH_TIMEOUT_MS = 180_000; // 3 min per batch
-
-function formatElapsed(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
 
 interface DivergenceBannerProps {
   layoutMd: string;
@@ -56,7 +45,6 @@ export function DivergenceBanner({
   const addToken = useProjectStore((s) => s.addToken);
   const removeTokens = useProjectStore((s) => s.removeTokens);
   const updateToken = useProjectStore((s) => s.updateToken);
-  const orgId = useOrgStore((s) => s.currentOrgId);
 
   const [dismissedSignature, setDismissedSignature] = useState<string | null>(
     () => {
@@ -169,19 +157,21 @@ export function DivergenceBanner({
     updateLayoutMd(projectId, next);
   }, [projectId, layoutMd, updateLayoutMd, report.tokensInMdNotInData]);
 
-  const bulkAddAllToLayoutMd = useCallback(() => {
+  // Section-aware programmatic merge. Places each token in the CSS block
+  // of its type's section (colour \u2192 \u00a72, typography \u2192 \u00a73, spacing/radius \u2192 \u00a74,
+  // effect \u2192 \u00a77, motion \u2192 \u00a78). Tokens whose section is absent fall back
+  // to CORE TOKENS. Instant, deterministic, no AI.
+  const mergeAllIntoLayoutMd = useCallback(() => {
     if (!projectId) return;
-    let next = layoutMd;
-    for (const t of report.tokensInDataNotInMd) {
-      const cssVar = t.name.startsWith("--") ? t.name : `--${t.name}`;
-      next = addTokenToLayoutMd(next, {
-        name: t.name.replace(/^--/, ""),
-        value: t.value,
-        type: t.type,
-        category: "semantic",
-        cssVariable: cssVar,
-      });
-    }
+    if (report.tokensInDataNotInMd.length === 0) return;
+    const asExtractedTokens: ExtractedToken[] = report.tokensInDataNotInMd.map((t) => ({
+      name: t.name.replace(/^--/, ""),
+      value: t.value,
+      type: t.type,
+      category: "semantic" as const,
+      cssVariable: t.name.startsWith("--") ? t.name : `--${t.name}`,
+    }));
+    const next = appendTokensToSections(layoutMd, asExtractedTokens);
     updateLayoutMd(projectId, next);
   }, [projectId, layoutMd, updateLayoutMd, report.tokensInDataNotInMd]);
 
@@ -195,173 +185,6 @@ export function DivergenceBanner({
     }
     updateLayoutMd(projectId, next);
   }, [projectId, layoutMd, updateLayoutMd, report.valueDivergences]);
-
-  // AI-backed bulk merge for `in extraction but not in layout.md`. Sends the
-  // tokens plus the current layout.md to Claude, which returns a rewritten
-  // file with each token placed in its correct section. Saves a version
-  // BEFORE streaming so a truncated / errored rewrite can be rolled back,
-  // and chunks large token sets so we don't blow past the output budget.
-  const [aiBulkState, setAiBulkState] = useState<"idle" | "loading" | "error">("idle");
-  const [aiBulkProgress, setAiBulkProgress] = useState<string | null>(null);
-  const [aiBulkError, setAiBulkError] = useState<string | null>(null);
-  const [aiBulkElapsed, setAiBulkElapsed] = useState<number>(0);
-  const aiBulkStartRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (aiBulkState !== "loading") {
-      aiBulkStartRef.current = null;
-      setAiBulkElapsed(0);
-      return;
-    }
-    if (aiBulkStartRef.current === null) {
-      aiBulkStartRef.current = Date.now();
-    }
-    const id = setInterval(() => {
-      if (aiBulkStartRef.current !== null) {
-        setAiBulkElapsed(Date.now() - aiBulkStartRef.current);
-      }
-    }, 500);
-    return () => clearInterval(id);
-  }, [aiBulkState]);
-
-  const aiBulkAddAllToLayoutMd = useCallback(async () => {
-    if (!projectId) return;
-    if (report.tokensInDataNotInMd.length === 0) return;
-
-    setAiBulkState("loading");
-    setAiBulkError(null);
-    setAiBulkProgress(null);
-
-    const preMergeLayoutMd = layoutMd;
-
-    // Safety net #1: persist the current layout.md BEFORE we stream any
-    // rewrite. If the rewrite truncates or errors, we can restore locally
-    // and the user also has a recoverable row in layout_md_versions.
-    if (orgId) {
-      try {
-        await fetch(
-          `/api/organizations/${orgId}/projects/${projectId}/layout-md-versions`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ layoutMd: preMergeLayoutMd, source: "pre-ai-merge" }),
-          }
-        );
-      } catch {
-        // Non-fatal: we still have the in-memory rollback below.
-      }
-    }
-
-    // Chunk big merges to stay well inside the model's output budget. A
-    // 100-token merge on a 12k-char file has historically been enough to
-    // truncate at max_tokens=32k. Keep chunks ≤ MERGE_CHUNK_SIZE.
-    const chunks: DivergentToken[][] = [];
-    for (let i = 0; i < report.tokensInDataNotInMd.length; i += MERGE_CHUNK_SIZE) {
-      chunks.push(report.tokensInDataNotInMd.slice(i, i + MERGE_CHUNK_SIZE));
-    }
-
-    try {
-      let workingLayoutMd = preMergeLayoutMd;
-
-      for (let i = 0; i < chunks.length; i++) {
-        const batchLabel =
-          chunks.length > 1
-            ? `Merging batch ${i + 1} of ${chunks.length} (${chunks[i].length} tokens)…`
-            : `Merging ${chunks[i].length} tokens…`;
-        setAiBulkProgress(batchLabel);
-
-        const chunk = chunks[i];
-        const tokensForPrompt = chunk
-          .map((t) => {
-            const cssVar = t.name.startsWith("--") ? t.name : `--${t.name}`;
-            return `- ${cssVar}: ${t.value} [${t.type}${t.mode ? `, mode:${t.mode}` : ""}]`;
-          })
-          .join("\n");
-
-        const instruction = `Merge the following extracted tokens into the correct sections of this layout.md. Rules:
-
-- Place each token in the section matching its type:
-  - color → Section 2 (Colour System). If a token's value is a linear-/radial-gradient, group them into a "Gradients" sub-block within Section 2.
-  - typography → Section 3 (Typography System). Font metrics like ascent/descent/units-per-em belong here as a "Font Metrics" sub-block.
-  - spacing → Section 4 (Spacing & Layout).
-  - radius → Section 4 or wherever radius tokens already live.
-  - effect → Section 7 (Elevation & Depth).
-  - motion → Section 8 (Motion).
-- If a section doesn't exist, create it in the right position.
-- For each token, add a short one-line usage comment explaining when to use it, inferred from its name and value.
-- Do NOT touch sections, tokens, or prose that aren't related to the tokens being added.
-- Do NOT re-add any tokens that are already present in the file.
-- Use the existing naming conventions and formatting (fenced css blocks, table styles, heading levels).
-
-Tokens to add (${chunk.length}${chunks.length > 1 ? ` of ${report.tokensInDataNotInMd.length}, batch ${i + 1}/${chunks.length}` : ""}):
-
-${tokensForPrompt}`;
-
-        const headers: Record<string, string> = { "Content-Type": "application/json" };
-        const apiKey = getStoredApiKey();
-        if (apiKey) headers["X-Api-Key"] = apiKey;
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), MERGE_BATCH_TIMEOUT_MS);
-        const batchStart = Date.now();
-        console.log(`[divergence-merge] batch ${i + 1}/${chunks.length} start: ${chunk.length} tokens, ${workingLayoutMd.length} chars layout.md`);
-
-        let res: Response;
-        try {
-          res = await fetch("/api/generate/edit-layout-md", {
-            method: "POST",
-            headers,
-            body: JSON.stringify({ instruction, layoutMd: workingLayoutMd }),
-            signal: controller.signal,
-          });
-        } catch (fetchErr) {
-          clearTimeout(timeoutId);
-          updateLayoutMd(projectId, preMergeLayoutMd);
-          if (fetchErr instanceof Error && fetchErr.name === "AbortError") {
-            throw new Error(
-              `Batch ${i + 1}/${chunks.length} timed out after ${Math.round(MERGE_BATCH_TIMEOUT_MS / 1000)}s. Your original layout.md has been restored. Try "Dump without AI" as a fallback.`
-            );
-          }
-          throw fetchErr;
-        }
-        clearTimeout(timeoutId);
-
-        const batchMs = Date.now() - batchStart;
-        console.log(`[divergence-merge] batch ${i + 1}/${chunks.length} response: ${res.status} in ${batchMs}ms`);
-
-        if (!res.ok) {
-          const errBody = await res.json().catch(() => ({ error: "Request failed" }));
-          updateLayoutMd(projectId, preMergeLayoutMd);
-          console.error(`[divergence-merge] batch ${i + 1} failed:`, errBody);
-          throw new Error(errBody.error || `Request failed (${res.status})`);
-        }
-
-        const newLayoutMd = await res.text();
-        console.log(`[divergence-merge] batch ${i + 1} applied edits: ${res.headers.get("X-Applied-Edits") ?? "?"}, new length: ${newLayoutMd.length}`);
-
-        if (!newLayoutMd || newLayoutMd.length < workingLayoutMd.length / 2) {
-          updateLayoutMd(projectId, preMergeLayoutMd);
-          throw new Error(
-            `Rewrite returned a suspiciously short result on batch ${i + 1}/${chunks.length}. Your original layout.md has been restored.`
-          );
-        }
-
-        updateLayoutMd(projectId, newLayoutMd);
-        workingLayoutMd = newLayoutMd;
-      }
-
-      setAiBulkState("idle");
-      setAiBulkProgress(null);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "AI merge failed";
-      console.error("AI divergence resolve failed:", err);
-      setAiBulkError(msg);
-      setAiBulkState("error");
-      setAiBulkProgress(null);
-      // Ensure editor is at the pre-merge state on any failure.
-      updateLayoutMd(projectId, preMergeLayoutMd);
-    }
-  }, [projectId, orgId, layoutMd, updateLayoutMd, report.tokensInDataNotInMd]);
 
   if (!extraction) return null;
   if (divergenceIsEmpty(report)) return null;
@@ -452,32 +275,11 @@ ${tokensForPrompt}`;
           {report.tokensInDataNotInMd.length > 0 && (
             <ActionableSection
               heading="In extraction but not in layout.md"
-              description="Tokens the AI knows about that aren't documented in layout.md. Merging with AI places each in the correct section (typography → §3, effects → §7, gradients as their own sub-block in §2) with short usage descriptions."
-              primaryBulkAction={{
-                label:
-                  aiBulkState === "loading"
-                    ? `Merging ${report.tokensInDataNotInMd.length}… ${formatElapsed(aiBulkElapsed)}`
-                    : `Merge ${report.tokensInDataNotInMd.length} with AI`,
-                icon:
-                  aiBulkState === "loading" ? (
-                    <Loader2 size={11} className="animate-spin" />
-                  ) : (
-                    <Sparkles size={11} />
-                  ),
-                onClick: aiBulkAddAllToLayoutMd,
-                disabled: aiBulkState === "loading",
+              description="Tokens that aren't documented in layout.md yet. Merging places each in the correct section (colour → §2, typography → §3, spacing → §4, effects → §7, motion → §8)."
+              bulkAction={{
+                label: `Merge ${report.tokensInDataNotInMd.length} into layout.md`,
+                onClick: mergeAllIntoLayoutMd,
               }}
-              secondaryBulkAction={{
-                label: "Dump without AI",
-                onClick: bulkAddAllToLayoutMd,
-              }}
-              statusNote={
-                aiBulkState === "error"
-                  ? `AI merge failed: ${aiBulkError}. Try "Dump without AI" as a fallback.`
-                  : aiBulkState === "loading"
-                    ? `${aiBulkProgress ?? "Rewriting layout.md"} · ${formatElapsed(aiBulkElapsed)} elapsed · this is a slow operation (30–90s per batch). A version was saved before the rewrite so you can restore if anything goes wrong.`
-                    : null
-              }
               items={report.tokensInDataNotInMd}
               renderItem={(t) => (
                 <Row
@@ -524,16 +326,10 @@ function ActionableSection<T>({
   bulkAction,
   items,
   renderItem,
-  primaryBulkAction,
-  secondaryBulkAction,
-  statusNote,
 }: {
   heading: string;
   description: string;
   bulkAction?: { label: string; onClick: () => void };
-  primaryBulkAction?: { label: string; icon?: React.ReactNode; onClick: () => void; disabled?: boolean };
-  secondaryBulkAction?: { label: string; onClick: () => void };
-  statusNote?: string | null;
   items: T[];
   renderItem: (item: T) => React.ReactNode;
 }) {
@@ -545,28 +341,7 @@ function ActionableSection<T>({
           <div className="mt-0.5 text-[10px] text-[var(--text-muted)]">{description}</div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          {secondaryBulkAction && (
-            <button
-              type="button"
-              onClick={secondaryBulkAction.onClick}
-              className="rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
-              title="Dump tokens into the CORE TOKENS block without AI rewrite"
-            >
-              {secondaryBulkAction.label}
-            </button>
-          )}
-          {primaryBulkAction && (
-            <button
-              type="button"
-              onClick={primaryBulkAction.onClick}
-              disabled={primaryBulkAction.disabled}
-              className="flex items-center gap-1 rounded-md border border-transparent bg-[var(--status-warning)] px-2 py-1 text-[10px] font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-            >
-              {primaryBulkAction.icon}
-              {primaryBulkAction.label}
-            </button>
-          )}
-          {!primaryBulkAction && bulkAction && (
+          {bulkAction && (
             <button
               type="button"
               onClick={bulkAction.onClick}
@@ -577,9 +352,6 @@ function ActionableSection<T>({
           )}
         </div>
       </div>
-      {statusNote && (
-        <div className="text-[10px] text-[var(--text-muted)]">{statusNote}</div>
-      )}
       <div className="max-h-60 space-y-1 overflow-y-auto rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-2">
         {items.slice(0, 50).map((item) => renderItem(item))}
         {items.length > 50 && (

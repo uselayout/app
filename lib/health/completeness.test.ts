@@ -168,6 +168,27 @@ describe('analyseCompleteness', () => {
     expect(antiSection?.score).toBeGreaterThan(0);
   });
 
+  it('counts bold-wrapped numbered list items (**1. …**) as anti-pattern rules', () => {
+    const md = `## 9. Anti-patterns
+
+**1. NEVER hardcode hex values** — use var(--color-primary) instead because themes won't propagate.
+
+**2. DON'T use Inter for display headings** — why it fails: Inter isn't designed for 105px display. Result: visually wrong.
+
+**3. NEVER skip focus rings** — accessibility failure (WCAG 2.4.7). Always apply outline.
+`;
+    const report = analyseCompleteness(md);
+    const antiSection = report.sections.find((s) => s.section === 'Anti-patterns');
+    // The "Multiple rules" check writes this suggestion to `missing` when
+    // it can't find 3+ numbered/bulleted items. After the regex fix it
+    // should find 3 bold-wrapped items and keep the suggestion OUT of
+    // missing.
+    const multipleRulesMissing = antiSection?.missing.some((m) =>
+      m.toLowerCase().includes('at least 5 anti-patterns')
+    );
+    expect(multipleRulesMissing).toBe(false);
+  });
+
   it('section score is 100 when all sub-checks pass', () => {
     const report = analyseCompleteness(FULL_LAYOUT_MD);
     const motion = report.sections.find((s) => s.section === 'Motion');

@@ -273,7 +273,7 @@ const SECTION_CHECKS: SectionCheck[] = [
       {
         label: "Multiple rules",
         test: (b) => {
-          const rulePatterns = b.match(/(?:^|\n)\s*(?:\d+[.)]|-|\*)\s+/g) ?? [];
+          const rulePatterns = b.match(/(?:^|\n)\s*(?:\*\*|__)?\s*(?:\d+[.)]|[-*+•])\s+/g) ?? [];
           return rulePatterns.length >= 3;
         },
         suggestion: "Document at least 5 anti-patterns as a numbered or bulleted list.",
