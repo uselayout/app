@@ -25,7 +25,7 @@ function mkExtraction(overrides: Partial<ExtractionResult["tokens"]> = {}): Extr
   };
 }
 
-describe("detectTokenDivergence — value normalisation", () => {
+describe("detectTokenDivergence — value conflicts only", () => {
   it("does not flag whitespace-only differences in rgba values", () => {
     const layoutMd = "```css\n--fides-from: rgba(0,0,0,0.06);\n--fides-to: rgba(0,0,0,0.15);\n```";
     const extraction = mkExtraction({
@@ -60,6 +60,20 @@ describe("detectTokenDivergence — value normalisation", () => {
     expect(report.valueDivergences).toEqual([]);
   });
 
+  it("matches tokens across --prefixed vs bare names", () => {
+    const layoutMd = "```css\n--font-size-md: 18px;\n```";
+    const extraction = mkExtraction({
+      typography: [
+        { name: "font-size-md", value: "20px", type: "typography", category: "primitive", cssVariable: "--font-size-md" },
+      ],
+    });
+    const report = detectTokenDivergence(layoutMd, extraction);
+    // Same token (modulo prefix), different values → flagged
+    expect(report.valueDivergences).toHaveLength(1);
+    expect(report.valueDivergences[0].mdValue).toBe("18px");
+    expect(report.valueDivergences[0].dataValue).toBe("20px");
+  });
+
   it("still flags genuinely different values", () => {
     const layoutMd = "```css\n--accent: #0a4b19;\n```";
     const extraction = mkExtraction({
@@ -68,27 +82,8 @@ describe("detectTokenDivergence — value normalisation", () => {
       ],
     });
     const report = detectTokenDivergence(layoutMd, extraction);
-    expect(report.valueDivergences.length).toBe(1);
+    expect(report.valueDivergences).toHaveLength(1);
     expect(report.valueDivergences[0].name).toBe("--accent");
-  });
-
-  it("matches a --prefixed layout.md token against a bare census-mined extraction token", () => {
-    // Census-mined tokens come through without the -- prefix (e.g. name: "font-size-md").
-    // Layout.md declarations always have -- (e.g. "--font-size-md"). Without
-    // normalising the name the same token appears on BOTH sides of the banner.
-    const layoutMd = "```css\n--font-size-md: 18px;\n--space-xs: 4px;\n```";
-    const extraction = mkExtraction({
-      typography: [
-        { name: "font-size-md", value: "18px", type: "typography", category: "primitive", cssVariable: "--font-size-md" },
-      ],
-      spacing: [
-        { name: "space-xs", value: "4px", type: "spacing", category: "primitive", cssVariable: "--space-xs" },
-      ],
-    });
-    const report = detectTokenDivergence(layoutMd, extraction);
-    expect(report.tokensInMdNotInData).toEqual([]);
-    expect(report.tokensInDataNotInMd).toEqual([]);
-    expect(report.valueDivergences).toEqual([]);
   });
 
   it("still flags different rgba alpha values", () => {
@@ -99,6 +94,21 @@ describe("detectTokenDivergence — value normalisation", () => {
       ],
     });
     const report = detectTokenDivergence(layoutMd, extraction);
-    expect(report.valueDivergences.length).toBe(1);
+    expect(report.valueDivergences).toHaveLength(1);
+  });
+
+  it("does NOT surface tokens that are missing on one side", () => {
+    // Extraction has --color-new that layout.md doesn't mention — the old
+    // behaviour surfaced this as "tokensInDataNotInMd". The new behaviour
+    // is silent; Source Panel handles it.
+    const layoutMd = "```css\n--color-primary: #111;\n```";
+    const extraction = mkExtraction({
+      colors: [
+        { name: "--color-primary", value: "#111", type: "color", category: "semantic", cssVariable: "--color-primary" },
+        { name: "--color-new", value: "#222", type: "color", category: "semantic", cssVariable: "--color-new" },
+      ],
+    });
+    const report = detectTokenDivergence(layoutMd, extraction);
+    expect(report.valueDivergences).toEqual([]);
   });
 });

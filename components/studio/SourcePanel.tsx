@@ -23,6 +23,9 @@ import { getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
 import { findTokenReferences, flattenTokens } from "@/lib/tokens/token-references";
 import { countTokenReferences } from "@/lib/tokens/rename-token";
 import { groupTokensByPurpose } from "@/lib/tokens/group-tokens";
+import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
+import { appendTokensToSections } from "@/lib/tokens/add-remove-token";
+import { isCuratedTokenName } from "@/lib/tokens/curated-filter";
 import type {
   ExtractionResult,
   ExtractedToken,
@@ -247,7 +250,7 @@ function SourcePanelInner({
           />
         )}
         {activeTab === "tokens" && extractionData && (
-          <TokensTab tokens={extractionData.tokens} cssVariables={extractionData.cssVariables} projectId={projectId} sourceType={extractionData.sourceType} />
+          <TokensTab tokens={extractionData.tokens} cssVariables={extractionData.cssVariables} projectId={projectId} sourceType={extractionData.sourceType} layoutMd={layoutMd ?? ""} />
         )}
         {activeTab === "components" && extractionData && (
           <ComponentsTab components={extractionData.components} sourceType={extractionData.sourceType} sourceUrl={extractionData.sourceUrl} />
@@ -460,17 +463,21 @@ export function SourcePanel(props: SourcePanelProps) {
 function TokenSectionHeader({
   label,
   count,
+  unmappedCount = 0,
   open,
   onToggle,
   onCopy,
   onAdd,
+  onAddAllToLayoutMd,
 }: {
   label: string;
   count: number;
+  unmappedCount?: number;
   open: boolean;
   onToggle: () => void;
   onCopy: () => void;
   onAdd?: () => void;
+  onAddAllToLayoutMd?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -492,6 +499,14 @@ function TokenSectionHeader({
     [onAdd]
   );
 
+  const handleAddAll = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onAddAllToLayoutMd?.();
+    },
+    [onAddAllToLayoutMd]
+  );
+
   return (
     <button
       onClick={onToggle}
@@ -505,6 +520,15 @@ function TokenSectionHeader({
       <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
         {label} ({count})
       </span>
+      {onAddAllToLayoutMd && unmappedCount > 0 && (
+        <span
+          onClick={handleAddAll}
+          className="shrink-0 rounded-md bg-[var(--studio-accent-subtle)] px-1.5 py-0.5 text-[9px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)]"
+          title={`${unmappedCount} token${unmappedCount === 1 ? "" : "s"} not in layout.md — click to add all to the correct section`}
+        >
+          +{unmappedCount} to layout.md
+        </span>
+      )}
       {onAdd && (
         <span
           onClick={handleAdd}
@@ -583,17 +607,60 @@ function TokensTab({
   cssVariables,
   projectId,
   sourceType,
+  layoutMd,
 }: {
   tokens: ExtractionResult["tokens"];
   cssVariables: Record<string, string>;
   projectId?: string;
   sourceType?: SourceType;
+  layoutMd: string;
 }) {
   const removeTokens = useProjectStore((s) => s.removeTokens);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateToken = useProjectStore((s) => s.updateToken);
   const renameToken = useProjectStore((s) => s.renameToken);
   const addToken = useProjectStore((s) => s.addToken);
+  const updateLayoutMd = useProjectStore((s) => s.updateLayoutMd);
+
+  // Set of token names (normalised, no leading --) currently declared in
+  // layout.md. Used to render per-row "not in layout.md" indicators and
+  // the per-section "Add all" action.
+  const layoutMdNames = useMemo(() => {
+    const parsed = parseTokensFromLayoutMd(layoutMd);
+    const names = new Set<string>();
+    for (const bucket of Object.values(parsed)) {
+      for (const t of bucket) {
+        names.add(t.name.replace(/^--/, ""));
+      }
+    }
+    return names;
+  }, [layoutMd]);
+
+  const isInLayoutMd = useCallback(
+    (token: ExtractedToken) => {
+      const key = (token.cssVariable ?? token.name).replace(/^--/, "");
+      return layoutMdNames.has(key);
+    },
+    [layoutMdNames]
+  );
+
+  const addOneToLayoutMd = useCallback(
+    (token: ExtractedToken) => {
+      if (!projectId) return;
+      const next = appendTokensToSections(layoutMd, [token]);
+      if (next !== layoutMd) updateLayoutMd(projectId, next);
+    },
+    [projectId, layoutMd, updateLayoutMd]
+  );
+
+  const addManyToLayoutMd = useCallback(
+    (toAdd: ExtractedToken[]) => {
+      if (!projectId || toAdd.length === 0) return;
+      const next = appendTokensToSections(layoutMd, toAdd);
+      if (next !== layoutMd) updateLayoutMd(projectId, next);
+    },
+    [projectId, layoutMd, updateLayoutMd]
+  );
   const pluginTokensPushedAt = useProjectStore(
     (s) => s.projects.find((p) => p.id === projectId)?.pluginTokensPushedAt
   );
@@ -832,11 +899,16 @@ function TokensTab({
           ))}
         </div>
       )}
-      {sections.map((section) => (
+      {sections.map((section) => {
+        const unmappedCurated = section.items.filter(
+          (t) => !isInLayoutMd(t) && isCuratedTokenName(t.cssVariable ?? t.name)
+        );
+        return (
         <div key={section.label} className="mb-1">
           <TokenSectionHeader
             label={section.label}
             count={section.items.length}
+            unmappedCount={unmappedCurated.length}
             open={openSections.has(section.label)}
             onToggle={() => toggleSection(section.label)}
             onCopy={() => copySection(section.items)}
@@ -845,6 +917,11 @@ function TokensTab({
               // Ensure the section is expanded so the form is visible
               if (!openSections.has(section.label)) toggleSection(section.label);
             } : undefined}
+            onAddAllToLayoutMd={
+              projectId && unmappedCurated.length > 0
+                ? () => addManyToLayoutMd(unmappedCurated)
+                : undefined
+            }
           />
           {openSections.has(section.label) && adding === section.label && projectId && (
             <AddTokenForm
@@ -890,7 +967,9 @@ function TokensTab({
                         cssVariables={tokenVarMap}
                         projectId={projectId}
                         allTokens={allTokensFlat}
-                        layoutMd={useProjectStore.getState().projects.find((p) => p.id === projectId)?.layoutMd ?? ""}
+                        layoutMd={layoutMd}
+                        isInLayoutMd={isInLayoutMd(token)}
+                        onAddToLayoutMd={projectId ? () => addOneToLayoutMd(token) : undefined}
                         onUpdate={updateToken}
                         onRename={renameToken}
                         onDelete={() => handleDelete(section.label, token)}
@@ -904,7 +983,8 @@ function TokensTab({
             </div>
           )}
         </div>
-      ))}
+        );
+      })}
       {undoState && (
         <div className="sticky bottom-0 flex items-center justify-between border-t border-[var(--studio-border)] bg-[var(--bg-elevated)] px-3 py-2">
           <span className="text-xs text-[var(--text-secondary)]">Token removed</span>
@@ -927,6 +1007,8 @@ function TokenRow({
   projectId,
   allTokens,
   layoutMd,
+  isInLayoutMd,
+  onAddToLayoutMd,
   onUpdate,
   onRename,
   onDelete,
@@ -937,6 +1019,8 @@ function TokenRow({
   projectId?: string;
   allTokens: ExtractedToken[];
   layoutMd: string;
+  isInLayoutMd: boolean;
+  onAddToLayoutMd?: () => void;
   onUpdate?: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string) => void;
   onRename?: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string) => void;
   onDelete?: () => void;
@@ -1104,8 +1188,14 @@ function TokenRow({
             className={`min-w-0 flex-1 truncate text-xs text-[var(--text-primary)] ${
               canRename ? "cursor-text hover:underline hover:decoration-dotted hover:decoration-[var(--text-muted)]" : ""
             }`}
-            title={token.cssVariable ?? token.name}
+            title={isInLayoutMd ? (token.cssVariable ?? token.name) : `${token.cssVariable ?? token.name} — not in layout.md yet`}
           >
+            {!isInLayoutMd && (
+              <span
+                className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[var(--status-warning)] align-middle"
+                aria-hidden="true"
+              />
+            )}
             {token.cssVariable ?? token.name}
             {token.originalName && (
               <span className="ml-1 text-[10px] text-[var(--text-muted)]" title={token.originalName}>
@@ -1159,6 +1249,19 @@ function TokenRow({
             <Copy className="h-3 w-3 text-[var(--text-muted)]" />
           )}
         </span>
+
+        {!isInLayoutMd && onAddToLayoutMd && (
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToLayoutMd();
+            }}
+            className="shrink-0 rounded-md bg-[var(--studio-accent-subtle)] px-1.5 py-0.5 text-[9px] font-medium text-[var(--text-secondary)] opacity-0 transition-all hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)] group-hover:opacity-100"
+            title="Add this token to layout.md in the correct section"
+          >
+            + layout.md
+          </span>
+        )}
 
         {onDelete && (
           <span
