@@ -29,6 +29,7 @@ interface OnboardingState {
   dismiss: () => void;
   openModal: () => void;
   closeModal: () => void;
+  resurface: () => void;
   reset: () => void;
   setLastSeenVersion: (version: number) => void;
 }
@@ -58,6 +59,39 @@ interface PersistedV1 {
   };
 }
 
+export function migrateOnboardingState(
+  persistedState: unknown,
+  fromVersion: number
+): Partial<OnboardingState> | unknown {
+  if (fromVersion >= CHECKLIST_VERSION) {
+    return persistedState;
+  }
+  const prev = (persistedState ?? {}) as PersistedV1;
+  const prevSteps = prev.steps ?? {};
+  const v1Complete =
+    !!prevSteps.extracted &&
+    !!prevSteps.viewedLayoutMd &&
+    !!prevSteps.installedMcp &&
+    !!prevSteps.generatedVariant;
+
+  // Resurface users who dismissed v1 before finishing — v2 adds meaningful
+  // new steps (component save, plugin, extension) that are worth showing.
+  const shouldResurface = !!prev.dismissed && !v1Complete;
+
+  return {
+    dismissed: shouldResurface ? false : prev.dismissed ?? false,
+    lastSeenVersion: 0,
+    steps: {
+      ...defaultSteps,
+      apiKeyAdded: !!prevSteps.apiKeyAdded,
+      extracted: !!prevSteps.extracted,
+      viewedLayoutMd: !!prevSteps.viewedLayoutMd,
+      generatedVariant: !!prevSteps.generatedVariant,
+      cliInstalled: !!prevSteps.installedMcp,
+    },
+  } satisfies Partial<OnboardingState>;
+}
+
 export const useOnboardingStore = create<OnboardingState>()(
   persist(
     (set) => ({
@@ -78,6 +112,8 @@ export const useOnboardingStore = create<OnboardingState>()(
 
       closeModal: () => set({ modalOpen: false }),
 
+      resurface: () => set({ dismissed: false }),
+
       reset: () =>
         set({
           dismissed: false,
@@ -96,25 +132,8 @@ export const useOnboardingStore = create<OnboardingState>()(
         lastSeenVersion: state.lastSeenVersion,
         steps: state.steps,
       }),
-      migrate: (persistedState, fromVersion) => {
-        if (fromVersion >= CHECKLIST_VERSION) {
-          return persistedState;
-        }
-        const prev = (persistedState ?? {}) as PersistedV1;
-        const prevSteps = prev.steps ?? {};
-        return {
-          dismissed: prev.dismissed ?? false,
-          lastSeenVersion: 0,
-          steps: {
-            ...defaultSteps,
-            apiKeyAdded: !!prevSteps.apiKeyAdded,
-            extracted: !!prevSteps.extracted,
-            viewedLayoutMd: !!prevSteps.viewedLayoutMd,
-            generatedVariant: !!prevSteps.generatedVariant,
-            cliInstalled: !!prevSteps.installedMcp,
-          },
-        } as Partial<OnboardingState>;
-      },
+      migrate: (persistedState, fromVersion) =>
+        migrateOnboardingState(persistedState, fromVersion) as OnboardingState,
       onRehydrateStorage: () => () => {
         useOnboardingStore.setState({ _hasHydrated: true });
       },

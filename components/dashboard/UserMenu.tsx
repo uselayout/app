@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession, signOut } from "@/lib/auth-client";
-import { LogOut, Settings, CreditCard, Sun, Moon, Monitor } from "lucide-react";
+import { LogOut, Settings, CreditCard, Sun, Moon, Monitor, Sparkles } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useOnboardingStore } from "@/lib/store/onboarding";
 
 interface UserMenuProps {
   collapsed?: boolean;
@@ -18,6 +19,8 @@ export function UserMenu({ collapsed }: UserMenuProps) {
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const orgSlug = typeof params?.org === "string" ? params.org : "";
+  const openOnboardingModal = useOnboardingStore((s) => s.openModal);
+  const resetOnboardingDismissal = useOnboardingStore((s) => s.resurface);
 
   const handleClickOutside = useCallback((e: MouseEvent) => {
     if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -107,6 +110,19 @@ export function UserMenu({ collapsed }: UserMenuProps) {
           >
             <CreditCard className="h-3.5 w-3.5" />
             Billing
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              resetOnboardingDismissal();
+              openOnboardingModal();
+            }}
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--text-secondary)] transition-all duration-[var(--duration-base)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Show getting started
           </button>
 
           <div className="my-1 border-t border-[var(--studio-border)]" />

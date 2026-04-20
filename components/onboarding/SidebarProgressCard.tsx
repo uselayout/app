@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useOnboardingStore } from "@/lib/store/onboarding";
 import { useOnboardingProgress } from "@/components/onboarding/OnboardingChecklist";
 
@@ -13,15 +14,35 @@ export function SidebarProgressCard({ collapsed }: SidebarProgressCardProps) {
   const openModal = useOnboardingStore((s) => s.openModal);
   const { completed, total, requiredDone } = useOnboardingProgress();
 
+  // Fade the card out on completion instead of disappearing abruptly.
+  const [exiting, setExiting] = useState(false);
+  const [unmount, setUnmount] = useState(false);
+
+  useEffect(() => {
+    if (!requiredDone) {
+      setExiting(false);
+      setUnmount(false);
+      return;
+    }
+    setExiting(true);
+    const t = setTimeout(() => setUnmount(true), 600);
+    return () => clearTimeout(t);
+  }, [requiredDone]);
+
   if (!_hasHydrated) return null;
   if (dismissed) return null;
-  if (requiredDone) return null;
+  if (unmount) return null;
 
   const pct = total === 0 ? 0 : (completed / total) * 100;
 
+  const fadeStyle = exiting
+    ? { opacity: 0, maxHeight: 0, overflow: "hidden", paddingTop: 0, paddingBottom: 0 }
+    : undefined;
+  const fadeClass = "transition-all duration-[400ms] ease-[cubic-bezier(0,0,0.2,1)]";
+
   if (collapsed) {
     return (
-      <div className="relative group px-1 pb-1">
+      <div className={`relative group px-1 pb-1 ${fadeClass}`} style={fadeStyle}>
         <button
           type="button"
           onClick={openModal}
@@ -38,7 +59,7 @@ export function SidebarProgressCard({ collapsed }: SidebarProgressCardProps) {
   }
 
   return (
-    <div className="px-1 pb-1">
+    <div className={`px-1 pb-1 ${fadeClass}`} style={fadeStyle}>
       <button
         type="button"
         onClick={openModal}

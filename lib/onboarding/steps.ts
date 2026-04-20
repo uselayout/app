@@ -2,6 +2,11 @@ import type { StepKey } from "@/lib/store/onboarding";
 
 export type StepPhase = "keys" | "explore" | "tools" | "learn";
 
+export interface StepContext {
+  hasWebsiteProject: boolean;
+  hasFigmaProject: boolean;
+}
+
 export interface StepDef {
   key: StepKey;
   phase: StepPhase;
@@ -9,6 +14,8 @@ export interface StepDef {
   description: string;
   /** Step counts toward progress but isn't required for 100% completion. */
   optional?: boolean;
+  /** Hide the step entirely when this predicate returns false. */
+  visibleWhen?: (ctx: StepContext) => boolean;
 }
 
 export const PHASE_LABELS: Record<StepPhase, string> = {
@@ -83,6 +90,7 @@ export const STEP_DEFS: StepDef[] = [
     phase: "tools",
     label: "Install the Chrome extension",
     description: "Capture authenticated pages the Figma REST API can't reach.",
+    visibleWhen: (ctx) => ctx.hasWebsiteProject || !ctx.hasFigmaProject,
   },
   {
     key: "readDocs",
@@ -106,4 +114,8 @@ export function groupStepsByPhase(
     phase,
     steps: groups.get(phase) ?? [],
   }));
+}
+
+export function getVisibleSteps(ctx: StepContext): StepDef[] {
+  return STEP_DEFS.filter((def) => !def.visibleWhen || def.visibleWhen(ctx));
 }

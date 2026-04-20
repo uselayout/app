@@ -8,9 +8,9 @@ import {
   type StepKey,
 } from "@/lib/store/onboarding";
 import {
-  STEP_DEFS,
   PHASE_LABELS,
   groupStepsByPhase,
+  getVisibleSteps,
   type StepDef,
 } from "@/lib/onboarding/steps";
 import { useKeyStatus } from "@/lib/hooks/use-api-key";
@@ -40,6 +40,12 @@ export function OnboardingChecklist({
   const anyPluginPushed = useProjectStore((s) =>
     s.projects.some((p) => !!p.pluginTokensPushedAt)
   );
+  const hasWebsiteProject = useProjectStore((s) =>
+    s.projects.some((p) => p.sourceType === "website")
+  );
+  const hasFigmaProject = useProjectStore((s) =>
+    s.projects.some((p) => p.sourceType === "figma")
+  );
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -59,7 +65,8 @@ export function OnboardingChecklist({
 
   if (!_hasHydrated) return null;
 
-  const grouped = groupStepsByPhase(STEP_DEFS);
+  const visibleSteps = getVisibleSteps({ hasWebsiteProject, hasFigmaProject });
+  const grouped = groupStepsByPhase(visibleSteps);
 
   const handleCopy = async () => {
     const ok = await copyToClipboard(CLI_COMMAND);
@@ -343,13 +350,21 @@ export function useOnboardingProgress(): {
   requiredDone: boolean;
 } {
   const steps = useOnboardingStore((s) => s.steps);
-  const total = STEP_DEFS.length;
-  const completed = STEP_DEFS.reduce(
+  const hasWebsiteProject = useProjectStore((s) =>
+    s.projects.some((p) => p.sourceType === "website")
+  );
+  const hasFigmaProject = useProjectStore((s) =>
+    s.projects.some((p) => p.sourceType === "figma")
+  );
+
+  const visibleSteps = getVisibleSteps({ hasWebsiteProject, hasFigmaProject });
+  const total = visibleSteps.length;
+  const completed = visibleSteps.reduce(
     (sum, def) => sum + (steps[def.key as StepKey] ? 1 : 0),
     0
   );
-  const requiredDone = STEP_DEFS.filter((d) => !d.optional).every(
-    (d) => steps[d.key as StepKey]
-  );
+  const requiredDone = visibleSteps
+    .filter((d) => !d.optional)
+    .every((d) => steps[d.key as StepKey]);
   return { completed, total, requiredDone };
 }
