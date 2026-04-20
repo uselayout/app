@@ -72,6 +72,25 @@ describe("detectTokenDivergence — value normalisation", () => {
     expect(report.valueDivergences[0].name).toBe("--accent");
   });
 
+  it("matches a --prefixed layout.md token against a bare census-mined extraction token", () => {
+    // Census-mined tokens come through without the -- prefix (e.g. name: "font-size-md").
+    // Layout.md declarations always have -- (e.g. "--font-size-md"). Without
+    // normalising the name the same token appears on BOTH sides of the banner.
+    const layoutMd = "```css\n--font-size-md: 18px;\n--space-xs: 4px;\n```";
+    const extraction = mkExtraction({
+      typography: [
+        { name: "font-size-md", value: "18px", type: "typography", category: "primitive", cssVariable: "--font-size-md" },
+      ],
+      spacing: [
+        { name: "space-xs", value: "4px", type: "spacing", category: "primitive", cssVariable: "--space-xs" },
+      ],
+    });
+    const report = detectTokenDivergence(layoutMd, extraction);
+    expect(report.tokensInMdNotInData).toEqual([]);
+    expect(report.tokensInDataNotInMd).toEqual([]);
+    expect(report.valueDivergences).toEqual([]);
+  });
+
   it("still flags different rgba alpha values", () => {
     const layoutMd = "```css\n--overlay: rgba(0, 0, 0, 0.2);\n```";
     const extraction = mkExtraction({

@@ -25,8 +25,20 @@ export interface ValueDivergence {
   mode?: string;
 }
 
+/**
+ * Normalise a token name for cross-source comparison. The layout.md parser
+ * emits names with the `--` prefix (e.g. `--font-size-md`) because CSS
+ * declarations include it. Census-based miners in scale-builder.ts emit
+ * bare role names (`font-size-md`). Without stripping the prefix the same
+ * token appears on both sides of the divergence banner.
+ */
+function normaliseName(name: string): string {
+  return name.replace(/^--/, "");
+}
+
 function keyFor(t: { name: string; mode?: string }): string {
-  return t.mode ? `${t.name}::${t.mode}` : t.name;
+  const n = normaliseName(t.name);
+  return t.mode ? `${n}::${t.mode}` : n;
 }
 
 /**
