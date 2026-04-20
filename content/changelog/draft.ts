@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-screenshot-push-crash",
+    title: "Screenshot push no longer crashes the Studio page",
+    description:
+      "Pushing a screenshot from the Chrome extension to a project whose layout.md hadn't been generated yet could put the Studio page into a render loop and show the \"Something went wrong\" screen. The auto-generate retry now waits for an explicit refresh instead of firing on every re-render.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-20",
+  },
+  {
     id: "2026-w17-welcome-onboarding",
     title: "Welcome modal and onboarding checklist",
     description:

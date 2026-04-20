@@ -290,13 +290,8 @@ export default function StudioPage({
 
     autoGenerateStarted.current = true;
     setCentreView("editor");
-    handleRegenerateLayoutMd().finally(() => {
-      const latest = useProjectStore.getState().projects.find((p) => p.id === id);
-      if (!latest?.layoutMd || latest.layoutMd.length === 0) {
-        autoGenerateStarted.current = false;
-      }
-    });
-  }, [id, autoGenerateParam, project, hydrating, handleRegenerateLayoutMd]);
+    handleRegenerateLayoutMd();
+  }, [autoGenerateParam, project, hydrating, handleRegenerateLayoutMd]);
 
   // Extraction diff state
   const previousExtractionRef = useRef<ExtractionResult | null>(null);

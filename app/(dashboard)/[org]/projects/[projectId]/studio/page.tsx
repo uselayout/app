@@ -287,15 +287,8 @@ export default function StudioPage({
       window.history.replaceState({}, "", url.toString());
     }
 
-    handleRegenerateLayoutMd().finally(() => {
-      // On error the handler toasts but doesn't throw; layoutMd stays empty.
-      // Reset the ref so a refresh lets the user retry.
-      const latest = useProjectStore.getState().projects.find((p) => p.id === id);
-      if (!latest?.layoutMd || latest.layoutMd.length === 0) {
-        autoGenerateStarted.current = false;
-      }
-    });
-  }, [id, searchParams, project, hydrating, handleRegenerateLayoutMd]);
+    handleRegenerateLayoutMd();
+  }, [searchParams, project, hydrating, handleRegenerateLayoutMd]);
 
   const handleReExtract = useCallback(() => {
     if (!project) return;
