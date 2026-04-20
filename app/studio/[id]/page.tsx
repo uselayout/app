@@ -206,9 +206,11 @@ export default function StudioPage({
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const sourceParam = searchParams.get("source");
+  const autoGenerateParam = searchParams.get("auto-generate");
 
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
+  const autoGenerateStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
   const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved" | "design-system">(
     tabParam === "editor" ? "editor" : "canvas"
@@ -259,10 +261,23 @@ export default function StudioPage({
 
   // Clear URL params after consuming so refresh doesn't re-trigger
   useEffect(() => {
-    if (tabParam || sourceParam) {
+    if (tabParam || sourceParam || autoGenerateParam) {
       window.history.replaceState({}, "", `/studio/${id}`);
     }
-  }, [id, tabParam, sourceParam]);
+  }, [id, tabParam, sourceParam, autoGenerateParam]);
+
+  // Auto-generate layout.md after plugin push (?auto-generate=1)
+  useEffect(() => {
+    if (autoGenerateStarted.current) return;
+    if (autoGenerateParam !== "1") return;
+    if (!project || hydrating) return;
+    if (!project.extractionData?.tokens) return;
+    if (project.layoutMd && project.layoutMd.length > 0) return;
+
+    autoGenerateStarted.current = true;
+    setCentreView("editor");
+    handleRegenerateLayoutMd();
+  }, [autoGenerateParam, project, hydrating, handleRegenerateLayoutMd]);
 
   // Extraction diff state
   const previousExtractionRef = useRef<ExtractionResult | null>(null);
