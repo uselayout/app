@@ -3,6 +3,7 @@ import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 import { renameTokenInLayoutMd } from "@/lib/tokens/rename-token";
 import { addTokenToLayoutMd, removeTokenFromLayoutMd } from "@/lib/tokens/add-remove-token";
+import { CORE_TOKENS_BLOCK_REGEX } from "@/lib/tokens/core-tokens-block";
 import { matchTokenToUnassignedRole } from "@/lib/tokens/standardise";
 import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont, ProjectStandardisation, DesignSystemSnapshot, TokenType, BrandingAsset, ContextDocument } from "@/lib/types";
 
@@ -69,8 +70,9 @@ function stripBloatForSave(project: Project): Project {
     });
   }
 
-  // Strip snapshots (client-only undo history, not needed on server)
-  delete stripped.snapshots;
+  // Snapshots are persisted server-side via the dedicated `snapshots` column
+  // (migration 042). Keep them in the outgoing payload so SnapshotManager can
+  // actually restore them after a reload.
 
   return stripped;
 }
@@ -164,12 +166,16 @@ async function apiFetchProject(id: string, orgId: string): Promise<Project | nul
 /**
  * Update the curated token block in layout.md's Quick Reference section.
  * Replaces the CORE TOKENS css block with current standardisation assignments.
+ *
+ * Exported for unit testing. The delimiter-tolerant regex lives in
+ * `core-tokens-block.ts` because Claude synthesis, the curated sync, and
+ * hand-authored docs have historically used different decorators around the
+ * label, and a strict match silently dropped assignments.
  */
-function syncCuratedTokensToLayoutMd(layoutMd: string, standardisation: ProjectStandardisation): string {
+export function syncCuratedTokensToLayoutMd(layoutMd: string, standardisation: ProjectStandardisation): string {
   const assignments = Object.values(standardisation.assignments);
   if (assignments.length === 0) return layoutMd;
 
-  // Build the new token block
   const lines: string[] = ["/* ── CORE TOKENS ── */", ""];
   const colours = assignments.filter((a) => ["bg-", "text-", "border", "accent", "success", "warning", "error", "info"].some((k) => a.roleKey.startsWith(k) || a.roleKey.includes(k)));
   const other = assignments.filter((a) => !colours.includes(a));
@@ -189,13 +195,10 @@ function syncCuratedTokensToLayoutMd(layoutMd: string, standardisation: ProjectS
 
   const newBlock = "```css\n" + lines.join("\n") + "\n```";
 
-  // Try to replace existing CORE TOKENS block
-  const coreTokensRegex = /```css\s*\n\/\*\s*──?\s*CORE TOKENS[\s\S]*?```/;
-  if (coreTokensRegex.test(layoutMd)) {
-    return layoutMd.replace(coreTokensRegex, newBlock);
+  if (CORE_TOKENS_BLOCK_REGEX.test(layoutMd)) {
+    return layoutMd.replace(CORE_TOKENS_BLOCK_REGEX, newBlock);
   }
 
-  // If no CORE TOKENS block found, don't modify
   return layoutMd;
 }
 
@@ -539,7 +542,16 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
               delete nextAssignments[roleKey];
             }
           }
-          standardisation = { ...standardisation, assignments: nextAssignments };
+          // Also prune the unassigned list so deleted tokens don't linger as
+          // dead reference material in the Curated view (fixes B12 silent bloat).
+          const nextUnassigned = standardisation.unassigned.filter(
+            (u) => !removedKeys.has(u.cssVariable ?? u.name)
+          );
+          standardisation = {
+            ...standardisation,
+            assignments: nextAssignments,
+            unassigned: nextUnassigned,
+          };
         }
 
         // Strip declarations from layout.md: original cssVariable AND any standardName

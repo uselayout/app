@@ -1,4 +1,5 @@
 import type { ExtractedToken, TokenType } from "@/lib/types";
+import { CORE_TOKENS_BLOCK_SPLIT_REGEX } from "./core-tokens-block";
 
 /**
  * Insert a CSS custom property declaration into the CORE TOKENS block of layout.md.
@@ -13,8 +14,7 @@ export function addTokenToLayoutMd(
   const cssVar = token.cssVariable ?? `--${token.name}`;
   const declaration = `  ${cssVar}: ${token.value};`;
 
-  const coreTokensRegex = /(```css\s*\n\/\*\s*──?\s*CORE TOKENS[\s\S]*?)(\n```)/;
-  const match = markdown.match(coreTokensRegex);
+  const match = markdown.match(CORE_TOKENS_BLOCK_SPLIT_REGEX);
   if (!match) return markdown;
 
   // Don't duplicate
@@ -23,7 +23,7 @@ export function addTokenToLayoutMd(
   if (existsRegex.test(match[1])) return markdown;
 
   const inserted = match[1] + "\n" + declaration + match[2];
-  return markdown.replace(coreTokensRegex, inserted);
+  return markdown.replace(CORE_TOKENS_BLOCK_SPLIT_REGEX, inserted);
 }
 
 /**
@@ -51,13 +51,14 @@ export function removeTokenFromLayoutMd(
   });
 }
 
+// Section number prefix is optional: tolerate `## 2. X`, `## 2 X`, `## 02. X`, and `## X`.
 const SECTION_HEADING_PATTERNS: Record<TokenType, RegExp> = {
-  color: /^##\s+\d+\.\s*Colou?r/im,
-  typography: /^##\s+\d+\.\s*Typography/im,
-  spacing: /^##\s+\d+\.\s*Spacing/im,
-  radius: /^##\s+\d+\.\s*Spacing/im,
-  effect: /^##\s+\d+\.\s*(?:Elevation|Effect|Depth|Shadow)/im,
-  motion: /^##\s+\d+\.\s*Motion/im,
+  color: /^##\s+(?:\d+\.?\s+)?Colou?r/im,
+  typography: /^##\s+(?:\d+\.?\s+)?Typography/im,
+  spacing: /^##\s+(?:\d+\.?\s+)?Spacing/im,
+  radius: /^##\s+(?:\d+\.?\s+)?Spacing/im,
+  effect: /^##\s+(?:\d+\.?\s+)?(?:Elevation|Effect|Depth|Shadow)/im,
+  motion: /^##\s+(?:\d+\.?\s+)?Motion/im,
 };
 
 function findSectionCssBlock(

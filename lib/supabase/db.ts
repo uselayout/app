@@ -21,17 +21,23 @@ interface ProjectRow {
   github_repo: string | null;
   branding_assets: unknown | null;
   context_documents: unknown | null;
+  snapshots: unknown | null;
   user_id: string;
   created_at: string;
   updated_at: string;
 }
 
-function rowToProject(row: ProjectRow): Project {
+// Exported for round-trip tests in db.test.ts. Piggy-backed fields in
+// extraction_data (_uploadedFonts, _standardisation, _pluginTokensPushedAt,
+// _iconPacks) have silently dropped user data in the past when one direction
+// was updated without the other; tests exercise both paths in lockstep.
+export function rowToProject(row: ProjectRow): Project {
   // Extract piggy-backed fields from extraction_data before casting
   const rawExtraction = row.extraction_data as Record<string, unknown> | null;
   const uploadedFonts = (rawExtraction?._uploadedFonts as Project["uploadedFonts"]) ?? undefined;
   const standardisation = (rawExtraction?._standardisation as Project["standardisation"]) ?? undefined;
   const pluginTokensPushedAt = (rawExtraction?._pluginTokensPushedAt as string) ?? undefined;
+  const iconPacks = (rawExtraction?._iconPacks as string[]) ?? undefined;
 
   // Strip piggy-backed fields from extraction data before casting to ExtractionResult
   let extractionData: Project["extractionData"] | undefined;
@@ -40,6 +46,7 @@ function rowToProject(row: ProjectRow): Project {
       _uploadedFonts: _,
       _standardisation: __,
       _pluginTokensPushedAt: ___,
+      _iconPacks: ____,
       ...clean
     } = rawExtraction;
     // Only treat as real extraction data if it has actual extraction fields
@@ -74,34 +81,41 @@ function rowToProject(row: ProjectRow): Project {
     contextDocuments: row.context_documents
       ? (row.context_documents as Project["contextDocuments"])
       : undefined,
+    snapshots: row.snapshots
+      ? (row.snapshots as Project["snapshots"])
+      : undefined,
+    iconPacks,
     pluginTokensPushedAt,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
-function projectToRow(
+export function projectToRow(
   project: Project,
   userId: string
-): Omit<ProjectRow, "created_at" | "scanned_components" | "scan_source" | "last_scan_at" | "github_repo" | "branding_assets" | "context_documents"> & { updated_at: string } {
-  // Store uploadedFonts, standardisation and pluginTokensPushedAt inside
-  // extraction_data to avoid a dedicated DB migration.
+): Omit<ProjectRow, "created_at" | "scanned_components" | "scan_source" | "last_scan_at" | "github_repo" | "branding_assets" | "context_documents"> & { updated_at: string; snapshots: unknown | null } {
+  // Store uploadedFonts, standardisation, pluginTokensPushedAt and iconPacks
+  // inside extraction_data to avoid a dedicated DB migration.
   const fonts = project.uploadedFonts ?? [];
   const std = project.standardisation ?? undefined;
   const pushedAt = project.pluginTokensPushedAt ?? undefined;
-  const hasExtra = fonts.length > 0 || std || pushedAt;
+  const icons = project.iconPacks ?? undefined;
+  const hasExtra = fonts.length > 0 || std || pushedAt || (icons && icons.length > 0);
   const extractionData = project.extractionData
     ? {
         ...project.extractionData,
         _uploadedFonts: fonts,
         _standardisation: std,
         _pluginTokensPushedAt: pushedAt,
+        _iconPacks: icons,
       }
     : hasExtra
       ? {
           _uploadedFonts: fonts,
           _standardisation: std,
           _pluginTokensPushedAt: pushedAt,
+          _iconPacks: icons,
         }
       : null;
 
@@ -118,6 +132,7 @@ function projectToRow(
     test_results: null,
     explorations: project.explorations ?? null,
     pending_canvas_image: project.pendingCanvasImage ?? null,
+    snapshots: project.snapshots ?? null,
     // NOTE: scanned_components, scan_source, last_scan_at, github_repo,
     // branding_assets, context_documents are intentionally excluded. They are
     // managed by dedicated API endpoints only. Including them here would wipe

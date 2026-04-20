@@ -57,10 +57,17 @@ export async function PUT(request: NextRequest, { params }: Params) {
       iconPacks: z.array(z.string()).nullable().optional(),
       uploadedFonts: z.array(z.record(z.string(), z.unknown())).nullable().optional(),
       pendingCanvasImage: z.string().nullable().optional(),
-      // Standardisation is embedded into extraction_data.­_standardisation by projectToRow.
+      // Standardisation is embedded into extraction_data._standardisation by projectToRow.
       // It MUST be declared here or Zod silently strips it from the PUT body and every
       // save would wipe the server copy.
       standardisation: z.record(z.string(), z.unknown()).nullable().optional(),
+      // Same applies to pluginTokensPushedAt — piggy-backed into
+      // extraction_data._pluginTokensPushedAt. Declaring it here stops Zod
+      // silently dropping it on PUT.
+      pluginTokensPushedAt: z.string().nullable().optional(),
+      // Snapshots persist via a dedicated column (migration 042). Declaring
+      // the field here keeps Zod from stripping it before it reaches projectToRow.
+      snapshots: z.array(z.record(z.string(), z.unknown())).nullable().optional(),
       createdAt: z.string(),
       updatedAt: z.string(),
     });
