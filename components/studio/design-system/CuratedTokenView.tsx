@@ -294,7 +294,7 @@ export function CuratedTokenView({
             id={`curated-${catKey}`}
             title={catDef.label}
             count={counts.assigned}
-            subtitle={`${counts.assigned}/${counts.total}`}
+            subtitle={`of ${counts.total} roles`}
           >
             <div className="mb-4 flex items-center justify-end">
               <button
@@ -425,7 +425,7 @@ export function CuratedTokenView({
             id={`curated-${catKey}`}
             title={catDef.label}
             count={counts.assigned}
-            subtitle={`${counts.assigned}/${counts.total}`}
+            subtitle={`of ${counts.total} roles`}
           >
             <div className="mb-4 flex items-center justify-end">
               <button
