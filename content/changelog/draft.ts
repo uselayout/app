@@ -279,4 +279,22 @@ export const draftEntries: ChangelogEntry[] = [
     category: "new",
     date: "2026-04-20",
   },
+  {
+    id: "2026-w17-auth-modal-dark",
+    title: "Sign-in and password modals stay dark in light mode",
+    description:
+      "The sign-in, sign-up, forgot-password, password-reset and request-access modals now render dark regardless of your Studio theme preference. Previously the modal card turned white against the dark aurora page when the Studio was in light mode, breaking the marketing aesthetic.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-unified-token-taxonomy",
+    title: "Consistent token category names across Source Panel and Curated",
+    description:
+      "Raw-token groupings in the Source Panel and Design System \"All Tokens\" view used to read \"Brand / Surfaces / Interactive\" while the Curated view used \"Accent / Backgrounds\". Same concept, two vocabularies. Now both surfaces use the same taxonomy: Backgrounds, Text, Borders, Accent, Status, Primitives, Palette, Components.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-20",
+  },
 ];
