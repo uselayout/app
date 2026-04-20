@@ -225,4 +225,31 @@ export const draftEntries: ChangelogEntry[] = [
     category: "improved",
     date: "2026-04-20",
   },
+  {
+    id: "2026-w17-explorer-avatar-reliability",
+    title: "Avatar generation in Explorer variants is reliable again",
+    description:
+      "Dynamic avatars and contextual images in generated variants used to fail in subtle ways — the same face repeated for every member of a team list, images vanishing entirely when the component used a helper function, or broken-image icons showing when generation hit a quota. Variants now always render either the correct image or a clear placeholder, and list templates produce per-item variety the way they look in the code.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-explorer-avatar-names",
+    title: "Avatar placeholders for non-Latin names and repeated initials",
+    description:
+      "Avatar placeholder circles containing non-Latin names like 李明, accented characters like Éliane, or longer first names like Santiago now generate portrait images automatically. Two team members sharing initials (two AAs for Alex Adams and Amy Anderson) now get distinct faces instead of the same person appearing twice.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-explorer-context-file-errors",
+    title: "Clearer errors when context files are too large",
+    description:
+      "Uploading an oversized context file to the Explorer now returns a message naming the file and its size (\"Context file brand-voice.md is 82KB. Each file must be ≤ 50KB.\") instead of a generic validation error. The 3-file cap surfaces its own friendly message too.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-20",
+  },
 ];
