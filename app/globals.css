@@ -217,6 +217,57 @@
   --sidebar-ring: rgba(0,0,0,0.15);
 }
 
+/* ===== FORCE DARK SCOPE =====
+   Certain surfaces (auth modals, marketing overlays) must always render in
+   dark theme regardless of the user's Studio theme preference. Applying
+   .force-dark to a wrapper re-declares the dark-mode tokens inside that
+   subtree so nested components using var(--bg-elevated) / var(--text-primary)
+   / etc. resolve to dark values even when :root.light is active. */
+.force-dark {
+  color-scheme: dark;
+  /* Backgrounds */
+  --bg-app: #0C0C0E;
+  --bg-panel: #141418;
+  --bg-surface: #1A1A20;
+  --bg-elevated: #222228;
+  --bg-hover: #2A2A32;
+  --bg-active: #32323A;
+  --bg-canvas: #17171C;
+
+  /* Borders */
+  --studio-border: rgba(255,255,255,0.12);
+  --studio-border-strong: rgba(255,255,255,0.22);
+  --studio-border-focus: rgba(224,224,230,0.6);
+
+  /* Accent */
+  --studio-accent: #E0E0E6;
+  --studio-accent-hover: #F0F0F4;
+  --studio-accent-subtle: rgba(224,224,230,0.10);
+
+  /* Text */
+  --text-primary: #EDEDF4;
+  --text-secondary: rgba(237,237,244,0.7);
+  --text-muted: rgba(237,237,244,0.5);
+  --text-on-accent: #08090a;
+
+  /* Status */
+  --status-success: #27a644;
+  --status-warning: #f0bf00;
+  --status-error: #eb5757;
+
+  /* shadcn tokens likely referenced by nested UI */
+  --background: #0C0C0E;
+  --foreground: #EDEDF4;
+  --card: #222228;
+  --card-foreground: #EDEDF4;
+  --popover: #222228;
+  --popover-foreground: #EDEDF4;
+  --primary: #E0E0E6;
+  --primary-foreground: #08090a;
+  --border: rgba(255,255,255,0.12);
+  --input: rgba(255,255,255,0.12);
+}
+
 /* Custom scrollbars — outside @layer for full specificity */
 * {
   scrollbar-width: thin;
