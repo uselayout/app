@@ -312,7 +312,7 @@ export default function ComparePage() {
               name: "Paper.design",
               desc: "Agent-first design canvas built on real HTML/CSS. 24 MCP tools with read and write access. Founded by Stephen Haney (built Radix/Modulz).",
               relationship:
-                "Complementary \u2014 Paper is a canvas, Layout is a compiler. Layout context could feed into Paper\u2019s canvas.",
+                "Complementary. Paper is a canvas, Layout is a compiler. Layout ships a Push to Paper action on Explorer variants that sends HTML/CSS straight onto a Paper artboard via Paper\u2019s MCP.",
             },
             {
               name: "Magic Patterns",

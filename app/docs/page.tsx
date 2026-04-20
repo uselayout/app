@@ -12,6 +12,7 @@ import {
   Puzzle,
   ArrowUpRight,
   Chrome,
+  Palette,
 } from "lucide-react";
 import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
@@ -36,6 +37,13 @@ const capabilities = [
     description:
       "Two-mode workspace: browse extracted tokens on the left, edit layout.md in the centre with an AI edit bar, then switch to the Explorer to generate and test component variants.",
     href: "/docs/studio",
+  },
+  {
+    icon: Palette,
+    title: "Design System hub",
+    description:
+      "Curate raw tokens into canonical roles, upload brand logos and custom fonts, attach brand voice and copy guidelines, and manage snapshots with rollback. Or start from a blank kit if you don't have a Figma or URL source.",
+    href: "/docs/design-system",
   },
   {
     icon: Sparkles,
