@@ -39,11 +39,11 @@ const DERIVED_HEADINGS: Array<{
   label: string;
   editIn: DerivedRange["editIn"];
 }> = [
-  { heading: "Appendix A", kind: "appendix-a", label: "Appendix A: Complete Token Reference", editIn: "tokens" },
-  { heading: "Brand Assets", kind: "brand-assets", label: "Brand Assets", editIn: "assets" },
-  { heading: "Icons", kind: "icons", label: "Icons", editIn: "assets" },
-  { heading: "Component Inventory", kind: "component-inventory", label: "Component Inventory", editIn: "components" },
-  { heading: "Product Context", kind: "product-context", label: "Product Context", editIn: "context" },
+  { heading: "Appendix A", kind: "appendix-a", label: "Appendix A (auto-generated)", editIn: "tokens" },
+  { heading: "Brand Assets", kind: "brand-assets", label: "Brand Assets (auto-generated)", editIn: "assets" },
+  { heading: "Icons", kind: "icons", label: "Icons (auto-generated)", editIn: "assets" },
+  { heading: "Component Inventory", kind: "component-inventory", label: "Component Inventory (auto-generated)", editIn: "components" },
+  { heading: "Product Context", kind: "product-context", label: "Product Context (auto-generated)", editIn: "context" },
 ];
 
 export function findDerivedRanges(markdown: string): DerivedRange[] {
@@ -66,7 +66,7 @@ export function findDerivedRanges(markdown: string): DerivedRange[] {
     }
     ranges.push({
       kind: "core-tokens",
-      label: "CORE TOKENS (derived from Curated assignments)",
+      label: "Core Tokens (auto-generated)",
       editIn: "tokens",
       startLine: start + 1,
       endLine: end + 1,

@@ -238,7 +238,7 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
               revertingRef.current = false;
             }
             toast.info(
-              `${hit?.label ?? "That section"} is regenerated from project state. Edit in the ${hit?.editIn ?? "Tokens"} tab.`
+              `${hit?.label ?? "That section"} is built from your design system — typing here won't stick. Open the ${hit?.editIn ?? "Tokens"} tab to edit it.`
             );
             return;
           }
@@ -365,7 +365,7 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
         linesDecorationsClassName: "layout-md-derived-gutter",
         hoverMessage: [
           { value: `**${r.label}**` },
-          { value: `This block is regenerated from project state on every read. Hand-edits here are overwritten — edit in the *${r.editIn}* tab instead.` },
+          { value: `Layout Studio builds this section from your design system every time it reads \`layout.md\`. Anything typed here gets overwritten — edit it in the **${r.editIn}** tab instead.` },
         ],
         marginClassName: "layout-md-derived-margin",
       },
