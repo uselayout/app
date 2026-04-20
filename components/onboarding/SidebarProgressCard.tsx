@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { useOnboardingStore } from "@/lib/store/onboarding";
 import { useOnboardingProgress } from "@/components/onboarding/OnboardingChecklist";
+import { useMounted } from "@/lib/hooks/use-mounted";
 
 interface SidebarProgressCardProps {
   collapsed: boolean;
 }
 
 export function SidebarProgressCard({ collapsed }: SidebarProgressCardProps) {
-  const _hasHydrated = useOnboardingStore((s) => s._hasHydrated);
+  const mounted = useMounted();
   const dismissed = useOnboardingStore((s) => s.dismissed);
   const openModal = useOnboardingStore((s) => s.openModal);
   const { completed, total, requiredDone } = useOnboardingProgress();
@@ -29,7 +30,7 @@ export function SidebarProgressCard({ collapsed }: SidebarProgressCardProps) {
     return () => clearTimeout(t);
   }, [requiredDone]);
 
-  if (!_hasHydrated) return null;
+  if (!mounted) return null;
   if (dismissed) return null;
   if (unmount) return null;
 
@@ -64,7 +65,7 @@ export function SidebarProgressCard({ collapsed }: SidebarProgressCardProps) {
         type="button"
         onClick={openModal}
         aria-label={`Open onboarding checklist, ${completed} of ${total} complete`}
-        className="group flex w-full flex-col gap-2 rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-surface)] p-3 text-left transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)] hover:border-[var(--studio-border-strong)] hover:bg-[var(--bg-hover)]"
+        className="group flex w-full flex-col gap-2 rounded-[var(--studio-radius-md)] border border-[var(--studio-border-strong)] bg-[var(--bg-app)] p-3 text-left transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)] hover:border-[var(--studio-border-focus)] hover:bg-[var(--bg-hover)]"
       >
         <div className="flex items-center justify-between">
           <span className="text-[13px] font-medium text-[var(--text-primary)]">

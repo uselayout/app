@@ -8,6 +8,7 @@ import {
   useOnboardingProgress,
 } from "@/components/onboarding/OnboardingChecklist";
 import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
+import { useMounted } from "@/lib/hooks/use-mounted";
 
 interface WelcomeModalProps {
   firstProjectId?: string;
@@ -15,7 +16,7 @@ interface WelcomeModalProps {
 }
 
 export function WelcomeModal({ firstProjectId, orgSlug }: WelcomeModalProps) {
-  const _hasHydrated = useOnboardingStore((s) => s._hasHydrated);
+  const mounted = useMounted();
   const modalOpen = useOnboardingStore((s) => s.modalOpen);
   const closeModal = useOnboardingStore((s) => s.closeModal);
   const dismiss = useOnboardingStore((s) => s.dismiss);
@@ -30,7 +31,7 @@ export function WelcomeModal({ firstProjectId, orgSlug }: WelcomeModalProps) {
     }
   }, [requiredDone, modalOpen, dismiss]);
 
-  if (!_hasHydrated) return null;
+  if (!mounted) return null;
 
   return (
     <>

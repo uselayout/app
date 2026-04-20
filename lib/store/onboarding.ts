@@ -20,7 +20,6 @@ export interface OnboardingSteps {
 export type StepKey = keyof OnboardingSteps;
 
 interface OnboardingState {
-  _hasHydrated: boolean;
   dismissed: boolean;
   modalOpen: boolean;
   lastSeenVersion: number;
@@ -95,7 +94,6 @@ export function migrateOnboardingState(
 export const useOnboardingStore = create<OnboardingState>()(
   persist(
     (set) => ({
-      _hasHydrated: false,
       dismissed: false,
       modalOpen: false,
       lastSeenVersion: 0,
@@ -134,9 +132,6 @@ export const useOnboardingStore = create<OnboardingState>()(
       }),
       migrate: (persistedState, fromVersion) =>
         migrateOnboardingState(persistedState, fromVersion) as OnboardingState,
-      onRehydrateStorage: () => () => {
-        useOnboardingStore.setState({ _hasHydrated: true });
-      },
     }
   )
 );

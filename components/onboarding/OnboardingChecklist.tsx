@@ -15,6 +15,7 @@ import {
 } from "@/lib/onboarding/steps";
 import { useKeyStatus } from "@/lib/hooks/use-api-key";
 import { useProjectStore } from "@/lib/store/project";
+import { useMounted } from "@/lib/hooks/use-mounted";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 
 const CLI_COMMAND = "npx @layoutdesign/context install";
@@ -32,7 +33,7 @@ export function OnboardingChecklist({
   firstProjectId,
   orgSlug,
 }: OnboardingChecklistProps) {
-  const _hasHydrated = useOnboardingStore((s) => s._hasHydrated);
+  const mounted = useMounted();
   const steps = useOnboardingStore((s) => s.steps);
   const markStep = useOnboardingStore((s) => s.markStep);
 
@@ -63,7 +64,7 @@ export function OnboardingChecklist({
     markStep,
   ]);
 
-  if (!_hasHydrated) return null;
+  if (!mounted) return null;
 
   const visibleSteps = getVisibleSteps({ hasWebsiteProject, hasFigmaProject });
   const grouped = groupStepsByPhase(visibleSteps);
