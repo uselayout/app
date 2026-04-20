@@ -41,10 +41,22 @@ export default function StudioPage({
   const clearSaveError = useProjectStore((s) => s.clearSaveError);
   const project = projects.find((p) => p.id === id);
 
-  // Fetch full project data if we only have summary data (list endpoint omits layout_md, extraction_data, explorations)
+  // Fetch full project data if we only have summary data (list endpoint omits layout_md, extraction_data, explorations).
+  // Guard on `=== undefined` not falsiness — a freshly-extracted project legitimately has layoutMd="" and
+  // explorations=[], and treating those as "not loaded" causes refreshProject to fire on every render, which flips
+  // `project` identity, which re-runs this effect → render loop → React error #185.
+  const needsRefreshRef = useRef(false);
   useEffect(() => {
-    if (project && (!project.layoutMd || !project.extractionData || !project.explorations)) {
-      refreshProject(id);
+    if (!project) return;
+    const missing =
+      project.layoutMd === undefined ||
+      project.extractionData === undefined ||
+      project.explorations === undefined;
+    if (missing && !needsRefreshRef.current) {
+      needsRefreshRef.current = true;
+      refreshProject(id).finally(() => {
+        needsRefreshRef.current = false;
+      });
     }
   }, [id, project, refreshProject]);
 
