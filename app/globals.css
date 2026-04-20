@@ -218,34 +218,22 @@
 }
 
 /* ===== LAYOUT.MD DERIVED-BLOCK DECORATIONS =====
-   Monaco applies these classes to lines inside CORE TOKENS, Appendix A,
-   and the four orphan sections so users see which regions are regenerated
-   by the derive engine and shouldn't be hand-edited. */
+   Monaco applies these classes to lines inside auto-generated sections
+   (Core Tokens, Appendix A, Brand Assets, Icons, Component Inventory,
+   Product Context) so users see at a glance which ranges are regenerated
+   by the derive engine and shouldn't be hand-edited. The style is
+   intentionally muted — the hover tooltip and the toast on attempted
+   edits carry the actual message. */
 .layout-md-derived-range {
-  background-color: rgba(224, 224, 230, 0.04);
-  /* Subtle tint — enough to notice, not enough to break readability. */
+  background-color: rgba(224, 224, 230, 0.025);
 }
 .light .layout-md-derived-range {
-  background-color: rgba(0, 0, 0, 0.03);
+  background-color: rgba(0, 0, 0, 0.02);
 }
 .layout-md-derived-gutter {
-  width: 3px !important;
+  width: 2px !important;
   margin-left: 4px;
-  background: linear-gradient(to bottom, #e4f222 0%, #e4f222 50%, transparent 50%);
-  background-size: 3px 8px;
-  background-repeat: repeat-y;
-}
-.light .layout-md-derived-gutter {
-  background: linear-gradient(to bottom, #7c3aed 0%, #7c3aed 50%, transparent 50%);
-  background-size: 3px 8px;
-  background-repeat: repeat-y;
-}
-.layout-md-derived-margin::before {
-  content: "🔒";
-  position: absolute;
-  left: 2px;
-  font-size: 9px;
-  opacity: 0.4;
+  background-color: var(--studio-border-strong);
 }
 
 /* ===== FORCE DARK SCOPE =====

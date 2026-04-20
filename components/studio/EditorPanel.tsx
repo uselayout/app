@@ -367,7 +367,6 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
           { value: `**${r.label}**` },
           { value: `Layout Studio builds this section from your design system every time it reads \`layout.md\`. Anything typed here gets overwritten — edit it in the **${r.editIn}** tab instead.` },
         ],
-        marginClassName: "layout-md-derived-margin",
       },
     }));
 
