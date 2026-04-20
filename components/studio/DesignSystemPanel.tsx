@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useMemo, useState, useEffect } from "react";
-import { X, Sparkles, Palette, Image as ImageIcon, FileText, FileCode } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 import type { ExtractionResult, ExtractedToken } from "@/lib/types";
 import { useProjectStore } from "@/lib/store/project";
 import { DesignSystemSection } from "./design-system/DesignSystemSection";
@@ -18,7 +18,6 @@ import { AddTokenForm } from "./AddTokenForm";
 import { IconPackSelector } from "./IconPackSelector";
 import { BrandingTab } from "./BrandingTab";
 import { ContextDocsTab } from "./ContextDocsTab";
-import { EditorPanel } from "./EditorPanel";
 import { useOrgStore } from "@/lib/store/organization";
 import { Plus } from "lucide-react";
 import { standardiseTokens } from "@/lib/tokens/standardise";
@@ -89,13 +88,8 @@ export function DesignSystemPanel({
   // one place to edit the design system. Source Panel stays functional for
   // backwards compatibility — it's still mounted in the parent layout — but
   // everything you need now lives inside this hub.
-  const [hubTab, setHubTab] = useState<"tokens" | "assets" | "context" | "editor">("tokens");
+  const [hubTab, setHubTab] = useState<"tokens" | "assets" | "context">("tokens");
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
-  const updateLayoutMd = useProjectStore((s) => s.updateLayoutMd);
-  const handleLayoutMdChangeFromHub = useCallback(
-    (next: string) => updateLayoutMd(projectId, next),
-    [updateLayoutMd, projectId]
-  );
 
   // Run standardisation ONCE when tokens are available. useRef prevents re-running
   // after standardisation completes (even if deps change). Adding tokens to deps
@@ -277,21 +271,19 @@ export function DesignSystemPanel({
       {/* Hub top-level tabs: Tokens / Assets / Context (Phase 2b/2c). */}
       <div className="sticky top-0 z-20 flex items-center gap-1 border-b border-[var(--studio-border)] bg-[var(--bg-app)] px-6 pt-2">
         {([
-          { key: "tokens", label: "Tokens", icon: Palette },
-          { key: "assets", label: "Assets", icon: ImageIcon },
-          { key: "context", label: "Context", icon: FileText },
-          { key: "editor", label: "Editor", icon: FileCode },
-        ] as const).map(({ key, label, icon: Icon }) => (
+          { key: "tokens", label: "Tokens" },
+          { key: "assets", label: "Assets" },
+          { key: "context", label: "Context" },
+        ] as const).map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setHubTab(key)}
-            className={`flex items-center gap-1.5 rounded-t-md px-3 py-2 text-xs font-medium transition-colors ${
+            className={`rounded-t-md px-3 py-2 text-xs font-medium transition-colors ${
               hubTab === key
                 ? "bg-[var(--bg-surface)] text-[var(--text-primary)] border border-b-0 border-[var(--studio-border)]"
                 : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
             }`}
           >
-            <Icon className="h-3.5 w-3.5" />
             {label}
           </button>
         ))}
@@ -409,20 +401,9 @@ export function DesignSystemPanel({
         </div>
       )}
 
-      {/* Editor hub tab content — inline Monaco so users can hand-edit
-          authored layout.md prose without leaving the hub. Derived blocks
-          are locked via Phase 4's decoration + edit guard. */}
-      {hubTab === "editor" && project && (
-        <div className="flex-1 overflow-hidden">
-          <EditorPanel
-            value={project.layoutMd ?? ""}
-            onChange={handleLayoutMdChangeFromHub}
-            projectId={projectId}
-            orgId={currentOrgId ?? undefined}
-            extractionData={extractionData}
-          />
-        </div>
-      )}
+      {/* Editor lives in the sidebar Editor view, not here — keeping the
+          hub focused on design system concerns (tokens / assets / context)
+          and avoiding duplicate Monaco mount points. */}
 
       {hubTab !== "tokens" ? null : null}
 
