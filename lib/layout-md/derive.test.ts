@@ -232,6 +232,46 @@ describe("renderAppendixA", () => {
     };
     expect(renderAppendixA(combined)).toContain("--bg: #fff; /* App bg — mode: light */");
   });
+
+  it("elides base64 data URIs that would otherwise bloat the appendix (TF6)", () => {
+    const bigBase64 = "iVBORw0KGgo" + "A".repeat(25_000);
+    const withImage: ExtractedTokens = {
+      ...fixtureTokens,
+      colors: [
+        token({
+          name: "coins-image",
+          value: `url("data:image/png;base64,${bigBase64}")`,
+          type: "color",
+        }),
+      ],
+    };
+    const rendered = renderAppendixA(withImage);
+    // Payload gone
+    expect(rendered).not.toContain(bigBase64);
+    // Type hint preserved so the AI still knows this is a PNG data URI
+    expect(rendered).toContain("data:image/png");
+    // Size marker visible
+    expect(rendered).toMatch(/<\d+(?:\.\d+)?KB elided>/);
+  });
+
+  it("leaves short values untouched even if they look like URLs", () => {
+    const shortUrl: ExtractedTokens = {
+      ...fixtureTokens,
+      colors: [token({ name: "logo", value: 'url("https://cdn.example.com/logo.svg")', type: "color" })],
+    };
+    expect(renderAppendixA(shortUrl)).toContain('url("https://cdn.example.com/logo.svg")');
+  });
+
+  it("elides very long non-URL values with a plain truncation", () => {
+    const longValue = "linear-gradient(" + "red, ".repeat(100) + "blue)";
+    const longGradient: ExtractedTokens = {
+      ...fixtureTokens,
+      colors: [token({ name: "rainbow", value: longValue, type: "color" })],
+    };
+    const rendered = renderAppendixA(longGradient);
+    expect(rendered).not.toContain(longValue);
+    expect(rendered).toMatch(/<\d+(?:\.\d+)?KB elided>/);
+  });
 });
 
 describe("deriveLayoutMd — Appendix A injection", () => {
