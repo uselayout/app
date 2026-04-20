@@ -181,28 +181,35 @@ export interface PipelineResult {
  * Also matches <span className="...rounded-full...">{initials}</span>.
  * Captures: (1) tag+attrs, (2) initials text, (3) size classes for reuse.
  */
+// Captures any 1-20 non-whitespace, non-angle-bracket character sequence as the
+// "initials" slot. Previously this was `[A-Za-z]{1,5}`, which silently skipped
+// emoji ("😊"), non-Latin names ("李明"), mixed alphanumerics ("JD1"), and any
+// first name longer than five letters — those divs rendered as empty circles.
 const AVATAR_INITIALS_RE =
-  /<(div|span)\s([^>]*?className=["'][^"']*rounded-full[^"']*["'][^>]*)>(?:\s*<span[^>]*>)?\s*([A-Za-z]{1,5})\s*(?:<\/span>\s*)?<\/\1>/gi;
+  /<(div|span)\s([^>]*?className=["'][^"']*rounded-full[^"']*["'][^>]*)>(?:\s*<span[^>]*>)?\s*([^\s<>]{1,20})\s*(?:<\/span>\s*)?<\/\1>/gi;
 
 /**
  * Convert avatar placeholders using initials (e.g. <div className="...rounded-full...">SC</div>)
  * into proper <img data-generate-image> tags so the image pipeline can process them.
+ *
+ * A position counter is appended to each prompt so that multiple avatars
+ * sharing the same initials (e.g. two "AA"s for Alex Adams + Amy Anderson)
+ * generate distinct images rather than collapsing to a single deduped URL.
  */
-function convertAvatarDivsToImgs(html: string): string {
+export function convertAvatarDivsToImgs(html: string): string {
   AVATAR_INITIALS_RE.lastIndex = 0;
+  let counter = 0;
   return html.replace(AVATAR_INITIALS_RE, (_fullMatch, _tag, attrs, initials) => {
-    // Extract className from the original element
+    counter += 1;
     const classMatch = attrs.match(/className=["']([^"']+)["']/i);
     const classes = classMatch?.[1] ?? "w-10 h-10 rounded-full object-cover";
-    // Ensure object-cover is present for img
     const imgClasses = classes.includes("object-cover") ? classes : `${classes} object-cover`;
-    // Remove layout classes that don't apply to img (flex, items-center, justify-center, bg-*)
     const cleanedClasses = imgClasses
       .replace(/\b(?:flex|inline-flex|items-center|justify-center|text-(?:xs|sm|base|lg|xl|\[[\d.]+\w+\])|font-\w+|bg-\[[^\]]+\]|bg-\w+-\d+)\b/g, "")
       .replace(/\s{2,}/g, " ")
       .trim();
 
-    return `<img data-generate-image="professional headshot portrait of a person, ${initials}" data-image-style="photo" data-image-ratio="1:1" alt="${initials}" className="${cleanedClasses}" />`;
+    return `<img data-generate-image="professional headshot portrait of person #${counter}, ${initials}" data-image-style="photo" data-image-ratio="1:1" alt="${initials}" className="${cleanedClasses}" />`;
   });
 }
 
