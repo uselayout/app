@@ -242,7 +242,7 @@ interface ProjectState {
   updateToken: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string, mode?: string) => void;
   renameToken: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string, mode?: string) => void;
   removeTokens: (id: string, tokenType: keyof ExtractedTokens, tokenNames: string[], mode?: string) => void;
-  addToken: (id: string, token: ExtractedToken, options?: { assignToRole?: { roleKey: string; standardName: string } }) => void;
+  addToken: (id: string, token: ExtractedToken, options?: { assignToRole?: { roleKey: string; standardName: string; mode?: string } }) => void;
   syncTokensFromLayoutMd: (id: string) => number;
   refreshProject: (id: string) => Promise<void>;
   deleteProject: (id: string) => void;
@@ -658,15 +658,18 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
             autoAssigned = { roleKey: match.roleKey, standardName: match.standardName };
           }
         }
-        const assignment = options?.assignToRole ?? autoAssigned;
+        const assignment: { roleKey: string; standardName: string; mode?: string } | null =
+          options?.assignToRole ?? autoAssigned;
         if (assignment && standardisation) {
-          const { roleKey, standardName } = assignment;
+          const { roleKey, standardName, mode } = assignment;
+          const key = assignmentKey(roleKey, mode);
           standardisation = {
             ...standardisation,
             assignments: {
               ...standardisation.assignments,
-              [roleKey]: {
+              [key]: {
                 roleKey,
+                mode,
                 originalName: token.name,
                 originalCssVariable: token.cssVariable,
                 value: token.value,

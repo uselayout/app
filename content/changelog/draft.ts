@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-curated-dark-mode",
+    title: "Curate light and dark tokens side by side",
+    description:
+      "The Design System page now has a mode toggle when your project includes both light and dark tokens. Switch between modes to assign different colours to the same role, and use \"Copy from Light\" to bootstrap dark from your existing light assignments. Exports and the AI-facing layout.md now carry per-mode data automatically.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-20",
+  },
+  {
     id: "2026-w17-screenshot-push-crash",
     title: "Screenshot push no longer crashes the Studio page",
     description:

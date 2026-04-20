@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Sun, Moon } from "lucide-react";
 import type { ExtractedToken, ProjectStandardisation, DesignSystemSnapshot, TokenType } from "@/lib/types";
 import {
   SCHEMA_CATEGORIES,
@@ -18,6 +18,7 @@ import { LayoutMdCompareModal } from "./LayoutMdCompareModal";
 import { AssignTokenPopover } from "./AssignTokenPopover";
 import { useProjectStore } from "@/lib/store/project";
 import { buildStandardName } from "@/lib/tokens/standard-schema";
+import { assignmentKey } from "@/lib/tokens/assignment-key";
 import { AddTokenForm } from "@/components/studio/AddTokenForm";
 
 const TOKEN_TYPE_FOR_CATEGORY: Record<StandardRoleCategory, TokenType> = {
@@ -62,6 +63,39 @@ export function CuratedTokenView({
   const addToken = useProjectStore((s) => s.addToken);
   const updateStandardisation = useProjectStore((s) => s.updateStandardisation);
 
+  // Mode awareness. Any project that extracted tokens tagged with a non-
+  // default mode (typically "dark") gets a mode toggle so users can curate
+  // each mode's role assignments independently. Projects without mode
+  // variants get the old single-view experience.
+  const availableModes = useMemo(() => {
+    const modes = new Set<string>();
+    for (const t of allTokens) {
+      if (t.mode) modes.add(t.mode);
+    }
+    // Also surface modes already present in assignments (e.g. dark-only kits
+    // where every dark token has been assigned and removed from the
+    // unassigned list).
+    for (const a of Object.values(assignments)) {
+      if (a.mode) modes.add(a.mode);
+    }
+    return [...modes].sort();
+  }, [allTokens, assignments]);
+  const hasModes = availableModes.length > 0;
+  const [activeMode, setActiveMode] = useState<string | undefined>(undefined);
+
+  // When activeMode changes, the set of "visible" assignments is the subset
+  // whose `.mode` matches. Default mode (undefined) shows assignments
+  // without a mode field — the legacy single-mode behaviour.
+  const visibleAssignments = useMemo(() => {
+    const filtered: ProjectStandardisation["assignments"] = {};
+    for (const [key, a] of Object.entries(assignments)) {
+      if ((a.mode ?? undefined) === activeMode) {
+        filtered[key] = a;
+      }
+    }
+    return filtered;
+  }, [assignments, activeMode]);
+
   const dismissAntiPattern = useCallback(
     (rule: string) => {
       const existing = standardisation.dismissedAntiPatterns ?? [];
@@ -89,9 +123,14 @@ export function CuratedTokenView({
     (
       roleKey: string,
       roleSuffix: string,
-      token: { name: string; cssVariable?: string; value: string; type?: string }
+      token: { name: string; cssVariable?: string; value: string; type?: string; mode?: string }
     ) => {
       const stdName = buildStandardName(standardisation.kitPrefix, roleSuffix);
+      // Target mode = whichever mode the user is curating right now. Falls
+      // back to the token's own mode tag if present (e.g. a dark-tagged
+      // token dragged onto an otherwise-empty light slot — which we still
+      // treat as a light-mode assignment; the token's mode is informational).
+      const targetMode = activeMode;
       // If the token isn't in extractionData yet (e.g. user typed a custom hex in the
       // popover), create it so it persists, exports, and appears in All Tokens.
       const existsInExtraction = allTokens.some(
@@ -115,14 +154,15 @@ export function CuratedTokenView({
             type: tokenType,
             category: "semantic",
             cssVariable: cssVar,
+            mode: token.mode,
           },
-          { assignToRole: { roleKey, standardName: stdName } }
+          { assignToRole: { roleKey, standardName: stdName, mode: targetMode } }
         );
         return;
       }
-      assignTokenToRole(projectId, roleKey, token.name, token.cssVariable, token.value, stdName);
+      assignTokenToRole(projectId, roleKey, token.name, token.cssVariable, token.value, stdName, targetMode);
     },
-    [projectId, standardisation.kitPrefix, assignTokenToRole, addToken, allTokens]
+    [projectId, standardisation.kitPrefix, assignTokenToRole, addToken, allTokens, activeMode]
   );
 
   // Track which category has the inline Add Token form open.
@@ -146,10 +186,37 @@ export function CuratedTokenView({
 
   const handleUnassignRole = useCallback(
     (roleKey: string) => {
-      unassignRole(projectId, roleKey);
+      unassignRole(projectId, roleKey, activeMode);
     },
-    [projectId, unassignRole]
+    [projectId, unassignRole, activeMode]
   );
+
+  // When the user switches to dark mode on a project that has no dark
+  // assignments yet, seeding them from the light-mode assignments is far
+  // less tedious than building each role manually. For each light
+  // assignment, prefer a same-name token whose `.mode` matches the target
+  // (so if the extractor captured --color-bg #fff light + #000 dark, dark
+  // mode starts with #000). Falls back to the light token when no dark
+  // twin exists — the user can then swap it manually.
+  const handleCopyFromDefault = useCallback(() => {
+    if (!activeMode) return;
+    const lightAssignments = Object.values(assignments).filter((a) => !a.mode);
+    for (const a of lightAssignments) {
+      const target = a.originalCssVariable ?? a.originalName;
+      const sameName = allTokens.filter((t) => (t.cssVariable ?? t.name) === target);
+      const token = sameName.find((t) => t.mode === activeMode) ?? sameName[0];
+      if (!token) continue;
+      assignTokenToRole(
+        projectId,
+        a.roleKey,
+        token.name,
+        token.cssVariable,
+        token.value,
+        a.standardName,
+        activeMode
+      );
+    }
+  }, [activeMode, assignments, allTokens, projectId, assignTokenToRole]);
 
   // Compare modal state
   const [compareData, setCompareData] = useState<{
@@ -164,21 +231,27 @@ export function CuratedTokenView({
     []
   );
 
-  // Build a lookup from role key to the actual token.
-  // Match by cssVariable/name only — NOT by value. The assignment's value field is
-  // a frozen snapshot from assign-time; if the token's value legitimately changes
-  // (parser correction, user edit, etc.) we still want the role to resolve.
+  // Build a lookup from role key to the actual token, scoped to the
+  // currently-visible mode. Match by cssVariable/name only — NOT by value —
+  // because assignment.value is a frozen snapshot from assign-time; if the
+  // underlying token's value legitimately changes (parser correction, user
+  // edit) we still want the role to resolve. When a dark-mode assignment
+  // points at a token whose mode-scoped twin exists, prefer the twin so the
+  // rendered swatch shows the dark value, not the light one.
   const roleTokenMap = useMemo(() => {
     const map = new Map<string, ExtractedToken>();
-    for (const [roleKey, assignment] of Object.entries(assignments)) {
+    for (const assignment of Object.values(visibleAssignments)) {
       const target = assignment.originalCssVariable ?? assignment.originalName;
-      const token = allTokens.find((t) => (t.cssVariable ?? t.name) === target);
+      const matches = allTokens.filter((t) => (t.cssVariable ?? t.name) === target);
+      // Prefer a token whose mode matches the active mode (if any).
+      const token =
+        matches.find((t) => (t.mode ?? undefined) === activeMode) ?? matches[0];
       if (token) {
-        map.set(roleKey, token);
+        map.set(assignment.roleKey, token);
       }
     }
     return map;
-  }, [assignments, allTokens]);
+  }, [visibleAssignments, allTokens, activeMode]);
 
   // Build the full pickable-tokens list for the assign popover.
   // Sources: extractionData tokens (primary) + standardisation.unassigned (anything
@@ -230,16 +303,20 @@ export function CuratedTokenView({
     return items;
   }, [allTokens, assignments, standardisation.unassigned]);
 
-  // Count assigned roles per category
+  // Count assigned roles per category — for the currently-visible mode only,
+  // so the badge ratios reflect what the user is actually curating.
   const categoryCounts = useMemo(() => {
     const counts: Record<string, { assigned: number; total: number }> = {};
+    const assignedRoleKeys = new Set(
+      Object.values(visibleAssignments).map((a) => a.roleKey)
+    );
     for (const cat of SCHEMA_CATEGORIES) {
       const roles = getRolesByCategory(cat.key);
-      const assigned = roles.filter((r) => assignments[r.key]).length;
+      const assigned = roles.filter((r) => assignedRoleKeys.has(r.key)).length;
       counts[cat.key] = { assigned, total: roles.length };
     }
     return counts;
-  }, [assignments]);
+  }, [visibleAssignments]);
 
   // Only show colour categories for now (the main value)
   const colourCategories: StandardRoleCategory[] = ["backgrounds", "text", "borders", "accent", "status"];
@@ -255,12 +332,60 @@ export function CuratedTokenView({
             Curated Design System
           </p>
           <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
-            {Object.values(assignments).length} tokens mapped to standard roles.
+            {Object.values(visibleAssignments).length} tokens mapped to standard roles
+            {activeMode ? ` for ${activeMode} mode` : ""}
+            {"."}
             {standardisation.unassigned.filter((u) => !u.hidden).length > 0 && (
               <> {standardisation.unassigned.filter((u) => !u.hidden).length} unassigned.</>
             )}
           </p>
         </div>
+        {/* When the user is curating a non-default mode and has no
+            assignments for it yet, offer a one-click bootstrap from the
+            light assignments. Mode-tagged tokens override light values
+            automatically where available. */}
+        {activeMode && Object.values(visibleAssignments).length === 0 &&
+          Object.values(assignments).some((a) => !a.mode) && (
+            <button
+              onClick={handleCopyFromDefault}
+              className="rounded-md border border-[var(--studio-border)] bg-[var(--bg-panel)] px-2.5 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+              title={`Start ${activeMode} assignments from the light set. Any token with a ${activeMode} variant uses that instead.`}
+            >
+              Copy from Light
+            </button>
+          )}
+        {/* Mode toggle — only rendered when the project has mode variants. */}
+        {hasModes && (
+          <div className="flex items-center rounded-md border border-[var(--studio-border)] bg-[var(--bg-panel)] p-0.5">
+            <button
+              onClick={() => setActiveMode(undefined)}
+              className={`flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium transition-colors ${
+                activeMode === undefined
+                  ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              }`}
+              title="Light / default mode"
+            >
+              <Sun className="h-3 w-3" />
+              Light
+            </button>
+            {availableModes.map((m) => (
+              <button
+                key={m}
+                onClick={() => setActiveMode(m)}
+                className={`flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium transition-colors ${
+                  activeMode === m
+                    ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                }`}
+                title={`${m} mode assignments`}
+              >
+                {m === "dark" ? <Moon className="h-3 w-3" /> : null}
+                <span className="capitalize">{m}</span>
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-2">
           {Object.values(assignments).filter((a) => a.confidence === "high").length > 0 && (
             <span className="rounded-full border border-[var(--status-success)]/20 bg-[var(--status-success)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--status-success)]">
@@ -317,7 +442,7 @@ export function CuratedTokenView({
             )}
             <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-4">
               {roles.map((role) => {
-                const assignment = assignments[role.key];
+                const assignment = visibleAssignments[assignmentKey(role.key, activeMode)];
                 const token = roleTokenMap.get(role.key);
 
                 if (assignment && token) {
