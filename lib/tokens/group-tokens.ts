@@ -31,8 +31,8 @@ function isComponentToken(name: string): boolean {
 
 interface GroupDef {
   label: string;
-  /** Match function — receives the lowercase token name (with --) */
-  match: (name: string) => boolean;
+  /** Match function — receives the full token so rules can inspect name, groupName, etc. */
+  match: (token: ExtractedToken) => boolean;
 }
 
 /**
@@ -43,17 +43,42 @@ function stripVendorPrefix(name: string): string {
   return name.replace(/^--(fides-overlay-|chakra-|mantine-|radix-|shadcn-|ant-|mui-)/, "--");
 }
 
+/**
+ * Text-hierarchy prefixes. These signal "colour applied to text of rank X",
+ * NOT "brand colour". Sites like wise.com define `--color-content-primary`
+ * (primary text, navy blue) — the word "primary" means first-rank text, not
+ * brand. The Brand rule must not claim these.
+ */
+const TEXT_HIERARCHY_PREFIXES = [
+  "content-", "text-", "heading-", "label-", "caption-",
+  "body-", "on-", "foreground-", "fg-",
+];
+
+function strippedSemanticName(n: string): string {
+  return stripVendorPrefix(n).replace(/^--/, "").replace(/^color-/, "");
+}
+
+function looksLikeTextHierarchy(n: string): boolean {
+  const stripped = strippedSemanticName(n);
+  return TEXT_HIERARCHY_PREFIXES.some((p) => stripped.startsWith(p));
+}
+
 const COLOR_GROUPS: GroupDef[] = [
   {
     label: "Primitives",
-    match: (n) => n.includes("primitive"),
+    match: (t) => (t.cssVariable ?? t.name).toLowerCase().includes("primitive"),
   },
   // Brand & Primary first — the most important tokens for identity
   {
     label: "Brand",
-    match: (n) => {
-      const s = stripVendorPrefix(n);
+    match: (t) => {
+      // Mined CTA tokens are explicitly tagged; they always land in Brand.
+      if (t.groupName === "Brand") return true;
+      const n = (t.cssVariable ?? t.name).toLowerCase();
       if (isComponentToken(n)) return false;
+      // Text-hierarchy tokens describe rank, not brand. Demote.
+      if (looksLikeTextHierarchy(n)) return false;
+      const s = stripVendorPrefix(n);
       // Named brand tokens (primary, secondary, tertiary, brand, accent)
       if (s.includes("primary") || s.includes("secondary") || s.includes("tertiary") || s.includes("brand") || s.includes("accent")) return true;
       // Single-word colour names (e.g. --coral, --midnight) — likely brand colours
@@ -65,7 +90,8 @@ const COLOR_GROUPS: GroupDef[] = [
   },
   {
     label: "Surfaces",
-    match: (n) => {
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
       const s = stripVendorPrefix(n);
       return !isComponentToken(n) &&
         (s.includes("background") || s.includes("-bg") || s.includes("surface") || s.includes("elevated") || s.includes("panel"));
@@ -73,15 +99,18 @@ const COLOR_GROUPS: GroupDef[] = [
   },
   {
     label: "Text",
-    match: (n) => {
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
+      if (isComponentToken(n)) return false;
+      if (looksLikeTextHierarchy(n)) return true;
       const s = stripVendorPrefix(n);
-      return !isComponentToken(n) &&
-        (s.includes("-text-") || s.endsWith("-text") || s.includes("font-color") || s.includes("label") || s.includes("heading") || s.includes("placeholder") || s.includes("caption"));
+      return s.includes("-text-") || s.endsWith("-text") || s.includes("font-color") || s.includes("placeholder");
     },
   },
   {
     label: "Borders",
-    match: (n) => {
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
       const s = stripVendorPrefix(n);
       return !isComponentToken(n) &&
         (s.includes("border") || s.includes("divider") || s.includes("outline") || s.includes("separator") || s.includes("stroke"));
@@ -89,88 +118,125 @@ const COLOR_GROUPS: GroupDef[] = [
   },
   {
     label: "Interactive",
-    match: (n) =>
-      !isComponentToken(n) &&
-      (n.includes("action") || n.includes("link") || n.includes("focus") || n.includes("selected") || n.includes("cta")),
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
+      return !isComponentToken(n) &&
+        (n.includes("action") || n.includes("link") || n.includes("focus") || n.includes("selected") || n.includes("cta"));
+    },
   },
   {
     label: "Status",
-    match: (n) => {
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
       const s = stripVendorPrefix(n);
       return s.includes("status") || s.includes("success") || s.includes("error") || s.includes("warning") || s.includes("info") || s.includes("danger") || s.includes("callout");
     },
   },
   {
     label: "Foreground",
-    match: (n) => n.includes("foreground"),
+    match: (t) => (t.cssVariable ?? t.name).toLowerCase().includes("foreground"),
   },
   {
     label: "Palette",
-    match: (n) => {
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
       const stripped = n.replace(/^--/, "");
       return /^(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|grey|zinc|neutral|stone|magenta|white|black|current)(-\d+)?$/.test(stripped);
     },
   },
   {
     label: "Components",
-    match: (n) => isComponentToken(n),
+    match: (t) => isComponentToken((t.cssVariable ?? t.name).toLowerCase()),
   },
 ];
 
 const TYPOGRAPHY_GROUPS: GroupDef[] = [
   {
     label: "Font Families",
-    match: (n) => n.includes("font-family") || n.includes("font-sans") || n.includes("font-serif") || n.includes("font-mono") || n.includes("font-display") || n.includes("font-body") || n.includes("font-code"),
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
+      return n.includes("font-family") || n.includes("font-sans") || n.includes("font-serif") || n.includes("font-mono") || n.includes("font-display") || n.includes("font-body") || n.includes("font-code");
+    },
   },
   {
     label: "Display Sizes",
-    match: (n) => n.includes("display") && (n.includes("size") || n.includes("font")),
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
+      return n.includes("display") && (n.includes("size") || n.includes("font"));
+    },
   },
   {
     label: "Heading Sizes",
-    match: (n) => n.includes("heading") && (n.includes("size") || n.includes("font")),
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
+      return n.includes("heading") && (n.includes("size") || n.includes("font"));
+    },
   },
   {
     label: "Body Sizes",
-    match: (n) => (n.includes("body") || n.includes("paragraph") || n.includes("description")) && (n.includes("size") || n.includes("font")),
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
+      return (n.includes("body") || n.includes("paragraph") || n.includes("description")) && (n.includes("size") || n.includes("font"));
+    },
   },
   {
     label: "Sizes",
-    match: (n) => n.includes("size") || n.includes("font-size"),
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
+      return n.includes("size") || n.includes("font-size");
+    },
   },
   {
     label: "Properties",
-    match: (n) => n.includes("weight") || n.includes("line-height") || n.includes("letter-spacing") || n.includes("tracking") || n.includes("leading"),
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
+      return n.includes("weight") || n.includes("line-height") || n.includes("letter-spacing") || n.includes("tracking") || n.includes("leading");
+    },
   },
 ];
 
 const SPACING_GROUPS: GroupDef[] = [
   {
     label: "Scale",
-    match: (n) => n.includes("space"),
+    match: (t) => (t.cssVariable ?? t.name).toLowerCase().includes("space"),
   },
   {
     label: "Layout",
-    match: (n) => n.includes("gap") || n.includes("padding") || n.includes("margin") || n.includes("inset"),
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
+      return n.includes("gap") || n.includes("padding") || n.includes("margin") || n.includes("inset");
+    },
   },
 ];
 
 const EFFECTS_GROUPS: GroupDef[] = [
   {
     label: "Shadows",
-    match: (n) => n.includes("shadow") || n.includes("elevation"),
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
+      return n.includes("shadow") || n.includes("elevation");
+    },
   },
   {
     label: "Z-Index",
-    match: (n) => n.includes("z-") || n.includes("z-index") || n.includes("layer"),
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
+      return n.includes("z-") || n.includes("z-index") || n.includes("layer");
+    },
   },
   {
     label: "Opacity",
-    match: (n) => n.includes("opacity") || n.includes("alpha"),
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
+      return n.includes("opacity") || n.includes("alpha");
+    },
   },
   {
     label: "Transitions",
-    match: (n) => n.includes("duration") || n.includes("ease") || n.includes("transition") || n.includes("delay"),
+    match: (t) => {
+      const n = (t.cssVariable ?? t.name).toLowerCase();
+      return n.includes("duration") || n.includes("ease") || n.includes("transition") || n.includes("delay");
+    },
   },
 ];
 
@@ -226,11 +292,10 @@ export function groupTokensByPurpose(
   }
 
   for (const token of cleanTokens) {
-    const name = (token.cssVariable ?? token.name).toLowerCase();
     let matched = false;
 
     for (const rule of rules) {
-      if (rule.match(name)) {
+      if (rule.match(token)) {
         groups.get(rule.label)!.push(token);
         matched = true;
         break;

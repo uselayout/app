@@ -334,7 +334,10 @@ function buildUserContent(
     sections.push(
       `--- BUTTON/CTA COLOUR CENSUS (background colours from all buttons on the page) ---\n` +
       `Use this to determine --color-primary. The most common non-white CTA background colour ` +
-      `with the largest element area is likely the brand primary, not necessarily the first button found.\n` +
+      `with the largest element area is likely the brand primary, not necessarily the first button found. ` +
+      `If a token named --brand-primary-cta is present in the extracted tokens, treat its value as the ` +
+      `canonical brand colour for the Quick Reference block — even when CSS vars like --color-content-primary ` +
+      `exist, those are usually text-hierarchy colours (primary text), not brand identity.\n` +
       JSON.stringify(data.buttonColourCensus, null, 2)
     );
   }

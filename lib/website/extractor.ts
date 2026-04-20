@@ -22,6 +22,7 @@ import {
   buildRadiusTokensFromCensus,
   buildShadowTokensFromCensus,
   buildMotionTokensFromCensus,
+  buildColourTokensFromCensus,
 } from "./scale-builder";
 import { partitionNoise } from "@/lib/extraction/noise";
 import { dedupeTokensByValue } from "@/lib/extraction/dedupe";
@@ -425,6 +426,20 @@ export async function extractFromWebsite({
       if (seenMotionKeys.has(key)) continue;
       motion.push(t);
       seenMotionKeys.add(key);
+    }
+
+    // Promote the dominant CTA colour(s) from the button census to a
+    // first-class Brand token. CSS vars like --color-content-primary often
+    // *describe* text hierarchy, not brand identity — on sites like wise.com
+    // the actual brand colour lives only in inline button styles. Dedupe by
+    // RGB value so we don't double-up if a CSS var already carries the same
+    // colour.
+    const minedBrandCtas = buildColourTokensFromCensus(buttonColourCensus);
+    const seenColourValues = new Set(colors.map((t) => t.value.trim().toLowerCase()));
+    for (const t of minedBrandCtas) {
+      if (seenColourValues.has(t.value.trim().toLowerCase())) continue;
+      colors.push(t);
+      seenColourValues.add(t.value.trim().toLowerCase());
     }
 
     // Extract font info from computed styles

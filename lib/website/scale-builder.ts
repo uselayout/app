@@ -221,3 +221,114 @@ export function buildMotionTokensFromCensus(census: {
 
   return out;
 }
+
+type ButtonColourCensus = Record<
+  string,
+  { count: number; elements: Array<{ tag: string; text: string; area: number; color: string }> }
+>;
+
+/** Parse a CSS rgb/rgba/#hex string into an {r,g,b} triple or null. */
+function parseColour(value: string): { r: number; g: number; b: number } | null {
+  const rgb = value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (rgb) return { r: parseInt(rgb[1]), g: parseInt(rgb[2]), b: parseInt(rgb[3]) };
+  const hex = value.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hex) {
+    const h = hex[1].length === 3
+      ? hex[1].split("").map((c) => c + c).join("")
+      : hex[1];
+    return {
+      r: parseInt(h.slice(0, 2), 16),
+      g: parseInt(h.slice(2, 4), 16),
+      b: parseInt(h.slice(4, 6), 16),
+    };
+  }
+  return null;
+}
+
+/** Distance in RGB space. Crude but sufficient to separate hues. */
+function colourDistance(
+  a: { r: number; g: number; b: number },
+  b: { r: number; g: number; b: number }
+): number {
+  return Math.sqrt((a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2);
+}
+
+function isNearWhite(c: { r: number; g: number; b: number }): boolean {
+  return c.r > 235 && c.g > 235 && c.b > 235;
+}
+function isNearBlack(c: { r: number; g: number; b: number }): boolean {
+  return c.r < 20 && c.g < 20 && c.b < 20;
+}
+function isGrey(c: { r: number; g: number; b: number }): boolean {
+  return Math.abs(c.r - c.g) + Math.abs(c.g - c.b) + Math.abs(c.r - c.b) < 30;
+}
+
+/**
+ * Mine the dominant CTA background colour(s) from the button colour census.
+ * The top scorer becomes `--brand-primary-cta` (marked `groupName: "Brand"`
+ * so the Colours panel surfaces it even when the CSS vars use semantic text
+ * names like `--color-content-primary`). A distinct secondary hue becomes
+ * `--brand-secondary-cta` if one exists.
+ */
+export function buildColourTokensFromCensus(census: ButtonColourCensus | undefined): ExtractedToken[] {
+  if (!census) return [];
+
+  type Scored = {
+    value: string;
+    rgb: { r: number; g: number; b: number };
+    count: number;
+    totalArea: number;
+    score: number;
+    sample: string;
+  };
+
+  const scored: Scored[] = [];
+  for (const [value, info] of Object.entries(census)) {
+    const rgb = parseColour(value);
+    if (!rgb) continue;
+    if (isNearWhite(rgb) || isNearBlack(rgb) || isGrey(rgb)) continue;
+    const totalArea = info.elements.reduce((sum, e) => sum + (e.area || 0), 0);
+    const score = info.count * Math.max(totalArea, 100);
+    const sampleText = info.elements.find((e) => e.text)?.text ?? info.elements[0]?.tag ?? "";
+    scored.push({ value, rgb, count: info.count, totalArea, score, sample: sampleText });
+  }
+  if (scored.length === 0) return [];
+
+  scored.sort((a, b) => b.score - a.score);
+
+  const primary = scored[0];
+  const secondary = scored.find((c) => colourDistance(c.rgb, primary.rgb) > 60);
+
+  const describe = (s: Scored, role: string): string => {
+    const preview = s.sample ? ` — e.g. "${s.sample.slice(0, 30)}"` : "";
+    return `${role} CTA background, dominant on ${s.count} button${s.count === 1 ? "" : "s"}${preview} /* mined from computed styles */`;
+  };
+
+  const out: ExtractedToken[] = [
+    {
+      name: "brand-primary-cta",
+      value: primary.value,
+      type: "color" as TokenType,
+      category: "semantic" as const,
+      cssVariable: "--brand-primary-cta",
+      groupName: "Brand",
+      originalName: `${primary.value} (button census)`,
+      description: describe(primary, "Primary"),
+    },
+  ];
+
+  if (secondary) {
+    out.push({
+      name: "brand-secondary-cta",
+      value: secondary.value,
+      type: "color" as TokenType,
+      category: "semantic" as const,
+      cssVariable: "--brand-secondary-cta",
+      groupName: "Brand",
+      originalName: `${secondary.value} (button census)`,
+      description: describe(secondary, "Secondary"),
+    });
+  }
+
+  return out;
+}

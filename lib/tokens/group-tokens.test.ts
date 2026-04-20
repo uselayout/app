@@ -42,7 +42,49 @@ describe('groupTokensByPurpose', () => {
     const labels = result.map((g) => g.label);
     expect(labels).toContain('Primitives');
     expect(labels).toContain('Surfaces');
-    expect(labels).toContain('Primary');
+    expect(labels).toContain('Brand');
+  });
+
+  it('demotes text-hierarchy tokens (content-*, text-*, on-*) from Brand to Text', () => {
+    const tokens = makeTokens([
+      '--color-content-primary',
+      '--color-content-secondary',
+      '--color-content-tertiary',
+      '--color-text-body',
+      '--color-on-accent',
+      '--color-background-screen',
+      '--color-surface',
+      '--color-border-neutral',
+    ]);
+    const result = groupTokensByPurpose(tokens, 'colors');
+    const brand = result.find((g) => g.label === 'Brand');
+    const text = result.find((g) => g.label === 'Text');
+    const brandNames = (brand?.tokens ?? []).map((t) => t.name);
+    const textNames = (text?.tokens ?? []).map((t) => t.name);
+    expect(brandNames).not.toContain('--color-content-primary');
+    expect(brandNames).not.toContain('--color-content-secondary');
+    expect(textNames).toContain('--color-content-primary');
+    expect(textNames).toContain('--color-text-body');
+    expect(textNames).toContain('--color-on-accent');
+  });
+
+  it('puts tokens with groupName="Brand" into the Brand group even without a brand-ish name', () => {
+    const tokens: ExtractedToken[] = [
+      { name: 'brand-primary-cta', value: 'rgb(159, 232, 112)', type: 'color', category: 'semantic', cssVariable: '--brand-primary-cta', groupName: 'Brand' },
+      ...makeTokens([
+        '--color-content-primary',
+        '--color-content-secondary',
+        '--color-background-screen',
+        '--color-surface',
+        '--color-border-neutral',
+        '--color-foo',
+        '--color-bar',
+      ]),
+    ];
+    const result = groupTokensByPurpose(tokens, 'colors');
+    const brand = result.find((g) => g.label === 'Brand');
+    expect(brand).toBeDefined();
+    expect(brand!.tokens.map((t) => t.cssVariable)).toContain('--brand-primary-cta');
   });
 
   it('classifies nav/button/card tokens as Components', () => {

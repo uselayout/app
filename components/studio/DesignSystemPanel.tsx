@@ -525,6 +525,7 @@ export function DesignSystemPanel({
             <ComponentsView
               extractedComponents={extractedComponents}
               scannedComponents={scannedComponents}
+              extractionSource={extractionData?.extractionSource}
             />
           )}
         </DesignSystemSection>}
