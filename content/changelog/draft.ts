@@ -324,4 +324,40 @@ export const draftEntries: ChangelogEntry[] = [
     category: "improved",
     date: "2026-04-20",
   },
+  {
+    id: "2026-w17-brand-cta-accent",
+    title: "Brand CTA colours now assigned to the Accent role",
+    description:
+      "Extracting a site whose primary brand colour lives in tokens named like --color-cta-primary-bg used to leave the Accent role empty — the matcher picked a blue link colour over the actual brand green. The matcher is now weighted so CTA, brand and primary tokens outrank interactive and link tokens for the Accent role. On-accent text and hover variants get their matching CTA counterparts too.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-appendix-base64-elide",
+    title: "Design system exports no longer carry base64 image data",
+    description:
+      "Some sites define tokens whose value is a large base64-encoded image data URI. These used to land verbatim in your layout.md's Appendix A, bloating the file and eating AI context window for zero useful signal. Big data URIs are now replaced with a size marker so the AI still sees that a token is an image but doesn't carry the payload.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-branding-card-redesign",
+    title: "Tidier Brand Assets list",
+    description:
+      "Brand asset cards in the Design System used to stretch two full-width dropdowns per asset, so even a handful of uploaded logos filled the viewport. Cards now use a single row with a small thumbnail, filename + size inline, compact slot and variant selectors, and a delete action on the right.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-derived-editor-polish",
+    title: "Clearer language on auto-generated sections of layout.md",
+    description:
+      "The Editor used to stamp auto-generated sections (Core Tokens, Appendix A, Brand Assets, etc.) with a dashed yellow/purple stripe and a lock emoji, with toast copy like 'is regenerated from project state'. Now a subtle boundary bar marks the range and the toast reads 'Core Tokens is built from your design system — typing here won't stick. Open the Tokens tab to edit it.'",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-20",
+  },
 ];
