@@ -56,7 +56,9 @@ const SECTION_HEADING_PATTERNS: Record<TokenType, RegExp> = {
   color: /^##\s+(?:\d+\.?\s+)?Colou?r/im,
   typography: /^##\s+(?:\d+\.?\s+)?Typography/im,
   spacing: /^##\s+(?:\d+\.?\s+)?Spacing/im,
-  radius: /^##\s+(?:\d+\.?\s+)?Spacing/im,
+  // Radius shares Spacing & Layout in the canonical template, but also matches
+  // a dedicated "## Radius" / "## Corner" / "## Rounded" heading if authored.
+  radius: /^##\s+(?:\d+\.?\s+)?(?:Spacing|Radius|Corner|Rounded)/im,
   effect: /^##\s+(?:\d+\.?\s+)?(?:Elevation|Effect|Depth|Shadow)/im,
   motion: /^##\s+(?:\d+\.?\s+)?Motion/im,
 };
