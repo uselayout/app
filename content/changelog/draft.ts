@@ -261,4 +261,22 @@ export const draftEntries: ChangelogEntry[] = [
     category: "improved",
     date: "2026-04-20",
   },
+  {
+    id: "2026-w17-orphan-sections-feed-ai",
+    title: "Brand assets, icons, context docs and scanned components now feed your AI",
+    description:
+      "Uploading brand logos, picking icon packs, attaching product-context documents, or scanning your codebase for components previously stored the data but never sent it to AI coding agents. All four now emit their own sections in your layout.md (Brand Assets, Icons, Component Inventory, Product Context), so MCP and the Explorer have access to the full context every time they generate.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-dark-mode-end-to-end",
+    title: "Dark mode works end-to-end in curated tokens",
+    description:
+      "Extracting a site with dark-mode tokens now flows cleanly through curation and into your design system exports. Assignments can carry a mode tag, the derived layout.md emits :root and [data-theme=\"dark\"] blocks (plus a prefers-color-scheme: dark twin), the exported tokens.json tags mode-scoped entries, and the Tailwind config picks up darkMode: [\"selector\", '[data-theme=\"dark\"]'] automatically when any mode variants exist.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-20",
+  },
 ];
