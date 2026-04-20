@@ -317,11 +317,11 @@ export const draftEntries: ChangelogEntry[] = [
   },
   {
     id: "2026-w17-design-system-hub",
-    title: "One page for tokens, assets, context and the editor",
+    title: "Design System page consolidates tokens, assets and context",
     description:
-      "The Design System page now has Tokens, Assets, Context and Editor sub-tabs so everything about your design system lives in one place. Icon packs, fonts, brand logos and product-context documents are accessible without hunting the sidebar, and you can hand-edit layout.md without changing pages.",
+      "The Design System page now has Tokens, Assets and Context sub-tabs. Design tokens, icon packs, fonts, brand logos and product-context documents all live in one place instead of scattered across separate sidebar tabs. The Editor stays where it is in the sidebar.",
     product: "studio",
-    category: "new",
+    category: "improved",
     date: "2026-04-20",
   },
 ];
