@@ -26,6 +26,15 @@ export const docsNavigation: DocNavSection[] = [
     ],
   },
   {
+    label: "Design System",
+    items: [
+      { title: "Design System Hub", href: "/docs/design-system" },
+      { title: "Branding & Assets", href: "/docs/branding" },
+      { title: "Product Context", href: "/docs/context-docs" },
+      { title: "Codebase Scanner", href: "/docs/scanner" },
+    ],
+  },
+  {
     label: "Integrations",
     items: [
       { title: "CLI & MCP Server", href: "/docs/cli" },

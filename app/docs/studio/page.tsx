@@ -138,6 +138,30 @@ export default function StudioPage() {
           overlay showing exactly what was capped and at what count. The
           extraction still completes with the data it captured.
         </Callout>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">Cancelling a run</h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            Long-running Figma or website extractions can be cancelled from the
+            progress overlay. Click <strong>Cancel</strong> to stop mid-way
+            rather than waiting for completion. Any partial data is discarded;
+            the project returns to its previous state.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">Starting from blank</h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            Extraction isn&apos;t mandatory. On the new-project screen, pick{" "}
+            <strong>Start blank</strong> to open an empty kit with all standard
+            sections. Add tokens, upload branding, attach context, then
+            generate layout.md when you&apos;re ready. See the{" "}
+            <Link href="/docs/design-system" className="text-gray-900 hover:underline">
+              Design System hub
+            </Link>{" "}
+            for the curated token workflow.
+          </p>
+        </div>
       </section>
 
       {/* Studio Workspace */}
@@ -198,8 +222,36 @@ export default function StudioPage() {
               natural-language instructions like{" "}
               <em>&quot;make buttons square instead of rounded&quot;</em> or{" "}
               <em>&quot;add a smaller button size variant&quot;</em> and Layout
-              will apply the changes directly to your layout.md. An undo button
-              appears after each edit so you can revert instantly if needed.
+              applies the changes directly to your layout.md. Edits are
+              surgical: only the lines that actually need to change are
+              rewritten, so untouched sections stay byte-identical and the
+              full-file &ldquo;Writing... 100 lines&rdquo; rewrites are gone.
+              An undo button appears after each edit so you can revert
+              instantly if needed.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              Design System hub
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              A dedicated page with Tokens, Assets, Context, and Editor
+              sub-tabs. This is the primary surface for curating extracted
+              tokens into canonical roles, uploading brand assets, and
+              attaching product context. Full walkthrough in the{" "}
+              <Link href="/docs/design-system" className="text-gray-900 hover:underline">
+                Design System Hub
+              </Link>{" "}
+              guide; the related{" "}
+              <Link href="/docs/branding" className="text-gray-900 hover:underline">
+                Branding &amp; Assets
+              </Link>{" "}
+              and{" "}
+              <Link href="/docs/context-docs" className="text-gray-900 hover:underline">
+                Product Context
+              </Link>{" "}
+              pages cover the other tabs.
             </p>
           </div>
 
@@ -253,6 +305,16 @@ export default function StudioPage() {
             covering hardcoded values, missing interactive states, semantic HTML,
             and accessibility attributes. Aim for 80+ before exporting to
             production.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">Rating variants</h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            Every variant card has thumbs up and thumbs down buttons. Ratings
+            are logged per-project and surfaced in the admin dashboard so the
+            team can see which prompts are producing strong results and which
+            are not. Use them freely; they feed back into prompt tuning.
           </p>
         </div>
 
@@ -371,6 +433,18 @@ export default function StudioPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Theme preference */}
+      <section className="space-y-3">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Theme preference</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The Studio UI itself supports <strong>light</strong>,{" "}
+          <strong>dark</strong>, and <strong>system</strong> modes (chosen in
+          the profile menu). The preference is separate from the design
+          system modes you&apos;re curating; it only affects the Studio
+          chrome, modals, dropdowns, and variant preview surfaces.
+        </p>
       </section>
 
       {/* Re-extraction and Diffing */}

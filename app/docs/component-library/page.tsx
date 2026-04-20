@@ -143,6 +143,22 @@ export default function ComponentLibraryPage() {
         </Callout>
       </section>
 
+      {/* Not the scanner */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Related: codebase-scanned components</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Saved components live in the Studio library and come from the
+          Explorer. Separately, the{" "}
+          <Link href="/docs/scanner" className="text-gray-900 hover:underline">
+            Codebase Scanner
+          </Link>{" "}
+          reads components already in your repository (React exports,
+          Storybook stories). Both sources are merged into the Components
+          view on the Design System page, so you see saved variants and
+          production components side by side.
+        </p>
+      </section>
+
       {/* Tips */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Tips</h2>

@@ -40,7 +40,7 @@ export default function FigmaPluginPage() {
           Download Figma Plugin (Alpha)
         </a>
         <p className="text-sm text-gray-500">
-          v0.2.6 &middot; 146 KB &middot; Requires Figma desktop app
+          v0.2.7 &middot; Requires Figma desktop app
         </p>
       </section>
 
@@ -112,7 +112,10 @@ export default function FigmaPluginPage() {
               One-click AI Kit export. Extracts all design tokens (colours,
               typography, spacing, effects, border radius) and components from
               the current file. Download as ZIP or push directly to Layout
-              Cloud.
+              Cloud. As of v0.2.7, Export also reads Figma Variables alongside
+              Styles (FLOAT variables classified by name into radius or
+              spacing), so files that use Variables instead of published
+              Styles produce a complete kit in one pass.
             </p>
           </div>
 
@@ -320,13 +323,13 @@ export default function FigmaPluginPage() {
 
         <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
           <h3 className="text-sm font-semibold text-[#0a0a0a]">
-            Why are Export and Variables separate?
+            Auto-generate after push
           </h3>
           <p className="text-sm text-gray-600 leading-relaxed">
-            When you create a project using the Export tab, it pushes Styles
-            (paint styles, text styles, effects) but not Variables. Variables
-            sync is a separate step in the Variables tab. We&apos;re merging
-            these into one step soon so everything comes through together.
+            When you push tokens from the plugin, Layout automatically
+            triggers layout.md synthesis server-side. Open the project in
+            the Studio and the generated layout.md is already waiting. No
+            need to click Generate manually.
           </p>
         </div>
       </section>

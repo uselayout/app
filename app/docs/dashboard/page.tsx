@@ -51,6 +51,10 @@ export default function DashboardPage() {
                   "Studio",
                   "Two-panel workspace for editing your layout.md and generating components with the Explorer.",
                 ],
+                [
+                  "Design System",
+                  "Per-project hub with Tokens, Assets, Context, and Editor sub-tabs. The curated view lives here.",
+                ],
               ].map(([page, purpose]) => (
                 <tr key={page} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-[#0a0a0a] whitespace-nowrap">
@@ -128,6 +132,35 @@ export default function DashboardPage() {
           Only Owners and Admins can access Settings. Members can view the
           dashboard pages but cannot modify organisation-level configuration.
         </Callout>
+      </section>
+
+      {/* Project-level surfaces */}
+      <section className="space-y-3">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Per-project surfaces</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The following surfaces live on the project (not in org Settings).
+          Open a project to access them:
+        </p>
+        <ul className="list-disc pl-6 space-y-2 text-gray-600">
+          <li>
+            <Link href="/docs/design-system" className="text-gray-900 hover:underline">
+              Design System hub
+            </Link>{" "}— Tokens, Assets, Context, and Editor sub-tabs.
+          </li>
+          <li>
+            <Link href="/docs/branding" className="text-gray-900 hover:underline">
+              Branding &amp; Assets
+            </Link>{" "}— logos, favicons, custom fonts.
+          </li>
+          <li>
+            <Link href="/docs/context-docs" className="text-gray-900 hover:underline">
+              Product Context
+            </Link>{" "}— brand voice and copy guidelines that feed into every Explorer generation.
+          </li>
+          <li>
+            Theme preference (light / dark / system) is per-user and lives in the profile menu in the sidebar.
+          </li>
+        </ul>
       </section>
 
       {/* Prev / Next */}

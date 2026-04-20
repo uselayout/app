@@ -237,7 +237,7 @@ export default function ApiKeysPage() {
               </tr>
               <tr>
                 <td className="px-4 py-2.5 text-gray-600">
-                  Explorer (Claude Opus 4.5)
+                  Explorer (Claude Opus 4.7)
                 </td>
                 <td className="px-4 py-2.5 text-gray-600">Anthropic API key</td>
                 <td className="px-4 py-2.5 text-gray-600">
