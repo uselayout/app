@@ -297,4 +297,31 @@ export const draftEntries: ChangelogEntry[] = [
     category: "improved",
     date: "2026-04-20",
   },
+  {
+    id: "2026-w17-monaco-derived-lock",
+    title: "Editor protects AI-generated sections of layout.md",
+    description:
+      "Sections that the system regenerates on every read (Core Tokens, Appendix A, Brand Assets, Icons, Component Inventory, Product Context) are now visually distinct in the Editor with a striped gutter and subtle background. Typing inside one is reverted with a toast pointing you to the right tab to edit that content — so you never lose work to a silent regeneration again.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-authored-prose-split",
+    title: "Existing projects auto-migrate to the authored-prose model",
+    description:
+      "Projects loaded after this release automatically split their layout.md into authored prose (what you wrote) and derived content (what the system generates). Nothing changes on screen, but the system now has a cleaner foundation to keep your prose intact when it regenerates the derived parts.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-design-system-hub",
+    title: "One page for tokens, assets, context and the editor",
+    description:
+      "The Design System page now has Tokens, Assets, Context and Editor sub-tabs so everything about your design system lives in one place. Icon packs, fonts, brand logos and product-context documents are accessible without hunting the sidebar, and you can hand-edit layout.md without changing pages.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-20",
+  },
 ];
