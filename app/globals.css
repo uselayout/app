@@ -217,6 +217,37 @@
   --sidebar-ring: rgba(0,0,0,0.15);
 }
 
+/* ===== LAYOUT.MD DERIVED-BLOCK DECORATIONS =====
+   Monaco applies these classes to lines inside CORE TOKENS, Appendix A,
+   and the four orphan sections so users see which regions are regenerated
+   by the derive engine and shouldn't be hand-edited. */
+.layout-md-derived-range {
+  background-color: rgba(224, 224, 230, 0.04);
+  /* Subtle tint — enough to notice, not enough to break readability. */
+}
+.light .layout-md-derived-range {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+.layout-md-derived-gutter {
+  width: 3px !important;
+  margin-left: 4px;
+  background: linear-gradient(to bottom, #e4f222 0%, #e4f222 50%, transparent 50%);
+  background-size: 3px 8px;
+  background-repeat: repeat-y;
+}
+.light .layout-md-derived-gutter {
+  background: linear-gradient(to bottom, #7c3aed 0%, #7c3aed 50%, transparent 50%);
+  background-size: 3px 8px;
+  background-repeat: repeat-y;
+}
+.layout-md-derived-margin::before {
+  content: "🔒";
+  position: absolute;
+  left: 2px;
+  font-size: 9px;
+  opacity: 0.4;
+}
+
 /* ===== FORCE DARK SCOPE =====
    Certain surfaces (auth modals, marketing overlays) must always render in
    dark theme regardless of the user's Studio theme preference. Applying

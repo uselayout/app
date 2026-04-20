@@ -11,6 +11,7 @@ import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import type { LayoutMdVersion } from "@/lib/supabase/layout-md-versions";
 import type { ExtractionResult } from "@/lib/types";
 import { DivergenceBanner } from "./DivergenceBanner";
+import { findDerivedRanges, rangeOverlapsDerived, type DerivedRange } from "@/lib/layout-md/derived-ranges";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -199,6 +200,55 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
     monaco.editor.defineTheme("studio-light", STUDIO_THEME_LIGHT);
     monaco.editor.setTheme(resolvedTheme === "light" ? "studio-light" : "studio-dark");
 
+    // Apply decorations once on mount and re-apply whenever the content
+    // changes (derived ranges shift with every edit in authored prose).
+    const model = editor.getModel();
+    if (model) {
+      applyDerivedDecorations(editor);
+
+      model.onDidChangeContent((e) => {
+        // Skip the change if we're programmatically reverting — the guard
+        // below fires its own model.pushEditOperations and we'd recurse.
+        if (revertingRef.current) return;
+
+        // Check each change against the current derived ranges. If any edit
+        // overlaps, revert by restoring the pre-change text at that spot.
+        const ranges = derivedRangesRef.current;
+        if (ranges.length > 0) {
+          const offendingChange = e.changes.find((c) => {
+            const hit = rangeOverlapsDerived(
+              c.range.startLineNumber,
+              c.range.endLineNumber,
+              ranges
+            );
+            return Boolean(hit);
+          });
+
+          if (offendingChange) {
+            const hit = rangeOverlapsDerived(
+              offendingChange.range.startLineNumber,
+              offendingChange.range.endLineNumber,
+              ranges
+            );
+            // Undo via editor stack — preserves cursor and undo history.
+            revertingRef.current = true;
+            try {
+              editor.trigger("derived-guard", "undo", null);
+            } finally {
+              revertingRef.current = false;
+            }
+            toast.info(
+              `${hit?.label ?? "That section"} is regenerated from project state. Edit in the ${hit?.editIn ?? "Tokens"} tab.`
+            );
+            return;
+          }
+        }
+
+        // Authored edit — recompute derived ranges and refresh decorations.
+        applyDerivedDecorations(editor);
+      });
+    }
+
     // Register colour provider — shows inline swatches with a picker in CSS blocks
     monaco.languages.registerColorProvider("markdown", {
       provideDocumentColors: (model: monacoType.editor.ITextModel) => {
@@ -286,6 +336,43 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
       monaco.editor.setTheme(resolvedTheme === "light" ? "studio-light" : "studio-dark");
     }
   }, [resolvedTheme]);
+
+  // Derived-block guard: the derive engine regenerates CORE TOKENS,
+  // Appendix A, Brand Assets, Icons, Component Inventory and Product
+  // Context on every read. Edits to those ranges in Monaco would be silently
+  // thrown away. Decorate the ranges as "derived" and revert edits that
+  // touch them so users never lose work without warning.
+  const derivedRangesRef = useRef<DerivedRange[]>([]);
+  const decorationsRef = useRef<string[]>([]);
+  const revertingRef = useRef(false);
+
+  const applyDerivedDecorations = useCallback((editor: monacoType.editor.IStandaloneCodeEditor) => {
+    const model = editor.getModel();
+    if (!model) return;
+    const ranges = findDerivedRanges(model.getValue());
+    derivedRangesRef.current = ranges;
+
+    const newDecorations: monacoType.editor.IModelDeltaDecoration[] = ranges.map((r) => ({
+      range: {
+        startLineNumber: r.startLine,
+        startColumn: 1,
+        endLineNumber: r.endLine,
+        endColumn: model.getLineMaxColumn(Math.min(r.endLine, model.getLineCount())),
+      },
+      options: {
+        isWholeLine: true,
+        className: "layout-md-derived-range",
+        linesDecorationsClassName: "layout-md-derived-gutter",
+        hoverMessage: [
+          { value: `**${r.label}**` },
+          { value: `This block is regenerated from project state on every read. Hand-edits here are overwritten — edit in the *${r.editIn}* tab instead.` },
+        ],
+        marginClassName: "layout-md-derived-margin",
+      },
+    }));
+
+    decorationsRef.current = editor.deltaDecorations(decorationsRef.current, newDecorations);
+  }, []);
 
   useEffect(() => {
     return () => {
