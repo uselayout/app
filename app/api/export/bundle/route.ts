@@ -10,6 +10,7 @@ import { generateTokensJson } from "@/lib/export/tokens-json";
 import { generateTailwindConfig } from "@/lib/export/tailwind-config";
 import { logEvent } from "@/lib/logging/platform-event";
 import { buildCuratedExtractedTokens } from "@/lib/tokens/curated-to-extracted";
+import { deriveLayoutMd } from "@/lib/layout-md/derive";
 import type { Project, ExportFormat, UploadedFont, BrandingAsset, ContextDocument } from "@/lib/types";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -51,6 +52,10 @@ const RequestSchema = z.object({
       addedAt: z.string(),
       pinned: z.boolean().optional(),
     })).optional(),
+    // Standardisation MUST be declared or Zod strips it — the exported
+    // layout.md runs through deriveLayoutMd, which uses it to regenerate
+    // the CORE TOKENS block.
+    standardisation: z.unknown().optional(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
     tokenCount: z.number().optional(),
@@ -93,10 +98,12 @@ export async function POST(request: NextRequest) {
   const { project, formats } = parsed.data;
   const zip = new JSZip();
 
-  // Always include layout.md
-  zip.file("layout.md", project.layoutMd);
-
   const proj = project as Project;
+
+  // Run the client-supplied project through the derive engine so the zipped
+  // layout.md matches what MCP and the Explorer see: fresh CORE TOKENS from
+  // the curated assignments, fresh Appendix A from the extracted tokens.
+  zip.file("layout.md", deriveLayoutMd(proj));
 
   for (const format of formats) {
     addFormatToZip(zip, format, proj);

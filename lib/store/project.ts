@@ -167,6 +167,13 @@ async function apiFetchProject(id: string, orgId: string): Promise<Project | nul
  * Update the curated token block in layout.md's Quick Reference section.
  * Replaces the CORE TOKENS css block with current standardisation assignments.
  *
+ * @deprecated For consumers of layout.md (MCP, Explorer, export) this is now
+ *   redundant — they all read through `deriveLayoutMd(project)` which
+ *   regenerates CORE TOKENS on every read. This function survives only so the
+ *   in-memory `project.layoutMd` stays current for the Monaco editor until
+ *   Phase 4 switches Monaco to read from derive directly. Once that lands,
+ *   delete this function and its call sites.
+ *
  * Exported for unit testing. The delimiter-tolerant regex lives in
  * `core-tokens-block.ts` because Claude synthesis, the curated sync, and
  * hand-authored docs have historically used different decorators around the

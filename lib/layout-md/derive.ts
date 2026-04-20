@@ -24,21 +24,26 @@ export interface DeriveOptions {
   skipAppendixA?: boolean;
 }
 
-export function deriveLayoutMd(project: Project, options: DeriveOptions = {}): string {
-  let md = project.layoutMd ?? "";
+// Minimum input shape the derive engine needs. Letting callers pass a partial
+// avoids forcing a full Project fetch (with explorations, snapshots, etc.)
+// every time someone reads layout.md via MCP or the Explorer.
+export type DeriveInput = Pick<Project, "layoutMd" | "standardisation" | "extractionData">;
 
-  if (!options.skipCoreTokens && project.standardisation) {
-    md = injectCoreTokensBlock(md, project.standardisation);
+export function deriveLayoutMd(input: DeriveInput, options: DeriveOptions = {}): string {
+  let md = input.layoutMd ?? "";
+
+  if (!options.skipCoreTokens && input.standardisation) {
+    md = injectCoreTokensBlock(md, input.standardisation);
   }
 
-  if (!options.skipAppendixA && project.extractionData?.tokens) {
-    md = injectAppendixA(md, project.extractionData.tokens);
+  if (!options.skipAppendixA && input.extractionData?.tokens) {
+    md = injectAppendixA(md, input.extractionData.tokens);
   }
 
   // Phase 3 will add:
-  //   md = injectIconsBlock(md, project.iconPacks);
-  //   md = injectBrandAssetsSection(md, project.brandingAssets);
-  //   md = injectProductContextSection(md, project.contextDocuments);
+  //   md = injectIconsBlock(md, input.iconPacks);
+  //   md = injectBrandAssetsSection(md, input.brandingAssets);
+  //   md = injectProductContextSection(md, input.contextDocuments);
 
   return md;
 }

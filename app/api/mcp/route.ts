@@ -6,6 +6,8 @@ import { getComponentBySlug, getComponentsByOrg } from "@/lib/supabase/component
 import { generateTokensCss } from "@/lib/export/tokens-css";
 import { generateTokensJson } from "@/lib/export/tokens-json";
 import { supabase } from "@/lib/supabase/client";
+import { rowToProject } from "@/lib/supabase/db";
+import { deriveLayoutMd } from "@/lib/layout-md/derive";
 
 import { logEvent } from "@/lib/logging/platform-event";
 import { summariseStorybookMetadata } from "@/lib/claude/scanned-component-prompt";
@@ -30,50 +32,39 @@ const McpRequestSchema = z.object({
 
 // ─── Tool Handlers ───────────────────────────────────────────────────────────
 
+async function fetchProjectForDerive(orgId: string, projectId: string | null) {
+  const base = supabase
+    .from("layout_projects")
+    .select("*")
+    .eq("org_id", orgId);
+  const query = projectId
+    ? base.eq("id", projectId)
+    : base.order("updated_at", { ascending: false }).limit(1);
+  const { data, error } = await query.single();
+  if (error || !data) return null;
+  return rowToProject(data as Parameters<typeof rowToProject>[0]);
+}
+
 async function handleGetDesignSystem(
   orgId: string,
   params: Record<string, unknown>
 ) {
   const projectId = typeof params.projectId === "string" ? params.projectId : null;
 
-  if (projectId) {
-    const { data, error } = await supabase
-      .from("layout_projects")
-      .select("id, name, layout_md")
-      .eq("id", projectId)
-      .eq("org_id", orgId)
-      .single();
-
-    if (error || !data) {
-      return { error: "Project not found or does not belong to this organisation" };
-    }
-
+  const project = await fetchProjectForDerive(orgId, projectId);
+  if (!project) {
     return {
-      result: {
-        layoutMd: data.layout_md as string,
-        projectName: data.name as string,
-        projectId: data.id as string,
-      },
+      error: projectId
+        ? "Project not found or does not belong to this organisation"
+        : "No projects found for this organisation",
     };
-  }
-
-  const { data, error } = await supabase
-    .from("layout_projects")
-    .select("id, name, layout_md")
-    .eq("org_id", orgId)
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .single();
-
-  if (error || !data) {
-    return { error: "No projects found for this organisation" };
   }
 
   return {
     result: {
-      layoutMd: data.layout_md as string,
-      projectName: data.name as string,
-      projectId: data.id as string,
+      layoutMd: deriveLayoutMd(project),
+      projectName: project.name,
+      projectId: project.id,
     },
   };
 }
@@ -126,30 +117,15 @@ async function handleGetDesignSection(
   }
 
   const projectId = typeof params.projectId === "string" ? params.projectId : null;
+  const project = await fetchProjectForDerive(orgId, projectId);
+  if (!project) return { error: "No project with layout.md found" };
 
-  let query = supabase
-    .from("layout_projects")
-    .select("id, name, layout_md")
-    .eq("org_id", orgId)
-    .not("layout_md", "is", null);
-
-  if (projectId) {
-    query = query.eq("id", projectId);
-  } else {
-    query = query.order("updated_at", { ascending: false }).limit(1);
-  }
-
-  const { data, error } = await query.single();
-  if (error || !data) {
-    return { error: "No project with layout.md found" };
-  }
-
-  const layoutMd = data.layout_md as string;
-  const sectionContent = extractSection(layoutMd, pattern);
+  const derivedMd = deriveLayoutMd(project);
+  const sectionContent = extractSection(derivedMd, pattern);
 
   if (!sectionContent) {
     return {
-      error: `Section "${sectionName}" not found in layout.md for project "${data.name as string}"`,
+      error: `Section "${sectionName}" not found in layout.md for project "${project.name}"`,
     };
   }
 
@@ -157,8 +133,8 @@ async function handleGetDesignSection(
     result: {
       section: sectionName,
       content: sectionContent,
-      projectName: data.name as string,
-      projectId: data.id as string,
+      projectName: project.name,
+      projectId: project.id,
     },
   };
 }
@@ -179,15 +155,8 @@ async function handleGetComponentWithContext(
     return { error: `Component "${slug}" not found` };
   }
 
-  // Fetch design tokens from latest project to cross-reference
-  const { data: projectData } = await supabase
-    .from("layout_projects")
-    .select("extraction_data, layout_md")
-    .eq("org_id", orgId)
-    .not("extraction_data", "is", null)
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .single();
+  // Fetch latest project for token cross-reference + derived layout.md.
+  const project = await fetchProjectForDerive(orgId, null);
 
   // Build token context: resolve actual values for tokens this component uses.
   // Follows the `reference` chain so primitive-to-semantic aliases return the
@@ -200,42 +169,41 @@ async function handleGetComponentWithContext(
     aliasChain?: string[];
     partial?: boolean;
   }> = [];
-  if (projectData?.extraction_data && component.tokensUsed.length > 0) {
-    const extraction = projectData.extraction_data as ExtractionResult;
-    if (extraction.tokens) {
-      const allTokens = [
-        ...extraction.tokens.colors,
-        ...extraction.tokens.typography,
-        ...extraction.tokens.spacing,
-        ...extraction.tokens.radius,
-        ...extraction.tokens.effects,
-      ];
+  if (project?.extractionData?.tokens && component.tokensUsed.length > 0) {
+    const tokens = project.extractionData.tokens;
+    const allTokens = [
+      ...tokens.colors,
+      ...tokens.typography,
+      ...tokens.spacing,
+      ...tokens.radius,
+      ...tokens.effects,
+    ];
 
-      for (const tokenVar of component.tokensUsed) {
-        const found = allTokens.find((t) => t.cssVariable === tokenVar);
-        if (!found) continue;
-        const resolved = resolveTokenAlias(found, allTokens);
-        tokenContext.push({
-          variable: tokenVar,
-          value: resolved.resolvedValue,
-          type: found.type,
-          ...(resolved.isAlias ? { isAlias: true, aliasChain: resolved.chain } : {}),
-          ...(resolved.partial ? { partial: true } : {}),
-        });
-      }
+    for (const tokenVar of component.tokensUsed) {
+      const found = allTokens.find((t) => t.cssVariable === tokenVar);
+      if (!found) continue;
+      const resolved = resolveTokenAlias(found, allTokens);
+      tokenContext.push({
+        variable: tokenVar,
+        value: resolved.resolvedValue,
+        type: found.type,
+        ...(resolved.isAlias ? { isAlias: true, aliasChain: resolved.chain } : {}),
+        ...(resolved.partial ? { partial: true } : {}),
+      });
     }
   }
 
-  // Extract relevant design guidelines from layout.md
+  // Extract relevant design guidelines from the *derived* layout.md so that
+  // regenerated blocks (e.g. fresh CORE TOKENS) are visible to component
+  // mention searches.
   let usageGuidelines: string | null = null;
-  if (projectData?.layout_md) {
-    const layoutMd = projectData.layout_md as string;
-    // Search for component name mentions in layout.md
+  if (project) {
+    const derivedMd = deriveLayoutMd(project);
     const componentPattern = new RegExp(
       `(?:^|\\n).*${component.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}.*(?:\\n|$)`,
       "gi"
     );
-    const mentions = layoutMd.match(componentPattern);
+    const mentions = derivedMd.match(componentPattern);
     if (mentions && mentions.length > 0) {
       usageGuidelines = mentions.join("\n").trim();
     }
@@ -425,19 +393,12 @@ async function handleCheckCompliance(
 
   const issues: Array<{ rule: string; message: string; severity: "error" | "warning" }> = [];
 
-  // Fetch project extraction data up front — several rules use it.
-  const { data: projectDataForPreChecks } = await supabase
-    .from("layout_projects")
-    .select("extraction_data, layout_md")
-    .eq("org_id", orgId)
-    .not("extraction_data", "is", null)
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .single();
-  const extractionForPreChecks = projectDataForPreChecks?.extraction_data
-    ? (projectDataForPreChecks.extraction_data as ExtractionResult)
-    : null;
-  const layoutMdForChecks = (projectDataForPreChecks?.layout_md ?? "") as string;
+  // Fetch project up front — several rules use extraction data, and the
+  // dark-mode check runs against the *derived* layout.md so that the latest
+  // curated tokens are visible even when the persisted layoutMd is stale.
+  const project = await fetchProjectForDerive(orgId, null);
+  const extractionForPreChecks = project?.extractionData ?? null;
+  const layoutMdForChecks = project ? deriveLayoutMd(project) : "";
 
   // Normalise hex to long-form lowercase so #fff and #FFFFFF compare equal.
   const normHex = (h: string) => {

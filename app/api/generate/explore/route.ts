@@ -11,7 +11,8 @@ import { getModelById, getDefaultModel, getModelCreditCost } from "@/lib/ai/mode
 import type { AiMode } from "@/lib/types/billing";
 import { AI_MODELS, BYOK_ONLY_MODELS, DEFAULT_EXPLORE_MODEL } from "@/lib/types";
 import type { AiModelId } from "@/lib/types";
-import { fetchProjectLayoutMd } from "@/lib/supabase/db";
+import { fetchProjectById } from "@/lib/supabase/db";
+import { deriveLayoutMd } from "@/lib/layout-md/derive";
 
 const RequestSchema = z.object({
   prompt: z.string().min(1),
@@ -71,21 +72,25 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: `Unknown model: ${modelId}` }, { status: 400 });
   }
 
-  // Prefer the server-side copy of layout.md when we have a projectId, to
-  // prevent a stale Zustand/prop snapshot from being used when the user edits
-  // in Monaco and immediately clicks Generate. Falls back to the client payload
-  // if the project isn't found (projectless playground uses).
+  // Always derive layout.md server-side when we have a projectId. This
+  // regenerates the CORE TOKENS block from the latest curated assignments
+  // and Appendix A from the latest tokens — beating any stale Zustand/prop
+  // snapshot the client might have sent. Falls back to the client payload
+  // for projectless playground use.
   let effectiveLayoutMd = layoutMd;
   if (parsed.data.projectId) {
-    const fresh = await fetchProjectLayoutMd(parsed.data.projectId);
-    if (fresh && fresh.layoutMd && fresh.layoutMd.trim().length > 0) {
-      const lengthDelta = Math.abs(fresh.layoutMd.length - layoutMd.length);
-      if (lengthDelta > 100) {
-        console.log(
-          `[explore] Using server layout.md (client delta: ${lengthDelta} chars, project ${parsed.data.projectId})`
-        );
+    const fresh = await fetchProjectById(parsed.data.projectId);
+    if (fresh) {
+      const derived = deriveLayoutMd(fresh);
+      if (derived.trim().length > 0) {
+        const lengthDelta = Math.abs(derived.length - layoutMd.length);
+        if (lengthDelta > 100) {
+          console.log(
+            `[explore] Using server-derived layout.md (client delta: ${lengthDelta} chars, project ${parsed.data.projectId})`
+          );
+        }
+        effectiveLayoutMd = derived;
       }
-      effectiveLayoutMd = fresh.layoutMd;
     }
   }
 
