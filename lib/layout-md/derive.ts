@@ -165,6 +165,27 @@ function injectCoreTokensBlock(md: string, standardisation: ProjectStandardisati
 
 const APPENDIX_A_SECTION_REGEX = /^## Appendix A[^\n]*\n[\s\S]*?(?=^## |$(?![\s\S]))/m;
 
+// Token values longer than this get elided in Appendix A. Very long values
+// are almost always base64 data URIs (image/png, image/svg+xml) that add zero
+// AI signal but silently eat context window and bloat the exported
+// layout.md. 200 chars is a conservative cap: genuine CSS values (gradients,
+// shadows, long font stacks) almost always fit, but a 27KB base64 PNG does
+// not. The underlying extraction data is kept intact — only the rendered
+// appendix strips the payload.
+const APPENDIX_VALUE_MAX_CHARS = 200;
+
+function elideTokenValue(value: string): string {
+  if (value.length <= APPENDIX_VALUE_MAX_CHARS) return value;
+  // Detect url("data:...") so we can keep the type hint (image/png / svg+xml
+  // etc.) visible to the AI even when we drop the payload.
+  const dataUrlMatch = value.match(/^url\((["']?)(data:[^;,]+)[;,]/i);
+  const sizeKb = (value.length / 1024).toFixed(1);
+  if (dataUrlMatch) {
+    return `url(${dataUrlMatch[1]}${dataUrlMatch[2]}; <${sizeKb}KB elided>${dataUrlMatch[1]})`;
+  }
+  return `${value.slice(0, 80).trimEnd()}… <${sizeKb}KB elided>`;
+}
+
 export function renderAppendixA(tokens: ExtractedTokens): string {
   const lines: string[] = [];
   const emitCategory = (label: string, toks: ExtractedToken[]) => {
@@ -178,7 +199,7 @@ export function renderAppendixA(tokens: ExtractedTokens): string {
         t.mode ? `mode: ${t.mode}` : null,
       ].filter((s): s is string => Boolean(s));
       const comment = trailing.length > 0 ? ` /* ${trailing.join(" — ")} */` : "";
-      lines.push(`${cssVar}: ${t.value};${comment}`);
+      lines.push(`${cssVar}: ${elideTokenValue(t.value)};${comment}`);
     }
   };
 
