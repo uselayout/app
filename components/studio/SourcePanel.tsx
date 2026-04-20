@@ -594,10 +594,16 @@ function TokensTab({
   const updateToken = useProjectStore((s) => s.updateToken);
   const renameToken = useProjectStore((s) => s.renameToken);
   const addToken = useProjectStore((s) => s.addToken);
+  const pluginTokensPushedAt = useProjectStore(
+    (s) => s.projects.find((p) => p.id === projectId)?.pluginTokensPushedAt
+  );
   const [adding, setAdding] = useState<string | null>(null);
 
   const allTokensFlat = useMemo(() => flattenTokens(tokens), [tokens]);
-  const showFigmaCallout = sourceType === "figma" && Object.keys(cssVariables).length < 15;
+  const showFigmaCallout =
+    sourceType === "figma" &&
+    Object.keys(cssVariables).length < 15 &&
+    !pluginTokensPushedAt;
 
   const [modeFilter, setModeFilter] = useState<string | null>(null);
 

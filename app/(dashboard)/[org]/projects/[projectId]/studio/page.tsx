@@ -179,6 +179,7 @@ export default function StudioPage({
   const { runExtraction, abort: abortExtraction } = useExtraction();
   const resetExtraction = useExtractionStore((s) => s.resetExtraction);
   const extractionStarted = useRef(false);
+  const autoGenerateStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
   const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved" | "design-system">("editor");
   const [showSourcePanel, setShowSourcePanel] = useState(true);
@@ -255,6 +256,24 @@ export default function StudioPage({
 
     runExtraction(project, pat ?? undefined);
   }, [id, project, runExtraction]);
+
+  // Auto-generate layout.md after plugin push (?auto-generate=1)
+  useEffect(() => {
+    if (autoGenerateStarted.current) return;
+    if (searchParams.get("auto-generate") !== "1") return;
+    if (!project || hydrating) return;
+    if (!project.extractionData?.tokens) return;
+    if (project.layoutMd && project.layoutMd.length > 0) return;
+
+    autoGenerateStarted.current = true;
+
+    // Strip the flag so refresh/revisit doesn't re-fire
+    const url = new URL(window.location.href);
+    url.searchParams.delete("auto-generate");
+    window.history.replaceState({}, "", url.toString());
+
+    handleRegenerateLayoutMd();
+  }, [searchParams, project, hydrating, handleRegenerateLayoutMd]);
 
   const handleReExtract = useCallback(() => {
     if (!project) return;

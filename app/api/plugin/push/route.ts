@@ -136,6 +136,7 @@ export async function POST(request: Request) {
   // Update extraction data and token count
   const updatedProject: Project = {
     ...project,
+    sourceType: "figma",
     tokenCount,
     sourceUrl: fileKey ?? project.sourceUrl,
     pluginTokensPushedAt: new Date().toISOString(),
