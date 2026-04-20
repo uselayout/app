@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useMemo, useState, useEffect } from "react";
-import { X, Sparkles } from "lucide-react";
+import { X, Sparkles, Palette, Image as ImageIcon, FileText } from "lucide-react";
 import type { ExtractionResult, ExtractedToken } from "@/lib/types";
 import { useProjectStore } from "@/lib/store/project";
 import { DesignSystemSection } from "./design-system/DesignSystemSection";
@@ -15,6 +15,9 @@ import { ComponentsView } from "./design-system/ComponentsView";
 import { CuratedTokenView } from "./design-system/CuratedTokenView";
 import { FontManager } from "./FontManager";
 import { AddTokenForm } from "./AddTokenForm";
+import { IconPackSelector } from "./IconPackSelector";
+import { BrandingTab } from "./BrandingTab";
+import { ContextDocsTab } from "./ContextDocsTab";
 import { useOrgStore } from "@/lib/store/organization";
 import { Plus } from "lucide-react";
 import { standardiseTokens } from "@/lib/tokens/standardise";
@@ -78,6 +81,15 @@ export function DesignSystemPanel({
   const [viewMode, setViewMode] = useState<"curated" | "all">(
     hasStandardisation ? "curated" : "all"
   );
+
+  // Top-level hub section: Tokens (current Curated/All view), Assets
+  // (Icons + Fonts + Branding), Context (product-context documents). Adding
+  // these here consolidates the Source Panel's scattered tabs so users have
+  // one place to edit the design system. Source Panel stays functional for
+  // backwards compatibility — it's still mounted in the parent layout — but
+  // everything you need now lives inside this hub.
+  const [hubTab, setHubTab] = useState<"tokens" | "assets" | "context">("tokens");
+  const currentOrgId = useOrgStore((s) => s.currentOrgId);
 
   // Run standardisation ONCE when tokens are available. useRef prevents re-running
   // after standardisation completes (even if deps change). Adding tokens to deps
@@ -256,8 +268,32 @@ export function DesignSystemPanel({
 
   return (
     <div className="flex h-full flex-col bg-[var(--bg-app)]">
-      {/* Section nav */}
-      <div className="sticky top-0 z-10 flex items-center gap-1 border-b border-[var(--studio-border)] bg-[var(--bg-app)] px-6 py-2">
+      {/* Hub top-level tabs: Tokens / Assets / Context (Phase 2b/2c). */}
+      <div className="sticky top-0 z-20 flex items-center gap-1 border-b border-[var(--studio-border)] bg-[var(--bg-app)] px-6 pt-2">
+        {([
+          { key: "tokens", label: "Tokens", icon: Palette },
+          { key: "assets", label: "Assets", icon: ImageIcon },
+          { key: "context", label: "Context", icon: FileText },
+        ] as const).map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setHubTab(key)}
+            className={`flex items-center gap-1.5 rounded-t-md px-3 py-2 text-xs font-medium transition-colors ${
+              hubTab === key
+                ? "bg-[var(--bg-surface)] text-[var(--text-primary)] border border-b-0 border-[var(--studio-border)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tokens-tab section nav (curated / all toggle + section jump). Only
+          visible when the user is on the Tokens hub tab. */}
+      {hubTab === "tokens" && (
+      <div className="sticky top-[41px] z-10 flex items-center gap-1 border-b border-[var(--studio-border)] bg-[var(--bg-app)] px-6 py-2">
         {/* Curated / All toggle */}
         <div className="mr-2 flex items-center rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-0.5">
           <button
@@ -321,9 +357,55 @@ export function DesignSystemPanel({
           );
         })}
       </div>
+      )}
+
+      {/* Assets hub tab content */}
+      {hubTab === "assets" && (
+        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-8">
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">Icon packs</h3>
+            <IconPackSelector projectId={projectId} />
+          </div>
+          {projectId && (
+            <div>
+              <h3 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">Fonts</h3>
+              <FontManager
+                projectId={projectId}
+                orgId={currentOrgId ?? undefined}
+                extractedFonts={extractionData?.fonts ?? []}
+                uploadedFonts={project?.uploadedFonts ?? []}
+                typographyTokens={tokens?.typography}
+              />
+            </div>
+          )}
+          {projectId && currentOrgId && (
+            <div>
+              <h3 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">Brand assets</h3>
+              <BrandingTab
+                projectId={projectId}
+                orgId={currentOrgId}
+                assets={project?.brandingAssets ?? []}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Context hub tab content */}
+      {hubTab === "context" && projectId && currentOrgId && (
+        <div className="flex-1 overflow-y-auto px-8 py-6">
+          <ContextDocsTab
+            projectId={projectId}
+            orgId={currentOrgId}
+            documents={project?.contextDocuments ?? []}
+          />
+        </div>
+      )}
+
+      {hubTab !== "tokens" ? null : null}
 
       {/* Editing guidance */}
-      {!guidanceDismissed && (
+      {hubTab === "tokens" && !guidanceDismissed && (
         <div className="flex items-center gap-3 border-b border-[var(--studio-border)] bg-[var(--bg-panel)] px-8 py-2.5">
           <p className="flex-1 text-xs text-[var(--text-muted)]">
             <span className="text-[var(--text-secondary)]">Quick edits:</span> click any value to edit, click swatches to pick colours, double-click names to rename.{" "}
@@ -346,7 +428,8 @@ export function DesignSystemPanel({
         </div>
       )}
 
-      {/* Scrollable content */}
+      {/* Scrollable content — only when Tokens hub tab is active */}
+      {hubTab === "tokens" && (
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-6">
         {/* Curated view */}
         {viewMode === "curated" && hasStandardisation && (
@@ -540,6 +623,7 @@ export function DesignSystemPanel({
           </DesignSystemSection>
         )}
       </div>
+      )}
     </div>
   );
 }
