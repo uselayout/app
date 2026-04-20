@@ -68,13 +68,10 @@ function TypographySpecimenRow({
 
   const specimenStyle: React.CSSProperties = {};
   if (isFontSize && numericValue) {
-    const unit = token.value.match(/(px|rem|em|%|vh|vw)/)?.[1] || "px";
-    // Preview cap — keeps rows usable without scroll. The numeric label
-    // next to each row stays authoritative; the specimen is just a visual
-    // guide and may be truncated for display sizes above 96px.
-    const maxVal = unit === "rem" || unit === "em" ? 6 : 96;
-    const capped = Math.min(numericValue, maxVal);
-    specimenStyle.fontSize = `${capped}${unit}`;
+    specimenStyle.fontSize = token.value;
+    // Tight line-height keeps the row exactly as tall as the glyphs —
+    // inheriting 1.5 would add ~80px of vertical padding on a 160px size.
+    specimenStyle.lineHeight = "1";
   } else if (isFontFamily) {
     specimenStyle.fontFamily = token.value;
   } else if (isFontWeight && numericValue) {
