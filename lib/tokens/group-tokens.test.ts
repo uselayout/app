@@ -41,8 +41,8 @@ describe('groupTokensByPurpose', () => {
     const result = groupTokensByPurpose(tokens, 'colors');
     const labels = result.map((g) => g.label);
     expect(labels).toContain('Primitives');
-    expect(labels).toContain('Surfaces');
-    expect(labels).toContain('Brand');
+    expect(labels).toContain('Backgrounds');
+    expect(labels).toContain('Accent');
   });
 
   it('demotes text-hierarchy tokens (content-*, text-*, on-*) from Brand to Text', () => {
@@ -57,7 +57,7 @@ describe('groupTokensByPurpose', () => {
       '--color-border-neutral',
     ]);
     const result = groupTokensByPurpose(tokens, 'colors');
-    const brand = result.find((g) => g.label === 'Brand');
+    const brand = result.find((g) => g.label === 'Accent');
     const text = result.find((g) => g.label === 'Text');
     const brandNames = (brand?.tokens ?? []).map((t) => t.name);
     const textNames = (text?.tokens ?? []).map((t) => t.name);
@@ -68,9 +68,9 @@ describe('groupTokensByPurpose', () => {
     expect(textNames).toContain('--color-on-accent');
   });
 
-  it('puts tokens with groupName="Brand" into the Brand group even without a brand-ish name', () => {
+  it('puts tokens tagged with groupName="Brand" (from scale-builder) into the Accent group', () => {
     const tokens: ExtractedToken[] = [
-      { name: 'brand-primary-cta', value: 'rgb(159, 232, 112)', type: 'color', category: 'semantic', cssVariable: '--brand-primary-cta', groupName: 'Brand' },
+      { name: 'mined-cta', value: 'rgb(159, 232, 112)', type: 'color', category: 'semantic', cssVariable: '--mined-cta', groupName: 'Brand' },
       ...makeTokens([
         '--color-content-primary',
         '--color-content-secondary',
@@ -82,9 +82,9 @@ describe('groupTokensByPurpose', () => {
       ]),
     ];
     const result = groupTokensByPurpose(tokens, 'colors');
-    const brand = result.find((g) => g.label === 'Brand');
-    expect(brand).toBeDefined();
-    expect(brand!.tokens.map((t) => t.cssVariable)).toContain('--brand-primary-cta');
+    const accent = result.find((g) => g.label === 'Accent');
+    expect(accent).toBeDefined();
+    expect(accent!.tokens.map((t) => t.cssVariable)).toContain('--mined-cta');
   });
 
   it('classifies nav/button/card tokens as Components', () => {
@@ -213,7 +213,7 @@ describe('groupTokensByPurpose', () => {
       '--color-bg-panel',
     ]);
     const result = groupTokensByPurpose(tokens, 'colors');
-    const surfaceGroup = result.find((g) => g.label === 'Surfaces');
+    const surfaceGroup = result.find((g) => g.label === 'Backgrounds');
     if (surfaceGroup) {
       const names = surfaceGroup.tokens.map((t) => t.name);
       // surface tokens should appear before bg tokens since they were inserted first

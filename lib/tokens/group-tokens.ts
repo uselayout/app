@@ -63,24 +63,40 @@ function looksLikeTextHierarchy(n: string): boolean {
   return TEXT_HIERARCHY_PREFIXES.some((p) => stripped.startsWith(p));
 }
 
+// COLOR_GROUPS labels mirror the standardised schema categories used by the
+// Curated view so the same concept reads the same word across both surfaces.
+// Previously Brand/Surfaces/Interactive on one side and Accent/Backgrounds on
+// the other split users' attention. Now a single taxonomy:
+//   Primitives | Accent | Backgrounds | Text | Borders | Status | Palette | Components
 const COLOR_GROUPS: GroupDef[] = [
   {
     label: "Primitives",
     match: (t) => (t.cssVariable ?? t.name).toLowerCase().includes("primitive"),
   },
-  // Brand & Primary first — the most important tokens for identity
+  // Accent — the brand / call-to-action tokens that drive visual identity.
+  // Merges the old "Brand" rule (primary/secondary/tertiary/brand/accent and
+  // single-word named colours) with the old "Interactive" rule (action / link
+  // / focus / selected / cta) since both point at the same user-facing role.
   {
-    label: "Brand",
+    label: "Accent",
     match: (t) => {
-      // Mined CTA tokens are explicitly tagged; they always land in Brand.
       if (t.groupName === "Brand") return true;
       const n = (t.cssVariable ?? t.name).toLowerCase();
       if (isComponentToken(n)) return false;
-      // Text-hierarchy tokens describe rank, not brand. Demote.
       if (looksLikeTextHierarchy(n)) return false;
       const s = stripVendorPrefix(n);
-      // Named brand tokens (primary, secondary, tertiary, brand, accent)
-      if (s.includes("primary") || s.includes("secondary") || s.includes("tertiary") || s.includes("brand") || s.includes("accent")) return true;
+      if (
+        s.includes("primary") ||
+        s.includes("secondary") ||
+        s.includes("tertiary") ||
+        s.includes("brand") ||
+        s.includes("accent") ||
+        s.includes("action") ||
+        s.includes("link") ||
+        s.includes("focus") ||
+        s.includes("selected") ||
+        s.includes("cta")
+      ) return true;
       // Single-word colour names (e.g. --coral, --midnight) — likely brand colours
       const stripped = n.replace(/^--/, "");
       if (stripped.split("-").length > 2) return false;
@@ -89,7 +105,7 @@ const COLOR_GROUPS: GroupDef[] = [
     },
   },
   {
-    label: "Surfaces",
+    label: "Backgrounds",
     match: (t) => {
       const n = (t.cssVariable ?? t.name).toLowerCase();
       const s = stripVendorPrefix(n);
@@ -114,14 +130,6 @@ const COLOR_GROUPS: GroupDef[] = [
       const s = stripVendorPrefix(n);
       return !isComponentToken(n) &&
         (s.includes("border") || s.includes("divider") || s.includes("outline") || s.includes("separator") || s.includes("stroke"));
-    },
-  },
-  {
-    label: "Interactive",
-    match: (t) => {
-      const n = (t.cssVariable ?? t.name).toLowerCase();
-      return !isComponentToken(n) &&
-        (n.includes("action") || n.includes("link") || n.includes("focus") || n.includes("selected") || n.includes("cta"));
     },
   },
   {
