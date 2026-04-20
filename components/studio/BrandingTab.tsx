@@ -194,67 +194,81 @@ export function BrandingTab({ projectId, orgId, assets }: BrandingTabProps) {
               key={asset.id}
               className="rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-2"
             >
-              <div className="flex gap-2">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[var(--studio-border)] bg-white/5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[var(--studio-border)] bg-white/5">
                   <img
                     src={asset.url}
                     alt={asset.name}
-                    className="max-h-14 max-w-14 object-contain"
+                    className="max-h-12 max-w-12 object-contain"
                   />
                 </div>
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div
-                    className="truncate text-xs text-[var(--text-primary)]"
-                    title={asset.name}
-                  >
-                    {asset.name}
-                  </div>
-                  <select
-                    value={asset.slot}
-                    disabled={busy}
-                    onChange={(e) => {
-                      const slot = e.target.value as BrandingSlot;
-                      if (slot !== asset.slot) patchAsset(asset, { slot });
-                    }}
-                    className="w-full rounded border border-[var(--studio-border)] bg-[var(--bg-panel)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)] focus:border-[var(--studio-border-focus)] focus:outline-none"
-                  >
-                    {SLOT_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label} — {opt.hint}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={asset.variant ?? "colour"}
-                    disabled={busy}
-                    onChange={(e) => {
-                      const variant = e.target.value as BrandingVariant;
-                      if (variant !== (asset.variant ?? "colour")) {
-                        patchAsset(asset, { variant });
-                      }
-                    }}
-                    className="w-full rounded border border-[var(--studio-border)] bg-[var(--bg-panel)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)] focus:border-[var(--studio-border-focus)] focus:outline-none"
-                    title="Variant — which surface this artwork suits"
-                  >
-                    {VARIANT_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label} — {opt.hint}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
-                    <span>{Math.ceil(asset.size / 1024)} KB</span>
-                    <button
-                      type="button"
-                      onClick={() => remove(asset)}
-                      disabled={busy}
-                      title="Delete asset"
-                      className="rounded p-1 text-[var(--text-muted)] hover:bg-red-500/10 hover:text-red-400"
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <div
+                      className="truncate text-xs font-medium text-[var(--text-primary)]"
+                      title={asset.name}
                     >
-                      <Trash2 size={12} />
-                    </button>
+                      {asset.name}
+                    </div>
+                    <span className="shrink-0 text-[10px] text-[var(--text-muted)]">
+                      {Math.ceil(asset.size / 1024)} KB
+                    </span>
+                  </div>
+                  {/* Slot + variant inline. Options carry only the label —
+                      `title` attributes surface the hint on hover so the
+                      dropdown chrome doesn't stretch to fit long descriptions. */}
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <select
+                      value={asset.slot}
+                      disabled={busy}
+                      onChange={(e) => {
+                        const slot = e.target.value as BrandingSlot;
+                        if (slot !== asset.slot) patchAsset(asset, { slot });
+                      }}
+                      className="w-auto rounded border border-[var(--studio-border)] bg-[var(--bg-panel)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)] focus:border-[var(--studio-border-focus)] focus:outline-none"
+                      title={
+                        SLOT_OPTIONS.find((o) => o.value === asset.slot)?.hint ??
+                        "Slot — which logo role this artwork fills"
+                      }
+                    >
+                      {SLOT_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value} title={opt.hint}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={asset.variant ?? "colour"}
+                      disabled={busy}
+                      onChange={(e) => {
+                        const variant = e.target.value as BrandingVariant;
+                        if (variant !== (asset.variant ?? "colour")) {
+                          patchAsset(asset, { variant });
+                        }
+                      }}
+                      className="w-auto rounded border border-[var(--studio-border)] bg-[var(--bg-panel)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)] focus:border-[var(--studio-border-focus)] focus:outline-none"
+                      title={
+                        VARIANT_OPTIONS.find((o) => o.value === (asset.variant ?? "colour"))?.hint ??
+                        "Variant — which surface this artwork suits"
+                      }
+                    >
+                      {VARIANT_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value} title={opt.hint}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => remove(asset)}
+                  disabled={busy}
+                  title="Delete asset"
+                  className="shrink-0 rounded p-1 text-[var(--text-muted)] hover:bg-red-500/10 hover:text-red-400"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             </li>
           ))}
