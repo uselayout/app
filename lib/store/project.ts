@@ -5,6 +5,7 @@ import { renameTokenInLayoutMd } from "@/lib/tokens/rename-token";
 import { addTokenToLayoutMd, removeTokenFromLayoutMd } from "@/lib/tokens/add-remove-token";
 import { CORE_TOKENS_BLOCK_REGEX } from "@/lib/tokens/core-tokens-block";
 import { renderCoreTokensBlock } from "@/lib/layout-md/derive";
+import { splitLayoutMdIntoAuthored } from "@/lib/layout-md/split-authored";
 import { assignmentKey } from "@/lib/tokens/assignment-key";
 import { matchTokenToUnassignedRole } from "@/lib/tokens/standardise";
 import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont, ProjectStandardisation, DesignSystemSnapshot, TokenType, BrandingAsset, ContextDocument } from "@/lib/types";
@@ -279,8 +280,32 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     // Preserve locally-created projects not yet on the server (in-flight saves)
     const serverIds = new Set(serverProjects.map((p) => p.id));
     const localOnly = state.projects.filter((p) => !serverIds.has(p.id) && p.orgId === orgId);
+
+    // Phase 5 one-shot migration: populate layoutMdAuthored for any project
+    // that has layoutMd but has never been split. The next store save persists
+    // the new field via the piggy-back column. Non-destructive — layoutMd stays
+    // intact; we just pre-compute the authored half so Phase 4's Monaco guard
+    // and future hub UI have clean prose to work with.
+    const migrated = serverProjects.map((p) => {
+      if (p.layoutMdAuthored !== undefined) return p;
+      if (!p.layoutMd) return p;
+      const authored = splitLayoutMdIntoAuthored(p.layoutMd);
+      if (!authored) return p;
+      return { ...p, layoutMdAuthored: authored };
+    });
+
+    // Trigger persistence for any project whose layoutMdAuthored was just
+    // populated so the split reaches Supabase rather than living client-only.
+    // Fire-and-forget — no need to await; the store's saveError surface will
+    // catch transport failures.
+    for (let i = 0; i < migrated.length; i++) {
+      if (migrated[i] !== serverProjects[i]) {
+        apiUpsertProject(migrated[i], (msg) => set({ saveError: msg }));
+      }
+    }
+
     return {
-      projects: [...serverProjects, ...localOnly],
+      projects: [...migrated, ...localOnly],
       userId, orgId, hydrating: false, hydrationError: null,
     };
   }),
