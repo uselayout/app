@@ -430,6 +430,11 @@ export default function StudioPage({
     [id, updateExplorations]
   );
 
+  const handleInitialImageConsumed = useCallback(() => {
+    setPendingFigmaImage(null);
+    setPendingFigmaContext(null);
+  }, []);
+
   const handleOpenSavedInCanvas = useCallback(
     (code: string, name: string) => {
       const sessionId = crypto.randomUUID();
@@ -589,7 +594,7 @@ export default function StudioPage({
               onLayoutMdUpdate={handleLayoutMdChange}
               initialImage={pendingFigmaImage ?? undefined}
               initialContextFiles={pendingFigmaContext ?? undefined}
-              onInitialImageConsumed={() => { setPendingFigmaImage(null); setPendingFigmaContext(null); }}
+              onInitialImageConsumed={handleInitialImageConsumed}
               extractedFonts={extractedFonts}
               extractedFontDeclarations={extractedFontDeclarations}
               uploadedFonts={project.uploadedFonts}

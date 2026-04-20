@@ -426,6 +426,11 @@ export default function StudioPage({
       .map((t) => ({ name: t.cssVariable!, value: t.value }));
   }, [project?.extractionData?.tokens]);
 
+  const handleInitialImageConsumed = useCallback(() => {
+    setPendingFigmaImage(null);
+    setPendingFigmaContext(null);
+  }, []);
+
   const handlePushToFigma = useCallback((variant: DesignVariant) => {
     // Phase 2: FigmaPushModal — for now copy code to clipboard
     navigator.clipboard.writeText(variant.code);
@@ -579,7 +584,7 @@ export default function StudioPage({
               onLayoutMdUpdate={handleLayoutMdChange}
               initialImage={pendingFigmaImage ?? undefined}
               initialContextFiles={pendingFigmaContext ?? undefined}
-              onInitialImageConsumed={() => { setPendingFigmaImage(null); setPendingFigmaContext(null); }}
+              onInitialImageConsumed={handleInitialImageConsumed}
               extractedFonts={extractedFonts}
               extractedFontDeclarations={extractedFontDeclarations}
               uploadedFonts={project.uploadedFonts}

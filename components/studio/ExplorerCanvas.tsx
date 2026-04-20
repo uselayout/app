@@ -31,8 +31,14 @@ import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import { buildCssTokenBlock } from "@/lib/explore/preview-helpers";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
-import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont, ComparisonResult, ScannedComponent } from "@/lib/types";
+import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont, ComparisonResult, ScannedComponent, ContextDocument, BrandingAsset } from "@/lib/types";
 import { formatScannedComponentForPrompt } from "@/lib/claude/scanned-component-prompt";
+
+// Stable empty-array singletons used as selector fallbacks — see the selectors
+// that read optional project fields. Creating a new `[]` inside the selector
+// is a Zustand anti-pattern that triggers re-renders on every store dispatch.
+const EMPTY_CONTEXT_DOCS: ContextDocument[] = [];
+const EMPTY_BRANDING_ASSETS: BrandingAsset[] = [];
 
 // Build component context string from scanned + saved components
 function buildComponentContext(
@@ -100,15 +106,20 @@ export function ExplorerCanvas({
     (s) => s.projects.find((p) => p.id === projectId)?.scannedComponents
   );
 
-  // Project-scoped context documents (auto-attached to every generation)
-  const projectContextDocs = useProjectStore(
-    (s) => s.projects.find((p) => p.id === projectId)?.contextDocuments ?? []
+  // Project-scoped context documents and branding assets. Select the raw field
+  // (possibly undefined) and fall back with a MODULE-LEVEL EMPTY_ARRAY so the
+  // selector returns a stable reference when the field is missing — otherwise
+  // `?? []` creates a fresh array on every store dispatch, Zustand diffs it as
+  // a change, and ExplorerCanvas re-renders in a tight loop (React #185).
+  const rawContextDocs = useProjectStore(
+    (s) => s.projects.find((p) => p.id === projectId)?.contextDocuments
   );
+  const projectContextDocs = rawContextDocs ?? EMPTY_CONTEXT_DOCS;
 
-  // Project-scoped branding assets (resolved into data-brand-logo="..." slots)
-  const projectBrandingAssets = useProjectStore(
-    (s) => s.projects.find((p) => p.id === projectId)?.brandingAssets ?? []
+  const rawBrandingAssets = useProjectStore(
+    (s) => s.projects.find((p) => p.id === projectId)?.brandingAssets
   );
+  const projectBrandingAssets = rawBrandingAssets ?? EMPTY_BRANDING_ASSETS;
 
   // Saved library components for the Explorer prompt
   const orgId = useOrgStore((s) => s.currentOrgId);
@@ -169,7 +180,11 @@ export function ExplorerCanvas({
   const pendingBatchCountRef = useRef(0);
   const generatingSessionRef = useRef<string | null>(null);
 
-  const { steps, markStep } = useOnboardingStore();
+  // Use specific selectors — destructuring `useOnboardingStore()` subscribes to
+  // the whole store (persisted) and forces a render-time read of state that
+  // differs SSR vs CSR (empty server default vs localStorage-hydrated client).
+  const steps = useOnboardingStore((s) => s.steps);
+  const markStep = useOnboardingStore((s) => s.markStep);
   const stepsRef = useRef(steps);
   stepsRef.current = steps;
 
