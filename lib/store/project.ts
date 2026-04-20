@@ -4,6 +4,8 @@ import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 import { renameTokenInLayoutMd } from "@/lib/tokens/rename-token";
 import { addTokenToLayoutMd, removeTokenFromLayoutMd } from "@/lib/tokens/add-remove-token";
 import { CORE_TOKENS_BLOCK_REGEX } from "@/lib/tokens/core-tokens-block";
+import { renderCoreTokensBlock } from "@/lib/layout-md/derive";
+import { assignmentKey } from "@/lib/tokens/assignment-key";
 import { matchTokenToUnassignedRole } from "@/lib/tokens/standardise";
 import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont, ProjectStandardisation, DesignSystemSnapshot, TokenType, BrandingAsset, ContextDocument } from "@/lib/types";
 
@@ -180,27 +182,8 @@ async function apiFetchProject(id: string, orgId: string): Promise<Project | nul
  * label, and a strict match silently dropped assignments.
  */
 export function syncCuratedTokensToLayoutMd(layoutMd: string, standardisation: ProjectStandardisation): string {
-  const assignments = Object.values(standardisation.assignments);
-  if (assignments.length === 0) return layoutMd;
-
-  const lines: string[] = ["/* ── CORE TOKENS ── */", ""];
-  const colours = assignments.filter((a) => ["bg-", "text-", "border", "accent", "success", "warning", "error", "info"].some((k) => a.roleKey.startsWith(k) || a.roleKey.includes(k)));
-  const other = assignments.filter((a) => !colours.includes(a));
-
-  if (colours.length > 0) {
-    lines.push("/* Colours */");
-    for (const a of colours) {
-      lines.push(`${a.standardName}: ${a.value};`);
-    }
-  }
-  if (other.length > 0) {
-    lines.push("", "/* Other */");
-    for (const a of other) {
-      lines.push(`${a.standardName}: ${a.value};`);
-    }
-  }
-
-  const newBlock = "```css\n" + lines.join("\n") + "\n```";
+  const newBlock = renderCoreTokensBlock(standardisation);
+  if (!newBlock) return layoutMd;
 
   if (CORE_TOKENS_BLOCK_REGEX.test(layoutMd)) {
     return layoutMd.replace(CORE_TOKENS_BLOCK_REGEX, newBlock);
@@ -266,8 +249,8 @@ interface ProjectState {
 
   // Standardisation
   updateStandardisation: (id: string, data: ProjectStandardisation) => void;
-  assignTokenToRole: (id: string, roleKey: string, tokenName: string, tokenCssVariable: string | undefined, tokenValue: string, standardName: string) => void;
-  unassignRole: (id: string, roleKey: string) => void;
+  assignTokenToRole: (id: string, roleKey: string, tokenName: string, tokenCssVariable: string | undefined, tokenValue: string, standardName: string, mode?: string) => void;
+  unassignRole: (id: string, roleKey: string, mode?: string) => void;
 
   // Snapshots
   createSnapshot: (id: string, label: string) => string | null;
@@ -840,14 +823,16 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
-  assignTokenToRole: (id, roleKey, tokenName, tokenCssVariable, tokenValue, standardName) => {
+  assignTokenToRole: (id, roleKey, tokenName, tokenCssVariable, tokenValue, standardName, mode) => {
     set((state) => ({
       projects: state.projects.map((p) => {
         if (p.id !== id || !p.standardisation) return p;
         const s = { ...p.standardisation };
         s.assignments = { ...s.assignments };
-        s.assignments[roleKey] = {
+        const key = assignmentKey(roleKey, mode);
+        s.assignments[key] = {
           roleKey,
+          mode,
           originalName: tokenName,
           originalCssVariable: tokenCssVariable,
           value: tokenValue,
@@ -870,15 +855,16 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
-  unassignRole: (id, roleKey) => {
+  unassignRole: (id, roleKey, mode) => {
     set((state) => ({
       projects: state.projects.map((p) => {
         if (p.id !== id || !p.standardisation) return p;
         const s = { ...p.standardisation };
-        const assignment = s.assignments[roleKey];
+        const key = assignmentKey(roleKey, mode);
+        const assignment = s.assignments[key];
         if (!assignment) return p;
         s.assignments = { ...s.assignments };
-        delete s.assignments[roleKey];
+        delete s.assignments[key];
         s.unassigned = [
           ...s.unassigned,
           {

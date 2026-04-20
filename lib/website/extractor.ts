@@ -277,19 +277,11 @@ export async function extractFromWebsite({
     const effects: ExtractedToken[] = [];
     const motion: ExtractedToken[] = [];
 
-    // Build a mode lookup from moded variables
-    const modeByVar = new Map<string, string>();
-    for (const mv of modedVariables) {
-      // Last occurrence wins (dark overrides default for same var)
-      modeByVar.set(mv.name, mv.mode);
-    }
-
+    // Emit default-scoped tokens directly from the flat cssVariables map —
+    // these are the browser-resolved values, which always represent the
+    // default / light mode at extraction time. Never tag these with a mode.
     for (const [name, value] of Object.entries(cssVariables)) {
       const token = cssVarToToken(name, value);
-      const mode = modeByVar.get(name);
-      if (mode && mode !== "default") {
-        token.mode = mode;
-      }
       switch (token.type) {
         case "color": colors.push(token); break;
         case "typography": typography.push(token); break;
@@ -300,18 +292,16 @@ export async function extractFromWebsite({
       }
     }
 
-    // Also create tokens for dark-mode-specific variables that override default ones
-    const defaultVarNames = new Set(
-      modedVariables.filter(mv => mv.mode === "default").map(mv => mv.name)
-    );
+    // Emit non-default mode variants from moded variables. Dark-only vars
+    // (present only in a [data-theme="dark"] block, no default counterpart)
+    // are surfaced too — previously they were filtered out. Each
+    // (name, mode) pair is deduped so the same var doesn't land twice.
+    const seenModeVariant = new Set<string>();
     for (const mv of modedVariables) {
       if (mv.mode === "default") continue;
-      if (!defaultVarNames.has(mv.name)) continue; // Only add overrides
-      // Check if we already have a mode-tagged version
-      const exists = colors.some(t => t.name === mv.name && t.mode === mv.mode)
-        || typography.some(t => t.name === mv.name && t.mode === mv.mode)
-        || spacing.some(t => t.name === mv.name && t.mode === mv.mode);
-      if (exists) continue;
+      const dedupKey = `${mv.mode}::${mv.name}`;
+      if (seenModeVariant.has(dedupKey)) continue;
+      seenModeVariant.add(dedupKey);
 
       const token = cssVarToToken(mv.name, mv.value);
       token.mode = mv.mode;

@@ -4,7 +4,11 @@ interface DTCGTokenFlat {
   $type: string;
   $value: string;
   $description?: string;
-  $extensions?: { "com.layout.alias"?: string };
+  $extensions?: {
+    "com.layout.alias"?: string;
+    /** Non-default mode (e.g. "dark") for tokens captured from a mode-scoped source selector. */
+    "com.layout.mode"?: string;
+  };
 }
 
 interface DTCGTokenTypography {
@@ -92,21 +96,29 @@ function tokenToDTCG(token: ExtractedToken): DTCGToken {
           ? "dimension"
           : "shadow";
 
+  const extensions: DTCGTokenFlat["$extensions"] = {};
+  if (token.reference) extensions["com.layout.alias"] = token.reference;
+  if (token.mode) extensions["com.layout.mode"] = token.mode;
+  const hasExtensions = Object.keys(extensions).length > 0;
+
   return {
     $type: dtcgType,
     $value: token.reference || token.value,
     ...(token.description ? { $description: token.description } : {}),
-    ...(token.reference ? { $extensions: { "com.layout.alias": token.reference } } : {}),
+    ...(hasExtensions ? { $extensions: extensions } : {}),
   };
 }
 
 function groupTokens(tokens: ExtractedToken[]): DTCGGroup {
   const group: DTCGGroup = {};
   for (const token of tokens) {
-    const key = token.name
+    const baseKey = token.name
       .toLowerCase()
       .replace(/[/\s]+/g, ".")
       .replace(/[^a-z0-9.]/g, "");
+    // Keep mode variants distinct so two tokens with the same logical name
+    // but different modes don't overwrite each other during grouping.
+    const key = token.mode ? `${baseKey}.${token.mode.toLowerCase()}` : baseKey;
     group[key] = tokenToDTCG(token);
   }
   return group;

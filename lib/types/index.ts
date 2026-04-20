@@ -321,9 +321,16 @@ export interface ContextDocument {
 /** Serialisable version of StandardisedTokenMap for project storage */
 export interface ProjectStandardisation {
   kitPrefix: string;
-  /** Role assignments keyed by role key */
+  /**
+   * Role assignments keyed by `roleKey` for default / light mode, and by
+   * `${roleKey}::${mode}` (e.g. "bg-app::dark") for non-default modes.
+   * Use `lib/tokens/assignment-key.ts::assignmentKey(roleKey, mode)` rather
+   * than concatenating by hand.
+   */
   assignments: Record<string, {
     roleKey: string;
+    /** Non-default mode, e.g. "dark". Omitted for the light / default mode. */
+    mode?: string;
     originalName: string;
     originalCssVariable?: string;
     value: string;

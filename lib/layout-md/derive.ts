@@ -82,28 +82,66 @@ export function renderCoreTokensBlock(standardisation: ProjectStandardisation): 
   const assignments = Object.values(standardisation.assignments);
   if (assignments.length === 0) return "";
 
-  const lines: string[] = ["/* ── CORE TOKENS ── */", ""];
   const colourRoleKeys = ["bg-", "text-", "border", "accent", "success", "warning", "error", "info"];
   const isColour = (roleKey: string) =>
     colourRoleKeys.some((k) => roleKey.startsWith(k) || roleKey.includes(k));
 
-  const colours = assignments.filter((a) => isColour(a.roleKey));
-  const other = assignments.filter((a) => !isColour(a.roleKey));
-
-  if (colours.length > 0) {
-    lines.push("/* Colours */");
-    for (const a of colours) {
-      lines.push(`${a.standardName}: ${a.value};`);
-    }
-  }
-  if (other.length > 0) {
-    lines.push("", "/* Other */");
-    for (const a of other) {
-      lines.push(`${a.standardName}: ${a.value};`);
-    }
+  // Partition by mode. Default (undefined) assignments live in :root; each
+  // non-default mode gets its own [data-theme="{mode}"] block so downstream
+  // CSS selectors can flip the full token set by toggling the attribute.
+  type Assignment = (typeof assignments)[number];
+  const byMode = new Map<string | undefined, Assignment[]>();
+  for (const a of assignments) {
+    const bucket = byMode.get(a.mode) ?? [];
+    bucket.push(a);
+    byMode.set(a.mode, bucket);
   }
 
-  return "```css\n" + lines.join("\n") + "\n```";
+  const renderDeclarations = (items: Assignment[]): string => {
+    const lines: string[] = [];
+    const colours = items.filter((a) => isColour(a.roleKey));
+    const other = items.filter((a) => !isColour(a.roleKey));
+    if (colours.length > 0) {
+      lines.push("  /* Colours */");
+      for (const a of colours) {
+        lines.push(`  ${a.standardName}: ${a.value};`);
+      }
+    }
+    if (other.length > 0) {
+      if (lines.length > 0) lines.push("");
+      lines.push("  /* Other */");
+      for (const a of other) {
+        lines.push(`  ${a.standardName}: ${a.value};`);
+      }
+    }
+    return lines.join("\n");
+  };
+
+  const parts: string[] = ["/* ── CORE TOKENS ── */"];
+
+  const defaultItems = byMode.get(undefined) ?? [];
+  if (defaultItems.length > 0) {
+    parts.push(`:root {\n${renderDeclarations(defaultItems)}\n}`);
+  }
+
+  // Emit non-default modes in alphabetical order so idempotent re-derives
+  // don't reshuffle blocks when the assignment Map iteration order changes.
+  const modeKeys = [...byMode.keys()].filter((m): m is string => Boolean(m)).sort();
+  for (const mode of modeKeys) {
+    const items = byMode.get(mode);
+    if (!items || items.length === 0) continue;
+    parts.push(`[data-theme="${mode}"] {\n${renderDeclarations(items)}\n}`);
+    // Mirror dark mode into a prefers-color-scheme query for systems without
+    // the selector attribute. Other modes are user-defined and don't get
+    // automatic media queries.
+    if (mode === "dark") {
+      parts.push(`@media (prefers-color-scheme: dark) {\n  :root {\n${renderDeclarations(items).replace(/^/gm, "  ")}\n  }\n}`);
+    }
+  }
+
+  if (parts.length === 1) return ""; // nothing but the header
+
+  return "```css\n" + parts.join("\n\n") + "\n```";
 }
 
 function injectCoreTokensBlock(md: string, standardisation: ProjectStandardisation): string {
