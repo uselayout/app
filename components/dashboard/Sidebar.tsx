@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams, usePathname, useSearchParams } from "next/navigation";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { UserMenu } from "./UserMenu";
+import { SidebarProgressCard } from "@/components/onboarding/SidebarProgressCard";
+import { useOnboardingStore } from "@/lib/store/onboarding";
 import { PanelLeftClose, PanelLeftOpen, BookMarked, Palette, Pencil, Sparkles, MessageCircle, Mail } from "lucide-react";
 
 interface NavItem {
@@ -37,6 +39,7 @@ function SidebarInner() {
   const searchParams = useSearchParams();
   const orgSlug = typeof params?.org === "string" ? params.org : "";
   const projectId = typeof params?.projectId === "string" ? params.projectId : "";
+  const markStep = useOnboardingStore((s) => s.markStep);
 
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -140,6 +143,11 @@ function SidebarInner() {
         </ul>
       </nav>
 
+      {/* Onboarding progress — sits above the user/docs divider */}
+      <div className="px-1 pt-1">
+        <SidebarProgressCard collapsed={collapsed} />
+      </div>
+
       {/* Bottom: User + Docs + Collapse */}
       <div className="border-t border-[var(--studio-border)] p-2 space-y-1">
         <UserMenu collapsed={collapsed} />
@@ -147,6 +155,7 @@ function SidebarInner() {
         <div className="relative group">
           <Link
             href="/docs"
+            onClick={() => markStep("readDocs")}
             className={`flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-all duration-[var(--duration-base)] ${
               collapsed ? "justify-center" : ""
             }`}

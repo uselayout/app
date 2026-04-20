@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { X, BookMarked, Loader2 } from "lucide-react";
 import { extractComponentName } from "@/lib/explore/preview-helpers";
 import { useOrgStore } from "@/lib/store/organization";
+import { useOnboardingStore } from "@/lib/store/onboarding";
 import type { DesignVariant } from "@/lib/types";
 
 interface PromoteToLibraryModalProps {
@@ -18,6 +19,7 @@ export function PromoteToLibraryModal({
   onSuccess,
 }: PromoteToLibraryModalProps) {
   const orgId = useOrgStore((s) => s.currentOrgId);
+  const markStep = useOnboardingStore((s) => s.markStep);
 
   const [name, setName] = useState(() => extractComponentName(variant.code));
   const [category, setCategory] = useState("");
@@ -81,6 +83,7 @@ export function PromoteToLibraryModal({
           throw new Error(body.error ?? "Failed to save component");
         }
 
+        markStep("componentSaved");
         onSuccess?.();
         onClose();
       } catch (err) {
@@ -89,7 +92,7 @@ export function PromoteToLibraryModal({
         setSaving(false);
       }
     },
-    [orgId, name, category, description, tagsInput, designType, variant.code, onClose, onSuccess]
+    [orgId, name, category, description, tagsInput, designType, variant.code, onClose, onSuccess, markStep]
   );
 
   return (

@@ -1,64 +1,120 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface OnboardingSteps {
-  apiKeyAdded: boolean; // step 0 — only shown for BYOK users
-  extracted: boolean; // step 1 — first project created
-  viewedLayoutMd: boolean; // step 2 — visited studio with non-empty layoutMd
-  installedMcp: boolean; // step 3 — manual check (user clicks to confirm)
-  generatedVariant: boolean; // step 4 — first variant generated in ExplorerCanvas
+export const CHECKLIST_VERSION = 2;
+
+export interface OnboardingSteps {
+  apiKeyAdded: boolean;
+  figmaTokenAdded: boolean;
+  geminiKeyAdded: boolean;
+  extracted: boolean;
+  viewedLayoutMd: boolean;
+  generatedVariant: boolean;
+  componentSaved: boolean;
+  cliInstalled: boolean;
+  figmaPluginInstalled: boolean;
+  extensionInstalled: boolean;
+  readDocs: boolean;
 }
+
+export type StepKey = keyof OnboardingSteps;
 
 interface OnboardingState {
   _hasHydrated: boolean;
   dismissed: boolean;
+  modalOpen: boolean;
+  lastSeenVersion: number;
   steps: OnboardingSteps;
-  markStep: (key: keyof OnboardingSteps) => void;
+  markStep: (key: StepKey) => void;
   dismiss: () => void;
+  openModal: () => void;
+  closeModal: () => void;
   reset: () => void;
-  allStepsComplete: () => boolean;
+  setLastSeenVersion: (version: number) => void;
 }
 
 const defaultSteps: OnboardingSteps = {
   apiKeyAdded: false,
+  figmaTokenAdded: false,
+  geminiKeyAdded: false,
   extracted: false,
   viewedLayoutMd: false,
-  installedMcp: false,
   generatedVariant: false,
+  componentSaved: false,
+  cliInstalled: false,
+  figmaPluginInstalled: false,
+  extensionInstalled: false,
+  readDocs: false,
 };
+
+interface PersistedV1 {
+  dismissed?: boolean;
+  steps?: {
+    apiKeyAdded?: boolean;
+    extracted?: boolean;
+    viewedLayoutMd?: boolean;
+    installedMcp?: boolean;
+    generatedVariant?: boolean;
+  };
+}
 
 export const useOnboardingStore = create<OnboardingState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       _hasHydrated: false,
       dismissed: false,
+      modalOpen: false,
+      lastSeenVersion: 0,
       steps: { ...defaultSteps },
 
       markStep: (key) =>
-        set((state) => ({
-          steps: { ...state.steps, [key]: true },
-        })),
+        set((state) =>
+          state.steps[key] ? state : { steps: { ...state.steps, [key]: true } }
+        ),
 
-      dismiss: () => set({ dismissed: true }),
+      dismiss: () => set({ dismissed: true, modalOpen: false }),
+
+      openModal: () => set({ modalOpen: true }),
+
+      closeModal: () => set({ modalOpen: false }),
 
       reset: () =>
         set({
           dismissed: false,
+          modalOpen: false,
+          lastSeenVersion: 0,
           steps: { ...defaultSteps },
         }),
 
-      allStepsComplete: () => {
-        const { steps } = get();
-        return (
-          steps.extracted &&
-          steps.viewedLayoutMd &&
-          steps.installedMcp &&
-          steps.generatedVariant
-        );
-      },
+      setLastSeenVersion: (version) => set({ lastSeenVersion: version }),
     }),
     {
       name: "layout-onboarding-v1",
+      version: CHECKLIST_VERSION,
+      partialize: (state) => ({
+        dismissed: state.dismissed,
+        lastSeenVersion: state.lastSeenVersion,
+        steps: state.steps,
+      }),
+      migrate: (persistedState, fromVersion) => {
+        if (fromVersion >= CHECKLIST_VERSION) {
+          return persistedState;
+        }
+        const prev = (persistedState ?? {}) as PersistedV1;
+        const prevSteps = prev.steps ?? {};
+        return {
+          dismissed: prev.dismissed ?? false,
+          lastSeenVersion: 0,
+          steps: {
+            ...defaultSteps,
+            apiKeyAdded: !!prevSteps.apiKeyAdded,
+            extracted: !!prevSteps.extracted,
+            viewedLayoutMd: !!prevSteps.viewedLayoutMd,
+            generatedVariant: !!prevSteps.generatedVariant,
+            cliInstalled: !!prevSteps.installedMcp,
+          },
+        } as Partial<OnboardingState>;
+      },
       onRehydrateStorage: () => () => {
         useOnboardingStore.setState({ _hasHydrated: true });
       },

@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-welcome-onboarding",
+    title: "Welcome modal and onboarding checklist",
+    description:
+      "New accounts now open to a welcome modal with a step-by-step setup checklist covering API keys, extraction, variant generation, saving components, and installing the CLI, Figma plugin and Chrome extension. Progress persists in a compact card tucked above your profile in the sidebar, stays clickable after you close the modal, and quietly disappears when everything is wired up.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-20",
+  },
+  {
     id: "2026-w16-surgical-layout-edits",
     title: "AI chat edits layout.md surgically",
     description:
