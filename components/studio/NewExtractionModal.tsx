@@ -324,10 +324,23 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
             {sourceType === "website" && (
               <div className="flex items-start gap-2.5 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-app)] p-3">
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" />
-                <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
-                  Website extraction works on publicly accessible pages only.
-                  Pages behind a login aren&apos;t supported from this flow.
-                </p>
+                <div className="space-y-1.5 text-xs leading-relaxed text-[var(--text-secondary)]">
+                  <p>
+                    Website extraction works on publicly accessible pages only.
+                    For pages behind a login, the Chrome extension runs in your
+                    authenticated session and can extract from anywhere you can
+                    browse.
+                  </p>
+                  <a
+                    href="/docs/chrome-extension"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[var(--studio-accent)] transition-colors hover:text-[var(--studio-accent-hover)]"
+                  >
+                    Get the Chrome extension
+                    <ArrowRight className="h-3 w-3" />
+                  </a>
+                </div>
               </div>
             )}
           </div>
