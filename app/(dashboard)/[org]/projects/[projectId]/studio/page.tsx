@@ -257,20 +257,27 @@ export default function StudioPage({
     runExtraction(project, pat ?? undefined);
   }, [id, project, runExtraction]);
 
-  // Auto-generate layout.md after plugin push (?auto-generate=1)
+  // Auto-generate layout.md after plugin push.
+  // Fires when either (a) ?auto-generate=1 is in the URL (plugin link),
+  // or (b) the project has pluginTokensPushedAt set but no layoutMd yet
+  // (user arrived via the dashboard after pushing).
   useEffect(() => {
     if (autoGenerateStarted.current) return;
-    if (searchParams.get("auto-generate") !== "1") return;
     if (!project || hydrating) return;
     if (!project.extractionData?.tokens) return;
     if (project.layoutMd && project.layoutMd.length > 0) return;
 
+    const hasUrlFlag = searchParams.get("auto-generate") === "1";
+    const hasPluginPush = Boolean(project.pluginTokensPushedAt);
+    if (!hasUrlFlag && !hasPluginPush) return;
+
     autoGenerateStarted.current = true;
 
-    // Strip the flag so refresh/revisit doesn't re-fire
-    const url = new URL(window.location.href);
-    url.searchParams.delete("auto-generate");
-    window.history.replaceState({}, "", url.toString());
+    if (hasUrlFlag) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("auto-generate");
+      window.history.replaceState({}, "", url.toString());
+    }
 
     handleRegenerateLayoutMd();
   }, [searchParams, project, hydrating, handleRegenerateLayoutMd]);

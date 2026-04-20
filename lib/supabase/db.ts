@@ -31,11 +31,17 @@ function rowToProject(row: ProjectRow): Project {
   const rawExtraction = row.extraction_data as Record<string, unknown> | null;
   const uploadedFonts = (rawExtraction?._uploadedFonts as Project["uploadedFonts"]) ?? undefined;
   const standardisation = (rawExtraction?._standardisation as Project["standardisation"]) ?? undefined;
+  const pluginTokensPushedAt = (rawExtraction?._pluginTokensPushedAt as string) ?? undefined;
 
   // Strip piggy-backed fields from extraction data before casting to ExtractionResult
   let extractionData: Project["extractionData"] | undefined;
   if (rawExtraction) {
-    const { _uploadedFonts: _, _standardisation: __, ...clean } = rawExtraction;
+    const {
+      _uploadedFonts: _,
+      _standardisation: __,
+      _pluginTokensPushedAt: ___,
+      ...clean
+    } = rawExtraction;
     // Only treat as real extraction data if it has actual extraction fields
     extractionData = clean.sourceType ? (clean as unknown as Project["extractionData"]) : undefined;
   }
@@ -68,6 +74,7 @@ function rowToProject(row: ProjectRow): Project {
     contextDocuments: row.context_documents
       ? (row.context_documents as Project["contextDocuments"])
       : undefined,
+    pluginTokensPushedAt,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -77,14 +84,25 @@ function projectToRow(
   project: Project,
   userId: string
 ): Omit<ProjectRow, "created_at" | "scanned_components" | "scan_source" | "last_scan_at" | "github_repo" | "branding_assets" | "context_documents"> & { updated_at: string } {
-  // Store uploadedFonts and standardisation inside extraction_data to avoid DB migrations
+  // Store uploadedFonts, standardisation and pluginTokensPushedAt inside
+  // extraction_data to avoid a dedicated DB migration.
   const fonts = project.uploadedFonts ?? [];
   const std = project.standardisation ?? undefined;
-  const hasExtra = fonts.length > 0 || std;
+  const pushedAt = project.pluginTokensPushedAt ?? undefined;
+  const hasExtra = fonts.length > 0 || std || pushedAt;
   const extractionData = project.extractionData
-    ? { ...project.extractionData, _uploadedFonts: fonts, _standardisation: std }
+    ? {
+        ...project.extractionData,
+        _uploadedFonts: fonts,
+        _standardisation: std,
+        _pluginTokensPushedAt: pushedAt,
+      }
     : hasExtra
-      ? { _uploadedFonts: fonts, _standardisation: std }
+      ? {
+          _uploadedFonts: fonts,
+          _standardisation: std,
+          _pluginTokensPushedAt: pushedAt,
+        }
       : null;
 
   return {

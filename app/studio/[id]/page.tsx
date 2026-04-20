@@ -266,13 +266,19 @@ export default function StudioPage({
     }
   }, [id, tabParam, sourceParam, autoGenerateParam]);
 
-  // Auto-generate layout.md after plugin push (?auto-generate=1)
+  // Auto-generate layout.md after plugin push.
+  // Fires when either (a) ?auto-generate=1 is in the URL (plugin link),
+  // or (b) the project has pluginTokensPushedAt set but no layoutMd yet
+  // (user arrived via the dashboard after pushing).
   useEffect(() => {
     if (autoGenerateStarted.current) return;
-    if (autoGenerateParam !== "1") return;
     if (!project || hydrating) return;
     if (!project.extractionData?.tokens) return;
     if (project.layoutMd && project.layoutMd.length > 0) return;
+
+    const hasUrlFlag = autoGenerateParam === "1";
+    const hasPluginPush = Boolean(project.pluginTokensPushedAt);
+    if (!hasUrlFlag && !hasPluginPush) return;
 
     autoGenerateStarted.current = true;
     setCentreView("editor");
