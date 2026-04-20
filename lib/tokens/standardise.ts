@@ -273,7 +273,13 @@ function findBestNameMatch(
     // Strip common prefixes for better matching (fides-overlay-background-color → background-color)
     const name = stripCommonPrefixes(rawName);
     const score = scoreNameMatch(role, name, rawName);
-    if (score < 2) continue; // Minimum score threshold
+    // Minimum threshold of 4 means pass 1 requires at least a direct keyword
+    // hit (weight 3+ with a bit of overlap, or a standalone keyword of
+    // weight 4+). Weaker candidates with pure overlap fall through to pass 2
+    // value matching or pass 3 fallback — this prevents roles like
+    // text-primary from stealing a cta-primary-text token from the
+    // accent-foreground role where it scores far higher by keyword match.
+    if (score < 4) continue;
 
     // Cross-validate with lightness/chroma hints for colour roles
     if (role.matchHints?.lightness && token.type === "color") {
@@ -347,13 +353,18 @@ function scoreNameMatch(role: StandardRole, strippedName: string, rawName: strin
     score += 3;
   }
 
-  // Full keyword matches (on both stripped and raw names)
+  // Full keyword matches (on both stripped and raw names). Use the best
+  // matching keyword's weight rather than stopping at the first match —
+  // otherwise a lower-priority keyword like "interactive" wins against a
+  // higher-priority one like "cta" purely because of array ordering.
+  let bestKeywordScore = 0;
   for (const keyword of role.matchKeywords) {
-    if (keyword.length >= 3 && (strippedName.includes(keyword) || rawName.includes(keyword))) {
-      score += 3;
-      break;
-    }
+    if (keyword.length < 3) continue;
+    if (!strippedName.includes(keyword) && !rawName.includes(keyword)) continue;
+    const weight = role.keywordWeights?.[keyword] ?? 3;
+    if (weight > bestKeywordScore) bestKeywordScore = weight;
   }
+  score += bestKeywordScore;
 
   // Partial word overlap (only meaningful words)
   const nameWords = strippedName.split(/[-_]/).filter((w) => w.length >= 3 && !NOISE_WORDS.has(w));
@@ -493,13 +504,30 @@ function parseChroma(value: string): number | null {
   return match ? parseFloat(match[1]) : null;
 }
 
-/** Rough chroma estimate for hex/rgb colours (max channel difference / 255). */
+/** Rough chroma estimate for hex/rgb/rgba colours (max channel difference / 255). */
 function estimateChromaFromHex(value: string): number {
-  const rgb = parseHexToRgb(value);
+  const rgb = parseRgbFromAny(value);
   if (!rgb) return 0;
   const max = Math.max(rgb.r, rgb.g, rgb.b);
   const min = Math.min(rgb.r, rgb.g, rgb.b);
   return (max - min) / 255;
+}
+
+/** Try hex first, fall back to rgb()/rgba() — saturated CTA tokens are
+ *  sometimes emitted as rgb(159, 232, 112) not #9fe870. Without this the
+ *  accent matcher's chroma > 0.1 filter rejects them as greyscale. */
+function parseRgbFromAny(value: string): { r: number; g: number; b: number } | null {
+  const hex = parseHexToRgb(value);
+  if (hex) return hex;
+  const rgbMatch = value.trim().toLowerCase().match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (rgbMatch) {
+    return {
+      r: parseInt(rgbMatch[1], 10),
+      g: parseInt(rgbMatch[2], 10),
+      b: parseInt(rgbMatch[3], 10),
+    };
+  }
+  return null;
 }
 
 function parseHexToRgb(hex: string): { r: number; g: number; b: number } | null {
