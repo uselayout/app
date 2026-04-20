@@ -40,6 +40,13 @@ export interface StandardRole {
   description: string;
   /** Keywords in extracted token names that suggest this role (for auto-matching) */
   matchKeywords: string[];
+  /**
+   * Optional per-keyword weight override. Keywords not listed here get the
+   * default weight of 3. Higher-weighted keywords win over lower-weighted
+   * ones when multiple tokens match the same role — critical for roles like
+   * `accent` where "cta" / "brand" should outrank "interactive" / "link".
+   */
+  keywordWeights?: Record<string, number>;
   /** Value-based matching hints */
   matchHints?: {
     /** For colours: "lightest" | "darkest" | "mid" | "accent" */
@@ -240,7 +247,27 @@ const COLOUR_ROLES: StandardRole[] = [
     suffix: "accent",
     required: true,
     description: "Primary brand / action colour. CTAs, links, active indicators.",
-    matchKeywords: ["accent", "primary", "brand", "action", "cta", "link", "interactive"],
+    matchKeywords: ["cta", "brand", "primary", "accent", "action", "interactive", "link"],
+    // CTA / brand tokens describe the identity colour and should beat more
+    // generic "interactive" / "link" tokens when both are present. Weights
+    // are tuned above the suffix-match bonus (+5) so a "--cta-primary-bg"
+    // outranks a "--interactive-accent" even when the latter gets the
+    // suffix bonus for ending in "-accent". Wise for example has
+    // --color-cta-primary-bg (green, the real brand colour) and
+    // --color-interactive-accent (blue, link colour) — the green should win.
+    // Weights need to outpace the combined suffix+contains bonus (up to +10)
+    // that any token ending in "-accent" already earns. Interactive-accent
+    // and similar already score ~17 without help; CTA tokens need to land
+    // above that even when they don't end in "-accent".
+    keywordWeights: {
+      cta: 18,
+      brand: 18,
+      primary: 12,
+      accent: 7,
+      action: 8,
+      interactive: 3,
+      link: 3,
+    },
     matchHints: { lightness: "accent" },
   },
   {
@@ -250,7 +277,22 @@ const COLOUR_ROLES: StandardRole[] = [
     suffix: "accent-hover",
     required: true,
     description: "Hover state of the accent colour (slightly darker or lighter).",
-    matchKeywords: ["accent-hover", "primary-hover", "brand-hover", "action-hover", "primary-dark"],
+    matchKeywords: [
+      "cta-secondary-bg",
+      "cta-primary-hover",
+      "accent-hover",
+      "primary-hover",
+      "brand-hover",
+      "action-hover",
+      "primary-dark",
+    ],
+    keywordWeights: {
+      "cta-secondary-bg": 18,
+      "cta-primary-hover": 18,
+      "accent-hover": 10,
+      "primary-hover": 10,
+      "brand-hover": 10,
+    },
     matchHints: { lightness: "accent" },
   },
   {
@@ -270,7 +312,23 @@ const COLOUR_ROLES: StandardRole[] = [
     suffix: "accent-foreground",
     required: true,
     description: "Text / icon colour placed on the accent background.",
-    matchKeywords: ["accent-foreground", "on-primary", "primary-foreground", "on-accent", "text-on-accent", "text-on-primary"],
+    matchKeywords: [
+      "cta-primary-text",
+      "cta-text",
+      "accent-foreground",
+      "on-primary",
+      "primary-foreground",
+      "on-accent",
+      "text-on-accent",
+      "text-on-primary",
+    ],
+    keywordWeights: {
+      "cta-primary-text": 18,
+      "cta-text": 14,
+      "accent-foreground": 10,
+      "on-primary": 8,
+      "on-accent": 8,
+    },
   },
   {
     key: "surface-foreground",
