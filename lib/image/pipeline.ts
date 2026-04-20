@@ -13,6 +13,7 @@
  */
 
 import { generateImage, ImageSafetyError, type ImageStyle, type AspectRatio } from "./generate";
+import { FALLBACK_SVG } from "./fallback";
 import { resolveJsxImages, hasJsxImageExpressions } from "./resolve-jsx-images";
 
 // ---------------------------------------------------------------------------
@@ -76,7 +77,7 @@ function repairCorruptedImageUrls(html: string): string {
   // If the tag has data-generate-image, the pipeline will re-generate it.
   // If not, add data-generate-image using the alt text so it becomes re-generable.
   result = result.replace(
-    /(<img\s[^>]*?)src=(["'])(?!data:|https?:|\/)([^"'\/\s]+\.(?:jpg|jpeg|png|webp|gif))\2([^>]*?)\/?>/gi,
+    /(<img\s[^>]*?)src=(["'])(?!data:|https?:|\/)([^"'/\s]+\.(?:jpg|jpeg|png|webp|gif))\2([^>]*?)\/?>/gi,
     (_match, before, _q, _filename, after) => {
       const tag = before + after;
       const hasGenerateAttr = tag.includes("data-generate-image");
@@ -265,8 +266,7 @@ function replaceRelativeSrcUrls(html: string): string {
   });
 }
 
-// Fallback SVG for failed image generation
-const FALLBACK_SVG = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><rect fill="%23f3f4f6" width="800" height="450"/><text x="400" y="210" text-anchor="middle" fill="%239ca3af" font-family="system-ui,sans-serif" font-size="16">Image generation failed</text><text x="400" y="240" text-anchor="middle" fill="%23d1d5db" font-family="system-ui,sans-serif" font-size="13">Check GOOGLE_AI_API_KEY is configured</text></svg>')}`;
+// Fallback SVG lives in lib/image/fallback.ts so the JSX resolver shares it.
 
 /**
  * Process all image placeholders in HTML, generating images and replacing

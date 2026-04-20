@@ -9,6 +9,7 @@
 import vm from "node:vm";
 import { transpileTsx } from "@/lib/transpile";
 import { generateImage, type ImageStyle, type AspectRatio } from "./generate";
+import { FALLBACK_SVG } from "./fallback";
 import type { PipelineOptions } from "./pipeline";
 
 // ---------------------------------------------------------------------------
@@ -203,8 +204,13 @@ function extractPromptsViaRegex(code: string): CollectedImage[] {
 // ---------------------------------------------------------------------------
 
 /**
- * Inject a __imageUrls map into the component source and add src attributes
- * to img tags that use JSX expressions for data-generate-image.
+ * Inject a __imageUrls map into the component source at module scope and
+ * add src attributes to img tags that use JSX expressions for data-generate-image.
+ *
+ * Module-scope injection (previously: before the first `return (`) avoids the
+ * scope-escape bug where an earlier `return (` inside a useMemo/useCallback/
+ * helper would capture the declaration, leaving outer JSX with an undefined
+ * `__imageUrls` identifier.
  */
 function injectUrlMap(
   code: string,
@@ -212,36 +218,35 @@ function injectUrlMap(
 ): string {
   if (Object.keys(urlMap).length === 0) return code;
 
-  let result = code;
-
-  // Inject the URL map before the first `return (` or `return(`
   const mapJson = JSON.stringify(urlMap);
-  const returnMatch = result.match(/^(\s*)(return\s*\()/m);
-  if (returnMatch) {
-    const indent = returnMatch[1];
-    const mapDecl = `${indent}const __imageUrls: Record<string, string> = ${mapJson};\n${indent}`;
-    result = result.replace(
-      returnMatch[0],
-      `${mapDecl}${returnMatch[2]}`,
-    );
-  }
+  const mapDecl = `const __imageUrls: Record<string, string> = ${mapJson};\n\n`;
 
-  // Add src={__imageUrls[expr]} to each <img ... data-generate-image={expr} ...>
-  JSX_EXPR_ATTR_RE.lastIndex = 0;
+  // React directive prologues ("use client", "use server", "use strict")
+  // MUST remain the first statement in the file. Insert the map after any
+  // such leading directive, otherwise at position 0.
+  const directiveMatch = code.match(/^\s*["'](?:use\s+(?:client|server|strict))["']\s*;?\s*\n/);
+  const insertAt = directiveMatch ? directiveMatch[0].length : 0;
+  let result = code.slice(0, insertAt) + mapDecl + code.slice(insertAt);
+
+  // Strip every existing `src=` form from an <img ...> tag before re-injecting,
+  // so refine cycles don't accumulate stacked src attributes (JSX duplicate
+  // attrs: last wins, but stacked src muddies diffs and confuses readers).
+  const stripSrcAttrs = (s: string): string =>
+    s
+      .replace(/\s+src=\{[^}]*\}/g, "")
+      .replace(/\s+src="[^"]*"/g, "")
+      .replace(/\s+src='[^']*'/g, "");
+
   result = result.replace(
-    /(<img\s[^>]*?)data-generate-image=(\{[^}]+\})([^>]*?)\/?>/gi,
-    (fullMatch, before: string, exprWithBraces: string, after: string) => {
-      // Skip if already has a src attribute (from a previous run)
-      if (/\bsrc=/.test(before + after)) {
-        // Update the existing src to use __imageUrls
-        const withUpdatedSrc = (before + `data-generate-image=${exprWithBraces}` + after)
-          .replace(/\bsrc=\{[^}]*\}/, `src={__imageUrls[${exprWithBraces.slice(1, -1)}]}`)
-          .replace(/\bsrc="[^"]*"/, `src={__imageUrls[${exprWithBraces.slice(1, -1)}]}`);
-        return withUpdatedSrc + " />";
-      }
-      // Add src using the same expression as the key into __imageUrls
-      const expr = exprWithBraces.slice(1, -1); // remove { and }
-      return `${before}src={__imageUrls[${expr}]} data-generate-image=${exprWithBraces}${after} />`;
+    /(<img\s[^>]*?)data-generate-image=(\{[^}]+\})([^>]*?)(\/?)>/gi,
+    (_full, before: string, exprWithBraces: string, after: string, selfClose: string) => {
+      const expr = exprWithBraces.slice(1, -1);
+      const cleanBefore = stripSrcAttrs(before);
+      const cleanAfter = stripSrcAttrs(after);
+      // JSX requires self-closing img. If the original omitted the slash we
+      // add one rather than leaving an unclosed tag that React rejects.
+      const close = selfClose || "/";
+      return `${cleanBefore}src={__imageUrls[${expr}]} data-generate-image=${exprWithBraces}${cleanAfter}${close}>`;
     },
   );
 
@@ -269,25 +274,27 @@ export async function resolveJsxImages(
     return { code, count: 0, failedCount: 0, errors: [] };
   }
 
-  // Step 1: Extract prompts — try evaluation first, fall back to regex
-  let collected = extractPromptsViaEval(code);
-
-  // Filter to only images that came from JSX expressions (not literal strings)
-  // The eval approach also picks up literal data-generate-image="..." attrs,
-  // which the main pipeline already handles. We only need the ones from expressions.
-  // To determine which are from expressions, we check if the prompt exists
-  // as a literal in the source. If it does, skip it (the main pipeline handles it).
+  // Step 1: Extract prompts — run BOTH eval and regex, prefer the one with
+  // more unique prompts. Eval usually wins for dynamic values, but when the
+  // AI collapses a list template to a shared prompt variable (e.g.
+  // `const avatarPrompt = "portrait"; members.map(m => <img data-generate-image={avatarPrompt} />)`),
+  // the eval path collects one unique prompt and every rendered item ends up
+  // with the same URL. The regex path walks data literals in the source and
+  // recovers per-item variety the eval missed.
   const literalPromptRe = /data-generate-image=["']([^"']+)["']/g;
   const literalPrompts = new Set<string>();
   for (const m of code.matchAll(literalPromptRe)) {
     literalPrompts.add(m[1]);
   }
-  collected = collected.filter((c) => !literalPrompts.has(c.prompt));
+  const dropLiterals = (items: CollectedImage[]) =>
+    items.filter((c) => !literalPrompts.has(c.prompt));
 
-  // If eval found nothing (but we know expressions exist), try regex fallback
-  if (collected.length === 0) {
-    collected = extractPromptsViaRegex(code);
-  }
+  const evalCollected = dropLiterals(extractPromptsViaEval(code));
+  const regexCollected = dropLiterals(extractPromptsViaRegex(code));
+
+  const evalUniqueCount = new Set(evalCollected.map((c) => c.prompt)).size;
+  const regexUniqueCount = new Set(regexCollected.map((c) => c.prompt)).size;
+  const collected = regexUniqueCount > evalUniqueCount ? regexCollected : evalCollected;
 
   if (collected.length === 0) {
     return { code, count: 0, failedCount: 0, errors: [] };
@@ -328,6 +335,11 @@ export async function resolveJsxImages(
         urlMap[batch[j].prompt] = result.value.url;
       } else {
         failedCount++;
+        // Critical: map the prompt to a visible placeholder even on failure,
+        // otherwise src={__imageUrls[prompt]} resolves to undefined and the
+        // rendered <img> shows a broken-image icon. Users see "something went
+        // wrong" instead of an unreadable variant.
+        urlMap[batch[j].prompt] = FALLBACK_SVG;
         const errMsg =
           result.reason instanceof Error
             ? result.reason.message
