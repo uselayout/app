@@ -255,6 +255,16 @@ export interface Project {
   sourceType: SourceType;
   sourceUrl?: string;
   layoutMd: string;
+  /**
+   * User-authored prose only — the parts of layout.md that are NOT regenerated
+   * by the derive engine (design direction, component narrative, anti-pattern
+   * stories, custom notes). When populated, the derive engine composes the
+   * final layout.md by interleaving authored prose with derived blocks
+   * (CORE TOKENS, Appendix A, Icons, Brand Assets, Component Inventory,
+   * Product Context). When absent, the legacy `layoutMd` is used as the base
+   * and derived blocks are regex-injected — behaviour matches pre-Phase-5.
+   */
+  layoutMdAuthored?: string;
   extractionData?: ExtractionResult;
   tokenCount?: number;
   healthScore?: number;

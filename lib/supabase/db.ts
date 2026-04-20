@@ -38,6 +38,7 @@ export function rowToProject(row: ProjectRow): Project {
   const standardisation = (rawExtraction?._standardisation as Project["standardisation"]) ?? undefined;
   const pluginTokensPushedAt = (rawExtraction?._pluginTokensPushedAt as string) ?? undefined;
   const iconPacks = (rawExtraction?._iconPacks as string[]) ?? undefined;
+  const layoutMdAuthored = (rawExtraction?._layoutMdAuthored as string) ?? undefined;
 
   // Strip piggy-backed fields from extraction data before casting to ExtractionResult
   let extractionData: Project["extractionData"] | undefined;
@@ -47,6 +48,7 @@ export function rowToProject(row: ProjectRow): Project {
       _standardisation: __,
       _pluginTokensPushedAt: ___,
       _iconPacks: ____,
+      _layoutMdAuthored: _____,
       ...clean
     } = rawExtraction;
     // Only treat as real extraction data if it has actual extraction fields
@@ -86,6 +88,7 @@ export function rowToProject(row: ProjectRow): Project {
       : undefined,
     iconPacks,
     pluginTokensPushedAt,
+    layoutMdAuthored,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -101,7 +104,8 @@ export function projectToRow(
   const std = project.standardisation ?? undefined;
   const pushedAt = project.pluginTokensPushedAt ?? undefined;
   const icons = project.iconPacks ?? undefined;
-  const hasExtra = fonts.length > 0 || std || pushedAt || (icons && icons.length > 0);
+  const authored = project.layoutMdAuthored ?? undefined;
+  const hasExtra = fonts.length > 0 || std || pushedAt || (icons && icons.length > 0) || authored;
   const extractionData = project.extractionData
     ? {
         ...project.extractionData,
@@ -109,6 +113,7 @@ export function projectToRow(
         _standardisation: std,
         _pluginTokensPushedAt: pushedAt,
         _iconPacks: icons,
+        _layoutMdAuthored: authored,
       }
     : hasExtra
       ? {
@@ -116,6 +121,7 @@ export function projectToRow(
           _standardisation: std,
           _pluginTokensPushedAt: pushedAt,
           _iconPacks: icons,
+          _layoutMdAuthored: authored,
         }
       : null;
 

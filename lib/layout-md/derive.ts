@@ -40,6 +40,7 @@ export interface DeriveOptions {
 export type DeriveInput = Pick<
   Project,
   | "layoutMd"
+  | "layoutMdAuthored"
   | "standardisation"
   | "extractionData"
   | "iconPacks"
@@ -49,7 +50,11 @@ export type DeriveInput = Pick<
 >;
 
 export function deriveLayoutMd(input: DeriveInput, options: DeriveOptions = {}): string {
-  let md = input.layoutMd ?? "";
+  // Prefer layoutMdAuthored when populated — it's the user's prose with derived
+  // blocks already stripped, so injecting fresh blocks produces a clean doc.
+  // Falls back to legacy layoutMd (which may contain stale derived content)
+  // so projects predating Phase 5 keep rendering correctly until they migrate.
+  let md = input.layoutMdAuthored ?? input.layoutMd ?? "";
 
   if (!options.skipCoreTokens && input.standardisation) {
     md = injectCoreTokensBlock(md, input.standardisation);

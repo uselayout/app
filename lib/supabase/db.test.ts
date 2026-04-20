@@ -52,6 +52,13 @@ describe("piggy-backed fields round-trip symmetrically", () => {
     expect(back.iconPacks).toEqual(["lucide", "simple-icons"]);
   });
 
+  it("layoutMdAuthored survives projectToRow → rowToProject (regression: Phase 5)", () => {
+    const input = baseProject({ layoutMdAuthored: "## 1. Design\n\nauthored prose only\n" });
+    const row = projectToRow(input, "u1");
+    const back = rowToProject({ ...baseRow(row.extraction_data), snapshots: null, updated_at: row.updated_at });
+    expect(back.layoutMdAuthored).toBe("## 1. Design\n\nauthored prose only\n");
+  });
+
   it("pluginTokensPushedAt survives both directions (regression: B7)", () => {
     const input = baseProject({ pluginTokensPushedAt: "2026-04-20T12:00:00.000Z" });
     const row = projectToRow(input, "u1");

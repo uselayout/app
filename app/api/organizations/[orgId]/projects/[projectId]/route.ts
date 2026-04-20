@@ -68,6 +68,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
       // Snapshots persist via a dedicated column (migration 042). Declaring
       // the field here keeps Zod from stripping it before it reaches projectToRow.
       snapshots: z.array(z.record(z.string(), z.unknown())).nullable().optional(),
+      // Authored prose — piggy-backed into extraction_data._layoutMdAuthored.
+      // Must be declared or Zod strips it silently.
+      layoutMdAuthored: z.string().nullable().optional(),
       createdAt: z.string(),
       updatedAt: z.string(),
     });
