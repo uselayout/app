@@ -180,4 +180,49 @@ export const draftEntries: ChangelogEntry[] = [
     category: "improved",
     date: "2026-04-12",
   },
+  {
+    id: "2026-w17-curated-tokens-reach-ai",
+    title: "Curated tokens reliably reach your AI agents",
+    description:
+      "Curating a role like APP BACKGROUND to pure white used to leave stale tokens in layout.md's Core Tokens block, so AI agents kept generating off-brand UI. Every MCP, Explorer, and export read now regenerates that block from your curated assignments, so what Claude sees always matches what you chose.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-curated-count-label",
+    title: "Clearer role count on the Curated page",
+    description:
+      "Section headers now read \"BACKGROUNDS 3 of 6 roles\" instead of the cryptic \"BACKGROUNDS 3 3/6\". Same data, no maths required.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-icon-packs-persist",
+    title: "Selected icon packs now persist",
+    description:
+      "Picking icon packs in the Source Panel worked in the session but disappeared on reload. Selections now save to the server and come back when you return to the project.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-snapshots-persist",
+    title: "Design system snapshots survive reloads",
+    description:
+      "Snapshots taken from the Curated view used to live only in your current browser session and vanished on refresh. They are now stored server-side, so rollbacks work after closing the tab or coming back the next day.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-exported-layout-matches",
+    title: "Exported layout.md matches what your agents see",
+    description:
+      "The layout.md in exported ZIPs is now the exact document MCP and the Explorer read, with curated Core Tokens and the full token reference appendix regenerated from your latest design system. No more drift between what you exported to Cursor or Windsurf and what the Explorer used for variants.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-20",
+  },
 ];
