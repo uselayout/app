@@ -264,8 +264,16 @@ export default function StudioPage({
   useEffect(() => {
     if (autoGenerateStarted.current) return;
     if (!project || hydrating) return;
-    if (!project.extractionData?.tokens) return;
     if (project.layoutMd && project.layoutMd.length > 0) return;
+
+    const t = project.extractionData?.tokens;
+    const tokenCount =
+      (t?.colors?.length ?? 0) +
+      (t?.typography?.length ?? 0) +
+      (t?.spacing?.length ?? 0) +
+      (t?.radius?.length ?? 0) +
+      (t?.effects?.length ?? 0);
+    if (tokenCount === 0) return;
 
     const hasUrlFlag = searchParams.get("auto-generate") === "1";
     const hasPluginPush = Boolean(project.pluginTokensPushedAt);
@@ -279,8 +287,15 @@ export default function StudioPage({
       window.history.replaceState({}, "", url.toString());
     }
 
-    handleRegenerateLayoutMd();
-  }, [searchParams, project, hydrating, handleRegenerateLayoutMd]);
+    handleRegenerateLayoutMd().finally(() => {
+      // On error the handler toasts but doesn't throw; layoutMd stays empty.
+      // Reset the ref so a refresh lets the user retry.
+      const latest = useProjectStore.getState().projects.find((p) => p.id === id);
+      if (!latest?.layoutMd || latest.layoutMd.length === 0) {
+        autoGenerateStarted.current = false;
+      }
+    });
+  }, [id, searchParams, project, hydrating, handleRegenerateLayoutMd]);
 
   const handleReExtract = useCallback(() => {
     if (!project) return;
