@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useMemo, useState, useEffect } from "react";
-import { X, Sparkles } from "lucide-react";
+import { X } from "lucide-react";
 import type { ExtractionResult, ExtractedToken } from "@/lib/types";
 import { useProjectStore } from "@/lib/store/project";
 import { DesignSystemSection } from "./design-system/DesignSystemSection";
@@ -293,25 +293,27 @@ export function DesignSystemPanel({
           visible when the user is on the Tokens hub tab. */}
       {hubTab === "tokens" && (
       <div className="sticky top-[41px] z-10 flex items-center gap-1 border-b border-[var(--studio-border)] bg-[var(--bg-app)] px-6 py-2">
-        {/* Curated / All toggle */}
-        <div className="mr-2 flex items-center rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] p-0.5">
+        {/* Curated / All segmented toggle.
+            Sunken container + raised active segment reads as a button group
+            without the heavy accent-fill active state (which rendered as
+            solid black in light mode). */}
+        <div className="mr-2 flex items-center rounded-md border border-[var(--studio-border)] bg-[var(--bg-panel)] p-0.5">
           <button
             onClick={() => setViewMode("curated")}
-            className={`flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium transition-colors ${
+            className={`rounded px-2.5 py-1 text-[10px] font-medium transition-colors ${
               viewMode === "curated"
-                ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[0_0_0_1px_var(--studio-border)]"
                 : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
             }`}
             title="Curated: standardised token roles for AI code generation"
           >
-            <Sparkles className="h-3 w-3" />
             Curated
           </button>
           <button
             onClick={() => setViewMode("all")}
-            className={`rounded px-2 py-1 text-[10px] font-medium transition-colors ${
+            className={`rounded px-2.5 py-1 text-[10px] font-medium transition-colors ${
               viewMode === "all"
-                ? "bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[0_0_0_1px_var(--studio-border)]"
                 : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
             }`}
             title="All: every extracted token"
