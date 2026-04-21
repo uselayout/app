@@ -17,6 +17,7 @@ const MAX_BRANDING_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_CONTEXT_BYTES = 50 * 1024; // 50 KB
 const MAX_BRANDING_ITEMS = 10;
 const MAX_CONTEXT_ITEMS = 10;
+const MAX_EXPLORER_REFERENCE_BYTES = 8 * 1024 * 1024; // 8 MB — Explorer reference images
 
 const ALLOWED_BRANDING_MIME = new Set([
   "image/png",
@@ -128,14 +129,25 @@ export async function POST(request: NextRequest, { params }: Params) {
   const kind = formData.get("kind");
   const file = formData.get("file");
 
-  if (kind !== "branding" && kind !== "context-doc") {
+  if (kind !== "branding" && kind !== "context-doc" && kind !== "explorer-reference") {
     return NextResponse.json(
-      { error: "kind must be 'branding' or 'context-doc'" },
+      { error: "kind must be 'branding', 'context-doc', or 'explorer-reference'" },
       { status: 400 }
     );
   }
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Missing file" }, { status: 400 });
+  }
+
+  // Explorer reference images are per-session (not per-project). Upload and
+  // return a URL — the client stores it on the ExplorationSession, not on the
+  // project row.
+  if (kind === "explorer-reference") {
+    return handleExplorerReferenceUpload({
+      file,
+      projectId,
+      orgId: auth.orgId,
+    });
   }
 
   // Load existing project to verify ownership and enforce per-project caps
@@ -321,4 +333,46 @@ async function handleContextUpload(opts: {
   }
 
   return NextResponse.json({ document: doc, contextDocuments: next });
+}
+
+async function handleExplorerReferenceUpload(opts: {
+  file: File;
+  projectId: string;
+  orgId: string;
+}): Promise<NextResponse> {
+  const { file, projectId, orgId } = opts;
+
+  if (file.size > MAX_EXPLORER_REFERENCE_BYTES) {
+    return NextResponse.json(
+      { error: "Reference image must be 8 MB or smaller" },
+      { status: 413 }
+    );
+  }
+  if (!ALLOWED_BRANDING_MIME.has(file.type)) {
+    return NextResponse.json(
+      { error: `Unsupported image type: ${file.type || "unknown"}` },
+      { status: 400 }
+    );
+  }
+
+  const id = nanoid();
+  const ext = extensionFor(file.type, "png");
+  const storagePath = `${orgId}/${projectId}/${id}.${ext}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  const url = await uploadToBucket(
+    "explorer-references",
+    storagePath,
+    buffer,
+    file.type
+  );
+  if (!url) {
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    url,
+    name: safeFilename(file.name || `reference.${ext}`),
+    size: file.size,
+  });
 }

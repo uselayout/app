@@ -10,6 +10,24 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-explorer-reference-images-persist",
+    title: "Explorer reference images now persist across refreshes",
+    description:
+      "Images dropped or pasted into an Explorer tab — and screenshots pushed from the Chrome extension — are now saved to project storage and reload correctly after a refresh. Previously, large images were silently dropped from the save payload.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-21",
+  },
+  {
+    id: "2026-w17-accent-hover-hue-match",
+    title: "Accent hover colour stays on-brand",
+    description:
+      "The Design System page now prefers a hover colour in the same hue family as your accent. If your extraction doesn't ship a matching hover tone, the slot is left empty for you to fill rather than picking an off-brand match.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-21",
+  },
+  {
     id: "2026-w17-curated-dark-mode",
     title: "Curate light and dark tokens side by side",
     description:

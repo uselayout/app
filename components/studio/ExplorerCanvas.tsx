@@ -29,6 +29,7 @@ import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 import { DEFAULT_EXPLORE_MODEL, AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import { buildCssTokenBlock } from "@/lib/explore/preview-helpers";
+import { uploadReferenceImage } from "@/lib/explore/upload-reference-image";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
 import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont, ComparisonResult, ScannedComponent, ContextDocument, BrandingAsset } from "@/lib/types";
@@ -524,13 +525,21 @@ export function ExplorerCanvas({
       } else {
         sessionId = crypto.randomUUID();
         existingVariants = [];
+        // Upload the data URI to storage so `referenceImage` persists across
+        // refreshes. The data URI itself is still passed to runGeneration for
+        // the immediate AI call — only the persisted copy swaps to a URL.
+        let persistedImage = imageDataUrl;
+        if (imageDataUrl && orgId) {
+          const uploaded = await uploadReferenceImage(orgId, projectId, imageDataUrl);
+          if (uploaded) persistedImage = uploaded;
+        }
         const newExploration: ExplorationSession = {
           id: sessionId,
           projectId,
           prompt,
           variantCount,
           variants: [],
-          referenceImage: imageDataUrl,
+          referenceImage: persistedImage,
           contextFiles: resolvedContextFiles,
           createdAt: new Date().toISOString(),
           generatingBatchId: batchId,
@@ -667,6 +676,18 @@ export function ExplorerCanvas({
       setActiveExplorationIndex(updated.length - 1);
       setSelectedVariantId(null);
       onInitialImageConsumed?.();
+
+      // If the incoming image is a data URI (Chrome extension push), upload
+      // it to storage and swap in the URL so the reference image survives a
+      // refresh.
+      if (orgId && initialImage.startsWith("data:")) {
+        void uploadReferenceImage(orgId, projectId, initialImage).then((url) => {
+          if (!url) return;
+          onUpdateExplorations(
+            updated.map((e) => (e.id === sessionId ? { ...e, referenceImage: url } : e))
+          );
+        });
+      }
     }
   }, [initialImage]);
 

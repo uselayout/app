@@ -26,12 +26,15 @@ const MAX_SAVE_BYTES = 5_000_000;
 function stripBloatForSave(project: Project): Project {
   const stripped = { ...project };
 
-  // Strip referenceImage (base64 screenshots) from exploration sessions
+  // Strip referenceImage (base64 screenshots) from exploration sessions.
+  // URL-shaped references (/api/storage/...) are kept — they survive a refresh
+  // and cost ~200 chars each. Only data-URI leftovers get dropped, which
+  // happen when the upload-to-storage step failed and we fell back to storing
+  // the inline data URI.
   if (stripped.explorations) {
     stripped.explorations = stripped.explorations.map((session) => {
       const s = { ...session };
-      // Remove base64 reference images - they're only needed client-side
-      if (s.referenceImage && s.referenceImage.length > 1000) {
+      if (s.referenceImage && s.referenceImage.startsWith("data:")) {
         delete s.referenceImage;
       }
       // Remove transient generation tracking fields
