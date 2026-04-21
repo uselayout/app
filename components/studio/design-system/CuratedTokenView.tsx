@@ -19,7 +19,6 @@ import { AssignTokenPopover } from "./AssignTokenPopover";
 import { useProjectStore } from "@/lib/store/project";
 import { buildStandardName } from "@/lib/tokens/standard-schema";
 import { assignmentKey } from "@/lib/tokens/assignment-key";
-import { AddTokenForm } from "@/components/studio/AddTokenForm";
 
 const TOKEN_TYPE_FOR_CATEGORY: Record<StandardRoleCategory, TokenType> = {
   backgrounds: "color",
@@ -431,12 +430,10 @@ export function CuratedTokenView({
               </button>
             </div>
             {addingToCategory === catKey && (
-              <AddTokenForm
-                tokenType={TOKEN_TYPE_FOR_CATEGORY[catKey]}
-                autoKeepOpen
-                onSubmit={(token) =>
-                  handleCreateToken(catKey, token.name, token.value)
-                }
+              <InlineAddTokenForm
+                category={catKey}
+                availableTokens={allTokens}
+                onSubmit={(name, value) => handleCreateToken(catKey, name, value)}
                 onCancel={() => setAddingToCategory(null)}
               />
             )}
@@ -562,12 +559,10 @@ export function CuratedTokenView({
               </button>
             </div>
             {addingToCategory === catKey && (
-              <AddTokenForm
-                tokenType={TOKEN_TYPE_FOR_CATEGORY[catKey]}
-                autoKeepOpen
-                onSubmit={(token) =>
-                  handleCreateToken(catKey, token.name, token.value)
-                }
+              <InlineAddTokenForm
+                category={catKey}
+                availableTokens={allTokens}
+                onSubmit={(name, value) => handleCreateToken(catKey, name, value)}
                 onCancel={() => setAddingToCategory(null)}
               />
             )}
