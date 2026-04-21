@@ -197,6 +197,65 @@ export function standardiseTokens(
     }
   }
 
+  // Pass 7: Hue-correlation clean-up for accent variants.
+  //
+  // If `accent` was won by a brand colour but `accent-hover` / `accent-subtle`
+  // picked a token from a different hue family (e.g. blue link-hover when the
+  // accent is green CTA), drop the mismatched variant and try to pick a
+  // closer-hue replacement. If none exists, leave the slot empty — better an
+  // empty slot the user can fill than a confidently-wrong off-brand colour.
+  //
+  // `accent-foreground` is excluded: it's "text-on-accent", typically near-
+  // black or near-white, and hue is not meaningful for readability.
+  const accentAssignment = assignments.get("accent");
+  if (accentAssignment) {
+    const accentHue = hueFromAny(accentAssignment.value);
+    if (accentHue !== null) {
+      for (const variantKey of ["accent-hover", "accent-subtle"]) {
+        const variantAssignment = assignments.get(variantKey);
+        if (!variantAssignment) continue;
+        const variantHue = hueFromAny(variantAssignment.value);
+        if (variantHue === null) continue;
+        const delta = Math.min(
+          Math.abs(accentHue - variantHue),
+          360 - Math.abs(accentHue - variantHue)
+        );
+        if (delta <= 40) continue;
+
+        // Drop the off-brand assignment and release its token so the
+        // replacement search below (and any downstream pass) can reuse it.
+        // `assignedTokenNames` is keyed by tokenKey() which is
+        // `${cssVariable ?? name}::${value}` — match that exact shape.
+        assignments.delete(variantKey);
+        const releasedKey = `${variantAssignment.originalCssVariable ?? variantAssignment.originalName}::${variantAssignment.value}`;
+        assignedTokenNames.delete(releasedKey);
+
+        // Try to find a close-hue replacement among unassigned colour tokens.
+        const role = STANDARD_SCHEMA.roles.find((r) => r.key === variantKey);
+        if (!role) continue;
+        const replacement = allTokens
+          .filter((t) => !assignedTokenNames.has(tokenKey(t)))
+          .filter((t) => isCompatibleType(role, t))
+          .map((t) => ({ token: t, hue: hueFromAny(t.value) }))
+          .filter((x): x is { token: FlatToken; hue: number } => x.hue !== null)
+          .map((x) => ({
+            ...x,
+            delta: Math.min(
+              Math.abs(accentHue - x.hue),
+              360 - Math.abs(accentHue - x.hue)
+            ),
+          }))
+          .filter((x) => x.delta <= 20)
+          .sort((a, b) => a.delta - b.delta)[0];
+
+        if (replacement) {
+          assignments.set(variantKey, buildAssignment(role, replacement.token, prefix, "low"));
+          assignedTokenNames.add(tokenKey(replacement.token));
+        }
+      }
+    }
+  }
+
   // Build unassigned list
   const unassigned: UnassignedToken[] = allTokens
     .filter((t) => !assignedTokenNames.has(tokenKey(t)))
@@ -545,6 +604,28 @@ function parseHexToRgb(hex: string): { r: number; g: number; b: number } | null 
 }
 
 /** Simple relative luminance approximation (0-1). */
+/**
+ * Return the hue (0-360°) of a colour value, or null if not parseable.
+ * Greyscale-ish colours (chroma near 0) return null so callers don't use
+ * meaningless hue values for black/white/grey.
+ */
+function hueFromAny(value: string): number | null {
+  const rgb = parseRgbFromAny(value);
+  if (!rgb) return null;
+  const { r, g, b } = rgb;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const range = max - min;
+  if (range < 10) return null; // near-greyscale — hue not meaningful
+  let h: number;
+  if (max === r) h = ((g - b) / range) % 6;
+  else if (max === g) h = (b - r) / range + 2;
+  else h = (r - g) / range + 4;
+  h *= 60;
+  if (h < 0) h += 360;
+  return h;
+}
+
 function rgbToLightness(r: number, g: number, b: number): number {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 }

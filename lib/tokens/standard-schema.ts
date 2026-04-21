@@ -150,7 +150,10 @@ const COLOUR_ROLES: StandardRole[] = [
     suffix: "bg-hover",
     required: true,
     description: "Background colour for interactive hover states.",
-    matchKeywords: ["bg-hover", "hover", "hover-bg", "bg-interactive", "bg-muted"],
+    // `hover` on its own is too greedy — it matched any accent/cta/brand
+    // token containing "hover" (e.g. `color-brand-primary-hover`) and stole
+    // those from the accent-hover role. Keep only the bg-scoped variants.
+    matchKeywords: ["bg-hover", "hover-bg", "bg-interactive", "bg-muted"],
   },
   {
     key: "bg-selected",
