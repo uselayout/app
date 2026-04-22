@@ -268,6 +268,39 @@ export function useExtraction() {
           const capped = capQuickReferenceInLayoutMd(layoutMd);
           updateLayoutMd(project.id, capped);
           syncTokensFromLayoutMd(project.id);
+
+          // Re-run standardisation against the expanded token set. The
+          // initial call at line ~148 above only saw raw CSS vars extracted
+          // from the stylesheet (~6 for Coinbase). Claude's synthesis then
+          // invents the full semantic token set (--coinbase-text-primary,
+          // --coinbase-surface, etc.) which syncTokensFromLayoutMd has just
+          // merged into extractionData.tokens. Without this second pass the
+          // Curated view shows at most one or two accidental matches — the
+          // bulk of the curated design system is silently empty.
+          try {
+            const latest = useProjectStore
+              .getState()
+              .projects.find((p) => p.id === project.id);
+            if (latest?.extractionData?.tokens) {
+              const source = latest.sourceUrl ?? latest.name;
+              const tokenMap = standardiseTokens(latest.extractionData.tokens, source);
+              const expanded: ProjectStandardisation = {
+                kitPrefix: tokenMap.kitPrefix,
+                assignments: Object.fromEntries(tokenMap.assignments),
+                unassigned: tokenMap.unassigned,
+                antiPatterns: tokenMap.antiPatterns,
+                dismissedAntiPatterns:
+                  latest.standardisation?.dismissedAntiPatterns ?? [],
+                standardisedAt: new Date().toISOString(),
+              };
+              updateStandardisation(project.id, expanded);
+            }
+          } catch {
+            // Non-fatal — the first-pass standardisation still persists.
+            console.warn(
+              "[extraction] Post-synthesis standardisation failed, keeping first-pass assignments"
+            );
+          }
         }
         setStreamingContent(null);
         updateStep("generate", { status: "complete" });

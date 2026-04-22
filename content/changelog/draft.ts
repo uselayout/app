@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-curated-standardisation-after-synthesis",
+    title: "Curated view now maps the full synthesised token set",
+    description:
+      "On websites where most tokens are synthesised during extraction rather than read from the raw stylesheet (Coinbase, Stripe, Linear and similar), the Curated page was mapping only a single accent token — the matcher ran before the synthesised tokens were merged in. The matcher now runs a second time after synthesis, so all background, text, border and accent roles auto-fill the way they should.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-22",
+  },
+  {
     id: "2026-w17-explorer-reference-images-persist",
     title: "Explorer reference images now persist across refreshes",
     description:
