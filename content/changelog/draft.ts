@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-session-stickiness",
+    title: "Staging sessions stick around properly",
+    description:
+      "If your staging session got bounced back to login we now tell you why — and when it's a real server-side problem (not just an expired cookie) the cause is logged so we can fix it rather than guess. Paired with tighter auth config to make session behaviour identical across environments.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-22",
+  },
+  {
     id: "2026-w17-preserve-curation-on-reextract",
     title: "Re-extraction no longer wipes your hand-curated assignments",
     description:
