@@ -9,6 +9,49 @@ import type { ExtractionResult, ExtractedComponent, Project, ProjectStandardisat
 import { standardiseTokens } from "@/lib/tokens/standardise";
 import { capQuickReferenceInLayoutMd } from "@/lib/claude/layout-md-cap";
 
+/**
+ * Overlay the user-confirmed assignments from an existing standardisation
+ * on top of a freshly-computed one. Re-extraction re-runs the auto matcher
+ * against the new token set — without this helper it would silently wipe any
+ * role the user has hand-assigned in the Curated UI (each one flagged
+ * `userConfirmed: true` by `assignTokenToRole` in the project store).
+ *
+ * Also keeps the corresponding tokens off the `unassigned` list so the
+ * "Unassigned" panel doesn't show duplicates the user has already curated.
+ */
+export function preserveUserCuration(
+  fresh: ProjectStandardisation,
+  existing: ProjectStandardisation | undefined
+): ProjectStandardisation {
+  if (!existing) return fresh;
+
+  const userConfirmed = Object.entries(existing.assignments).filter(
+    ([, a]) => a.userConfirmed
+  );
+
+  const mergedAssignments = { ...fresh.assignments };
+  const claimedNames = new Set<string>();
+  for (const [key, assignment] of userConfirmed) {
+    mergedAssignments[key] = assignment;
+    claimedNames.add(
+      assignment.originalCssVariable ?? assignment.originalName
+    );
+  }
+
+  const mergedUnassigned =
+    claimedNames.size > 0
+      ? fresh.unassigned.filter((u) => !claimedNames.has(u.cssVariable ?? u.name))
+      : fresh.unassigned;
+
+  return {
+    ...fresh,
+    assignments: mergedAssignments,
+    unassigned: mergedUnassigned,
+    dismissedAntiPatterns:
+      existing.dismissedAntiPatterns ?? fresh.dismissedAntiPatterns,
+  };
+}
+
 export function useExtraction() {
   const startExtraction = useExtractionStore((s) => s.startExtraction);
   const updateStep = useExtractionStore((s) => s.updateStep);
@@ -141,18 +184,24 @@ export function useExtraction() {
         }
         updateExtractionData(project.id, extractionData);
 
-        // Step 1b: Run standardisation (classify tokens against canonical schema)
+        // Step 1b: Run standardisation (classify tokens against canonical schema).
+        // Capture any hand-curated assignments from the previous run so
+        // re-extraction doesn't silently wipe them.
+        const previousStandardisation = project.standardisation;
         let standardisationData: ProjectStandardisation | undefined;
         try {
           const source = project.sourceUrl ?? project.name;
           const tokenMap = standardiseTokens(extractionData.tokens, source);
-          standardisationData = {
+          const fresh: ProjectStandardisation = {
             kitPrefix: tokenMap.kitPrefix,
             assignments: Object.fromEntries(tokenMap.assignments),
             unassigned: tokenMap.unassigned,
             antiPatterns: tokenMap.antiPatterns,
+            dismissedAntiPatterns:
+              previousStandardisation?.dismissedAntiPatterns ?? [],
             standardisedAt: new Date().toISOString(),
           };
+          standardisationData = preserveUserCuration(fresh, previousStandardisation);
           updateStandardisation(project.id, standardisationData);
         } catch {
           // Non-fatal: synthesis works without standardisation
@@ -293,7 +342,15 @@ export function useExtraction() {
                   latest.standardisation?.dismissedAntiPatterns ?? [],
                 standardisedAt: new Date().toISOString(),
               };
-              updateStandardisation(project.id, expanded);
+              // Layer the user's hand-curated assignments back on top —
+              // same as the first-pass call. `previousStandardisation` is the
+              // pre-extraction snapshot; `latest.standardisation` at this
+              // point is the first-pass auto output (no user edits since we
+              // wrote it). So we preserve against `previousStandardisation`.
+              updateStandardisation(
+                project.id,
+                preserveUserCuration(expanded, previousStandardisation)
+              );
             }
           } catch {
             // Non-fatal — the first-pass standardisation still persists.

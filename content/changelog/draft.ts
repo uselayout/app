@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-preserve-curation-on-reextract",
+    title: "Re-extraction no longer wipes your hand-curated assignments",
+    description:
+      "If you'd assigned a specific token to a role (e.g. picked your real brand hover instead of the auto-matched one), re-extracting used to silently reset it back to whatever the auto matcher preferred. Those hand-picked assignments now survive re-extraction — only roles you never touched get re-matched.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-22",
+  },
+  {
     id: "2026-w17-curated-standardisation-after-synthesis",
     title: "Curated view now maps the full synthesised token set",
     description:
