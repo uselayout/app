@@ -21,6 +21,7 @@ const TokenEntrySchema = z.object({
   value: z.string(),
   cssVariable: z.string().optional(),
   category: z.string().optional(),
+  mode: z.string().optional().nullable(),
 });
 
 const ComponentSchema = z.object({
@@ -131,6 +132,7 @@ export async function POST(request: Request) {
       type,
       category: "primitive" as const,
       cssVariable: t.cssVariable,
+      mode: t.mode ?? undefined,
     }));
 
   // Update extraction data and token count
