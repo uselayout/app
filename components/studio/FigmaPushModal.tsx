@@ -97,28 +97,34 @@ export function FigmaPushModal({
               <div className="flex items-start gap-2.5 rounded-lg border border-[var(--studio-accent)]/30 bg-[var(--studio-accent)]/5 px-3.5 py-2.5">
                 <Info size={14} className="mt-0.5 shrink-0 text-[var(--studio-accent)]" />
                 <div className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                  <span className="font-medium text-[var(--text-primary)]">Requires the Layout MCP server.</span>{" "}
-                  Install with{" "}
-                  <code className="rounded bg-[var(--bg-surface)] px-1 py-0.5 font-mono text-[10px] text-[var(--text-primary)]">
-                    npx @layoutdesign/context install
-                  </code>{" "}
-                  and the{" "}
-                  <a
-                    href="https://mcp.figma.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium text-[var(--studio-accent)] hover:underline"
-                  >
-                    Figma MCP server
-                  </a>.
+                  <span className="font-medium text-[var(--text-primary)]">First time? You&rsquo;ll need two things set up.</span>{" "}
+                  The Layout MCP server and Figma&rsquo;s MCP server. Both are
+                  quick to install and our docs walk you through it.
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                    <a
+                      href="/docs/cli"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-[var(--studio-accent)] hover:underline"
+                    >
+                      Setup guide →
+                    </a>
+                    <a
+                      href="https://www.figma.com/mcp-catalog/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-[var(--studio-accent)] hover:underline"
+                    >
+                      Figma MCP catalog →
+                    </a>
+                  </div>
                 </div>
               </div>
 
               {/* Instructions */}
               <div className="space-y-3">
                 <p className="text-xs text-[var(--text-secondary)]">
-                  Copy the command below and run it in your AI coding agent
-                  (Claude Code, Cursor, etc.) to push this component to Figma.
+                  Run this in your AI agent to push the design into Figma.
                 </p>
 
                 {/* Step indicators */}
@@ -126,17 +132,17 @@ export function FigmaPushModal({
                   <StepItem
                     number={1}
                     label="Copy the push command"
-                    description="This tells the MCP server to render and push your component"
+                    description="This tells the MCP server to render and push your design"
                   />
                   <StepItem
                     number={2}
                     label="Run in your AI agent"
-                    description="Paste into Claude Code, Cursor, or any MCP-compatible agent"
+                    description="Paste into Claude Code, Cursor, or another AI agent that supports MCP"
                   />
                   <StepItem
                     number={3}
-                    label="Component appears in Figma"
-                    description="The rendered component is pushed as a new frame"
+                    label="Your design appears in Figma"
+                    description="Ready to edit, restyle, or drop into your file"
                   />
                 </div>
               </div>
