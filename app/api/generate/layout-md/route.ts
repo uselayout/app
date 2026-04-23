@@ -9,6 +9,7 @@ import { generateLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/ra
 import { getClientIp } from "@/lib/get-client-ip";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 import { logApiCall } from "@/lib/logging/api-log";
+import { classifyApiError } from "@/lib/api-error";
 import { logEvent } from "@/lib/logging/platform-event";
 import { fetchProjectById } from "@/lib/supabase/db";
 import type { ExtractionResult, ExtractedToken } from "@/lib/types";
@@ -212,7 +213,7 @@ export async function POST(request: NextRequest) {
     // Log usage on success, refund credit on failure
     void usage
       .then((u) => {
-        void logApiCall({ userId, endpoint: "generate/layout-md", statusCode: 200, durationMs: Date.now() - startTime, metadata: apiLogMetadata });
+        void logApiCall({ userId, endpoint: "generate/layout-md", statusCode: 200, durationMs: Date.now() - startTime, metadata: { ...apiLogMetadata, mode } });
         void logEvent("layout_md.created", "studio", { userId, metadata: { sourceType: extractionData.sourceType, componentCount: extractionData.components.length } });
         return logUsage({
           userId,
@@ -225,7 +226,15 @@ export async function POST(request: NextRequest) {
       })
       .catch(async (err) => {
         console.error("Stream failed, refunding credit:", err);
-        void logApiCall({ userId, endpoint: "generate/layout-md", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: err instanceof Error ? err.message : String(err), metadata: apiLogMetadata });
+        const { errorClass, status } = classifyApiError(err);
+        void logApiCall({
+          userId,
+          endpoint: "generate/layout-md",
+          statusCode: status,
+          durationMs: Date.now() - startTime,
+          errorMessage: err instanceof Error ? err.message : String(err),
+          metadata: { ...apiLogMetadata, mode, errorClass },
+        });
         if (mode === "hosted") {
           await refundCredit(userId, "layout-md");
         }

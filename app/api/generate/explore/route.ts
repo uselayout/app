@@ -6,6 +6,7 @@ import { checkQuota, deductCredit, refundCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 import { logApiCall } from "@/lib/logging/api-log";
+import { classifyApiError } from "@/lib/api-error";
 import { logEvent } from "@/lib/logging/platform-event";
 import { getModelById, getDefaultModel, getModelCreditCost } from "@/lib/ai/models";
 import type { AiMode } from "@/lib/types/billing";
@@ -252,7 +253,7 @@ export async function POST(request: NextRequest) {
 
   void usage
     .then((u) => {
-      void logApiCall({ userId, endpoint: "generate/explore", statusCode: 200, durationMs: Date.now() - startTime, metadata: apiLogMetadata });
+      void logApiCall({ userId, endpoint: "generate/explore", statusCode: 200, durationMs: Date.now() - startTime, metadata: { ...apiLogMetadata, mode } });
       void logEvent("variant.generated", "studio", { userId, metadata: { variantCount, modelId, isRefinement, hasImageUpload: !!imageDataUrl, prompt } });
       return logUsage({
         userId,
@@ -265,7 +266,15 @@ export async function POST(request: NextRequest) {
     })
     .catch(async (err) => {
       console.error("Stream failed, refunding credit:", err);
-      void logApiCall({ userId, endpoint: "generate/explore", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: err instanceof Error ? err.message : String(err), metadata: apiLogMetadata });
+      const { errorClass, status } = classifyApiError(err);
+      void logApiCall({
+        userId,
+        endpoint: "generate/explore",
+        statusCode: status,
+        durationMs: Date.now() - startTime,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        metadata: { ...apiLogMetadata, mode, errorClass },
+      });
       if (mode === "hosted") {
         await refundCredit(userId, "explore");
       }
