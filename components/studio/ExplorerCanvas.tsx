@@ -299,7 +299,10 @@ export function ExplorerCanvas({
         const completeCount = countCompleteVariants(fullOutput);
         if (completeCount > lastCount) {
           lastCount = completeCount;
-          const parsed = parseVariants(fullOutput, parseOpts);
+          const parsed = parseVariants(fullOutput, parseOpts).map((v) => ({
+            ...v,
+            code: replaceBrandingPlaceholders(v.code, projectBrandingAssets),
+          }));
           const merged = [...existingVariants, ...parsed];
           const updated = updatedExplorations.map((e) =>
             e.id === sessionId ? { ...e, variants: merged } : e
@@ -308,7 +311,10 @@ export function ExplorerCanvas({
         }
       }
 
-      const finalNew = parseVariants(fullOutput, parseOpts);
+      const finalNew = parseVariants(fullOutput, parseOpts).map((v) => ({
+        ...v,
+        code: replaceBrandingPlaceholders(v.code, projectBrandingAssets),
+      }));
 
       // Detect errors embedded in the stream (e.g. from Gemini)
       if (finalNew.length === 0) {
@@ -354,9 +360,11 @@ export function ExplorerCanvas({
         setImageNotice(`${totalPlaceholders} image(s) ready to generate. Use "Generate images" on each variant or click images in Inspector.`);
       }
 
-      // Compute health scores for newly generated variants
-      const variantsToScore = totalPlaceholders > 0 ? withPlaceholders : finalNew;
-      const scored = variantsToScore.map((v) => ({
+      // Compute health scores for newly generated variants. Always score the
+      // branded copy so `data-brand-logo` placeholders that were resolved to
+      // real Supabase URLs survive the final write — otherwise variants with
+      // logos but no `data-generate-image` slots would regress to unbranded.
+      const scored = withPlaceholders.map((v) => ({
         ...v,
         healthScore: calculateHealthScore(v.code, extractedFonts, layoutMd),
       }));

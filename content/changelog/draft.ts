@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-explorer-brand-logos-render",
+    title: "Explorer variants now show your uploaded brand logos",
+    description:
+      "Generated components that referenced your brand logo (footers, headers, sign-up cards) could end up with a broken image where the logo should be. The logo URL was being resolved correctly, then silently discarded on the final write whenever a variant had no other generated images. Brand logos now survive the full pipeline and render in every variant.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-23",
+  },
+  {
     id: "2026-w17-extraction-diff-scrolls",
     title: "Extraction Changes modal now scrolls through every change",
     description:
