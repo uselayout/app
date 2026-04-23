@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-welcome-modal-remove-video-link",
+    title: "Welcome modal no longer links to an unrecorded video",
+    description:
+      "The \"Watch a 90-second overview\" link in the welcome modal pointed at our YouTube channel before the overview video existed. Removed for now; it'll come back once the video is ready to watch.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-23",
+  },
+  {
     id: "2026-w17-inspector-brand-asset-picker",
     title: "Swap brand logos from the Inspector",
     description:
