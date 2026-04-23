@@ -3,6 +3,7 @@
 import { use, useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
+import { capQuickReferenceInLayoutMd } from "@/lib/claude/layout-md-cap";
 import { useExtractionStore } from "@/lib/store/extraction";
 import { useOnboardingStore } from "@/lib/store/onboarding";
 import { useExtraction } from "@/lib/hooks/use-extraction";
@@ -153,8 +154,8 @@ export default function StudioPage({
           }
         }
       }
-      // Final update with complete content
-      if (md) updateLayoutMd(id, md);
+      // Final update with complete content — enforce the Quick Reference cap
+      if (md) updateLayoutMd(id, capQuickReferenceInLayoutMd(md));
     } catch (err) {
       console.error("layout.md regeneration error:", err);
       const { toast } = await import("sonner");
@@ -205,9 +206,11 @@ export default function StudioPage({
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const sourceParam = searchParams.get("source");
+  const autoGenerateParam = searchParams.get("auto-generate");
 
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
+  const autoGenerateStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
   const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved" | "design-system">(
     tabParam === "editor" ? "editor" : "canvas"
@@ -258,10 +261,37 @@ export default function StudioPage({
 
   // Clear URL params after consuming so refresh doesn't re-trigger
   useEffect(() => {
-    if (tabParam || sourceParam) {
+    if (tabParam || sourceParam || autoGenerateParam) {
       window.history.replaceState({}, "", `/studio/${id}`);
     }
-  }, [id, tabParam, sourceParam]);
+  }, [id, tabParam, sourceParam, autoGenerateParam]);
+
+  // Auto-generate layout.md after plugin push.
+  // Fires when either (a) ?auto-generate=1 is in the URL (plugin link),
+  // or (b) the project has pluginTokensPushedAt set but no layoutMd yet
+  // (user arrived via the dashboard after pushing).
+  useEffect(() => {
+    if (autoGenerateStarted.current) return;
+    if (!project || hydrating) return;
+    if (project.layoutMd && project.layoutMd.length > 0) return;
+
+    const t = project.extractionData?.tokens;
+    const tokenCount =
+      (t?.colors?.length ?? 0) +
+      (t?.typography?.length ?? 0) +
+      (t?.spacing?.length ?? 0) +
+      (t?.radius?.length ?? 0) +
+      (t?.effects?.length ?? 0);
+    if (tokenCount === 0) return;
+
+    const hasUrlFlag = autoGenerateParam === "1";
+    const hasPluginPush = Boolean(project.pluginTokensPushedAt);
+    if (!hasUrlFlag && !hasPluginPush) return;
+
+    autoGenerateStarted.current = true;
+    setCentreView("editor");
+    handleRegenerateLayoutMd();
+  }, [autoGenerateParam, project, hydrating, handleRegenerateLayoutMd]);
 
   // Extraction diff state
   const previousExtractionRef = useRef<ExtractionResult | null>(null);
@@ -395,6 +425,11 @@ export default function StudioPage({
       .filter((t) => t.cssVariable)
       .map((t) => ({ name: t.cssVariable!, value: t.value }));
   }, [project?.extractionData?.tokens]);
+
+  const handleInitialImageConsumed = useCallback(() => {
+    setPendingFigmaImage(null);
+    setPendingFigmaContext(null);
+  }, []);
 
   const handlePushToFigma = useCallback((variant: DesignVariant) => {
     // Phase 2: FigmaPushModal — for now copy code to clipboard
@@ -536,6 +571,7 @@ export default function StudioPage({
               tokenSuggestions={tokenSuggestions}
               projectId={project.id}
               orgId={project.orgId}
+              extractionData={project.extractionData}
             />
           }
           canvasPanel={
@@ -548,7 +584,7 @@ export default function StudioPage({
               onLayoutMdUpdate={handleLayoutMdChange}
               initialImage={pendingFigmaImage ?? undefined}
               initialContextFiles={pendingFigmaContext ?? undefined}
-              onInitialImageConsumed={() => { setPendingFigmaImage(null); setPendingFigmaContext(null); }}
+              onInitialImageConsumed={handleInitialImageConsumed}
               extractedFonts={extractedFonts}
               extractedFontDeclarations={extractedFontDeclarations}
               uploadedFonts={project.uploadedFonts}

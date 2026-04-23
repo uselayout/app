@@ -22,6 +22,7 @@ export function ColorPickerPopover({
   const [open, setOpen] = useState(false);
   const [hexInput, setHexInput] = useState(value);
   const hexValue = toHex(value) ?? "#000000";
+  const isNonHex = !toHex(value);
 
   // Sync input when value changes externally
   useEffect(() => {
@@ -62,6 +63,13 @@ export function ColorPickerPopover({
         className="w-auto border-[var(--studio-border)] bg-[var(--bg-elevated)] p-3"
       >
         <div className="flex flex-col gap-2">
+          {isNonHex && (
+            <div
+              className="h-12 w-36 rounded border border-[var(--studio-border)]"
+              style={{ backgroundColor: value }}
+              title={`Preview: ${value}`}
+            />
+          )}
           <input
             type="color"
             value={hexValue}

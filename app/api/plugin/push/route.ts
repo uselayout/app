@@ -21,6 +21,7 @@ const TokenEntrySchema = z.object({
   value: z.string(),
   cssVariable: z.string().optional(),
   category: z.string().optional(),
+  mode: z.string().optional().nullable(),
 });
 
 const ComponentSchema = z.object({
@@ -131,11 +132,13 @@ export async function POST(request: Request) {
       type,
       category: "primitive" as const,
       cssVariable: t.cssVariable,
+      mode: t.mode ?? undefined,
     }));
 
   // Update extraction data and token count
   const updatedProject: Project = {
     ...project,
+    sourceType: "figma",
     tokenCount,
     sourceUrl: fileKey ?? project.sourceUrl,
     pluginTokensPushedAt: new Date().toISOString(),
@@ -169,7 +172,12 @@ export async function POST(request: Request) {
   await upsertProject(updatedProject, org.ownerId);
 
   const origin = new URL(request.url).origin;
-  const url = `${origin}/studio/${updatedProject.id}`;
+  // Auto-generate layout.md on first arrival if the project doesn't have one yet.
+  // Skips the flag on subsequent pushes so existing layout.md isn't clobbered.
+  const needsGeneration = !updatedProject.layoutMd || updatedProject.layoutMd.length === 0;
+  const url = needsGeneration
+    ? `${origin}/studio/${updatedProject.id}?auto-generate=1`
+    : `${origin}/studio/${updatedProject.id}`;
 
   void logEvent("plugin.figma.push_tokens", "figma-plugin", { orgId: auth.orgId, metadata: { tokenCount, componentCount: components.length, fileKey } });
 

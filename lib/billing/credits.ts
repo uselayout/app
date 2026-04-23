@@ -91,11 +91,13 @@ export async function getOrCreateCreditBalance(
 
 /**
  * Check whether a user has enough credits for an AI call.
- * Returns allowed: true if they have remaining monthly OR top-up credits.
+ * @param creditCost - Number of credits this call costs (default 1). Use getModelCreditCost() from lib/ai/models.ts.
+ * Returns allowed: true if they have enough remaining monthly + top-up credits.
  */
 export async function checkQuota(
   userId: string,
-  endpoint: AiEndpoint
+  endpoint: AiEndpoint,
+  creditCost: number = 1
 ): Promise<QuotaCheck> {
   let balance = await getCreditBalance(userId);
   if (!balance) {
@@ -130,10 +132,14 @@ export async function checkQuota(
     ? balance.topupLayoutMd
     : balance.topupAiQuery;
 
-  if (monthly <= 0 && topup <= 0) {
+  const total = monthly + topup;
+
+  if (total < creditCost) {
     return {
       allowed: false,
-      reason: `No ${creditType === "layoutMd" ? "layout.md" : "AI query"} credits remaining. Top up or switch to your own API key.`,
+      reason: total <= 0
+        ? `No ${creditType === "layoutMd" ? "layout.md" : "AI query"} credits remaining. Top up or switch to your own API key.`
+        : `Not enough credits for this model (need ${creditCost}, have ${total}). Try a different model or top up.`,
       remaining: {
         layoutMd: balance.layoutMdRemaining + balance.topupLayoutMd,
         aiQuery: balance.aiQueryRemaining + balance.topupAiQuery,
@@ -152,10 +158,12 @@ export async function checkQuota(
 
 /**
  * Check whether an org has enough credits for an AI call.
+ * @param creditCost - Number of credits this call costs (default 1).
  */
 export async function checkQuotaByOrg(
   orgId: string,
-  endpoint: AiEndpoint
+  endpoint: AiEndpoint,
+  creditCost: number = 1
 ): Promise<QuotaCheck> {
   let balance = await getCreditBalanceByOrg(orgId);
   if (!balance) {
@@ -184,10 +192,14 @@ export async function checkQuotaByOrg(
     ? balance.topupLayoutMd
     : balance.topupAiQuery;
 
-  if (monthly <= 0 && topup <= 0) {
+  const total = monthly + topup;
+
+  if (total < creditCost) {
     return {
       allowed: false,
-      reason: `No ${creditType === "layoutMd" ? "layout.md" : "AI query"} credits remaining. Top up or switch to your own API key.`,
+      reason: total <= 0
+        ? `No ${creditType === "layoutMd" ? "layout.md" : "AI query"} credits remaining. Top up or switch to your own API key.`
+        : `Not enough credits for this model (need ${creditCost}, have ${total}). Try a different model or top up.`,
       remaining: {
         layoutMd: balance.layoutMdRemaining + balance.topupLayoutMd,
         aiQuery: balance.aiQueryRemaining + balance.topupAiQuery,
@@ -205,16 +217,46 @@ export async function checkQuotaByOrg(
 }
 
 /**
- * Atomically deduct one credit. Uses a database RPC function to prevent
+ * Atomically deduct credits. Uses a database RPC function to prevent
  * race conditions when concurrent requests both pass the quota check.
  * Tries monthly credits first, then falls back to top-up credits.
+ * @param creditCost - Number of credits to deduct (default 1).
  */
 export async function deductCredit(
   userId: string,
-  endpoint: AiEndpoint
+  endpoint: AiEndpoint,
+  creditCost: number = 1
 ): Promise<boolean> {
   const creditType = endpoint === "layout-md" ? "design_md" : "test_query";
 
+  if (creditCost > 1) {
+    // Use the new amount-aware RPC
+    const { data, error } = await supabase.rpc("layout_deduct_credit_amount", {
+      p_user_id: userId,
+      p_type: creditType,
+      p_amount: creditCost,
+    });
+
+    if (error) {
+      // Fall back to calling the old RPC multiple times if new RPC not deployed yet
+      console.warn("layout_deduct_credit_amount RPC failed, falling back to single deductions:", error.message);
+      for (let i = 0; i < creditCost; i++) {
+        const { data: d, error: e } = await supabase.rpc("layout_deduct_credit", {
+          p_user_id: userId,
+          p_type: creditType,
+        });
+        if (e || d !== true) {
+          console.error(`Failed to deduct credit ${i + 1}/${creditCost}:`, e?.message);
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return data === true;
+  }
+
+  // Single credit deduction (original path)
   const { data, error } = await supabase.rpc("layout_deduct_credit", {
     p_user_id: userId,
     p_type: creditType,
@@ -229,14 +271,37 @@ export async function deductCredit(
 }
 
 /**
- * Atomically deduct one org credit. Uses a database RPC function to prevent
- * race conditions when concurrent requests both pass the quota check.
+ * Atomically deduct org credits.
+ * @param creditCost - Number of credits to deduct (default 1).
  */
 export async function deductCreditByOrg(
   orgId: string,
-  endpoint: AiEndpoint
+  endpoint: AiEndpoint,
+  creditCost: number = 1
 ): Promise<boolean> {
   const creditType = endpoint === "layout-md" ? "design_md" : "test_query";
+
+  if (creditCost > 1) {
+    const { data, error } = await supabase.rpc("layout_deduct_credit_amount_org", {
+      p_org_id: orgId,
+      p_type: creditType,
+      p_amount: creditCost,
+    });
+
+    if (error) {
+      console.warn("layout_deduct_credit_amount_org RPC failed, falling back:", error.message);
+      for (let i = 0; i < creditCost; i++) {
+        const { data: d, error: e } = await supabase.rpc("layout_deduct_credit_org", {
+          p_org_id: orgId,
+          p_type: creditType,
+        });
+        if (e || d !== true) return false;
+      }
+      return true;
+    }
+
+    return data === true;
+  }
 
   const { data, error } = await supabase.rpc("layout_deduct_credit_org", {
     p_org_id: orgId,

@@ -8,6 +8,7 @@ import { generateLimiter } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 import type { AiMode } from "@/lib/types/billing";
+import { getTaskModelId } from "@/lib/ai/models";
 
 const RequestSchema = z.object({
   instruction: z.string().min(1),
@@ -84,7 +85,8 @@ export async function POST(request: NextRequest) {
 
   const { instruction, layoutMd } = parsed.data;
   const streamController = registerStream();
-  const { stream, usage } = createFixStream(instruction, layoutMd, apiKey);
+  const editorModelId = await getTaskModelId("editor");
+  const { stream, usage } = createFixStream(instruction, layoutMd, apiKey, editorModelId);
 
   void usage
     .then((u) =>
@@ -93,7 +95,7 @@ export async function POST(request: NextRequest) {
         endpoint: "edit",
         mode,
         usage: u,
-        model: "claude-sonnet-4-6",
+        model: editorModelId,
       })
     )
     .catch(async (err) => {

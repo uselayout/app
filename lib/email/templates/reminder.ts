@@ -85,6 +85,7 @@ ${p("If you have any questions or ran into trouble, just reply to this email.")}
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 </head>
 <body style="margin:0;padding:0;background:#0C0C0E;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <span style="display:none;font-size:1px;color:#0C0C0E;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${isFinal ? "Last chance to claim your Layout alpha access." : "Your Layout alpha access code is still waiting for you."}&#847;&zwnj;&#847;&zwnj;&#847;&zwnj;&#847;&zwnj;&#847;&zwnj;&#847;&zwnj;&#847;&zwnj;&#847;&zwnj;</span>
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#0C0C0E;padding:40px 20px;">
     <tr>
       <td align="center">

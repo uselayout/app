@@ -42,7 +42,7 @@ export function RequestAccessClient() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080705] relative overflow-hidden">
+    <div className="force-dark min-h-screen bg-[#080705] relative overflow-hidden text-[var(--text-primary)]">
       {/* Aurora background */}
       <img
         src="/marketing/aurora-hero.webp"
@@ -166,11 +166,11 @@ export function RequestAccessClient() {
             <p className="text-[12px] leading-[16px] text-[var(--text-muted)] text-center">
               By continuing you agree to our
               <br />
-              <a href="/terms" className="text-white underline">
+              <a href="/terms" className="text-[var(--text-primary)] underline">
                 Terms of Service
               </a>{" "}
               and{" "}
-              <a href="/privacy" className="text-white underline">
+              <a href="/privacy" className="text-[var(--text-primary)] underline">
                 Privacy Policy
               </a>
             </p>

@@ -14,7 +14,10 @@ import { ComparisonView } from "./ComparisonView";
 import { PromoteToLibraryModal } from "./PromoteToLibraryModal";
 import { parseVariants, countCompleteVariants } from "@/lib/explore/parse-variants";
 import { friendlyError } from "@/lib/explore/friendly-error";
+import { UpgradePrompt } from "@/components/billing/UpgradePrompt";
 import { applyChangesToLayoutMd } from "@/lib/figma/diff";
+import { mergeContextForGeneration } from "@/lib/context/merge";
+import { replaceBrandingPlaceholders } from "@/lib/branding/post-process";
 import { getStoredApiKey, useKeyStatus, dismissKeyLoss } from "@/lib/hooks/use-api-key";
 import { processCodeImages } from "@/lib/image/process-code-images";
 import { injectPlaceholderSvgs } from "@/lib/image/placeholder";
@@ -26,9 +29,17 @@ import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 import { DEFAULT_EXPLORE_MODEL, AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import { buildCssTokenBlock } from "@/lib/explore/preview-helpers";
+import { uploadReferenceImage } from "@/lib/explore/upload-reference-image";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
-import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont, ComparisonResult, ScannedComponent } from "@/lib/types";
+import type { ExplorationSession, DesignVariant, FigmaChange, ContextFile, AiModelId, ExtractedToken, FontDeclaration, UploadedFont, ComparisonResult, ScannedComponent, ContextDocument, BrandingAsset } from "@/lib/types";
+import { formatScannedComponentForPrompt } from "@/lib/claude/scanned-component-prompt";
+
+// Stable empty-array singletons used as selector fallbacks — see the selectors
+// that read optional project fields. Creating a new `[]` inside the selector
+// is a Zustand anti-pattern that triggers re-renders on every store dispatch.
+const EMPTY_CONTEXT_DOCS: ContextDocument[] = [];
+const EMPTY_BRANDING_ASSETS: BrandingAsset[] = [];
 
 // Build component context string from scanned + saved components
 function buildComponentContext(
@@ -38,14 +49,12 @@ function buildComponentContext(
   const sections: string[] = [];
 
   if (scannedComponents && scannedComponents.length > 0) {
-    const lines = scannedComponents
-      .slice(0, 50)
-      .map((c) => {
-        const propsStr = c.props.length > 0 ? ` props: ${c.props.join(", ")}` : "";
-        const importPath = c.importPath.startsWith("src/") ? "@/" + c.importPath.slice(4) : c.importPath;
-        return `- ${c.name} (import from '${importPath}')${propsStr}`;
-      });
-    sections.push(`### From Codebase\n${lines.join("\n")}`);
+    const hasStorybook = scannedComponents.some((c) => c.source === "storybook");
+    const entries = scannedComponents.slice(0, 50).map(formatScannedComponentForPrompt);
+    const heading = hasStorybook
+      ? "### From Codebase (with Storybook metadata)\nReuse the listed story variants and arg values before inventing new ones."
+      : "### From Codebase";
+    sections.push(`${heading}\n${entries.join("\n")}`);
   }
 
   if (savedComponents && savedComponents.length > 0) {
@@ -57,7 +66,17 @@ function buildComponentContext(
 
   if (sections.length === 0) return "";
 
-  return `\n\n## Existing Components (REUSE these, do NOT recreate)\n\n${sections.join("\n\n")}\n\nWhen building UI, import existing components instead of generating new ones. Use the exact import paths shown above.`;
+  return `\n\n## Existing Components (REUSE these, do NOT recreate)\n\n${sections.join("\n\n")}\n\nWhen building UI, import existing components instead of generating new ones. Use the exact import paths shown above. If a story variant already exists for what you need, prefer its configured arg values.`;
+}
+
+/**
+ * Origin for absolutising `/api/storage/…` brand asset URLs. Srcdoc iframes
+ * sandboxed without `allow-same-origin` (ResponsivePreview modal) can't
+ * resolve relative paths via `<base href>`, so we prepend the current origin
+ * at post-process time.
+ */
+function getBrowserOrigin(): string | undefined {
+  return typeof window !== "undefined" ? window.location.origin : undefined;
 }
 
 interface ExplorerCanvasProps {
@@ -97,6 +116,21 @@ export function ExplorerCanvas({
   const scannedComponents = useProjectStore(
     (s) => s.projects.find((p) => p.id === projectId)?.scannedComponents
   );
+
+  // Project-scoped context documents and branding assets. Select the raw field
+  // (possibly undefined) and fall back with a MODULE-LEVEL EMPTY_ARRAY so the
+  // selector returns a stable reference when the field is missing — otherwise
+  // `?? []` creates a fresh array on every store dispatch, Zustand diffs it as
+  // a change, and ExplorerCanvas re-renders in a tight loop (React #185).
+  const rawContextDocs = useProjectStore(
+    (s) => s.projects.find((p) => p.id === projectId)?.contextDocuments
+  );
+  const projectContextDocs = rawContextDocs ?? EMPTY_CONTEXT_DOCS;
+
+  const rawBrandingAssets = useProjectStore(
+    (s) => s.projects.find((p) => p.id === projectId)?.brandingAssets
+  );
+  const projectBrandingAssets = rawBrandingAssets ?? EMPTY_BRANDING_ASSETS;
 
   // Saved library components for the Explorer prompt
   const orgId = useOrgStore((s) => s.currentOrgId);
@@ -138,6 +172,7 @@ export function ExplorerCanvas({
   const imageAbortMapRef = useRef<Map<string, AbortController>>(new Map());
   const [imageNotice, setImageNotice] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [quotaError, setQuotaError] = useState<{ message: string; remaining?: { layoutMd: number; aiQuery: number } } | null>(null);
   const [generationStatus, setGenerationStatus] = useState<string | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [pushVariant, setPushVariant] = useState<DesignVariant | null>(null);
@@ -156,7 +191,11 @@ export function ExplorerCanvas({
   const pendingBatchCountRef = useRef(0);
   const generatingSessionRef = useRef<string | null>(null);
 
-  const { steps, markStep } = useOnboardingStore();
+  // Use specific selectors — destructuring `useOnboardingStore()` subscribes to
+  // the whole store (persisted) and forces a render-time read of state that
+  // differs SSR vs CSR (empty server default vs localStorage-hydrated client).
+  const steps = useOnboardingStore((s) => s.steps);
+  const markStep = useOnboardingStore((s) => s.markStep);
   const stepsRef = useRef(steps);
   stepsRef.current = steps;
 
@@ -270,7 +309,10 @@ export function ExplorerCanvas({
         const completeCount = countCompleteVariants(fullOutput);
         if (completeCount > lastCount) {
           lastCount = completeCount;
-          const parsed = parseVariants(fullOutput, parseOpts);
+          const parsed = parseVariants(fullOutput, parseOpts).map((v) => ({
+            ...v,
+            code: replaceBrandingPlaceholders(v.code, projectBrandingAssets, getBrowserOrigin()),
+          }));
           const merged = [...existingVariants, ...parsed];
           const updated = updatedExplorations.map((e) =>
             e.id === sessionId ? { ...e, variants: merged } : e
@@ -279,7 +321,10 @@ export function ExplorerCanvas({
         }
       }
 
-      const finalNew = parseVariants(fullOutput, parseOpts);
+      const finalNew = parseVariants(fullOutput, parseOpts).map((v) => ({
+        ...v,
+        code: replaceBrandingPlaceholders(v.code, projectBrandingAssets, getBrowserOrigin()),
+      }));
 
       // Detect errors embedded in the stream (e.g. from Gemini)
       if (finalNew.length === 0) {
@@ -303,13 +348,17 @@ export function ExplorerCanvas({
         markStep("generatedVariant");
       }
 
-      // Inject placeholder SVGs instead of auto-generating images.
+      // Resolve data-brand-logo="..." attributes to real Supabase URLs, then
+      // inject placeholder SVGs for any remaining data-generate-image slots.
       // Users can generate images later via Inspector, smart regenerate, or bulk generate.
       let totalPlaceholders = 0;
       const withPlaceholders = finalNew.map((v) => {
-        const { code: placeholderCode, count } = injectPlaceholderSvgs(v.code);
+        const branded = replaceBrandingPlaceholders(v.code, projectBrandingAssets, getBrowserOrigin());
+        const { code: placeholderCode, count } = injectPlaceholderSvgs(branded);
         totalPlaceholders += count;
-        return count > 0 ? { ...v, code: placeholderCode } : v;
+        return branded !== v.code || count > 0
+          ? { ...v, code: placeholderCode }
+          : v;
       });
 
       if (totalPlaceholders > 0) {
@@ -321,9 +370,11 @@ export function ExplorerCanvas({
         setImageNotice(`${totalPlaceholders} image(s) ready to generate. Use "Generate images" on each variant or click images in Inspector.`);
       }
 
-      // Compute health scores for newly generated variants
-      const variantsToScore = totalPlaceholders > 0 ? withPlaceholders : finalNew;
-      const scored = variantsToScore.map((v) => ({
+      // Compute health scores for newly generated variants. Always score the
+      // branded copy so `data-brand-logo` placeholders that were resolved to
+      // real Supabase URLs survive the final write — otherwise variants with
+      // logos but no `data-generate-image` slots would regress to unbranded.
+      const scored = withPlaceholders.map((v) => ({
         ...v,
         healthScore: calculateHealthScore(v.code, extractedFonts, layoutMd),
       }));
@@ -339,7 +390,7 @@ export function ExplorerCanvas({
       streamingBatchRef.current = null;
       pendingBatchCountRef.current = 0;
     },
-    [onUpdateExplorations, extractedFonts, layoutMd, markStep]
+    [onUpdateExplorations, extractedFonts, layoutMd, markStep, projectBrandingAssets]
   );
 
   /** Shared fetch + stream logic used by all generation handlers */
@@ -371,7 +422,17 @@ export function ExplorerCanvas({
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({ error: "Request failed" }));
+        if (errBody.code === "QUOTA_EXCEEDED" || errBody.code === "BYOK_REQUIRED") {
+          setQuotaError({ message: errBody.error, remaining: errBody.remaining });
+          return;
+        }
         throw new Error(friendlyError(errBody));
+      }
+
+      // Check if server fell back to a cheaper model due to insufficient credits
+      if (res.headers.get("X-Model-Fallback") === "true") {
+        const usedModel = res.headers.get("X-Model-Used") ?? "default model";
+        toast.info(`Switched to ${usedModel} — not enough credits for the selected model.`);
       }
 
       await streamVariants(res, sessionId, latestExplorations, existingVariants, batchId, batchPrompt);
@@ -443,12 +504,23 @@ export function ExplorerCanvas({
 
       setIsGenerating(true);
       setGenerationError(null);
+      setQuotaError(null);
       setSelectedVariantId(null);
       abortRef.current = new AbortController();
 
       // Fetch any URLs in the prompt before generation
-      const { prompt: resolvedPrompt, contextFiles: resolvedContextFiles } =
+      const { prompt: resolvedPrompt, contextFiles: urlResolvedContextFiles } =
         await fetchUrlsFromPrompt(prompt, contextFiles);
+
+      // Merge project-scoped context docs (pinned first) with session-scoped
+      // files. Session files win on name collision. Capped at the server's
+      // max of 3 context files total.
+      const resolvedContextFiles = mergeContextForGeneration({
+        projectDocs: projectContextDocs,
+        sessionFiles: urlResolvedContextFiles,
+        includeProjectContext: true,
+        maxFiles: 3,
+      });
 
       const batchId = crypto.randomUUID();
       const batchPrompt = prompt;
@@ -471,13 +543,21 @@ export function ExplorerCanvas({
       } else {
         sessionId = crypto.randomUUID();
         existingVariants = [];
+        // Upload the data URI to storage so `referenceImage` persists across
+        // refreshes. The data URI itself is still passed to runGeneration for
+        // the immediate AI call — only the persisted copy swaps to a URL.
+        let persistedImage = imageDataUrl;
+        if (imageDataUrl && orgId) {
+          const uploaded = await uploadReferenceImage(orgId, projectId, imageDataUrl);
+          if (uploaded) persistedImage = uploaded;
+        }
         const newExploration: ExplorationSession = {
           id: sessionId,
           projectId,
           prompt,
           variantCount,
           variants: [],
-          referenceImage: imageDataUrl,
+          referenceImage: persistedImage,
           contextFiles: resolvedContextFiles,
           createdAt: new Date().toISOString(),
           generatingBatchId: batchId,
@@ -515,7 +595,7 @@ export function ExplorerCanvas({
         generatingSessionRef.current = null;
       }
     },
-    [isGenerating, projectId, layoutMd, modelId, explorations, currentExploration, onUpdateExplorations, runGeneration, fetchUrlsFromPrompt, scannedComponents, savedLibraryComponents]
+    [isGenerating, projectId, layoutMd, modelId, explorations, currentExploration, onUpdateExplorations, runGeneration, fetchUrlsFromPrompt, scannedComponents, savedLibraryComponents, projectContextDocs]
   );
 
   const handleRefine = useCallback(
@@ -524,11 +604,19 @@ export function ExplorerCanvas({
 
       setIsGenerating(true);
       setGenerationError(null);
+      setQuotaError(null);
       abortRef.current = new AbortController();
 
       // Fetch any URLs in the refinement prompt
-      const { prompt: resolvedPrompt, contextFiles: resolvedContextFiles } =
+      const { prompt: resolvedPrompt, contextFiles: urlResolvedContextFiles } =
         await fetchUrlsFromPrompt(refinementPrompt, contextFiles);
+
+      const resolvedContextFiles = mergeContextForGeneration({
+        projectDocs: projectContextDocs,
+        sessionFiles: urlResolvedContextFiles,
+        includeProjectContext: true,
+        maxFiles: 3,
+      });
 
       const batchId = crypto.randomUUID();
       const batchPrompt = `Refine "${selectedVariant.name}": ${refinementPrompt}`;
@@ -577,7 +665,7 @@ export function ExplorerCanvas({
         generatingSessionRef.current = null;
       }
     },
-    [isGenerating, selectedVariant, currentExploration, projectId, layoutMd, explorations, runGeneration, fetchUrlsFromPrompt, scannedComponents, savedLibraryComponents]
+    [isGenerating, selectedVariant, currentExploration, projectId, layoutMd, explorations, runGeneration, fetchUrlsFromPrompt, scannedComponents, savedLibraryComponents, projectContextDocs]
   );
 
   const handleRegenerate = useCallback(() => {
@@ -606,6 +694,18 @@ export function ExplorerCanvas({
       setActiveExplorationIndex(updated.length - 1);
       setSelectedVariantId(null);
       onInitialImageConsumed?.();
+
+      // If the incoming image is a data URI (Chrome extension push), upload
+      // it to storage and swap in the URL so the reference image survives a
+      // refresh.
+      if (orgId && initialImage.startsWith("data:")) {
+        void uploadReferenceImage(orgId, projectId, initialImage).then((url) => {
+          if (!url) return;
+          onUpdateExplorations(
+            updated.map((e) => (e.id === sessionId ? { ...e, referenceImage: url } : e))
+          );
+        });
+      }
     }
   }, [initialImage]);
 
@@ -615,6 +715,7 @@ export function ExplorerCanvas({
 
       setIsGenerating(true);
       setGenerationError(null);
+      setQuotaError(null);
       abortRef.current = new AbortController();
 
       const batchId = crypto.randomUUID();
@@ -799,6 +900,15 @@ export function ExplorerCanvas({
           },
         });
 
+        // Re-apply branding assets so data-brand-logo="..." keeps resolving
+        // after an image regeneration pass. processCodeImages preserves the
+        // attribute but may have stripped or overwritten the src.
+        result.code = replaceBrandingPlaceholders(
+          result.code,
+          projectBrandingAssets,
+          getBrowserOrigin()
+        );
+
         if (controller.signal.aborted) return;
 
         if (result.skippedNoKey && result.placeholderCount > 0) {
@@ -902,8 +1012,20 @@ export function ExplorerCanvas({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Error banner */}
-      {generationError && (
+      {/* Credit exhaustion prompt */}
+      {quotaError && orgSlug && (
+        <div className="mx-4 mt-4">
+          <UpgradePrompt
+            orgSlug={orgSlug}
+            remaining={quotaError.remaining}
+            message={quotaError.message}
+            onDismiss={() => setQuotaError(null)}
+          />
+        </div>
+      )}
+
+      {/* Error banner (non-quota errors) */}
+      {generationError && !quotaError && (
         <div className="mx-4 mt-4 flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3">
           <p className="flex-1 text-xs text-red-300">
             {generationError}
@@ -1150,6 +1272,7 @@ export function ExplorerCanvas({
                       iconPacks={iconPacks}
                       fonts={extractedFontDeclarations}
                       uploadedFonts={uploadedFonts}
+                      brandingAssets={projectBrandingAssets}
                       isProcessingImages={isProcessingImages}
                       onViewComparison={() => {
                         const comparisons = currentExploration?.comparisons?.filter(
@@ -1336,6 +1459,9 @@ export function ExplorerCanvas({
           variant={responsiveVariant}
           onClose={() => setResponsiveVariant(null)}
           cssTokenBlock={cssTokenBlock}
+          iconPacks={iconPacks}
+          fonts={extractedFontDeclarations}
+          uploadedFonts={uploadedFonts}
         />
       )}
 

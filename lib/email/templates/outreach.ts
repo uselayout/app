@@ -15,6 +15,7 @@ export function outreachEmailHtml({
 }): string {
   const greeting = name ? `Hi ${name},` : "Hi,";
   const sender = senderName || "The Layout team";
+  const preheader = bodyHtml.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim().slice(0, 90);
 
   return `<!DOCTYPE html>
 <html>
@@ -23,6 +24,7 @@ export function outreachEmailHtml({
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 </head>
 <body style="margin:0;padding:0;background:#0C0C0E;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <span style="display:none;font-size:1px;color:#0C0C0E;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${preheader}&#847;&zwnj;&#847;&zwnj;&#847;&zwnj;&#847;&zwnj;&#847;&zwnj;&#847;&zwnj;&#847;&zwnj;&#847;&zwnj;</span>
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#0C0C0E;padding:40px 20px;">
     <tr>
       <td align="center">

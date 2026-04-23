@@ -1,4 +1,11 @@
 // ─── AI Provider / Model ─────────────────────────────────────────────────────
+//
+// The canonical model registry lives in the `layout_ai_models` DB table,
+// managed via the admin panel. See lib/ai/models.ts for the async API.
+//
+// The synchronous constants below are kept for backwards compat and as
+// fallbacks when the DB is unreachable.
+// ─────────────────────────────────────────────────────────────────────────────
 
 export type AiProvider = "claude" | "gemini";
 
@@ -9,18 +16,19 @@ export interface AiModelDef {
   maxOutputTokens: number;
 }
 
-export const AI_MODELS = {
+/** Synchronous fallback model map. Prefer lib/ai/models.ts async API in new code. */
+export const AI_MODELS: Record<string, AiModelDef> = {
   "claude-sonnet-4-6": {
     id: "claude-sonnet-4-6",
     label: "Claude Sonnet 4.6",
     provider: "claude",
     maxOutputTokens: 64_000,
   },
-  "claude-opus-4-5": {
-    id: "claude-opus-4-5",
-    label: "Claude Opus 4.5",
+  "claude-opus-4-7": {
+    id: "claude-opus-4-7",
+    label: "Claude Opus 4.7",
     provider: "claude",
-    maxOutputTokens: 32_000,
+    maxOutputTokens: 128_000,
   },
   "gemini-3.1-pro-preview": {
     id: "gemini-3.1-pro-preview",
@@ -28,15 +36,18 @@ export const AI_MODELS = {
     provider: "gemini",
     maxOutputTokens: 65_536,
   },
-} as const satisfies Record<string, AiModelDef>;
+};
 
-/** Models that require the user to provide their own API key (BYOK) */
-export const BYOK_ONLY_MODELS: ReadonlySet<AiModelId> = new Set([
-  "claude-opus-4-5",
+/**
+ * Models that require the user to provide their own API key (BYOK).
+ * Synchronous fallback. Prefer `isModelByokOnly()` from lib/ai/models.ts.
+ */
+export const BYOK_ONLY_MODELS: ReadonlySet<string> = new Set([
   "gemini-3.1-pro-preview",
 ]);
 
-export type AiModelId = keyof typeof AI_MODELS;
+/** Model ID type. Now a string to support DB-managed models. */
+export type AiModelId = string;
 
 export const DEFAULT_EXPLORE_MODEL: AiModelId = "claude-sonnet-4-6";
 
@@ -80,6 +91,14 @@ export interface ExtractedToken {
   mode?: string;
   /** Alias reference: if this token references another, e.g. "var(--primitive-red-400)". */
   reference?: string;
+  /** Standard role key from Layout's canonical schema (e.g. "bg-app", "accent", "error"). */
+  standardRole?: string;
+  /** Standard CSS variable name: --{kit}-{role} (e.g. "--ada-bg-app"). */
+  standardName?: string;
+  /** Confidence of the standard role assignment. */
+  standardConfidence?: "high" | "medium" | "low";
+  /** CSS variable names of other tokens that resolved to the same value at extraction time. Populated by lib/extraction/dedupe.ts. */
+  aliases?: string[];
 }
 
 export interface ComponentProperty {
@@ -204,6 +223,7 @@ export interface ExtractionResult {
   cssVariables: Record<string, string>;
   computedStyles: Record<string, ComputedStyleMap>;
   interactiveStates?: Record<string, Record<string, string>>;
+  buttonColourCensus?: Record<string, { count: number; elements: Array<{ tag: string; text: string; area: number; color: string }> }>;
   breakpoints?: string[];
   warnings?: string[];
   layoutPatterns?: Array<{
@@ -212,6 +232,12 @@ export interface ExtractionResult {
     crossAxis: string;
     count: number;
   }>;
+  /**
+   * Tokens filtered out by lib/extraction/noise.ts (vendor libs, alpha-tint
+   * primitives). Kept here so users can inspect what was dropped and
+   * re-include anything they actually want.
+   */
+  droppedNoise?: Array<{ name: string; value: string; type: TokenType; reason: "vendor" | "alpha-tint" | "other" }>;
 }
 
 export interface ExtractionStep {
@@ -229,6 +255,16 @@ export interface Project {
   sourceType: SourceType;
   sourceUrl?: string;
   layoutMd: string;
+  /**
+   * User-authored prose only — the parts of layout.md that are NOT regenerated
+   * by the derive engine (design direction, component narrative, anti-pattern
+   * stories, custom notes). When populated, the derive engine composes the
+   * final layout.md by interleaving authored prose with derived blocks
+   * (CORE TOKENS, Appendix A, Icons, Brand Assets, Component Inventory,
+   * Product Context). When absent, the legacy `layoutMd` is used as the base
+   * and derived blocks are regex-injected — behaviour matches pre-Phase-5.
+   */
+  layoutMdAuthored?: string;
   extractionData?: ExtractionResult;
   tokenCount?: number;
   healthScore?: number;
@@ -241,8 +277,106 @@ export interface Project {
   scanSource?: "cli" | "github";
   lastScanAt?: string;
   githubRepo?: string;
+  /** Standardisation data: kit prefix, role assignments, unassigned tokens */
+  standardisation?: ProjectStandardisation;
+  /** Design system snapshots for rollback (max 5) */
+  snapshots?: DesignSystemSnapshot[];
+  /** Brand logos, wordmarks, favicons uploaded by the user */
+  brandingAssets?: BrandingAsset[];
+  /** Project-scoped context documents attached to every variant generation */
+  contextDocuments?: ContextDocument[];
   createdAt: string;
   updatedAt: string;
+}
+
+/** Slots a branding asset can occupy. Informs the `data-brand-logo` attribute Claude emits. */
+export type BrandingSlot =
+  | "primary"
+  | "secondary"
+  | "wordmark"
+  | "favicon"
+  | "mark"
+  | "other";
+
+/**
+ * Context variant for a brand asset. A single brand typically has several
+ * visual treatments of the same logo (full colour, white for dark surfaces,
+ * black for mono prints). The generator picks the right variant at runtime
+ * based on the surface the logo is placed on.
+ */
+export type BrandingVariant = "colour" | "white" | "black" | "mono";
+
+export interface BrandingAsset {
+  id: string;
+  slot: BrandingSlot;
+  /** Defaults to "colour" for existing records written before variants shipped. */
+  variant?: BrandingVariant;
+  url: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  uploadedAt: string;
+}
+
+export interface ContextDocument {
+  id: string;
+  name: string;
+  content: string;
+  mimeType: string;
+  size: number;
+  addedAt: string;
+  pinned?: boolean;
+}
+
+/** Serialisable version of StandardisedTokenMap for project storage */
+export interface ProjectStandardisation {
+  kitPrefix: string;
+  /**
+   * Role assignments keyed by `roleKey` for default / light mode, and by
+   * `${roleKey}::${mode}` (e.g. "bg-app::dark") for non-default modes.
+   * Use `lib/tokens/assignment-key.ts::assignmentKey(roleKey, mode)` rather
+   * than concatenating by hand.
+   */
+  assignments: Record<string, {
+    roleKey: string;
+    /** Non-default mode, e.g. "dark". Omitted for the light / default mode. */
+    mode?: string;
+    originalName: string;
+    originalCssVariable?: string;
+    value: string;
+    standardName: string;
+    confidence: "high" | "medium" | "low";
+    userConfirmed: boolean;
+  }>;
+  /** Tokens not assigned to any standard role */
+  unassigned: {
+    name: string;
+    cssVariable?: string;
+    value: string;
+    type: string;
+    hidden: boolean;
+  }[];
+  /** Auto-generated anti-patterns */
+  antiPatterns: {
+    rule: string;
+    reason: string;
+    fix: string;
+  }[];
+  /** Rule strings of anti-patterns the user has dismissed; hidden from the curated view until re-standardisation. */
+  dismissedAntiPatterns?: string[];
+  /** When the standardisation was last run */
+  standardisedAt: string;
+}
+
+export interface DesignSystemSnapshot {
+  id: string;
+  label: string;
+  tokens: ExtractedTokens;
+  layoutMd: string;
+  healthScore?: number;
+  tokenCount: number;
+  standardisation?: ProjectStandardisation;
+  createdAt: string;
 }
 
 export interface HealthScore {
@@ -340,6 +474,12 @@ export interface StyleEdit {
   before: string;
   after: string;
   tokenMatch?: string;
+  /**
+   * When set, the edit targets an `<img data-brand-logo="{slot}">` element.
+   * The direct-edit engine uses this to locate the correct `<img>` in the
+   * source even when it has no classes or id — match by data attribute.
+   */
+  brandLogoSlot?: string;
 }
 
 export interface ElementAnnotation {

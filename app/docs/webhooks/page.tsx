@@ -179,8 +179,13 @@ export default function WebhooksPage() {
                 </td>
                 <td className="px-4 py-3 text-gray-600">
                   Triggers re-extraction when a push to a configured branch is
-                  received. Useful when design tokens are managed as code and
-                  committed to a repository.
+                  received. Useful when design tokens are managed as code. Also
+                  re-runs the{" "}
+                  <Link href="/docs/scanner" className="text-gray-900 hover:underline">
+                    codebase scanner
+                  </Link>
+                  , so renamed or added components show up in the Studio
+                  without a manual sync.
                 </td>
               </tr>
             </tbody>

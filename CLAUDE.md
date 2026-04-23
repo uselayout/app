@@ -29,7 +29,7 @@ Browser-based tool that extracts design systems from Figma files and live websit
 - **UI:** shadcn/ui components, custom Studio design system
 - **State:** Zustand with localStorage persistence
 - **Editor:** @monaco-editor/react (markdown mode, custom dark theme)
-- **AI:** @anthropic-ai/sdk - Claude Sonnet 4.6 (claude-sonnet-4-6)
+- **AI:** @anthropic-ai/sdk - Claude Sonnet 4.6 (default), Claude Opus 4.7 (premium), Haiku 4.5 (simple edits). Models managed via admin panel (DB-driven).
 - **Extraction:** Playwright (website), Figma REST API (Figma files)
 - **Export:** JSZip for bundle generation
 - **Validation:** Zod for all API inputs

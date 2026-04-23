@@ -39,7 +39,7 @@ function ForgotPasswordContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080705] relative overflow-hidden">
+    <div className="force-dark min-h-screen bg-[#080705] relative overflow-hidden text-[var(--text-primary)]">
       {/* Aurora background */}
       <img
         src="/marketing/aurora-hero.webp"

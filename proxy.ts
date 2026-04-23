@@ -36,11 +36,24 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = await auth.api.getSession({ headers: request.headers });
+  let session: Awaited<ReturnType<typeof auth.api.getSession>> | null = null;
+  let sessionError: string | null = null;
+  try {
+    session = await auth.api.getSession({ headers: request.headers });
+  } catch (err) {
+    sessionError = err instanceof Error ? err.message : String(err);
+    // Surface the real reason in server logs so "silent logout" incidents
+    // leave a trace to investigate.
+    console.error(`[proxy] session lookup failed for ${pathname}:`, sessionError);
+  }
 
   if (!session) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
+    // Tell the login page which kind of session miss this was. `error` covers
+    // the thrown-exception case (likely env / DB), `expired` the benign
+    // no-cookie case. The login page can render different copy for each.
+    loginUrl.searchParams.set("reason", sessionError ? "error" : "expired");
     return NextResponse.redirect(loginUrl);
   }
 

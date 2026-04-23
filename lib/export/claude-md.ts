@@ -3,6 +3,16 @@ import { extractQuickReference } from "./extract-quick-reference";
 
 export function generateClaudeMd(project: Project): string {
   const quickRefLines = extractQuickReference(project.layoutMd);
+  const hasBranding = (project.brandingAssets?.length ?? 0) > 0;
+  const hasContext = (project.contextDocuments?.length ?? 0) > 0;
+
+  const brandingSection = hasBranding
+    ? `\n- \`.layout/branding/\` — brand logos, wordmarks, favicons. Reference in generated code with \`data-brand-logo="primary"\` (also "secondary", "wordmark", "favicon", "mark"). Do **not** hardcode URLs; the Layout runtime resolves the attribute.`
+    : "";
+
+  const contextSection = hasContext
+    ? `\n- \`.layout/context/\` — project context documents (brand voice, product descriptions, copy guidelines). Read before writing user-facing copy.`
+    : "";
 
   return `## Design System — ${project.name}
 
@@ -25,7 +35,7 @@ If the **layout** MCP server is connected, use these tools:
 Otherwise, read the local files in \`.layout/\`:
 - \`.layout/layout.md\` — complete design system specification
 - \`.layout/tokens.css\` — CSS custom properties
-- \`.layout/tokens.json\` — W3C DTCG token format
+- \`.layout/tokens.json\` — W3C DTCG token format${brandingSection}${contextSection}
 
 **Before building any UI component, read the design system first.**
 `;

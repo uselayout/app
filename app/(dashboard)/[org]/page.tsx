@@ -8,8 +8,6 @@ import { useProjectStore } from "@/lib/store/project";
 import { useOnboardingStore } from "@/lib/store/onboarding";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { NewExtractionModal } from "@/components/studio/NewExtractionModal";
-import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
-import { ApiKeyModal } from "@/components/shared/ApiKeyModal";
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
@@ -43,7 +41,6 @@ export default function OrgProjectsPage() {
 
   const searchParams = useSearchParams();
   const [showNewExtraction, setShowNewExtraction] = useState(false);
-  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
 
   // Open extraction modal if ?new=true is in the URL
   useEffect(() => {
@@ -76,15 +73,6 @@ export default function OrgProjectsPage() {
           <Plus size={14} />
           New Project
         </button>
-      </div>
-
-      <div className="mb-6">
-        <OnboardingChecklist
-          onOpenExtraction={() => setShowNewExtraction(true)}
-          onOpenApiKeyModal={() => setShowApiKeyModal(true)}
-          firstProjectId={projects[0]?.id}
-          orgSlug={orgSlug}
-        />
       </div>
 
       {hydrating ? (
@@ -148,10 +136,6 @@ export default function OrgProjectsPage() {
 
       {showNewExtraction && (
         <NewExtractionModal onClose={() => setShowNewExtraction(false)} />
-      )}
-
-      {showApiKeyModal && (
-        <ApiKeyModal onClose={() => setShowApiKeyModal(false)} />
       )}
 
       {deleteTarget && (

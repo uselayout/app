@@ -158,6 +158,37 @@ export default function ExplorerPage() {
 
           <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              Rate variants
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Every variant card has thumbs up and thumbs down buttons.
+              Ratings are logged per-project and visible in the admin
+              dashboard so the team can see which prompts are producing
+              strong results. No effect on the variant itself; purely a
+              feedback signal.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              Context docs shape generation
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Brand voice docs, copy guidelines, and product descriptions
+              attached to the project via{" "}
+              <Link href="/docs/context-docs" className="text-gray-900 hover:underline">
+                Product Context
+              </Link>{" "}
+              are included in every Explorer prompt alongside your design
+              tokens. Variants generated with context docs produce markedly
+              more on-brand microcopy in the first draft. Oversized uploads
+              are rejected with a friendly error naming the file and the
+              limit.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
               Health Scoring
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">

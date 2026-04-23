@@ -9,7 +9,9 @@ import { generateTokensCss } from "@/lib/export/tokens-css";
 import { generateTokensJson } from "@/lib/export/tokens-json";
 import { generateTailwindConfig } from "@/lib/export/tailwind-config";
 import { logEvent } from "@/lib/logging/platform-event";
-import type { Project, ExportFormat, UploadedFont } from "@/lib/types";
+import { buildCuratedExtractedTokens } from "@/lib/tokens/curated-to-extracted";
+import { deriveLayoutMd } from "@/lib/layout-md/derive";
+import type { Project, ExportFormat, UploadedFont, BrandingAsset, ContextDocument } from "@/lib/types";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 
@@ -31,6 +33,29 @@ const RequestSchema = z.object({
       projectId: z.string(),
       orgId: z.string().optional(),
     })).optional(),
+    brandingAssets: z.array(z.object({
+      id: z.string(),
+      slot: z.enum(["primary", "secondary", "wordmark", "favicon", "mark", "other"]),
+      variant: z.enum(["colour", "white", "black", "mono"]).optional(),
+      url: z.string(),
+      name: z.string(),
+      mimeType: z.string(),
+      size: z.number(),
+      uploadedAt: z.string(),
+    })).optional(),
+    contextDocuments: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      content: z.string(),
+      mimeType: z.string(),
+      size: z.number(),
+      addedAt: z.string(),
+      pinned: z.boolean().optional(),
+    })).optional(),
+    // Standardisation MUST be declared or Zod strips it — the exported
+    // layout.md runs through deriveLayoutMd, which uses it to regenerate
+    // the CORE TOKENS block.
+    standardisation: z.unknown().optional(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
     tokenCount: z.number().optional(),
@@ -73,10 +98,12 @@ export async function POST(request: NextRequest) {
   const { project, formats } = parsed.data;
   const zip = new JSZip();
 
-  // Always include layout.md
-  zip.file("layout.md", project.layoutMd);
-
   const proj = project as Project;
+
+  // Run the client-supplied project through the derive engine so the zipped
+  // layout.md matches what MCP and the Explorer see: fresh CORE TOKENS from
+  // the curated assignments, fresh Appendix A from the extracted tokens.
+  zip.file("layout.md", deriveLayoutMd(proj));
 
   for (const format of formats) {
     addFormatToZip(zip, format, proj);
@@ -147,7 +174,79 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  void logEvent("export.bundle", "studio", { userId: session.user.id, metadata: { formats, projectId: project.id, hasScreenshots: !!proj.extractionData?.screenshots?.length, fontCount: uploadedFonts.length } });
+  // Include branding assets: fetch each from the Supabase URL and write into
+  // a branding/ folder alongside an index.json mapping slot -> filename so
+  // downstream consumers (CLI / MCP) can resolve data-brand-logo="..." slots.
+  const brandingAssets = (proj.brandingAssets ?? []) as BrandingAsset[];
+  if (brandingAssets.length > 0) {
+    const brandingDir = zip.folder("branding");
+    const manifest: Record<string, { filename: string; slot: string; url: string; mimeType: string }> = {};
+
+    await Promise.all(
+      brandingAssets.map(async (asset) => {
+        try {
+          const storagePath = asset.url.replace(/^\/api\/storage\//, "");
+          const url = `${SUPABASE_URL}/storage/v1/object/public/${storagePath}`;
+          const res = await fetch(url);
+          if (!res.ok) return;
+          const buffer = await res.arrayBuffer();
+          const ext = asset.name.includes(".")
+            ? asset.name.split(".").pop()
+            : undefined;
+          const safeName = asset.name
+            .toLowerCase()
+            .replace(/[^a-z0-9.]+/g, "-");
+          const filename = `${asset.slot}-${asset.id}${ext ? "" : ""}-${safeName}`;
+          brandingDir?.file(filename, buffer);
+          manifest[asset.id] = {
+            filename,
+            slot: asset.slot,
+            url: asset.url,
+            mimeType: asset.mimeType,
+          };
+        } catch {
+          // Skip failed downloads; continue bundling.
+        }
+      })
+    );
+
+    brandingDir?.file("index.json", JSON.stringify(manifest, null, 2));
+  }
+
+  // Include context documents: one .md per doc + a lightweight index.json.
+  const contextDocuments = (proj.contextDocuments ?? []) as ContextDocument[];
+  if (contextDocuments.length > 0) {
+    const contextDir = zip.folder("context");
+    const manifest: Record<string, { name: string; pinned: boolean; mimeType: string; addedAt: string }> = {};
+
+    for (const doc of contextDocuments) {
+      const safeName = doc.name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-");
+      const filename = safeName.endsWith(".md") || safeName.endsWith(".txt")
+        ? safeName
+        : `${safeName}.md`;
+      contextDir?.file(filename, doc.content);
+      manifest[doc.id] = {
+        name: filename,
+        pinned: Boolean(doc.pinned),
+        mimeType: doc.mimeType,
+        addedAt: doc.addedAt,
+      };
+    }
+
+    contextDir?.file("index.json", JSON.stringify(manifest, null, 2));
+  }
+
+  void logEvent("export.bundle", "studio", {
+    userId: session.user.id,
+    metadata: {
+      formats,
+      projectId: project.id,
+      hasScreenshots: !!proj.extractionData?.screenshots?.length,
+      fontCount: uploadedFonts.length,
+      brandingCount: brandingAssets.length,
+      contextDocCount: contextDocuments.length,
+    },
+  });
 
   const zipBuffer = await zip.generateAsync({ type: "arraybuffer" });
   const safeName = project.name
@@ -182,21 +281,26 @@ function addFormatToZip(zip: JSZip, format: ExportFormat, project: Project) {
     }
     case "tokens-css": {
       if (project.extractionData?.tokens) {
-        zip.file("tokens.css", generateTokensCss(project.extractionData.tokens));
+        const tokens = buildCuratedExtractedTokens(project.standardisation) ?? project.extractionData.tokens;
+        const out = generateTokensCss(tokens);
+        if (out.length > 0) zip.file("tokens.css", out);
       }
       break;
     }
     case "tokens-json": {
       if (project.extractionData?.tokens) {
-        zip.file("tokens.json", generateTokensJson(project.extractionData.tokens));
+        const tokens = buildCuratedExtractedTokens(project.standardisation) ?? project.extractionData.tokens;
+        const out = generateTokensJson(tokens);
+        if (out.length > 0) zip.file("tokens.json", out);
       }
       break;
     }
     case "tailwind-config": {
       if (project.extractionData?.tokens) {
+        const tokens = buildCuratedExtractedTokens(project.standardisation) ?? project.extractionData.tokens;
         zip.file(
           "tailwind.config.js",
-          generateTailwindConfig(project.extractionData.tokens, project.extractionData.breakpoints)
+          generateTailwindConfig(tokens, project.extractionData.breakpoints)
         );
       }
       break;

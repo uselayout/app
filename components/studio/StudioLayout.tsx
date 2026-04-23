@@ -12,8 +12,11 @@ interface StudioLayoutProps {
   showSourcePanel?: boolean;
 }
 
-const MIN_PANEL_WIDTH = 200;
-const DEFAULT_LEFT = 280;
+const MIN_PANEL_WIDTH = 320;
+// Wider floor and default so long token names (e.g.
+// `--ramp-accent-primary-hover`) and the hex value column fit without the
+// panel feeling cramped or clipping.
+const DEFAULT_LEFT = 400;
 
 export function StudioLayout({
   sourcePanel,

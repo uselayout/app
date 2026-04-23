@@ -8,6 +8,7 @@ import { checkQuota, deductCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
 import { saveLayoutMdVersion } from "@/lib/supabase/layout-md-versions";
 import type { Project, ExtractionResult } from "@/lib/types";
+import { getTaskModelId } from "@/lib/ai/models";
 import type { AiMode, TokenUsageResult } from "@/lib/types/billing";
 import { generationLimit } from "@/lib/concurrency";
 
@@ -111,8 +112,9 @@ export async function POST(request: Request) {
   }
 
   let usage: Promise<TokenUsageResult> | undefined;
+  const extractionModelId = await getTaskModelId("extraction");
   const layoutMd = await generationLimit(async () => {
-    const { stream, usage: usagePromise } = createLayoutMdStream(extractionData, apiKey);
+    const { stream, usage: usagePromise } = createLayoutMdStream(extractionData, apiKey, undefined, extractionModelId);
 
     // Collect the full stream into a string
     const reader = stream.getReader();
@@ -168,7 +170,7 @@ export async function POST(request: Request) {
           endpoint: "layout-md",
           mode,
           usage: u,
-          model: "claude-sonnet-4-6",
+          model: extractionModelId,
         }),
       )
       .catch((err) => console.error("Usage logging failed:", err));

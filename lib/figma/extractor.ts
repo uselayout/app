@@ -2,6 +2,8 @@ import { FigmaClient, FigmaApiError } from "./client";
 import type { FigmaNode } from "./client";
 import { parseStyles } from "./parsers/styles";
 import { parseComponents } from "./parsers/components";
+import { partitionNoise } from "@/lib/extraction/noise";
+import { dedupeTokensByValue } from "@/lib/extraction/dedupe";
 import type { ExtractionResult, ExtractedToken, TokenCategory, TokenType } from "@/lib/types";
 
 interface FigmaExtractionOptions {
@@ -443,20 +445,41 @@ export async function extractFromFigma({
     cssVariables = Object.fromEntries(Object.entries(cssVariables).slice(0, 1000));
   }
 
-  const tokenCount = colors.length + typography.length + effects.length + radius.length + spacing.length;
+  // Drop vendor / alpha-tint noise, then collapse value duplicates.
+  const droppedNoise: Array<{ name: string; value: string; type: TokenType; reason: "vendor" | "alpha-tint" | "other" }> = [];
+  function filterNoise<T extends ExtractedToken>(arr: T[]): T[] {
+    const { kept, dropped } = partitionNoise(arr);
+    for (const d of dropped) {
+      droppedNoise.push({
+        name: d.cssVariable ?? d.name,
+        value: d.value,
+        type: d.type,
+        reason: /rgba\(\s*var\(\s*--/.test(d.value) ? "alpha-tint" : "vendor",
+      });
+    }
+    return kept;
+  }
+
+  const finalColors = dedupeTokensByValue(filterNoise(colors));
+  const finalTypography = dedupeTokensByValue(filterNoise(typography));
+  const finalSpacing = dedupeTokensByValue(filterNoise(spacing));
+  const finalRadius = dedupeTokensByValue(filterNoise(radius));
+  const finalEffects = dedupeTokensByValue(filterNoise(effects));
+
+  const tokenCount = finalColors.length + finalTypography.length + finalEffects.length + finalRadius.length + finalSpacing.length;
   const cappedVarCount = Object.keys(cssVariables).length;
-  onProgress?.("complete", 80, `Extraction complete — ${tokenCount} tokens${cappedVarCount > 0 ? `, ${cappedVarCount} variables` : ""}`);
+  onProgress?.("complete", 80, `Extraction complete — ${tokenCount} tokens${cappedVarCount > 0 ? `, ${cappedVarCount} variables` : ""}${droppedNoise.length > 0 ? `, ${droppedNoise.length} noise filtered` : ""}`);
 
   return {
     sourceType: "figma",
     sourceName: file.name,
     sourceUrl: `https://www.figma.com/file/${fileKey}`,
     tokens: {
-      colors,
-      typography,
-      spacing,
-      radius,
-      effects,
+      colors: finalColors,
+      typography: finalTypography,
+      spacing: finalSpacing,
+      radius: finalRadius,
+      effects: finalEffects,
       motion: [],
     },
     components,
@@ -483,5 +506,6 @@ export async function extractFromFigma({
     computedStyles: {},
     layoutPatterns,
     warnings: warnings.length > 0 ? warnings : undefined,
+    droppedNoise: droppedNoise.length > 0 ? droppedNoise : undefined,
   };
 }

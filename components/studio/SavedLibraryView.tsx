@@ -9,6 +9,8 @@ import { SavedComponentDetail } from "./SavedComponentDetail";
 import type { Component } from "@/lib/types/component";
 
 interface SavedLibraryViewProps {
+  /** When present, scope the library to components saved from this project. */
+  projectId?: string;
   onNavigateToCanvas?: () => void;
   onOpenInCanvas?: (code: string, name: string) => void;
   onPushToFigma?: (code: string, name: string) => void;
@@ -168,7 +170,7 @@ function SavedCard({
   );
 }
 
-export function SavedLibraryView({ onNavigateToCanvas, onOpenInCanvas, onPushToFigma }: SavedLibraryViewProps) {
+export function SavedLibraryView({ projectId, onNavigateToCanvas, onOpenInCanvas, onPushToFigma }: SavedLibraryViewProps) {
   const orgId = useOrgStore((s) => s.currentOrgId);
   const [components, setComponents] = useState<Component[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,7 +187,8 @@ export function SavedLibraryView({ onNavigateToCanvas, onOpenInCanvas, onPushToF
     }
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/organizations/${orgId}/components`)
+    const qs = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
+    fetch(`/api/organizations/${orgId}/components${qs}`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data: Component[]) => {
         if (!cancelled) setComponents(data);
@@ -195,7 +198,7 @@ export function SavedLibraryView({ onNavigateToCanvas, onOpenInCanvas, onPushToF
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [orgId]);
+  }, [orgId, projectId]);
 
   const handleCopyCode = useCallback(async (comp: Component) => {
     const ok = await copyToClipboard(comp.code);

@@ -13,7 +13,7 @@ import { EditHistoryPanel } from "@/components/studio/EditHistoryPanel";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { countPlaceholderImages } from "@/lib/image/placeholder";
 import { PaperIcon } from "@/components/studio/PaperPushModal";
-import type { DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotation, ExtractedToken, FontDeclaration, UploadedFont } from "@/lib/types";
+import type { BrandingAsset, DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotation, ExtractedToken, FontDeclaration, UploadedFont } from "@/lib/types";
 
 
 // ---------------------------------------------------------------------------
@@ -67,7 +67,12 @@ const CSS_TO_TAILWIND: Record<string, (val: string) => string> = {
   marginLeft: (v) => `ml-[${v}]`,
 };
 
-/** Tailwind class prefix patterns for each CSS property (for removal) */
+/**
+ * Tailwind class prefix patterns for each CSS property (for removal).
+ * Layout properties (display, flexDirection, alignItems, justifyContent) use
+ * negative lookbehind (?<![\w:]) to ONLY match base classes, preserving
+ * responsive variants like md:flex-row, lg:items-center, etc.
+ */
 const TAILWIND_PREFIXES: Record<string, RegExp> = {
   fontWeight: /\bfont-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black|\[\d+\])\b/g,
   fontSize: /\btext-(?:xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|\[[^\]]+\])\b/g,
@@ -75,10 +80,11 @@ const TAILWIND_PREFIXES: Record<string, RegExp> = {
   letterSpacing: /\btracking-(?:tighter|tight|normal|wide|wider|widest|\[[^\]]+\])\b/g,
   fontFamily: /\bfont-(?:sans|serif|mono|\[[^\]]+\])\b/g,
   textAlign: /\btext-(?:left|center|right|justify)\b/g,
-  display: /\b(?:block|flex|grid|inline|inline-flex|inline-block|hidden)\b/g,
-  flexDirection: /(?<![:\w])flex-(?:row|col|row-reverse|col-reverse)\b/g,
-  alignItems: /\bitems-(?:start|end|center|baseline|stretch)\b/g,
-  justifyContent: /\bjustify-(?:start|end|center|between|around|evenly)\b/g,
+  // Layout props: only match BASE class, not responsive variants (sm:flex, md:flex-row, etc.)
+  display: /(?<![\w:])(?:block|flex|grid|inline|inline-flex|inline-block|hidden)\b/g,
+  flexDirection: /(?<![\w:])flex-(?:row|col|row-reverse|col-reverse)\b/g,
+  alignItems: /(?<![\w:])items-(?:start|end|center|baseline|stretch)\b/g,
+  justifyContent: /(?<![\w:])justify-(?:start|end|center|between|around|evenly)\b/g,
   color: /\btext-\[(?:rgb|rgba|#)[^\]]*\]\b/g,
   backgroundColor: /\bbg-\[(?:rgb|rgba|#)[^\]]*\]\b/g,
   borderColor: /\bborder-\[(?:rgb|rgba|#)[^\]]*\]\b/g,
@@ -104,6 +110,11 @@ const TAILWIND_PREFIXES: Record<string, RegExp> = {
  * by its tag name and CSS classes. Scores candidates by class overlap and
  * returns null if the match is ambiguous (tied scores) or below threshold.
  */
+/**
+ * Find the opening tag region for an element by tag name + class matching.
+ * Uses a bracket-counting parser to handle arbitrarily nested JSX expressions
+ * that regex alone cannot parse reliably.
+ */
 function findElementRegion(
   code: string,
   elementTag: string,
@@ -111,15 +122,39 @@ function findElementRegion(
 ): { tagStart: number; tagEnd: number; tagContent: string } | null {
   if (!elementTag) return null;
   const classWords = elementClasses.split(/\s+/).filter(Boolean);
-  // Match both self-closing and normal opening tags for this element type
-  const tagRegex = new RegExp(`<${elementTag}\\b(?:[^>"'{}]|"[^"]*"|'[^']*'|\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\})*(?:/>|>)`, "g");
+
+  // Find all positions where this tag opens
+  const tagOpen = new RegExp(`<${elementTag}\\b`, "g");
   const candidates: { tagStart: number; tagEnd: number; tagContent: string; score: number }[] = [];
 
-  let m: RegExpExecArray | null;
-  while ((m = tagRegex.exec(code)) !== null) {
-    const tagContent = m[0];
-    const tagStart = m.index;
-    const tagEnd = m.index + tagContent.length;
+  let openMatch: RegExpExecArray | null;
+  while ((openMatch = tagOpen.exec(code)) !== null) {
+    const tagStart = openMatch.index;
+    // Walk forward, counting braces and handling strings, to find > or />
+    let i = tagStart + openMatch[0].length;
+    let braceDepth = 0;
+    let inString: string | false = false;
+    let tagEnd = -1;
+
+    while (i < code.length) {
+      const ch = code[i];
+      if (inString) {
+        if (ch === inString && code[i - 1] !== "\\") inString = false;
+        i++;
+        continue;
+      }
+      if (ch === '"' || ch === "'" || ch === "`") { inString = ch; i++; continue; }
+      if (ch === "{") { braceDepth++; i++; continue; }
+      if (ch === "}") { braceDepth--; i++; continue; }
+      if (braceDepth === 0) {
+        if (ch === "/" && code[i + 1] === ">") { tagEnd = i + 2; break; }
+        if (ch === ">") { tagEnd = i + 1; break; }
+      }
+      i++;
+    }
+    if (tagEnd === -1) continue;
+
+    const tagContent = code.slice(tagStart, tagEnd);
 
     // Score by class overlap
     let score = 0;
@@ -341,12 +376,124 @@ function tryAddInlineStyle(code: string, edit: StyleEdit): string | null {
 }
 
 /**
+ * Convert a camelCase JS style property to kebab-case CSS property.
+ * e.g. paddingTop → padding-top, backgroundColor → background-color
+ */
+function toKebabCase(prop: string): string {
+  return prop.replace(/([A-Z])/g, "-$1").toLowerCase();
+}
+
+/**
+ * Try to edit a CSS property value directly inside a <style> block.
+ * Matches CSS rules by the element's class names and replaces the property value.
+ * This is critical for AI-generated components that use <style> blocks instead of
+ * inline styles or Tailwind classes.
+ */
+function tryDirectStyleBlockEdit(code: string, edit: StyleEdit): string | null {
+  const { property, after, elementClasses } = edit;
+  const kebabProp = toKebabCase(property);
+  if (!kebabProp) return null;
+
+  // Find <style> or <style jsx> blocks in the code
+  const styleBlockRegex = /<style(?:\s[^>]*)?>([^]*?)<\/style>/gi;
+  let styleMatch: RegExpExecArray | null;
+  const classWords = elementClasses.split(/\s+/).filter(Boolean);
+  if (classWords.length === 0) return null;
+
+  while ((styleMatch = styleBlockRegex.exec(code)) !== null) {
+    const styleContent = styleMatch[1];
+    const styleStart = styleMatch.index + styleMatch[0].indexOf(styleContent);
+
+    // Try each class to find a matching CSS rule
+    for (const cls of classWords) {
+      // Match rules like .className { ... } - handle both exact and compound selectors
+      const escapedCls = cls.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const ruleRegex = new RegExp(
+        `(\\.${escapedCls}\\b[^{]*\\{)([^}]*)\\}`,
+        "g",
+      );
+      let ruleMatch: RegExpExecArray | null;
+      while ((ruleMatch = ruleRegex.exec(styleContent)) !== null) {
+        const ruleBody = ruleMatch[2];
+        // Find the property in this rule
+        const propRegex = new RegExp(
+          `(${kebabProp}\\s*:\\s*)([^;!}]+)(\\s*(?:!important)?\\s*[;}])`,
+        );
+        const propMatch = propRegex.exec(ruleBody);
+        if (propMatch) {
+          const newRuleBody = ruleBody.slice(0, propMatch.index) +
+            propMatch[1] + after + propMatch[3] +
+            ruleBody.slice(propMatch.index + propMatch[0].length);
+          const newStyleContent = styleContent.slice(0, ruleMatch.index + ruleMatch[1].length) +
+            newRuleBody + "}" +
+            styleContent.slice(ruleMatch.index + ruleMatch[0].length);
+          return code.slice(0, styleStart) + newStyleContent + code.slice(styleStart + styleContent.length);
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Rewrite a brand-logo `<img>` tag in the source: swap its `src` or
+ * `data-brand-variant` attribute. Matches the `<img>` by its
+ * `data-brand-logo="{slot}"` attribute so it still works when the tag has
+ * no className. Mirrors the strip-src pattern in
+ * lib/branding/post-process.ts so JSX "last-src-wins" can't leave a stale
+ * value behind.
+ */
+function tryDirectBrandLogoEdit(code: string, edit: StyleEdit): string | null {
+  const slot = edit.brandLogoSlot;
+  if (!slot) return null;
+
+  const slotEscaped = slot.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const imgRe = new RegExp(
+    `<img\\s[^>]*data-brand-logo=["']${slotEscaped}["'][^>]*\\/?>`,
+    "i",
+  );
+  const match = imgRe.exec(code);
+  if (!match) return null;
+
+  const tag = match[0];
+  let updated = tag;
+
+  if (edit.property === "src") {
+    updated = updated
+      .replace(/\ssrc\s*=\s*"[^"]*"/gi, "")
+      .replace(/\ssrc\s*=\s*'[^']*'/gi, "")
+      .replace(/\ssrc\s*=\s*\{[^}]*\}/gi, "")
+      .replace(/\/?\s*>$/, ` src="${edit.after}" />`);
+  } else if (edit.property === "data-brand-variant") {
+    if (/data-brand-variant=/.test(updated)) {
+      updated = updated.replace(
+        /data-brand-variant=(?:"[^"]*"|'[^']*'|\{[^}]*\})/i,
+        `data-brand-variant="${edit.after}"`,
+      );
+    } else {
+      updated = updated.replace(
+        new RegExp(`(data-brand-logo=["']${slotEscaped}["'])`, "i"),
+        `$1 data-brand-variant="${edit.after}"`,
+      );
+    }
+  } else {
+    return null;
+  }
+
+  if (updated === tag) return null;
+  return code.slice(0, match.index) + updated + code.slice(match.index + tag.length);
+}
+
+/**
  * Try to apply a single style edit directly in the source code.
  * Attempts in order:
  *  1. Text content replacement
- *  2. Modify existing inline style
- *  3. Replace existing Tailwind class (not add new ones)
- *  4. Add new inline style (overrides <style> blocks via specificity)
+ *  2. Brand-logo attribute swap (src / data-brand-variant)
+ *  3. Modify existing inline style
+ *  4. Replace existing Tailwind class (not add new ones)
+ *  5. Add new inline style (overrides <style> blocks via specificity)
+ *  6. Edit CSS property in <style> block
  * Returns the updated code, or null if all direct paths fail.
  */
 function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null {
@@ -360,6 +507,19 @@ function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null 
       return textResult;
     }
     console.debug("[direct-edit] textContent: no direct match found for:", edit.before?.substring(0, 50));
+    return null;
+  }
+
+  // Handle brand-logo attribute edits — find the `<img data-brand-logo="{slot}">`
+  // and rewrite src or data-brand-variant. Matches by slot instead of classes
+  // because brand-logo imgs often have no class at all.
+  if (edit.brandLogoSlot && (property === "src" || property === "data-brand-variant")) {
+    const brandResult = tryDirectBrandLogoEdit(code, edit);
+    if (brandResult) {
+      console.debug(`[direct-edit] ${property}: brand-logo edit succeeded (slot=${edit.brandLogoSlot})`);
+      return brandResult;
+    }
+    console.debug(`[direct-edit] ${property}: brand-logo edit failed to find matching <img> (slot=${edit.brandLogoSlot})`);
     return null;
   }
 
@@ -393,11 +553,33 @@ function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null 
     }
   }
 
+  // Try adding a Tailwind class (when element uses Tailwind but lacks a class for this property).
+  // Preferred over inline style because it preserves responsive behaviour.
+  if (elementClasses && CSS_TO_TAILWIND[property]) {
+    const classMatch = findBestClassNameMatch(code, elementClasses, edit.elementTag);
+    if (classMatch) {
+      const newClass = CSS_TO_TAILWIND[property](after);
+      const updatedClassName = `${classMatch.captured} ${newClass}`;
+      const result = code.replace(classMatch.full, `${classMatch.attrName}="${updatedClassName}"`);
+      if (result !== code) {
+        console.debug(`[direct-edit] ${property}: added Tailwind class (preserves responsive)`);
+        return result;
+      }
+    }
+  }
+
   // Fall back to adding an inline style — overrides <style> blocks via CSS specificity
   const addResult = tryAddInlineStyle(code, edit);
   if (addResult) {
     console.debug(`[direct-edit] ${property}: added inline style (overrides <style> block)`);
     return addResult;
+  }
+
+  // Try editing CSS property directly in a <style> block
+  const styleBlockResult = tryDirectStyleBlockEdit(code, edit);
+  if (styleBlockResult) {
+    console.debug(`[direct-edit] ${property}: edited <style> block CSS rule`);
+    return styleBlockResult;
   }
 
   console.debug(`[direct-edit] ${property}: all direct edit paths failed, will use AI fallback`);
@@ -465,6 +647,7 @@ interface VariantCardProps {
   iconPacks?: string[];
   fonts?: FontDeclaration[];
   uploadedFonts?: UploadedFont[];
+  brandingAssets?: BrandingAsset[];
   /** When true, card animates in with a scale-up + fade-in entrance */
   isNewlyGenerated?: boolean;
 }
@@ -492,6 +675,7 @@ export function VariantCard({
   iconPacks,
   fonts,
   uploadedFonts,
+  brandingAssets,
   isNewlyGenerated = false,
 }: VariantCardProps) {
   // Top-down clip-path reveal for newly generated variants.
@@ -1088,6 +1272,7 @@ export function VariantCard({
                 if (fullscreenIframeRef.current) fullscreenIframeRef.current.srcdoc = srcdoc;
               }}
               designTokens={designTokens}
+              brandingAssets={brandingAssets}
               iframeScale={1}
             />
 

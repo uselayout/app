@@ -41,6 +41,56 @@ describe('calculateHealthScore', () => {
     expect(hexIssue).toBeUndefined();
   });
 
+  it('treats short-form and long-form hex as equivalent', () => {
+    // layout.md uses #FFFBFE (6-digit); output uses short-form equivalents and case-varied forms
+    const withShortForm = '<div style={{ background: "#fff", color: "#6750a4" }}>Text</div>';
+    const layoutMdWithShort = '```css\n--color-surface: #FFF;\n--color-primary: #6750A4;\n```';
+    const result = calculateHealthScore(withShortForm, [], layoutMdWithShort);
+    const hexIssue = result.issues.find((i) => i.rule === 'No hardcoded colours');
+    expect(hexIssue).toBeUndefined();
+  });
+
+  it('matches long-form output against short-form layout.md hex', () => {
+    // layout.md uses short-form, output uses long-form — should still match
+    const output = '<div style={{ color: "#ffffff" }}>Text</div>';
+    const layoutMd = '```css\n--color-surface: #fff;\n```';
+    const result = calculateHealthScore(output, [], layoutMd);
+    const hexIssue = result.issues.find((i) => i.rule === 'No hardcoded colours');
+    expect(hexIssue).toBeUndefined();
+  });
+
+  it('flags font-family without line-height when typography tokens exist', () => {
+    const layoutMd = '```css\n--typography-body-size: 16px;\n--typography-body-family: Geist;\n```';
+    const output = '<div style={{ fontFamily: "Geist" }}>Hello</div>';
+    const result = calculateHealthScore(output, [], layoutMd);
+    const issue = result.issues.find((i) => i.rule === 'Composite typography');
+    expect(issue).toBeDefined();
+  });
+
+  it('does not flag composite typography when line-height is set alongside font-family', () => {
+    const layoutMd = '```css\n--typography-body-size: 16px;\n```';
+    const output = '<div style={{ fontFamily: "Geist", lineHeight: "1.5" }}>Hello</div>';
+    const result = calculateHealthScore(output, [], layoutMd);
+    const issue = result.issues.find((i) => i.rule === 'Composite typography');
+    expect(issue).toBeUndefined();
+  });
+
+  it('flags missing dark-mode switch when layout.md defines a .dark block', () => {
+    const layoutMd = '```css\n.dark { --color-primary: #000; }\n--color-primary: #fff;\n```';
+    const output = '<div style={{ color: "var(--color-primary)" }}>Hi</div>';
+    const result = calculateHealthScore(output, [], layoutMd);
+    const issue = result.issues.find((i) => i.rule === 'Multi-mode coverage');
+    expect(issue).toBeDefined();
+  });
+
+  it('does not flag multi-mode when output uses Tailwind dark: variant', () => {
+    const layoutMd = '```css\n.dark { --color-primary: #000; }\n--color-primary: #fff;\n```';
+    const output = '<div className="bg-white dark:bg-black">Hi</div><span style={{ color: "var(--color-primary)" }} />';
+    const result = calculateHealthScore(output, [], layoutMd);
+    const issue = result.issues.find((i) => i.rule === 'Multi-mode coverage');
+    expect(issue).toBeUndefined();
+  });
+
   it('awards a bonus when CSS variables are used and design system defines vars', () => {
     const withVars = '<div style={{ color: "var(--color-primary)" }}>Text</div>';
     const withoutVars = '<div style={{ color: "blue" }}>Text</div>';

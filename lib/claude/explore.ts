@@ -82,9 +82,18 @@ TWO types of visuals — use the RIGHT approach for each:
    - NEVER use placeholder services, empty src, or data URIs. Omit src entirely — the pipeline adds it.
 
 2. LOGOS, ICONS, and SIMPLE GRAPHICS (brand logos, UI icons, decorative marks, badges, social icons):
-   Do NOT use data-generate-image for these. Two options:
+   Do NOT use data-generate-image for these. Three options:
 
-   a) REAL BRAND LOGOS — use Simple Icons CDN for recognisable brands:
+   a0) THIS PROJECT'S OWN BRAND LOGO — only when the design system's layout.md contains a "## Branding Assets" section listing available slots:
+      <img data-brand-logo="primary" alt="Brand" className="h-8" />
+      Slot values are any listed in the Branding Assets section. Common slots: "primary", "secondary", "wordmark", "favicon", "mark".
+      MATCH THE VARIANT TO THE SURFACE: if the logo sits on a dark background (e.g. a dark navbar, dark hero, dark footer) add data-brand-variant="white". On a black-text-on-white print surface add data-brand-variant="black". Default (colour on light surfaces) needs no variant attribute.
+      <img data-brand-logo="primary" data-brand-variant="white" alt="Brand" className="h-8" />
+      Only use variants that the Branding Assets table actually lists; the runtime falls back to the colour variant automatically if a requested variant hasn't been uploaded.
+      Omit src entirely — the Layout runtime resolves the attribute to the real uploaded logo URL.
+      Use this anywhere the design shows the project's own brand (header nav, footer, favicon, login).
+
+   a) REAL BRAND LOGOS (third-party brands, not this project's own) — use Simple Icons CDN for recognisable brands:
       <img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/{slug}.svg" alt="Brand" className="h-6 opacity-60" />
       Common slugs: stripe, github, figma, openai, slack, discord, notion, shopify, vercel, react, nextdotjs, tailwindcss, typescript, linkedin, x, youtube, meta, apple, microsoft, google, nvidia, adobe, dropbox, netlify, railway, linear, asana, docker, kubernetes, postgresql, mongodb, redis, amazonaws, googlecloud, microsoftazure
       Styling: All Simple Icons are monochrome black. Apply opacity-40 to opacity-70 for subtle trust bars.
@@ -191,9 +200,18 @@ TWO types of visuals — use the RIGHT approach for each:
    - NEVER use placeholder services, empty src, or data URIs. Omit src entirely — the pipeline adds it.
 
 2. LOGOS, ICONS, and SIMPLE GRAPHICS (brand logos, UI icons, decorative marks, badges, social icons):
-   Do NOT use data-generate-image for these. Two options:
+   Do NOT use data-generate-image for these. Three options:
 
-   a) REAL BRAND LOGOS — use Simple Icons CDN for recognisable brands:
+   a0) THIS PROJECT'S OWN BRAND LOGO — only when the design system's layout.md contains a "## Branding Assets" section listing available slots:
+      <img data-brand-logo="primary" alt="Brand" className="h-8" />
+      Slot values are any listed in the Branding Assets section. Common slots: "primary", "secondary", "wordmark", "favicon", "mark".
+      MATCH THE VARIANT TO THE SURFACE: if the logo sits on a dark background (e.g. a dark navbar, dark hero, dark footer) add data-brand-variant="white". On a black-text-on-white print surface add data-brand-variant="black". Default (colour on light surfaces) needs no variant attribute.
+      <img data-brand-logo="primary" data-brand-variant="white" alt="Brand" className="h-8" />
+      Only use variants that the Branding Assets table actually lists; the runtime falls back to the colour variant automatically if a requested variant hasn't been uploaded.
+      Omit src entirely — the Layout runtime resolves the attribute to the real uploaded logo URL.
+      Use this anywhere the design shows the project's own brand (header nav, footer, favicon, login).
+
+   a) REAL BRAND LOGOS (third-party brands, not this project's own) — use Simple Icons CDN for recognisable brands:
       <img src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/{slug}.svg" alt="Brand" className="h-6 opacity-60" />
       Common slugs: stripe, github, figma, openai, slack, discord, notion, shopify, vercel, react, nextdotjs, tailwindcss, typescript, linkedin, x, youtube, meta, apple, microsoft, google, nvidia, adobe, dropbox, netlify, railway, linear, asana, docker, kubernetes, postgresql, mongodb, redis, amazonaws, googlecloud, microsoftazure
       Styling: All Simple Icons are monochrome black. Apply opacity-40 to opacity-70 for subtle trust bars.
@@ -366,7 +384,7 @@ export function createExploreStream(
         const msgStream = anthropic.messages.stream({
           model: modelId,
           max_tokens: 64000,
-          system: systemPrompt,
+          system: [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }],
           messages: [{ role: "user", content: userContent }],
         });
 
@@ -443,7 +461,7 @@ Refinement request: ${refinementPrompt}`;
         const msgStream = anthropic.messages.stream({
           model: modelId,
           max_tokens: 64000,
-          system: systemPrompt,
+          system: [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }],
           messages: [{ role: "user", content: userContent }],
         });
 
@@ -487,9 +505,19 @@ function buildUserContent(
   imageDataUrl?: string,
   contextFiles?: Array<{ name: string; content: string }>,
 ): string | ContentBlockParam[] {
-  const contextBlock = contextFiles?.length
-    ? contextFiles.map((f) => `--- context: ${f.name} ---\n${f.content}\n--- end ---`).join("\n\n") + "\n\n"
-    : "";
+  let contextBlock = "";
+  if (contextFiles?.length) {
+    const preamble =
+      "--- PROJECT CONTEXT (supplementary, non-authoritative) ---\n" +
+      "Brand voice, product descriptions, and copy guidelines uploaded by the user.\n" +
+      "Use these to inform copy tone and wording. Design tokens above remain the source of truth.\n---\n\n";
+    contextBlock =
+      preamble +
+      contextFiles
+        .map((f) => `--- context: ${f.name} ---\n${f.content}\n--- end ---`)
+        .join("\n\n") +
+      "\n\n";
+  }
   const fullPrompt = contextBlock + prompt;
 
   if (!imageDataUrl) return fullPrompt;

@@ -100,6 +100,12 @@ export function getInspectorScript(): string {
       msg.imageRatio = el.getAttribute('data-image-ratio') || '16:9';
       msg.imageSrc = el.src || '';
     }
+    // Include brand-logo metadata so the parent Inspector can show the picker
+    if (el.tagName === 'IMG' && el.getAttribute('data-brand-logo')) {
+      msg.brandLogoSlot = el.getAttribute('data-brand-logo') || '';
+      msg.brandLogoVariant = el.getAttribute('data-brand-variant') || 'colour';
+      msg.brandLogoSrc = el.src || '';
+    }
     window.parent.postMessage(msg, '*');
   }
 
@@ -236,6 +242,9 @@ export function getInspectorScript(): string {
         selected.textContent = val;
       } else if (prop === 'src' && selected.tagName === 'IMG') {
         selected.src = val;
+      } else if (prop.indexOf('data-') === 0) {
+        // data-* attributes — set directly so the live DOM reflects the edit
+        selected.setAttribute(prop, val);
       } else {
         selected.style[prop] = val;
       }

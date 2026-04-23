@@ -2,22 +2,39 @@ import { create } from "zustand";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import { replaceTokenInLayoutMd } from "@/lib/tokens/replace-token";
 import { renameTokenInLayoutMd } from "@/lib/tokens/rename-token";
-import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont } from "@/lib/types";
+import { addTokenToLayoutMd, removeTokenFromLayoutMd } from "@/lib/tokens/add-remove-token";
+import { CORE_TOKENS_BLOCK_REGEX } from "@/lib/tokens/core-tokens-block";
+import { renderCoreTokensBlock } from "@/lib/layout-md/derive";
+import { splitLayoutMdIntoAuthored } from "@/lib/layout-md/split-authored";
+import { assignmentKey } from "@/lib/tokens/assignment-key";
+import { matchTokenToUnassignedRole } from "@/lib/tokens/standardise";
+import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont, ProjectStandardisation, DesignSystemSnapshot, TokenType, BrandingAsset, ContextDocument } from "@/lib/types";
+
+/**
+ * Hard ceiling above which we refuse to save and surface an error instead of
+ * silently dropping user data. Tuned to Supabase/Coolify proxy limits.
+ */
+const MAX_SAVE_BYTES = 5_000_000;
 
 /**
  * Strip large base64 data from the project before sending to the API.
  * referenceImage and compiledJs bloat the payload (often >10MB) and cause
- * JSON parsing failures due to body size limits.
+ * JSON parsing failures due to body size limits. We strip only ephemeral,
+ * client-only data — never user curation (standardisation.unassigned,
+ * antiPatterns), which is load-bearing for the curated-token UX.
  */
 function stripBloatForSave(project: Project): Project {
   const stripped = { ...project };
 
-  // Strip referenceImage (base64 screenshots) from exploration sessions
+  // Strip referenceImage (base64 screenshots) from exploration sessions.
+  // URL-shaped references (/api/storage/...) are kept — they survive a refresh
+  // and cost ~200 chars each. Only data-URI leftovers get dropped, which
+  // happen when the upload-to-storage step failed and we fell back to storing
+  // the inline data URI.
   if (stripped.explorations) {
     stripped.explorations = stripped.explorations.map((session) => {
       const s = { ...session };
-      // Remove base64 reference images - they're only needed client-side
-      if (s.referenceImage && s.referenceImage.length > 1000) {
+      if (s.referenceImage && s.referenceImage.startsWith("data:")) {
         delete s.referenceImage;
       }
       // Remove transient generation tracking fields
@@ -59,7 +76,27 @@ function stripBloatForSave(project: Project): Project {
     });
   }
 
+  // Snapshots are persisted server-side via the dedicated `snapshots` column
+  // (migration 042). Keep them in the outgoing payload so SnapshotManager can
+  // actually restore them after a reload.
+
   return stripped;
+}
+
+/**
+ * Produce the JSON body to save, or an error message explaining why we can't.
+ * Never silently drops user-authored data — if the payload is too large, the
+ * caller must surface the error so the user can prune Explorer sessions.
+ */
+function buildSaveBody(project: Project): { body: string } | { error: string } {
+  const body = JSON.stringify(stripBloatForSave(project));
+  if (body.length > MAX_SAVE_BYTES) {
+    const mb = (body.length / 1_000_000).toFixed(1);
+    return {
+      error: `Project too large to save (${mb}MB, limit ${(MAX_SAVE_BYTES / 1_000_000).toFixed(0)}MB). Delete old Explorer sessions or variants, then try again.`,
+    };
+  }
+  return { body };
 }
 
 /** Save a project via the server-side API (bypasses RLS). */
@@ -70,16 +107,18 @@ function apiUpsertProject(project: Project, onError?: (msg: string) => void): vo
     onError?.(msg);
     return;
   }
+  const built = buildSaveBody(project);
+  if ("error" in built) {
+    console.error("Failed to save project:", built.error);
+    onError?.(built.error);
+    return;
+  }
   void (async () => {
     try {
-      const body = JSON.stringify(stripBloatForSave(project));
-      if (body.length > 5_000_000) {
-        console.warn(`[save] Payload is ${(body.length / 1_000_000).toFixed(1)}MB — may exceed proxy limits`);
-      }
       const res = await fetch(`/api/organizations/${project.orgId}/projects/${project.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body,
+        body: built.body,
       });
       if (!res.ok) {
         const detail = await res.text().catch(() => "");
@@ -98,15 +137,13 @@ function apiUpsertProject(project: Project, onError?: (msg: string) => void): vo
 /** Save a project via the server-side API (awaitable version). */
 async function apiUpsertProjectAsync(project: Project): Promise<string | null> {
   if (!project.orgId) return "Cannot save project: missing orgId";
+  const built = buildSaveBody(project);
+  if ("error" in built) return built.error;
   try {
-    const body = JSON.stringify(stripBloatForSave(project));
-    if (body.length > 5_000_000) {
-      console.warn(`[save] Payload is ${(body.length / 1_000_000).toFixed(1)}MB — may exceed proxy limits`);
-    }
     const res = await fetch(`/api/organizations/${project.orgId}/projects/${project.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body,
+      body: built.body,
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
@@ -130,6 +167,33 @@ async function apiFetchProject(id: string, orgId: string): Promise<Project | nul
   const res = await fetch(`/api/organizations/${orgId}/projects/${id}`);
   if (!res.ok) return null;
   return res.json() as Promise<Project>;
+}
+
+/**
+ * Update the curated token block in layout.md's Quick Reference section.
+ * Replaces the CORE TOKENS css block with current standardisation assignments.
+ *
+ * @deprecated For consumers of layout.md (MCP, Explorer, export) this is now
+ *   redundant — they all read through `deriveLayoutMd(project)` which
+ *   regenerates CORE TOKENS on every read. This function survives only so the
+ *   in-memory `project.layoutMd` stays current for the Monaco editor until
+ *   Phase 4 switches Monaco to read from derive directly. Once that lands,
+ *   delete this function and its call sites.
+ *
+ * Exported for unit testing. The delimiter-tolerant regex lives in
+ * `core-tokens-block.ts` because Claude synthesis, the curated sync, and
+ * hand-authored docs have historically used different decorators around the
+ * label, and a strict match silently dropped assignments.
+ */
+export function syncCuratedTokensToLayoutMd(layoutMd: string, standardisation: ProjectStandardisation): string {
+  const newBlock = renderCoreTokensBlock(standardisation);
+  if (!newBlock) return layoutMd;
+
+  if (CORE_TOKENS_BLOCK_REGEX.test(layoutMd)) {
+    return layoutMd.replace(CORE_TOKENS_BLOCK_REGEX, newBlock);
+  }
+
+  return layoutMd;
 }
 
 /** Create a unique key for a token, accounting for mode variants. */
@@ -173,14 +237,29 @@ interface ProjectState {
   updateHealthScore: (id: string, score: number) => void;
   updateIconPacks: (id: string, iconPacks: string[]) => void;
   updateUploadedFonts: (id: string, fonts: UploadedFont[]) => void;
+  updateBrandingAssets: (id: string, assets: BrandingAsset[]) => void;
+  updateContextDocuments: (id: string, documents: ContextDocument[]) => void;
+  /** Mutate layoutMd in local state only (server already wrote it). */
+  setLayoutMdLocal: (id: string, layoutMd: string) => void;
   updateExplorations: (id: string, explorations: ExplorationSession[]) => void;
   updateToken: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string, mode?: string) => void;
   renameToken: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string, mode?: string) => void;
   removeTokens: (id: string, tokenType: keyof ExtractedTokens, tokenNames: string[], mode?: string) => void;
+  addToken: (id: string, token: ExtractedToken, options?: { assignToRole?: { roleKey: string; standardName: string; mode?: string } }) => void;
   syncTokensFromLayoutMd: (id: string) => number;
   refreshProject: (id: string) => Promise<void>;
   deleteProject: (id: string) => void;
   clearProjects: () => void;
+
+  // Standardisation
+  updateStandardisation: (id: string, data: ProjectStandardisation) => void;
+  assignTokenToRole: (id: string, roleKey: string, tokenName: string, tokenCssVariable: string | undefined, tokenValue: string, standardName: string, mode?: string) => void;
+  unassignRole: (id: string, roleKey: string, mode?: string) => void;
+
+  // Snapshots
+  createSnapshot: (id: string, label: string) => string | null;
+  restoreSnapshot: (id: string, snapshotId: string) => boolean;
+  deleteSnapshot: (id: string, snapshotId: string) => void;
 }
 
 export const useProjectStore = create<ProjectState>()((set, get) => ({
@@ -204,8 +283,32 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     // Preserve locally-created projects not yet on the server (in-flight saves)
     const serverIds = new Set(serverProjects.map((p) => p.id));
     const localOnly = state.projects.filter((p) => !serverIds.has(p.id) && p.orgId === orgId);
+
+    // Phase 5 one-shot migration: populate layoutMdAuthored for any project
+    // that has layoutMd but has never been split. The next store save persists
+    // the new field via the piggy-back column. Non-destructive — layoutMd stays
+    // intact; we just pre-compute the authored half so Phase 4's Monaco guard
+    // and future hub UI have clean prose to work with.
+    const migrated = serverProjects.map((p) => {
+      if (p.layoutMdAuthored !== undefined) return p;
+      if (!p.layoutMd) return p;
+      const authored = splitLayoutMdIntoAuthored(p.layoutMd);
+      if (!authored) return p;
+      return { ...p, layoutMdAuthored: authored };
+    });
+
+    // Trigger persistence for any project whose layoutMdAuthored was just
+    // populated so the split reaches Supabase rather than living client-only.
+    // Fire-and-forget — no need to await; the store's saveError surface will
+    // catch transport failures.
+    for (let i = 0; i < migrated.length; i++) {
+      if (migrated[i] !== serverProjects[i]) {
+        apiUpsertProject(migrated[i], (msg) => set({ saveError: msg }));
+      }
+    }
+
     return {
-      projects: [...serverProjects, ...localOnly],
+      projects: [...migrated, ...localOnly],
       userId, orgId, hydrating: false, hydrationError: null,
     };
   }),
@@ -320,6 +423,34 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
   },
 
+  // Branding assets and context documents are persisted via the dedicated
+  // /api/organizations/[orgId]/projects/[projectId]/assets endpoint. These
+  // setters only update local state — the server write has already happened
+  // (or will happen) via that endpoint.
+  updateBrandingAssets: (id, brandingAssets) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id ? { ...p, brandingAssets } : p
+      ),
+    }));
+  },
+
+  updateContextDocuments: (id, contextDocuments) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id ? { ...p, contextDocuments } : p
+      ),
+    }));
+  },
+
+  setLayoutMdLocal: (id, layoutMd) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id ? { ...p, layoutMd } : p
+      ),
+    }));
+  },
+
   updateExplorations: (id, explorations) => {
     set((state) => ({
       projects: state.projects.map((p) =>
@@ -400,6 +531,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       projects: state.projects.map((p) => {
         if (p.id !== id || !p.extractionData) return p;
         const tokens = { ...p.extractionData.tokens };
+        const removed = tokens[tokenType].filter((t) => nameSet.has(t.name) && t.mode === mode);
         tokens[tokenType] = tokens[tokenType].filter((t) => {
           const isTarget = nameSet.has(t.name) && t.mode === mode;
           return !isTarget;
@@ -410,10 +542,158 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
           tokens.spacing.length +
           tokens.radius.length +
           tokens.effects.length;
+
+        // Also drop any standardisation assignments that pointed at a removed token,
+        // otherwise the curated-tokens sync would re-emit the standard-name declaration
+        // into layout.md and syncTokensFromLayoutMd would resurrect the colour on reload.
+        // Match on cssVariable/name only — the assignment's `value` can be stale (see
+        // syncTokensFromLayoutMd reconciliation) so comparing values would miss matches.
+        let standardisation = p.standardisation;
+        const removedStandardNames: string[] = [];
+        if (standardisation) {
+          const nextAssignments = { ...standardisation.assignments };
+          const removedKeys = new Set(removed.map((t) => t.cssVariable ?? t.name));
+          for (const [roleKey, a] of Object.entries(nextAssignments)) {
+            const aKey = a.originalCssVariable ?? a.originalName;
+            if (removedKeys.has(aKey)) {
+              removedStandardNames.push(a.standardName);
+              delete nextAssignments[roleKey];
+            }
+          }
+          // Also prune the unassigned list so deleted tokens don't linger as
+          // dead reference material in the Curated view (fixes B12 silent bloat).
+          const nextUnassigned = standardisation.unassigned.filter(
+            (u) => !removedKeys.has(u.cssVariable ?? u.name)
+          );
+          standardisation = {
+            ...standardisation,
+            assignments: nextAssignments,
+            unassigned: nextUnassigned,
+          };
+        }
+
+        // Strip declarations from layout.md: original cssVariable AND any standardName
+        // the removed tokens had (otherwise the Core Tokens block keeps them).
+        let layoutMd = p.layoutMd;
+        for (const t of removed) {
+          layoutMd = removeTokenFromLayoutMd(layoutMd, { name: t.name, cssVariable: t.cssVariable });
+        }
+        for (const stdName of removedStandardNames) {
+          layoutMd = removeTokenFromLayoutMd(layoutMd, { name: stdName.replace(/^--/, ""), cssVariable: stdName });
+        }
+
         return {
           ...p,
           extractionData: { ...p.extractionData, tokens },
+          layoutMd,
           tokenCount,
+          standardisation,
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  addToken: (id, token, options) => {
+    const bucketForType = (type: TokenType): keyof ExtractedTokens => {
+      switch (type) {
+        case "color": return "colors";
+        case "typography": return "typography";
+        case "spacing": return "spacing";
+        case "radius": return "radius";
+        case "effect": return "effects";
+        case "motion": return "motion";
+      }
+    };
+
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id) return p;
+        const bucket = bucketForType(token.type);
+
+        const existing = p.extractionData ?? {
+          sourceType: "manual" as SourceType,
+          sourceName: "manual",
+          tokens: { colors: [], typography: [], spacing: [], radius: [], effects: [], motion: [] },
+          components: [],
+          screenshots: [],
+          fonts: [],
+          animations: [],
+          librariesDetected: {},
+          cssVariables: {},
+          computedStyles: {},
+        } as ExtractionResult;
+
+        const tokens = { ...existing.tokens };
+        // Avoid duplicates by name+mode within the same bucket
+        const isDuplicate = tokens[bucket].some(
+          (t) => t.name === token.name && t.mode === token.mode
+        );
+        if (!isDuplicate) {
+          tokens[bucket] = [...tokens[bucket], token];
+        }
+
+        const tokenCount =
+          tokens.colors.length +
+          tokens.typography.length +
+          tokens.spacing.length +
+          tokens.radius.length +
+          tokens.effects.length;
+
+        // Insert into CORE TOKENS block of layout.md
+        let layoutMd = addTokenToLayoutMd(p.layoutMd, token);
+
+        // Assign to a standardised role — explicit option wins; otherwise try
+        // an automatic high-confidence name match against unassigned roles so
+        // inline-added tokens don't sit outside the curated map.
+        let standardisation = p.standardisation;
+        let autoAssigned: { roleKey: string; standardName: string } | null = null;
+        if (!options?.assignToRole && standardisation && !isDuplicate) {
+          const match = matchTokenToUnassignedRole(
+            token,
+            standardisation.assignments,
+            standardisation.kitPrefix,
+            "high"
+          );
+          if (match) {
+            autoAssigned = { roleKey: match.roleKey, standardName: match.standardName };
+          }
+        }
+        const assignment: { roleKey: string; standardName: string; mode?: string } | null =
+          options?.assignToRole ?? autoAssigned;
+        if (assignment && standardisation) {
+          const { roleKey, standardName, mode } = assignment;
+          const key = assignmentKey(roleKey, mode);
+          standardisation = {
+            ...standardisation,
+            assignments: {
+              ...standardisation.assignments,
+              [key]: {
+                roleKey,
+                mode,
+                originalName: token.name,
+                originalCssVariable: token.cssVariable,
+                value: token.value,
+                standardName,
+                confidence: "high" as const,
+                userConfirmed: Boolean(options?.assignToRole),
+              },
+            },
+            unassigned: standardisation.unassigned.filter(
+              (u) => !((u.cssVariable ?? u.name) === (token.cssVariable ?? token.name) && u.value === token.value)
+            ),
+          };
+          layoutMd = syncCuratedTokensToLayoutMd(layoutMd, standardisation);
+        }
+
+        return {
+          ...p,
+          extractionData: { ...existing, tokens },
+          layoutMd,
+          tokenCount,
+          standardisation,
           updatedAt: new Date().toISOString(),
         };
       }),
@@ -469,6 +749,38 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       mergedTokens.radius.length +
       mergedTokens.effects.length;
 
+    // Reconcile assignment values against the (possibly updated) tokens. Without this,
+    // role assignments keep frozen values from assign-time (e.g. "var(--orange-500)")
+    // and syncCuratedTokensToLayoutMd would re-emit those stale refs into layout.md
+    // even though the token itself now resolves to a concrete hex.
+    let reconciledStandardisation = project.standardisation;
+    if (reconciledStandardisation) {
+      const allMerged: ExtractedToken[] = [
+        ...mergedTokens.colors,
+        ...mergedTokens.typography,
+        ...mergedTokens.spacing,
+        ...mergedTokens.radius,
+        ...mergedTokens.effects,
+        ...mergedTokens.motion,
+      ];
+      const byKey = new Map<string, ExtractedToken>();
+      for (const t of allMerged) byKey.set(t.cssVariable ?? t.name, t);
+
+      const nextAssignments = { ...reconciledStandardisation.assignments };
+      let changed = false;
+      for (const [roleKey, a] of Object.entries(nextAssignments)) {
+        const target = a.originalCssVariable ?? a.originalName;
+        const token = byKey.get(target);
+        if (token && token.value !== a.value) {
+          nextAssignments[roleKey] = { ...a, value: token.value };
+          changed = true;
+        }
+      }
+      if (changed) {
+        reconciledStandardisation = { ...reconciledStandardisation, assignments: nextAssignments };
+      }
+    }
+
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === id
@@ -476,6 +788,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
               ...p,
               extractionData: mergedData,
               tokenCount: newCount,
+              standardisation: reconciledStandardisation,
               updatedAt: new Date().toISOString(),
             }
           : p
@@ -507,6 +820,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
                 // Prefer server data if it has fonts, otherwise keep local (save may be in-flight)
                 uploadedFonts: fresh.uploadedFonts ?? p.uploadedFonts,
                 iconPacks: p.iconPacks ?? fresh.iconPacks,
+                standardisation: p.standardisation ?? fresh.standardisation,
               }
             : p
         ),
@@ -525,4 +839,169 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   },
 
   clearProjects: () => set({ projects: [], currentProjectId: null, userId: null, orgId: null, hydrating: false, saveError: null }),
+
+  // ── Standardisation ─────────────────────────────────────────────────────
+
+  updateStandardisation: (id, data) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id
+          ? { ...p, standardisation: data, updatedAt: new Date().toISOString() }
+          : p
+      ),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  assignTokenToRole: (id, roleKey, tokenName, tokenCssVariable, tokenValue, standardName, mode) => {
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id || !p.standardisation) return p;
+        const s = { ...p.standardisation };
+        s.assignments = { ...s.assignments };
+        const key = assignmentKey(roleKey, mode);
+        s.assignments[key] = {
+          roleKey,
+          mode,
+          originalName: tokenName,
+          originalCssVariable: tokenCssVariable,
+          value: tokenValue,
+          standardName,
+          confidence: "high" as const,
+          userConfirmed: true,
+        };
+        // Remove from unassigned. Match by cssVariable/name only — values can drift
+        // (stored unassigned values may be stale var() refs vs current hex).
+        const assignedKey = tokenCssVariable ?? tokenName;
+        s.unassigned = s.unassigned.filter(
+          (u) => (u.cssVariable ?? u.name) !== assignedKey
+        );
+        // Sync to layout.md
+        const updatedMd = syncCuratedTokensToLayoutMd(p.layoutMd, s);
+        return { ...p, standardisation: s, layoutMd: updatedMd, updatedAt: new Date().toISOString() };
+      }),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  unassignRole: (id, roleKey, mode) => {
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id || !p.standardisation) return p;
+        const s = { ...p.standardisation };
+        const key = assignmentKey(roleKey, mode);
+        const assignment = s.assignments[key];
+        if (!assignment) return p;
+        s.assignments = { ...s.assignments };
+        delete s.assignments[key];
+        s.unassigned = [
+          ...s.unassigned,
+          {
+            name: assignment.originalName,
+            cssVariable: assignment.originalCssVariable,
+            value: assignment.value,
+            type: "color",
+            hidden: false,
+          },
+        ];
+        const updatedMd = syncCuratedTokensToLayoutMd(p.layoutMd, s);
+        return { ...p, standardisation: s, layoutMd: updatedMd, updatedAt: new Date().toISOString() };
+      }),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  // ── Snapshots ───────────────────────────────────────────────────────────
+
+  createSnapshot: (id, label) => {
+    const project = get().projects.find((p) => p.id === id);
+    if (!project?.extractionData?.tokens) return null;
+
+    const snapshotId = `snap_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const allTokens = project.extractionData.tokens;
+    const tokenCount = Object.values(allTokens).reduce(
+      (sum, arr) => sum + (arr as ExtractedToken[]).length,
+      0
+    );
+
+    const snapshot: DesignSystemSnapshot = {
+      id: snapshotId,
+      label,
+      tokens: JSON.parse(JSON.stringify(allTokens)),
+      layoutMd: project.layoutMd,
+      healthScore: project.healthScore,
+      tokenCount,
+      standardisation: project.standardisation
+        ? JSON.parse(JSON.stringify(project.standardisation))
+        : undefined,
+      createdAt: new Date().toISOString(),
+    };
+
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id) return p;
+        const existing = p.snapshots ?? [];
+        // Keep max 5 snapshots, drop oldest if needed
+        const trimmed = existing.length >= 5 ? existing.slice(1) : existing;
+        return {
+          ...p,
+          snapshots: [...trimmed, snapshot],
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+
+    const updated = get().projects.find((p) => p.id === id);
+    if (updated) apiUpsertProject(updated, (msg) => set({ saveError: msg }));
+    return snapshotId;
+  },
+
+  restoreSnapshot: (id, snapshotId) => {
+    const project = get().projects.find((p) => p.id === id);
+    const snapshot = project?.snapshots?.find((s) => s.id === snapshotId);
+    if (!project || !snapshot) return false;
+
+    // Create a snapshot of current state before restoring (non-destructive)
+    get().createSnapshot(id, `Before restore (${new Date().toISOString().slice(0, 16)})`);
+
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id) return p;
+        return {
+          ...p,
+          layoutMd: snapshot.layoutMd,
+          extractionData: p.extractionData
+            ? { ...p.extractionData, tokens: JSON.parse(JSON.stringify(snapshot.tokens)) }
+            : undefined,
+          healthScore: snapshot.healthScore,
+          standardisation: snapshot.standardisation
+            ? JSON.parse(JSON.stringify(snapshot.standardisation))
+            : undefined,
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+
+    const updated = get().projects.find((p) => p.id === id);
+    if (updated) apiUpsertProject(updated, (msg) => set({ saveError: msg }));
+    return true;
+  },
+
+  deleteSnapshot: (id, snapshotId) => {
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== id) return p;
+        return {
+          ...p,
+          snapshots: (p.snapshots ?? []).filter((s) => s.id !== snapshotId),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+    const updated = get().projects.find((p) => p.id === id);
+    if (updated) apiUpsertProject(updated, (msg) => set({ saveError: msg }));
+  },
 }));

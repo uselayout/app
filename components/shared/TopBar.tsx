@@ -102,13 +102,15 @@ export function TopBar({
 
       {/* Right: Actions */}
       <div className="flex flex-1 items-center justify-end gap-1.5">
-        <button
-          onClick={onReExtract}
-          className="flex items-center justify-center size-7 rounded-[4px] border border-[var(--studio-border-strong)] bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
-          title="Re-extract"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-        </button>
+        {sourceType !== "manual" && (
+          <button
+            onClick={onReExtract}
+            className="flex items-center justify-center size-7 rounded-[4px] border border-[var(--studio-border-strong)] bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+            title="Re-extract"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </button>
+        )}
         <button
           onClick={onExport}
           className="flex items-center justify-center h-7 px-[13px] rounded-[4px] bg-[var(--studio-accent)] border border-[var(--studio-accent)] text-[12px] font-medium text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] transition-colors"

@@ -113,7 +113,7 @@ function SignupContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080705] relative overflow-hidden">
+    <div className="force-dark min-h-screen bg-[#080705] relative overflow-hidden text-[var(--text-primary)]">
       {/* Aurora background */}
       <img
         src="/marketing/aurora-hero.webp"
@@ -240,14 +240,14 @@ function SignupContent() {
             <div className="flex flex-col gap-[6px] text-center">
               <p className="text-[12px] text-[var(--text-secondary)]">
                 Already have an account?{" "}
-                <Link href="/login" className="text-white hover:underline">
+                <Link href="/login" className="text-[var(--text-primary)] hover:underline">
                   Sign in →
                 </Link>
               </p>
               {BETA_ACTIVE && (
                 <p className="text-[12px] text-[var(--text-secondary)]">
                   Don&apos;t have a code?{" "}
-                  <Link href="/request-access" className="text-white hover:underline">
+                  <Link href="/request-access" className="text-[var(--text-primary)] hover:underline">
                     Request early access →
                   </Link>
                 </p>
@@ -260,11 +260,11 @@ function SignupContent() {
             <p className="text-[12px] leading-[16px] text-[var(--text-muted)] text-center">
               By continuing you agree to our
               <br />
-              <a href="/terms" className="text-white underline">
+              <a href="/terms" className="text-[var(--text-primary)] underline">
                 Terms of Service
               </a>{" "}
               and{" "}
-              <a href="/privacy" className="text-white underline">
+              <a href="/privacy" className="text-[var(--text-primary)] underline">
                 Privacy Policy
               </a>
             </p>

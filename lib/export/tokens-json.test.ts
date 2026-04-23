@@ -23,15 +23,44 @@ function makeToken(
   return { name, value, type, category: 'primitive', ...overrides };
 }
 
-describe('generateTokensJson', () => {
-  it('returns valid JSON', () => {
-    const json = generateTokensJson(makeTokens());
-    expect(() => JSON.parse(json)).not.toThrow();
+describe('generateTokensJson — multi-mode (Phase 3.5)', () => {
+  it('tags mode-scoped tokens with com.layout.mode extension', () => {
+    const tokens = makeTokens({
+      colors: [
+        makeToken('bg', '#ffffff', 'color'),
+        makeToken('bg', '#000000', 'color', { mode: 'dark' }),
+      ],
+    });
+    const parsed = JSON.parse(generateTokensJson(tokens));
+    // Default-mode entry is keyed by name; dark variant gets a namespaced key.
+    expect(parsed.color.bg).toBeDefined();
+    expect(parsed.color['bg.dark']).toBeDefined();
+    expect(parsed.color['bg.dark'].$extensions['com.layout.mode']).toBe('dark');
+    // Default entry carries no mode extension.
+    expect(parsed.color.bg.$extensions).toBeUndefined();
   });
 
-  it('returns empty object when no tokens provided', () => {
+  it('keeps default-mode entries clean of the mode extension', () => {
+    const tokens = makeTokens({
+      colors: [makeToken('Primary', '#6750A4', 'color')],
+    });
+    const parsed = JSON.parse(generateTokensJson(tokens));
+    expect(parsed.color.primary.$extensions).toBeUndefined();
+  });
+});
+
+describe('generateTokensJson', () => {
+  it('returns empty string when no tokens provided (blank project)', () => {
     const json = generateTokensJson(makeTokens());
-    expect(JSON.parse(json)).toEqual({});
+    expect(json).toBe('');
+  });
+
+  it('returns valid parseable JSON when tokens are present', () => {
+    const tokens = makeTokens({
+      colors: [makeToken('Primary', '#6750A4', 'color')],
+    });
+    const json = generateTokensJson(tokens);
+    expect(() => JSON.parse(json)).not.toThrow();
   });
 
   it('groups colour tokens under top-level "color" key', () => {

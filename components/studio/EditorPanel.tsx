@@ -6,8 +6,12 @@ import type { OnMount } from "@monaco-editor/react";
 import type * as monacoType from "monaco-editor";
 import { ArrowUp, Undo2, Loader2, History, X } from "lucide-react";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import type { LayoutMdVersion } from "@/lib/supabase/layout-md-versions";
+import type { ExtractionResult } from "@/lib/types";
+import { DivergenceBanner } from "./DivergenceBanner";
+import { findDerivedRanges, rangeOverlapsDerived, type DerivedRange } from "@/lib/layout-md/derived-ranges";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -29,6 +33,7 @@ interface EditorPanelProps {
   tokenSuggestions?: TokenSuggestion[];
   projectId?: string;
   orgId?: string;
+  extractionData?: ExtractionResult;
 }
 
 const STUDIO_THEME_DARK: monacoType.editor.IStandaloneThemeData = {
@@ -89,7 +94,7 @@ const STUDIO_THEME_LIGHT: monacoType.editor.IStandaloneThemeData = {
   },
 };
 
-export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId, orgId }: EditorPanelProps) {
+export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId, orgId, extractionData }: EditorPanelProps) {
   const { resolvedTheme } = useTheme();
   const editorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "idle">("idle");
@@ -129,12 +134,12 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
   }, [onChange]);
 
   const tokenCount = useMemo(() => Math.round(value.length / 4), [value]);
-  const tokenColour =
+  const tokenBadge =
     tokenCount < 4000
-      ? "text-[var(--status-success)]"
+      ? "bg-[var(--status-success)] text-white"
       : tokenCount < 8000
-        ? "text-yellow-400"
-        : "text-[var(--status-error)]";
+        ? "bg-[var(--status-warning)] text-black"
+        : "bg-[var(--status-error)] text-white";
 
   const handleChange = useCallback(
     (newValue: string | undefined) => {
@@ -171,6 +176,21 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
     editorRef.current?.focus();
   }, []);
 
+  // Cross-panel scroll: other components (e.g. the Design System page) can
+  // dispatch a `layout-scroll-to-section` CustomEvent with { match: RegExp }
+  // to jump the editor to a specific heading. Used by "Fix in layout.md".
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ match: string }>).detail;
+      if (!detail?.match) return;
+      const re = new RegExp(detail.match, "i");
+      const target = sections.find((s) => re.test(s.label));
+      if (target) scrollToLine(target.line);
+    };
+    window.addEventListener("layout-scroll-to-section", handler);
+    return () => window.removeEventListener("layout-scroll-to-section", handler);
+  }, [sections, scrollToLine]);
+
   const suggestionsRef = useRef(tokenSuggestions);
   suggestionsRef.current = tokenSuggestions;
 
@@ -179,6 +199,55 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
     monaco.editor.defineTheme("studio-dark", STUDIO_THEME_DARK);
     monaco.editor.defineTheme("studio-light", STUDIO_THEME_LIGHT);
     monaco.editor.setTheme(resolvedTheme === "light" ? "studio-light" : "studio-dark");
+
+    // Apply decorations once on mount and re-apply whenever the content
+    // changes (derived ranges shift with every edit in authored prose).
+    const model = editor.getModel();
+    if (model) {
+      applyDerivedDecorations(editor);
+
+      model.onDidChangeContent((e) => {
+        // Skip the change if we're programmatically reverting — the guard
+        // below fires its own model.pushEditOperations and we'd recurse.
+        if (revertingRef.current) return;
+
+        // Check each change against the current derived ranges. If any edit
+        // overlaps, revert by restoring the pre-change text at that spot.
+        const ranges = derivedRangesRef.current;
+        if (ranges.length > 0) {
+          const offendingChange = e.changes.find((c) => {
+            const hit = rangeOverlapsDerived(
+              c.range.startLineNumber,
+              c.range.endLineNumber,
+              ranges
+            );
+            return Boolean(hit);
+          });
+
+          if (offendingChange) {
+            const hit = rangeOverlapsDerived(
+              offendingChange.range.startLineNumber,
+              offendingChange.range.endLineNumber,
+              ranges
+            );
+            // Undo via editor stack — preserves cursor and undo history.
+            revertingRef.current = true;
+            try {
+              editor.trigger("derived-guard", "undo", null);
+            } finally {
+              revertingRef.current = false;
+            }
+            toast.info(
+              `${hit?.label ?? "That section"} is built from your design system — typing here won't stick. Open the ${hit?.editIn ?? "Tokens"} tab to edit it.`
+            );
+            return;
+          }
+        }
+
+        // Authored edit — recompute derived ranges and refresh decorations.
+        applyDerivedDecorations(editor);
+      });
+    }
 
     // Register colour provider — shows inline swatches with a picker in CSS blocks
     monaco.languages.registerColorProvider("markdown", {
@@ -268,6 +337,42 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
     }
   }, [resolvedTheme]);
 
+  // Derived-block guard: the derive engine regenerates CORE TOKENS,
+  // Appendix A, Brand Assets, Icons, Component Inventory and Product
+  // Context on every read. Edits to those ranges in Monaco would be silently
+  // thrown away. Decorate the ranges as "derived" and revert edits that
+  // touch them so users never lose work without warning.
+  const derivedRangesRef = useRef<DerivedRange[]>([]);
+  const decorationsRef = useRef<string[]>([]);
+  const revertingRef = useRef(false);
+
+  const applyDerivedDecorations = useCallback((editor: monacoType.editor.IStandaloneCodeEditor) => {
+    const model = editor.getModel();
+    if (!model) return;
+    const ranges = findDerivedRanges(model.getValue());
+    derivedRangesRef.current = ranges;
+
+    const newDecorations: monacoType.editor.IModelDeltaDecoration[] = ranges.map((r) => ({
+      range: {
+        startLineNumber: r.startLine,
+        startColumn: 1,
+        endLineNumber: r.endLine,
+        endColumn: model.getLineMaxColumn(Math.min(r.endLine, model.getLineCount())),
+      },
+      options: {
+        isWholeLine: true,
+        className: "layout-md-derived-range",
+        linesDecorationsClassName: "layout-md-derived-gutter",
+        hoverMessage: [
+          { value: `**${r.label}**` },
+          { value: `Layout Studio builds this section from your design system every time it reads \`layout.md\`. Anything typed here gets overwritten — edit it in the **${r.editIn}** tab instead.` },
+        ],
+      },
+    }));
+
+    decorationsRef.current = editor.deltaDecorations(decorationsRef.current, newDecorations);
+  }, []);
+
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -298,11 +403,20 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
               History
             </button>
           )}
-          <span className={`text-xs ${tokenColour}`}>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium tabular-nums ${tokenBadge}`}
+          >
             ~{tokenCount.toLocaleString()} tokens
           </span>
         </div>
       </div>
+
+      {/* Token ↔ extraction data divergence warning */}
+      <DivergenceBanner
+        layoutMd={value}
+        extraction={extractionData}
+        storageKey={projectId}
+      />
 
       {/* Section navigator */}
       {sections.length > 0 && (
@@ -472,32 +586,17 @@ function EditorChatBar({
         throw new Error(errBody.error || `Request failed (${res.status})`);
       }
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No response body");
+      const newLayoutMd = await res.text();
+      const appliedCount = Number(res.headers.get("X-Applied-Edits")) || 0;
 
-      const decoder = new TextDecoder();
-      let accumulated = "";
-      let lineCount = 0;
-
-      while (true) {
-        const { done, value: chunk } = await reader.read();
-        if (done) break;
-        accumulated += decoder.decode(chunk, { stream: true });
-        lineCount = accumulated.split("\n").length;
-        setStreamStatus(`Writing... ${lineCount} lines`);
-
-        // Stream into editor progressively
-        editorRef.current?.setValue(accumulated);
-      }
-
-      if (accumulated.startsWith("\n\n[Error:")) {
-        // Restore on error
-        editorRef.current?.setValue(value);
-        throw new Error(accumulated);
-      }
-
-      onChange(accumulated);
+      // Apply once at the end — no progressive rewriting of the whole file.
+      editorRef.current?.setValue(newLayoutMd);
+      onChange(newLayoutMd);
       setInstruction("");
+
+      toast.success(
+        appliedCount === 1 ? "1 edit applied" : `${appliedCount} edits applied`
+      );
 
       // Show undo toast
       setShowUndo(true);
@@ -507,13 +606,13 @@ function EditorChatBar({
       }, 8000);
     } catch (err) {
       console.error("AI edit failed:", err);
-      // Restore previous value on error
+      toast.error(err instanceof Error ? err.message : "AI edit failed");
       setPreviousValue(null);
     } finally {
       setIsStreaming(false);
       setStreamStatus(null);
     }
-  }, [instruction, isStreaming, value, onChange, editorRef]);
+  }, [instruction, isStreaming, value, onChange, editorRef, projectId, orgId]);
 
   const handleUndo = useCallback(() => {
     if (previousValue === null) return;

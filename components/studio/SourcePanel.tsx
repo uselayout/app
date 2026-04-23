@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes, Figma, Sparkles, Loader2, Type } from "lucide-react";
+import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image, Gauge, RefreshCw, Plus, Trash2, Globe, Layers, ArrowRight, Terminal, Shapes, Figma, Sparkles, Loader2, Type, FileText, ImagePlus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
@@ -11,6 +11,9 @@ import { FigmaEmbed } from "@/components/studio/FigmaEmbed";
 import { parseFigmaUrl } from "@/lib/figma/parse-url";
 import { IconPackSelector } from "@/components/studio/IconPackSelector";
 import { FontManager } from "@/components/studio/FontManager";
+import { ContextDocsTab } from "@/components/studio/ContextDocsTab";
+import { BrandingTab } from "@/components/studio/BrandingTab";
+import { AddTokenForm } from "@/components/studio/AddTokenForm";
 import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
 import { resolveTokenValue } from "@/lib/util/color";
 import { useProjectStore } from "@/lib/store/project";
@@ -20,6 +23,9 @@ import { getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
 import { findTokenReferences, flattenTokens } from "@/lib/tokens/token-references";
 import { countTokenReferences } from "@/lib/tokens/rename-token";
 import { groupTokensByPurpose } from "@/lib/tokens/group-tokens";
+import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
+import { appendTokensToSections } from "@/lib/tokens/add-remove-token";
+import { isCuratedTokenName } from "@/lib/tokens/curated-filter";
 import type {
   ExtractionResult,
   ExtractedToken,
@@ -41,7 +47,7 @@ interface SourcePanelProps {
   onFontUploaded?: () => void;
 }
 
-type TabId = "tokens" | "components" | "screenshots" | "icons" | "fonts" | "quality" | "connect" | "figma";
+type TabId = "tokens" | "components" | "screenshots" | "icons" | "fonts" | "branding" | "context" | "quality" | "connect" | "figma";
 
 function SourcePanelEmptyState({
   projectId,
@@ -178,12 +184,15 @@ function SourcePanelInner({
 
   const hasLayoutMd = !!layoutMd && layoutMd.length > 0;
 
+  const isWebsite = extractionData?.sourceType === "website";
   const tabs: { id: TabId; label: string; icon: LucideIcon }[] = [
     { id: "tokens", label: "Tokens", icon: Palette },
-    { id: "components", label: "Components", icon: LayoutGrid },
+    { id: "components", label: isWebsite ? "Patterns" : "Components", icon: LayoutGrid },
     { id: "screenshots", label: "Screenshots", icon: Image },
     { id: "icons", label: "Icons", icon: Shapes },
     { id: "fonts", label: "Fonts", icon: Type },
+    { id: "branding", label: "Branding", icon: ImagePlus },
+    { id: "context", label: "Context", icon: FileText },
     { id: "quality", label: "Quality", icon: Gauge },
     { id: "figma", label: "Figma", icon: Figma },
     { id: "connect", label: "Connect", icon: Terminal },
@@ -241,7 +250,7 @@ function SourcePanelInner({
           />
         )}
         {activeTab === "tokens" && extractionData && (
-          <TokensTab tokens={extractionData.tokens} cssVariables={extractionData.cssVariables} projectId={projectId} sourceType={extractionData.sourceType} />
+          <TokensTab tokens={extractionData.tokens} cssVariables={extractionData.cssVariables} projectId={projectId} sourceType={extractionData.sourceType} layoutMd={layoutMd ?? ""} />
         )}
         {activeTab === "components" && extractionData && (
           <ComponentsTab components={extractionData.components} sourceType={extractionData.sourceType} sourceUrl={extractionData.sourceUrl} />
@@ -263,6 +272,20 @@ function SourcePanelInner({
               onFontUploaded={onFontUploaded}
             />
           </div>
+        )}
+        {activeTab === "branding" && projectId && currentOrgId && (
+          <BrandingTab
+            projectId={projectId}
+            orgId={currentOrgId}
+            assets={currentProject?.brandingAssets ?? []}
+          />
+        )}
+        {activeTab === "context" && projectId && currentOrgId && (
+          <ContextDocsTab
+            projectId={projectId}
+            orgId={currentOrgId}
+            documents={currentProject?.contextDocuments ?? []}
+          />
         )}
         {activeTab === "quality" && extractionData && (
           <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} projectId={projectId} orgId={currentOrgId ?? undefined} />
@@ -440,15 +463,21 @@ export function SourcePanel(props: SourcePanelProps) {
 function TokenSectionHeader({
   label,
   count,
+  unmappedCount = 0,
   open,
   onToggle,
   onCopy,
+  onAdd,
+  onAddAllToLayoutMd,
 }: {
   label: string;
   count: number;
+  unmappedCount?: number;
   open: boolean;
   onToggle: () => void;
   onCopy: () => void;
+  onAdd?: () => void;
+  onAddAllToLayoutMd?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -460,6 +489,22 @@ function TokenSectionHeader({
       setTimeout(() => setCopied(false), 1500);
     },
     [onCopy]
+  );
+
+  const handleAdd = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onAdd?.();
+    },
+    [onAdd]
+  );
+
+  const handleAddAll = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onAddAllToLayoutMd?.();
+    },
+    [onAddAllToLayoutMd]
   );
 
   return (
@@ -475,20 +520,46 @@ function TokenSectionHeader({
       <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
         {label} ({count})
       </span>
+      {onAddAllToLayoutMd && unmappedCount > 0 && (
+        <span
+          onClick={handleAddAll}
+          className="shrink-0 rounded-md bg-[var(--studio-accent-subtle)] px-1.5 py-0.5 text-[9px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)]"
+          title={`${unmappedCount} token${unmappedCount === 1 ? "" : "s"} not in layout.md — click to add all to the correct section`}
+        >
+          +{unmappedCount} to layout.md
+        </span>
+      )}
+      {onAdd && (
+        <span
+          onClick={handleAdd}
+          className="shrink-0 rounded p-1 text-[var(--text-muted)] opacity-70 transition-opacity hover:bg-[var(--bg-hover)] hover:opacity-100"
+          title={`Add a new ${label.toLowerCase().replace(/s$/, "")} token`}
+        >
+          <Plus className="h-3 w-3" />
+        </span>
+      )}
       <span
         onClick={handleCopy}
-        className="shrink-0 rounded p-1 opacity-0 transition-opacity hover:bg-[var(--bg-hover)] group-hover:opacity-100"
+        className="shrink-0 rounded p-1 text-[var(--text-muted)] opacity-70 transition-opacity hover:bg-[var(--bg-hover)] hover:opacity-100"
         title={`Copy all ${label.toLowerCase()}`}
       >
         {copied ? (
           <Check className="h-3 w-3 text-[var(--status-success)]" />
         ) : (
-          <Copy className="h-3 w-3 text-[var(--text-muted)]" />
+          <Copy className="h-3 w-3" />
         )}
       </span>
     </button>
   );
 }
+
+const TYPE_FOR_SECTION: Record<string, import("@/lib/types").TokenType> = {
+  Colours: "color",
+  Typography: "typography",
+  Spacing: "spacing",
+  Radius: "radius",
+  Effects: "effect",
+};
 
 const SECTION_TYPE_MAP: Record<string, keyof import("@/lib/types").ExtractedTokens> = {
   Colours: "colors",
@@ -536,19 +607,70 @@ function TokensTab({
   cssVariables,
   projectId,
   sourceType,
+  layoutMd,
 }: {
   tokens: ExtractionResult["tokens"];
   cssVariables: Record<string, string>;
   projectId?: string;
   sourceType?: SourceType;
+  layoutMd: string;
 }) {
   const removeTokens = useProjectStore((s) => s.removeTokens);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateToken = useProjectStore((s) => s.updateToken);
   const renameToken = useProjectStore((s) => s.renameToken);
+  const addToken = useProjectStore((s) => s.addToken);
+  const updateLayoutMd = useProjectStore((s) => s.updateLayoutMd);
+
+  // Set of token names (normalised, no leading --) currently declared in
+  // layout.md. Used to render per-row "not in layout.md" indicators and
+  // the per-section "Add all" action.
+  const layoutMdNames = useMemo(() => {
+    const parsed = parseTokensFromLayoutMd(layoutMd);
+    const names = new Set<string>();
+    for (const bucket of Object.values(parsed)) {
+      for (const t of bucket) {
+        names.add(t.name.replace(/^--/, ""));
+      }
+    }
+    return names;
+  }, [layoutMd]);
+
+  const isInLayoutMd = useCallback(
+    (token: ExtractedToken) => {
+      const key = (token.cssVariable ?? token.name).replace(/^--/, "");
+      return layoutMdNames.has(key);
+    },
+    [layoutMdNames]
+  );
+
+  const addOneToLayoutMd = useCallback(
+    (token: ExtractedToken) => {
+      if (!projectId) return;
+      const next = appendTokensToSections(layoutMd, [token]);
+      if (next !== layoutMd) updateLayoutMd(projectId, next);
+    },
+    [projectId, layoutMd, updateLayoutMd]
+  );
+
+  const addManyToLayoutMd = useCallback(
+    (toAdd: ExtractedToken[]) => {
+      if (!projectId || toAdd.length === 0) return;
+      const next = appendTokensToSections(layoutMd, toAdd);
+      if (next !== layoutMd) updateLayoutMd(projectId, next);
+    },
+    [projectId, layoutMd, updateLayoutMd]
+  );
+  const pluginTokensPushedAt = useProjectStore(
+    (s) => s.projects.find((p) => p.id === projectId)?.pluginTokensPushedAt
+  );
+  const [adding, setAdding] = useState<string | null>(null);
 
   const allTokensFlat = useMemo(() => flattenTokens(tokens), [tokens]);
-  const showFigmaCallout = sourceType === "figma" && Object.keys(cssVariables).length < 15;
+  const showFigmaCallout =
+    sourceType === "figma" &&
+    Object.keys(cssVariables).length < 15 &&
+    !pluginTokensPushedAt;
 
   const [modeFilter, setModeFilter] = useState<string | null>(null);
 
@@ -635,16 +757,21 @@ function TokensTab({
     [modeFilter]
   );
 
+  // Always show every section so the per-section "+" affordance is visible
+  // regardless of whether tokens exist yet. Previously this was filtered to
+  // populated sections only, which hid the path to adding a second type.
   const sections: { label: string; items: ExtractedToken[] }[] = [
     { label: "Colours", items: filterByMode(tokens.colors) },
     { label: "Typography", items: filterByMode(tokens.typography) },
     { label: "Spacing", items: filterByMode(tokens.spacing) },
     { label: "Radius", items: filterByMode(tokens.radius) },
     { label: "Effects", items: filterByMode(tokens.effects) },
-  ].filter((s) => s.items.length > 0);
+  ];
 
+  // Open populated sections by default; empty sections stay collapsed but
+  // their header + button remains visible so users can expand on demand.
   const [openSections, setOpenSections] = useState<Set<string>>(
-    () => new Set(sections.map((s) => s.label))
+    () => new Set(sections.filter((s) => s.items.length > 0).map((s) => s.label))
   );
 
   const toggleSection = useCallback((label: string) => {
@@ -699,8 +826,35 @@ function TokensTab({
 
   if (sections.length === 0) {
     return (
-      <div className="p-4 text-xs text-[var(--text-muted)]">
-        No tokens extracted.
+      <div className="p-4 space-y-3">
+        <p className="text-xs text-[var(--text-muted)]">
+          {sourceType === "manual"
+            ? "No tokens yet. Click a section below to add your first token."
+            : "No tokens extracted."}
+        </p>
+        {projectId && (
+          <div className="space-y-1">
+            {Object.keys(TYPE_FOR_SECTION).map((label) => (
+              <button
+                key={label}
+                onClick={() => setAdding(label)}
+                className="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+                Add {label.toLowerCase().replace(/s$/, "")} token
+              </button>
+            ))}
+            {adding && (
+              <AddTokenForm
+                tokenType={TYPE_FOR_SECTION[adding] ?? "color"}
+                compact
+                autoKeepOpen
+                onSubmit={(token) => addToken(projectId, token)}
+                onCancel={() => setAdding(null)}
+              />
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -745,15 +899,39 @@ function TokensTab({
           ))}
         </div>
       )}
-      {sections.map((section) => (
+      {sections.map((section) => {
+        const unmappedCurated = section.items.filter(
+          (t) => !isInLayoutMd(t) && isCuratedTokenName(t.cssVariable ?? t.name)
+        );
+        return (
         <div key={section.label} className="mb-1">
           <TokenSectionHeader
             label={section.label}
             count={section.items.length}
+            unmappedCount={unmappedCurated.length}
             open={openSections.has(section.label)}
             onToggle={() => toggleSection(section.label)}
             onCopy={() => copySection(section.items)}
+            onAdd={projectId ? () => {
+              setAdding(section.label);
+              // Ensure the section is expanded so the form is visible
+              if (!openSections.has(section.label)) toggleSection(section.label);
+            } : undefined}
+            onAddAllToLayoutMd={
+              projectId && unmappedCurated.length > 0
+                ? () => addManyToLayoutMd(unmappedCurated)
+                : undefined
+            }
           />
+          {openSections.has(section.label) && adding === section.label && projectId && (
+            <AddTokenForm
+              tokenType={TYPE_FOR_SECTION[section.label] ?? "color"}
+              compact
+              autoKeepOpen
+              onSubmit={(token) => addToken(projectId, token)}
+              onCancel={() => setAdding(null)}
+            />
+          )}
           {openSections.has(section.label) && (
             <div className="pl-2">
               {groupTokensByPurpose(section.items, SECTION_TYPE_MAP[section.label]).map((group) => {
@@ -789,7 +967,9 @@ function TokensTab({
                         cssVariables={tokenVarMap}
                         projectId={projectId}
                         allTokens={allTokensFlat}
-                        layoutMd={useProjectStore.getState().projects.find((p) => p.id === projectId)?.layoutMd ?? ""}
+                        layoutMd={layoutMd}
+                        isInLayoutMd={isInLayoutMd(token)}
+                        onAddToLayoutMd={projectId ? () => addOneToLayoutMd(token) : undefined}
                         onUpdate={updateToken}
                         onRename={renameToken}
                         onDelete={() => handleDelete(section.label, token)}
@@ -803,7 +983,8 @@ function TokensTab({
             </div>
           )}
         </div>
-      ))}
+        );
+      })}
       {undoState && (
         <div className="sticky bottom-0 flex items-center justify-between border-t border-[var(--studio-border)] bg-[var(--bg-elevated)] px-3 py-2">
           <span className="text-xs text-[var(--text-secondary)]">Token removed</span>
@@ -826,6 +1007,8 @@ function TokenRow({
   projectId,
   allTokens,
   layoutMd,
+  isInLayoutMd,
+  onAddToLayoutMd,
   onUpdate,
   onRename,
   onDelete,
@@ -836,6 +1019,8 @@ function TokenRow({
   projectId?: string;
   allTokens: ExtractedToken[];
   layoutMd: string;
+  isInLayoutMd: boolean;
+  onAddToLayoutMd?: () => void;
   onUpdate?: (id: string, tokenType: keyof ExtractedTokens, tokenName: string, newValue: string) => void;
   onRename?: (id: string, tokenType: keyof ExtractedTokens, oldName: string, newName: string) => void;
   onDelete?: () => void;
@@ -1003,8 +1188,14 @@ function TokenRow({
             className={`min-w-0 flex-1 truncate text-xs text-[var(--text-primary)] ${
               canRename ? "cursor-text hover:underline hover:decoration-dotted hover:decoration-[var(--text-muted)]" : ""
             }`}
-            title={token.cssVariable ?? token.name}
+            title={isInLayoutMd ? (token.cssVariable ?? token.name) : `${token.cssVariable ?? token.name} — not in layout.md yet`}
           >
+            {!isInLayoutMd && (
+              <span
+                className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[var(--status-warning)] align-middle"
+                aria-hidden="true"
+              />
+            )}
             {token.cssVariable ?? token.name}
             {token.originalName && (
               <span className="ml-1 text-[10px] text-[var(--text-muted)]" title={token.originalName}>
@@ -1058,6 +1249,19 @@ function TokenRow({
             <Copy className="h-3 w-3 text-[var(--text-muted)]" />
           )}
         </span>
+
+        {!isInLayoutMd && onAddToLayoutMd && (
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToLayoutMd();
+            }}
+            className="shrink-0 rounded-md bg-[var(--studio-accent-subtle)] px-1.5 py-0.5 text-[9px] font-medium text-[var(--text-secondary)] opacity-0 transition-all hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)] group-hover:opacity-100"
+            title="Add this token to layout.md in the correct section"
+          >
+            + layout.md
+          </span>
+        )}
 
         {onDelete && (
           <span
@@ -1154,7 +1358,7 @@ function ComponentsTab({
                     variant="secondary"
                     className="bg-[var(--bg-elevated)] text-[var(--text-muted)] text-[10px] px-1.5 py-0"
                   >
-                    {component.variantCount} variants
+                    {component.variantCount} {sourceType === "website" ? "styles" : "variants"}
                   </Badge>
                 )}
               </div>
@@ -1173,7 +1377,7 @@ function ComponentsTab({
                 </div>
               )}
             </div>
-            {componentUrl ? (
+            {componentUrl && (
               <a
                 href={componentUrl}
                 target="_blank"
@@ -1183,8 +1387,6 @@ function ComponentsTab({
               >
                 <ExternalLink className="h-3 w-3 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors" />
               </a>
-            ) : (
-              <ExternalLink className="h-3 w-3 shrink-0 text-[var(--text-muted)] opacity-30" />
             )}
           </div>
         );
@@ -1250,8 +1452,9 @@ function ScreenshotsTab({
       )}
 
       {screenshots.length === 0 ? (
-        <div className="p-4 text-xs text-[var(--text-muted)]">
-          No screenshots captured. Add screenshots or extract from a website.
+        <div className="p-4 text-xs text-[var(--text-muted)] space-y-2">
+          <p>No screenshots captured. Some sites block automated screenshots.</p>
+          <p>Upload your own screenshots for better layout.md generation — they help the AI understand page structure and visual hierarchy.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2 p-2">

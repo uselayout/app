@@ -126,17 +126,21 @@ export async function POST(request: NextRequest) {
         let html: string;
         let headers: Record<string, string> | undefined;
 
+        const unsubUrl = generateUnsubscribeUrl(recipient.email);
+        headers = {
+          "List-Unsubscribe": `<${unsubUrl}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        };
+
         if (isOutreach) {
-          const unsubUrl = generateUnsubscribeUrl(recipient.email);
           html = outreachEmailHtml({
             name: recipient.name,
             bodyHtml,
             unsubscribeUrl: unsubUrl,
             senderName: senderDisplayName,
           });
-          headers = { "List-Unsubscribe": `<${unsubUrl}>` };
         } else {
-          html = wrapBroadcastHtml(bodyHtml);
+          html = wrapBroadcastHtml(bodyHtml, unsubUrl);
         }
 
         try {

@@ -410,6 +410,14 @@ npx @layoutdesign/context init --kit notion-lite`}
       <section className="space-y-6">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Codebase Scanner</h2>
         <p className="text-base text-gray-600 leading-relaxed">
+          See the dedicated{" "}
+          <Link href="/docs/scanner" className="text-gray-900 hover:underline">
+            Codebase Scanner
+          </Link>{" "}
+          page for the end-to-end walkthrough, flag reference, and where
+          scanned components show up in the Studio UI. Short version below.
+        </p>
+        <p className="text-base text-gray-600 leading-relaxed">
           Layout automatically detects React components and Storybook stories in
           your project. The MCP server scans your project on startup
           (~10&ndash;30ms). AI agents see your existing components via{" "}

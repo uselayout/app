@@ -24,12 +24,29 @@ export async function parseComponents(
 
   onProgress?.(`Found ${components.length} components, ${componentSets.length} component sets`);
 
-  if (components.length > 75) {
-    onWarning?.(`${components.length} components found but only first 75 enriched with full property data.`);
+  // Fallback: when the REST endpoints return nothing, walk the document
+  // tree for COMPONENT / COMPONENT_SET nodes. This recovers components on
+  // community-file duplicates, which don't expose them via the metadata
+  // endpoints until the owner explicitly publishes them.
+  if (components.length === 0 && componentSets.length === 0) {
+    try {
+      onProgress?.("No components via REST — walking document tree as fallback");
+      return await parseComponentsFromTree(fileKey, client, onProgress);
+    } catch (err) {
+      onWarning?.(
+        `Component fallback failed: ${err instanceof Error ? err.message : String(err)}`
+      );
+      return { components: [], nodeData: {} };
+    }
+  }
+
+  const COMPONENT_ENRICH_LIMIT = 200;
+  if (components.length > COMPONENT_ENRICH_LIMIT) {
+    onWarning?.(`${components.length} components found but only first ${COMPONENT_ENRICH_LIMIT} enriched with full property data.`);
   }
 
   const setNodeIds = componentSets.map((s) => s.node_id);
-  const componentNodeIds = components.slice(0, 75).map((c) => c.node_id);
+  const componentNodeIds = components.slice(0, COMPONENT_ENRICH_LIMIT).map((c) => c.node_id);
   const allNodeIds = [...new Set([...setNodeIds, ...componentNodeIds])];
 
   let nodeData: Record<string, { document: FigmaNode }> = {};
@@ -109,4 +126,93 @@ export async function parseComponents(
   }
 
   return { components: Array.from(groupedBySet.values()), nodeData };
+}
+
+/**
+ * Fallback component extraction for files where /components and /component_sets
+ * return empty (typically community-file duplicates that haven't been
+ * re-published). Walks the full document tree and collects every
+ * COMPONENT_SET and top-level COMPONENT node.
+ */
+export async function parseComponentsFromTree(
+  fileKey: string,
+  client: FigmaClient,
+  onProgress?: (msg: string) => void
+): Promise<ParseComponentsResult> {
+  onProgress?.("Fetching full document tree...");
+  const fileRes = await client.getFile(fileKey);
+
+  const components: ExtractedComponent[] = [];
+  const nodeData: Record<string, { document: FigmaNode }> = {};
+  const seenNames = new Set<string>();
+
+  walkComponentNodes(fileRes.document, (node, inSet) => {
+    if (node.type === "COMPONENT_SET") {
+      if (seenNames.has(node.name)) return;
+      seenNames.add(node.name);
+
+      const variants = (node.children ?? [])
+        .filter((c) => c.type === "COMPONENT")
+        .map((c) => c.name);
+
+      components.push({
+        name: node.name,
+        variantCount: Math.max(1, variants.length),
+        variants: variants.length > 0 ? variants : undefined,
+        properties: toComponentProperties(node.componentPropertyDefinitions),
+      });
+      nodeData[node.id] = { document: node };
+    } else if (node.type === "COMPONENT" && !inSet) {
+      // Standalone component (not wrapped in a COMPONENT_SET)
+      if (seenNames.has(node.name)) return;
+      seenNames.add(node.name);
+
+      components.push({
+        name: node.name,
+        variantCount: 1,
+        properties: toComponentProperties(node.componentPropertyDefinitions),
+      });
+      nodeData[node.id] = { document: node };
+    }
+  });
+
+  onProgress?.(`Found ${components.length} components via document tree`);
+  return { components, nodeData };
+}
+
+function walkComponentNodes(
+  node: FigmaNode,
+  callback: (node: FigmaNode, inSet: boolean) => void,
+  inSet = false
+): void {
+  callback(node, inSet);
+  // Don't recurse into COMPONENT or COMPONENT_SET bodies — we've already
+  // captured them and their internal structure isn't relevant to the inventory.
+  if (node.type === "COMPONENT" || node.type === "COMPONENT_SET") return;
+  if (node.children) {
+    for (const child of node.children) {
+      walkComponentNodes(child, callback, inSet);
+    }
+  }
+}
+
+function toComponentProperties(
+  defs: FigmaNode["componentPropertyDefinitions"]
+): ExtractedComponent["properties"] {
+  if (!defs) return undefined;
+  return Object.fromEntries(
+    Object.entries(defs).map(([key, val]) => [
+      key,
+      {
+        type: val.type as "BOOLEAN" | "TEXT" | "VARIANT" | "INSTANCE_SWAP",
+        defaultValue:
+          val.defaultValue !== undefined ? String(val.defaultValue) : undefined,
+        preferredValues: val.preferredValues?.map((pv) =>
+          typeof pv === "object" && pv.type
+            ? `${pv.type.toLowerCase()}:${pv.value}`
+            : pv.value
+        ),
+      },
+    ])
+  );
 }

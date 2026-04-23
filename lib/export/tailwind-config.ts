@@ -59,7 +59,21 @@ export function generateTailwindConfig(tokens: ExtractedTokens, breakpoints?: st
   const transitionDuration: Record<string, string> = {};
   const transitionTimingFunction: Record<string, string> = {};
 
+  // Track whether we saw any mode-scoped colour tokens so we know to emit
+  // darkMode config. Colour values in the config stay as var(--token) — the
+  // mode switching is handled by the per-mode [data-theme="..."] blocks the
+  // exported tokens.css / layout.md emit, not by nested Tailwind colours.
+  let hasModeVariants = false;
+
   for (const token of tokens.colors) {
+    if (token.mode) {
+      hasModeVariants = true;
+      // Skip mode-scoped tokens in the default key space — they share the
+      // same CSS variable name as their light-mode counterpart and the CSS
+      // cascade resolves which value wins at paint time. Emitting a second
+      // entry here would just overwrite the first with an identical string.
+      continue;
+    }
     const key = sanitiseKey(token.name);
     const varName = token.cssVariable || `--color-${key}`;
     colors[key] = `var(${varName})`;
@@ -163,11 +177,18 @@ export function generateTailwindConfig(tokens: ExtractedTokens, breakpoints?: st
     if (Object.keys(screens).length > 0) extend.screens = screens;
   }
 
-  const config = {
+  const config: Record<string, unknown> = {
     theme: {
       extend,
     },
   };
+
+  // Only emit darkMode when the extraction contained at least one dark-mode
+  // token. Projects with no mode variants get a vanilla config and save users
+  // from wondering why a `darkMode` key shows up they never asked for.
+  if (hasModeVariants) {
+    config.darkMode = ["selector", '[data-theme="dark"]'];
+  }
 
   return `/** @type {import('tailwindcss').Config} */
 module.exports = ${JSON.stringify(config, null, 2)};

@@ -82,7 +82,10 @@ export const TIER_CREDITS = {
 export const ALPHA_MODE = true;
 export const ALPHA_CREDITS = { layoutMd: 5, aiQuery: 100 } as const;
 
-/** Claude Sonnet 4.6 pricing per token in USD */
+/**
+ * Default token pricing (Sonnet 4.6). Used as fallback when model-specific
+ * pricing is unavailable. Prefer `getModelTokenCosts()` from lib/ai/models.ts.
+ */
 export const TOKEN_COSTS_USD = {
   input: 3.0 / 1_000_000,
   output: 15.0 / 1_000_000,

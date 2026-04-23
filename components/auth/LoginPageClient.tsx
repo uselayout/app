@@ -20,6 +20,16 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const rawNext = searchParams.get("next") ?? "/studio";
   const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/studio";
+  // When proxy.ts bounces an unauthenticated request it attaches a `reason`
+  // so we can explain why they're back at login instead of showing a blank
+  // form. `expired` = no/stale session cookie; `error` = getSession threw.
+  const reason = searchParams.get("reason");
+  const reasonMessage =
+    reason === "expired"
+      ? "Your session expired. Please sign in again."
+      : reason === "error"
+      ? "We couldn't verify your session. Please sign in again."
+      : null;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,7 +54,7 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080705] relative overflow-hidden">
+    <div className="force-dark min-h-screen bg-[#080705] relative overflow-hidden text-[var(--text-primary)]">
       {/* Aurora background */}
       <img
         src="/marketing/aurora-hero.webp"
@@ -155,6 +165,12 @@ function LoginContent() {
                 Forgot password?
               </Link>
 
+              {reasonMessage && !error && (
+                <p className="rounded-[6px] bg-[var(--bg-elevated)] border border-[var(--studio-border)] px-3 py-2 text-[12px] text-[var(--text-secondary)]">
+                  {reasonMessage}
+                </p>
+              )}
+
               {error && (
                 <p className="rounded-[6px] bg-red-500/10 border border-red-500/20 px-3 py-2 text-[12px] text-red-400">
                   {error}
@@ -183,9 +199,9 @@ function LoginContent() {
           <div className="border-t border-[var(--studio-border)] px-5 py-[10px]">
             <p className="text-[12px] leading-[16px] text-[var(--text-muted)] text-center">
               By continuing you agree to our<br />
-              <a href="/terms" className="text-white underline">Terms of Service</a>
+              <a href="/terms" className="text-[var(--text-primary)] underline">Terms of Service</a>
               {" "}and{" "}
-              <a href="/privacy" className="text-white underline">Privacy Policy</a>
+              <a href="/privacy" className="text-[var(--text-primary)] underline">Privacy Policy</a>
             </p>
           </div>
         </div>

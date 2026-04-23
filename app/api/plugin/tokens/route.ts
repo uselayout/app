@@ -31,6 +31,7 @@ function toPluginTokens(tokens: ExtractedTokens) {
       name: t.name,
       value: t.value,
       cssVariable: t.cssVariable ?? null,
+      mode: t.mode ?? null,
     }));
 
   return {
@@ -91,6 +92,7 @@ const TokenEntrySchema = z.object({
   name: z.string(),
   value: z.string(),
   cssVariable: z.string().optional().nullable(),
+  mode: z.string().optional().nullable(),
 });
 
 const ImportSchema = z.object({
@@ -174,7 +176,12 @@ export async function POST(request: Request) {
     const result = [...existingArr];
 
     for (const token of incomingArr) {
-      const idx = result.findIndex((t) => t.name === token.name);
+      const mode = token.mode ?? undefined;
+      // Key on name + mode so a multi-mode variable (same name, different mode)
+      // produces one token per mode rather than clobbering.
+      const idx = result.findIndex(
+        (t) => t.name === token.name && (t.mode ?? undefined) === mode
+      );
       if (idx === -1) {
         result.push({
           name: token.name,
@@ -182,6 +189,7 @@ export async function POST(request: Request) {
           type,
           category: "primitive",
           cssVariable: token.cssVariable ?? undefined,
+          mode,
         });
         created++;
       } else if (result[idx].value !== token.value) {
@@ -189,6 +197,7 @@ export async function POST(request: Request) {
           ...result[idx],
           value: token.value,
           cssVariable: token.cssVariable ?? result[idx].cssVariable,
+          mode,
         };
         updated++;
       } else {

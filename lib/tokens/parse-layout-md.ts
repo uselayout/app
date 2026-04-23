@@ -5,17 +5,35 @@ import type { ExtractedToken, ExtractedTokens, TokenType } from "@/lib/types";
  * Returns structured tokens compatible with ExtractionResult.tokens.
  */
 export function parseTokensFromLayoutMd(markdown: string): ExtractedTokens {
-  const declarations = extractCSSDeclarations(markdown);
+  const declarations = [
+    ...extractCSSDeclarations(markdown),
+    ...extractTableDeclarations(markdown),
+  ];
   const seen = new Map<string, ExtractedToken>();
 
   for (const { name, value, mode } of declarations) {
     const token = classifyToken(name, value);
-    if (token) {
-      if (mode) token.mode = mode;
-      // Later declarations win (deduplication by name+mode)
-      const key = mode ? `${name}::${mode}` : name;
+    if (!token) continue;
+    if (mode) token.mode = mode;
+    const key = mode ? `${name}::${mode}` : name;
+    const existing = seen.get(key);
+    if (!existing) {
+      seen.set(key, token);
+      continue;
+    }
+    // Prefer declarations with concrete values (hex / rgb / px) over unresolved
+    // `var(--something)` references. Otherwise a later semantic declaration like
+    // `--color-primary: var(--orange-500)` would overwrite a Quick-Reference
+    // declaration with the actual hex.
+    const existingIsRef = existing.value.includes("var(");
+    const newIsRef = token.value.includes("var(");
+    if (existingIsRef && !newIsRef) {
+      seen.set(key, token);
+    } else if (existingIsRef === newIsRef) {
+      // Same kind — later wins (matches prior behaviour for legitimate overrides).
       seen.set(key, token);
     }
+    // existing is concrete and new is a ref → keep existing
   }
 
   const colors: ExtractedToken[] = [];
@@ -106,6 +124,28 @@ function extractDeclarationsFromBlock(blockContent: string, declarations: CSSDec
       declarations.push({ name: declMatch[1].trim(), value: declMatch[2].trim() });
     }
   }
+}
+
+/**
+ * Extract token declarations from markdown tables.
+ * Many synthesised layout.md files list primitives (like `--orange-500` → `#ff5a00`)
+ * in markdown tables rather than CSS blocks. Without this, references like
+ * `--color-primary: var(--orange-500)` resolve to nothing and swatches render blank.
+ */
+function extractTableDeclarations(markdown: string): CSSDeclaration[] {
+  const declarations: CSSDeclaration[] = [];
+  const stripped = markdown.replace(/```[\s\S]*?```/g, "");
+
+  const rowRegex = /^\s*\|\s*`?\s*(--[\w-]+)\s*`?\s*\|\s*`?\s*([^|`\n]+?)\s*`?\s*\|/gm;
+  for (const match of stripped.matchAll(rowRegex)) {
+    const name = match[1].trim();
+    const value = match[2].trim();
+    if (!value || value === "—" || value === "-" || value.startsWith("|")) continue;
+    if (value.startsWith("var(")) continue;
+    declarations.push({ name, value });
+  }
+
+  return declarations;
 }
 
 const COLOR_PATTERNS = [

@@ -73,6 +73,8 @@ export async function GET(request: Request) {
       sourceType: p.sourceType,
       sourceUrl: p.sourceUrl,
       updatedAt: p.updatedAt,
+      pluginTokensPushedAt: p.pluginTokensPushedAt,
+      tokenCount: p.tokenCount,
     }));
 
     return NextResponse.json({ projects: result }, { headers: CORS });

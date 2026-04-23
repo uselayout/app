@@ -1,5 +1,18 @@
 import type { HealthScore, HealthIssue } from "@/lib/types";
 
+// Normalise a hex colour to long-form lowercase so `#fff` and `#FFFFFF` compare equal.
+// Expands 3-digit to 6-digit and 4-digit (with alpha) to 8-digit.
+function normaliseHex(hex: string): string {
+  const lower = hex.toLowerCase();
+  if (lower.length === 4) {
+    return `#${lower[1]}${lower[1]}${lower[2]}${lower[2]}${lower[3]}${lower[3]}`;
+  }
+  if (lower.length === 5) {
+    return `#${lower[1]}${lower[1]}${lower[2]}${lower[2]}${lower[3]}${lower[3]}${lower[4]}${lower[4]}`;
+  }
+  return lower;
+}
+
 export function calculateHealthScore(
   output: string,
   extractedFonts: string[] = [],
@@ -12,14 +25,14 @@ export function calculateHealthScore(
   // Documentation mentions like "--color: #value" without semicolons don't count
   const hasCssVars = /--[\w-]+:\s*[#\w0-9][^;\n]*;/.test(layoutMd ?? "");
   const approvedHex = new Set(
-    (layoutMd ?? "").match(/#[0-9a-fA-F]{3,8}\b/gi)?.map((h) => h.toLowerCase()) ?? []
+    (layoutMd ?? "").match(/#[0-9a-fA-F]{3,8}\b/gi)?.map(normaliseHex) ?? []
   );
 
   // Check for hardcoded hex values.
   // Design system has vars → all hardcoded hex is wrong.
   // Design system has no vars → only flag values absent from the spec.
   const hexMatches = output.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [];
-  const uniqueHex = [...new Set(hexMatches.map((h) => h.toLowerCase()))];
+  const uniqueHex = [...new Set(hexMatches.map(normaliseHex))];
   const rogueHex = uniqueHex.filter((h) => !approvedHex.has(h));
 
   if (rogueHex.length > 0) {
@@ -74,7 +87,7 @@ export function calculateHealthScore(
   let inlineMatch;
   let hasRogueInlineColor = false;
   while ((inlineMatch = inlineColorPattern.exec(output)) !== null) {
-    if (!approvedHex.has(`#${inlineMatch[1].toLowerCase()}`)) {
+    if (!approvedHex.has(normaliseHex(`#${inlineMatch[1]}`))) {
       hasRogueInlineColor = true;
       break;
     }
@@ -139,6 +152,50 @@ export function calculateHealthScore(
           rule: "Border radius matches design system",
           actual: `Off-scale: ${[...new Set(offGridRadius)].slice(0, 3).join(", ")}`,
           expected: `Design system radius: ${[...radiusTokenValues].join(", ")}`,
+        });
+      }
+    }
+  }
+
+  // ── Composite typography coupling ───────────────────────────────────────────
+  // Design systems treat typography as a bundle (family + size + weight +
+  // line-height). Setting font-family without line-height in the same block
+  // leaks away from the composite token and produces inconsistent text.
+  // Matches both kebab-case (CSS) and camelCase (JSX inline style).
+  if (layoutMd && /--[\w-]*(?:typography|typo|text|heading|body)/i.test(layoutMd)) {
+    const fontFamilyRe = /(?:font-family|fontFamily)\s*[:=]\s*[^;{},]+/g;
+    for (const ff of output.matchAll(fontFamilyRe)) {
+      const idx = ff.index ?? 0;
+      const window = output.slice(idx, Math.min(output.length, idx + 400));
+      const hasLineHeight = /line-height\s*[:=]|lineHeight\s*[:=]/i.test(window);
+      const usesTypoToken = /var\(--[^)]*(?:typography|typo|text|heading|body)/i.test(window);
+      if (!hasLineHeight && !usesTypoToken) {
+        score -= 5;
+        issues.push({
+          severity: "warning",
+          rule: "Composite typography",
+          actual: "font-family set without a matching line-height",
+          expected: "Use a composite typography token (family + size + weight + line-height bundled)",
+        });
+        break; // only penalise once
+      }
+    }
+  }
+
+  // ── Multi-mode coverage ────────────────────────────────────────────────────
+  // If the design system defines a dark-mode block, output using colour
+  // tokens should acknowledge dark mode. Warning only.
+  if (layoutMd && /\[data-theme\s*=\s*["']dark["']\]|\.dark\b\s*\{|@media\s*\(\s*prefers-color-scheme\s*:\s*dark/i.test(layoutMd)) {
+    const usesVarTokens = /var\(--/.test(output);
+    if (usesVarTokens) {
+      const acknowledgesMode = /\bdark:|data-theme\s*=\s*["']|className=\{[^}]*dark|prefers-color-scheme/i.test(output);
+      if (!acknowledgesMode) {
+        score -= 5;
+        issues.push({
+          severity: "warning",
+          rule: "Multi-mode coverage",
+          actual: "No dark-mode switch present",
+          expected: "Design system defines dark mode — use Tailwind dark:, data-theme, or prefers-color-scheme",
         });
       }
     }

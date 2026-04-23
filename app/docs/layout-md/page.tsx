@@ -72,7 +72,32 @@ State-specific tokens for individual components.
 --button-primary-bg: var(--color-primary);
 --button-primary-bg-hover: var(--color-primary-hover);
 --button-primary-text: var(--color-text-on-primary);
-\`\`\``;
+\`\`\`
+
+### Mode support
+
+When a token has a light and dark value, both appear side by side. Agents see exactly what to emit in each block.
+
+\`\`\`css
+:root {
+  --color-bg-app: #FFFFFF;
+  --color-text-primary: #0A0A0A;
+}
+
+[data-theme="dark"] {
+  --color-bg-app: #0C0C0E;
+  --color-text-primary: #EDEDF4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg-app: #0C0C0E;
+    --color-text-primary: #EDEDF4;
+  }
+}
+\`\`\`
+
+Exports carry the same shape: \`tokens.json\` tags mode-scoped entries via \`$extensions.mode\`, and \`tailwind.config.js\` enables \`darkMode\` automatically.`;
 
 const typographyExample = `## Typography System
 

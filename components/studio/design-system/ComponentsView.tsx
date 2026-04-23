@@ -8,17 +8,25 @@ import type { ExtractedComponent, ScannedComponent } from "@/lib/types";
 interface ComponentsViewProps {
   extractedComponents: ExtractedComponent[];
   scannedComponents: ScannedComponent[];
+  /** Source of the design-side inventory. Drives the "Design" column label. */
+  extractionSource?: "figma" | "website";
 }
 
 interface MergedComponent {
   name: string;
-  figma: ExtractedComponent | null;
+  design: ExtractedComponent | null;
   code: ScannedComponent | null;
   matchConfidence: number;
 }
 
-export function ComponentsView({ extractedComponents, scannedComponents }: ComponentsViewProps) {
+export function ComponentsView({
+  extractedComponents,
+  scannedComponents,
+  extractionSource,
+}: ComponentsViewProps) {
   const [copiedPath, setCopiedPath] = useState<string | null>(null);
+
+  const designLabel = extractionSource === "figma" ? "Figma" : "Design";
 
   const handleCopyImport = (name: string, rawPath: string) => {
     const importPath = rawPath.startsWith("src/") ? "@/" + rawPath.slice(4) : rawPath;
@@ -32,43 +40,39 @@ export function ComponentsView({ extractedComponents, scannedComponents }: Compo
     const result: MergedComponent[] = [];
     const usedScanned = new Set<string>();
 
-    // Filter out Figma icon components (not real UI components)
     const filteredExtracted = extractedComponents.filter(
       (c) => !c.name.toLowerCase().startsWith("icon/") && !c.name.toLowerCase().startsWith("icon\\")
     );
 
-    // Start with Figma components
-    for (const figma of filteredExtracted) {
+    for (const design of filteredExtracted) {
       const match = scannedComponents.find(
         (s) =>
-          s.designSystemMatch?.toLowerCase() === figma.name.toLowerCase() ||
-          s.name.toLowerCase() === figma.name.toLowerCase()
+          s.designSystemMatch?.toLowerCase() === design.name.toLowerCase() ||
+          s.name.toLowerCase() === design.name.toLowerCase()
       );
       if (match) usedScanned.add(match.filePath);
       result.push({
-        name: figma.name,
-        figma,
+        name: design.name,
+        design,
         code: match ?? null,
         matchConfidence: match?.matchConfidence ?? 0,
       });
     }
 
-    // Add code-only components
     for (const code of scannedComponents) {
       if (!usedScanned.has(code.filePath) && !result.some((r) => r.code?.filePath === code.filePath)) {
         result.push({
           name: code.name,
-          figma: null,
+          design: null,
           code,
           matchConfidence: 0,
         });
       }
     }
 
-    // Sort: matched first, then figma-only, then code-only
     return result.sort((a, b) => {
-      const aScore = a.figma && a.code ? 2 : a.figma ? 1 : 0;
-      const bScore = b.figma && b.code ? 2 : b.figma ? 1 : 0;
+      const aScore = a.design && a.code ? 2 : a.design ? 1 : 0;
+      const bScore = b.design && b.code ? 2 : b.design ? 1 : 0;
       return bScore - aScore;
     });
   }, [extractedComponents, scannedComponents]);
@@ -87,13 +91,12 @@ export function ComponentsView({ extractedComponents, scannedComponents }: Compo
 
   return (
     <div className="space-y-1">
-      {/* Header row */}
       <div className="grid grid-cols-[1fr_60px_60px_1fr_20px] gap-2 px-2 py-1">
         <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
           Component
         </span>
         <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)] text-center">
-          Figma
+          {designLabel}
         </span>
         <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)] text-center">
           Code
@@ -114,7 +117,7 @@ export function ComponentsView({ extractedComponents, scannedComponents }: Compo
           </span>
 
           <span className="flex justify-center">
-            {comp.figma ? (
+            {comp.design ? (
               <Check className="h-3.5 w-3.5 text-emerald-400" />
             ) : (
               <Minus className="h-3.5 w-3.5 text-[var(--text-muted)] opacity-30" />
@@ -138,7 +141,7 @@ export function ComponentsView({ extractedComponents, scannedComponents }: Compo
                 {comp.code.filePath}
               </span>
             )}
-            {comp.figma && !comp.code && (
+            {comp.design && !comp.code && (
               <span className="text-[10px] text-[var(--status-warning)]/70">Not built yet</span>
             )}
             {comp.code && comp.code.props.length > 0 && (
@@ -170,16 +173,15 @@ export function ComponentsView({ extractedComponents, scannedComponents }: Compo
         </div>
       ))}
 
-      {/* Summary */}
       <div className="flex gap-4 px-2 pt-2 border-t border-[var(--studio-border)] mt-2">
         <span className="text-[10px] text-[var(--text-muted)]">
-          {merged.filter((c) => c.figma && c.code).length} matched
+          {merged.filter((c) => c.design && c.code).length} matched
         </span>
         <span className="text-[10px] text-[var(--text-muted)]">
-          {merged.filter((c) => c.figma && !c.code).length} design only
+          {merged.filter((c) => c.design && !c.code).length} design only
         </span>
         <span className="text-[10px] text-[var(--text-muted)]">
-          {merged.filter((c) => !c.figma && c.code).length} code only
+          {merged.filter((c) => !c.design && c.code).length} code only
         </span>
       </div>
     </div>

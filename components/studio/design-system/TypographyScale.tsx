@@ -53,7 +53,13 @@ function TypographySpecimenRow({
   const [justCopied, setJustCopied] = useState(false);
 
   const displayName = token.cssVariable ?? `--${token.name}`;
-  const isFontSize = token.name.includes("size") || token.name.includes("font-size");
+  // Only treat a token as a font-size specimen if its name says so OR the
+  // parser already classified it as typography. Bare `--size-*` tokens from
+  // sites that use the word for component dimensions (wise.com's
+  // --size-60/--size-160 for widths/heights) must NOT render as text.
+  const isFontSize =
+    token.name.includes("font-size") ||
+    (token.type === "typography" && token.name.includes("size"));
   const isFontFamily = token.name.includes("font-family") || token.name.includes("font-sans") || token.name.includes("font-mono") || token.name.includes("font-serif") || (token.value.includes(",") && !token.value.includes("("));
   const isFontWeight = token.name.includes("weight");
   const isLineHeight = token.name.includes("line-height") || token.name.includes("leading");
@@ -62,11 +68,10 @@ function TypographySpecimenRow({
 
   const specimenStyle: React.CSSProperties = {};
   if (isFontSize && numericValue) {
-    const unit = token.value.match(/(px|rem|em|%|vh|vw)/)?.[1] || "px";
-    // Cap at sensible max: 3rem/em ≈ 48px, 48px for px
-    const maxVal = unit === "rem" || unit === "em" ? 3 : 48;
-    const capped = Math.min(numericValue, maxVal);
-    specimenStyle.fontSize = `${capped}${unit}`;
+    specimenStyle.fontSize = token.value;
+    // Tight line-height keeps the row exactly as tall as the glyphs —
+    // inheriting 1.5 would add ~80px of vertical padding on a 160px size.
+    specimenStyle.lineHeight = "1";
   } else if (isFontFamily) {
     specimenStyle.fontFamily = token.value;
   } else if (isFontWeight && numericValue) {

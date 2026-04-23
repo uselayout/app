@@ -6,6 +6,7 @@ import { useProjectStore } from "@/lib/store/project";
 import { useExtractionStore } from "@/lib/store/extraction";
 import { useOnboardingStore } from "@/lib/store/onboarding";
 import { useExtraction } from "@/lib/hooks/use-extraction";
+import { capQuickReferenceInLayoutMd } from "@/lib/claude/layout-md-cap";
 import { useKeyboardShortcuts } from "@/lib/hooks/use-keyboard-shortcuts";
 import { TopBar } from "@/components/shared/TopBar";
 import { StudioLayout } from "@/components/studio/StudioLayout";
@@ -40,10 +41,22 @@ export default function StudioPage({
   const clearSaveError = useProjectStore((s) => s.clearSaveError);
   const project = projects.find((p) => p.id === id);
 
-  // Fetch full project data if we only have summary data (list endpoint omits layout_md, extraction_data, explorations)
+  // Fetch full project data if we only have summary data (list endpoint omits layout_md, extraction_data, explorations).
+  // Guard on `=== undefined` not falsiness — a freshly-extracted project legitimately has layoutMd="" and
+  // explorations=[], and treating those as "not loaded" causes refreshProject to fire on every render, which flips
+  // `project` identity, which re-runs this effect → render loop → React error #185.
+  const needsRefreshRef = useRef(false);
   useEffect(() => {
-    if (project && (!project.layoutMd || !project.extractionData || !project.explorations)) {
-      refreshProject(id);
+    if (!project) return;
+    const missing =
+      project.layoutMd === undefined ||
+      project.extractionData === undefined ||
+      project.explorations === undefined;
+    if (missing && !needsRefreshRef.current) {
+      needsRefreshRef.current = true;
+      refreshProject(id).finally(() => {
+        needsRefreshRef.current = false;
+      });
     }
   }, [id, project, refreshProject]);
 
@@ -154,7 +167,7 @@ export default function StudioPage({
           }
         }
       }
-      if (md) updateLayoutMd(id, md);
+      if (md) updateLayoutMd(id, capQuickReferenceInLayoutMd(md));
     } catch (err) {
       console.error("layout.md regeneration error:", err);
       const { toast } = await import("sonner");
@@ -178,6 +191,7 @@ export default function StudioPage({
   const { runExtraction, abort: abortExtraction } = useExtraction();
   const resetExtraction = useExtractionStore((s) => s.resetExtraction);
   const extractionStarted = useRef(false);
+  const autoGenerateStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
   const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved" | "design-system">("editor");
   const [showSourcePanel, setShowSourcePanel] = useState(true);
@@ -254,6 +268,39 @@ export default function StudioPage({
 
     runExtraction(project, pat ?? undefined);
   }, [id, project, runExtraction]);
+
+  // Auto-generate layout.md after plugin push.
+  // Fires when either (a) ?auto-generate=1 is in the URL (plugin link),
+  // or (b) the project has pluginTokensPushedAt set but no layoutMd yet
+  // (user arrived via the dashboard after pushing).
+  useEffect(() => {
+    if (autoGenerateStarted.current) return;
+    if (!project || hydrating) return;
+    if (project.layoutMd && project.layoutMd.length > 0) return;
+
+    const t = project.extractionData?.tokens;
+    const tokenCount =
+      (t?.colors?.length ?? 0) +
+      (t?.typography?.length ?? 0) +
+      (t?.spacing?.length ?? 0) +
+      (t?.radius?.length ?? 0) +
+      (t?.effects?.length ?? 0);
+    if (tokenCount === 0) return;
+
+    const hasUrlFlag = searchParams.get("auto-generate") === "1";
+    const hasPluginPush = Boolean(project.pluginTokensPushedAt);
+    if (!hasUrlFlag && !hasPluginPush) return;
+
+    autoGenerateStarted.current = true;
+
+    if (hasUrlFlag) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("auto-generate");
+      window.history.replaceState({}, "", url.toString());
+    }
+
+    handleRegenerateLayoutMd();
+  }, [searchParams, project, hydrating, handleRegenerateLayoutMd]);
 
   const handleReExtract = useCallback(() => {
     if (!project) return;
@@ -383,6 +430,11 @@ export default function StudioPage({
     [id, updateExplorations]
   );
 
+  const handleInitialImageConsumed = useCallback(() => {
+    setPendingFigmaImage(null);
+    setPendingFigmaContext(null);
+  }, []);
+
   const handleOpenSavedInCanvas = useCallback(
     (code: string, name: string) => {
       const sessionId = crypto.randomUUID();
@@ -503,12 +555,12 @@ export default function StudioPage({
         onToggleSource={() => setShowSourcePanel((prev) => !prev)}
         sourcePanelOpen={showSourcePanel}
         onExport={() => setShowExport(true)}
-        showSourceToggle={centreView === "editor" || centreView === "canvas"}
+        showSourceToggle={centreView === "editor"}
       />
       <div className="flex-1 overflow-hidden">
         <StudioLayout
           centreView={centreView}
-          showSourcePanel={showSourcePanel && (centreView === "editor" || centreView === "canvas")}
+          showSourcePanel={showSourcePanel && centreView === "editor"}
           sourcePanel={
             <SourcePanel
               extractionData={project.extractionData}
@@ -529,6 +581,7 @@ export default function StudioPage({
               tokenSuggestions={tokenSuggestions}
               projectId={project.id}
               orgId={project.orgId}
+              extractionData={project.extractionData}
             />
           }
           canvasPanel={
@@ -541,7 +594,7 @@ export default function StudioPage({
               onLayoutMdUpdate={handleLayoutMdChange}
               initialImage={pendingFigmaImage ?? undefined}
               initialContextFiles={pendingFigmaContext ?? undefined}
-              onInitialImageConsumed={() => { setPendingFigmaImage(null); setPendingFigmaContext(null); }}
+              onInitialImageConsumed={handleInitialImageConsumed}
               extractedFonts={extractedFonts}
               extractedFontDeclarations={extractedFontDeclarations}
               uploadedFonts={project.uploadedFonts}
@@ -550,6 +603,7 @@ export default function StudioPage({
           }
           savedPanel={
             <SavedLibraryView
+              projectId={project.id}
               onNavigateToCanvas={() => handleCentreViewChange("canvas")}
               onOpenInCanvas={handleOpenSavedInCanvas}
             />

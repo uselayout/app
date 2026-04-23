@@ -7,6 +7,7 @@ interface DesignSystemSectionProps {
   id: string;
   title: string;
   count?: number;
+  subtitle?: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
 }
@@ -15,6 +16,7 @@ export function DesignSystemSection({
   id,
   title,
   count,
+  subtitle,
   children,
   defaultOpen = true,
 }: DesignSystemSectionProps) {
@@ -38,6 +40,9 @@ export function DesignSystemSection({
           <span className="rounded-full bg-[var(--bg-hover)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-muted)]">
             {count}
           </span>
+        )}
+        {subtitle && (
+          <span className="text-[10px] text-[var(--text-muted)]">{subtitle}</span>
         )}
       </button>
       {open && (

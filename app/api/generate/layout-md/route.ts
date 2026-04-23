@@ -13,6 +13,7 @@ import { logEvent } from "@/lib/logging/platform-event";
 import { fetchProjectById } from "@/lib/supabase/db";
 import type { ExtractionResult, ExtractedToken } from "@/lib/types";
 import type { AiMode } from "@/lib/types/billing";
+import { getTaskModelId } from "@/lib/ai/models";
 
 // Allow large request bodies for screenshot data (base64 images can be 2-5MB each)
 export const maxDuration = 120;
@@ -43,6 +44,31 @@ const RequestSchema = z.object({
     extractionSource: z.enum(["figma", "website"]).optional(),
   }),
   projectId: z.string().optional(),
+  standardisation: z.object({
+    kitPrefix: z.string(),
+    assignments: z.record(z.string(), z.object({
+      roleKey: z.string(),
+      originalName: z.string(),
+      originalCssVariable: z.string().optional(),
+      value: z.string(),
+      standardName: z.string(),
+      confidence: z.enum(["high", "medium", "low"]),
+      userConfirmed: z.boolean(),
+    })),
+    unassigned: z.array(z.object({
+      name: z.string(),
+      cssVariable: z.string().optional(),
+      value: z.string(),
+      type: z.string(),
+      hidden: z.boolean(),
+    })),
+    antiPatterns: z.array(z.object({
+      rule: z.string(),
+      reason: z.string(),
+      fix: z.string(),
+    })),
+    standardisedAt: z.string(),
+  }).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -166,7 +192,8 @@ export async function POST(request: NextRequest) {
 
     const streamController = registerStream();
     const startTime = Date.now();
-    const { stream, usage } = createLayoutMdStream(extractionData, apiKey);
+    const extractionModelId = await getTaskModelId("extraction");
+    const { stream, usage } = createLayoutMdStream(extractionData, apiKey, parsed.data.standardisation, extractionModelId);
 
     const apiLogMetadata = {
       projectId: parsed.data.projectId,
@@ -193,7 +220,7 @@ export async function POST(request: NextRequest) {
           endpoint: "layout-md",
           mode,
           usage: u,
-          model: "claude-sonnet-4-6",
+          model: extractionModelId,
         });
       })
       .catch(async (err) => {

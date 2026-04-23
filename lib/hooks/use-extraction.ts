@@ -5,7 +5,52 @@ import { useExtractionStore } from "@/lib/store/extraction";
 import { useProjectStore } from "@/lib/store/project";
 import { getStoredApiKey, getStoredFigmaApiKey } from "@/lib/hooks/use-api-key";
 import { useOrgStore } from "@/lib/store/organization";
-import type { ExtractionResult, ExtractedComponent, Project } from "@/lib/types";
+import type { ExtractionResult, ExtractedComponent, Project, ProjectStandardisation } from "@/lib/types";
+import { standardiseTokens } from "@/lib/tokens/standardise";
+import { capQuickReferenceInLayoutMd } from "@/lib/claude/layout-md-cap";
+
+/**
+ * Overlay the user-confirmed assignments from an existing standardisation
+ * on top of a freshly-computed one. Re-extraction re-runs the auto matcher
+ * against the new token set — without this helper it would silently wipe any
+ * role the user has hand-assigned in the Curated UI (each one flagged
+ * `userConfirmed: true` by `assignTokenToRole` in the project store).
+ *
+ * Also keeps the corresponding tokens off the `unassigned` list so the
+ * "Unassigned" panel doesn't show duplicates the user has already curated.
+ */
+export function preserveUserCuration(
+  fresh: ProjectStandardisation,
+  existing: ProjectStandardisation | undefined
+): ProjectStandardisation {
+  if (!existing) return fresh;
+
+  const userConfirmed = Object.entries(existing.assignments).filter(
+    ([, a]) => a.userConfirmed
+  );
+
+  const mergedAssignments = { ...fresh.assignments };
+  const claimedNames = new Set<string>();
+  for (const [key, assignment] of userConfirmed) {
+    mergedAssignments[key] = assignment;
+    claimedNames.add(
+      assignment.originalCssVariable ?? assignment.originalName
+    );
+  }
+
+  const mergedUnassigned =
+    claimedNames.size > 0
+      ? fresh.unassigned.filter((u) => !claimedNames.has(u.cssVariable ?? u.name))
+      : fresh.unassigned;
+
+  return {
+    ...fresh,
+    assignments: mergedAssignments,
+    unassigned: mergedUnassigned,
+    dismissedAntiPatterns:
+      existing.dismissedAntiPatterns ?? fresh.dismissedAntiPatterns,
+  };
+}
 
 export function useExtraction() {
   const startExtraction = useExtractionStore((s) => s.startExtraction);
@@ -18,6 +63,8 @@ export function useExtraction() {
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
   const updateLayoutMd = useProjectStore((s) => s.updateLayoutMd);
   const syncTokensFromLayoutMd = useProjectStore((s) => s.syncTokensFromLayoutMd);
+  const updateStandardisation = useProjectStore((s) => s.updateStandardisation);
+  const createSnapshot = useProjectStore((s) => s.createSnapshot);
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -137,6 +184,30 @@ export function useExtraction() {
         }
         updateExtractionData(project.id, extractionData);
 
+        // Step 1b: Run standardisation (classify tokens against canonical schema).
+        // Capture any hand-curated assignments from the previous run so
+        // re-extraction doesn't silently wipe them.
+        const previousStandardisation = project.standardisation;
+        let standardisationData: ProjectStandardisation | undefined;
+        try {
+          const source = project.sourceUrl ?? project.name;
+          const tokenMap = standardiseTokens(extractionData.tokens, source);
+          const fresh: ProjectStandardisation = {
+            kitPrefix: tokenMap.kitPrefix,
+            assignments: Object.fromEntries(tokenMap.assignments),
+            unassigned: tokenMap.unassigned,
+            antiPatterns: tokenMap.antiPatterns,
+            dismissedAntiPatterns:
+              previousStandardisation?.dismissedAntiPatterns ?? [],
+            standardisedAt: new Date().toISOString(),
+          };
+          standardisationData = preserveUserCuration(fresh, previousStandardisation);
+          updateStandardisation(project.id, standardisationData);
+        } catch {
+          // Non-fatal: synthesis works without standardisation
+          console.warn("[extraction] Standardisation failed, continuing without curated tokens");
+        }
+
         // Step 2: Generate layout.md
         updateStep("generate", { status: "running" });
 
@@ -149,6 +220,11 @@ export function useExtraction() {
           }).catch(() => {}); // Non-blocking — don't fail extraction if version save fails
         }
 
+        // Create a snapshot before generating new layout.md
+        if (project.layoutMd && project.layoutMd.length > 0) {
+          createSnapshot(project.id, "Before re-extraction");
+        }
+
         // Pass screenshots through — they're resized server-side before sending to Claude
         const extractionDataForSynthesis = extractionData;
 
@@ -159,7 +235,10 @@ export function useExtraction() {
             "Content-Type": "application/json",
             ...(apiKey ? { "X-Api-Key": apiKey } : {}),
           },
-          body: JSON.stringify({ extractionData: extractionDataForSynthesis }),
+          body: JSON.stringify({
+            extractionData: extractionDataForSynthesis,
+            standardisation: standardisationData,
+          }),
           signal: controller.signal,
         });
 
@@ -231,10 +310,54 @@ export function useExtraction() {
           }
         }
 
-        // Write final content to project store (single Supabase persist)
+        // Write final content to project store (single Supabase persist).
+        // Enforce the Quick Reference cap so oversized Section 0 blocks are
+        // trimmed post-hoc rather than bloating the context agents consume.
         if (layoutMd.length > 0) {
-          updateLayoutMd(project.id, layoutMd);
+          const capped = capQuickReferenceInLayoutMd(layoutMd);
+          updateLayoutMd(project.id, capped);
           syncTokensFromLayoutMd(project.id);
+
+          // Re-run standardisation against the expanded token set. The
+          // initial call at line ~148 above only saw raw CSS vars extracted
+          // from the stylesheet (~6 for Coinbase). Claude's synthesis then
+          // invents the full semantic token set (--coinbase-text-primary,
+          // --coinbase-surface, etc.) which syncTokensFromLayoutMd has just
+          // merged into extractionData.tokens. Without this second pass the
+          // Curated view shows at most one or two accidental matches — the
+          // bulk of the curated design system is silently empty.
+          try {
+            const latest = useProjectStore
+              .getState()
+              .projects.find((p) => p.id === project.id);
+            if (latest?.extractionData?.tokens) {
+              const source = latest.sourceUrl ?? latest.name;
+              const tokenMap = standardiseTokens(latest.extractionData.tokens, source);
+              const expanded: ProjectStandardisation = {
+                kitPrefix: tokenMap.kitPrefix,
+                assignments: Object.fromEntries(tokenMap.assignments),
+                unassigned: tokenMap.unassigned,
+                antiPatterns: tokenMap.antiPatterns,
+                dismissedAntiPatterns:
+                  latest.standardisation?.dismissedAntiPatterns ?? [],
+                standardisedAt: new Date().toISOString(),
+              };
+              // Layer the user's hand-curated assignments back on top —
+              // same as the first-pass call. `previousStandardisation` is the
+              // pre-extraction snapshot; `latest.standardisation` at this
+              // point is the first-pass auto output (no user edits since we
+              // wrote it). So we preserve against `previousStandardisation`.
+              updateStandardisation(
+                project.id,
+                preserveUserCuration(expanded, previousStandardisation)
+              );
+            }
+          } catch {
+            // Non-fatal — the first-pass standardisation still persists.
+            console.warn(
+              "[extraction] Post-synthesis standardisation failed, keeping first-pass assignments"
+            );
+          }
         }
         setStreamingContent(null);
         updateStep("generate", { status: "complete" });
@@ -267,6 +390,8 @@ export function useExtraction() {
       completeExtraction,
       updateExtractionData,
       updateLayoutMd,
+      updateStandardisation,
+      createSnapshot,
       currentOrgId,
     ]
   );

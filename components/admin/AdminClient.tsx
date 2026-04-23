@@ -7,6 +7,7 @@ import { EmailTab } from "./EmailTab";
 import { DashboardTab } from "./DashboardTab";
 import { RoadmapTab } from "./RoadmapTab";
 import { VariantsTab } from "./VariantsTab";
+import { AIModelsTab } from "./AIModelsTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -2303,7 +2304,7 @@ function CreditsTab({ toast }: { toast: (msg: string, type?: "success" | "error"
 
 export function AdminClient() {
   const { data: session, isPending } = useSession();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "codes" | "requests" | "changelog" | "credits" | "email" | "roadmap" | "variants">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "codes" | "requests" | "changelog" | "credits" | "ai-models" | "email" | "roadmap" | "variants">("dashboard");
   const { toasts, show: toast } = useToast();
   const [pendingCount, setPendingCount] = useState(0);
   const [stats, setStats] = useState<AdminStatsData | null>(null);
@@ -2379,6 +2380,7 @@ export function AdminClient() {
     { key: "changelog", label: "Changelog" },
     { key: "roadmap", label: "Roadmap" },
     { key: "credits", label: "Credits" },
+    { key: "ai-models", label: "AI Models" },
     { key: "email", label: "Email" },
     { key: "variants", label: "Variants" },
   ];
@@ -2459,6 +2461,9 @@ export function AdminClient() {
         )}
         {activeTab === "credits" && (
           <CreditsTab toast={toast} />
+        )}
+        {activeTab === "ai-models" && (
+          <AIModelsTab toast={toast} />
         )}
         {activeTab === "email" && (
           <EmailTab toast={toast} />
