@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-extraction-diff-scrolls",
+    title: "Extraction Changes modal now scrolls through every change",
+    description:
+      "When a re-extraction produced a long list of token or component changes, the review dialog clipped the bottom rows with no way to scroll. The list now scrolls properly so you can review and accept changes no matter how many there are.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-23",
+  },
+  {
     id: "2026-w17-session-stickiness",
     title: "Staging sessions stick around properly",
     description:
