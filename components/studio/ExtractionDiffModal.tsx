@@ -246,9 +246,9 @@ export function ExtractionDiffModal({
       />
 
       {/* Panel */}
-      <div className="relative z-10 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-app)] shadow-2xl">
+      <div className="relative z-10 w-full max-w-2xl h-[85vh] flex flex-col overflow-hidden rounded-xl border border-[var(--studio-border-strong)] bg-[var(--bg-app)] shadow-2xl">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 px-5 py-4 border-b border-[var(--studio-border)]">
+        <div className="flex-shrink-0 flex items-start justify-between gap-4 px-5 py-4 border-b border-[var(--studio-border)]">
           <div className="flex-1 min-w-0">
             <h2 className="text-[var(--text-primary)] text-base font-semibold leading-snug">
               Extraction Changes
@@ -282,7 +282,7 @@ export function ExtractionDiffModal({
 
         {/* Stats bar */}
         {(tokenTotal > 0 || componentTotal > 0 || fontTotal > 0) && (
-          <div className="flex items-center gap-4 px-5 py-2.5 bg-[var(--bg-panel)] border-b border-[var(--studio-border)] text-xs text-[var(--text-muted)] flex-wrap">
+          <div className="flex-shrink-0 flex items-center gap-4 px-5 py-2.5 bg-[var(--bg-panel)] border-b border-[var(--studio-border)] text-xs text-[var(--text-muted)] flex-wrap">
             {tokenTotal > 0 && (
               <span>
                 <span className="text-[var(--text-secondary)] font-medium">{tokenTotal}</span>{" "}
@@ -371,7 +371,7 @@ export function ExtractionDiffModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[var(--studio-border)] bg-[var(--bg-panel)] rounded-b-xl">
+        <div className="flex-shrink-0 flex items-center justify-end gap-2 px-5 py-3 border-t border-[var(--studio-border)] bg-[var(--bg-panel)] rounded-b-xl">
           <button
             type="button"
             onClick={onClose}
