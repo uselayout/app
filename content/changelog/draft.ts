@@ -10,6 +10,78 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-figma-plugin-variable-modes",
+    title: "Light and dark Figma Variables sync as separate tokens",
+    description:
+      "If your Figma file has Variables with light and dark modes, the plugin now emits a token per mode rather than collapsing them. Push from Figma and your design system in Layout gets matching light + dark assignments out of the box, ready for the Curated view's mode toggle.",
+    product: "figma-plugin",
+    category: "new",
+    date: "2026-04-23",
+  },
+  {
+    id: "2026-w17-figma-plugin-variables-sync",
+    title: "Sync colours and spacing from Figma Variables",
+    description:
+      "The plugin now reads native Figma Variables for colour and spacing, in addition to local styles. If your team uses Variables (the modern way to manage tokens in Figma), they flow straight into Layout without you having to convert anything to styles first.",
+    product: "figma-plugin",
+    category: "new",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-figma-plugin-extract-ux",
+    title: "Clearer extraction state and Variables controls in the plugin",
+    description:
+      "Extract now shows a loading state so you know it's working, and the plugin remembers when you last pushed so the Push button labels what it's about to do. The Variables section gets its own toggle and the banner contrast is easier on the eyes.",
+    product: "figma-plugin",
+    category: "improved",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-token-divergence-banner",
+    title: "Spot and fix token gaps between extraction and layout.md",
+    description:
+      "When your extracted tokens drift from what's in layout.md (because you re-extracted, edited the markdown by hand, or pushed from the plugin), a divergence banner now lists exactly which tokens are missing or have a different value. Fix them one at a time, or hit Merge all to append the missing ones into the right sections automatically. Cosmetic-only differences (whitespace, hex case) are no longer flagged.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-20",
+  },
+  {
+    id: "2026-w17-token-role-pickers",
+    title: "Friendlier token role pickers in the Design System page",
+    description:
+      "Click a colour swatch in the Curated view to open the extracted-token picker (no more typing hex codes). For non-colour roles like spacing, radius, font weight and motion, the picker now lets you either pick from extracted values or type a custom one (16px, 600, 200ms) without leaving the row. Typography roles render real type specimens so you can see the choice at a glance.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-19",
+  },
+  {
+    id: "2026-w17-inspector-logo-variants",
+    title: "Brand logos support colour, white, black and mono variants",
+    description:
+      "Upload variants of the same logo (full colour, white knockout, black, monochrome) and Layout will pick the right one based on the surface it's placed on. The Inspector logo picker shows all variants so you can swap manually if the AI's choice isn't right.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-19",
+  },
+  {
+    id: "2026-w17-opus-47-default",
+    title: "Smarter, cheaper AI generation with Opus 4.7 and prompt caching",
+    description:
+      "Variant generation now uses Claude Opus 4.7 by default, with prompt caching turned on so repeated work against the same design system is faster and cheaper. Each task (Explorer, layout.md edits, Inspector tweaks) can be configured to a different model from the admin panel, and you'll see a clearer prompt to top up if you run out of credits mid-flow.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-18",
+  },
+  {
+    id: "2026-w16-inspector-tailwind-responsive",
+    title: "Inspector edits keep responsive Tailwind classes",
+    description:
+      "Editing a class via the Inspector used to strip responsive prefixes like sm:, md: and lg: from the surrounding classes, breaking the variant's responsive behaviour. The edit now preserves them so your breakpoint styles stay intact.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-16",
+  },
+  {
     id: "2026-w17-welcome-modal-remove-video-link",
     title: "Welcome modal no longer links to an unrecorded video",
     description:
