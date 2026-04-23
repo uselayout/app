@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-inspector-brand-asset-picker",
+    title: "Swap brand logos from the Inspector",
+    description:
+      "When the AI picks the wrong logo variant (white on light, colour on dark, icon when you wanted a wordmark), you no longer have to regenerate the whole variant. Click the logo in Inspect mode and a new Logo tab lets you swap to any of your uploaded brand assets. The preview updates instantly and the change is written back to the variant's code on Apply.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-23",
+  },
+  {
     id: "2026-w17-settings-sidebar-cleanup",
     title: "Cleaner sidebar on settings pages",
     description:

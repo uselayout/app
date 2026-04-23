@@ -1272,6 +1272,7 @@ export function ExplorerCanvas({
                       iconPacks={iconPacks}
                       fonts={extractedFontDeclarations}
                       uploadedFonts={uploadedFonts}
+                      brandingAssets={projectBrandingAssets}
                       isProcessingImages={isProcessingImages}
                       onViewComparison={() => {
                         const comparisons = currentExploration?.comparisons?.filter(

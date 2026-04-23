@@ -474,6 +474,12 @@ export interface StyleEdit {
   before: string;
   after: string;
   tokenMatch?: string;
+  /**
+   * When set, the edit targets an `<img data-brand-logo="{slot}">` element.
+   * The direct-edit engine uses this to locate the correct `<img>` in the
+   * source even when it has no classes or id — match by data attribute.
+   */
+  brandLogoSlot?: string;
 }
 
 export interface ElementAnnotation {

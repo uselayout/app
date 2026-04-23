@@ -5,7 +5,7 @@ import { X, Paintbrush, Type, Maximize2, Move, MessageSquarePlus, Send, ImageIco
 import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
 import { isPlaceholderSrc } from "@/lib/image/placeholder";
 import { toast } from "sonner";
-import type { StyleEdit, ElementAnnotation, ExtractedToken } from "@/lib/types";
+import type { BrandingAsset, StyleEdit, ElementAnnotation, ExtractedToken } from "@/lib/types";
 
 interface ComputedStyles {
   fontFamily?: string;
@@ -50,6 +50,9 @@ interface SelectedElement {
   imageStyle?: string;
   imageRatio?: string;
   imageSrc?: string;
+  brandLogoSlot?: string;
+  brandLogoVariant?: string;
+  brandLogoSrc?: string;
 }
 
 interface ElementInspectorProps {
@@ -62,11 +65,12 @@ interface ElementInspectorProps {
   onDeselect: () => void;
   onReset?: () => void;
   designTokens?: ExtractedToken[];
+  brandingAssets?: BrandingAsset[];
   /** Scale factor applied to the iframe (e.g. 0.5 for 50% scale) */
   iframeScale?: number;
 }
 
-type PropertySection = "text" | "colours" | "spacing" | "size" | "annotate" | "image";
+type PropertySection = "text" | "colours" | "spacing" | "size" | "annotate" | "image" | "branding";
 
 interface TokenSuggestion {
   name: string;
@@ -384,6 +388,7 @@ export function ElementInspector({
   onDeselect,
   onReset,
   designTokens,
+  brandingAssets,
   iframeScale = 0.5,
 }: ElementInspectorProps) {
   const [selected, setSelected] = useState<SelectedElement | null>(null);
@@ -479,11 +484,16 @@ export function ElementInspector({
           imageStyle: msg.imageStyle,
           imageRatio: msg.imageRatio,
           imageSrc: msg.imageSrc,
+          brandLogoSlot: msg.brandLogoSlot,
+          brandLogoVariant: msg.brandLogoVariant,
+          brandLogoSrc: msg.brandLogoSrc,
         };
         setSelected(newSelected);
 
         // Auto-select tab based on element type
-        if (msg.imagePrompt) {
+        if (msg.brandLogoSlot) {
+          setActiveSection("branding");
+        } else if (msg.imagePrompt) {
           setActiveSection("image");
         } else {
           const tag = (msg.elementTag ?? "").toLowerCase();
@@ -559,6 +569,71 @@ export function ElementInspector({
           return updated;
         }
         return [...prev, edit];
+      });
+    },
+    [iframeRef]
+  );
+
+  /**
+   * Swap the brand-logo `<img>` to a different uploaded asset. Writes both
+   * `src` (absolute URL, so sandboxed preview frames can load it) and
+   * `data-brand-variant`. Both edits carry `brandLogoSlot` so the direct-edit
+   * engine in VariantCard can locate the `<img>` by slot even when it has no
+   * className.
+   */
+  const applyBrandAsset = useCallback(
+    (asset: BrandingAsset) => {
+      const sel = selectedRef.current;
+      if (!sel || !sel.brandLogoSlot || !iframeRef.current?.contentWindow) return;
+
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const absoluteSrc =
+        origin && asset.url.startsWith("/") ? `${origin}${asset.url}` : asset.url;
+      const nextVariant = asset.variant ?? "colour";
+      const slot = sel.brandLogoSlot;
+      const beforeSrc = sel.brandLogoSrc ?? "";
+      const beforeVariant = sel.brandLogoVariant ?? "colour";
+
+      iframeRef.current.contentWindow.postMessage(
+        { type: "layout-inspector-apply-style", property: "src", value: absoluteSrc },
+        "*"
+      );
+      iframeRef.current.contentWindow.postMessage(
+        { type: "layout-inspector-apply-style", property: "data-brand-variant", value: nextVariant },
+        "*"
+      );
+
+      setSelected((prev) =>
+        prev ? { ...prev, brandLogoSrc: absoluteSrc, brandLogoVariant: nextVariant } : prev
+      );
+
+      setPendingEdits((prev) => {
+        const withoutOld = prev.filter(
+          (e) =>
+            !(
+              e.elementId === sel.elementId &&
+              (e.property === "src" || e.property === "data-brand-variant")
+            )
+        );
+        const srcEdit: StyleEdit = {
+          elementId: sel.elementId,
+          elementTag: sel.elementTag,
+          elementClasses: sel.elementClasses,
+          property: "src",
+          before: beforeSrc,
+          after: absoluteSrc,
+          brandLogoSlot: slot,
+        };
+        const variantEdit: StyleEdit = {
+          elementId: sel.elementId,
+          elementTag: sel.elementTag,
+          elementClasses: sel.elementClasses,
+          property: "data-brand-variant",
+          before: beforeVariant,
+          after: nextVariant,
+          brandLogoSlot: slot,
+        };
+        return [...withoutOld, srcEdit, variantEdit];
       });
     },
     [iframeRef]
@@ -753,7 +828,9 @@ export function ElementInspector({
   const cs = selected.computedStyles;
 
   const hasImageData = !!selected.imagePrompt;
+  const hasBrandLogo = !!selected.brandLogoSlot && !!brandingAssets && brandingAssets.length > 0;
   const sections: { id: PropertySection; icon: React.ReactNode; label: string }[] = [
+    ...(hasBrandLogo ? [{ id: "branding" as const, icon: <ImageIcon size={11} />, label: "Logo" }] : []),
     ...(hasImageData ? [{ id: "image" as const, icon: <ImageIcon size={11} />, label: "Image" }] : []),
     { id: "text", icon: <Type size={11} />, label: "Text" },
     { id: "colours", icon: <Paintbrush size={11} />, label: "Colours" },
@@ -804,6 +881,52 @@ export function ElementInspector({
 
       {/* Properties */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 py-1.5">
+        {activeSection === "branding" && hasBrandLogo && brandingAssets && (
+          <div className="flex flex-col gap-1">
+            <p className="text-[10px] text-[var(--text-muted)] px-0.5">
+              Swap to another uploaded asset. Slot:{" "}
+              <span className="text-[var(--text-secondary)]">{selected.brandLogoSlot}</span>
+            </p>
+            {brandingAssets.map((asset) => {
+              const currentRelative = selected.brandLogoSrc
+                ? selected.brandLogoSrc.replace(
+                    typeof window !== "undefined" ? window.location.origin : "",
+                    ""
+                  )
+                : "";
+              const isActive = currentRelative === asset.url;
+              return (
+                <button
+                  key={asset.id}
+                  onClick={() => applyBrandAsset(asset)}
+                  className={`flex items-center gap-2 rounded border px-1.5 py-1 text-left transition-colors ${
+                    isActive
+                      ? "border-[var(--studio-accent)] bg-[var(--studio-accent-subtle)]"
+                      : "border-[var(--studio-border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)]"
+                  }`}
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--studio-border)] bg-[var(--bg-elevated)]">
+                    <img
+                      src={asset.url}
+                      alt={asset.name}
+                      className="max-h-6 max-w-6 object-contain"
+                    />
+                  </span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="text-[11px] font-medium text-[var(--text-primary)] truncate">
+                      {asset.slot}
+                      {asset.variant ? ` — ${asset.variant}` : ""}
+                    </span>
+                    <span className="text-[10px] text-[var(--text-muted)] truncate">
+                      {asset.name}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {activeSection === "image" && hasImageData && (
           <div className="flex flex-col gap-2 h-full">
             <label className="text-[10px] text-[var(--text-muted)]">Prompt</label>

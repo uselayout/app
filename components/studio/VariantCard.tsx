@@ -13,7 +13,7 @@ import { EditHistoryPanel } from "@/components/studio/EditHistoryPanel";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { countPlaceholderImages } from "@/lib/image/placeholder";
 import { PaperIcon } from "@/components/studio/PaperPushModal";
-import type { DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotation, ExtractedToken, FontDeclaration, UploadedFont } from "@/lib/types";
+import type { BrandingAsset, DesignVariant, StyleEdit, EditEntry, EditHistory, ElementAnnotation, ExtractedToken, FontDeclaration, UploadedFont } from "@/lib/types";
 
 
 // ---------------------------------------------------------------------------
@@ -437,13 +437,63 @@ function tryDirectStyleBlockEdit(code: string, edit: StyleEdit): string | null {
 }
 
 /**
+ * Rewrite a brand-logo `<img>` tag in the source: swap its `src` or
+ * `data-brand-variant` attribute. Matches the `<img>` by its
+ * `data-brand-logo="{slot}"` attribute so it still works when the tag has
+ * no className. Mirrors the strip-src pattern in
+ * lib/branding/post-process.ts so JSX "last-src-wins" can't leave a stale
+ * value behind.
+ */
+function tryDirectBrandLogoEdit(code: string, edit: StyleEdit): string | null {
+  const slot = edit.brandLogoSlot;
+  if (!slot) return null;
+
+  const slotEscaped = slot.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const imgRe = new RegExp(
+    `<img\\s[^>]*data-brand-logo=["']${slotEscaped}["'][^>]*\\/?>`,
+    "i",
+  );
+  const match = imgRe.exec(code);
+  if (!match) return null;
+
+  const tag = match[0];
+  let updated = tag;
+
+  if (edit.property === "src") {
+    updated = updated
+      .replace(/\ssrc\s*=\s*"[^"]*"/gi, "")
+      .replace(/\ssrc\s*=\s*'[^']*'/gi, "")
+      .replace(/\ssrc\s*=\s*\{[^}]*\}/gi, "")
+      .replace(/\/?\s*>$/, ` src="${edit.after}" />`);
+  } else if (edit.property === "data-brand-variant") {
+    if (/data-brand-variant=/.test(updated)) {
+      updated = updated.replace(
+        /data-brand-variant=(?:"[^"]*"|'[^']*'|\{[^}]*\})/i,
+        `data-brand-variant="${edit.after}"`,
+      );
+    } else {
+      updated = updated.replace(
+        new RegExp(`(data-brand-logo=["']${slotEscaped}["'])`, "i"),
+        `$1 data-brand-variant="${edit.after}"`,
+      );
+    }
+  } else {
+    return null;
+  }
+
+  if (updated === tag) return null;
+  return code.slice(0, match.index) + updated + code.slice(match.index + tag.length);
+}
+
+/**
  * Try to apply a single style edit directly in the source code.
  * Attempts in order:
  *  1. Text content replacement
- *  2. Modify existing inline style
- *  3. Replace existing Tailwind class (not add new ones)
- *  4. Add new inline style (overrides <style> blocks via specificity)
- *  5. Edit CSS property in <style> block
+ *  2. Brand-logo attribute swap (src / data-brand-variant)
+ *  3. Modify existing inline style
+ *  4. Replace existing Tailwind class (not add new ones)
+ *  5. Add new inline style (overrides <style> blocks via specificity)
+ *  6. Edit CSS property in <style> block
  * Returns the updated code, or null if all direct paths fail.
  */
 function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null {
@@ -457,6 +507,19 @@ function tryDirectStyleEditSingle(code: string, edit: StyleEdit): string | null 
       return textResult;
     }
     console.debug("[direct-edit] textContent: no direct match found for:", edit.before?.substring(0, 50));
+    return null;
+  }
+
+  // Handle brand-logo attribute edits — find the `<img data-brand-logo="{slot}">`
+  // and rewrite src or data-brand-variant. Matches by slot instead of classes
+  // because brand-logo imgs often have no class at all.
+  if (edit.brandLogoSlot && (property === "src" || property === "data-brand-variant")) {
+    const brandResult = tryDirectBrandLogoEdit(code, edit);
+    if (brandResult) {
+      console.debug(`[direct-edit] ${property}: brand-logo edit succeeded (slot=${edit.brandLogoSlot})`);
+      return brandResult;
+    }
+    console.debug(`[direct-edit] ${property}: brand-logo edit failed to find matching <img> (slot=${edit.brandLogoSlot})`);
     return null;
   }
 
@@ -584,6 +647,7 @@ interface VariantCardProps {
   iconPacks?: string[];
   fonts?: FontDeclaration[];
   uploadedFonts?: UploadedFont[];
+  brandingAssets?: BrandingAsset[];
   /** When true, card animates in with a scale-up + fade-in entrance */
   isNewlyGenerated?: boolean;
 }
@@ -611,6 +675,7 @@ export function VariantCard({
   iconPacks,
   fonts,
   uploadedFonts,
+  brandingAssets,
   isNewlyGenerated = false,
 }: VariantCardProps) {
   // Top-down clip-path reveal for newly generated variants.
@@ -1207,6 +1272,7 @@ export function VariantCard({
                 if (fullscreenIframeRef.current) fullscreenIframeRef.current.srcdoc = srcdoc;
               }}
               designTokens={designTokens}
+              brandingAssets={brandingAssets}
               iframeScale={1}
             />
 
