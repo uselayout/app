@@ -19,7 +19,7 @@ export interface StepDef {
 }
 
 export const PHASE_LABELS: Record<StepPhase, string> = {
-  keys: "Connect your keys",
+  keys: "Bring your own keys (optional)",
   explore: "Extract and explore",
   tools: "Wire it into your tools",
   learn: "Learn more",
@@ -31,22 +31,22 @@ export const STEP_DEFS: StepDef[] = [
   {
     key: "apiKeyAdded",
     phase: "keys",
-    label: "Add your Anthropic API key",
-    description: "Powers variant generation. Stored locally in your browser.",
+    label: "Bring your own Anthropic key",
+    description: "Variants use Layout's hosted model by default. Add your own Anthropic key to use that instead. Stored locally in your browser.",
     optional: true,
   },
   {
     key: "figmaTokenAdded",
     phase: "keys",
     label: "Add your Figma personal access token",
-    description: "Required to extract design systems from Figma files.",
+    description: "Only needed if you want to extract a Figma file or push designs back to Figma.",
     optional: true,
   },
   {
     key: "geminiKeyAdded",
     phase: "keys",
-    label: "Add your Gemini API key (optional)",
-    description: "Unlocks AI image generation inside variants.",
+    label: "Add your Gemini API key",
+    description: "Only needed if you want AI image generation inside variants.",
     optional: true,
   },
   {

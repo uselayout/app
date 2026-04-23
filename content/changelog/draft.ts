@@ -10,6 +10,51 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-settings-sidebar-cleanup",
+    title: "Cleaner sidebar on settings pages",
+    description:
+      "The left navigation used to show Editor, Explore, Design System and Library on settings pages where none of them worked. Those items now hide whenever you're not inside a project, so the sidebar only shows what you can actually click.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-23",
+  },
+  {
+    id: "2026-w17-onboarding-cli-link-and-persist",
+    title: "Install CLI step now links to instructions",
+    description:
+      "The \"Install the CLI\" item in the onboarding checklist now has an Open instructions link, matching the Figma plugin and Chrome extension steps. Install instruction links also stay visible after you tick a step done, so you can come back to them later without rerunning onboarding.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-23",
+  },
+  {
+    id: "2026-w17-push-to-figma-catalog-link",
+    title: "Push to Figma: working link to Figma's MCP catalog",
+    description:
+      "The \"Figma MCP server\" link in the Push to Figma modal used to go to a page that no longer loads. It now points to Figma's MCP catalog so you can actually get the Figma MCP set up in one click.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-23",
+  },
+  {
+    id: "2026-w17-push-to-figma-friendlier-copy",
+    title: "Friendlier Push to Figma modal",
+    description:
+      "Rewritten prerequisites and steps to focus on what happens for you (\"your design appears in Figma, ready to edit\") rather than what happens under the hood. Added direct links to the setup guide and Figma MCP catalog so first-timers have a clear next step.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-23",
+  },
+  {
+    id: "2026-w17-onboarding-byok-framing",
+    title: "Onboarding keys are now clearly optional",
+    description:
+      "The Anthropic key row in the checklist read like a required step, but variants run on Layout's hosted model by default — your own key is only needed if you'd rather swap it in. Relabelled as \"Bring your own keys (optional)\" and clarified that the Figma token and Gemini key only matter if you want Figma import/push or AI image generation.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-23",
+  },
+  {
     id: "2026-w17-explorer-brand-logos-render",
     title: "Explorer variants now show your uploaded brand logos",
     description:

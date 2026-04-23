@@ -153,40 +153,66 @@ export function OnboardingChecklist({
 
       case "figmaPluginInstalled":
         return (
-          <div className="flex flex-wrap items-center gap-2">
-            <GoLink
-              href="/docs/figma-plugin"
-              onClick={() => {
-                markStep("readDocs");
-                onClose?.();
-              }}
-            >
-              Open instructions
-            </GoLink>
-            <MarkDoneButton onClick={() => markStep("figmaPluginInstalled")}>
-              Mark as done
-            </MarkDoneButton>
-          </div>
+          <MarkDoneButton onClick={() => markStep("figmaPluginInstalled")}>
+            Mark as done
+          </MarkDoneButton>
         );
 
       case "extensionInstalled":
         return (
-          <div className="flex flex-wrap items-center gap-2">
-            <GoLink
-              href="/docs/chrome-extension"
-              onClick={() => {
-                markStep("readDocs");
-                onClose?.();
-              }}
-            >
-              Open instructions
-            </GoLink>
-            <MarkDoneButton onClick={() => markStep("extensionInstalled")}>
-              Mark as done
-            </MarkDoneButton>
-          </div>
+          <MarkDoneButton onClick={() => markStep("extensionInstalled")}>
+            Mark as done
+          </MarkDoneButton>
         );
 
+      case "readDocs":
+        return null;
+
+      default:
+        return null;
+    }
+  };
+
+  // Docs links that persist even after the step is ticked — users often want to
+  // refer back to install instructions later.
+  const renderDocLink = (def: StepDef): ReactNode => {
+    switch (def.key) {
+      case "cliInstalled":
+        return (
+          <GoLink
+            href="/docs/cli"
+            onClick={() => {
+              markStep("readDocs");
+              onClose?.();
+            }}
+          >
+            Open instructions
+          </GoLink>
+        );
+      case "figmaPluginInstalled":
+        return (
+          <GoLink
+            href="/docs/figma-plugin"
+            onClick={() => {
+              markStep("readDocs");
+              onClose?.();
+            }}
+          >
+            Open instructions
+          </GoLink>
+        );
+      case "extensionInstalled":
+        return (
+          <GoLink
+            href="/docs/chrome-extension"
+            onClick={() => {
+              markStep("readDocs");
+              onClose?.();
+            }}
+          >
+            Open instructions
+          </GoLink>
+        );
       case "readDocs":
         return (
           <GoLink
@@ -199,7 +225,6 @@ export function OnboardingChecklist({
             Open docs
           </GoLink>
         );
-
       default:
         return null;
     }
@@ -219,6 +244,7 @@ export function OnboardingChecklist({
                 def={def}
                 complete={steps[def.key]}
                 cta={renderCta(def)}
+                docLink={renderDocLink(def)}
               />
             ))}
           </ul>
@@ -232,10 +258,12 @@ function ChecklistRow({
   def,
   complete,
   cta,
+  docLink,
 }: {
   def: StepDef;
   complete: boolean;
   cta: ReactNode;
+  docLink: ReactNode;
 }) {
   return (
     <li
@@ -277,12 +305,15 @@ function ChecklistRow({
           {def.label}
         </span>
         {!complete && (
-          <>
-            <span className="text-xs text-[var(--text-secondary)]">
-              {def.description}
-            </span>
-            {cta && <div className="mt-1">{cta}</div>}
-          </>
+          <span className="text-xs text-[var(--text-secondary)]">
+            {def.description}
+          </span>
+        )}
+        {(!complete || docLink) && (
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            {docLink}
+            {!complete && cta}
+          </div>
         )}
       </div>
     </li>

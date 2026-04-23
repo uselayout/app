@@ -109,39 +109,38 @@ function SidebarInner() {
         <WorkspaceSwitcher collapsed={collapsed} />
       </div>
 
-      {/* Nav items */}
-      <nav className="flex-1 overflow-y-auto p-2">
-        <ul className="space-y-1">
-          {navItems.map((item) => (
-            <li key={item.segment} className="relative group">
-              <Link
-                href={projectId ? item.href : `/${orgSlug}`}
-                aria-disabled={!projectId}
-                tabIndex={projectId ? undefined : -1}
-                onClick={projectId ? undefined : (e) => e.preventDefault()}
-                className={`flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm transition-all duration-[var(--duration-base)] ${
-                  collapsed ? "justify-center" : ""
-                } ${
-                  isActive(item.segment)
-                    ? "bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]"
-                    : projectId
-                      ? "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-                      : "text-[var(--text-muted)] cursor-default pointer-events-none"
-                }`}
-              >
-                <span className="shrink-0">{item.icon}</span>
-                {!collapsed && item.label}
-              </Link>
-              {/* Tooltip when collapsed */}
-              {collapsed && (
-                <div className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 rounded-md bg-[var(--bg-elevated)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] opacity-0 shadow-lg border border-[var(--studio-border)] transition-opacity group-hover:opacity-100">
-                  {item.label}
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      </nav>
+      {/* Nav items — only render inside a project context */}
+      {projectId ? (
+        <nav className="flex-1 overflow-y-auto p-2">
+          <ul className="space-y-1">
+            {navItems.map((item) => (
+              <li key={item.segment} className="relative group">
+                <Link
+                  href={item.href}
+                  className={`flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm transition-all duration-[var(--duration-base)] ${
+                    collapsed ? "justify-center" : ""
+                  } ${
+                    isActive(item.segment)
+                      ? "bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  <span className="shrink-0">{item.icon}</span>
+                  {!collapsed && item.label}
+                </Link>
+                {/* Tooltip when collapsed */}
+                {collapsed && (
+                  <div className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 rounded-md bg-[var(--bg-elevated)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] opacity-0 shadow-lg border border-[var(--studio-border)] transition-opacity group-hover:opacity-100">
+                    {item.label}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : (
+        <div className="flex-1" />
+      )}
 
       {/* Onboarding progress — sits above the user/docs divider */}
       <div className="px-1 pt-1">
