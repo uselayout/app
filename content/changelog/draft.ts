@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-supabase-restart-resilience",
+    title: "Stay signed in during brief database restarts",
+    description:
+      "If the database briefly goes away (for a restart or migration), you'll now see a short \"Layout is briefly unavailable\" page instead of being logged out and bounced to the sign-in screen. Your session stays valid, and a quick refresh gets you back to work.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-23",
+  },
+  {
     id: "2026-w17-figma-plugin-variable-modes",
     title: "Light and dark Figma Variables sync as separate tokens",
     description:
