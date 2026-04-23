@@ -69,6 +69,16 @@ function buildComponentContext(
   return `\n\n## Existing Components (REUSE these, do NOT recreate)\n\n${sections.join("\n\n")}\n\nWhen building UI, import existing components instead of generating new ones. Use the exact import paths shown above. If a story variant already exists for what you need, prefer its configured arg values.`;
 }
 
+/**
+ * Origin for absolutising `/api/storage/…` brand asset URLs. Srcdoc iframes
+ * sandboxed without `allow-same-origin` (ResponsivePreview modal) can't
+ * resolve relative paths via `<base href>`, so we prepend the current origin
+ * at post-process time.
+ */
+function getBrowserOrigin(): string | undefined {
+  return typeof window !== "undefined" ? window.location.origin : undefined;
+}
+
 interface ExplorerCanvasProps {
   projectId: string;
   layoutMd: string;
@@ -301,7 +311,7 @@ export function ExplorerCanvas({
           lastCount = completeCount;
           const parsed = parseVariants(fullOutput, parseOpts).map((v) => ({
             ...v,
-            code: replaceBrandingPlaceholders(v.code, projectBrandingAssets),
+            code: replaceBrandingPlaceholders(v.code, projectBrandingAssets, getBrowserOrigin()),
           }));
           const merged = [...existingVariants, ...parsed];
           const updated = updatedExplorations.map((e) =>
@@ -313,7 +323,7 @@ export function ExplorerCanvas({
 
       const finalNew = parseVariants(fullOutput, parseOpts).map((v) => ({
         ...v,
-        code: replaceBrandingPlaceholders(v.code, projectBrandingAssets),
+        code: replaceBrandingPlaceholders(v.code, projectBrandingAssets, getBrowserOrigin()),
       }));
 
       // Detect errors embedded in the stream (e.g. from Gemini)
@@ -343,7 +353,7 @@ export function ExplorerCanvas({
       // Users can generate images later via Inspector, smart regenerate, or bulk generate.
       let totalPlaceholders = 0;
       const withPlaceholders = finalNew.map((v) => {
-        const branded = replaceBrandingPlaceholders(v.code, projectBrandingAssets);
+        const branded = replaceBrandingPlaceholders(v.code, projectBrandingAssets, getBrowserOrigin());
         const { code: placeholderCode, count } = injectPlaceholderSvgs(branded);
         totalPlaceholders += count;
         return branded !== v.code || count > 0
@@ -895,7 +905,8 @@ export function ExplorerCanvas({
         // attribute but may have stripped or overwritten the src.
         result.code = replaceBrandingPlaceholders(
           result.code,
-          projectBrandingAssets
+          projectBrandingAssets,
+          getBrowserOrigin()
         );
 
         if (controller.signal.aborted) return;

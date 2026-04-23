@@ -51,10 +51,16 @@ function resolveAsset(
  * ALL existing src attributes are stripped first — mirrors the
  * data-generate-image pipeline at lib/image/pipeline.ts:352-354 and the JSX
  * duplicate-attribute gotcha documented in CLAUDE.md.
+ *
+ * Pass `origin` (e.g. `window.location.origin`) to absolutise relative
+ * `/api/storage/…` URLs. Sandboxed srcdoc iframes without `allow-same-origin`
+ * can fail to resolve relative paths via `<base href>`, so preview contexts
+ * should always supply an origin.
  */
 export function replaceBrandingPlaceholders(
   code: string,
-  assets: BrandingAsset[] | undefined | null
+  assets: BrandingAsset[] | undefined | null,
+  origin?: string
 ): string {
   if (!assets || assets.length === 0) return code;
   if (!code.includes("data-brand-logo")) return code;
@@ -68,6 +74,9 @@ export function replaceBrandingPlaceholders(
     const asset = resolveAsset(slotRaw, variantRaw, assets);
     if (!asset) return match;
 
+    const resolvedUrl =
+      origin && asset.url.startsWith("/") ? `${origin}${asset.url}` : asset.url;
+
     // Strip every existing src variant before adding a single clean one.
     // Without this, JSX "last-src-wins" can leave the fallback visible.
     const stripped = match
@@ -75,7 +84,7 @@ export function replaceBrandingPlaceholders(
       .replace(/\ssrc\s*=\s*'[^']*'/gi, "")
       .replace(/\ssrc\s*=\s*\{[^}]*\}/gi, "");
 
-    return stripped.replace(/\/?\s*>$/, ` src="${asset.url}" />`);
+    return stripped.replace(/\/?\s*>$/, ` src="${resolvedUrl}" />`);
   });
 }
 
