@@ -59,14 +59,6 @@ export function WelcomeModal({ firstProjectId, orgSlug }: WelcomeModalProps) {
                   ? "Everything's wired up. Keep exploring, or close this to dismiss."
                   : "Turn any Figma file or website into context your AI coding agent understands. Work through these steps to feel the full loop."}
               </p>
-              <a
-                href="https://www.youtube.com/@layoutdesign"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 inline-flex w-fit items-center gap-1.5 text-xs text-[var(--text-secondary)] underline decoration-[var(--studio-border-strong)] underline-offset-4 transition-colors hover:text-[var(--text-primary)]"
-              >
-                Watch a 90-second overview
-              </a>
 
               {/* Progress */}
               <div className="mt-5 flex items-center gap-3">
