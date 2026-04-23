@@ -7,7 +7,7 @@ const SAFE_METADATA_KEYS = new Set([
   "hasImageUpload", "hasContextFiles", "contextFileCount", "isRefinement",
   "promptLength", "instructionLength", "editCount", "annotationCount",
   "figmaFileKey", "screenshotCount", "durationMs", "tokenCount", "componentCount",
-  "formats", "hasScreenshots", "tool", "fileKey",
+  "formats", "hasScreenshots", "tool", "fileKey", "mode", "errorClass",
 ]);
 
 function sanitiseMetadata(meta: unknown): Record<string, unknown> | null {

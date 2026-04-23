@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-byok-credit-error-clarity",
+    title: "Clearer message when your own Anthropic credits run out",
+    description:
+      "If you're using your own Anthropic API key and it runs out of credits mid-generation, Layout now tells you clearly and points you to console.anthropic.com to top up, instead of showing a generic API error. You can also switch back to hosted mode from Settings if you'd rather Layout handle the billing.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-23",
+  },
+  {
     id: "2026-w17-supabase-restart-resilience",
     title: "Stay signed in during brief database restarts",
     description:
