@@ -40,7 +40,7 @@ export default function FigmaPluginPage() {
           Download Figma Plugin (Alpha)
         </a>
         <p className="text-sm text-gray-500">
-          v0.2.7 &middot; Requires Figma desktop app
+          v0.2.10 &middot; Requires Figma desktop app
         </p>
       </section>
 
@@ -112,10 +112,13 @@ export default function FigmaPluginPage() {
               One-click AI Kit export. Extracts all design tokens (colours,
               typography, spacing, effects, border radius) and components from
               the current file. Download as ZIP or push directly to Layout
-              Cloud. As of v0.2.7, Export also reads Figma Variables alongside
-              Styles (FLOAT variables classified by name into radius or
-              spacing), so files that use Variables instead of published
-              Styles produce a complete kit in one pass.
+              Cloud. Export reads Figma Variables alongside Styles (FLOAT
+              variables classified by name into radius or spacing), so files
+              that use Variables instead of published Styles produce a
+              complete kit in one pass. Each Variable mode produces its own
+              token, so light and dark (or any other modes) flow through to
+              Layout as separate mode-tagged tokens instead of collapsing
+              into one.
             </p>
           </div>
 
