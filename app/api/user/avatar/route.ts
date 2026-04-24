@@ -1,15 +1,35 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { Pool } from "pg";
 import { auth } from "@/lib/auth";
 import { uploadToBucket } from "@/lib/supabase/storage";
 
 const MAX_BYTES = 2 * 1024 * 1024; // 2MB
 const ALLOWED_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
-// Accepts a multipart upload from the profile settings page, stores the image
-// in the user-avatars bucket, and updates user.image via Better Auth so the
-// new URL flows everywhere session.user.image is read (publish flow, UserMenu,
-// kit cards, etc.).
+// Better Auth's updateUser API validates `image` as an absolute URL and
+// rejects our /api/storage/... proxy paths, so we write directly to the
+// layout_user row. The session cookie cache picks it up on next refetch.
+let _pool: Pool | null = null;
+function pool(): Pool {
+  if (!_pool) {
+    _pool = new Pool({
+      connectionString: process.env.DATABASE_URL!,
+      max: 2,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 5_000,
+    });
+  }
+  return _pool;
+}
+
+async function setUserImage(userId: string, image: string | null): Promise<void> {
+  await pool().query(
+    `UPDATE layout_user SET image = $1, "updatedAt" = NOW() WHERE id = $2`,
+    [image, userId],
+  );
+}
+
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) {
@@ -40,15 +60,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
 
-  // Persist the new URL on the user row via Better Auth's server API. This
-  // surfaces it on session.user.image everywhere without a reload.
   try {
-    await auth.api.updateUser({
-      headers: await headers(),
-      body: { image: url },
-    });
+    await setUserImage(session.user.id, url);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "update-user failed";
+    console.error("[avatar] failed to write user.image:", err);
+    const message = err instanceof Error ? err.message : "Failed to save avatar URL";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
@@ -62,12 +78,10 @@ export async function DELETE() {
   }
 
   try {
-    await auth.api.updateUser({
-      headers: await headers(),
-      body: { image: null },
-    });
+    await setUserImage(session.user.id, null);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "update-user failed";
+    console.error("[avatar] failed to clear user.image:", err);
+    const message = err instanceof Error ? err.message : "Failed to remove avatar";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
