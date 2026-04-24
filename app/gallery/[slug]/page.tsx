@@ -223,7 +223,7 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
                               {grouped.spacing.map((s) => (
                                 <div key={s.name} className="flex items-center gap-3">
                                   <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono w-40 shrink-0 truncate">{s.name}</span>
-                                  <span className="h-2 rounded bg-[var(--mkt-accent)]" style={{ width: s.value }} />
+                                  <span className="h-2 rounded bg-[var(--mkt-text-muted)] opacity-60" style={{ width: s.value }} />
                                   <span className="text-[11px] text-[var(--mkt-text-muted)] font-mono">{s.value}</span>
                                 </div>
                               ))}
@@ -237,7 +237,7 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
                             <div className="flex flex-wrap gap-3">
                               {grouped.radius.map((r) => (
                                 <div key={r.name} className="flex flex-col items-center gap-1.5">
-                                  <span className="w-14 h-14 bg-[var(--mkt-accent)]" style={{ borderRadius: r.value }} />
+                                  <span className="w-14 h-14 bg-[var(--mkt-text-muted)] opacity-60" style={{ borderRadius: r.value }} />
                                   <span className="text-[10px] text-[var(--mkt-text-primary)] font-mono">{r.name.split(".").pop()}</span>
                                   <span className="text-[10px] text-[var(--mkt-text-muted)] font-mono">{r.value}</span>
                                 </div>
