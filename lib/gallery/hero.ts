@@ -74,35 +74,30 @@ function buildHeroPrompt(kit: PublicKit): { prompt: string; brandColours: string
 
 /**
  * Generate a hero cover PNG for a kit and upload it to Supabase Storage.
- * Returns the proxied /api/storage URL on success, null on failure.
+ * Throws with the upstream error message on failure so the route can surface
+ * it to the user (billing caps, bad key, rate limits, etc.). Returns the
+ * proxied /api/storage URL on success.
  */
 export async function captureAndUploadKitHero(
   kit: PublicKit,
   options: GenerateHeroOptions = {},
-): Promise<string | null> {
+): Promise<string> {
   const { prompt, brandColours } = buildHeroPrompt(kit);
 
-  let data: string;
-  let mimeType: string;
-  try {
-    const result = await generateImageRaw({
-      prompt,
-      brandColours: brandColours.length > 0 ? brandColours : undefined,
-      // "4:3" maps to 1536x1024 in the GPT Image 2 provider (mapSize in openai.ts)
-      aspectRatio: "4:3",
-      resolution: "2K",
-      forcedProvider: "openai",
-      openaiApiKey: options.openaiApiKey,
-    });
-    data = result.data;
-    mimeType = result.mimeType;
-  } catch (err) {
-    console.error(`[kit-hero] GPT Image 2 call failed for ${kit.slug}:`, err);
-    return null;
-  }
+  const result = await generateImageRaw({
+    prompt,
+    brandColours: brandColours.length > 0 ? brandColours : undefined,
+    // "4:3" maps to 1536x1024 in the GPT Image 2 provider (mapSize in openai.ts)
+    aspectRatio: "4:3",
+    resolution: "2K",
+    forcedProvider: "openai",
+    openaiApiKey: options.openaiApiKey,
+  });
 
-  const buffer = Buffer.from(data, "base64");
-  const ext = mimeType.includes("png") ? "png" : mimeType.includes("jpeg") ? "jpg" : "png";
+  const buffer = Buffer.from(result.data, "base64");
+  const ext = result.mimeType.includes("png") ? "png" : result.mimeType.includes("jpeg") ? "jpg" : "png";
   const path = `kit-heroes/${kit.id}.${ext}`;
-  return uploadToBucket("layout-images", path, buffer, mimeType, { upsert: true });
+  const url = await uploadToBucket("layout-images", path, buffer, result.mimeType, { upsert: true });
+  if (!url) throw new Error("Generated hero image but upload to storage failed");
+  return url;
 }
