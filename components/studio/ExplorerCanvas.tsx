@@ -25,7 +25,7 @@ import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { toast } from "sonner";
 import { calculateHealthScore } from "@/lib/health/score";
 import { useOnboardingStore } from "@/lib/store/onboarding";
-import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
+import { getStoredGoogleApiKey, getStoredOpenAIKey } from "@/lib/hooks/use-api-key";
 import { DEFAULT_EXPLORE_MODEL, AI_MODELS, BYOK_ONLY_MODELS } from "@/lib/types";
 import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import { buildCssTokenBlock } from "@/lib/explore/preview-helpers";
@@ -876,9 +876,10 @@ export function ExplorerCanvas({
       const variant = currentExploration.variants.find((v) => v.id === variantId);
       if (!variant) return;
 
-      // Check for Google AI key before attempting API call
-      if (!getStoredGoogleApiKey()) {
-        toast.error("Add a Google AI API key in Settings → API Keys to generate images.");
+      // Check for at least one image-gen key before attempting API call.
+      // Router auto-routes text-heavy prompts to OpenAI when both are present.
+      if (!getStoredGoogleApiKey() && !getStoredOpenAIKey()) {
+        toast.error("Add a Google AI or OpenAI API key in Settings → API Keys to generate images.");
         return;
       }
 

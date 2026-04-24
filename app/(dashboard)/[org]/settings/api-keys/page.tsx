@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { useOrgStore } from "@/lib/store/organization";
 import { ApiKeyManager } from "@/components/dashboard/ApiKeyManager";
-import { useApiKey, useGoogleApiKey, useFigmaApiKey } from "@/lib/hooks/use-api-key";
+import { useApiKey, useGoogleApiKey, useOpenAIKey, useFigmaApiKey } from "@/lib/hooks/use-api-key";
 
 // ---------------------------------------------------------------------------
 // Personal key field (localStorage, never sent to server)
@@ -121,6 +121,7 @@ export default function ApiKeysPage() {
 
   const anthropic = useApiKey();
   const google = useGoogleApiKey();
+  const openai = useOpenAIKey();
   const figma = useFigmaApiKey();
 
   if (!currentOrg) {
@@ -178,6 +179,16 @@ export default function ApiKeysPage() {
             storedKey={google.key}
             onSave={google.setKey}
             onClear={google.clearKey}
+          />
+
+          <PersonalKeyField
+            label="OpenAI API Key"
+            placeholder="sk-proj-..."
+            externalUrl="https://platform.openai.com/api-keys"
+            externalLabel="Get key"
+            storedKey={openai.key}
+            onSave={openai.setKey}
+            onClear={openai.clearKey}
           />
 
           <PersonalKeyField

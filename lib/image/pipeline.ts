@@ -50,6 +50,8 @@ export interface PipelineOptions {
   onTotalCount?: (count: number) => void;
   /** User-provided Google AI API key (BYOK) */
   googleApiKey?: string;
+  /** User-provided OpenAI API key (BYOK) for GPT Image 2.0 */
+  openaiApiKey?: string;
   /** Force regeneration even for images that already have real URLs */
   forceRegenerate?: boolean;
   /** AbortSignal — stops generation when client disconnects or cancels */
@@ -341,6 +343,7 @@ export async function processImagePlaceholders(
           brandColours: options.brandColours,
           brandStyle: options.brandStyle,
           googleApiKey: options.googleApiKey,
+          openaiApiKey: options.openaiApiKey,
         })
       )
     );
