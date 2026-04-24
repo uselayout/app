@@ -9,67 +9,176 @@ import type { PublicKit } from "@/lib/types/kit";
  * populate independent columns and the card fallback chain prefers the hero
  * when both exist.
  *
- * v1 does not pass the kit's logo as a reference image. GPT Image 2 goes via
- * /v1/images/generations which is text-only in our current integration. We
- * describe the logo in the prompt and let the model render a stylised mark.
+ * Two-pronged fidelity strategy:
+ *   1. Tight prompt derived from the full palette, real font names, tag-driven
+ *      composition cues, and an explicit no-text directive (text is where the
+ *      model fails hardest).
+ *   2. Reference-image mode via /v1/images/edits when the kit ships a logo on
+ *      rich_bundle.brandingAssets — the model composes around the actual mark
+ *      instead of inventing one.
  */
 
 interface GenerateHeroOptions {
   openaiApiKey?: string;
 }
 
-function extractColour(tokensCss: string, names: RegExp[]): string | null {
-  for (const pattern of names) {
-    const match = tokensCss.match(pattern);
-    if (match && match[1]) return match[1].trim();
+interface ReferenceImage {
+  buffer: Buffer;
+  filename: string;
+  mimeType: string;
+}
+
+// --- Token extraction --------------------------------------------------------
+
+interface ExtractedToken {
+  role: string;
+  value: string;
+}
+
+function extractPalette(tokensCss: string, limit = 6): ExtractedToken[] {
+  const re = /--([a-zA-Z0-9-]+)\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|oklch\([^)]+\)|hsla?\([^)]+\))/g;
+  const out: ExtractedToken[] = [];
+  const seen = new Set<string>();
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(tokensCss)) && out.length < limit) {
+    const role = m[1];
+    const value = m[2].trim();
+    if (seen.has(role)) continue;
+    seen.add(role);
+    out.push({ role, value });
   }
-  return null;
+  return out;
 }
 
-function extractFontFamily(tokensCss: string): string {
-  const match = tokensCss.match(/--[a-zA-Z0-9-]*font-(?:sans|serif|display|primary)[^:]*:\s*([^;]+);/i);
-  if (!match || !match[1]) return "sans-serif";
-  const value = match[1].toLowerCase();
-  if (/serif/.test(value)) return "serif";
-  if (/mono|code/.test(value)) return "mono";
-  return "sans-serif";
+function firstFontFamily(tokensCss: string, selector: RegExp): string | null {
+  const m = tokensCss.match(selector);
+  if (!m || !m[1]) return null;
+  const first = m[1].split(",")[0].trim().replace(/^['"]|['"]$/g, "");
+  if (!first || /^(system-ui|sans-serif|serif|monospace|mono|ui-sans|ui-serif|ui-monospace|-apple-system)$/i.test(first)) {
+    return null;
+  }
+  return first;
 }
 
-function buildHeroPrompt(kit: PublicKit): { prompt: string; brandColours: string[] } {
-  const primary = extractColour(kit.tokensCss, [
-    /--[a-zA-Z0-9-]*(?:accent|primary|brand)\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|oklch\([^)]+\))/,
-  ]);
-  const bg = extractColour(kit.tokensCss, [
-    /--[a-zA-Z0-9-]*bg(?:-app)?\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|oklch\([^)]+\))/,
-    /--[a-zA-Z0-9-]*background\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|oklch\([^)]+\))/,
-  ]);
-  const text = extractColour(kit.tokensCss, [
-    /--[a-zA-Z0-9-]*text(?:-primary)?\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|oklch\([^)]+\))/,
-    /--[a-zA-Z0-9-]*foreground\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|oklch\([^)]+\))/,
-  ]);
+function fontFamilies(tokensCss: string): string[] {
+  const names: string[] = [];
+  for (const pattern of [
+    /--[a-zA-Z0-9-]*font-(?:display|heading)[^:]*:\s*([^;]+);/i,
+    /--[a-zA-Z0-9-]*font-sans[^:]*:\s*([^;]+);/i,
+    /--[a-zA-Z0-9-]*font-serif[^:]*:\s*([^;]+);/i,
+    /--[a-zA-Z0-9-]*font-mono[^:]*:\s*([^;]+);/i,
+  ]) {
+    const family = firstFontFamily(tokensCss, pattern);
+    if (family && !names.includes(family)) names.push(family);
+  }
+  return names.slice(0, 2);
+}
 
-  const brandColours = [primary, bg, text].filter((c): c is string => !!c);
-  const typeVibe = extractFontFamily(kit.tokensCss);
-  const tagDesc = kit.tags.length > 0 ? kit.tags.join(", ") : "modern design system";
-  const shortName = kit.name.length > 20 ? kit.name.slice(0, 18) + "..." : kit.name;
+const TAG_CUES: Record<string, string> = {
+  dark: "moody, low-key composition with deep shadows and subtle glows",
+  light: "generous white space, airy layout, high-key lighting",
+  minimal: "restrained composition, few elements, strong negative space",
+  fintech: "trust signals, geometric precision, soft gradients, a sense of quiet confidence",
+  "dev-tool": "editor or terminal motif, monospaced patterns, code-like composition",
+  "developer-tool": "editor or terminal motif, monospaced patterns, code-like composition",
+  saas: "clean product-marketing aesthetic, card-based composition",
+  ecomm: "product-card motif, retail-grade gloss, gentle product shadows",
+  ecommerce: "product-card motif, retail-grade gloss, gentle product shadows",
+  mobile: "device-frame framing, portrait orientation references",
+  ios: "Apple-flavoured minimalism, SF Pro sensibility, rounded corners",
+  editorial: "magazine-style layout, typographic emphasis",
+  "content-first": "typography-led composition, text as hero, imagery as accent",
+};
+
+function tagCues(tags: string[]): string[] {
+  const cues: string[] = [];
+  for (const tag of tags) {
+    const cue = TAG_CUES[tag.toLowerCase()];
+    if (cue && !cues.includes(cue)) cues.push(cue);
+    if (cues.length >= 2) break;
+  }
+  return cues;
+}
+
+function buildHeroPrompt(kit: PublicKit, hasReferenceLogo: boolean): { prompt: string; brandColours: string[] } {
+  const palette = extractPalette(kit.tokensCss, 6);
+  const fonts = fontFamilies(kit.tokensCss);
+  const cues = tagCues(kit.tags);
+
+  const paletteLine = palette.length > 0
+    ? `Palette (use these exact hex values, not approximations): ${palette.map((t) => `${t.role} ${t.value}`).join(", ")}.`
+    : "";
+  const fontsLine = fonts.length > 0 ? `Typography reference: ${fonts.join(", ")}.` : "";
+  const cuesLine = cues.length > 0 ? `Composition cues: ${cues.join("; ")}.` : "";
+  const descLine = kit.description ? `Style brief: ${kit.description}` : "";
+
+  const logoDirective = hasReferenceLogo
+    ? "Compose the cover around the provided brand mark. The mark is the focal point, placed at large scale and bleeding partly off one edge for drama. Do not alter, recolour, or re-render the mark; the rest of the composition flows from its shape and colour."
+    : "Compose a minimal poster-style hero of three floating UI primitives arranged in a loose diagonal composition: a button, a small card with a headline stripe and paragraph bar, and a pill-shaped badge. The palette itself is the hero.";
 
   const prompt = [
-    `Editorial cover image for a design system called "${kit.name}".`,
-    kit.description ? `Description: ${kit.description}.` : "",
-    `Aesthetic hints: ${tagDesc}.`,
-    primary ? `Use ${primary} as the accent colour.` : "",
-    bg ? `Background colour: ${bg}.` : "",
-    text ? `Text colour: ${text}.` : "",
-    "Compose a minimal, modern poster-style hero featuring:",
-    `a small logo-style mark in the top-left spelling "${shortName}" in a ${typeVibe} wordmark style,`,
-    "three floating UI components arranged in a loose diagonal composition: a primary-coloured button with subtle text, a small card showing a single headline and paragraph, and a pill-shaped badge,",
-    "generous negative space, soft shadows, crisp edges.",
-    "Figma-community cover-image style. Not a literal mockup. Do not render any text other than the kit name. Professional, poster-like, marketing-grade.",
-  ]
-    .filter(Boolean)
-    .join(" ");
+    `Editorial cover image for a design system.`,
+    descLine,
+    cuesLine,
+    paletteLine,
+    fontsLine,
+    logoDirective,
+    "Generous negative space. Soft shadows. Crisp edges. Figma-community cover-image style.",
+    "ABSOLUTE CONSTRAINT: do not render any text, letters, numbers, wordmarks, captions, or labels anywhere in the image. Text rendering is forbidden. The composition is purely visual.",
+    "No stock photography. No human figures. No literal product mockups. Marketing-grade, poster-like, professional.",
+  ].filter(Boolean).join(" ");
 
+  const brandColours = palette.map((t) => t.value);
   return { prompt, brandColours };
+}
+
+// --- Reference logos ---------------------------------------------------------
+
+const MAX_REFERENCE_BYTES = 4 * 1024 * 1024;
+const MAX_REFERENCE_COUNT = 2;
+
+function baseUrl(): string {
+  return (
+    process.env.INTERNAL_APP_URL ??
+    (process.env.NODE_ENV === "production" ? "http://localhost:3000" : process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000")
+  ).replace(/\/$/, "");
+}
+
+async function loadReferenceLogos(kit: PublicKit): Promise<ReferenceImage[]> {
+  const assets = kit.richBundle?.brandingAssets ?? [];
+  const logos = assets
+    .filter((a) => /^(logo|mark|wordmark)$/i.test(a.slot ?? ""))
+    .slice(0, MAX_REFERENCE_COUNT);
+
+  if (logos.length === 0) return [];
+
+  const origin = baseUrl();
+  const out: ReferenceImage[] = [];
+
+  for (const asset of logos) {
+    try {
+      const url = asset.url.startsWith("http") ? asset.url : `${origin}${asset.url.startsWith("/") ? "" : "/"}${asset.url}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.warn(`[kit-hero] logo fetch ${res.status} for ${kit.slug} at ${asset.url}`);
+        continue;
+      }
+      const arr = await res.arrayBuffer();
+      if (arr.byteLength > MAX_REFERENCE_BYTES) {
+        console.warn(`[kit-hero] logo too large for ${kit.slug}: ${arr.byteLength} bytes`);
+        continue;
+      }
+      out.push({
+        buffer: Buffer.from(arr),
+        filename: asset.name || `${kit.slug}-logo.png`,
+        mimeType: asset.mimeType || "image/png",
+      });
+    } catch (err) {
+      console.warn(`[kit-hero] logo fetch threw for ${kit.slug}:`, err);
+    }
+  }
+
+  return out;
 }
 
 /**
@@ -82,7 +191,12 @@ export async function captureAndUploadKitHero(
   kit: PublicKit,
   options: GenerateHeroOptions = {},
 ): Promise<string> {
-  const { prompt, brandColours } = buildHeroPrompt(kit);
+  const references = await loadReferenceLogos(kit);
+  const { prompt, brandColours } = buildHeroPrompt(kit, references.length > 0);
+
+  console.log(
+    `[kit-hero] ${kit.slug}: ${references.length > 0 ? `${references.length} reference image(s)` : "text-only"}, palette ${brandColours.length}`,
+  );
 
   const result = await generateImageRaw({
     prompt,
@@ -92,6 +206,7 @@ export async function captureAndUploadKitHero(
     resolution: "2K",
     forcedProvider: "openai",
     openaiApiKey: options.openaiApiKey,
+    referenceImages: references.length > 0 ? references : undefined,
   });
 
   const buffer = Buffer.from(result.data, "base64");
