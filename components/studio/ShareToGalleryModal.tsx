@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Sparkles, Loader2 } from "lucide-react";
 import type { Project } from "@/lib/types";
 import type { KitLicence, KitTier } from "@/lib/types/kit";
 
@@ -44,6 +45,43 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
   const [error, setError] = useState<string | null>(null);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
 
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [publishAsLayout, setPublishAsLayout] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    fetch("/api/admin/check")
+      .then((r) => r.json())
+      .then((body: { isAdmin: boolean }) => setIsAdmin(body.isAdmin))
+      .catch(() => setIsAdmin(false));
+  }, [open]);
+
+  async function handleAiSuggest() {
+    setAiBusy(true);
+    setAiError(null);
+    try {
+      const res = await fetch(`/api/organizations/${orgSlug}/kits/ai-suggest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: project.id }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: "AI suggestion failed" }));
+        throw new Error(body.error ?? "AI suggestion failed");
+      }
+      const body = (await res.json()) as { description: string; tags: string[] };
+      setDescription(body.description);
+      setTagsText(body.tags.join(", "));
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "AI suggestion failed");
+    } finally {
+      setAiBusy(false);
+    }
+  }
+
   const counts = useMemo(() => ({
     components: 0, // Component count not tracked on Project; fetched at publish time.
     fonts: project.uploadedFonts?.length ?? 0,
@@ -78,6 +116,7 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
           tier,
           unlisted,
           include,
+          publishAs: isAdmin && publishAsLayout ? "layout" : "self",
         }),
       });
       if (!res.ok) {
@@ -152,6 +191,26 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
               />
             </Field>
 
+            <div className="flex items-center justify-between -mb-1">
+              <span className="text-[12px] uppercase tracking-wide text-[var(--text-muted)]">
+                Description & Tags
+              </span>
+              <button
+                type="button"
+                onClick={handleAiSuggest}
+                disabled={aiBusy}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[var(--studio-border-strong)] text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 transition-colors"
+                title="Generate description and tags with Claude Haiku"
+              >
+                {aiBusy ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3 h-3" />
+                )}
+                {aiBusy ? "Generating..." : "Generate with AI"}
+              </button>
+            </div>
+
             <Field label="Description">
               <textarea
                 value={description}
@@ -171,6 +230,10 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
                 placeholder="dark, minimal, saas"
               />
             </Field>
+
+            {aiError && (
+              <p className="text-[12px] text-red-400 -mt-1">{aiError}</p>
+            )}
 
             <Field label="Licence">
               <div className="flex gap-2">
@@ -253,6 +316,25 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
                 </button>
               </div>
             </Field>
+
+            {isAdmin && (
+              <label className="flex items-start gap-2.5 px-3 py-2.5 rounded-md border border-dashed border-[var(--studio-border-strong)] bg-[var(--bg-surface)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={publishAsLayout}
+                  onChange={(e) => setPublishAsLayout(e.target.checked)}
+                  className="mt-0.5 accent-[var(--studio-accent)]"
+                />
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-[13px] text-[var(--text-primary)] font-medium">
+                    Publish as Layout (official kit)
+                  </span>
+                  <span className="text-[12px] text-[var(--text-muted)]">
+                    Attribute this kit to the Layout team instead of your personal org. Admin-only.
+                  </span>
+                </span>
+              </label>
+            )}
 
             {error && (
               <div className="text-[13px] text-red-400">{error}</div>
