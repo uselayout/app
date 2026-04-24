@@ -119,6 +119,10 @@ export interface PublicKit {
   showcaseGeneratedAt?: string;
   /** Timestamp of the last successful Playwright PNG preview generation. */
   previewGeneratedAt?: string;
+  /** GPT Image 2-generated stylised hero cover for the gallery card. Preferred over previewImageUrl when set. */
+  heroImageUrl?: string;
+  /** Timestamp of the last successful hero image generation. */
+  heroGeneratedAt?: string;
 
   createdAt: string;
   updatedAt: string;
@@ -134,6 +138,7 @@ export interface PublicKitSummary {
   author: KitAuthor;
   licence: KitLicence;
   previewImageUrl?: string;
+  heroImageUrl?: string;
   tier: KitTier;
   featured: boolean;
   upvoteCount: number;
@@ -152,6 +157,7 @@ export function kitSummary(kit: PublicKit): PublicKitSummary {
     author: kit.author,
     licence: kit.licence,
     previewImageUrl: kit.previewImageUrl,
+    heroImageUrl: kit.heroImageUrl,
     tier: kit.tier,
     featured: kit.featured,
     upvoteCount: kit.upvoteCount,

@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireOrgAuth } from "@/lib/api/auth-context";
 import { fetchProjectById } from "@/lib/supabase/db";
-import { publishKit, updateKitShowcase, updateKitPreviewImage } from "@/lib/supabase/kits";
+import { publishKit, updateKitShowcase, updateKitPreviewImage, updateKitHeroImage } from "@/lib/supabase/kits";
 import { buildKitFromProject } from "@/lib/kits/from-project";
 import { generateKitShowcase } from "@/lib/claude/generate-kit-showcase";
 import { captureAndUploadKitPreview } from "@/lib/gallery/snapshot";
+import { captureAndUploadKitHero } from "@/lib/gallery/hero";
 
 function isAdminEmail(email: string | undefined | null): boolean {
   if (!email) return false;
@@ -131,6 +132,14 @@ export async function POST(
       if (url) await updateKitPreviewImage(kit.id, url);
     } catch (err) {
       console.error(`[publish] preview snapshot failed for ${kit.slug}:`, err);
+    }
+  })();
+  void (async () => {
+    try {
+      const url = await captureAndUploadKitHero(kit);
+      if (url) await updateKitHeroImage(kit.id, url);
+    } catch (err) {
+      console.error(`[publish] hero generation failed for ${kit.slug}:`, err);
     }
   })();
 

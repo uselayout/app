@@ -3,28 +3,32 @@
 import { useState } from "react";
 import type { PublicKitSummary } from "@/lib/types/kit";
 
-// Renders the kit preview image when one exists, otherwise a generated
-// gradient-and-wordmark card derived from the kit's name. Deterministic: same
-// kit always gets the same placeholder, so the gallery doesn't look random.
+// Renders the best available kit preview. Fallback chain:
+//   1. heroImageUrl — GPT Image 2-generated stylised cover (marketing-grade).
+//   2. previewImageUrl — Playwright screenshot of the Live Preview showcase
+//      (truth-preserving, matches the detail page).
+//   3. deterministic gradient placeholder derived from the kit's name.
+// Image errors skip forward to the next step in the chain.
 export function KitPreview({
   kit,
   aspect = "4/3",
   className = "",
 }: {
-  kit: Pick<PublicKitSummary, "name" | "previewImageUrl" | "tags">;
+  kit: Pick<PublicKitSummary, "name" | "previewImageUrl" | "heroImageUrl" | "tags">;
   aspect?: "4/3" | "16/9";
   className?: string;
 }) {
-  const [broken, setBroken] = useState(false);
-  const canShowImage = !!kit.previewImageUrl && !broken;
+  const candidates = [kit.heroImageUrl, kit.previewImageUrl].filter((u): u is string => !!u);
+  const [cursor, setCursor] = useState(0);
+  const activeUrl = candidates[cursor];
 
-  if (canShowImage) {
+  if (activeUrl) {
     return (
       <div className={`relative overflow-hidden ${aspect === "16/9" ? "aspect-[16/9]" : "aspect-[4/3]"} ${className}`}>
         <img
-          src={kit.previewImageUrl}
+          src={activeUrl}
           alt={`${kit.name} preview`}
-          onError={() => setBroken(true)}
+          onError={() => setCursor((c) => c + 1)}
           className="w-full h-full object-cover"
         />
       </div>

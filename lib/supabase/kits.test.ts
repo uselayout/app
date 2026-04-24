@@ -66,6 +66,8 @@ describe("kits round-trip", () => {
       showcase_custom_js: null,
       showcase_generated_at: null,
       preview_generated_at: null,
+      hero_image_url: null,
+      hero_generated_at: null,
       created_at: kit.createdAt,
       updated_at: kit.updatedAt,
     };
@@ -129,6 +131,8 @@ describe("kits round-trip", () => {
       showcase_custom_js: null,
       showcase_generated_at: null,
       preview_generated_at: null,
+      hero_image_url: null,
+      hero_generated_at: null,
       created_at: kit.createdAt,
       updated_at: kit.updatedAt,
     };

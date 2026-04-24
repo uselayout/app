@@ -45,12 +45,14 @@ interface KitRow {
   showcase_custom_js: string | null;
   showcase_generated_at: string | null;
   preview_generated_at: string | null;
+  hero_image_url: string | null;
+  hero_generated_at: string | null;
   created_at: string;
   updated_at: string;
 }
 
 const SUMMARY_COLUMNS =
-  "id, slug, name, description, tags, author_org_id, author_user_id, author_display_name, author_avatar_url, licence, preview_image_url, tier, featured, upvote_count, import_count, created_at, updated_at";
+  "id, slug, name, description, tags, author_org_id, author_user_id, author_display_name, author_avatar_url, licence, preview_image_url, hero_image_url, tier, featured, upvote_count, import_count, created_at, updated_at";
 
 function rowToKit(row: KitRow): PublicKit {
   const author: KitAuthor = {
@@ -90,6 +92,8 @@ function rowToKit(row: KitRow): PublicKit {
     showcaseCustomJs: row.showcase_custom_js ?? undefined,
     showcaseGeneratedAt: row.showcase_generated_at ?? undefined,
     previewGeneratedAt: row.preview_generated_at ?? undefined,
+    heroImageUrl: row.hero_image_url ?? undefined,
+    heroGeneratedAt: row.hero_generated_at ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -110,6 +114,7 @@ function rowToSummary(row: Partial<KitRow>): PublicKitSummary {
     },
     licence: (row.licence as KitLicence) ?? "MIT",
     previewImageUrl: row.preview_image_url ?? undefined,
+    heroImageUrl: row.hero_image_url ?? undefined,
     tier: (row.tier as KitTier) ?? "minimal",
     featured: row.featured ?? false,
     upvoteCount: row.upvote_count ?? 0,
@@ -148,6 +153,8 @@ type KitInsertRow = Omit<
   | "showcase_custom_js"
   | "showcase_generated_at"
   | "preview_generated_at"
+  | "hero_image_url"
+  | "hero_generated_at"
 >;
 
 export function kitToRow(kit: PublishKitInput): KitInsertRow {
@@ -283,6 +290,23 @@ export async function updateKitPreviewImage(
     })
     .eq("id", id);
   if (error) console.error("updateKitPreviewImage failed:", error.message);
+  return !error;
+}
+
+/** Write back the GPT Image 2-generated hero cover URL. */
+export async function updateKitHeroImage(
+  id: string,
+  heroImageUrl: string,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("layout_public_kit")
+    .update({
+      hero_image_url: heroImageUrl,
+      hero_generated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) console.error("updateKitHeroImage failed:", error.message);
   return !error;
 }
 
