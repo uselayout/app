@@ -10,6 +10,7 @@ import {
   Sparkles,
   Lightbulb,
   Info,
+  LayoutGrid,
 } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { useProjectStore } from "@/lib/store/project";
@@ -25,7 +26,7 @@ interface NewExtractionModalProps {
   onClose: () => void;
 }
 
-type Mode = "extract" | "blank";
+type Mode = "extract" | "blank" | "kits";
 
 export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
   const router = useRouter();
@@ -217,9 +218,18 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
           >
             Start blank
           </button>
+          <button
+            type="button"
+            onClick={() => setMode("kits")}
+            className={tabClass(mode === "kits")}
+          >
+            Browse Kits
+          </button>
         </div>
 
-        {mode === "extract" ? (
+        {mode === "kits" ? (
+          <BrowseKitsPanel orgSlug={orgSlug} onClose={onClose} />
+        ) : mode === "extract" ? (
           <div className="space-y-3">
             <div className="relative">
               <input
@@ -369,6 +379,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
           <p className="mt-3 text-xs text-[var(--status-error)]">{saveError}</p>
         )}
 
+        {mode !== "kits" && (
         <div className="mt-5 flex items-center justify-end gap-3">
           <button
             onClick={onClose}
@@ -414,6 +425,128 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
             </button>
           )}
         </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface BrowseKit {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  tags: string[];
+  previewImageUrl?: string;
+  author: { orgId: string; displayName?: string; avatarUrl?: string };
+  featured: boolean;
+  importCount: number;
+  tier: "minimal" | "rich";
+}
+
+function BrowseKitsPanel({ orgSlug, onClose }: { orgSlug: string; onClose: () => void }) {
+  const router = useRouter();
+  const [kits, setKits] = useState<BrowseKit[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [importingSlug, setImportingSlug] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/public/kits?sort=featured&limit=24")
+      .then((r) => r.json())
+      .then((body: { kits: BrowseKit[] }) => {
+        if (!cancelled) setKits(body.kits);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load kits");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleImport(slug: string) {
+    if (!orgSlug) {
+      setError("Pick an organisation before importing.");
+      return;
+    }
+    setImportingSlug(slug);
+    setError(null);
+    try {
+      const res = await fetch(`/api/organizations/${orgSlug}/kits/${slug}/import`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: "Import failed" }));
+        throw new Error(body.error ?? "Import failed");
+      }
+      const { projectId } = (await res.json()) as { projectId: string };
+      onClose();
+      router.push(`/${orgSlug}/projects/${projectId}/studio`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Import failed");
+      setImportingSlug(null);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-md border border-[var(--studio-border)] bg-[var(--bg-app)] p-3 text-xs text-[var(--text-muted)] flex items-start gap-2">
+        <LayoutGrid className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+        <span>
+          Community kits. One click and you get a new project with the tokens
+          and layout.md ready to build on. Browse the full{" "}
+          <a href="/gallery" target="_blank" rel="noreferrer" className="underline hover:text-[var(--text-primary)]">
+            Kit Gallery
+          </a>.
+        </span>
+      </div>
+
+      {error && <p className="text-xs text-[var(--status-error)]">{error}</p>}
+
+      <div className="max-h-[360px] overflow-auto rounded-md border border-[var(--studio-border)] bg-[var(--bg-app)]">
+        {!kits ? (
+          <div className="flex items-center justify-center py-8 text-xs text-[var(--text-muted)]">
+            <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
+            Loading kits...
+          </div>
+        ) : kits.length === 0 ? (
+          <div className="py-8 text-center text-xs text-[var(--text-muted)]">No kits yet.</div>
+        ) : (
+          <ul className="divide-y divide-[var(--studio-border)]">
+            {kits.map((kit) => {
+              const importing = importingSlug === kit.slug;
+              return (
+                <li key={kit.id} className="flex items-center gap-3 p-3">
+                  <div className="size-10 shrink-0 rounded overflow-hidden bg-[var(--bg-surface)] border border-[var(--studio-border)]">
+                    {kit.previewImageUrl && (
+                      <img src={kit.previewImageUrl} alt="" className="w-full h-full object-cover" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] text-[var(--text-primary)] truncate">{kit.name}</span>
+                      {kit.featured && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--studio-accent-subtle)] text-[var(--text-secondary)]">Featured</span>
+                      )}
+                    </div>
+                    {kit.description && (
+                      <p className="text-[11px] text-[var(--text-muted)] truncate">{kit.description}</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleImport(kit.slug)}
+                    disabled={importing}
+                    className="shrink-0 rounded px-3 py-1.5 bg-[var(--studio-accent)] text-[11px] text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)] disabled:opacity-50"
+                  >
+                    {importing ? "..." : "Import"}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </div>
   );

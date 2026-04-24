@@ -10,6 +10,24 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-kit-gallery-public-browse",
+    title: "Browse community kits at layout.design/gallery",
+    description:
+      "A new public gallery page lists design-system kits anyone can import into Layout Studio with one click, or install from the CLI with npx @layoutdesign/context install <slug>. Filter by tag, search by name, sort by Featured / Top / New. Linear, Stripe and Notion lookalike kits are seeded to start.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-kit-gallery-share-and-import",
+    title: "Share your Studio project as a public kit",
+    description:
+      "A new Share button in the Studio top bar publishes the current project as a public kit (MIT or CC-BY by default, or bring your own licence). Pick minimal (tokens + layout.md only) or rich (components, fonts, branding, context docs too). The New Project modal also gets a Browse Kits tab for importing any public kit without leaving Studio.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
     id: "2026-w17-byok-credit-error-clarity",
     title: "Clearer message when your own Anthropic credits run out",
     description:

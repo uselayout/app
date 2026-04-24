@@ -71,7 +71,6 @@ export default async function KitDetailPage({ params }: PageProps) {
             <div className="flex flex-col gap-6">
               <div className="aspect-[16/9] rounded-2xl overflow-hidden border border-[var(--mkt-border)] bg-[#101014]">
                 {kit.previewImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={kit.previewImageUrl} alt={`${kit.name} preview`} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[var(--mkt-text-muted)] text-sm">
@@ -93,7 +92,6 @@ export default async function KitDetailPage({ params }: PageProps) {
 
                 <div className="flex items-center gap-2 mt-1">
                   {kit.author.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={kit.author.avatarUrl} alt="" className="w-5 h-5 rounded-full bg-white/10" />
                   ) : (
                     <div className="w-5 h-5 rounded-full bg-white/10" />

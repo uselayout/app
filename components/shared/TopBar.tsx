@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { RefreshCw, PanelLeft } from "lucide-react";
+import { RefreshCw, PanelLeft, Share2 } from "lucide-react";
 import type { SourceType } from "@/lib/types";
 
 interface TopBarProps {
@@ -13,6 +13,7 @@ interface TopBarProps {
   onToggleSource?: () => void;
   sourcePanelOpen?: boolean;
   onExport?: () => void;
+  onShareToGallery?: () => void;
   showSourceToggle?: boolean;
 }
 
@@ -25,6 +26,7 @@ export function TopBar({
   onToggleSource,
   sourcePanelOpen,
   onExport,
+  onShareToGallery,
   showSourceToggle = true,
 }: TopBarProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -109,6 +111,16 @@ export function TopBar({
             title="Re-extract"
           >
             <RefreshCw className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {onShareToGallery && (
+          <button
+            onClick={onShareToGallery}
+            className="flex items-center gap-1.5 h-7 px-[10px] rounded-[4px] border border-[var(--studio-border-strong)] bg-transparent text-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+            title="Share this project as a public kit"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            <span>Share</span>
           </button>
         )}
         <button

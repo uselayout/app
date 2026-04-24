@@ -9,7 +9,6 @@ export function KitCard({ kit }: { kit: PublicKitSummary }) {
     >
       <div className="relative aspect-[4/3] bg-gradient-to-br from-[#1a1a20] to-[#080705] overflow-hidden">
         {kit.previewImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={kit.previewImageUrl}
             alt={`${kit.name} preview`}
@@ -51,7 +50,6 @@ export function KitCard({ kit }: { kit: PublicKitSummary }) {
         <div className="mt-auto flex items-center justify-between pt-2">
           <div className="flex items-center gap-2 min-w-0">
             {kit.author.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={kit.author.avatarUrl}
                 alt=""
