@@ -72,6 +72,32 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
     }
   }
 
+  async function regenShowcase(id: string, name: string) {
+    setBusy(id);
+    try {
+      const res = await fetch(`/api/admin/kits/${id}/generate-showcase`, { method: "POST" });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Showcase generation failed");
+      toast(`Regenerated showcase for "${name}"`, "success");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Showcase generation failed", "error");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function regenPreview(id: string, name: string) {
+    setBusy(id);
+    try {
+      const res = await fetch(`/api/admin/kits/${id}/generate-preview`, { method: "POST" });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Preview generation failed");
+      toast(`Regenerated preview for "${name}"`, "success");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Preview generation failed", "error");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   const filtered = !kits
     ? null
     : filter === "hidden"
@@ -226,6 +252,32 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                         }}
                       >
                         {kit.hidden ? "Unhide" : "Hide"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy === kit.id}
+                        onClick={() => regenShowcase(kit.id, kit.name)}
+                        className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
+                        style={{
+                          border: "1px solid var(--studio-border)",
+                          color: "var(--text-secondary)",
+                        }}
+                        title="Regenerate bespoke showcase via Claude"
+                      >
+                        Regen showcase
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy === kit.id}
+                        onClick={() => regenPreview(kit.id, kit.name)}
+                        className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
+                        style={{
+                          border: "1px solid var(--studio-border)",
+                          color: "var(--text-secondary)",
+                        }}
+                        title="Regenerate PNG preview via Playwright"
+                      >
+                        Regen preview
                       </button>
                       <button
                         type="button"

@@ -111,6 +111,15 @@ export interface PublicKit {
   githubFolder?: string;
   githubSyncedAt?: string;
 
+  /** Claude-generated bespoke showcase TSX. Falls back to the uniform template when null. */
+  showcaseCustomTsx?: string;
+  /** Pre-transpiled JS for the bespoke showcase, used by the iframe. */
+  showcaseCustomJs?: string;
+  /** Timestamp of the last successful AI showcase generation. */
+  showcaseGeneratedAt?: string;
+  /** Timestamp of the last successful Playwright PNG preview generation. */
+  previewGeneratedAt?: string;
+
   createdAt: string;
   updatedAt: string;
 }

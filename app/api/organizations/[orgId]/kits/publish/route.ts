@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireOrgAuth } from "@/lib/api/auth-context";
 import { fetchProjectById } from "@/lib/supabase/db";
-import { publishKit } from "@/lib/supabase/kits";
+import { publishKit, updateKitShowcase, updateKitPreviewImage } from "@/lib/supabase/kits";
 import { buildKitFromProject } from "@/lib/kits/from-project";
+import { generateKitShowcase } from "@/lib/claude/generate-kit-showcase";
+import { captureAndUploadKitPreview } from "@/lib/gallery/snapshot";
 
 function isAdminEmail(email: string | undefined | null): boolean {
   if (!email) return false;
@@ -103,6 +105,35 @@ export async function POST(
   });
 
   const kit = await publishKit(payload);
+
+  // Fire-and-forget: generate a bespoke AI showcase and a PNG preview after
+  // publish. The kit is immediately viewable with the uniform template + the
+  // project's canvas screenshot while these settle. Errors are logged and
+  // swallowed so an AI hiccup never blocks a successful publish.
+  const origin = new URL(request.url).origin;
+  void (async () => {
+    try {
+      const result = await generateKitShowcase({
+        kitName: kit.name,
+        kitDescription: kit.description,
+        kitTags: kit.tags,
+        layoutMd: kit.layoutMd,
+        tokensCss: kit.tokensCss,
+      });
+      await updateKitShowcase(kit.id, result.tsx, result.js);
+    } catch (err) {
+      console.error(`[publish] showcase generation failed for ${kit.slug}:`, err);
+    }
+  })();
+  void (async () => {
+    try {
+      const url = await captureAndUploadKitPreview(kit.id, kit.slug, origin);
+      if (url) await updateKitPreviewImage(kit.id, url);
+    } catch (err) {
+      console.error(`[publish] preview snapshot failed for ${kit.slug}:`, err);
+    }
+  })();
+
   return NextResponse.json({
     kitId: kit.id,
     slug: kit.slug,

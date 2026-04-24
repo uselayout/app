@@ -41,6 +41,10 @@ interface KitRow {
   view_count: number;
   github_folder: string | null;
   github_synced_at: string | null;
+  showcase_custom_tsx: string | null;
+  showcase_custom_js: string | null;
+  showcase_generated_at: string | null;
+  preview_generated_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -82,6 +86,10 @@ function rowToKit(row: KitRow): PublicKit {
     viewCount: row.view_count,
     githubFolder: row.github_folder ?? undefined,
     githubSyncedAt: row.github_synced_at ?? undefined,
+    showcaseCustomTsx: row.showcase_custom_tsx ?? undefined,
+    showcaseCustomJs: row.showcase_custom_js ?? undefined,
+    showcaseGeneratedAt: row.showcase_generated_at ?? undefined,
+    previewGeneratedAt: row.preview_generated_at ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -136,6 +144,10 @@ type KitInsertRow = Omit<
   | "hidden"
   | "github_folder"
   | "github_synced_at"
+  | "showcase_custom_tsx"
+  | "showcase_custom_js"
+  | "showcase_generated_at"
+  | "preview_generated_at"
 >;
 
 export function kitToRow(kit: PublishKitInput): KitInsertRow {
@@ -236,6 +248,42 @@ export async function fetchKitById(id: string): Promise<PublicKit | null> {
     .maybeSingle();
   if (error || !data) return null;
   return rowToKit(data as KitRow);
+}
+
+/** Write back the AI-generated bespoke showcase TSX + transpiled JS. */
+export async function updateKitShowcase(
+  id: string,
+  tsx: string,
+  js: string,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("layout_public_kit")
+    .update({
+      showcase_custom_tsx: tsx,
+      showcase_custom_js: js,
+      showcase_generated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) console.error("updateKitShowcase failed:", error.message);
+  return !error;
+}
+
+/** Write back the Playwright-generated PNG preview URL. */
+export async function updateKitPreviewImage(
+  id: string,
+  previewImageUrl: string,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("layout_public_kit")
+    .update({
+      preview_image_url: previewImageUrl,
+      preview_generated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) console.error("updateKitPreviewImage failed:", error.message);
+  return !error;
 }
 
 /**

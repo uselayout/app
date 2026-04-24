@@ -16,9 +16,10 @@ import { getKitShowcaseJs } from "@/components/gallery/kit-showcase-compiled";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ snapshot?: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const kit = await fetchKitBySlug(slug);
   if (!kit) return { title: "Kit not found - Layout" };
@@ -48,10 +49,26 @@ function colourTokens(tokensJson: Record<string, unknown>): Array<{ name: string
   return out.slice(0, 12);
 }
 
-export default async function KitDetailPage({ params }: PageProps) {
+export default async function KitDetailPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const { snapshot } = await searchParams;
   const kit = await fetchKitBySlug(slug);
   if (!kit) notFound();
+
+  const isSnapshot = snapshot === "1";
+  const showcaseJs = kit.showcaseCustomJs ?? getKitShowcaseJs();
+
+  // Snapshot mode: render only the showcase iframe at full size, no chrome.
+  // Used by Playwright to capture the card thumbnail (lib/gallery/snapshot.ts).
+  if (isSnapshot) {
+    return (
+      <main className="min-h-screen bg-[var(--mkt-bg)]" data-mkt-theme="light">
+        <div className="max-w-[1280px] mx-auto">
+          <KitShowcaseFrame showcaseJs={showcaseJs} tokensCss={kit.tokensCss} height={900} />
+        </div>
+      </main>
+    );
+  }
 
   const session = await auth.api.getSession({ headers: await headers() });
   const isLoggedIn = !!session?.user?.id;
@@ -131,7 +148,7 @@ export default async function KitDetailPage({ params }: PageProps) {
                 <KitDetailTabs
                   preview={
                     <KitShowcaseFrame
-                      showcaseJs={getKitShowcaseJs()}
+                      showcaseJs={showcaseJs}
                       tokensCss={kit.tokensCss}
                       height={900}
                     />
