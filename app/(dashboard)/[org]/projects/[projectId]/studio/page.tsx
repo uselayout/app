@@ -15,6 +15,7 @@ import { EditorPanel } from "@/components/studio/EditorPanel";
 import { SourcePanel } from "@/components/studio/SourcePanel";
 import { ExplorerCanvas } from "@/components/studio/ExplorerCanvas";
 import { ExportModal } from "@/components/studio/ExportModal";
+import { ShareToGalleryModal } from "@/components/studio/ShareToGalleryModal";
 import { ExtractionDiffModal } from "@/components/studio/ExtractionDiffModal";
 import { diffExtractions } from "@/lib/extraction/diff";
 import type { ExtractionDiff } from "@/lib/extraction/diff";
@@ -193,6 +194,7 @@ export default function StudioPage({
   const extractionStarted = useRef(false);
   const autoGenerateStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved" | "design-system">("editor");
   const [showSourcePanel, setShowSourcePanel] = useState(true);
   const [whatsNextDismissed, setWhatsNextDismissed] = useState(false);
@@ -555,6 +557,7 @@ export default function StudioPage({
         onToggleSource={() => setShowSourcePanel((prev) => !prev)}
         sourcePanelOpen={showSourcePanel}
         onExport={() => setShowExport(true)}
+        onShareToGallery={() => setShowShare(true)}
         showSourceToggle={centreView === "editor"}
       />
       <div className="flex-1 overflow-hidden">
@@ -617,6 +620,14 @@ export default function StudioPage({
           }
         />
       </div>
+      {showShare && (
+        <ShareToGalleryModal
+          project={project}
+          orgSlug={orgSlug}
+          open={showShare}
+          onClose={() => setShowShare(false)}
+        />
+      )}
       {showExport && (
         <ExportModal project={project} onClose={() => setShowExport(false)} />
       )}
