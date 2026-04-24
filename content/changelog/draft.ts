@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-admin-email-personalisation",
+    title: "Personalise broadcast emails with each recipient's name",
+    description:
+      "The admin Email tab now supports {{firstName}}, {{name}} and {{email}} placeholders anywhere in the subject or body. Each broadcast is personalised per recipient before sending, with a sensible fallback when no name is on file, so marketing emails always open with a real greeting instead of \"Hi ,\". Click the chips under the message box to insert a placeholder at the cursor.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
     id: "2026-w17-kit-gallery-ai-showcase",
     title: "Claude writes a bespoke showcase for every new kit",
     description:

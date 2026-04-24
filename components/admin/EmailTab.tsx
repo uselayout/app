@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { SENDER_OPTIONS, OUTREACH_SENDER_OPTIONS } from "@/lib/email/senders";
+import { EMAIL_TOKENS } from "@/lib/email/tokens";
 
 interface RecipientData {
   segments: {
@@ -182,6 +183,7 @@ export function EmailTab({ toast }: Props) {
   const [confirming, setConfirming] = useState(false);
   const [suggestions, setSuggestions] = useState<Array<{ email: string; name: string }>>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [outreachRecipients, setOutreachRecipients] = useState<OutreachRecipient[]>([]);
   const [bulkPasteText, setBulkPasteText] = useState("");
   const [checkingSuppression, setCheckingSuppression] = useState(false);
@@ -208,6 +210,23 @@ export function EmailTab({ toast }: Props) {
           : individualEmails.length;
 
   const canSend = subject.trim() && bodyText.trim() && recipientCount > 0 && !sending;
+
+  const insertTokenIntoBody = (token: string) => {
+    const el = bodyRef.current;
+    if (!el) {
+      setBodyText((prev) => prev + token);
+      return;
+    }
+    const start = el.selectionStart ?? bodyText.length;
+    const end = el.selectionEnd ?? bodyText.length;
+    const next = bodyText.slice(0, start) + token + bodyText.slice(end);
+    setBodyText(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const caret = start + token.length;
+      el.setSelectionRange(caret, caret);
+    });
+  };
 
   const handleAddEmail = (email: string) => {
     const trimmed = email.trim().toLowerCase();
@@ -604,6 +623,7 @@ export function EmailTab({ toast }: Props) {
         <div>
           <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Message</label>
           <textarea
+            ref={bodyRef}
             value={bodyText}
             onChange={(e) => setBodyText(e.target.value)}
             placeholder={"Write your message here. Basic formatting supported:\n\nBlank lines create new paragraphs\n- Dashes create bullet lists\n**Bold text** for emphasis\n## Headings for sections\nURLs are auto-linked\n[link text](https://example.com) for named links"}
@@ -616,6 +636,28 @@ export function EmailTab({ toast }: Props) {
               lineHeight: "1.6",
             }}
           />
+          <div
+            className="mt-2 flex items-center gap-2 flex-wrap text-xs"
+            style={{ color: "var(--text-muted)" }}
+          >
+            <span>Insert:</span>
+            {EMAIL_TOKENS.map((token) => (
+              <button
+                key={token}
+                type="button"
+                onClick={() => insertTokenIntoBody(token)}
+                className="px-2 py-0.5 rounded-md font-mono transition-all"
+                style={{
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--studio-border)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                {token}
+              </button>
+            ))}
+            <span>replaced per recipient before sending.</span>
+          </div>
         </div>
 
         {/* Actions */}
