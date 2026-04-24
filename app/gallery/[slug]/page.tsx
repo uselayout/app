@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { fetchKitBySlug } from "@/lib/supabase/kits";
+import { fetchKitBySlug, hasUpvoted } from "@/lib/supabase/kits";
 import { auth } from "@/lib/auth";
 import { getUserOrganizations } from "@/lib/supabase/organization";
 import { KitDetailImportButton } from "@/components/gallery/KitDetailClient";
 import { GalleryThemeInit } from "@/components/gallery/GalleryThemeInit";
+import { Avatar } from "@/components/gallery/Avatar";
+import { KitPreview } from "@/components/gallery/KitPreview";
+import { UpvoteButton } from "@/components/gallery/UpvoteButton";
+import { CopyInline } from "@/components/gallery/CopyInline";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -50,9 +54,11 @@ export default async function KitDetailPage({ params }: PageProps) {
   const session = await auth.api.getSession({ headers: await headers() });
   const isLoggedIn = !!session?.user?.id;
   let currentOrgSlug: string | undefined;
+  let initiallyUpvoted = false;
   if (session?.user?.id) {
     const orgs = await getUserOrganizations(session.user.id);
     currentOrgSlug = orgs[0]?.slug;
+    initiallyUpvoted = await hasUpvoted(kit.id, session.user.id);
   }
 
   const swatches = colourTokens(kit.tokensJson);
@@ -64,7 +70,7 @@ export default async function KitDetailPage({ params }: PageProps) {
         <div className="max-w-[1080px] mx-auto px-6">
           <div className="flex items-center justify-between mb-10">
             <Link href="/" aria-label="Layout home">
-              <img src="/marketing/logo.svg" alt="Layout" width={99} height={24} />
+              <img src="/marketing/logo.svg" alt="Layout" width={99} height={24} className="mkt-logo" />
             </Link>
             <Link
               href="/gallery"
@@ -76,33 +82,31 @@ export default async function KitDetailPage({ params }: PageProps) {
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">
             <div className="flex flex-col gap-6">
-              <div className="aspect-[16/9] rounded-2xl overflow-hidden border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]">
-                {kit.previewImageUrl ? (
-                  <img src={kit.previewImageUrl} alt={`${kit.name} preview`} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[var(--mkt-text-muted)] text-sm">
-                    No preview
-                  </div>
-                )}
+              <div className="rounded-2xl overflow-hidden border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]">
+                <KitPreview kit={kit} aspect="16/9" />
               </div>
 
               <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-4">
                   <h1 className="text-[36px] leading-[40px] font-normal tracking-[-0.9px]">{kit.name}</h1>
-                  <span className="shrink-0 text-[12px] text-[var(--mkt-text-secondary)] px-2 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]">
-                    {kit.licence}
-                  </span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <UpvoteButton
+                      slug={kit.slug}
+                      initialCount={kit.upvoteCount}
+                      initiallyUpvoted={initiallyUpvoted}
+                      isLoggedIn={isLoggedIn}
+                    />
+                    <span className="text-[12px] text-[var(--mkt-text-secondary)] px-2 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]">
+                      {kit.licence}
+                    </span>
+                  </div>
                 </div>
                 {kit.description && (
                   <p className="text-[16px] leading-[24px] text-[var(--mkt-text-secondary)]">{kit.description}</p>
                 )}
 
                 <div className="flex items-center gap-2 mt-1">
-                  {kit.author.avatarUrl ? (
-                    <img src={kit.author.avatarUrl} alt="" className="w-5 h-5 rounded-full bg-[var(--mkt-surface-muted)]" />
-                  ) : (
-                    <div className="w-5 h-5 rounded-full bg-[var(--mkt-surface-muted)]" />
-                  )}
+                  <Avatar src={kit.author.avatarUrl} name={kit.author.displayName} size={20} />
                   <span className="text-[13px] text-[var(--mkt-text-secondary)]">
                     Published by {kit.author.displayName ?? "Layout community"}
                   </span>
@@ -161,11 +165,12 @@ export default async function KitDetailPage({ params }: PageProps) {
                   isLoggedIn={isLoggedIn}
                   currentOrgSlug={currentOrgSlug}
                 />
-                <div className="flex flex-col gap-1 pt-3 border-t border-[var(--mkt-border)]">
+                <div className="flex flex-col gap-2 pt-3 border-t border-[var(--mkt-border)]">
                   <span className="text-[11px] uppercase tracking-wide text-[var(--mkt-text-muted)]">CLI</span>
-                  <code className="text-[12px] font-mono text-[var(--mkt-text-primary)] break-all">
-                    npx @layoutdesign/context install {kit.slug}
-                  </code>
+                  <CopyInline
+                    value={`npx @layoutdesign/context install ${kit.slug}`}
+                    label="Copy install command"
+                  />
                 </div>
               </div>
 

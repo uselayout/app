@@ -8,6 +8,7 @@ import { DashboardTab } from "./DashboardTab";
 import { RoadmapTab } from "./RoadmapTab";
 import { VariantsTab } from "./VariantsTab";
 import { AIModelsTab } from "./AIModelsTab";
+import { KitsTab } from "./KitsTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -2304,7 +2305,7 @@ function CreditsTab({ toast }: { toast: (msg: string, type?: "success" | "error"
 
 export function AdminClient() {
   const { data: session, isPending } = useSession();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "codes" | "requests" | "changelog" | "credits" | "ai-models" | "email" | "roadmap" | "variants">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "codes" | "requests" | "changelog" | "credits" | "ai-models" | "email" | "roadmap" | "variants" | "kits">("dashboard");
   const { toasts, show: toast } = useToast();
   const [pendingCount, setPendingCount] = useState(0);
   const [stats, setStats] = useState<AdminStatsData | null>(null);
@@ -2383,6 +2384,7 @@ export function AdminClient() {
     { key: "ai-models", label: "AI Models" },
     { key: "email", label: "Email" },
     { key: "variants", label: "Variants" },
+    { key: "kits", label: "Kits" },
   ];
 
   return (
@@ -2473,6 +2475,9 @@ export function AdminClient() {
         )}
         {activeTab === "variants" && (
           <VariantsTab />
+        )}
+        {activeTab === "kits" && (
+          <KitsTab toast={toast} />
         )}
       </div>
 

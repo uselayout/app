@@ -9,7 +9,8 @@ import { useEffect } from "react";
 export function GalleryThemeInit() {
   useEffect(() => {
     const saved = localStorage.getItem("layout-gallery-theme");
-    const theme = saved === "light" ? "light" : "dark";
+    // Default is light; dark is the opt-in variant.
+    const theme = saved === "dark" ? "dark" : "light";
     document.documentElement.setAttribute("data-mkt-theme", theme);
     return () => {
       document.documentElement.removeAttribute("data-mkt-theme");
