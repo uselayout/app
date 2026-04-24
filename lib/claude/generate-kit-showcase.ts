@@ -4,15 +4,15 @@ import { transpileTsx } from "@/lib/transpile";
 // System prompt constraining Claude to emit a TSX module that renders a design
 // system showcase inside our existing iframe runtime. The iframe provides
 // React globally (useState, useEffect, Fragment are pre-destructured), plus a
-// commonjs-style `module.exports`. The module must default-export a component
-// named `App` that uses React.createElement (not JSX) so the output works
-// without a JSX transform in the iframe.
+// commonjs-style `module.exports`. JSX is fine — our transpileTsx pipeline
+// runs the output through the TypeScript compiler with jsxFactory set to
+// React.createElement, so the iframe receives pure JS.
 //
 // We keep the output constrained: fixed sections in fixed order so every kit
 // feels comparable, but the model picks layout density, hero treatment, and
-// how to present each section given the kit's aesthetic. If Claude strays
-// (returns JSX, forgets export, produces invalid TS) we reject and fall back
-// to the uniform template.
+// how to present each section given the kit's aesthetic. If Claude forgets
+// the export or produces invalid TS we reject and fall back to the uniform
+// template.
 
 const SYSTEM = `You generate a single TypeScript (TSX) module that renders a design system showcase inside a sandboxed React 18 iframe.
 
@@ -20,9 +20,9 @@ const SYSTEM = `You generate a single TypeScript (TSX) module that renders a des
 
 1. Produce **only** TypeScript source code. No prose, no markdown fencing, no comments outside the code.
 2. The module must end with \`export default App;\` — the runtime calls \`ReactDOM.createRoot(...).render(React.createElement(App))\`.
-3. **Never** use JSX syntax. Always \`React.createElement(type, props, ...children)\`. JSX will not compile in the iframe.
-4. The iframe already exposes React, useState, useEffect, useRef, useMemo, useCallback as globals. Do NOT import anything.
-5. The iframe has Tailwind loaded, but prefer inline \`style={}\` with the kit's CSS custom properties via \`var(--name)\` references or by reading \`document.styleSheets\` on mount.
+3. Use JSX syntax freely. The output is transpiled by the TypeScript compiler with jsxFactory set to React.createElement.
+4. The iframe already exposes React, useState, useEffect, useRef, useMemo, useCallback as globals. Do NOT import anything. Do not write \`import React from "react"\`.
+5. The iframe has Tailwind loaded. Use a mix of Tailwind classes and inline \`style={}\` with the kit's CSS custom properties via \`var(--name)\`.
 6. Read the kit's tokens by iterating \`document.styleSheets\` at mount time. A helper \`readRootCssVars()\` is provided below — copy it verbatim into your output.
 7. Render **these sections, in this order, at these headings**:
    - Hero (kit name + one-line aesthetic description you write)
@@ -98,12 +98,6 @@ function hasExportDefault(code: string): boolean {
   return /export\s+default\s+(App|\w+)/.test(code);
 }
 
-function hasJsxSyntax(code: string): boolean {
-  // If we see <TagName or <Component tokens outside of a string, that's JSX.
-  // Rough but sufficient as a sanity check before transpile.
-  return /<[A-Z][A-Za-z0-9]*[\s/>]/.test(code) || /<\/[A-Z][A-Za-z0-9]*>/.test(code);
-}
-
 /**
  * Generate a bespoke showcase for a kit. Returns both the raw TSX (for audit +
  * later regeneration) and the transpiled JS the iframe will run. Throws on any
@@ -147,9 +141,8 @@ export async function generateKitShowcase(input: GenerateInput): Promise<Generat
   if (!hasExportDefault(tsx)) {
     throw new Error("Generated showcase missing `export default App`.");
   }
-  if (hasJsxSyntax(tsx)) {
-    throw new Error("Generated showcase uses JSX syntax; iframe expects React.createElement only.");
-  }
+  // JSX is fine — transpileTsx handles it with jsxFactory: React.createElement.
+  // The iframe runtime only needs the compiled output to be valid CommonJS.
 
   let js: string;
   try {
