@@ -6,6 +6,7 @@ import { fetchKitBySlug } from "@/lib/supabase/kits";
 import { auth } from "@/lib/auth";
 import { getUserOrganizations } from "@/lib/supabase/organization";
 import { KitDetailImportButton } from "@/components/gallery/KitDetailClient";
+import { GalleryThemeInit } from "@/components/gallery/GalleryThemeInit";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -58,18 +59,24 @@ export default async function KitDetailPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-[var(--mkt-bg)] text-[var(--mkt-text-primary)]">
-      <section className="pt-[100px] pb-8 lg:pt-[140px]">
+      <GalleryThemeInit />
+      <section className="pt-[60px] pb-8 lg:pt-[100px]">
         <div className="max-w-[1080px] mx-auto px-6">
-          <Link
-            href="/gallery"
-            className="inline-flex items-center gap-1.5 text-[13px] text-[var(--mkt-text-secondary)] hover:text-white mb-8"
-          >
-            ← Back to gallery
-          </Link>
+          <div className="flex items-center justify-between mb-10">
+            <Link href="/" aria-label="Layout home">
+              <img src="/marketing/logo.svg" alt="Layout" width={99} height={24} />
+            </Link>
+            <Link
+              href="/gallery"
+              className="inline-flex items-center gap-1.5 text-[13px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)]"
+            >
+              ← Back to gallery
+            </Link>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">
             <div className="flex flex-col gap-6">
-              <div className="aspect-[16/9] rounded-2xl overflow-hidden border border-[var(--mkt-border)] bg-[#101014]">
+              <div className="aspect-[16/9] rounded-2xl overflow-hidden border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]">
                 {kit.previewImageUrl ? (
                   <img src={kit.previewImageUrl} alt={`${kit.name} preview`} className="w-full h-full object-cover" />
                 ) : (
@@ -82,7 +89,7 @@ export default async function KitDetailPage({ params }: PageProps) {
               <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-4">
                   <h1 className="text-[36px] leading-[40px] font-normal tracking-[-0.9px]">{kit.name}</h1>
-                  <span className="shrink-0 text-[12px] text-[var(--mkt-text-muted)] px-2 py-1 rounded-full border border-[var(--mkt-border)]">
+                  <span className="shrink-0 text-[12px] text-[var(--mkt-text-secondary)] px-2 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]">
                     {kit.licence}
                   </span>
                 </div>
@@ -92,14 +99,14 @@ export default async function KitDetailPage({ params }: PageProps) {
 
                 <div className="flex items-center gap-2 mt-1">
                   {kit.author.avatarUrl ? (
-                    <img src={kit.author.avatarUrl} alt="" className="w-5 h-5 rounded-full bg-white/10" />
+                    <img src={kit.author.avatarUrl} alt="" className="w-5 h-5 rounded-full bg-[var(--mkt-surface-muted)]" />
                   ) : (
-                    <div className="w-5 h-5 rounded-full bg-white/10" />
+                    <div className="w-5 h-5 rounded-full bg-[var(--mkt-surface-muted)]" />
                   )}
                   <span className="text-[13px] text-[var(--mkt-text-secondary)]">
                     Published by {kit.author.displayName ?? "Layout community"}
                   </span>
-                  <span className="text-white/20">|</span>
+                  <span aria-hidden className="text-[var(--mkt-text-muted)] opacity-40">·</span>
                   <span className="text-[13px] text-[var(--mkt-text-muted)]">{kit.importCount} imports</span>
                 </div>
 
@@ -109,7 +116,7 @@ export default async function KitDetailPage({ params }: PageProps) {
                       <Link
                         key={tag}
                         href={`/gallery?tag=${encodeURIComponent(tag)}`}
-                        className="px-2 py-0.5 rounded-full border border-[var(--mkt-border)] text-[11px] text-[var(--mkt-text-secondary)] hover:text-white"
+                        className="px-2 py-0.5 rounded-full border border-[var(--mkt-border)] text-[11px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)]"
                       >
                         {tag}
                       </Link>
@@ -118,14 +125,13 @@ export default async function KitDetailPage({ params }: PageProps) {
                 )}
               </div>
 
-              {/* Swatches */}
               {swatches.length > 0 && (
                 <div className="flex flex-col gap-2 mt-2">
                   <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Colour tokens</h2>
                   <div className="flex flex-wrap gap-2">
                     {swatches.map((s) => (
-                      <div key={s.name} className="flex items-center gap-2 rounded-lg border border-[var(--mkt-border)] bg-[#101014] px-2 py-1.5">
-                        <span className="w-5 h-5 rounded" style={{ background: s.value }} />
+                      <div key={s.name} className="flex items-center gap-2 rounded-lg border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] px-2 py-1.5">
+                        <span className="w-5 h-5 rounded border border-[var(--mkt-border)]" style={{ background: s.value }} />
                         <span className="text-[12px] text-[var(--mkt-text-secondary)] font-mono">{s.name}</span>
                       </div>
                     ))}
@@ -133,17 +139,16 @@ export default async function KitDetailPage({ params }: PageProps) {
                 </div>
               )}
 
-              {/* layout.md preview */}
               <div className="flex flex-col gap-2 mt-4">
                 <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">layout.md</h2>
-                <pre className="max-h-[600px] overflow-auto rounded-2xl border border-[var(--mkt-border)] bg-[#0d0d11] p-5 text-[12px] leading-[18px] font-mono text-[var(--mkt-text-secondary)] whitespace-pre-wrap">
+                <pre className="max-h-[600px] overflow-auto rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface-muted)] p-5 text-[12px] leading-[18px] font-mono text-[var(--mkt-text-secondary)] whitespace-pre-wrap">
                   {kit.layoutMd}
                 </pre>
               </div>
             </div>
 
             <aside className="flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start">
-              <div className="flex flex-col gap-4 rounded-2xl border border-[var(--mkt-border)] bg-[#101014] p-5">
+              <div className="flex flex-col gap-4 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
                 <div className="flex flex-col gap-1">
                   <span className="text-[12px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Use this kit</span>
                   <span className="text-[14px] text-[var(--mkt-text-primary)]">
@@ -164,7 +169,7 @@ export default async function KitDetailPage({ params }: PageProps) {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 rounded-2xl border border-[var(--mkt-border)] bg-[#101014] p-5 text-[12px] text-[var(--mkt-text-secondary)]">
+              <div className="flex flex-col gap-2 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5 text-[12px] text-[var(--mkt-text-secondary)]">
                 <div className="flex justify-between"><span>Tier</span><span className="text-[var(--mkt-text-primary)]">{kit.tier}</span></div>
                 <div className="flex justify-between"><span>Published</span><span className="text-[var(--mkt-text-primary)]">{new Date(kit.createdAt).toLocaleDateString()}</span></div>
                 <div className="flex justify-between"><span>Upvotes</span><span className="text-[var(--mkt-text-primary)]">{kit.upvoteCount}</span></div>
