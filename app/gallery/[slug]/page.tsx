@@ -128,8 +128,8 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">
-            <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-10">
+            <div className="flex flex-col gap-6 min-w-0">
               <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-4">
                   <h1 className="text-[36px] leading-[40px] font-normal tracking-[-0.9px]">{kit.name}</h1>
@@ -190,9 +190,9 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
                             <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Colour ({grouped.colour.length})</h2>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                               {grouped.colour.slice(0, 48).map((s) => (
-                                <div key={s.name} className="flex items-center gap-2 rounded-lg border border-[var(--mkt-border)] bg-[var(--mkt-bg)] px-2 py-1.5">
+                                <div key={s.name} className="flex items-center gap-2 rounded-lg border border-[var(--mkt-border)] bg-[var(--mkt-bg)] px-2 py-1.5 min-w-0">
                                   <span className="w-6 h-6 rounded border border-[var(--mkt-border)] shrink-0" style={{ background: s.value }} />
-                                  <div className="flex flex-col min-w-0">
+                                  <div className="flex flex-col min-w-0 flex-1">
                                     <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono truncate">{s.name}</span>
                                     <span className="text-[10px] text-[var(--mkt-text-muted)] font-mono truncate">{s.value}</span>
                                   </div>
@@ -207,9 +207,9 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
                             <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Typography ({grouped.typography.length})</h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               {grouped.typography.map((t) => (
-                                <div key={t.name} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--mkt-border)] bg-[var(--mkt-bg)] px-3 py-2">
-                                  <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono truncate">{t.name}</span>
-                                  <span className="text-[11px] text-[var(--mkt-text-muted)] font-mono truncate text-right">{t.value}</span>
+                                <div key={t.name} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--mkt-border)] bg-[var(--mkt-bg)] px-3 py-2 min-w-0">
+                                  <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono truncate min-w-0 flex-1">{t.name}</span>
+                                  <span className="text-[11px] text-[var(--mkt-text-muted)] font-mono truncate text-right min-w-0 flex-1">{t.value}</span>
                                 </div>
                               ))}
                             </div>
@@ -251,9 +251,9 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
                             <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Shadow ({grouped.shadow.length})</h2>
                             <div className="flex flex-col gap-2">
                               {grouped.shadow.map((s) => (
-                                <div key={s.name} className="flex items-center justify-between gap-3">
-                                  <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono">{s.name}</span>
-                                  <span className="text-[11px] text-[var(--mkt-text-muted)] font-mono truncate max-w-[60%] text-right">{s.value}</span>
+                                <div key={s.name} className="flex items-center justify-between gap-3 min-w-0">
+                                  <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono shrink-0">{s.name}</span>
+                                  <span className="text-[11px] text-[var(--mkt-text-muted)] font-mono truncate text-right min-w-0 flex-1">{s.value}</span>
                                 </div>
                               ))}
                             </div>

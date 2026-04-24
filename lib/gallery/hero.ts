@@ -136,6 +136,21 @@ function buildHeroPrompt(kit: PublicKit, hasReferenceLogo: boolean): { prompt: s
 
 const MAX_REFERENCE_BYTES = 4 * 1024 * 1024;
 const MAX_REFERENCE_COUNT = 2;
+// GPT Image 2 /v1/images/edits accepts only these formats.
+const ALLOWED_REFERENCE_MIME = new Set(["image/png", "image/jpeg", "image/webp"]);
+
+function sniffMimeType(buffer: Buffer, declared?: string): string | null {
+  // PNG: 89 50 4E 47
+  if (buffer.length >= 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) return "image/png";
+  // JPEG: FF D8 FF
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return "image/jpeg";
+  // WEBP: RIFF....WEBP
+  if (buffer.length >= 12 && buffer.subarray(0, 4).toString("ascii") === "RIFF" && buffer.subarray(8, 12).toString("ascii") === "WEBP") return "image/webp";
+  // SVG: <?xml or <svg
+  const head = buffer.subarray(0, 256).toString("utf8").trimStart();
+  if (head.startsWith("<?xml") || head.startsWith("<svg")) return "image/svg+xml";
+  return declared ?? null;
+}
 
 function baseUrl(): string {
   return (
@@ -168,10 +183,28 @@ async function loadReferenceLogos(kit: PublicKit): Promise<ReferenceImage[]> {
         console.warn(`[kit-hero] logo too large for ${kit.slug}: ${arr.byteLength} bytes`);
         continue;
       }
+      const buffer = Buffer.from(arr);
+      // Prefer magic-byte sniffing over the declared mimetype (Supabase sometimes
+      // returns application/octet-stream). SVG and other unsupported formats
+      // are skipped here so /v1/images/edits doesn't 400.
+      const sniffed = sniffMimeType(buffer, asset.mimeType);
+      if (!sniffed || !ALLOWED_REFERENCE_MIME.has(sniffed)) {
+        console.warn(
+          `[kit-hero] skipping reference for ${kit.slug}: unsupported mimetype ${sniffed ?? "unknown"} (OpenAI accepts PNG/JPEG/WEBP only)`,
+        );
+        continue;
+      }
+      const extByType: Record<string, string> = {
+        "image/png": "png",
+        "image/jpeg": "jpg",
+        "image/webp": "webp",
+      };
+      const ext = extByType[sniffed];
+      const defaultName = `${kit.slug}-logo.${ext}`;
       out.push({
-        buffer: Buffer.from(arr),
-        filename: asset.name || `${kit.slug}-logo.png`,
-        mimeType: asset.mimeType || "image/png",
+        buffer,
+        filename: (asset.name && /\.(png|jpe?g|webp)$/i.test(asset.name)) ? asset.name : defaultName,
+        mimeType: sniffed,
       });
     } catch (err) {
       console.warn(`[kit-hero] logo fetch threw for ${kit.slug}:`, err);
