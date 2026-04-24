@@ -50,11 +50,20 @@ function walkTokens(node: unknown, path: string[] = []): FlatToken[] {
   return Object.entries(obj).flatMap(([k, v]) => (k.startsWith("$") ? [] : walkTokens(v, [...path, k])));
 }
 
+function pxValue(s: string): number {
+  const m = s.match(/-?[\d.]+/);
+  return m ? parseFloat(m[0]) : 0;
+}
+
+function sortByPixelValue(tokens: FlatToken[]): FlatToken[] {
+  return [...tokens].sort((a, b) => pxValue(a.value) - pxValue(b.value));
+}
+
 function groupTokens(tokens: FlatToken[]) {
   const colour = tokens.filter((t) => t.type === "color");
   const typography = tokens.filter((t) => ["fontFamily", "fontSize", "fontWeight", "lineHeight", "letterSpacing"].includes(t.type));
-  const spacing = tokens.filter((t) => t.type === "dimension" && /spacing|gap|space|size/i.test(t.group));
-  const radius = tokens.filter((t) => t.type === "dimension" && /radius|rounded|border/i.test(t.group));
+  const spacing = sortByPixelValue(tokens.filter((t) => t.type === "dimension" && /spacing|gap|space|size/i.test(t.group)));
+  const radius = sortByPixelValue(tokens.filter((t) => t.type === "dimension" && /radius|rounded|border/i.test(t.group)));
   const shadow = tokens.filter((t) => t.type === "shadow" || t.type === "boxShadow");
   return { colour, typography, spacing, radius, shadow };
 }
