@@ -12,14 +12,18 @@ export function KitCard({ kit }: { kit: PublicKitSummary }) {
     >
       <div className="relative">
         <KitPreview kit={kit} aspect="4/3" />
-        {kit.featured && (
-          <div className="absolute top-3 left-3 px-2 py-1 rounded-full bg-[var(--mkt-accent)] text-[#08090a] text-[11px] font-medium tracking-wide">
-            Featured
-          </div>
-        )}
-        {kit.tier === "rich" && (
-          <div className="absolute top-3 right-3 px-2 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface-elevated)] text-[var(--mkt-text-primary)] text-[11px] font-medium tracking-wide">
-            Rich kit
+        {(kit.featured || kit.tier === "rich") && (
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+            {kit.featured && (
+              <span className="px-2 py-1 rounded-full bg-[var(--mkt-accent)] text-[#08090a] text-[11px] font-medium tracking-wide shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
+                Featured
+              </span>
+            )}
+            {kit.tier === "rich" && (
+              <span className="px-2 py-1 rounded-full border border-white/20 bg-black/60 text-white text-[11px] font-medium tracking-wide backdrop-blur-sm">
+                Rich kit
+              </span>
+            )}
           </div>
         )}
       </div>

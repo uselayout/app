@@ -2,7 +2,12 @@ import "server-only";
 import { chromium } from "playwright";
 import { uploadToBucket } from "@/lib/supabase/storage";
 
-const VIEWPORT = { width: 1440, height: 900 };
+// Match the card's 4:3 aspect ratio so the screenshot fills the preview slot
+// without either letterboxing or the right/bottom of the showcase getting
+// cropped. 1440x1080 gives the showcase 1080px of vertical room (enough for
+// hero + palette + typography to render), which is the most visually
+// interesting part for the card thumbnail.
+const VIEWPORT = { width: 1440, height: 1080 };
 const NAV_TIMEOUT_MS = 30_000;
 const RENDER_WAIT_MS = 2_500;
 
@@ -29,7 +34,15 @@ export async function captureKitShowcasePng(
     // Give the inner iframe enough time to load React from the CDN, run the
     // showcase JS, and paint. networkidle above does not wait for subframes.
     await page.waitForTimeout(RENDER_WAIT_MS);
-    const buffer = await page.screenshot({ type: "png", fullPage: false, timeout: 15_000 });
+    // Clip to viewport (not fullPage) so the capture is exactly 1440x1080.
+    // Anything past the fold is intentionally cropped — the detail page
+    // shows the full scrollable showcase.
+    const buffer = await page.screenshot({
+      type: "png",
+      fullPage: false,
+      clip: { x: 0, y: 0, width: VIEWPORT.width, height: VIEWPORT.height },
+      timeout: 15_000,
+    });
     return buffer;
   } finally {
     await browser.close().catch(() => {});

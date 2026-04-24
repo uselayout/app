@@ -41,12 +41,25 @@ export async function POST(
     );
   }
 
-  const heroUrl = await captureAndUploadKitHero(kit, { openaiApiKey });
-  if (!heroUrl) {
-    return NextResponse.json(
-      { error: "Hero generation failed. Check the OpenAI API key and quota." },
-      { status: 500 },
-    );
+  let heroUrl: string;
+  try {
+    heroUrl = await captureAndUploadKitHero(kit, { openaiApiKey });
+  } catch (err) {
+    const raw = err instanceof Error ? err.message : "Hero generation failed";
+    console.error(`[generate-hero] ${kit.slug}:`, raw);
+    // Surface OpenAI's actual error (billing cap, invalid key, rate limit,
+    // content policy, etc.) back to the admin UI instead of a generic 500.
+    let friendly = raw;
+    if (/billing hard limit/i.test(raw)) {
+      friendly = "OpenAI billing hard limit reached. Raise the monthly cap at platform.openai.com/account/limits, or wait for the next cycle.";
+    } else if (/invalid api key|incorrect api key|401/i.test(raw)) {
+      friendly = "OpenAI rejected the API key. Re-check Settings > API Keys.";
+    } else if (/rate limit|429/i.test(raw)) {
+      friendly = "OpenAI rate-limited this request. Wait a minute and try again.";
+    } else if (/content policy|safety/i.test(raw)) {
+      friendly = "OpenAI content policy rejected the prompt. Edit the kit name/description and retry.";
+    }
+    return NextResponse.json({ error: friendly }, { status: 500 });
   }
 
   const ok = await updateKitHeroImage(kit.id, heroUrl);
