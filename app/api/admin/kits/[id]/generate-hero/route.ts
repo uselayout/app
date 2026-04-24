@@ -20,8 +20,20 @@ export async function POST(
     return NextResponse.json({ error: "Kit not found" }, { status: 404 });
   }
 
-  const headerKey = request.headers.get("x-openai-api-key")?.trim();
-  const openaiApiKey = headerKey && headerKey.length > 0 ? headerKey : process.env.OPENAI_API_KEY;
+  // Prefer key from request body (survives proxy header stripping), then
+  // common header variants, then server env.
+  const body = await request.json().catch(() => ({} as Record<string, unknown>));
+  const bodyKey = typeof body?.openaiApiKey === "string" ? body.openaiApiKey.trim() : "";
+  const headerKey =
+    request.headers.get("x-openai-api-key")?.trim() ??
+    request.headers.get("x-openai-key")?.trim() ??
+    "";
+  const authHeader = request.headers.get("authorization") ?? "";
+  const authKey = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : "";
+  const openaiApiKey = bodyKey || headerKey || authKey || process.env.OPENAI_API_KEY;
+
+  console.log(`[generate-hero] key source: ${bodyKey ? "body" : headerKey ? "header" : authKey ? "authorization" : openaiApiKey ? "env" : "none"}`);
+
   if (!openaiApiKey) {
     return NextResponse.json(
       { error: "OpenAI API key required. Add it in Settings > API Keys or set OPENAI_API_KEY on the server." },
