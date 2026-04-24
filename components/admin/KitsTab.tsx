@@ -21,13 +21,14 @@ interface AdminKitRow {
   created_at: string;
   showcase_generated_at: string | null;
   preview_generated_at: string | null;
+  hero_generated_at: string | null;
 }
 
 type ToastFn = (msg: string, type?: "success" | "error") => void;
 
 interface RunningJob {
   kitId: string;
-  kind: "showcase" | "preview";
+  kind: "showcase" | "preview" | "hero";
   startedAt: number;
 }
 
@@ -150,6 +151,22 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
     }
   }
 
+  async function regenHero(id: string, name: string) {
+    setJobs((j) => [...j, { kitId: id, kind: "hero", startedAt: Date.now() }]);
+    toast(`Generating hero cover for "${name}"... this takes 20-40s (GPT Image 2)`, "success");
+    try {
+      const res = await fetch(`/api/admin/kits/${id}/generate-hero`, { method: "POST" });
+      const body: { ok?: boolean; error?: string; heroUrl?: string } = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `Hero generation failed (HTTP ${res.status})`);
+      toast(`Hero cover generated for "${name}"`, "success");
+      load();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Hero generation failed", "error");
+    } finally {
+      setJobs((j) => j.filter((x) => !(x.kitId === id && x.kind === "hero")));
+    }
+  }
+
   const filtered = !kits
     ? null
     : filter === "hidden"
@@ -168,7 +185,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
         <div>
           <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Kit Gallery</h2>
           <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-            Manage public kits. Feature to promote, hide to remove from public listings, or delete entirely. Regen showcase calls Claude Sonnet (~30s). Regen preview runs Playwright (~45s).
+            Manage public kits. Feature to promote, hide to remove from public listings, or delete entirely. Regen showcase calls Claude Sonnet (~30s). Regen preview runs Playwright (~45s). Regen hero calls GPT Image 2 for a stylised marketing cover (~30s).
           </p>
         </div>
         <div className="flex items-center gap-1">
@@ -214,6 +231,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                 <th className="text-left font-medium px-3 py-2" style={{ color: "var(--text-muted)" }}>Kit</th>
                 <th className="text-left font-medium px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-muted)" }}>Showcase</th>
                 <th className="text-left font-medium px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-muted)" }}>Preview</th>
+                <th className="text-left font-medium px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-muted)" }}>Hero</th>
                 <th className="text-right font-medium px-3 py-2" style={{ color: "var(--text-muted)" }}>Actions</th>
               </tr>
             </thead>
@@ -221,7 +239,8 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
               {filtered.map((kit) => {
                 const showcaseJob = jobFor(kit.id, "showcase");
                 const previewJob = jobFor(kit.id, "preview");
-                const anyJob = showcaseJob || previewJob;
+                const heroJob = jobFor(kit.id, "hero");
+                const anyJob = showcaseJob || previewJob || heroJob;
                 return (
                   <tr
                     key={kit.id}
@@ -272,6 +291,16 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                         </span>
                       ) : (
                         <span className="text-[11px]">{formatTimestamp(kit.preview_generated_at)}</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-secondary)" }}>
+                      {heroJob ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--mkt-accent)" }} />
+                          Generating… {formatElapsed(Date.now() - heroJob.startedAt)}
+                        </span>
+                      ) : (
+                        <span className="text-[11px]">{formatTimestamp(kit.hero_generated_at)}</span>
                       )}
                     </td>
                     <td className="px-3 py-2 text-right">
@@ -327,6 +356,19 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                           title="Regenerate PNG preview via Playwright (~45s)"
                         >
                           {previewJob ? "Capturing…" : "Regen preview"}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!!heroJob}
+                          onClick={() => regenHero(kit.id, kit.name)}
+                          className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
+                          style={{
+                            border: "1px solid var(--studio-border)",
+                            color: heroJob ? "var(--mkt-accent)" : "var(--text-secondary)",
+                          }}
+                          title="Regenerate stylised hero cover via GPT Image 2 (~30s)"
+                        >
+                          {heroJob ? "Generating…" : "Regen hero"}
                         </button>
                         <button
                           type="button"
