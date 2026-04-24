@@ -157,9 +157,11 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
     setJobs((j) => [...j, { kitId: id, kind: "hero", startedAt: Date.now() }]);
     toast(`Generating hero cover for "${name}"... this takes 20-40s (GPT Image 2)`, "success");
     try {
-      const headers: Record<string, string> = {};
-      if (storedKey) headers["X-OpenAI-Api-Key"] = storedKey;
-      const res = await fetch(`/api/admin/kits/${id}/generate-hero`, { method: "POST", headers });
+      const res = await fetch(`/api/admin/kits/${id}/generate-hero`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(storedKey ? { openaiApiKey: storedKey } : {}),
+      });
       const body: { ok?: boolean; error?: string; heroUrl?: string } = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error ?? `Hero generation failed (HTTP ${res.status})`);
       toast(`Hero cover generated for "${name}"`, "success");
