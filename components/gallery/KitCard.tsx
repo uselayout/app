@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { Heart, Download } from "lucide-react";
 import type { PublicKitSummary } from "@/lib/types/kit";
+import { Avatar } from "./Avatar";
+import { KitPreview } from "./KitPreview";
 
 export function KitCard({ kit }: { kit: PublicKitSummary }) {
   return (
@@ -7,18 +10,8 @@ export function KitCard({ kit }: { kit: PublicKitSummary }) {
       href={`/gallery/${kit.slug}`}
       className="group flex flex-col rounded-[16px] border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] overflow-hidden transition-all hover:border-[var(--mkt-text-muted)] hover:bg-[var(--mkt-surface-elevated)]"
     >
-      <div className="relative aspect-[4/3] bg-[var(--mkt-surface-muted)] overflow-hidden">
-        {kit.previewImageUrl ? (
-          <img
-            src={kit.previewImageUrl}
-            alt={`${kit.name} preview`}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-[var(--mkt-text-muted)] text-sm">
-            No preview
-          </div>
-        )}
+      <div className="relative">
+        <KitPreview kit={kit} aspect="4/3" />
         {kit.featured && (
           <div className="absolute top-3 left-3 px-2 py-1 rounded-full bg-[var(--mkt-accent)] text-[#08090a] text-[11px] font-medium tracking-wide">
             Featured
@@ -36,7 +29,7 @@ export function KitCard({ kit }: { kit: PublicKitSummary }) {
           <h3 className="text-[18px] leading-[24px] text-[var(--mkt-text-primary)] font-medium">
             {kit.name}
           </h3>
-          <span className="shrink-0 text-[12px] text-[var(--mkt-text-muted)] px-2 py-0.5 rounded-full border border-[var(--mkt-border)]">
+          <span className="shrink-0 text-[12px] text-[var(--mkt-text-secondary)] px-2 py-0.5 rounded-full border border-[var(--mkt-border)]">
             {kit.licence}
           </span>
         </div>
@@ -49,24 +42,22 @@ export function KitCard({ kit }: { kit: PublicKitSummary }) {
 
         <div className="mt-auto flex items-center justify-between pt-2">
           <div className="flex items-center gap-2 min-w-0">
-            {kit.author.avatarUrl ? (
-              <img
-                src={kit.author.avatarUrl}
-                alt=""
-                className="w-5 h-5 rounded-full bg-[var(--mkt-surface-muted)]"
-              />
-            ) : (
-              <div className="w-5 h-5 rounded-full bg-[var(--mkt-surface-muted)]" />
-            )}
+            <Avatar src={kit.author.avatarUrl} name={kit.author.displayName} size={20} />
             <span className="text-[12px] text-[var(--mkt-text-secondary)] truncate">
               {kit.author.displayName ?? "Layout community"}
             </span>
           </div>
 
           <div className="flex items-center gap-3 text-[12px] text-[var(--mkt-text-muted)]">
-            <span>{kit.upvoteCount} upvotes</span>
+            <span className="inline-flex items-center gap-1">
+              <Heart className="w-3 h-3" aria-hidden />
+              {kit.upvoteCount}
+            </span>
             <span aria-hidden className="opacity-30">·</span>
-            <span>{kit.importCount} imports</span>
+            <span className="inline-flex items-center gap-1">
+              <Download className="w-3 h-3" aria-hidden />
+              {kit.importCount}
+            </span>
           </div>
         </div>
 

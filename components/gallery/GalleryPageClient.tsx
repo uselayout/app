@@ -37,13 +37,14 @@ export function GalleryPageClient({
   const [q, setQ] = useState(initialQ ?? "");
   const [tag, setTag] = useState<string | undefined>(initialTag);
   const [sort, setSort] = useState<KitSort>(initialSort);
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
 
   // Hydrate persisted theme and apply it to <html data-mkt-theme="..."> so the
   // cascade reaches the page hero, cards, inputs, and any deeper children.
+  // Default is light; dark is the opt-in variant.
   useEffect(() => {
     const saved = (typeof window !== "undefined" && localStorage.getItem(THEME_KEY)) as Theme | null;
-    const initial: Theme = saved === "light" ? "light" : "dark";
+    const initial: Theme = saved === "dark" ? "dark" : "light";
     setTheme(initial);
     document.documentElement.setAttribute("data-mkt-theme", initial);
     return () => {

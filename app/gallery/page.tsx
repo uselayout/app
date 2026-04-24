@@ -52,7 +52,7 @@ export default async function GalleryPage({ searchParams }: PageProps) {
       <section className="pt-[60px] pb-12 lg:pt-[100px] lg:pb-16">
         <div className="max-w-[1280px] mx-auto px-6">
           <Link href="/" className="inline-flex mb-10" aria-label="Layout home">
-            <img src="/marketing/logo.svg" alt="Layout" width={99} height={24} />
+            <img src="/marketing/logo.svg" alt="Layout" width={99} height={24} className="mkt-logo" />
           </Link>
           <div className="flex flex-col gap-6 max-w-[820px]">
             <div className="inline-flex self-start items-center gap-2 px-3 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] text-[12px] text-[var(--mkt-text-secondary)]">
