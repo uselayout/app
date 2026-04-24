@@ -15,11 +15,12 @@ import {
 import type {
   AspectRatio,
   ImageStyle,
+  ReferenceImage,
   Resolution,
 } from "./providers/types";
 
 export { ImageSafetyError } from "./providers/router";
-export type { AspectRatio, ImageStyle, Resolution };
+export type { AspectRatio, ImageStyle, ReferenceImage, Resolution };
 export type { ProviderName } from "./providers/router";
 
 export interface GenerateImageOptions {
@@ -36,6 +37,8 @@ export interface GenerateImageOptions {
   openaiApiKey?: string;
   /** Force a specific provider; otherwise auto-route by prompt content. */
   forcedProvider?: ProviderName;
+  /** Optional reference image(s) — OpenAI only, routes to /v1/images/edits. */
+  referenceImages?: ReferenceImage[];
 }
 
 export interface GeneratedImage {
@@ -90,6 +93,7 @@ export async function generateImageRaw(
       brandStyle: options.brandStyle,
       keys,
       forced: options.forcedProvider,
+      referenceImages: options.referenceImages,
     }),
   );
 }

@@ -65,10 +65,18 @@ export async function generateWithRouter(
     brandColours: options.brandColours,
     brandStyle: options.brandStyle,
     apiKey,
+    referenceImages: options.referenceImages,
   };
 
   if (provider === "openai") {
     return generateWithOpenAI(providerOptions);
+  }
+  // Reference images are an OpenAI-only feature for now. Gemini drops them
+  // silently — still generates a text-only image so the caller succeeds.
+  if (providerOptions.referenceImages && providerOptions.referenceImages.length > 0) {
+    console.warn(
+      `[image-router] referenceImages not supported by Gemini provider; dropping ${providerOptions.referenceImages.length} reference(s).`,
+    );
   }
   return generateWithGemini(providerOptions);
 }

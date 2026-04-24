@@ -4,6 +4,12 @@ export type Resolution = "512" | "1K" | "2K";
 
 export type ProviderName = "gemini" | "openai";
 
+export interface ReferenceImage {
+  buffer: Buffer;
+  filename: string;
+  mimeType: string;
+}
+
 export interface ProviderGenerateOptions {
   prompt: string;
   style?: ImageStyle;
@@ -12,6 +18,9 @@ export interface ProviderGenerateOptions {
   brandColours?: string[];
   brandStyle?: string;
   apiKey: string;
+  /** Optional PNG/JPEG reference images. OpenAI provider routes these
+   * through /v1/images/edits so the model composes around the real marks. */
+  referenceImages?: ReferenceImage[];
 }
 
 export interface ProviderResult {
