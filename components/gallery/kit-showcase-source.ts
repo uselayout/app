@@ -46,8 +46,12 @@ function collect(style: CSSStyleDeclaration, out: CssVar[], seen: Set<string>) {
   for (let i = 0; i < style.length; i++) {
     const name = style[i];
     if (!name || !name.startsWith("--") || seen.has(name)) continue;
-    seen.add(name);
+    // Skip motion/animation/keyframe definitions: they aren't visual tokens
+    // and dumping @keyframes into a palette grid bloats the showcase.
+    if (/^--(motion|animation|keyframe|transition|duration|ease|easing)/i.test(name)) continue;
     const value = style.getPropertyValue(name).trim();
+    if (/@keyframes/i.test(value)) continue;
+    seen.add(name);
     out.push({ name, value });
   }
 }

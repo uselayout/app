@@ -120,6 +120,7 @@ export async function POST(
         kitTags: kit.tags,
         layoutMd: kit.layoutMd,
         tokensCss: kit.tokensCss,
+        brandingAssets: kit.richBundle?.brandingAssets,
       });
       await updateKitShowcase(kit.id, result.tsx, result.js);
     } catch (err) {
