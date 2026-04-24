@@ -36,17 +36,27 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export const dynamic = "force-dynamic";
 
-function colourTokens(tokensJson: Record<string, unknown>): Array<{ name: string; value: string }> {
-  const colours = tokensJson["color"] ?? tokensJson["colors"];
-  if (!colours || typeof colours !== "object") return [];
-  const out: Array<{ name: string; value: string }> = [];
-  for (const [name, entry] of Object.entries(colours as Record<string, unknown>)) {
-    if (entry && typeof entry === "object" && "$value" in entry) {
-      const value = (entry as { $value: unknown }).$value;
-      if (typeof value === "string") out.push({ name, value });
-    }
+type FlatToken = { name: string; value: string; type: string; group: string };
+
+function walkTokens(node: unknown, path: string[] = []): FlatToken[] {
+  if (!node || typeof node !== "object") return [];
+  const obj = node as Record<string, unknown>;
+  if ("$value" in obj) {
+    const raw = obj["$value"];
+    const type = typeof obj["$type"] === "string" ? (obj["$type"] as string) : "";
+    const value = Array.isArray(raw) ? raw.join(", ") : typeof raw === "object" ? JSON.stringify(raw) : String(raw);
+    return [{ name: path.join("."), value, type, group: path[0] ?? "" }];
   }
-  return out.slice(0, 12);
+  return Object.entries(obj).flatMap(([k, v]) => (k.startsWith("$") ? [] : walkTokens(v, [...path, k])));
+}
+
+function groupTokens(tokens: FlatToken[]) {
+  const colour = tokens.filter((t) => t.type === "color");
+  const typography = tokens.filter((t) => ["fontFamily", "fontSize", "fontWeight", "lineHeight", "letterSpacing"].includes(t.type));
+  const spacing = tokens.filter((t) => t.type === "dimension" && /spacing|gap|space|size/i.test(t.group));
+  const radius = tokens.filter((t) => t.type === "dimension" && /radius|rounded|border/i.test(t.group));
+  const shadow = tokens.filter((t) => t.type === "shadow" || t.type === "boxShadow");
+  return { colour, typography, spacing, radius, shadow };
 }
 
 export default async function KitDetailPage({ params, searchParams }: PageProps) {
@@ -80,7 +90,14 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
     initiallyUpvoted = await hasUpvoted(kit.id, session.user.id);
   }
 
-  const swatches = colourTokens(kit.tokensJson);
+  const flatTokens = walkTokens(kit.tokensJson);
+  const grouped = groupTokens(flatTokens);
+  const hasAnyTokens =
+    grouped.colour.length > 0 ||
+    grouped.typography.length > 0 ||
+    grouped.spacing.length > 0 ||
+    grouped.radius.length > 0 ||
+    grouped.shadow.length > 0;
 
   return (
     <main className="min-h-screen bg-[var(--mkt-bg)] text-[var(--mkt-text-primary)]">
@@ -154,17 +171,82 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
                     />
                   }
                   tokens={
-                    swatches.length > 0 ? (
-                      <div className="flex flex-col gap-3 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
-                        <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Colour tokens</h2>
-                        <div className="flex flex-wrap gap-2">
-                          {swatches.map((s) => (
-                            <div key={s.name} className="flex items-center gap-2 rounded-lg border border-[var(--mkt-border)] bg-[var(--mkt-bg)] px-2 py-1.5">
-                              <span className="w-5 h-5 rounded border border-[var(--mkt-border)]" style={{ background: s.value }} />
-                              <span className="text-[12px] text-[var(--mkt-text-secondary)] font-mono">{s.name}</span>
+                    hasAnyTokens ? (
+                      <div className="flex flex-col gap-4">
+                        {grouped.colour.length > 0 && (
+                          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
+                            <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Colour ({grouped.colour.length})</h2>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                              {grouped.colour.slice(0, 48).map((s) => (
+                                <div key={s.name} className="flex items-center gap-2 rounded-lg border border-[var(--mkt-border)] bg-[var(--mkt-bg)] px-2 py-1.5">
+                                  <span className="w-6 h-6 rounded border border-[var(--mkt-border)] shrink-0" style={{ background: s.value }} />
+                                  <div className="flex flex-col min-w-0">
+                                    <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono truncate">{s.name}</span>
+                                    <span className="text-[10px] text-[var(--mkt-text-muted)] font-mono truncate">{s.value}</span>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        )}
+
+                        {grouped.typography.length > 0 && (
+                          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
+                            <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Typography ({grouped.typography.length})</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {grouped.typography.map((t) => (
+                                <div key={t.name} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--mkt-border)] bg-[var(--mkt-bg)] px-3 py-2">
+                                  <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono truncate">{t.name}</span>
+                                  <span className="text-[11px] text-[var(--mkt-text-muted)] font-mono truncate text-right">{t.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {grouped.spacing.length > 0 && (
+                          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
+                            <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Spacing ({grouped.spacing.length})</h2>
+                            <div className="flex flex-col gap-1.5">
+                              {grouped.spacing.map((s) => (
+                                <div key={s.name} className="flex items-center gap-3">
+                                  <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono w-40 shrink-0 truncate">{s.name}</span>
+                                  <span className="h-2 rounded bg-[var(--mkt-accent)]" style={{ width: s.value }} />
+                                  <span className="text-[11px] text-[var(--mkt-text-muted)] font-mono">{s.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {grouped.radius.length > 0 && (
+                          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
+                            <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Radius ({grouped.radius.length})</h2>
+                            <div className="flex flex-wrap gap-3">
+                              {grouped.radius.map((r) => (
+                                <div key={r.name} className="flex flex-col items-center gap-1.5">
+                                  <span className="w-14 h-14 bg-[var(--mkt-accent)]" style={{ borderRadius: r.value }} />
+                                  <span className="text-[10px] text-[var(--mkt-text-primary)] font-mono">{r.name.split(".").pop()}</span>
+                                  <span className="text-[10px] text-[var(--mkt-text-muted)] font-mono">{r.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {grouped.shadow.length > 0 && (
+                          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
+                            <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Shadow ({grouped.shadow.length})</h2>
+                            <div className="flex flex-col gap-2">
+                              {grouped.shadow.map((s) => (
+                                <div key={s.name} className="flex items-center justify-between gap-3">
+                                  <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono">{s.name}</span>
+                                  <span className="text-[11px] text-[var(--mkt-text-muted)] font-mono truncate max-w-[60%] text-right">{s.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <p className="text-[13px] text-[var(--mkt-text-muted)]">No tokens declared.</p>
