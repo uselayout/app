@@ -29,7 +29,7 @@ export function KitPreview({
           src={activeUrl}
           alt={`${kit.name} preview`}
           onError={() => setCursor((c) => c + 1)}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-top"
         />
       </div>
     );
