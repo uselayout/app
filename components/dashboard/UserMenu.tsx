@@ -6,6 +6,7 @@ import { useSession, signOut } from "@/lib/auth-client";
 import { LogOut, Settings, CreditCard, Sun, Moon, Monitor, Sparkles } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useOnboardingStore } from "@/lib/store/onboarding";
+import { Avatar } from "@/components/gallery/Avatar";
 
 interface UserMenuProps {
   collapsed?: boolean;
@@ -36,12 +37,7 @@ export function UserMenu({ collapsed }: UserMenuProps) {
   const user = session?.user;
   if (!user) return null;
 
-  const initials = (user.name || user.email || "U")
-    .split(" ")
-    .map((s) => s[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const avatarUrl = "image" in user ? ((user.image as string | null | undefined) ?? undefined) : undefined;
 
   const handleSignOut = async () => {
     await signOut();
@@ -57,9 +53,7 @@ export function UserMenu({ collapsed }: UserMenuProps) {
           collapsed ? "justify-center" : ""
         }`}
       >
-        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--studio-accent)] text-[10px] font-bold text-[var(--text-on-accent)]">
-          {initials}
-        </div>
+        <Avatar src={avatarUrl} name={user.name ?? user.email} size={24} className="shrink-0" />
         {!collapsed && (
           <span className="truncate text-[var(--text-secondary)]">
             {user.name || user.email}
