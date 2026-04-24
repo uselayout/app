@@ -5,6 +5,22 @@ import { fetchProjectById } from "@/lib/supabase/db";
 import { publishKit } from "@/lib/supabase/kits";
 import { buildKitFromProject } from "@/lib/kits/from-project";
 
+function isAdminEmail(email: string | undefined | null): boolean {
+  if (!email) return false;
+  const admins = (process.env.ADMIN_EMAIL ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return admins.includes(email.toLowerCase());
+}
+
+const LAYOUT_OFFICIAL_AUTHOR = {
+  orgId: "layout-team",
+  userId: "layout-team",
+  displayName: "Layout",
+  avatarUrl: undefined as string | undefined,
+};
+
 const Body = z.object({
   projectId: z.string(),
   name: z.string().min(1).max(80),
@@ -23,6 +39,7 @@ const Body = z.object({
       context: z.boolean().default(false),
     })
     .default({ components: false, fonts: false, branding: false, context: false }),
+  publishAs: z.enum(["self", "layout"]).default("self"),
 });
 
 export async function POST(
@@ -49,6 +66,28 @@ export async function POST(
   }
 
   const user = session?.user;
+  const wantsLayoutOfficial = input.publishAs === "layout";
+  if (wantsLayoutOfficial && !isAdminEmail(user?.email)) {
+    return NextResponse.json(
+      { error: "Only Layout admins can publish as the official Layout author." },
+      { status: 403 },
+    );
+  }
+
+  const author = wantsLayoutOfficial
+    ? {
+        orgId: LAYOUT_OFFICIAL_AUTHOR.orgId,
+        userId: LAYOUT_OFFICIAL_AUTHOR.userId,
+        displayName: LAYOUT_OFFICIAL_AUTHOR.displayName,
+        avatarUrl: LAYOUT_OFFICIAL_AUTHOR.avatarUrl,
+      }
+    : {
+        orgId: resolvedOrgId,
+        userId,
+        displayName: user?.name ?? undefined,
+        avatarUrl: (user && "image" in user ? (user.image as string | null | undefined) : undefined) ?? undefined,
+      };
+
   const payload = buildKitFromProject({
     project,
     name: input.name,
@@ -59,12 +98,7 @@ export async function POST(
     tier: input.tier,
     unlisted: input.unlisted,
     previewImageUrl: input.previewImageUrl ?? project.pendingCanvasImage ?? undefined,
-    author: {
-      orgId: resolvedOrgId,
-      userId,
-      displayName: user?.name ?? undefined,
-      avatarUrl: (user && "image" in user ? (user.image as string | null | undefined) : undefined) ?? undefined,
-    },
+    author,
     include: input.include,
   });
 
