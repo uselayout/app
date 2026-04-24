@@ -11,6 +11,7 @@ import { generateTailwindConfig } from "@/lib/export/tailwind-config";
 import { logEvent } from "@/lib/logging/platform-event";
 import { buildCuratedExtractedTokens } from "@/lib/tokens/curated-to-extracted";
 import { deriveLayoutMd } from "@/lib/layout-md/derive";
+import { generateDesignMd } from "@/lib/export/design-md";
 import type { Project, ExportFormat, UploadedFont, BrandingAsset, ContextDocument } from "@/lib/types";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -103,7 +104,19 @@ export async function POST(request: NextRequest) {
   // Run the client-supplied project through the derive engine so the zipped
   // layout.md matches what MCP and the Explorer see: fresh CORE TOKENS from
   // the curated assignments, fresh Appendix A from the extracted tokens.
-  zip.file("layout.md", deriveLayoutMd(proj));
+  const derivedLayoutMd = deriveLayoutMd(proj);
+  zip.file("layout.md", derivedLayoutMd);
+
+  // Companion design.md for agents that follow Google's design.md spec. Same
+  // tokens, same prose, different frontmatter shape. layout.md stays canonical.
+  zip.file(
+    "design.md",
+    generateDesignMd({
+      name: proj.name,
+      layoutMd: derivedLayoutMd,
+      extractionData: proj.extractionData,
+    })
+  );
 
   for (const format of formats) {
     addFormatToZip(zip, format, proj);

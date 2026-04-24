@@ -28,6 +28,33 @@ export const draftEntries: ChangelogEntry[] = [
     date: "2026-04-24",
   },
   {
+    id: "2026-w17-vs-design-md-comparison-page",
+    title: "How Layout compares to Google's design.md",
+    description:
+      "A new page at /vs/design-md lays out where Layout and Google's newly open-sourced design.md agree, where Layout goes further (multi-source extraction, Figma sync, Kit Gallery, AI variant generation), and what we're borrowing from them (CLI linter, diff command, formal spec, awesome-list distribution). Also added a Google design.md column to /docs/compare so you can see Layout's superset at a glance.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-companion-design-md-export",
+    title: "Export bundles now ship a companion design.md",
+    description:
+      "Your export ZIP now includes a design.md alongside layout.md, formatted for compatibility with Google's design.md spec. Agents trained on Google's format (Stitch, stitch-skills, and anything downstream of Google Labs Code) can read your design system without configuration. layout.md remains canonical and carries our extras (three-tier tokens, multi-mode, motion, confidence annotations) that design.md doesn't yet model.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-canonical-spec-url",
+    title: "layout.design/spec is the canonical spec URL",
+    description:
+      "Formal specification for the layout.md format is now reachable at layout.design/spec (redirects to the in-docs spec page). Clean URL to share with engineers, investors, and anyone writing a DESIGN.md-style file.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-24",
+  },
+  {
     id: "2026-w17-openai-gpt-image-2",
     title: "Generate logos and wordmarks with OpenAI GPT Image 2.0",
     description:
