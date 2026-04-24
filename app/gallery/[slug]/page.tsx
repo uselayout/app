@@ -8,9 +8,11 @@ import { getUserOrganizations } from "@/lib/supabase/organization";
 import { KitDetailImportButton } from "@/components/gallery/KitDetailClient";
 import { GalleryThemeInit } from "@/components/gallery/GalleryThemeInit";
 import { Avatar } from "@/components/gallery/Avatar";
-import { KitPreview } from "@/components/gallery/KitPreview";
 import { UpvoteButton } from "@/components/gallery/UpvoteButton";
 import { CopyInline } from "@/components/gallery/CopyInline";
+import { KitDetailTabs } from "@/components/gallery/KitDetailTabs";
+import { KitShowcaseFrame } from "@/components/gallery/KitShowcaseFrame";
+import { getKitShowcaseJs } from "@/components/gallery/kit-showcase-compiled";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -82,10 +84,6 @@ export default async function KitDetailPage({ params }: PageProps) {
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">
             <div className="flex flex-col gap-6">
-              <div className="rounded-2xl overflow-hidden border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]">
-                <KitPreview kit={kit} aspect="16/9" />
-              </div>
-
               <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-4">
                   <h1 className="text-[36px] leading-[40px] font-normal tracking-[-0.9px]">{kit.name}</h1>
@@ -129,25 +127,38 @@ export default async function KitDetailPage({ params }: PageProps) {
                 )}
               </div>
 
-              {swatches.length > 0 && (
-                <div className="flex flex-col gap-2 mt-2">
-                  <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Colour tokens</h2>
-                  <div className="flex flex-wrap gap-2">
-                    {swatches.map((s) => (
-                      <div key={s.name} className="flex items-center gap-2 rounded-lg border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] px-2 py-1.5">
-                        <span className="w-5 h-5 rounded border border-[var(--mkt-border)]" style={{ background: s.value }} />
-                        <span className="text-[12px] text-[var(--mkt-text-secondary)] font-mono">{s.name}</span>
+              <div className="mt-4">
+                <KitDetailTabs
+                  preview={
+                    <KitShowcaseFrame
+                      showcaseJs={getKitShowcaseJs()}
+                      tokensCss={kit.tokensCss}
+                      height={900}
+                    />
+                  }
+                  tokens={
+                    swatches.length > 0 ? (
+                      <div className="flex flex-col gap-3 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
+                        <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Colour tokens</h2>
+                        <div className="flex flex-wrap gap-2">
+                          {swatches.map((s) => (
+                            <div key={s.name} className="flex items-center gap-2 rounded-lg border border-[var(--mkt-border)] bg-[var(--mkt-bg)] px-2 py-1.5">
+                              <span className="w-5 h-5 rounded border border-[var(--mkt-border)]" style={{ background: s.value }} />
+                              <span className="text-[12px] text-[var(--mkt-text-secondary)] font-mono">{s.name}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-2 mt-4">
-                <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">layout.md</h2>
-                <pre className="max-h-[600px] overflow-auto rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface-muted)] p-5 text-[12px] leading-[18px] font-mono text-[var(--mkt-text-secondary)] whitespace-pre-wrap">
-                  {kit.layoutMd}
-                </pre>
+                    ) : (
+                      <p className="text-[13px] text-[var(--mkt-text-muted)]">No tokens declared.</p>
+                    )
+                  }
+                  layoutMd={
+                    <pre className="max-h-[700px] overflow-auto rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface-muted)] p-5 text-[12px] leading-[18px] font-mono text-[var(--mkt-text-secondary)] whitespace-pre-wrap">
+                      {kit.layoutMd}
+                    </pre>
+                  }
+                />
               </div>
             </div>
 

@@ -10,6 +10,24 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-kit-gallery-showcase",
+    title: "Every kit in the Gallery renders live against its own tokens",
+    description:
+      "Gallery kit pages now show a Live Preview tab alongside the Tokens and layout.md tabs. The preview renders a uniform showcase (palette, typography scale, spacing, radius, shadows, sample components) styled with each kit's own CSS variables, so comparing kits is genuinely visual instead of staring at markdown.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-profile-avatar-upload",
+    title: "Upload a profile picture",
+    description:
+      "Settings > Profile now has a Profile picture section. Upload a PNG, JPG or WEBP (up to 2MB) and your avatar flows through to the Studio sidebar, the author row on any kit you publish, and anywhere your name appears.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
     id: "2026-w17-kit-gallery-public-browse",
     title: "Browse community kits at layout.design/gallery",
     description:
