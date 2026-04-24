@@ -77,7 +77,7 @@ function Placeholder({
           filter: "blur(20px)",
         }}
       />
-      <div className="absolute inset-0 flex flex-col items-start justify-end p-5">
+      <div className="absolute inset-0 flex flex-col items-start justify-start p-5">
         <span
           className="text-[11px] uppercase tracking-[0.16em] opacity-60"
           style={{ color: textColour }}
