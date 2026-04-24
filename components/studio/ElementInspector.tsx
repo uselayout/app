@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { X, Paintbrush, Type, Maximize2, Move, MessageSquarePlus, Send, ImageIcon, Loader2 } from "lucide-react";
-import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
+import { getStoredGoogleApiKey, getStoredOpenAIKey } from "@/lib/hooks/use-api-key";
 import { isPlaceholderSrc } from "@/lib/image/placeholder";
 import { toast } from "sonner";
 import type { BrandingAsset, StyleEdit, ElementAnnotation, ExtractedToken } from "@/lib/types";
@@ -650,8 +650,9 @@ export function ElementInspector({
     if (!selected || !imagePromptEdit.trim()) return;
 
     const googleKey = getStoredGoogleApiKey();
-    if (!googleKey) {
-      toast.error("Add a Google AI API key in Settings → API Keys to generate images.");
+    const openaiKey = getStoredOpenAIKey();
+    if (!googleKey && !openaiKey) {
+      toast.error("Add a Google AI or OpenAI API key in Settings → API Keys to generate images.");
       return;
     }
 
@@ -659,6 +660,7 @@ export function ElementInspector({
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (googleKey) headers["X-Google-Api-Key"] = googleKey;
+      if (openaiKey) headers["X-OpenAI-Api-Key"] = openaiKey;
 
       const res = await fetch("/api/generate/image", {
         method: "POST",
@@ -968,9 +970,9 @@ export function ElementInspector({
                 </select>
               </div>
             </div>
-            {!getStoredGoogleApiKey() ? (
+            {!getStoredGoogleApiKey() && !getStoredOpenAIKey() ? (
               <p className="mt-auto rounded border border-[var(--status-warning)]/30 bg-[var(--status-warning)]/10 px-3 py-2 text-[10px] text-[var(--status-warning)]">
-                Add a Google AI API key in Settings to generate images.
+                Add a Google AI or OpenAI API key in Settings to generate images.
               </p>
             ) : (
               <button

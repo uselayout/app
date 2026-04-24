@@ -70,11 +70,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // BYOK via header, with env var fallback for self-hosted deployments
+  // BYOK via header, with env var fallback for self-hosted deployments.
+  // Either Google (Gemini) or OpenAI (GPT Image 2.0) is sufficient — the
+  // router auto-routes text-heavy prompts to OpenAI when both are present.
   const googleApiKey = request.headers.get("X-Google-Api-Key") || process.env.GOOGLE_AI_API_KEY || undefined;
-  if (!googleApiKey) {
+  const openaiApiKey = request.headers.get("X-OpenAI-Api-Key") || process.env.OPENAI_API_KEY || undefined;
+  if (!googleApiKey && !openaiApiKey) {
     return NextResponse.json(
-      { error: "Image generation requires a Google AI API Key. Add yours in the API Keys settings or set GOOGLE_AI_API_KEY env var.", code: "NO_API_KEY" },
+      { error: "Image generation requires a Google AI or OpenAI API key. Add one in API Keys settings.", code: "NO_API_KEY" },
       { status: 503 }
     );
   }
@@ -109,6 +112,7 @@ export async function POST(request: NextRequest) {
               brandColours,
               brandStyle,
               googleApiKey,
+              openaiApiKey,
               forceRegenerate,
               signal: requestSignal,
               onImageComplete: (_index, url) => {
@@ -179,6 +183,7 @@ export async function POST(request: NextRequest) {
       brandStyle,
       orgId,
       googleApiKey,
+      openaiApiKey,
     });
 
     // Convert relative proxy URL to absolute so it works inside srcdoc iframes
@@ -196,7 +201,7 @@ export async function POST(request: NextRequest) {
       err instanceof Error ? err.message : "Image generation failed";
 
     // Check for missing API key
-    if (message.includes("GOOGLE_AI_API_KEY")) {
+    if (message.includes("GOOGLE_AI_API_KEY") || message.includes("OPENAI_API_KEY") || message.includes("No image generation API key")) {
       return NextResponse.json(
         { error: "Image generation is not configured. Contact your administrator." },
         { status: 503 }

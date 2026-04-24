@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-openai-gpt-image-2",
+    title: "Generate logos and wordmarks with OpenAI GPT Image 2.0",
+    description:
+      "Add an OpenAI API key in Settings and Layout now routes text-heavy image prompts (logos, wordmarks, diagrams, posters) to OpenAI's new GPT Image 2.0, which renders text legibly where Gemini blurs it. Gemini still handles photos and illustrations. The Branding tab also gets a Generate with AI button so you can spin up a primary logo, wordmark or favicon from a prompt and use it everywhere the data-brand-logo attribute resolves.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
     id: "2026-w17-byok-credit-error-clarity",
     title: "Clearer message when your own Anthropic credits run out",
     description:

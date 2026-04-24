@@ -325,6 +325,7 @@ export async function resolveJsxImages(
           brandColours: options.brandColours,
           brandStyle: options.brandStyle,
           googleApiKey: options.googleApiKey,
+          openaiApiKey: options.openaiApiKey,
         }),
       ),
     );
