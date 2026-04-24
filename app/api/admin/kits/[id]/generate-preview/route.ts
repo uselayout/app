@@ -9,8 +9,12 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 function resolveBaseUrl(request: Request): string {
-  const explicit = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.APP_BASE_URL;
-  if (explicit) return explicit.replace(/\/$/, "");
+  // Playwright runs inside the app container. Loopback sidesteps the Traefik
+  // proxy, SSL termination and host-header rewrites (without this, Next
+  // reconstructs a URL like https://0.0.0.0:3000 which Playwright can't hit).
+  // Allow override for edge cases (auth-guarded pages, canary routing, etc.).
+  if (process.env.INTERNAL_APP_URL) return process.env.INTERNAL_APP_URL.replace(/\/$/, "");
+  if (process.env.NODE_ENV === "production") return "http://localhost:3000";
   const url = new URL(request.url);
   return `${url.protocol}//${url.host}`;
 }
