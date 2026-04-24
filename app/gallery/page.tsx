@@ -49,10 +49,13 @@ export default async function GalleryPage({ searchParams }: PageProps) {
   return (
     <main className="min-h-screen bg-[var(--mkt-bg)] text-[var(--mkt-text-primary)]">
       {/* Hero */}
-      <section className="pt-[100px] pb-12 lg:pt-[140px] lg:pb-16">
+      <section className="pt-[60px] pb-12 lg:pt-[100px] lg:pb-16">
         <div className="max-w-[1280px] mx-auto px-6">
+          <Link href="/" className="inline-flex mb-10" aria-label="Layout home">
+            <img src="/marketing/logo.svg" alt="Layout" width={99} height={24} />
+          </Link>
           <div className="flex flex-col gap-6 max-w-[820px]">
-            <div className="inline-flex self-start items-center gap-2 px-3 py-1 rounded-full border border-[var(--mkt-border)] text-[12px] text-[var(--mkt-text-secondary)]">
+            <div className="inline-flex self-start items-center gap-2 px-3 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] text-[12px] text-[var(--mkt-text-secondary)]">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--mkt-accent)]" />
               New: community Kit Gallery
             </div>
@@ -68,7 +71,7 @@ export default async function GalleryPage({ searchParams }: PageProps) {
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/login?redirect=/gallery"
-                className="px-5 py-2.5 rounded-full bg-white text-[#08090a] text-[14px] font-medium hover:bg-white/90 transition-colors"
+                className="px-5 py-2.5 rounded-full bg-[var(--mkt-btn-primary-bg)] text-[var(--mkt-btn-primary-text)] text-[14px] font-medium hover:opacity-90 transition-opacity"
               >
                 Open Studio
               </Link>
@@ -76,7 +79,7 @@ export default async function GalleryPage({ searchParams }: PageProps) {
                 href="https://www.npmjs.com/package/@layoutdesign/context"
                 target="_blank"
                 rel="noreferrer"
-                className="px-5 py-2.5 rounded-full border border-[var(--mkt-border)] text-[14px] text-[var(--mkt-text-primary)] hover:bg-white/5 transition-colors"
+                className="px-5 py-2.5 rounded-full border border-[var(--mkt-border-strong)] text-[14px] text-[var(--mkt-text-primary)] hover:bg-[var(--mkt-surface)] transition-colors"
               >
                 Install the CLI
               </a>

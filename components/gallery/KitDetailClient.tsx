@@ -57,7 +57,7 @@ export function KitDetailImportButton({ slug, isLoggedIn, currentOrgSlug }: Prop
       {error && <p className="text-[13px] text-red-400">{error}</p>}
       <Link
         href={`/api/public/kits/${slug}/download?tier=minimal`}
-        className="text-center px-5 py-2.5 rounded-full border border-[var(--mkt-border)] text-[14px] text-[var(--mkt-text-primary)] hover:bg-white/5 transition-colors"
+        className="text-center px-5 py-2.5 rounded-full border border-[var(--mkt-border-strong)] text-[14px] text-[var(--mkt-text-primary)] hover:bg-[var(--mkt-surface-elevated)] transition-colors"
       >
         Download .zip
       </Link>

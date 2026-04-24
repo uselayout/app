@@ -5,9 +5,9 @@ export function KitCard({ kit }: { kit: PublicKitSummary }) {
   return (
     <Link
       href={`/gallery/${kit.slug}`}
-      className="group flex flex-col rounded-[16px] border border-[var(--mkt-border)] bg-[#101014] overflow-hidden transition-colors hover:border-white/20"
+      className="group flex flex-col rounded-[16px] border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] overflow-hidden transition-all hover:border-[var(--mkt-text-muted)] hover:bg-[var(--mkt-surface-elevated)]"
     >
-      <div className="relative aspect-[4/3] bg-gradient-to-br from-[#1a1a20] to-[#080705] overflow-hidden">
+      <div className="relative aspect-[4/3] bg-[var(--mkt-surface-muted)] overflow-hidden">
         {kit.previewImageUrl ? (
           <img
             src={kit.previewImageUrl}
@@ -25,7 +25,7 @@ export function KitCard({ kit }: { kit: PublicKitSummary }) {
           </div>
         )}
         {kit.tier === "rich" && (
-          <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-white/10 text-white text-[11px] font-medium tracking-wide backdrop-blur">
+          <div className="absolute top-3 right-3 px-2 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface-elevated)] text-[var(--mkt-text-primary)] text-[11px] font-medium tracking-wide">
             Rich kit
           </div>
         )}
@@ -36,7 +36,7 @@ export function KitCard({ kit }: { kit: PublicKitSummary }) {
           <h3 className="text-[18px] leading-[24px] text-[var(--mkt-text-primary)] font-medium">
             {kit.name}
           </h3>
-          <span className="shrink-0 text-[12px] text-[var(--mkt-text-muted)]">
+          <span className="shrink-0 text-[12px] text-[var(--mkt-text-muted)] px-2 py-0.5 rounded-full border border-[var(--mkt-border)]">
             {kit.licence}
           </span>
         </div>
@@ -53,19 +53,19 @@ export function KitCard({ kit }: { kit: PublicKitSummary }) {
               <img
                 src={kit.author.avatarUrl}
                 alt=""
-                className="w-5 h-5 rounded-full bg-white/10"
+                className="w-5 h-5 rounded-full bg-[var(--mkt-surface-muted)]"
               />
             ) : (
-              <div className="w-5 h-5 rounded-full bg-white/10" />
+              <div className="w-5 h-5 rounded-full bg-[var(--mkt-surface-muted)]" />
             )}
-            <span className="text-[12px] text-[var(--mkt-text-muted)] truncate">
+            <span className="text-[12px] text-[var(--mkt-text-secondary)] truncate">
               {kit.author.displayName ?? "Layout community"}
             </span>
           </div>
 
           <div className="flex items-center gap-3 text-[12px] text-[var(--mkt-text-muted)]">
             <span>{kit.upvoteCount} upvotes</span>
-            <span className="text-white/20">|</span>
+            <span aria-hidden className="opacity-30">·</span>
             <span>{kit.importCount} imports</span>
           </div>
         </div>

@@ -23,6 +23,7 @@ export const docsNavigation: DocNavSection[] = [
       { title: "Studio Guide", href: "/docs/studio" },
       { title: "Explorer", href: "/docs/explorer" },
       { title: "Component Library", href: "/docs/component-library" },
+      { title: "Kit Gallery", href: "/gallery" },
     ],
   },
   {
@@ -68,6 +69,7 @@ export const docsNavigation: DocNavSection[] = [
     items: [
       { title: "API Reference", href: "/docs/api-reference" },
       { title: "layout.md Spec", href: "/docs/layout-md" },
+      { title: "Layout vs design.md", href: "/vs/design-md" },
       { title: "Self-Hosting", href: "/docs/self-hosting" },
       { title: "Data & Privacy", href: "/docs/data-handling" },
       { title: "How Layout Compares", href: "/docs/compare" },

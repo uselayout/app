@@ -1,5 +1,8 @@
 const LAYOUT_LINKS = [
   { label: "Home", href: "/" },
+  { label: "Gallery", href: "/gallery" },
+  { label: "Spec", href: "/spec" },
+  { label: "vs design.md", href: "/vs/design-md" },
   { label: "Pricing", href: "/pricing" },
   { label: "Docs", href: "/docs" },
   { label: "Changelog", href: "/changelog" },

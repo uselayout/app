@@ -12,6 +12,7 @@ import { FigmaLoopSection } from "@/components/marketing/FigmaLoopSection";
 import { ExtensionSection } from "@/components/marketing/ExtensionSection";
 import { ExplorerSection } from "@/components/marketing/ExplorerSection";
 import { DesignSystemSection } from "@/components/marketing/DesignSystemSection";
+import { BrowseKitsCTA } from "@/components/marketing/BrowseKitsCTA";
 import { ComparisonSection } from "@/components/marketing/ComparisonSection";
 import { OpenSourceSection } from "@/components/marketing/OpenSourceSection";
 import { EarlyAccessCTA } from "@/components/marketing/EarlyAccessCTA";
@@ -39,6 +40,7 @@ export function LandingPageClient() {
           <ExtensionSection />
           <ExplorerSection />
           <DesignSystemSection />
+          <BrowseKitsCTA />
           <ComparisonSection />
           <OpenSourceSection />
           <EarlyAccessCTA onInstallCLI={openInstall} />
