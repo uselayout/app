@@ -21,7 +21,7 @@ const LAYOUT_OFFICIAL_AUTHOR = {
   orgId: "layout-team",
   userId: "layout-team",
   displayName: "Layout",
-  avatarUrl: undefined as string | undefined,
+  avatarUrl: "/marketing/layout-avatar.svg" as string | undefined,
 };
 
 const Body = z.object({

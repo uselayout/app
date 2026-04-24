@@ -5,6 +5,11 @@ import { useState } from "react";
 // Small presentational avatar with a coloured-circle-with-initial fallback.
 // Use when an image URL is either missing or may fail to load (seeded kits
 // referencing assets that never uploaded, HTTPS sites with HTTP authors, etc).
+
+// Kits published by the official Layout team default to a dark-square Layout
+// mark instead of an initial when no avatar has been uploaded.
+const LAYOUT_DEFAULT_AVATAR = "/marketing/layout-avatar.svg";
+
 export function Avatar({
   src,
   name,
@@ -17,7 +22,9 @@ export function Avatar({
   className?: string;
 }) {
   const [broken, setBroken] = useState(false);
-  const canShowImage = !!src && !broken;
+  const isLayoutAuthor = (name ?? "").trim().toLowerCase() === "layout";
+  const effectiveSrc = src || (isLayoutAuthor ? LAYOUT_DEFAULT_AVATAR : undefined);
+  const canShowImage = !!effectiveSrc && !broken;
   const initial = (name ?? "?").trim().charAt(0).toUpperCase() || "?";
   // Pick a stable hue from the name so every author has a consistent colour.
   const hue = name
@@ -29,7 +36,7 @@ export function Avatar({
   if (canShowImage) {
     return (
       <img
-        src={src}
+        src={effectiveSrc}
         alt=""
         width={size}
         height={size}
