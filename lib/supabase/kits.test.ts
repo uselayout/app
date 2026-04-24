@@ -62,6 +62,10 @@ describe("kits round-trip", () => {
       view_count: 0,
       github_folder: null,
       github_synced_at: null,
+      showcase_custom_tsx: null,
+      showcase_custom_js: null,
+      showcase_generated_at: null,
+      preview_generated_at: null,
       created_at: kit.createdAt,
       updated_at: kit.updatedAt,
     };
@@ -121,6 +125,10 @@ describe("kits round-trip", () => {
       view_count: 0,
       github_folder: null,
       github_synced_at: null,
+      showcase_custom_tsx: null,
+      showcase_custom_js: null,
+      showcase_generated_at: null,
+      preview_generated_at: null,
       created_at: kit.createdAt,
       updated_at: kit.updatedAt,
     };

@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-kit-gallery-ai-showcase",
+    title: "Claude writes a bespoke showcase for every new kit",
+    description:
+      "Publishing a kit now kicks off two background jobs: Claude Sonnet writes a bespoke design-system showcase tailored to the kit's aesthetic, and Playwright snapshots it as a PNG card thumbnail. Card previews on /gallery stop being gradient placeholders and start looking like the actual design system. Admins get Regen showcase and Regen preview buttons in the admin Kits tab to re-run either step for any existing kit.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
     id: "2026-w17-kit-gallery-showcase",
     title: "Every kit in the Gallery renders live against its own tokens",
     description:
