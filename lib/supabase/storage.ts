@@ -3,7 +3,13 @@ import { supabase } from "./client";
 const SCREENSHOTS_BUCKET = "screenshots";
 const SCREENSHOT_NAMES = ["full-page.png", "viewport.png"] as const;
 
-export type StorageBucket = "screenshots" | "branding" | "layout-images" | "layout-fonts" | "explorer-references";
+export type StorageBucket =
+  | "screenshots"
+  | "branding"
+  | "layout-images"
+  | "layout-fonts"
+  | "explorer-references"
+  | "user-avatars";
 
 /**
  * Upload a buffer to any Supabase storage bucket at the given path.
