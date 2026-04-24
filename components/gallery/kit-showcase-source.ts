@@ -256,16 +256,6 @@ function Hero(props: { accent: string; border: string; surface: string; text: st
       borderBottom: "1px solid " + props.border
     }
   },
-    React.createElement("div", {
-      style: { display: "inline-flex", alignItems: "center", gap: 8 }
-    },
-      React.createElement("span", {
-        style: { width: 8, height: 8, borderRadius: 999, background: props.accent }
-      }),
-      React.createElement("span", {
-        style: { fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.6 }
-      }, "Kit Showcase")
-    ),
     React.createElement("h1", {
       style: { fontSize: 44, lineHeight: 1.05, fontWeight: 500, margin: 0, letterSpacing: "-0.025em" }
     }, "Your design system, rendered live"),

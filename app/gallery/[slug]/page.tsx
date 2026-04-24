@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { fetchKitBySlug, hasUpvoted } from "@/lib/supabase/kits";
+import { fetchKitBySlug, fetchRelatedKits, hasUpvoted } from "@/lib/supabase/kits";
+import { KitCard } from "@/components/gallery/KitCard";
 import { auth } from "@/lib/auth";
 import { getUserOrganizations } from "@/lib/supabase/organization";
 import { KitDetailImportButton } from "@/components/gallery/KitDetailClient";
@@ -108,18 +109,20 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
     grouped.radius.length > 0 ||
     grouped.shadow.length > 0;
 
+  const relatedKits = await fetchRelatedKits(kit.slug, kit.tags, 3);
+
   return (
     <main className="min-h-screen bg-[var(--mkt-bg)] text-[var(--mkt-text-primary)]">
       <GalleryThemeInit />
-      <section className="pt-[60px] pb-8 lg:pt-[100px]">
+      <section className="pt-[40px] pb-8 lg:pt-[60px]">
         <div className="max-w-[1080px] mx-auto px-6">
-          <div className="flex items-center justify-between mb-10">
-            <Link href="/" aria-label="Layout home">
+          <div className="flex flex-col gap-5 mb-8">
+            <Link href="/" aria-label="Layout home" className="self-start">
               <img src="/marketing/logo.svg" alt="Layout" width={99} height={24} className="mkt-logo" />
             </Link>
             <Link
               href="/gallery"
-              className="inline-flex items-center gap-1.5 text-[13px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)]"
+              className="self-start inline-flex items-center gap-1.5 text-[13px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)]"
             >
               ← Back to gallery
             </Link>
@@ -176,7 +179,7 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
                     <KitShowcaseFrame
                       showcaseJs={showcaseJs}
                       tokensCss={kit.tokensCss}
-                      height={900}
+                      fillViewport
                     />
                   }
                   tokens={
@@ -300,6 +303,28 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
               </div>
             </aside>
           </div>
+
+          {relatedKits.length > 0 && (
+            <section className="mt-20 pt-10 border-t border-[var(--mkt-border)]">
+              <div className="flex items-end justify-between gap-4 mb-6">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] uppercase tracking-[0.16em] text-[var(--mkt-text-muted)]">More from the gallery</span>
+                  <h2 className="text-[24px] leading-[28px] font-normal tracking-[-0.4px]">You may also like</h2>
+                </div>
+                <Link
+                  href="/gallery"
+                  className="text-[13px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)]"
+                >
+                  Browse all kits →
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {relatedKits.map((related) => (
+                  <KitCard key={related.id} kit={related} />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </section>
     </main>

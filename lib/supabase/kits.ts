@@ -236,6 +236,30 @@ export async function listPublicKits(
   return (data as Partial<KitRow>[]).map(rowToSummary);
 }
 
+/**
+ * Fetch up to `limit` other kits that share any tag with the given kit.
+ * Used by the "You may also like" section on kit detail pages.
+ */
+export async function fetchRelatedKits(
+  slug: string,
+  tags: string[],
+  limit = 3,
+): Promise<PublicKitSummary[]> {
+  if (tags.length === 0) return [];
+  const { data, error } = await supabase
+    .from("layout_public_kit")
+    .select(SUMMARY_COLUMNS)
+    .eq("hidden", false)
+    .eq("unlisted", false)
+    .neq("slug", slug)
+    .overlaps("tags", tags)
+    .order("upvote_count", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error || !data) return [];
+  return (data as Partial<KitRow>[]).map(rowToSummary);
+}
+
 export async function fetchKitBySlug(slug: string): Promise<PublicKit | null> {
   const { data, error } = await supabase
     .from("layout_public_kit")
