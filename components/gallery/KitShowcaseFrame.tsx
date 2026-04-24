@@ -8,13 +8,16 @@ interface Props {
   showcaseJs: string;
   /** The kit's tokens.css. Injected verbatim as a <style> block inside the iframe. */
   tokensCss: string;
+  /** Explicit pixel height. Overrides `fillViewport`. */
   height?: number;
+  /** Fill the viewport (minus a top offset for the page header). */
+  fillViewport?: boolean;
 }
 
 // Iframe host for the Kit Showcase. The showcase JS is pre-compiled on the
 // server (see kit-showcase-compiled.ts) so anonymous gallery visitors render
 // the preview without hitting /api/transpile, which requires auth.
-export function KitShowcaseFrame({ showcaseJs, tokensCss, height = 900 }: Props) {
+export function KitShowcaseFrame({ showcaseJs, tokensCss, height, fillViewport }: Props) {
   const srcdoc = useMemo(
     () =>
       buildSrcdoc(showcaseJs, "App", {
@@ -23,13 +26,17 @@ export function KitShowcaseFrame({ showcaseJs, tokensCss, height = 900 }: Props)
     [showcaseJs, tokensCss],
   );
 
+  const style: React.CSSProperties = fillViewport
+    ? { height: "calc(100vh - 160px)", minHeight: 720 }
+    : { height: height ?? 900 };
+
   return (
     <iframe
       srcDoc={srcdoc}
       title="Kit showcase"
       sandbox="allow-scripts allow-same-origin"
       className="w-full rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]"
-      style={{ height }}
+      style={style}
     />
   );
 }

@@ -25,7 +25,7 @@ const SYSTEM = `You generate a single TypeScript (TSX) module that renders a des
 5. The iframe has Tailwind loaded. Use a mix of Tailwind classes and inline \`style={}\` with the kit's CSS custom properties via \`var(--name)\`.
 6. Read the kit's tokens by iterating \`document.styleSheets\` at mount time. A helper \`readRootCssVars()\` is provided below — copy it verbatim into your output.
 7. Render **these sections, in this order, at these headings**:
-   - Hero (kit name + one-line aesthetic description you write)
+   - Hero: the kit name as a large heading and a one-line aesthetic description underneath. **Do not add a pill, badge, emoji, eyebrow label, or "Design System" tag above or beside the kit name.** Name + description only.
    - "Colour palette" (grouped by role: backgrounds, text, accent, borders, status, other)
    - "Typography" (Display / Heading / Body / Caption samples at sensible sizes)
    - "Spacing" (horizontal bars from smallest to largest --space-* tokens)
