@@ -140,14 +140,44 @@ function App() {
   );
 }
 
+function toRgb(s: string): [number, number, number] | null {
+  s = s.trim();
+  if (s.startsWith("#")) {
+    let h = s.slice(1);
+    if (h.length === 3) h = h.split("").map((c: string) => c + c).join("");
+    if (h.length < 6) return null;
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  const m = s.match(/rgba?\\(\\s*([^)]+)\\)/);
+  if (m) {
+    const parts = m[1].split(",").map((p: string) => parseFloat(p));
+    if (parts.length >= 3) return [parts[0], parts[1], parts[2]];
+  }
+  return null;
+}
+
+function luminance(value: string): number {
+  const rgb = toRgb(value);
+  if (!rgb) return 0.5;
+  const c = [rgb[0], rgb[1], rgb[2]].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+
+function findByPattern(colours: CssVar[], patterns: RegExp[]): string | null {
+  for (const p of patterns) {
+    const match = colours.find((v: CssVar) => p.test(v.name) && isColour(v.value));
+    if (match) return match.value;
+  }
+  return null;
+}
+
 function pickBg(colours: CssVar[]): string {
   const order = ["--bg-app", "--color-bg-app", "--color-background", "--color-bg", "--mkt-bg"];
   for (const name of order) {
     const c = colours.find((v: CssVar) => v.name === name);
     if (c && isColour(c.value)) return c.value;
   }
-  const match = colours.find((v: CssVar) => /-bg(-app)?$/.test(v.name) && isColour(v.value));
-  return match?.value || "#ffffff";
+  return findByPattern(colours, [/-bg-app$/, /-background$/, /-bg$/]) || "#ffffff";
 }
 function pickText(colours: CssVar[], bg: string): string {
   const order = ["--text-primary", "--color-text-primary", "--color-text", "--color-foreground", "--mkt-text-primary"];
@@ -155,14 +185,33 @@ function pickText(colours: CssVar[], bg: string): string {
     const c = colours.find((v: CssVar) => v.name === name);
     if (c && isColour(c.value)) return c.value;
   }
-  let best = colours[0]?.value || "#111";
+  // Prefix-matched text tokens: --linear-text-primary, --acme-text, etc.
+  const prefixed = findByPattern(colours, [/-text-primary$/, /-text-default$/, /-text$/, /-foreground$/]);
+  if (prefixed) {
+    const bgLum = luminance(bg);
+    const prefLum = luminance(prefixed);
+    const preferLight = bgLum < 0.5;
+    const polarityOk = preferLight ? prefLum > 0.45 : prefLum < 0.55;
+    if (polarityOk && contrast(prefixed, bg) >= 3) return prefixed;
+  }
+
+  // Luminance-aware fallback: dark bg, prefer light tokens. Light bg, prefer dark tokens.
+  const bgLum = luminance(bg);
+  const preferLight = bgLum < 0.5;
+  let best: string | null = null;
   let bestRatio = 0;
   for (const v of colours) {
     if (!isColour(v.value)) continue;
     const r = contrast(v.value, bg);
+    if (r === null || r < 3) continue;
+    const tokenLum = luminance(v.value);
+    const polarityOk = preferLight ? tokenLum > 0.55 : tokenLum < 0.45;
+    if (!polarityOk) continue;
     if (r > bestRatio) { bestRatio = r; best = v.value; }
   }
-  return best;
+  if (best) return best;
+  // Hard fallback so we never render dark-on-dark.
+  return preferLight ? "#f7f8f8" : "#111115";
 }
 function pickAccent(colours: CssVar[]): string {
   const order = ["--color-accent", "--color-primary", "--mkt-accent", "--accent", "--brand"];
@@ -170,8 +219,7 @@ function pickAccent(colours: CssVar[]): string {
     const c = colours.find((v: CssVar) => v.name === name);
     if (c && isColour(c.value)) return c.value;
   }
-  const match = colours.find((v: CssVar) => /-(accent|primary|brand)$/.test(v.name) && isColour(v.value));
-  return match?.value || "#5E6AD2";
+  return findByPattern(colours, [/-accent$/, /-primary$/, /-brand$/]) || "#5E6AD2";
 }
 function pickSurface(colours: CssVar[], bg: string): string {
   const order = ["--bg-surface", "--color-bg-surface", "--color-surface", "--mkt-surface"];
@@ -179,7 +227,7 @@ function pickSurface(colours: CssVar[], bg: string): string {
     const c = colours.find((v: CssVar) => v.name === name);
     if (c && isColour(c.value)) return c.value;
   }
-  return bg;
+  return findByPattern(colours, [/-bg-surface$/, /-bg-elevated$/, /-surface$/]) || bg;
 }
 function pickBorder(colours: CssVar[]): string {
   const order = ["--studio-border", "--color-border", "--mkt-border", "--border"];
@@ -187,8 +235,7 @@ function pickBorder(colours: CssVar[]): string {
     const c = colours.find((v: CssVar) => v.name === name);
     if (c && isColour(c.value)) return c.value;
   }
-  const match = colours.find((v: CssVar) => /-border/.test(v.name) && isColour(v.value));
-  return match?.value || "rgba(0,0,0,0.12)";
+  return findByPattern(colours, [/-border$/, /-border-/]) || "rgba(0,0,0,0.12)";
 }
 
 function SectionHeader(props: { label: string; title: string; count?: number }) {

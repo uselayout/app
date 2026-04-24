@@ -20,10 +20,19 @@ export async function POST(
     return NextResponse.json({ error: "Kit not found" }, { status: 404 });
   }
 
-  const heroUrl = await captureAndUploadKitHero(kit);
+  const headerKey = request.headers.get("x-openai-api-key")?.trim();
+  const openaiApiKey = headerKey && headerKey.length > 0 ? headerKey : process.env.OPENAI_API_KEY;
+  if (!openaiApiKey) {
+    return NextResponse.json(
+      { error: "OpenAI API key required. Add it in Settings > API Keys or set OPENAI_API_KEY on the server." },
+      { status: 400 },
+    );
+  }
+
+  const heroUrl = await captureAndUploadKitHero(kit, { openaiApiKey });
   if (!heroUrl) {
     return NextResponse.json(
-      { error: "Hero generation failed. Check that OPENAI_API_KEY is set on the server." },
+      { error: "Hero generation failed. Check the OpenAI API key and quota." },
       { status: 500 },
     );
   }

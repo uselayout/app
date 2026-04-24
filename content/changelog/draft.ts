@@ -10,6 +10,33 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-gallery-tokens-tab-full",
+    title: "Gallery Tokens tab now lists every token, not just colours",
+    description:
+      "The Tokens tab on each kit page now walks the full W3C DTCG tokens.json and surfaces colours (with swatches), typography (font families, sizes, weights, line heights), spacing (as scaled bars), radius (as rounded samples) and shadows. Previously nested tokens like color.bg.app or color.text.primary were being dropped, so the tab showed up empty on most kits.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-showcase-dark-text-fix",
+    title: "Showcase text stays readable on dark kits",
+    description:
+      "Kits with dark-first tokens (Linear-style) were rendering the showcase hero and section headers in near-black text on near-black backgrounds. Foreground picking now prefers semantic names like text-primary, foreground and text-default, then falls back to the highest-contrast token of the right polarity, then to a hard-coded near-white so we never render dark on dark again.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-admin-regen-hero-byok",
+    title: "Regen hero now honours your own OpenAI key",
+    description:
+      "Admins can generate Kit Gallery hero covers with their own OpenAI key. The Regen hero button in /admin > Kits forwards the key saved in Settings > API Keys on every call, falling back to the server-side OPENAI_API_KEY when one is set.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-24",
+  },
+  {
     id: "2026-w17-kit-gallery-hero-image",
     title: "Gallery cards get a stylised hero cover via GPT Image 2",
     description:
