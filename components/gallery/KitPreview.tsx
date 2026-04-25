@@ -3,22 +3,36 @@
 import { useState } from "react";
 import type { PublicKitSummary } from "@/lib/types/kit";
 
-// Renders the best available kit preview. Fallback chain:
-//   1. heroImageUrl — GPT Image 2-generated stylised cover (marketing-grade).
-//   2. previewImageUrl — Playwright screenshot of the Live Preview showcase
-//      (truth-preserving, matches the detail page).
-//   3. deterministic gradient placeholder derived from the kit's name.
-// Image errors skip forward to the next step in the chain.
+// Renders the best available kit preview. Default fallback chain:
+//   1. customCardImageUrl — admin-uploaded 1440×1080 custom card.
+//   2. heroImageUrl — GPT Image 2-generated stylised cover.
+//   3. previewImageUrl — Playwright screenshot of the Live Preview showcase.
+//   4. deterministic gradient placeholder.
+// `cardImagePref` lets admin force one of custom/hero/preview, skipping the
+// chain. Image errors skip forward to the next step in the (possibly
+// truncated) chain.
 export function KitPreview({
   kit,
   aspect = "4/3",
   className = "",
 }: {
-  kit: Pick<PublicKitSummary, "name" | "previewImageUrl" | "heroImageUrl" | "tags">;
+  kit: Pick<
+    PublicKitSummary,
+    "name" | "previewImageUrl" | "heroImageUrl" | "customCardImageUrl" | "cardImagePref" | "tags"
+  >;
   aspect?: "4/3" | "16/9";
   className?: string;
 }) {
-  const candidates = [kit.heroImageUrl, kit.previewImageUrl].filter((u): u is string => !!u);
+  const buildCandidates = (): string[] => {
+    const pref = kit.cardImagePref ?? "auto";
+    if (pref === "custom") return [kit.customCardImageUrl].filter((u): u is string => !!u);
+    if (pref === "hero") return [kit.heroImageUrl].filter((u): u is string => !!u);
+    if (pref === "preview") return [kit.previewImageUrl].filter((u): u is string => !!u);
+    return [kit.customCardImageUrl, kit.heroImageUrl, kit.previewImageUrl].filter(
+      (u): u is string => !!u,
+    );
+  };
+  const candidates = buildCandidates();
   const [cursor, setCursor] = useState(0);
   const activeUrl = candidates[cursor];
 

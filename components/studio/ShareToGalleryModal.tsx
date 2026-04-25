@@ -44,6 +44,7 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const [publishedStatus, setPublishedStatus] = useState<"pending" | "approved" | null>(null);
 
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -123,8 +124,12 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
         const body = await res.json().catch(() => ({ error: "Publish failed" }));
         throw new Error(body.error ?? "Publish failed");
       }
-      const { url } = (await res.json()) as { url: string };
+      const { url, status } = (await res.json()) as {
+        url: string | null;
+        status?: "pending" | "approved";
+      };
       setPublishedUrl(url);
+      setPublishedStatus(status ?? "approved");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Publish failed");
     } finally {
@@ -157,11 +162,22 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
           </button>
         </div>
 
-        {publishedUrl ? (
+        {publishedStatus ? (
           <div className="flex flex-col gap-4 py-4">
             <div className="rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-4">
-              <p className="text-[14px] text-[var(--text-primary)]">Published.</p>
-              <p className="text-[13px] text-[var(--text-secondary)] mt-1">Your kit is live at {publishedUrl}.</p>
+              {publishedStatus === "approved" && publishedUrl ? (
+                <>
+                  <p className="text-[14px] text-[var(--text-primary)]">Published.</p>
+                  <p className="text-[13px] text-[var(--text-secondary)] mt-1">Your kit is live at {publishedUrl}.</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[14px] text-[var(--text-primary)]">Submitted for review.</p>
+                  <p className="text-[13px] text-[var(--text-secondary)] mt-1">
+                    The Layout team will check your kit and publish it to the gallery shortly.
+                  </p>
+                </>
+              )}
             </div>
             <div className="flex gap-2 justify-end">
               <button
@@ -171,13 +187,15 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
               >
                 Close
               </button>
-              <Link
-                href={publishedUrl}
-                target="_blank"
-                className="h-8 px-3 flex items-center rounded bg-[var(--studio-accent)] text-[13px] text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)]"
-              >
-                View in Gallery
-              </Link>
+              {publishedStatus === "approved" && publishedUrl && (
+                <Link
+                  href={publishedUrl}
+                  target="_blank"
+                  className="h-8 px-3 flex items-center rounded bg-[var(--studio-accent)] text-[13px] text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)]"
+                >
+                  View in Gallery
+                </Link>
+              )}
             </div>
           </div>
         ) : (

@@ -10,6 +10,24 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w17-gallery-pending-review",
+    title: "Self-published kits go through admin review",
+    description:
+      "Kits published from Studio now land in a Pending review queue and only appear on the public gallery once the Layout team approves. Approving fires the showcase, preview and hero generation jobs in one click. Quality control without friction; layout-team publishes still go straight live.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-25",
+  },
+  {
+    id: "2026-w17-gallery-card-image-control",
+    title: "Pick the gallery card image",
+    description:
+      "Admins can now choose which image shows on each kit's gallery card without regenerating: auto, custom upload, hero, or preview. Upload your own 1440\u00d71080 PNG/JPG/WEBP via the new Upload card button when AI-generated covers don't quite land.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-25",
+  },
+  {
     id: "2026-w17-gallery-tokens-tab-full",
     title: "Gallery Tokens tab now lists every token, not just colours",
     description:

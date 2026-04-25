@@ -38,6 +38,8 @@ function makeKit(overrides: Partial<PublicKit> = {}): PublicKit {
     unlisted: false,
     featured: false,
     hidden: false,
+    status: "approved",
+    cardImagePref: "auto",
     upvoteCount: 0,
     importCount: 0,
     viewCount: 0,
@@ -68,6 +70,9 @@ describe("kits round-trip", () => {
       preview_generated_at: null,
       hero_image_url: null,
       hero_generated_at: null,
+      custom_card_image_url: null,
+      status: kit.status,
+      card_image_pref: kit.cardImagePref,
       created_at: kit.createdAt,
       updated_at: kit.updatedAt,
     };
@@ -133,6 +138,9 @@ describe("kits round-trip", () => {
       preview_generated_at: null,
       hero_image_url: null,
       hero_generated_at: null,
+      custom_card_image_url: null,
+      status: kit.status,
+      card_image_pref: kit.cardImagePref,
       created_at: kit.createdAt,
       updated_at: kit.updatedAt,
     };
@@ -151,5 +159,12 @@ describe("kits round-trip", () => {
   it("defaults unlisted to false when omitted in overrides", () => {
     const kit = makeKit({ unlisted: false });
     expect(kitToRow(kit).unlisted).toBe(false);
+  });
+
+  it("round-trips status and cardImagePref", () => {
+    const kit = makeKit({ status: "pending", cardImagePref: "preview" });
+    const row = kitToRow(kit);
+    expect(row.status).toBe("pending");
+    expect(row.card_image_pref).toBe("preview");
   });
 });

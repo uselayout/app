@@ -17,6 +17,11 @@ interface AdminKitRow {
   featured: boolean;
   hidden: boolean;
   unlisted: boolean;
+  status: "pending" | "approved";
+  card_image_pref: "auto" | "custom" | "hero" | "preview";
+  custom_card_image_url: string | null;
+  hero_image_url: string | null;
+  preview_image_url: string | null;
   upvote_count: number;
   import_count: number;
   created_at: string;
@@ -29,9 +34,11 @@ type ToastFn = (msg: string, type?: "success" | "error") => void;
 
 interface RunningJob {
   kitId: string;
-  kind: "showcase" | "preview" | "hero";
+  kind: "showcase" | "preview" | "hero" | "approve" | "upload";
   startedAt: number;
 }
+
+type FilterTab = "pending" | "all" | "featured" | "hidden";
 
 function formatElapsed(ms: number): string {
   const s = Math.floor(ms / 1000);
@@ -52,10 +59,11 @@ function formatTimestamp(iso: string | null): string {
 export function KitsTab({ toast }: { toast: ToastFn }) {
   const [kits, setKits] = useState<AdminKitRow[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "hidden" | "featured">("all");
+  const [filter, setFilter] = useState<FilterTab>("pending");
   const [jobs, setJobs] = useState<RunningJob[]>([]);
   const [, setTick] = useState(0);
   const tickRef = useRef<number | null>(null);
+  const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const load = useCallback(() => {
     fetch("/api/admin/kits")
@@ -87,21 +95,122 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
     };
   }, [jobs.length]);
 
-  async function patch(id: string, patch: Partial<Pick<AdminKitRow, "featured" | "hidden" | "unlisted">>) {
+  async function patch(
+    id: string,
+    body: Partial<Pick<AdminKitRow, "featured" | "hidden" | "unlisted" | "card_image_pref">> & { cardImagePref?: AdminKitRow["card_image_pref"] },
+  ) {
     setBusy(id);
     try {
+      // Translate snake_case state-shape to the API's camelCase contract.
+      const apiBody: Record<string, unknown> = {};
+      if ("featured" in body) apiBody.featured = body.featured;
+      if ("hidden" in body) apiBody.hidden = body.hidden;
+      if ("unlisted" in body) apiBody.unlisted = body.unlisted;
+      if ("cardImagePref" in body) apiBody.cardImagePref = body.cardImagePref;
       const res = await fetch(`/api/admin/kits/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
+        body: JSON.stringify(apiBody),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "Update failed");
       toast("Kit updated", "success");
-      setKits((rows) => (rows ? rows.map((r) => (r.id === id ? { ...r, ...patch } : r)) : rows));
+      setKits((rows) =>
+        rows
+          ? rows.map((r) => {
+              if (r.id !== id) return r;
+              const next = { ...r };
+              if ("featured" in body && body.featured !== undefined) next.featured = body.featured;
+              if ("hidden" in body && body.hidden !== undefined) next.hidden = body.hidden;
+              if ("unlisted" in body && body.unlisted !== undefined) next.unlisted = body.unlisted;
+              if (body.cardImagePref !== undefined) next.card_image_pref = body.cardImagePref;
+              return next;
+            })
+          : rows,
+      );
     } catch (e) {
       toast(e instanceof Error ? e.message : "Update failed", "error");
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function approve(id: string, name: string) {
+    const storedKey = getStoredOpenAIKey();
+    setJobs((j) => [...j, { kitId: id, kind: "approve", startedAt: Date.now() }]);
+    toast(`Approving "${name}" and firing showcase + preview + hero...`, "success");
+    try {
+      const res = await fetch(`/api/admin/kits/${id}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(storedKey ? { openaiApiKey: storedKey } : {}),
+      });
+      const body: { ok?: boolean; error?: string } = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `Approve failed (HTTP ${res.status})`);
+      toast(`"${name}" approved. Showcase/preview/hero generating in the background.`, "success");
+      load();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Approve failed", "error");
+    } finally {
+      setJobs((j) => j.filter((x) => !(x.kitId === id && x.kind === "approve")));
+    }
+  }
+
+  function readImageDimensions(file: File): Promise<{ width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not read image"));
+      };
+      img.src = url;
+    });
+  }
+
+  async function uploadCustomCard(id: string, name: string, file: File) {
+    const REQ_W = 1440, REQ_H = 1080;
+    try {
+      const dims = await readImageDimensions(file);
+      if (dims.width !== REQ_W || dims.height !== REQ_H) {
+        toast(`Image must be exactly ${REQ_W}\u00d7${REQ_H}. Yours is ${dims.width}\u00d7${dims.height}.`, "error");
+        return;
+      }
+    } catch {
+      toast("Could not read image dimensions. Try a different file.", "error");
+      return;
+    }
+
+    setJobs((j) => [...j, { kitId: id, kind: "upload", startedAt: Date.now() }]);
+    toast(`Uploading custom card for "${name}"...`, "success");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`/api/admin/kits/${id}/custom-card`, { method: "POST", body: form });
+      const body: { ok?: boolean; error?: string; url?: string } = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `Upload failed (HTTP ${res.status})`);
+      toast(`Custom card uploaded for "${name}".`, "success");
+      load();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Upload failed", "error");
+    } finally {
+      setJobs((j) => j.filter((x) => !(x.kitId === id && x.kind === "upload")));
+    }
+  }
+
+  async function removeCustomCard(id: string, name: string) {
+    if (!confirm(`Remove the uploaded card image from "${name}"?`)) return;
+    try {
+      const res = await fetch(`/api/admin/kits/${id}/custom-card`, { method: "DELETE" });
+      const body: { ok?: boolean; error?: string } = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `Remove failed (HTTP ${res.status})`);
+      toast(`Custom card removed from "${name}".`, "success");
+      load();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Remove failed", "error");
     }
   }
 
@@ -175,11 +284,15 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
 
   const filtered = !kits
     ? null
-    : filter === "hidden"
-      ? kits.filter((k) => k.hidden)
-      : filter === "featured"
-        ? kits.filter((k) => k.featured)
-        : kits;
+    : filter === "pending"
+      ? kits.filter((k) => k.status === "pending")
+      : filter === "hidden"
+        ? kits.filter((k) => k.hidden)
+        : filter === "featured"
+          ? kits.filter((k) => k.featured)
+          : kits;
+
+  const pendingCount = kits ? kits.filter((k) => k.status === "pending").length : 0;
 
   function jobFor(kitId: string, kind: RunningJob["kind"]): RunningJob | undefined {
     return jobs.find((j) => j.kitId === kitId && j.kind === kind);
@@ -191,23 +304,31 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
         <div>
           <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Kit Gallery</h2>
           <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-            Manage public kits. Feature to promote, hide to remove from public listings, or delete entirely. Regen showcase calls Claude Sonnet (~30s). Regen preview runs Playwright (~45s). Regen hero calls GPT Image 2 for a stylised marketing cover (~30s).
+            Self-published kits land in Pending. Approve to fire showcase + preview + hero and make them public. Card image: pick which artwork shows on the gallery card, or upload your own (1440×1080 PNG/JPG/WEBP).
           </p>
         </div>
         <div className="flex items-center gap-1">
-          {(["all", "featured", "hidden"] as const).map((f) => (
+          {(["pending", "all", "featured", "hidden"] as const).map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setFilter(f)}
-              className="px-3 py-1.5 rounded-md text-xs transition-colors"
+              className="px-3 py-1.5 rounded-md text-xs transition-colors inline-flex items-center gap-1.5"
               style={{
                 background: filter === f ? "var(--bg-elevated)" : "transparent",
                 color: filter === f ? "var(--text-primary)" : "var(--text-muted)",
                 border: filter === f ? "1px solid var(--studio-border)" : "1px solid transparent",
               }}
             >
-              {f === "all" ? "All" : f === "featured" ? "Featured" : "Hidden"}
+              {f === "pending" ? "Pending" : f === "all" ? "All" : f === "featured" ? "Featured" : "Hidden"}
+              {f === "pending" && pendingCount > 0 && (
+                <span
+                  className="text-[10px] px-1.5 py-0.5 rounded-full"
+                  style={{ background: "var(--mkt-accent)", color: "#08090a" }}
+                >
+                  {pendingCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -246,7 +367,13 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                 const showcaseJob = jobFor(kit.id, "showcase");
                 const previewJob = jobFor(kit.id, "preview");
                 const heroJob = jobFor(kit.id, "hero");
-                const anyJob = showcaseJob || previewJob || heroJob;
+                const approveJob = jobFor(kit.id, "approve");
+                const uploadJob = jobFor(kit.id, "upload");
+                const anyJob = showcaseJob || previewJob || heroJob || approveJob || uploadJob;
+                const hasCustom = !!kit.custom_card_image_url;
+                const hasHero = !!kit.hero_image_url;
+                const hasPreview = !!kit.preview_image_url;
+                const showCardPicker = hasCustom || hasHero || hasPreview;
                 return (
                   <tr
                     key={kit.id}
@@ -256,7 +383,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                     }}
                   >
                     <td className="px-3 py-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Link
                           href={`/gallery/${kit.slug}`}
                           target="_blank"
@@ -265,6 +392,9 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                         >
                           {kit.name}
                         </Link>
+                        {kit.status === "pending" && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#f59e0b", color: "#1a0f00" }}>Pending</span>
+                        )}
                         {kit.featured && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--mkt-accent)", color: "#08090a" }}>Featured</span>
                         )}
@@ -278,6 +408,35 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                       <div className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
                         {kit.slug} · {kit.licence} · {kit.tier}
                       </div>
+                      {showCardPicker && (
+                        <div className="mt-2 inline-flex items-center gap-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                          <span>Card:</span>
+                          {(["auto", "custom", "hero", "preview"] as const).map((opt) => {
+                            const enabled =
+                              opt === "auto" ||
+                              (opt === "custom" && hasCustom) ||
+                              (opt === "hero" && hasHero) ||
+                              (opt === "preview" && hasPreview);
+                            const isActive = kit.card_image_pref === opt;
+                            return (
+                              <button
+                                key={opt}
+                                type="button"
+                                disabled={!enabled || busy === kit.id || !!anyJob}
+                                onClick={() => patch(kit.id, { cardImagePref: opt })}
+                                className="px-1.5 py-0.5 rounded text-[10px] transition-colors disabled:opacity-30"
+                                style={{
+                                  background: isActive ? "var(--bg-elevated)" : "transparent",
+                                  color: isActive ? "var(--text-primary)" : "var(--text-muted)",
+                                  border: "1px solid var(--studio-border)",
+                                }}
+                              >
+                                {opt}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-secondary)" }}>
                       {showcaseJob ? (
@@ -311,6 +470,63 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                     </td>
                     <td className="px-3 py-2 text-right">
                       <div className="inline-flex items-center gap-1.5 flex-wrap justify-end">
+                        {kit.status === "pending" && (
+                          <button
+                            type="button"
+                            disabled={!!approveJob || !!anyJob}
+                            onClick={() => approve(kit.id, kit.name)}
+                            className="px-2 py-1 rounded text-[11px] font-medium transition-colors disabled:opacity-40"
+                            style={{
+                              background: "var(--mkt-accent)",
+                              color: "#08090a",
+                              border: "1px solid var(--mkt-accent)",
+                            }}
+                            title="Approve and fire showcase + preview + hero generation"
+                          >
+                            {approveJob ? `Approving… ${formatElapsed(Date.now() - approveJob.startedAt)}` : "Approve"}
+                          </button>
+                        )}
+                        <input
+                          ref={(el) => {
+                            fileInputs.current[kit.id] = el;
+                          }}
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) uploadCustomCard(kit.id, kit.name, f);
+                            e.target.value = "";
+                          }}
+                        />
+                        <button
+                          type="button"
+                          disabled={!!uploadJob || !!anyJob}
+                          onClick={() => fileInputs.current[kit.id]?.click()}
+                          className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
+                          style={{
+                            border: "1px solid var(--studio-border)",
+                            color: uploadJob ? "var(--mkt-accent)" : "var(--text-secondary)",
+                          }}
+                          title="Upload a custom 1440×1080 card image (PNG/JPG/WEBP)"
+                        >
+                          {uploadJob ? "Uploading…" : hasCustom ? "Replace card" : "Upload card"}
+                        </button>
+                        {hasCustom && (
+                          <button
+                            type="button"
+                            disabled={!!anyJob}
+                            onClick={() => removeCustomCard(kit.id, kit.name)}
+                            className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
+                            style={{
+                              border: "1px solid transparent",
+                              color: "var(--text-muted)",
+                            }}
+                            title="Remove the uploaded custom card image"
+                          >
+                            Clear card
+                          </button>
+                        )}
                         <button
                           type="button"
                           disabled={busy === kit.id || !!anyJob}

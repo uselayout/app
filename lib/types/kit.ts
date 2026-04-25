@@ -11,6 +11,10 @@ export type KitLicence = "MIT" | "CC-BY-4.0" | "custom";
 
 export type KitSort = "featured" | "new" | "top";
 
+export type KitStatus = "pending" | "approved";
+
+export type KitCardImagePref = "auto" | "custom" | "hero" | "preview";
+
 export interface KitAuthor {
   orgId: string;
   userId?: string;
@@ -100,6 +104,11 @@ export interface PublicKit {
   sourceProjectId?: string;
   parentKitId?: string;
 
+  /** 'pending' kits are excluded from public listings until an admin approves. */
+  status: KitStatus;
+  /** Override for which image shows on the gallery card. 'auto' = hero → preview → gradient. */
+  cardImagePref: KitCardImagePref;
+
   featured: boolean;
   hidden: boolean;
   unlisted: boolean;
@@ -123,6 +132,8 @@ export interface PublicKit {
   heroImageUrl?: string;
   /** Timestamp of the last successful hero image generation. */
   heroGeneratedAt?: string;
+  /** Admin-uploaded card image (1440x1080). Wins the fallback chain when present. */
+  customCardImageUrl?: string;
 
   createdAt: string;
   updatedAt: string;
@@ -139,8 +150,11 @@ export interface PublicKitSummary {
   licence: KitLicence;
   previewImageUrl?: string;
   heroImageUrl?: string;
+  customCardImageUrl?: string;
   tier: KitTier;
   featured: boolean;
+  status: KitStatus;
+  cardImagePref: KitCardImagePref;
   upvoteCount: number;
   importCount: number;
   createdAt: string;
@@ -158,8 +172,11 @@ export function kitSummary(kit: PublicKit): PublicKitSummary {
     licence: kit.licence,
     previewImageUrl: kit.previewImageUrl,
     heroImageUrl: kit.heroImageUrl,
+    customCardImageUrl: kit.customCardImageUrl,
     tier: kit.tier,
     featured: kit.featured,
+    status: kit.status,
+    cardImagePref: kit.cardImagePref,
     upvoteCount: kit.upvoteCount,
     importCount: kit.importCount,
     createdAt: kit.createdAt,
