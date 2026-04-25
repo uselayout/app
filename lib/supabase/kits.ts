@@ -3,10 +3,12 @@ import {
   kitSummary,
   slugify,
   type KitAuthor,
+  type KitCardImagePref,
   type KitJson,
   type KitLicence,
   type KitRichBundle,
   type KitSort,
+  type KitStatus,
   type KitTier,
   type PublicKit,
   type PublicKitSummary,
@@ -47,12 +49,15 @@ interface KitRow {
   preview_generated_at: string | null;
   hero_image_url: string | null;
   hero_generated_at: string | null;
+  custom_card_image_url: string | null;
+  status: string;
+  card_image_pref: string;
   created_at: string;
   updated_at: string;
 }
 
 const SUMMARY_COLUMNS =
-  "id, slug, name, description, tags, author_org_id, author_user_id, author_display_name, author_avatar_url, licence, preview_image_url, hero_image_url, tier, featured, upvote_count, import_count, created_at, updated_at";
+  "id, slug, name, description, tags, author_org_id, author_user_id, author_display_name, author_avatar_url, licence, preview_image_url, hero_image_url, custom_card_image_url, tier, featured, status, card_image_pref, upvote_count, import_count, created_at, updated_at";
 
 function rowToKit(row: KitRow): PublicKit {
   const author: KitAuthor = {
@@ -83,6 +88,8 @@ function rowToKit(row: KitRow): PublicKit {
     featured: row.featured,
     hidden: row.hidden,
     unlisted: row.unlisted,
+    status: (row.status as KitStatus) ?? "approved",
+    cardImagePref: (row.card_image_pref as KitCardImagePref) ?? "auto",
     upvoteCount: row.upvote_count,
     importCount: row.import_count,
     viewCount: row.view_count,
@@ -94,6 +101,7 @@ function rowToKit(row: KitRow): PublicKit {
     previewGeneratedAt: row.preview_generated_at ?? undefined,
     heroImageUrl: row.hero_image_url ?? undefined,
     heroGeneratedAt: row.hero_generated_at ?? undefined,
+    customCardImageUrl: row.custom_card_image_url ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -115,8 +123,11 @@ function rowToSummary(row: Partial<KitRow>): PublicKitSummary {
     licence: (row.licence as KitLicence) ?? "MIT",
     previewImageUrl: row.preview_image_url ?? undefined,
     heroImageUrl: row.hero_image_url ?? undefined,
+    customCardImageUrl: row.custom_card_image_url ?? undefined,
     tier: (row.tier as KitTier) ?? "minimal",
     featured: row.featured ?? false,
+    status: (row.status as KitStatus) ?? "approved",
+    cardImagePref: (row.card_image_pref as KitCardImagePref) ?? "auto",
     upvoteCount: row.upvote_count ?? 0,
     importCount: row.import_count ?? 0,
     createdAt: row.created_at!,
@@ -136,7 +147,15 @@ export type PublishKitInput = Omit<
   | "hidden"
   | "githubFolder"
   | "githubSyncedAt"
-> & { id?: string };
+  | "status"
+  | "cardImagePref"
+> & {
+  id?: string;
+  /** Defaults to 'pending' on insert. Layout-team path passes 'approved' to bypass review. */
+  status?: KitStatus;
+  /** Defaults to 'auto' on insert. */
+  cardImagePref?: KitCardImagePref;
+};
 
 type KitInsertRow = Omit<
   KitRow,
@@ -155,6 +174,7 @@ type KitInsertRow = Omit<
   | "preview_generated_at"
   | "hero_image_url"
   | "hero_generated_at"
+  | "custom_card_image_url"
 >;
 
 export function kitToRow(kit: PublishKitInput): KitInsertRow {
@@ -180,6 +200,8 @@ export function kitToRow(kit: PublishKitInput): KitInsertRow {
     source_project_id: kit.sourceProjectId ?? null,
     parent_kit_id: kit.parentKitId ?? null,
     unlisted: kit.unlisted ?? false,
+    status: kit.status ?? "pending",
+    card_image_pref: kit.cardImagePref ?? "auto",
   };
 }
 
@@ -210,6 +232,7 @@ export async function listPublicKits(
     .from("layout_public_kit")
     .select(SUMMARY_COLUMNS)
     .eq("hidden", false)
+    .eq("status", "approved")
     .range(offset, offset + limit - 1);
 
   if (!includeUnlisted) query = query.eq("unlisted", false);
@@ -251,6 +274,7 @@ export async function fetchRelatedKits(
     .select(SUMMARY_COLUMNS)
     .eq("hidden", false)
     .eq("unlisted", false)
+    .eq("status", "approved")
     .neq("slug", slug)
     .overlaps("tags", tags)
     .order("upvote_count", { ascending: false })
@@ -266,6 +290,7 @@ export async function fetchKitBySlug(slug: string): Promise<PublicKit | null> {
     .select("*")
     .eq("slug", slug)
     .eq("hidden", false)
+    .eq("status", "approved")
     .maybeSingle();
   if (error || !data) return null;
   return rowToKit(data as KitRow);
@@ -331,6 +356,47 @@ export async function updateKitHeroImage(
     })
     .eq("id", id);
   if (error) console.error("updateKitHeroImage failed:", error.message);
+  return !error;
+}
+
+/**
+ * Mark a kit as approved so it appears in public listings. Caller is expected
+ * to also fire generation jobs (showcase/preview/hero) right after.
+ */
+export async function approveKit(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("layout_public_kit")
+    .update({ status: "approved", updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) console.error("approveKit failed:", error.message);
+  return !error;
+}
+
+export async function setCardImagePref(
+  id: string,
+  pref: KitCardImagePref,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("layout_public_kit")
+    .update({ card_image_pref: pref, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) console.error("setCardImagePref failed:", error.message);
+  return !error;
+}
+
+/** Save (or clear) the admin-uploaded custom card image URL. */
+export async function setCustomCardImage(
+  id: string,
+  url: string | null,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("layout_public_kit")
+    .update({
+      custom_card_image_url: url,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) console.error("setCustomCardImage failed:", error.message);
   return !error;
 }
 

@@ -2,11 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireOrgAuth } from "@/lib/api/auth-context";
 import { fetchProjectById } from "@/lib/supabase/db";
-import { publishKit, updateKitShowcase, updateKitPreviewImage, updateKitHeroImage } from "@/lib/supabase/kits";
+import { publishKit } from "@/lib/supabase/kits";
 import { buildKitFromProject } from "@/lib/kits/from-project";
-import { generateKitShowcase } from "@/lib/claude/generate-kit-showcase";
-import { captureAndUploadKitPreview } from "@/lib/gallery/snapshot";
-import { captureAndUploadKitHero } from "@/lib/gallery/hero";
+import { runKitGenerationJobs } from "@/lib/gallery/run-generation-jobs";
 
 function isAdminEmail(email: string | undefined | null): boolean {
   if (!email) return false;
@@ -105,48 +103,22 @@ export async function POST(
     include: input.include,
   });
 
-  const kit = await publishKit(payload);
+  // Layout-team publishes bypass the review queue and fire generation jobs
+  // immediately. Self-publishes land in 'pending' for admin to approve.
+  const kit = await publishKit({
+    ...payload,
+    status: wantsLayoutOfficial ? "approved" : "pending",
+  });
 
-  // Fire-and-forget: generate a bespoke AI showcase and a PNG preview after
-  // publish. The kit is immediately viewable with the uniform template + the
-  // project's canvas screenshot while these settle. Errors are logged and
-  // swallowed so an AI hiccup never blocks a successful publish.
-  const origin = new URL(request.url).origin;
-  void (async () => {
-    try {
-      const result = await generateKitShowcase({
-        kitName: kit.name,
-        kitDescription: kit.description,
-        kitTags: kit.tags,
-        layoutMd: kit.layoutMd,
-        tokensCss: kit.tokensCss,
-        brandingAssets: kit.richBundle?.brandingAssets,
-      });
-      await updateKitShowcase(kit.id, result.tsx, result.js);
-    } catch (err) {
-      console.error(`[publish] showcase generation failed for ${kit.slug}:`, err);
-    }
-  })();
-  void (async () => {
-    try {
-      const url = await captureAndUploadKitPreview(kit.id, kit.slug, origin);
-      if (url) await updateKitPreviewImage(kit.id, url);
-    } catch (err) {
-      console.error(`[publish] preview snapshot failed for ${kit.slug}:`, err);
-    }
-  })();
-  void (async () => {
-    try {
-      const url = await captureAndUploadKitHero(kit);
-      if (url) await updateKitHeroImage(kit.id, url);
-    } catch (err) {
-      console.error(`[publish] hero generation failed for ${kit.slug}:`, err);
-    }
-  })();
+  if (wantsLayoutOfficial) {
+    const origin = new URL(request.url).origin;
+    runKitGenerationJobs(kit, origin);
+  }
 
   return NextResponse.json({
     kitId: kit.id,
     slug: kit.slug,
-    url: `/gallery/${kit.slug}`,
+    status: kit.status,
+    url: kit.status === "approved" ? `/gallery/${kit.slug}` : null,
   });
 }
