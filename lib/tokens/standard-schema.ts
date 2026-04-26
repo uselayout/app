@@ -132,7 +132,7 @@ const COLOUR_ROLES: StandardRole[] = [
     suffix: "bg-surface",
     required: true,
     description: "Cards, panels, sidebars. One step above app background.",
-    matchKeywords: ["bg-surface", "surface", "bg-card", "bg-panel", "card-bg", "panel-bg", "bg-secondary"],
+    matchKeywords: ["bg-surface", "surface", "bg-card", "bg-panel", "card-bg", "panel-bg", "bg-secondary", "background-secondary"],
   },
   {
     key: "bg-elevated",
@@ -141,7 +141,7 @@ const COLOUR_ROLES: StandardRole[] = [
     suffix: "bg-elevated",
     required: true,
     description: "Modals, dropdowns, popovers. Highest surface elevation.",
-    matchKeywords: ["bg-elevated", "elevated", "bg-popover", "bg-dropdown", "bg-modal", "bg-overlay-content", "popover"],
+    matchKeywords: ["bg-elevated", "elevated", "bg-popover", "bg-dropdown", "bg-modal", "bg-overlay-content", "popover", "background-tertiary"],
   },
   {
     key: "bg-hover",
@@ -153,7 +153,10 @@ const COLOUR_ROLES: StandardRole[] = [
     // `hover` on its own is too greedy — it matched any accent/cta/brand
     // token containing "hover" (e.g. `color-brand-primary-hover`) and stole
     // those from the accent-hover role. Keep only the bg-scoped variants.
-    matchKeywords: ["bg-hover", "hover-bg", "bg-interactive", "bg-muted"],
+    // "background-hover" is the literal Figma SDS naming and is safe because
+    // semantic hovers like "background-positive-hover" don't contain the
+    // contiguous substring "background-hover" (positive interrupts).
+    matchKeywords: ["bg-hover", "hover-bg", "bg-interactive", "bg-muted", "background-hover"],
   },
   {
     key: "bg-selected",
@@ -171,7 +174,7 @@ const COLOUR_ROLES: StandardRole[] = [
     suffix: "bg-overlay",
     required: false,
     description: "Semi-transparent backdrop behind modals and drawers.",
-    matchKeywords: ["overlay", "scrim", "backdrop", "bg-overlay", "modal-backdrop"],
+    matchKeywords: ["overlay", "scrim", "backdrop", "bg-overlay", "modal-backdrop", "blanket"],
     matchHints: { preferAlpha: true },
   },
 
@@ -192,7 +195,7 @@ const COLOUR_ROLES: StandardRole[] = [
     suffix: "text-secondary",
     required: true,
     description: "Supporting text, descriptions, labels. Reduced emphasis.",
-    matchKeywords: ["text-secondary", "text-subtle", "text-sub", "text-description", "on-surface-variant", "text-label", "text-hushed", "text-subdued"],
+    matchKeywords: ["text-secondary", "text-subtle", "text-sub", "text-description", "on-surface-variant", "text-label", "text-hushed", "text-subdued", "text-neutral-secondary"],
   },
   {
     key: "text-muted",
@@ -201,7 +204,7 @@ const COLOUR_ROLES: StandardRole[] = [
     suffix: "text-muted",
     required: true,
     description: "Lowest emphasis text: captions, timestamps, disabled labels.",
-    matchKeywords: ["text-muted", "text-disabled", "text-tertiary", "text-caption", "text-faint", "text-hint", "text-hushed", "text-dim", "text-quiet"],
+    matchKeywords: ["text-muted", "text-disabled", "text-tertiary", "text-caption", "text-faint", "text-hint", "text-hushed", "text-dim", "text-quiet", "text-neutral-tertiary"],
   },
   {
     key: "text-placeholder",
