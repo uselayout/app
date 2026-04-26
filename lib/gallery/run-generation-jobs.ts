@@ -4,6 +4,7 @@ import {
   updateKitPreviewImage,
   updateKitHeroImage,
   updateKitStyleProfile,
+  setBespokeShowcase,
 } from "@/lib/supabase/kits";
 import { generateKitShowcase } from "@/lib/claude/generate-kit-showcase";
 import { generateKitStyleProfile } from "@/lib/claude/generate-kit-style-profile";
@@ -46,26 +47,31 @@ export function runKitGenerationJobs(
     }
   })();
 
-  // Showcase generation only runs for kits the publisher (or admin) has
-  // explicitly opted in for via the bespoke flag. Default kits render
-  // through the uniform template — no Claude call, no cost, no variance.
-  if (kit.bespokeShowcase) {
-    void (async () => {
-      try {
-        const result = await generateKitShowcase({
-          kitName: kit.name,
-          kitDescription: kit.description,
-          kitTags: kit.tags,
-          layoutMd: kit.layoutMd,
-          tokensCss: kit.tokensCss,
-          brandingAssets: kit.richBundle?.brandingAssets,
-        });
-        await updateKitShowcase(kit.id, result.tsx, result.js);
-      } catch (err) {
-        console.error(`[gen-jobs] showcase failed for ${kit.slug}:`, err);
+  // Bespoke showcase: ALWAYS fires on publish now. The uniform template
+  // can only swap colours; bespoke writes brand-faithful TSX per kit
+  // (Linear renders Linear-style buttons, Stripe gets shadow CTAs, Apple
+  // gets iOS-style controls, etc). Auto-flips bespokeShowcase to true
+  // on success so the gallery page serves the new TSX. On failure the
+  // kit silently falls back to the uniform template — kit page never
+  // breaks.
+  void (async () => {
+    try {
+      const result = await generateKitShowcase({
+        kitName: kit.name,
+        kitDescription: kit.description,
+        kitTags: kit.tags,
+        layoutMd: kit.layoutMd,
+        tokensCss: kit.tokensCss,
+        brandingAssets: kit.richBundle?.brandingAssets,
+      });
+      const ok = await updateKitShowcase(kit.id, result.tsx, result.js);
+      if (ok && !kit.bespokeShowcase) {
+        await setBespokeShowcase(kit.id, true);
       }
-    })();
-  }
+    } catch (err) {
+      console.error(`[gen-jobs] showcase failed for ${kit.slug}:`, err);
+    }
+  })();
 
   void (async () => {
     try {
