@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-figma-plugin-0-2-11-no-collisions",
+    title: "Figma plugin keeps every colour ramp on extraction",
+    description:
+      "Files with multiple colour ramps (Brand, Red, Green, Yellow, Slate, Gray) were collapsing to a single greyscale palette because the plugin stripped the first slash segment from every variable name, so Brand/100 and Red/100 both became 100 and overwrote each other. Variable names now keep the full path, so every ramp and every semantic group (Background/Brand/Default, Text/Positive/Default, etc.) flows through to Layout. Re-download the plugin (v0.2.11) from the docs page to pick up the fix.",
+    product: "figma-plugin",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
     id: "2026-w18-gallery-new-badge-and-cleaner-admin",
     title: "Gallery cards get a New badge, admin row gets tidier",
     description:

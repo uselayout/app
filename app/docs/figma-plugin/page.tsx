@@ -40,7 +40,7 @@ export default function FigmaPluginPage() {
           Download Figma Plugin (Alpha)
         </a>
         <p className="text-sm text-gray-500">
-          v0.2.10 &middot; Requires Figma desktop app
+          v0.2.11 &middot; Requires Figma desktop app
         </p>
       </section>
 
