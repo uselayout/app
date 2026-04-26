@@ -41,6 +41,8 @@ const Body = z.object({
     })
     .default({ components: false, fonts: false, branding: false, context: false }),
   publishAs: z.enum(["self", "layout"]).default("self"),
+  /** Opt into Claude-generated bespoke Live Preview. Default uses the uniform template. */
+  bespokeShowcase: z.boolean().default(false),
 });
 
 export async function POST(
@@ -108,6 +110,7 @@ export async function POST(
   const kit = await publishKit({
     ...payload,
     status: wantsLayoutOfficial ? "approved" : "pending",
+    bespokeShowcase: input.bespokeShowcase,
   });
 
   if (wantsLayoutOfficial) {

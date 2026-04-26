@@ -24,21 +24,26 @@ export function runKitGenerationJobs(
   origin: string,
   openaiApiKey?: string,
 ): void {
-  void (async () => {
-    try {
-      const result = await generateKitShowcase({
-        kitName: kit.name,
-        kitDescription: kit.description,
-        kitTags: kit.tags,
-        layoutMd: kit.layoutMd,
-        tokensCss: kit.tokensCss,
-        brandingAssets: kit.richBundle?.brandingAssets,
-      });
-      await updateKitShowcase(kit.id, result.tsx, result.js);
-    } catch (err) {
-      console.error(`[gen-jobs] showcase failed for ${kit.slug}:`, err);
-    }
-  })();
+  // Showcase generation only runs for kits the publisher (or admin) has
+  // explicitly opted in for via the bespoke flag. Default kits render
+  // through the uniform template — no Claude call, no cost, no variance.
+  if (kit.bespokeShowcase) {
+    void (async () => {
+      try {
+        const result = await generateKitShowcase({
+          kitName: kit.name,
+          kitDescription: kit.description,
+          kitTags: kit.tags,
+          layoutMd: kit.layoutMd,
+          tokensCss: kit.tokensCss,
+          brandingAssets: kit.richBundle?.brandingAssets,
+        });
+        await updateKitShowcase(kit.id, result.tsx, result.js);
+      } catch (err) {
+        console.error(`[gen-jobs] showcase failed for ${kit.slug}:`, err);
+      }
+    })();
+  }
 
   void (async () => {
     try {

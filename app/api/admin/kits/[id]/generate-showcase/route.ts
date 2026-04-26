@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/admin-context";
-import { fetchKitById, updateKitShowcase } from "@/lib/supabase/kits";
+import { fetchKitById, setBespokeShowcase, updateKitShowcase } from "@/lib/supabase/kits";
 import { generateKitShowcase } from "@/lib/claude/generate-kit-showcase";
 
 export async function POST(
@@ -29,6 +29,10 @@ export async function POST(
     if (!ok) {
       return NextResponse.json({ error: "Failed to save showcase" }, { status: 500 });
     }
+    // Triggering a regen implicitly opts the kit into bespoke mode so the
+    // detail page actually serves the new output. Admin can flip back to
+    // uniform via the PATCH route or the KitsTab dropdown.
+    if (!kit.bespokeShowcase) await setBespokeShowcase(kit.id, true);
     return NextResponse.json({ ok: true, length: result.tsx.length });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Generation failed";

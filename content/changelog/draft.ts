@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-gallery-uniform-by-default",
+    title: "Gallery Live Preview now uses our uniform template by default",
+    description:
+      "Every kit's Live Preview now renders through the hand-built Layout template by default. Faster (no AI wait), free (no Claude credits), and improvements ship to every kit at once. Existing kits with a Claude-generated bespoke showcase keep it. New publishes can still opt in to a bespoke AI layout via a checkbox on the Share modal.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
     id: "2026-w18-figma-plugin-0-2-11-no-collisions",
     title: "Figma plugin keeps every colour ramp on extraction",
     description:

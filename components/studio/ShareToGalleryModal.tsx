@@ -34,6 +34,7 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
   const [licence, setLicence] = useState<KitLicence>("MIT");
   const [licenceCustom, setLicenceCustom] = useState("");
   const [unlisted, setUnlisted] = useState(false);
+  const [bespokeShowcase, setBespokeShowcase] = useState(false);
   const [include, setInclude] = useState<Record<ToggleKey, boolean>>({
     components: false,
     fonts: (project.uploadedFonts?.length ?? 0) > 0,
@@ -116,6 +117,7 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
           licenceCustom: licence === "custom" ? licenceCustom : undefined,
           tier,
           unlisted,
+          bespokeShowcase,
           include,
           publishAs: isAdmin && publishAsLayout ? "layout" : "self",
         }),
@@ -334,6 +336,23 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
                 </button>
               </div>
             </Field>
+
+            <label className="flex items-start gap-2.5 px-3 py-2.5 rounded-md border border-dashed border-[var(--studio-border-strong)] bg-[var(--bg-surface)] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={bespokeShowcase}
+                onChange={(e) => setBespokeShowcase(e.target.checked)}
+                className="mt-0.5 accent-[var(--studio-accent)]"
+              />
+              <span className="flex flex-col gap-0.5">
+                <span className="text-[13px] text-[var(--text-primary)] font-medium">
+                  Generate a bespoke AI Live Preview
+                </span>
+                <span className="text-[12px] text-[var(--text-muted)]">
+                  Slower (Claude takes ~30s) but produces a layout tuned to your kit. Default uses our hand-built uniform template.
+                </span>
+              </span>
+            </label>
 
             {isAdmin && (
               <label className="flex items-start gap-2.5 px-3 py-2.5 rounded-md border border-dashed border-[var(--studio-border-strong)] bg-[var(--bg-surface)] cursor-pointer">

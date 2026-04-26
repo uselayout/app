@@ -39,6 +39,7 @@ interface KitRow {
   hidden: boolean;
   unlisted: boolean;
   is_new: boolean;
+  bespoke_showcase: boolean;
   upvote_count: number;
   import_count: number;
   view_count: number;
@@ -90,6 +91,7 @@ function rowToKit(row: KitRow): PublicKit {
     hidden: row.hidden,
     unlisted: row.unlisted,
     isNew: row.is_new ?? false,
+    bespokeShowcase: row.bespoke_showcase ?? false,
     status: (row.status as KitStatus) ?? "approved",
     cardImagePref: (row.card_image_pref as KitCardImagePref) ?? "auto",
     upvoteCount: row.upvote_count,
@@ -153,12 +155,15 @@ export type PublishKitInput = Omit<
   | "githubSyncedAt"
   | "status"
   | "cardImagePref"
+  | "bespokeShowcase"
 > & {
   id?: string;
   /** Defaults to 'pending' on insert. Layout-team path passes 'approved' to bypass review. */
   status?: KitStatus;
   /** Defaults to 'auto' on insert. */
   cardImagePref?: KitCardImagePref;
+  /** Defaults to false on insert. Publisher opts in via the Share modal. */
+  bespokeShowcase?: boolean;
 };
 
 type KitInsertRow = Omit<
@@ -207,6 +212,7 @@ export function kitToRow(kit: PublishKitInput): KitInsertRow {
     unlisted: kit.unlisted ?? false,
     status: kit.status ?? "pending",
     card_image_pref: kit.cardImagePref ?? "auto",
+    bespoke_showcase: kit.bespokeShowcase ?? false,
   };
 }
 
@@ -386,6 +392,19 @@ export async function setCardImagePref(
     .update({ card_image_pref: pref, updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) console.error("setCardImagePref failed:", error.message);
+  return !error;
+}
+
+/** Flip a kit between bespoke (Claude-generated) and uniform Live Preview. */
+export async function setBespokeShowcase(
+  id: string,
+  bespoke: boolean,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("layout_public_kit")
+    .update({ bespoke_showcase: bespoke, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) console.error("setBespokeShowcase failed:", error.message);
   return !error;
 }
 

@@ -114,6 +114,9 @@ export interface PublicKit {
   unlisted: boolean;
   /** Admin-curated "New" badge. Surfaces on KitCard when true. */
   isNew: boolean;
+  /** When true the Live Preview renders the cached Claude-generated showcase.
+   * When false (default) it renders the hand-built uniform template. */
+  bespokeShowcase: boolean;
 
   upvoteCount: number;
   importCount: number;
