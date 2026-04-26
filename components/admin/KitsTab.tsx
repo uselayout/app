@@ -414,17 +414,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                       <div className="flex items-center gap-2 flex-wrap">
                         <KitNameCell
                           kit={kit}
-                          onSave={async (value) => {
-                            await patch(kit.id, { name: value });
-                            // If the kit is currently bespoke, the cached
-                            // TSX has the old name baked in. Regenerate
-                            // so the gallery page reflects the rename.
-                            // Uniform kits read window.__KIT__.name and
-                            // update on next reload — no regen needed.
-                            if (kit.bespoke_showcase) {
-                              regenShowcase(kit.id, value);
-                            }
-                          }}
+                          onSave={(value) => patch(kit.id, { name: value })}
                         />
                         {kit.status === "pending" && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#f59e0b", color: "#1a0f00" }}>Pending</span>
@@ -460,14 +450,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                       </div>
                       <KitDescriptionCell
                         kit={kit}
-                        onSave={async (value) => {
-                          await patch(kit.id, { description: value });
-                          // Description is part of the bespoke hero — regen
-                          // so the gallery page picks up the new copy.
-                          if (kit.bespoke_showcase) {
-                            regenShowcase(kit.id, kit.name);
-                          }
-                        }}
+                        onSave={(value) => patch(kit.id, { description: value })}
                       />
                       {showCardPicker && (
                         <div className="mt-2 inline-flex items-center gap-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
