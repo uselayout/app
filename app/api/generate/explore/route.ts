@@ -30,6 +30,13 @@ const RequestSchema = z.object({
   iconPacks: z.array(z.string()).optional(),
 });
 
+// Cap how long the Claude stream can hold the request thread. Without this
+// a hung stream pins a Node thread and (cumulatively, under load) starves
+// /api/health/ready, causing Coolify to mark the container unhealthy.
+// Matches /api/generate/layout-md.
+export const maxDuration = 120;
+export const dynamic = "force-dynamic";
+
 const CONTEXT_FILE_MAX_CHARS = 50_000;
 const CONTEXT_FILE_MAX_COUNT = 3;
 

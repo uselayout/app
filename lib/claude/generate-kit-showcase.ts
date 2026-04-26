@@ -191,6 +191,10 @@ interface GenerateInput {
   /** Called with each text delta from the Claude stream. CLI scripts use it
    * to print live progress so the operator can see the call is alive. */
   onProgress?: (delta: string, totalChars: number) => void;
+  /** Abort the Anthropic call when the upstream request is cancelled (client
+   * disconnect, route timeout). Without this, a hung stream keeps the
+   * bespokeShowcaseLimit slot busy until the 180s queue timeout fires. */
+  signal?: AbortSignal;
 }
 
 function stripFences(raw: string): string {
@@ -304,12 +308,15 @@ async function generateKitShowcaseInner(input: GenerateInput): Promise<Generated
   // Streaming: gives CLI callers a progress signal so they can see the
   // call is alive. The non-streaming path used to freeze terminals for
   // 1-3 minutes with no output, indistinguishable from a network stall.
-  const stream = anthropic.messages.stream({
-    model: input.modelId ?? "claude-sonnet-4-6",
-    max_tokens: 16000,
-    system: SYSTEM,
-    messages: [{ role: "user", content: userMessage }],
-  });
+  const stream = anthropic.messages.stream(
+    {
+      model: input.modelId ?? "claude-sonnet-4-6",
+      max_tokens: 16000,
+      system: SYSTEM,
+      messages: [{ role: "user", content: userMessage }],
+    },
+    input.signal ? { signal: input.signal } : undefined,
+  );
 
   let totalChars = 0;
   if (input.onProgress) {
@@ -342,6 +349,8 @@ async function generateKitShowcaseInner(input: GenerateInput): Promise<Generated
   }
   // JSX is fine — transpileTsx handles it with jsxFactory: React.createElement.
   // The iframe runtime only needs the compiled output to be valid CommonJS.
+  // transpileTsx yields the event loop before the synchronous compile so the
+  // healthcheck stays responsive while we run.
 
   let js: string;
   try {
