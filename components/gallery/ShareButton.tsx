@@ -43,12 +43,11 @@ export function ShareButton({ name, description }: Props) {
     <button
       type="button"
       onClick={handleShare}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] text-[12px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)] hover:border-[var(--mkt-text-secondary)] transition-colors"
+      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-[var(--mkt-border-strong)] text-[var(--mkt-text-primary)] hover:bg-[var(--mkt-surface-elevated)] transition-colors"
       aria-label={state === "copied" ? "Link copied" : "Share kit"}
     >
       <svg
-        width="13"
-        height="13"
+        className="w-4 h-4"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -63,7 +62,7 @@ export function ShareButton({ name, description }: Props) {
         <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
         <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
       </svg>
-      {state === "copied" ? "Copied" : "Share"}
+      <span className="text-[13px]">{state === "copied" ? "Copied" : "Share"}</span>
     </button>
   );
 }
