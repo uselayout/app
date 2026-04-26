@@ -18,6 +18,7 @@ interface AdminKitRow {
   hidden: boolean;
   unlisted: boolean;
   is_new: boolean;
+  bespoke_showcase: boolean;
   status: "pending" | "approved";
   card_image_pref: "auto" | "custom" | "hero" | "preview";
   custom_card_image_url: string | null;
@@ -103,6 +104,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
       hidden?: boolean;
       unlisted?: boolean;
       isNew?: boolean;
+      bespokeShowcase?: boolean;
       cardImagePref?: AdminKitRow["card_image_pref"];
     },
   ) {
@@ -124,6 +126,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
               if (body.hidden !== undefined) next.hidden = body.hidden;
               if (body.unlisted !== undefined) next.unlisted = body.unlisted;
               if (body.isNew !== undefined) next.is_new = body.isNew;
+              if (body.bespokeShowcase !== undefined) next.bespoke_showcase = body.bespokeShowcase;
               if (body.cardImagePref !== undefined) next.card_image_pref = body.cardImagePref;
               return next;
             })
@@ -400,6 +403,15 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                         {kit.is_new && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#10b981", color: "#04261a" }}>New</span>
                         )}
+                        {kit.bespoke_showcase && (
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded"
+                            style={{ background: "#8b5cf6", color: "#1a0633" }}
+                            title="Live Preview uses the Claude-generated bespoke showcase. Click 'Use uniform layout' in Generate to revert."
+                          >
+                            Bespoke
+                          </span>
+                        )}
                         {kit.featured && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--mkt-accent)", color: "#08090a" }}>Featured</span>
                         )}
@@ -572,9 +584,22 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                           {kit.hidden ? "Unhide" : "Hide"}
                         </button>
                         <RegenMenu
-                          showcase={{ running: !!showcaseJob, label: showcaseJob ? `Showcase… ${formatElapsed(Date.now() - showcaseJob.startedAt)}` : "Regen showcase", onClick: () => regenShowcase(kit.id, kit.name) }}
+                          showcase={{
+                            running: !!showcaseJob,
+                            label: showcaseJob
+                              ? `Showcase… ${formatElapsed(Date.now() - showcaseJob.startedAt)}`
+                              : kit.bespoke_showcase
+                                ? "Regen bespoke showcase"
+                                : "Switch to bespoke (Claude)",
+                            onClick: () => regenShowcase(kit.id, kit.name),
+                          }}
                           preview={{ running: !!previewJob, label: previewJob ? `Preview… ${formatElapsed(Date.now() - previewJob.startedAt)}` : "Regen preview", onClick: () => regenPreview(kit.id, kit.name) }}
                           hero={{ running: !!heroJob, label: heroJob ? `Hero… ${formatElapsed(Date.now() - heroJob.startedAt)}` : "Regen hero", onClick: () => regenHero(kit.id, kit.name) }}
+                          revertToUniform={
+                            kit.bespoke_showcase
+                              ? () => patch(kit.id, { bespokeShowcase: false })
+                              : undefined
+                          }
                           anyJob={!!anyJob}
                         />
                         <button
@@ -612,11 +637,14 @@ function RegenMenu({
   showcase,
   preview,
   hero,
+  revertToUniform,
   anyJob,
 }: {
   showcase: RegenAction;
   preview: RegenAction;
   hero: RegenAction;
+  /** Present only when the kit is currently bespoke. Flips back to the uniform template. */
+  revertToUniform?: () => void;
   anyJob: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -666,9 +694,9 @@ function RegenMenu({
           }}
         >
           {[
-            { ...showcase, hint: "Claude Sonnet · ~30s" },
+            { ...showcase, hint: "Claude Sonnet · ~30s · costs credits" },
             { ...preview, hint: "Playwright · ~45s" },
-            { ...hero, hint: "GPT Image 2 · ~30s" },
+            { ...hero, hint: "GPT Image 2 · ~30s · costs ~$0.04" },
           ].map((item) => (
             <button
               key={item.label + item.hint}
@@ -687,6 +715,25 @@ function RegenMenu({
               </span>
             </button>
           ))}
+          {revertToUniform && (
+            <>
+              <div style={{ height: 1, background: "var(--studio-border)", margin: "4px 0" }} />
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  revertToUniform();
+                }}
+                className="w-full text-left px-3 py-2 text-[12px] transition-colors flex flex-col gap-0.5 hover:bg-[var(--bg-hover)]"
+                style={{ color: "var(--text-primary)" }}
+              >
+                <span>Use uniform layout</span>
+                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                  Switches Live Preview back to the standard template (cached bespoke kept)
+                </span>
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

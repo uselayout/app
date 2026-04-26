@@ -76,7 +76,13 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
   if (!kit) notFound();
 
   const isSnapshot = snapshot === "1";
-  const showcaseJs = kit.showcaseCustomJs ?? getKitShowcaseJs();
+  // Uniform template by default. Bespoke (Claude-generated) only when the
+  // kit has been opted in AND has cached output. Admin can flip a kit back
+  // to uniform without losing the cached blob.
+  const showcaseJs =
+    kit.bespokeShowcase && kit.showcaseCustomJs
+      ? kit.showcaseCustomJs
+      : getKitShowcaseJs();
 
   // Snapshot mode: render only the showcase iframe at full size, no chrome.
   // Used by Playwright to capture the card thumbnail (lib/gallery/snapshot.ts).

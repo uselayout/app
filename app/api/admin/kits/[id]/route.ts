@@ -8,6 +8,7 @@ const PatchBody = z.object({
   hidden: z.boolean().optional(),
   unlisted: z.boolean().optional(),
   isNew: z.boolean().optional(),
+  bespokeShowcase: z.boolean().optional(),
   cardImagePref: z.enum(["auto", "custom", "hero", "preview"]).optional(),
 });
 
@@ -33,6 +34,7 @@ export async function PATCH(
   if ("hidden" in parsed.data) update.hidden = parsed.data.hidden;
   if ("unlisted" in parsed.data) update.unlisted = parsed.data.unlisted;
   if ("isNew" in parsed.data) update.is_new = parsed.data.isNew;
+  if ("bespokeShowcase" in parsed.data) update.bespoke_showcase = parsed.data.bespokeShowcase;
   if ("cardImagePref" in parsed.data) update.card_image_pref = parsed.data.cardImagePref;
 
   const { error } = await supabase
