@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { getStoredOpenAIKey } from "@/lib/hooks/use-api-key";
 
@@ -102,6 +103,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
     id: string,
     body: {
       name?: string;
+      description?: string;
       featured?: boolean;
       hidden?: boolean;
       unlisted?: boolean;
@@ -125,6 +127,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
               if (r.id !== id) return r;
               const next = { ...r };
               if (body.name !== undefined) next.name = body.name;
+              if (body.description !== undefined) next.description = body.description;
               if (body.featured !== undefined) next.featured = body.featured;
               if (body.hidden !== undefined) next.hidden = body.hidden;
               if (body.unlisted !== undefined) next.unlisted = body.unlisted;
@@ -455,6 +458,17 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                       <div className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
                         {kit.slug} · {kit.licence} · {kit.tier}
                       </div>
+                      <KitDescriptionCell
+                        kit={kit}
+                        onSave={async (value) => {
+                          await patch(kit.id, { description: value });
+                          // Description is part of the bespoke hero — regen
+                          // so the gallery page picks up the new copy.
+                          if (kit.bespoke_showcase) {
+                            regenShowcase(kit.id, kit.name);
+                          }
+                        }}
+                      />
                       {showCardPicker && (
                         <div className="mt-2 inline-flex items-center gap-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
                           <span>Card:</span>
@@ -677,7 +691,9 @@ function RegenMenu({
   anyJob: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuCoords = usePortalMenuCoords(open, buttonRef, 240);
   const running = showcase.running || preview.running || hero.running;
   const label = showcase.running
     ? showcase.label
@@ -687,11 +703,15 @@ function RegenMenu({
         ? hero.label
         : "Generate";
 
-  // Close on outside click.
+  // Close on outside click. Both the trigger button and the portal'd
+  // menu must be considered "inside" so clicking a menu item doesn't
+  // close before the click handler runs.
   useEffect(() => {
     if (!open) return;
     function onDown(e: MouseEvent) {
-      if (!ref.current || ref.current.contains(e.target as Node)) return;
+      const target = e.target as Node;
+      if (buttonRef.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
       setOpen(false);
     }
     document.addEventListener("mousedown", onDown);
@@ -699,8 +719,9 @@ function RegenMenu({
   }, [open]);
 
   return (
-    <div ref={ref} className="relative inline-block">
+    <>
       <button
+        ref={buttonRef}
         type="button"
         disabled={anyJob}
         onClick={() => setOpen((v) => !v)}
@@ -715,10 +736,16 @@ function RegenMenu({
         {label}
         <span aria-hidden style={{ fontSize: 10, opacity: 0.7 }}>▾</span>
       </button>
-      {open && (
+      {open && menuCoords && createPortal(
         <div
-          className="absolute right-0 mt-1 z-[9999] min-w-[180px] rounded-md py-1 shadow-lg"
+          ref={menuRef}
+          className="rounded-md py-1 shadow-lg"
           style={{
+            position: "fixed",
+            top: menuCoords.top,
+            left: menuCoords.left,
+            minWidth: 240,
+            zIndex: 9999,
             background: "var(--bg-elevated)",
             border: "1px solid var(--studio-border)",
           }}
@@ -784,10 +811,52 @@ function RegenMenu({
               </button>
             </>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
-    </div>
+    </>
   );
+}
+
+/**
+ * Compute fixed-position coords for a portal'd menu, anchored under
+ * the right edge of a trigger button. Recomputes on resize + scroll
+ * so the menu tracks the trigger if the page shifts. Returns null
+ * until the first measurement lands.
+ */
+function usePortalMenuCoords(
+  open: boolean,
+  buttonRef: React.RefObject<HTMLButtonElement | null>,
+  minWidth: number,
+): { top: number; left: number } | null {
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!open || !buttonRef.current) {
+      setCoords(null);
+      return;
+    }
+    function update() {
+      const btn = buttonRef.current;
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
+      // Anchor the menu's right edge to the button's right edge.
+      // Clamp inside viewport with a small margin.
+      const margin = 8;
+      const left = Math.max(margin, Math.min(window.innerWidth - minWidth - margin, rect.right - minWidth));
+      const top = rect.bottom + 4;
+      setCoords({ top, left });
+    }
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [open, buttonRef, minWidth]);
+
+  return coords;
 }
 
 function KitNameCell({
@@ -872,6 +941,90 @@ function KitNameCell({
   );
 }
 
+function KitDescriptionCell({
+  kit,
+  onSave,
+}: {
+  kit: AdminKitRow;
+  onSave: (description: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(kit.description ?? "");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  function commit() {
+    const trimmed = draft.trim();
+    setEditing(false);
+    if (trimmed === (kit.description ?? "")) return;
+    onSave(trimmed);
+  }
+
+  if (editing) {
+    return (
+      <div className="mt-1">
+        <textarea
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setDraft(kit.description ?? "");
+              setEditing(false);
+            }
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) commit();
+          }}
+          rows={2}
+          placeholder="Short kit description shown on gallery page"
+          className="w-full max-w-xl px-2 py-1 rounded text-[11px] outline-none resize-y"
+          style={{
+            background: "var(--bg-surface)",
+            color: "var(--text-primary)",
+            border: "1px solid var(--studio-border-focus)",
+          }}
+        />
+        <div className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+          Cmd+Enter to save · Esc to cancel
+        </div>
+      </div>
+    );
+  }
+
+  const empty = !kit.description || kit.description.trim() === "";
+  return (
+    <div
+      className="mt-1 text-[11px] group inline-flex items-start gap-1 max-w-xl"
+      style={{ color: empty ? "var(--text-muted)" : "var(--text-secondary)" }}
+    >
+      <span className="cursor-text" onClick={() => setEditing(true)}>
+        {empty ? "Add description…" : kit.description}
+      </span>
+      <button
+        type="button"
+        onClick={() => {
+          setDraft(kit.description ?? "");
+          setEditing(true);
+        }}
+        title="Edit description"
+        className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] px-1 rounded shrink-0"
+        style={{
+          color: "var(--text-muted)",
+          border: "1px solid var(--studio-border)",
+        }}
+      >
+        Edit
+      </button>
+    </div>
+  );
+}
+
 interface ActionMenuItem {
   label: string;
   onClick: () => void;
@@ -897,12 +1050,16 @@ function ActionMenu({
   loading?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuCoords = usePortalMenuCoords(open, buttonRef, 200);
 
   useEffect(() => {
     if (!open) return;
     function onDown(e: MouseEvent) {
-      if (!ref.current || ref.current.contains(e.target as Node)) return;
+      const target = e.target as Node;
+      if (buttonRef.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
       setOpen(false);
     }
     document.addEventListener("mousedown", onDown);
@@ -910,8 +1067,9 @@ function ActionMenu({
   }, [open]);
 
   return (
-    <div ref={ref} className="relative inline-block">
+    <>
       <button
+        ref={buttonRef}
         type="button"
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
@@ -925,10 +1083,16 @@ function ActionMenu({
         {label}
         <span aria-hidden style={{ fontSize: 10, opacity: 0.7 }}>▾</span>
       </button>
-      {open && (
+      {open && menuCoords && createPortal(
         <div
-          className="absolute right-0 mt-1 z-[9999] min-w-[180px] rounded-md py-1 shadow-lg"
+          ref={menuRef}
+          className="rounded-md py-1 shadow-lg"
           style={{
+            position: "fixed",
+            top: menuCoords.top,
+            left: menuCoords.left,
+            minWidth: 200,
+            zIndex: 9999,
             background: "var(--bg-elevated)",
             border: "1px solid var(--studio-border)",
           }}
@@ -956,8 +1120,9 @@ function ActionMenu({
               )}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
-    </div>
+    </>
   );
 }

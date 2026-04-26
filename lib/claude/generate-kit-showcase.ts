@@ -230,6 +230,22 @@ function hasExportDefault(code: string): boolean {
 /** When Claude defines `function App` or `const App` but forgets to export
  * it, append the export ourselves so the iframe runtime can pick it up.
  * Cheaper than rejecting the whole generation. */
+/** When the kit has no primary logo asset, strip every <img> tag from
+ * the generated TSX. Belt-and-braces against Claude inventing a fake
+ * brand mark even after the prompt forbids it. Only fires when the
+ * caller didn't pass a primary logo, so legitimate logo <img>s on
+ * brand-asset-bearing kits aren't touched. */
+function stripImgsWhenNoLogo(code: string, hadPrimaryLogo: boolean): string {
+  if (hadPrimaryLogo) return code;
+  // Self-closing: <img src="..." />
+  let out = code.replace(/<img\b[^>]*\/>/gi, "");
+  // Open + close: <img src="...">  ... </img>
+  out = out.replace(/<img\b[^>]*>\s*<\/img>/gi, "");
+  // Bare opening tag with no slash (HTML void element style)
+  out = out.replace(/<img\b[^>]*>/gi, "");
+  return out;
+}
+
 function ensureExportDefault(code: string): string {
   if (hasExportDefault(code)) return code;
   if (/(?:function|const|let|var)\s+App\b/.test(code)) {
@@ -310,7 +326,10 @@ async function generateKitShowcaseInner(input: GenerateInput): Promise<Generated
     .map((block) => block.text)
     .join("\n");
 
-  const tsx = ensureExportDefault(stripFences(raw));
+  const hadPrimaryLogo = !!logo;
+  const tsx = ensureExportDefault(
+    stripImgsWhenNoLogo(stripFences(raw), hadPrimaryLogo),
+  );
 
   if (!hasExportDefault(tsx)) {
     // Final safety net: log the first chunk so we can diagnose what
