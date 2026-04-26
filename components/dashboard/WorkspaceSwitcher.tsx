@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useParams, usePathname, useSearchParams } from "next/navigation";
 import { useOrgStore } from "@/lib/store/organization";
 import { useProjectStore } from "@/lib/store/project";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 
 interface WorkspaceSwitcherProps {
   collapsed?: boolean;
@@ -13,7 +13,10 @@ interface WorkspaceSwitcherProps {
 export function WorkspaceSwitcher({ collapsed }: WorkspaceSwitcherProps) {
   const [open, setOpen] = useState(false);
   const [showOrgList, setShowOrgList] = useState(false);
+  const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const activeRowRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
@@ -40,6 +43,35 @@ export function WorkspaceSwitcher({ collapsed }: WorkspaceSwitcherProps) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [handleClickOutside]);
+
+  useEffect(() => {
+    if (!open) {
+      setSearch("");
+      setShowOrgList(false);
+      return;
+    }
+    if (showOrgList) return;
+    // Focus search input and scroll the active project into view when the
+    // dropdown opens so a long list doesn't bury the current selection.
+    const id = window.setTimeout(() => {
+      searchInputRef.current?.focus();
+      activeRowRef.current?.scrollIntoView({ block: "nearest" });
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [open, showOrgList]);
+
+  const filteredProjects = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = q
+      ? projects.filter((p) => p.name.toLowerCase().includes(q))
+      : projects;
+    // Sort by recency (most recently updated first), falling back to created.
+    return [...list].sort((a, b) => {
+      const aT = a.updatedAt ?? a.createdAt ?? "";
+      const bT = b.updatedAt ?? b.createdAt ?? "";
+      return bT.localeCompare(aT);
+    });
+  }, [projects, search]);
 
   function displayOrgName(slug: string, name: string): string {
     return slug.startsWith("personal-") ? "Personal" : name;
@@ -134,29 +166,70 @@ export function WorkspaceSwitcher({ collapsed }: WorkspaceSwitcherProps) {
           {!showOrgList ? (
             <>
               {/* Project list header */}
-              <div className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
-                Projects
+              <div className="flex items-center justify-between px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                <span>Projects</span>
+                <span className="text-[var(--text-muted)] normal-case tracking-normal">
+                  {filteredProjects.length}
+                </span>
               </div>
+
+              {projects.length > 6 && (
+                <div className="px-2 pb-1.5">
+                  <div className="relative">
+                    <Search
+                      className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-[var(--text-muted)]"
+                      aria-hidden
+                    />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && filteredProjects[0]) {
+                          handleSelectProject(filteredProjects[0].id);
+                        } else if (e.key === "Escape") {
+                          if (search) setSearch("");
+                          else setOpen(false);
+                        }
+                      }}
+                      placeholder="Search projects…"
+                      aria-label="Search projects"
+                      className="w-full rounded-[var(--studio-radius-md)] border border-[var(--studio-border)] bg-[var(--bg-app)] py-1 pl-7 pr-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--studio-border-focus)]"
+                    />
+                  </div>
+                </div>
+              )}
 
               {projects.length === 0 ? (
                 <p className="px-3 py-2 text-xs text-[var(--text-muted)]">
                   No projects yet
                 </p>
+              ) : filteredProjects.length === 0 ? (
+                <p className="px-3 py-2 text-xs text-[var(--text-muted)]">
+                  No matches.
+                </p>
               ) : (
-                projects.map((project) => (
-                  <button
-                    key={project.id}
-                    type="button"
-                    onClick={() => handleSelectProject(project.id)}
-                    className={`flex w-full items-center px-3 py-2 text-left text-sm transition-all duration-[var(--duration-base)] hover:bg-[var(--bg-hover)] ${
-                      activeProject?.id === project.id
-                        ? "text-[var(--studio-accent)]"
-                        : "text-[var(--text-secondary)]"
-                    }`}
-                  >
-                    <span className="truncate">{project.name}</span>
-                  </button>
-                ))
+                <div className="max-h-[320px] overflow-y-auto">
+                  {filteredProjects.map((project) => {
+                    const isActive = activeProject?.id === project.id;
+                    return (
+                      <button
+                        key={project.id}
+                        ref={isActive ? activeRowRef : undefined}
+                        type="button"
+                        onClick={() => handleSelectProject(project.id)}
+                        className={`flex w-full items-center px-3 py-2 text-left text-sm transition-all duration-[var(--duration-base)] hover:bg-[var(--bg-hover)] ${
+                          isActive
+                            ? "text-[var(--studio-accent)]"
+                            : "text-[var(--text-secondary)]"
+                        }`}
+                      >
+                        <span className="truncate">{project.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
 
               <div className="my-1 border-t border-[var(--studio-border)]" />
