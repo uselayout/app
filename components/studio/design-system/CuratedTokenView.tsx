@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
-import { Plus, Sun, Moon } from "lucide-react";
+import { Plus, Sun, Moon, Wand2 } from "lucide-react";
 import type { ExtractedToken, ProjectStandardisation, DesignSystemSnapshot, TokenType } from "@/lib/types";
 import {
   SCHEMA_CATEGORIES,
@@ -43,6 +43,7 @@ interface CuratedTokenViewProps {
   onUpdateToken: (tokenType: "colors" | "typography" | "spacing" | "radius" | "effects", name: string, value: string) => void;
   onRemoveToken: (tokenType: "colors" | "typography" | "spacing" | "radius" | "effects", names: string[]) => void;
   onRenameToken: (tokenType: "colors" | "typography" | "spacing" | "radius" | "effects", oldName: string, newName: string) => void;
+  onRestandardise?: () => void;
 }
 
 export function CuratedTokenView({
@@ -55,6 +56,7 @@ export function CuratedTokenView({
   onUpdateToken,
   onRemoveToken,
   onRenameToken,
+  onRestandardise,
 }: CuratedTokenViewProps) {
   const { assignments } = standardisation;
   const assignTokenToRole = useProjectStore((s) => s.assignTokenToRole);
@@ -353,6 +355,20 @@ export function CuratedTokenView({
               Copy from Light
             </button>
           )}
+        {/* Run the standardiser against the current token pool. Useful when
+            assignments are empty (fresh import) or stale (extraction names
+            changed under existing assignments). Snapshots before running so
+            user-confirmed work can be rolled back. */}
+        {onRestandardise && (
+          <button
+            onClick={onRestandardise}
+            className="flex items-center gap-1 rounded-md border border-[var(--studio-border)] bg-[var(--bg-panel)] px-2.5 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+            title="Auto-fill empty role slots by running the matcher against your current tokens. Existing assignments are snapshotted so you can roll back."
+          >
+            <Wand2 className="h-3 w-3" />
+            Auto-fill from tokens
+          </button>
+        )}
         {/* Mode toggle — only rendered when the project has mode variants. */}
         {hasModes && (
           <div className="flex items-center rounded-md border border-[var(--studio-border)] bg-[var(--bg-panel)] p-0.5">

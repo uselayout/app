@@ -448,6 +448,7 @@ export function DesignSystemPanel({
             onUpdateToken={handleUpdateToken}
             onRemoveToken={(tokenType, names) => handleRemoveToken(tokenType, names)}
             onRenameToken={handleRenameToken}
+            onRestandardise={handleRestandardise}
           />
         )}
 
