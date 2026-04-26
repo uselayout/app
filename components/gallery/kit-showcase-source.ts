@@ -16,29 +16,49 @@ type CssVar = { name: string; value: string };
 
 type Category = "color" | "space" | "radius" | "shadow" | "font" | "other";
 
-// Style profile shape — a copy of lib/types/kit-style-profile.ts inlined
-// for the iframe runtime. Schema version 1. The host injects the kit's
-// profile via window.__KIT__.styleProfile; this DEFAULT runs when the
-// kit has no profile yet.
+// Style profile v2 — mirrors lib/types/kit-style-profile.ts. Inlined here
+// because the iframe runtime can't import. The host injects the kit's
+// profile via window.__KIT__.styleProfile; DEFAULT runs as fallback.
 type KitStyleProfile = {
-  version: 1;
+  version: 2;
   mode: "light" | "dark";
   density: "compact" | "comfortable" | "airy";
-  headingWeight: number;
-  button: { radius: string; weight: number; padding: string; fillStyle: "filled" | "shadowed" | "subtle" };
-  input: { radius: string; borderWidth: number; focusStyle: "ring" | "border" };
-  card: { radius: string; padding: number; elevation: "soft" | "shadow" | "elevated" };
+  colours: {
+    bg: string; surface: string; surfaceElevated: string;
+    text: string; headingText: string; textMuted: string;
+    accent: string; accentHover: string; accentSubtle: string; onAccent: string;
+    border: string; borderStrong: string;
+    success: string; warning: string; error: string; info: string;
+  };
+  type: { headingWeight: number; bodyWeight: number; headingTracking: string };
+  button: {
+    radius: string; weight: number; padding: string;
+    fillStyle: "filled" | "shadowed" | "subtle" | "outlined-emphasis";
+    primaryShadow: string | null;
+    hoverEffect: "brightness" | "shadow-lift" | "bg-shift" | "border-fill";
+    secondaryStyle: "outline" | "filled-light" | "ghost";
+  };
+  input: { radius: string; borderWidth: number; focusStyle: "ring" | "border" | "shadow"; bg: string };
+  card: { radius: string; padding: number; elevation: "soft" | "shadow" | "elevated"; bg: string };
   badge: { shape: "pill" | "rounded" | "square"; weight: number };
-  tab: { indicator: "underline" | "pill" | "filled" | "subtle" };
+  tab: { indicator: "underline" | "pill" | "filled" | "subtle"; indicatorWeight: number };
 };
 
 const DEFAULT_STYLE_PROFILE: KitStyleProfile = {
-  version: 1, mode: "light", density: "comfortable", headingWeight: 700,
-  button: { radius: "var(--radius-lg, 999px)", weight: 500, padding: "10px 18px", fillStyle: "filled" },
-  input: { radius: "var(--radius-md, 8px)", borderWidth: 1, focusStyle: "ring" },
-  card: { radius: "var(--radius-lg, 12px)", padding: 20, elevation: "soft" },
+  version: 2, mode: "light", density: "comfortable",
+  colours: {
+    bg: "#ffffff", surface: "#fafafa", surfaceElevated: "#ffffff",
+    text: "#1f2228", headingText: "#08090a", textMuted: "#6b7280",
+    accent: "#1f2228", accentHover: "#000000", accentSubtle: "rgba(31, 34, 40, 0.10)", onAccent: "#ffffff",
+    border: "rgba(0, 0, 0, 0.10)", borderStrong: "rgba(0, 0, 0, 0.20)",
+    success: "#2ea043", warning: "#d49a15", error: "#e54d2e", info: "#2383e2"
+  },
+  type: { headingWeight: 700, bodyWeight: 400, headingTracking: "-0.025em" },
+  button: { radius: "var(--radius-lg, 10px)", weight: 500, padding: "10px 18px", fillStyle: "filled", primaryShadow: null, hoverEffect: "brightness", secondaryStyle: "outline" },
+  input: { radius: "var(--radius-md, 8px)", borderWidth: 1, focusStyle: "ring", bg: "bg" },
+  card: { radius: "var(--radius-lg, 12px)", padding: 20, elevation: "soft", bg: "surface" },
   badge: { shape: "pill", weight: 500 },
-  tab: { indicator: "underline" }
+  tab: { indicator: "underline", indicatorWeight: 2 }
 };
 
 function readRootCssVars(): CssVar[] {
@@ -130,15 +150,23 @@ function App() {
   const [vars, setVars] = React.useState<CssVar[] | null>(null);
   React.useEffect(() => {
     setVars(readRootCssVars());
-    // Hover/active interaction styles. Inline styles can't carry pseudo-
-    // class rules, so we append a small stylesheet once at mount. Uses
-    // filter() for brightness shifts so it works on any kit's accent
-    // without needing to compute a per-kit hover colour.
+    // Hover stylesheet. Profile-driven so each kit gets its brand-typical
+    // hover treatment: brightness shift (default), shadow lift (Stripe),
+    // bg shift (most macOS-style), or border fill (outline-emphasis kits).
+    const meta = (typeof window !== "undefined" && (window as any).__KIT__) || {};
+    const prof: KitStyleProfile = meta.styleProfile || DEFAULT_STYLE_PROFILE;
+    const hover = prof.button.hoverEffect;
+    const primaryHoverRule =
+      hover === "shadow-lift" ? "[data-showcase-btn][data-variant='primary']:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.12); cursor: pointer; }"
+      : hover === "bg-shift" ? "[data-showcase-btn][data-variant='primary']:hover:not(:disabled) { filter: brightness(1.05); cursor: pointer; }"
+      : hover === "border-fill" ? "[data-showcase-btn][data-variant='primary']:hover:not(:disabled) { filter: brightness(0.96); cursor: pointer; }"
+      : "[data-showcase-btn][data-variant='primary']:hover:not(:disabled) { filter: brightness(1.08); cursor: pointer; }";
     const style = document.createElement("style");
     style.textContent = [
-      "[data-showcase-btn]:hover:not(:disabled) { filter: brightness(1.08); cursor: pointer; }",
+      primaryHoverRule,
       "[data-showcase-btn]:active:not(:disabled) { filter: brightness(0.94); }",
-      "[data-showcase-btn][data-variant='secondary']:hover, [data-showcase-btn][data-variant='ghost']:hover { background: rgba(127,127,127,0.08); }",
+      "[data-showcase-btn][data-variant='secondary']:hover, [data-showcase-btn][data-variant='ghost']:hover { background: rgba(127,127,127,0.08); cursor: pointer; }",
+      "[data-showcase-btn]:not([data-variant='primary']):hover:not(:disabled) { cursor: pointer; }",
       "[data-showcase-tab]:hover { opacity: 1 !important; cursor: pointer; }",
       "[data-showcase-segment]:hover { cursor: pointer; }",
       "[data-showcase-toggle]:hover, [data-showcase-checkbox]:hover, [data-showcase-radio]:hover { cursor: pointer; }",
@@ -156,22 +184,23 @@ function App() {
   };
   for (const v of vars) buckets[categorise(v)].push(v);
 
-  const bg = pickBg(buckets.color);
-  const text = pickText(buckets.color, bg);
-  const headingText = pickHeadingText(buckets.color, bg);
-  const accent = pickAccent(buckets.color);
-  const surface = pickSurface(buckets.color, bg);
-  const border = pickBorder(buckets.color);
+  // Read the kit's style profile FIRST. v2 profiles include explicit
+  // brand colours; the renderer trusts them and skips the heuristic
+  // pickers. v1 profiles or no profile → fall back to picker.
+  const kitMeta = (typeof window !== "undefined" && (window as any).__KIT__) || {};
+  const profile: KitStyleProfile = kitMeta.styleProfile || DEFAULT_STYLE_PROFILE;
+  const profileColours = profile.colours;
+
+  // Profile colours win; picker is the safety net for legacy kits.
+  const bg = profileColours?.bg || pickBg(buckets.color);
+  const text = profileColours?.text || pickText(buckets.color, bg);
+  const headingText = profileColours?.headingText || pickHeadingText(buckets.color, bg);
+  const accent = profileColours?.accent || pickAccent(buckets.color);
+  const surface = profileColours?.surface || pickSurface(buckets.color, bg);
+  const border = profileColours?.border || pickBorder(buckets.color);
   const radii = pickRadii(buckets.radius);
 
   const fontFamily = buckets.font.find((v: CssVar) => /family|sans|serif/.test(v.name))?.value || "system-ui, sans-serif";
-
-  // Read the kit's style profile from window.__KIT__. The host injects
-  // it via buildSrcdoc, the renderer falls back to DEFAULT_STYLE_PROFILE
-  // when no profile exists yet (newly published kit, or generation
-  // failed). Profile fields override radii/weights/etc. block-by-block.
-  const kitMeta = (typeof window !== "undefined" && (window as any).__KIT__) || {};
-  const profile = kitMeta.styleProfile || DEFAULT_STYLE_PROFILE;
 
   // Density drives outer padding/gap so the showcase feels like the
   // kit's natural density, not a generic comfortable mid-tone.
@@ -292,7 +321,13 @@ function pickAccent(colours: CssVar[]): string {
     const c = colours.find((v: CssVar) => v.name === name);
     if (c && isColour(c.value)) return c.value;
   }
-  return findByPattern(colours, [/-accent$/, /-primary$/, /-brand$/]) || "#5E6AD2";
+  // End-anchored pattern fallback. NEVER fall back to a hardcoded brand
+  // colour — the previous "#5E6AD2" was Linear's accent and made every
+  // unprofiled kit look like Linear. If no accent is found, return the
+  // most saturated non-neutral colour available, else a near-black.
+  const patterned = findByPattern(colours, [/-accent$/, /-primary$/, /-brand$/, /-cta$/]);
+  if (patterned) return patterned;
+  return "#1f2228";
 }
 function pickSurface(colours: CssVar[], bg: string): string {
   const order = ["--bg-surface", "--color-bg-surface", "--color-surface", "--mkt-surface"];
@@ -602,7 +637,9 @@ function ShadowSection(props: { shadows: CssVar[]; surface: string; text: string
 }
 
 function ComponentsSection(props: { bg: string; text: string; accent: string; border: string; surface: string; headingText: string; radii: KitRadii; profile: KitStyleProfile }) {
-  const onAccent = onColour(props.accent);
+  // onAccent: profile wins (brand may want off-white or a specific tone),
+  // fall back to luminance-derived if profile colours absent.
+  const onAccent = props.profile.colours?.onAccent || onColour(props.accent);
   const blockProps = { bg: props.bg, text: props.text, accent: props.accent, border: props.border, surface: props.surface, onAccent: onAccent, radii: props.radii, profile: props.profile };
   const sectionGap = props.profile.density === "compact" ? 22 : props.profile.density === "airy" ? 36 : 28;
   return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
@@ -646,12 +683,21 @@ function ButtonsBlock(p: { text: string; accent: string; border: string; onAccen
   const fw = p.profile.button.weight;
   const pad = p.profile.button.padding;
   const fill = p.profile.button.fillStyle;
-  // "shadowed" → solid + soft drop-shadow (Stripe-like).
-  // "subtle" → low-saturation tint not solid (Notion-like).
-  // "filled" → flat solid (default).
-  const primaryShadow = fill === "shadowed" ? "0 1px 2px rgba(0,0,0,0.08), 0 4px 12px " + withAlpha(p.accent, 0.25) : undefined;
-  const primaryBg = fill === "subtle" ? withAlpha(p.accent, 0.14) : p.accent;
-  const primaryColor = fill === "subtle" ? p.accent : p.onAccent;
+  // primaryShadow: profile-prescribed CSS string wins. Fall back to a
+  // generated accent-tinted shadow when fillStyle === "shadowed" but no
+  // explicit string was given.
+  const primaryShadow =
+    p.profile.button.primaryShadow ??
+    (fill === "shadowed" ? "0 1px 2px rgba(0,0,0,0.08), 0 4px 12px " + withAlpha(p.accent, 0.25) : undefined);
+  const primaryBg =
+    fill === "subtle" ? withAlpha(p.accent, 0.14)
+    : fill === "outlined-emphasis" ? "transparent"
+    : p.accent;
+  const primaryColor =
+    fill === "subtle" ? p.accent
+    : fill === "outlined-emphasis" ? p.accent
+    : p.onAccent;
+  const primaryBorder = fill === "outlined-emphasis" ? "2px solid " + p.accent : "none";
 
   const btn = (label: string, variant: "primary" | "secondary" | "ghost" | "disabled", size: "sm" | "md" = "md") => {
     const padding = size === "sm" ? "6px 12px" : pad;
@@ -659,12 +705,17 @@ function ButtonsBlock(p: { text: string; accent: string; border: string; onAccen
     const baseTransition = { transition: "filter 120ms ease, background 120ms ease, box-shadow 120ms ease" };
     if (variant === "primary") return React.createElement("button", {
       "data-showcase-btn": "true", "data-variant": "primary",
-      style: { ...baseTransition, background: primaryBg, color: primaryColor, border: "none", padding, borderRadius: r, fontSize, fontWeight: fw, cursor: "pointer", boxShadow: primaryShadow }
+      style: { ...baseTransition, background: primaryBg, color: primaryColor, border: primaryBorder, padding, borderRadius: r, fontSize, fontWeight: fw, cursor: "pointer", boxShadow: primaryShadow }
     }, label);
-    if (variant === "secondary") return React.createElement("button", {
-      "data-showcase-btn": "true", "data-variant": "secondary",
-      style: { ...baseTransition, background: "transparent", color: p.text, border: "1px solid " + p.border, padding, borderRadius: r, fontSize, fontWeight: fw, cursor: "pointer" }
-    }, label);
+    if (variant === "secondary") {
+      const sec = p.profile.button.secondaryStyle;
+      const secBg = sec === "filled-light" ? withAlpha(p.text, 0.06) : "transparent";
+      const secBorder = sec === "ghost" ? "none" : "1px solid " + p.border;
+      return React.createElement("button", {
+        "data-showcase-btn": "true", "data-variant": "secondary",
+        style: { ...baseTransition, background: secBg, color: p.text, border: secBorder, padding, borderRadius: r, fontSize, fontWeight: fw, cursor: "pointer" }
+      }, label);
+    }
     if (variant === "ghost") return React.createElement("button", {
       "data-showcase-btn": "true", "data-variant": "ghost",
       style: { ...baseTransition, background: "transparent", color: p.text, border: "none", padding, borderRadius: r, fontSize, fontWeight: fw, cursor: "pointer", opacity: 0.7 }
@@ -870,10 +921,12 @@ function ControlsBlock(p: { text: string; accent: string; border: string; bg: st
 }
 
 function StatusBadgesBlock(p: { text: string; accent: string; border: string; radii: KitRadii; profile: KitStyleProfile }) {
-  // Badge shape comes from profile: "pill" → kit's pill radius, "rounded"
-  // → kit's small radius, "square" → 0. Weight also profile-driven.
   const badgeRadius = p.profile.badge.shape === "pill" ? p.radii.pill : p.profile.badge.shape === "rounded" ? p.radii.sm : "0px";
   const fw = p.profile.badge.weight;
+  // Status colours read from the profile so each kit gets its own brand
+  // success/warning/error/info — Figma's #14ae5c green vs Apple's #34c759
+  // vs IBM's #198038 etc. Falls back to the v2 defaults when absent.
+  const c = p.profile.colours;
   const pill = (label: string, fill: string, color: string, dot?: string) =>
     React.createElement("span", {
       style: { padding: "4px 10px", borderRadius: badgeRadius, background: fill, color, fontSize: 12, fontWeight: fw, display: "inline-flex", alignItems: "center", gap: 6 }
@@ -881,18 +934,14 @@ function StatusBadgesBlock(p: { text: string; accent: string; border: string; ra
       dot ? React.createElement("span", { style: { width: 6, height: 6, borderRadius: "50%", background: dot, display: "inline-block" } }) : null,
       label
     );
-  // Status colours: tinted backgrounds with stronger accent for the dot/label.
-  // Success / Warning / Error / Info use fixed semantic hues so they read as
-  // status — the kit's accent is reserved for "Default" / brand-led badges.
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Status badges"),
     React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 8 } },
       pill("Default", withAlpha(p.accent, 0.18), p.accent, p.accent),
-      pill("Success", "rgba(46, 160, 67, 0.18)", "#2ea043", "#2ea043"),
-      pill("Warning", "rgba(212, 154, 21, 0.18)", "#b08200", "#d49a15"),
-      pill("Error",   "rgba(229, 77, 46, 0.18)",  "#c63d22", "#e54d2e"),
-      pill("Info",    "rgba(35, 131, 226, 0.18)", "#1a6dbd", "#2383e2"),
-      // Outline variant for completeness
+      pill("Success", withAlpha(c.success, 0.18), c.success, c.success),
+      pill("Warning", withAlpha(c.warning, 0.18), c.warning, c.warning),
+      pill("Error",   withAlpha(c.error,   0.18), c.error,   c.error),
+      pill("Info",    withAlpha(c.info,    0.18), c.info,    c.info),
       React.createElement("span", {
         style: { padding: "4px 10px", borderRadius: badgeRadius, border: "1px solid " + p.border, color: p.text, fontSize: 12, fontWeight: fw }
       }, "Draft")

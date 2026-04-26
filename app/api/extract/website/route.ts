@@ -19,16 +19,22 @@ const RequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const ip = await getClientIp();
-  const { success } = extractLimiter.check(10, ip);
-  if (!success) {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429, headers: { "Retry-After": "60" } }
-    );
+  // Resolve bearer-admin first so we can skip rate limits for batch jobs.
+  // ADMIN_API_KEY is server-side only, so this exempt path can't be
+  // reached by end users. Cookie-session callers go through both limits.
+  const bearerAdmin = await resolveBearerAdmin(request.headers);
+
+  if (!bearerAdmin) {
+    const ip = await getClientIp();
+    const { success } = extractLimiter.check(10, ip);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers: { "Retry-After": "60" } }
+      );
+    }
   }
 
-  const bearerAdmin = await resolveBearerAdmin(request.headers);
   const session = bearerAdmin
     ? null
     : await auth.api.getSession({ headers: request.headers });
@@ -36,9 +42,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const userId = bearerAdmin?.id ?? session!.user.id;
-  const { success: allowed, reset } = checkUserRateLimit(userId);
-  if (!allowed) {
-    return rateLimitResponse(reset);
+
+  if (!bearerAdmin) {
+    const { success: allowed, reset } = checkUserRateLimit(userId);
+    if (!allowed) {
+      return rateLimitResponse(reset);
+    }
   }
 
   let body: unknown;

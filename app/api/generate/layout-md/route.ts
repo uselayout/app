@@ -74,13 +74,19 @@ const RequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const ip = await getClientIp();
-  const { success } = generateLimiter.check(20, ip);
-  if (!success) {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429, headers: { "Retry-After": "60" } }
-    );
+  // Resolve bearer-admin first so batch jobs skip rate limits.
+  // ADMIN_API_KEY is server-side only.
+  const bearerAdmin = await resolveBearerAdmin(request.headers);
+
+  if (!bearerAdmin) {
+    const ip = await getClientIp();
+    const { success } = generateLimiter.check(20, ip);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers: { "Retry-After": "60" } }
+      );
+    }
   }
 
   let body: unknown;
@@ -100,7 +106,6 @@ export async function POST(request: NextRequest) {
   }
 
   // Auth: bearer-admin token (batch scripts) OR Better Auth session cookie.
-  const bearerAdmin = await resolveBearerAdmin(request.headers);
   const session = bearerAdmin
     ? null
     : await auth.api.getSession({ headers: request.headers });
@@ -110,9 +115,11 @@ export async function POST(request: NextRequest) {
 
   const userId = bearerAdmin?.id ?? session!.user.id;
 
-  const { success: withinLimit, reset } = checkUserRateLimit(userId);
-  if (!withinLimit) {
-    return rateLimitResponse(reset);
+  if (!bearerAdmin) {
+    const { success: withinLimit, reset } = checkUserRateLimit(userId);
+    if (!withinLimit) {
+      return rateLimitResponse(reset);
+    }
   }
 
   if (isShuttingDown()) {

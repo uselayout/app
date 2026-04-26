@@ -5,85 +5,158 @@ import {
   type KitStyleProfile,
 } from "@/lib/types/kit-style-profile";
 
-// Claude derives a small structured profile from the kit's layout.md +
-// tokens.css. The output JSON tells the uniform Live Preview how each
-// block should render for THIS kit — radii, weights, paddings, fill
-// styles, density. Cheap (~$0.005/kit), predictable (validated against
-// a strict schema), and easy to evolve (improve renderer once, every
-// kit benefits).
+// Claude derives the v2 KitStyleProfile from a kit's layout.md + tokens.css.
+// The output is structured JSON describing every brand-variable visual
+// decision the uniform Live Preview will make: brand colours, button
+// fillStyle, input focus treatment, card elevation, status palette, etc.
 //
-// Falls back to DEFAULT_STYLE_PROFILE if Claude returns garbage.
+// "Uniform structure, brand-faithful skin": the renderer's 12 blocks stay
+// identical across kits, but each kit gets its own derived skin so Apple
+// looks Apple, Linear looks Linear, Stripe looks Stripe — with the SAME
+// structural layout.
+//
+// Cost: ~$0.02–0.05 per kit, ~3–5s. Falls back to DEFAULT_STYLE_PROFILE
+// silently if Claude returns garbage.
 
-const SYSTEM = `You analyse a design system's documentation and tokens and produce a small JSON object describing how its UI looks. Your only job is the JSON — no prose, no markdown fences.
+const SYSTEM = `You are a senior brand designer. You analyse a design system's layout.md + tokens.css and emit a structured JSON profile describing how its UI should render.
 
-The JSON has this exact shape (every field required, even if you keep the default):
+Your output drives a uniform Live Preview that shows every kit through the same 12 component blocks. Brand fidelity comes from the COLOURS, weights, paddings, and treatments you prescribe — not from changing the structure.
+
+# Output schema
+
+Return ONLY a JSON object. No prose, no markdown. Every field required.
 
 {
-  "version": 1,
+  "version": 2,
   "mode": "light" | "dark",
   "density": "compact" | "comfortable" | "airy",
-  "headingWeight": 400-800,
+  "colours": {
+    "bg": "#hex",                  // app background
+    "surface": "#hex",             // card / panel surface
+    "surfaceElevated": "#hex",     // hover / popover surface
+    "text": "#hex",                // body text
+    "headingText": "#hex",         // h1/h2 — higher contrast than text
+    "textMuted": "#hex",           // captions, secondary
+    "accent": "#hex",              // brand primary CTA / accent
+    "accentHover": "#hex",         // primary button hover
+    "accentSubtle": "#hex or rgba()",  // tinted accent for badges/alerts
+    "onAccent": "#hex",            // text/icon painted on accent — pick what the brand actually uses, not just luminance-derived
+    "border": "#hex or rgba()",    // neutral divider
+    "borderStrong": "#hex or rgba()",  // emphasised border (focus, selected)
+    "success": "#hex",             // brand success — use kit's actual green if defined
+    "warning": "#hex",
+    "error": "#hex",
+    "info": "#hex"
+  },
+  "type": {
+    "headingWeight": 400-800,
+    "bodyWeight": 400-700,
+    "headingTracking": "-0.02em" | "-0.025em" | "-0.01em" | "0" | "0.01em"
+  },
   "button": {
-    "radius": "var(--radius-NAME)" | "Npx",
+    "radius": "var(--radius-X)" | "Npx",
     "weight": 400-700,
-    "padding": "Npx Npx",
-    "fillStyle": "filled" | "shadowed" | "subtle"
+    "padding": "10px 18px",
+    "fillStyle": "filled" | "shadowed" | "subtle" | "outlined-emphasis",
+    "primaryShadow": null | "0 1px 2px rgba(0,0,0,0.08), 0 4px 12px rgba(99,91,255,0.25)",
+    "hoverEffect": "brightness" | "shadow-lift" | "bg-shift" | "border-fill",
+    "secondaryStyle": "outline" | "filled-light" | "ghost"
   },
   "input": {
-    "radius": "var(--radius-NAME)" | "Npx",
+    "radius": "...",
     "borderWidth": 1 | 1.5 | 2,
-    "focusStyle": "ring" | "border"
+    "focusStyle": "ring" | "border" | "shadow",
+    "bg": "surface" | "bg" | "#hex"
   },
   "card": {
-    "radius": "var(--radius-NAME)" | "Npx",
+    "radius": "...",
     "padding": 12-32,
-    "elevation": "soft" | "shadow" | "elevated"
+    "elevation": "soft" | "shadow" | "elevated",
+    "bg": "surface" | "bg" | "#hex"
   },
   "badge": {
     "shape": "pill" | "rounded" | "square",
     "weight": 400-700
   },
   "tab": {
-    "indicator": "underline" | "pill" | "filled" | "subtle"
+    "indicator": "underline" | "pill" | "filled" | "subtle",
+    "indicatorWeight": 1-4
   }
 }
 
 # How to choose values
 
-- **mode**: which surface the brand's product lives on. Linear, Vercel, Spotify, Sentry, Cursor, Supabase, ElevenLabs, Perplexity, Revolut, Mercedes, Netflix, Attio, Fey → "dark". Most others (Stripe, Notion, Apple, Klarna, Wise, Ramp, Asana, Folk, Bonsai, Webflow, Coinbase, Shopify, Zendesk, Dropbox, etc.) → "light". When uncertain, look for hints in layout.md ("dark UI", "primarily dark surface").
+**Mode**: which surface the brand's product lives on by default. Linear, Vercel, Spotify, Sentry, Cursor, Supabase, ElevenLabs, Perplexity, Revolut, Mercedes, Netflix, Attio, Fey → "dark". Most others (Stripe, Notion, Apple, Klarna, Wise, Ramp, Asana, Folk, Bonsai, Webflow, Coinbase, Shopify, Zendesk, Dropbox, Figma, IBM, Airtable, etc.) → "light". When uncertain, look at hints in layout.md ("Dark, ultra-minimal" → dark).
 
-- **density**: how breathable the layout is. Apple, Stripe, Bonsai → "airy". Linear, Vercel, Notion → "comfortable". IBM, Salesforce, Microsoft, ClickUp → "compact".
+**Brand colours — be authoritative.** Use the brand's actual palette:
 
-- **headingWeight**: the brand's display weight on h1 / h2.
-  - Apple, Vercel, Stripe display lean towards 500-600 (refined / editorial)
-  - Linear, Notion, Figma sit around 600-700 (confident / direct)
-  - IBM, Salesforce, Microsoft go 700-800 (assertive / corporate)
+- **Apple** → bg #ffffff, surface #fbfbfd, text #1d1d1f, headingText #1d1d1f, accent #0071e3 (Apple System Blue), accentHover #0077ed, onAccent #ffffff, border rgba(0,0,0,0.10). Buttons rounded ~18px (NOT pill), filled style, brightness hover. Status: success #34c759, warning #ff9500, error #ff3b30, info #007aff.
 
-- **button.radius**: prefer a CSS variable reference if a sensibly-named radius token exists (e.g. \`var(--radius-md)\`, \`var(--radius-lg)\`). Pill-button kits (Stripe, Linear, Wise) use the pill / full radius. Sharp-cornered kits (IBM, Notion) use sm/md radii (4-8px). Modern soft kits (Apple, Vercel, Cursor) use a medium radius (8-14px).
-- **button.weight**: 500 is most common. 600 for assertive brands (IBM, Salesforce). 400 for serif / editorial brands.
-- **button.padding**: "10px 18px" is a sensible default. Compact kits → "8px 14px". Airy kits → "12px 22px".
-- **button.fillStyle**: "filled" is the default solid CTA. "shadowed" if the brand uses a soft drop-shadow on primary buttons (Stripe, Webflow). "subtle" if primary is a tinted background not solid (rare; Notion-like).
+- **Linear** → bg #08090a, surface #131316, text #f7f8f8, headingText #ffffff, accent #5e6ad2, accentHover #6e7adf, onAccent #ffffff, border rgba(255,255,255,0.10). Pill buttons (var(--radius-full)), brightness hover. Density comfortable.
 
-- **input.radius**: usually a smaller radius than buttons. \`var(--radius-md)\` or \`var(--radius-sm)\`.
-- **input.borderWidth**: 1 default. 1.5 for kits with emphasis (Notion). 2 only for very chunky borders.
-- **input.focusStyle**: "ring" if the brand uses an accent-coloured outer ring/glow on focus (Stripe). "border" if just the border colour shifts (Linear, Apple).
+- **Stripe** → bg #ffffff, surface #f6f9fc, text #425466, headingText #0a2540, accent #635bff, accentHover #5851ec, onAccent #ffffff, accentSubtle rgba(99,91,255,0.10). primaryShadow "0 1px 2px rgba(50,50,93,0.10), 0 4px 12px rgba(50,50,93,0.10)". hoverEffect "shadow-lift". Buttons radius ~6-8px not pill. Status colours from Stripe's own palette.
 
-- **card.radius**: usually larger than buttons. \`var(--radius-lg)\` is most common. 16-24px.
-- **card.padding**: 20 default. 16 for compact, 28 for airy.
-- **card.elevation**: "soft" = border, no shadow (Linear, Stripe). "shadow" = border + soft shadow (Notion, Asana). "elevated" = shadow only, no border (Material / Google).
+- **Notion** → bg #ffffff, surface #f7f6f3 (warm grey), text #37352f, headingText #37352f, accent #2383e2 (Notion blue), accentHover #1a6bbf, onAccent #ffffff. Card elevation "shadow". Density "airy". Headings serif-feel weight 600.
 
-- **badge.shape**: "pill" for most (universal default). "rounded" if the brand uses small-radius status chips. "square" rare.
-- **badge.weight**: usually 500. 600 for emphatic brands.
+- **Figma** → bg #ffffff (or #FADCA2 ONLY if the kit's primary surface is the cream — check tokens.css), text #000000, headingText #000000, accent #0d99ff (Figma blue), accentHover #0084e0, onAccent #ffffff. Status: success #14ae5c, warning #ffc738, error #f24822, info #0d99ff. Rounded UI (radius-md, not pill).
 
-- **tab.indicator**: "underline" most common (Linear, Stripe, Notion). "pill" if active tab gets a pill-shaped background (Apple Music). "filled" if active tab gets full accent fill. "subtle" if the active marker is just bold + colour shift.
+- **Vercel** → bg #000000, surface #0a0a0a, text #ededed, headingText #ffffff, accent #ffffff, accentHover #fafafa, onAccent #000000, border rgba(255,255,255,0.14). Mono-chrome dark — primary button is white-on-black. fillStyle "filled".
+
+- **Ramp** → bg #fafaf7 (cream), surface #ffffff, text #1a1a1a, headingText #000000, accent #1a1a1a (near-black), accentHover #000000, onAccent #fafaf7, border rgba(0,0,0,0.10). Buttons radius ~24px, filled style, no shadow. Editorial.
+
+- **IBM** → bg #ffffff, surface #f4f4f4, text #161616, headingText #161616, accent #0f62fe (IBM blue), accentHover #0050e6, onAccent #ffffff, border #c6c6c6. Sharp corners (radius-sm 4px), headingWeight 700 (assertive corporate). Status colours strict IBM palette.
+
+- **Airbnb** → bg #ffffff, surface #ffffff, text #222222, headingText #222222, accent #ff385c (Airbnb pink/red), accentHover #e0306c, onAccent #ffffff. Buttons rounded ~12-16px, filled. Card elevation "shadow".
+
+- **Klarna** → bg #ffffff, surface #ffa8cd (or warmer pink), text #17120f, headingText #0c0a09, accent #ffa8cd or #000000 (Klarna alternates), buttons pill-shaped, filled.
+
+- **Spotify** → bg #121212, surface #181818, text #b3b3b3, headingText #ffffff, accent #1ed760 (Spotify green), accentHover #1fdf64, onAccent #000000 (the green is bright, dark text on it). Pill buttons.
+
+- **Wise** → bg #ffffff, surface #ffffff, text #0e0f0c, headingText #0e0f0c, accent #163300 (deep green) and/or #9fe870 (signature lime), onAccent #0e0f0c. Buttons rounded.
+
+- **Coinbase** → bg #ffffff, accent #0052ff (Coinbase blue), onAccent #ffffff, headingText #0a0b0d. Sharp-ish buttons, regulated-finance feel.
+
+- **OpenAI** → bg #ffffff, surface #fafafa, text #000000, headingText #000000, accent #10a37f (OpenAI green) — NOT default indigo. Editorial weight 500.
+
+- **Sentry** → bg #181225 (dark purple-tinged), surface #1f1937, text #ebe6ef, accent #7553ff or #f55a91 (Sentry's actual purple/magenta — they use both). dark mode.
+
+- **PostHog** → bg #ffffff (or warm yellow #fff4e3 in some surfaces), accent #f9bd2b (PostHog yellow) with dark text #000 on it. Onyx for primary buttons sometimes.
+
+- **For any other brand**: study layout.md for explicit colour mentions. Inspect tokens.css for the most "brand"-named colour token (e.g. \`--f-emphasis-btn-bg-color\` is Figma's primary CTA — read its value). NEVER default to indigo or Linear's #5E6AD2. If genuinely no brand colour exists, use #1f2228 (near-black) or #ffffff (near-white) depending on mode — graceful neutral, never branded as Linear.
+
+**Density**:
+- compact: IBM, Salesforce, Microsoft, ClickUp
+- comfortable: Linear, Vercel, Notion, Stripe (most kits)
+- airy: Apple, Bonsai, Headspace
+
+**fillStyle**:
+- "filled": flat solid accent (most common — Linear, Notion, IBM)
+- "shadowed": filled + drop-shadow (Stripe, Webflow)
+- "subtle": low-saturation tinted bg (rare — some Notion variants)
+- "outlined-emphasis": thick border, accent text, transparent fill
+
+**hoverEffect**: "brightness" default. "shadow-lift" if brand uses elevated hovers (Stripe, Vercel). "bg-shift" for subtle bg colour change (most macOS-style). "border-fill" for outline buttons that fill on hover.
+
+**secondaryStyle**: "outline" most common. "filled-light" if secondary is a tinted bg (Notion). "ghost" if it's just text with hover bg (some Apple).
+
+**focusStyle**: "ring" if accent ring on focus (Stripe, modern web). "border" if border colour shifts only (Linear, Apple, native macOS). "shadow" rare.
+
+**card.elevation**: "soft" = border only (Linear, Stripe, Vercel). "shadow" = border + soft shadow (Notion, Asana, Asana). "elevated" = shadow only no border (Material).
+
+**badge.shape**: "pill" most common. "rounded" for sharp brands (IBM uses small radius). "square" rare.
+
+**tab.indicator**: "underline" most common. "pill" if the active tab has a pill background (Apple Music). "filled" if active gets full accent fill. "subtle" if it's just bold + colour shift.
+
+**tab.indicatorWeight**: 2 default. 1 for delicate (Apple). 3 for emphatic.
 
 # Hard rules
 
-- Output ONLY a JSON object. No explanation, no markdown, no leading/trailing whitespace.
-- Every field must be present. If you're uncertain, pick the closest of the listed values.
-- "var(--...)" strings must reference a token name that actually appears in tokens.css. Don't invent.
+- Output ONLY a JSON object. No markdown, no prose.
+- Every field required.
+- Colour values must be valid CSS: \`#hex\`, \`rgb(...)\`, \`rgba(...)\`, \`hsl(...)\`, \`var(--...)\`, \`oklch(...)\`. NO bare colour names ("blue") or invented values.
 - Numeric fields must be plain numbers, not strings.
-- Do not include any field outside the schema above.`;
+- Do not invent token names that aren't in the kit's tokens.css.
+- For unknown brands, derive defensibly from layout.md and tokens.css. Never default to Linear-indigo (#5E6AD2 / #6366f1).`;
 
 export interface GenerateProfileInput {
   kitName: string;
@@ -103,9 +176,9 @@ function stripFences(raw: string): string {
 }
 
 /**
- * Generate the kit style profile via Claude. Always returns a valid
- * profile — if Claude's output fails to parse, falls back to
- * DEFAULT_STYLE_PROFILE. Never throws.
+ * Generate the v2 kit style profile via Claude. Always returns a valid
+ * profile — falls back to DEFAULT_STYLE_PROFILE on any failure. Never
+ * throws.
  */
 export async function generateKitStyleProfile(
   input: GenerateProfileInput,
@@ -117,14 +190,14 @@ export async function generateKitStyleProfile(
     input.kitDescription ? `Description: ${input.kitDescription}` : "",
     input.kitTags.length > 0 ? `Tags: ${input.kitTags.join(", ")}` : "",
     "",
-    "First ~2000 chars of layout.md:",
+    "First ~3000 chars of layout.md:",
     "```",
-    input.layoutMd.slice(0, 2000),
+    input.layoutMd.slice(0, 3000),
     "```",
     "",
-    "tokens.css (for var() name references; first 3000 chars):",
+    "tokens.css (first 4000 chars — use these for accent values, prefer ones already declared as CSS variables):",
     "```css",
-    input.tokensCss.slice(0, 3000),
+    input.tokensCss.slice(0, 4000),
     "```",
     "",
     "Return ONLY the JSON object described in the system prompt.",
@@ -136,7 +209,7 @@ export async function generateKitStyleProfile(
   try {
     const response = await anthropic.messages.create({
       model: input.modelId ?? "claude-sonnet-4-6",
-      max_tokens: 1500,
+      max_tokens: 4000,
       system: SYSTEM,
       messages: [{ role: "user", content: userMessage }],
     });
@@ -153,7 +226,7 @@ export async function generateKitStyleProfile(
   try {
     parsed = JSON.parse(stripFences(raw));
   } catch (err) {
-    console.error("[style-profile] JSON parse failed:", err, "\nraw:", raw.slice(0, 200));
+    console.error("[style-profile] JSON parse failed:", err, "\nraw:", raw.slice(0, 300));
     return DEFAULT_STYLE_PROFILE;
   }
 
