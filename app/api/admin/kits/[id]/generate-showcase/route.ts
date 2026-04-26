@@ -3,6 +3,13 @@ import { requireAdmin } from "@/lib/api/admin-context";
 import { fetchKitById, setBespokeShowcase, updateKitShowcase } from "@/lib/supabase/kits";
 import { generateKitShowcase } from "@/lib/claude/generate-kit-showcase";
 
+// Cap how long the Claude stream + transpile can hold the request thread.
+// Without this the route runs unbounded and a hung Anthropic stream can keep
+// a bespokeShowcaseLimit slot busy until the queue timeout (180s), which
+// during the 56-kit gallery batch caused the healthcheck to fail and Coolify
+// to mark the container unhealthy. 180s matches the limiter's queue timeout.
+export const maxDuration = 180;
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -24,6 +31,7 @@ export async function POST(
       layoutMd: kit.layoutMd,
       tokensCss: kit.tokensCss,
       brandingAssets: kit.richBundle?.brandingAssets,
+      signal: request.signal,
     });
     const ok = await updateKitShowcase(kit.id, result.tsx, result.js);
     if (!ok) {
