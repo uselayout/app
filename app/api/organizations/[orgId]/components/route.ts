@@ -93,7 +93,7 @@ export async function POST(
   let compiledJs = parsed.data.compiledJs;
   if (!compiledJs && parsed.data.code) {
     try {
-      compiledJs = transpileTsx(parsed.data.code);
+      compiledJs = await transpileTsx(parsed.data.code);
     } catch {
       // Non-fatal: component will show "No preview"
     }

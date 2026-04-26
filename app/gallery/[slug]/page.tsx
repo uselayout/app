@@ -83,7 +83,7 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
   const showcaseJs =
     kit.bespokeShowcase && kit.showcaseCustomJs
       ? kit.showcaseCustomJs
-      : getKitShowcaseJs();
+      : await getKitShowcaseJs();
 
   // Orphan detection. After the Studio publish modal stopped accepting
   // bespoke=true at publish, this state should only happen if a kit was
