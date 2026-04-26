@@ -3,8 +3,11 @@ import {
   updateKitPreviewImage,
   updateKitHeroImage,
   updateKitStyleProfile,
+  updateKitShowcase,
+  setBespokeShowcase,
 } from "@/lib/supabase/kits";
 import { generateKitStyleProfile } from "@/lib/claude/generate-kit-style-profile";
+import { generateKitShowcase } from "@/lib/claude/generate-kit-showcase";
 import { captureAndUploadKitPreview } from "@/lib/gallery/snapshot";
 import { captureAndUploadKitHero } from "@/lib/gallery/hero";
 import type { PublicKit } from "@/lib/types/kit";
@@ -44,21 +47,31 @@ export function runKitGenerationJobs(
     }
   })();
 
-  // Bespoke showcase generation is INTENTIONALLY NOT FIRED HERE.
+  // Bespoke showcase generation, on every publish.
   //
-  // Server-side bespoke generation pegged the Node single-thread under
-  // sustained load (Claude streaming + TypeScript transpile per kit),
-  // which starved /api/health/ready and triggered Coolify to drop the
-  // backend ("no available server" 503s on the gallery).
-  //
-  // The bespoke flow is now opt-in via scripts/regen-bespoke.ts which
-  // runs Claude + transpile LOCALLY and POSTs the result to
-  // /api/admin/kits/[id]/showcase. Keeps the staging server free for
-  // serving requests.
-  //
-  // The kit publishes with style profile only (auto, fast, cheap) and
-  // renders via the uniform template. Run the bespoke regen script
-  // separately when you want kit-tailored TSX.
+  // We previously disabled this server-side because seven parallel
+  // bulk-regen calls pegged the Node thread on transpile, starving the
+  // healthcheck. The new operational profile is one-at-a-time manual
+  // publishing through Studio, so concurrency stays at 1-2 in practice.
+  // bespokeShowcaseLimit(2) inside generateKitShowcase queues anything
+  // unexpected. scripts/regen-bespoke.ts remains as a manual fallback
+  // if a publish-time generation fails.
+  void (async () => {
+    try {
+      const result = await generateKitShowcase({
+        kitName: kit.name,
+        kitDescription: kit.description,
+        kitTags: kit.tags,
+        layoutMd: kit.layoutMd,
+        tokensCss: kit.tokensCss,
+        brandingAssets: kit.richBundle?.brandingAssets,
+      });
+      const ok = await updateKitShowcase(kit.id, result.tsx, result.js);
+      if (ok) await setBespokeShowcase(kit.id, true);
+    } catch (err) {
+      console.error(`[gen-jobs] bespoke showcase failed for ${kit.slug}:`, err);
+    }
+  })();
 
   void (async () => {
     try {
