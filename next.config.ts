@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // esbuild ships per-platform native binaries — let Node resolve them at
+  // runtime instead of letting Turbopack/webpack try to bundle the binary.
+  serverExternalPackages: ["esbuild"],
   // Allow large request bodies for screenshot data in layout-md generation
   experimental: {
     serverActions: {
