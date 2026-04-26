@@ -573,8 +573,8 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                             label: showcaseJob
                               ? `Showcase… ${formatElapsed(Date.now() - showcaseJob.startedAt)}`
                               : kit.bespoke_showcase
-                                ? "Regen bespoke showcase"
-                                : "Switch to bespoke (Claude)",
+                                ? "Regen bespoke (Claude)"
+                                : "Generate bespoke (Claude)",
                             onClick: () => regenShowcase(kit.id, kit.name),
                           }}
                           preview={{ running: !!previewJob, label: previewJob ? `Preview… ${formatElapsed(Date.now() - previewJob.startedAt)}` : "Regen preview", onClick: () => regenPreview(kit.id, kit.name) }}
@@ -582,6 +582,11 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                           revertToUniform={
                             kit.bespoke_showcase
                               ? () => patch(kit.id, { bespokeShowcase: false })
+                              : undefined
+                          }
+                          restoreBespoke={
+                            !kit.bespoke_showcase && kit.showcase_generated_at
+                              ? () => patch(kit.id, { bespokeShowcase: true })
                               : undefined
                           }
                           anyJob={!!anyJob}
@@ -610,6 +615,7 @@ function RegenMenu({
   preview,
   hero,
   revertToUniform,
+  restoreBespoke,
   anyJob,
 }: {
   showcase: RegenAction;
@@ -617,6 +623,9 @@ function RegenMenu({
   hero: RegenAction;
   /** Present only when the kit is currently bespoke. Flips back to the uniform template. */
   revertToUniform?: () => void;
+  /** Present when the kit is currently uniform AND a cached bespoke exists.
+   * Restores the cached bespoke without re-running Claude. */
+  restoreBespoke?: () => void;
   anyJob: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -665,6 +674,25 @@ function RegenMenu({
             border: "1px solid var(--studio-border)",
           }}
         >
+          {restoreBespoke && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                restoreBespoke();
+              }}
+              className="w-full text-left px-3 py-2 text-[12px] transition-colors flex flex-col gap-0.5 hover:bg-[var(--bg-hover)]"
+              style={{ color: "var(--mkt-accent)" }}
+            >
+              <span>Restore bespoke (cached)</span>
+              <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                Switches back to the previously generated bespoke. Instant, no Claude call.
+              </span>
+            </button>
+          )}
+          {restoreBespoke && (
+            <div style={{ height: 1, background: "var(--studio-border)", margin: "4px 0" }} />
+          )}
           {[
             { ...showcase, hint: "Claude Sonnet · ~30s · costs credits" },
             { ...preview, hint: "Playwright · ~45s" },

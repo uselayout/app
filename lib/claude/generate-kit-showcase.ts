@@ -28,10 +28,23 @@ const SYSTEM = `You generate a single TypeScript (TSX) module that renders a des
    - Hero: the kit name as a large heading and a one-line aesthetic description underneath. **Do not add a pill, badge, emoji, eyebrow label, or "Design System" tag above or beside the kit name.** Name + description only. **If brand assets are provided in the user message, render the primary logo at the top of the hero as an \`<img src="..." alt="..." />\` tag (max-height around 48-80px). Do not re-draw or restyle the mark; just render it.**
    - "Colour palette" (grouped by role: backgrounds, text, accent, borders, status, other)
    - "Typography" (Display / Heading / Body / Caption samples at sensible sizes)
-   - "Spacing" (horizontal bars from smallest to largest --space-* tokens)
-   - "Radius" (boxes with each --radius-* value)
+   - "Spacing" (horizontal bars from smallest to largest --space-* tokens, rendered with a NEUTRAL fill — \`rgba(text, 0.25)\` style — not the kit's accent. Spacing communicates scale, not brand colour.)
+   - "Radius" (boxes with each --radius-* value, also using a NEUTRAL fill rather than accent)
    - "Elevation" (if any --shadow-* tokens exist; skip if none)
-   - "Components" (buttons: primary / secondary / ghost / disabled; input; two badges; one card)
+   - "Components" — render a comprehensive showcase, with small uppercase sub-labels above each block, in this order:
+     1. **Buttons**: primary, secondary, ghost, disabled, plus small-size variants and one circular icon button
+     2. **Inputs**: at least four variants — search with a leading icon, prefixed (e.g. \`@\`), select with a chevron, and a textarea
+     3. **Field states**: default, focused (with accent ring), error (with red border)
+     4. **Controls**: a toggle in on + off states, a checked + unchecked checkbox pair, a selected + unselected radio pair (each labelled)
+     5. **Status badges**: at least 5 — Default (kit accent), Success, Warning, Error, Info — each with a small leading dot. Plus one outline "Draft" badge.
+     6. **Navigation**: a tabs row with one active tab (underline + accent), AND a 3-option segmented control with one active segment
+     7. **People**: an overlapping avatar group of 4–5 with a "+N" chip, plus one large avatar with an online status dot, plus one mini list-item showing avatar + name + meta row
+     8. **Progress**: a labelled progress bar (~64% filled with the accent), plus 2–3 skeleton-loader bars
+     9. **Alert / banner**: an info-style alert using the accent — icon + title + body + action button on the right
+     10. **Stat tiles**: 3 KPI cards in a grid (label, large number, delta in accent)
+     11. **Card**: one rich card with avatar/icon, title + meta row, body paragraph, status pill, and two action buttons (View + Share)
+     12. **Data table**: a 4-column table (ID, Name, Status badge, Updated) with at least 3 rows and a header row in monospace
+   - Buttons that paint text directly on the accent must compute their text colour from the accent's luminance (white if accent is dark, near-black if accent is light). Never hardcode \`#fff\` or \`#000\` for that label.
 8. Use the kit's tokens. Prefer \`var(--token-name)\` inline for surface/accent/border. Pick sensible fallbacks if tokens are missing.
 9. Design quality matters: respect the kit's aesthetic (dense vs airy, sharp vs soft), but keep section structure identical to rules 7.
 10. **Ignore motion/animation tokens entirely.** Any CSS variable whose name starts with \`--motion-\`, \`--animation-\`, \`--transition-\`, \`--keyframe-\`, \`--duration-\`, \`--ease-\`, or whose value contains \`@keyframes\` is NOT a visual token and must not appear in the palette, typography, or any other rendered section. The user message passes tokens.css with these already stripped, but the iframe's \`readRootCssVars()\` may still expose them — filter them inside your component before rendering.

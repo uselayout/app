@@ -147,6 +147,14 @@ export interface BuildSrcdocOptions {
   fonts?: FontDeclaration[];
   uploadedFonts?: UploadedFont[];
   cssTokenBlock?: string;
+  /** Kit metadata exposed to the iframe as window.__KIT__. Used by the
+   * uniform showcase template to render a brand-aware hero (logo + name
+   * + description). Bespoke showcases ignore this and embed their own. */
+  kit?: {
+    name?: string;
+    description?: string;
+    logoUrl?: string;
+  };
 }
 
 export function buildSrcdoc(js: string, componentName: string, opts?: BuildSrcdocOptions): string;
@@ -189,6 +197,12 @@ export function buildSrcdoc(
     ? `"${fontResult.primaryFamily}",system-ui,sans-serif`
     : "system-ui,sans-serif";
 
+  // Kit metadata exposed to the iframe as window.__KIT__. JSON-encoded so
+  // any quotes / special chars survive HTML embedding intact.
+  const kitJson = opts.kit
+    ? JSON.stringify(opts.kit).replace(/</g, "\\u003c").replace(/>/g, "\\u003e")
+    : null;
+
   return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
@@ -201,6 +215,7 @@ ${fontResult.linkTags}
 ${iconScriptTags}
 <style>${fontResult.fontFaceCSS ? fontResult.fontFaceCSS + "\n" : ""}body{margin:0;font-family:${bodyFont}}a[href]{cursor:default}</style>
 ${opts.cssTokenBlock ? `<style>${opts.cssTokenBlock}</style>` : ""}
+${kitJson ? `<script>window.__KIT__=${kitJson};</${"script"}>` : ""}
 </head><body>
 <div id="root"></div>
 <script>

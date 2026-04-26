@@ -8,6 +8,9 @@ interface Props {
   showcaseJs: string;
   /** The kit's tokens.css. Injected verbatim as a <style> block inside the iframe. */
   tokensCss: string;
+  /** Kit metadata for the uniform Hero (logo + name + description).
+   * Bespoke showcases ignore this and embed their own. */
+  kit?: { name?: string; description?: string; logoUrl?: string };
   /** Explicit pixel height. Overrides `fillViewport`. */
   height?: number;
   /** Fill the viewport (minus a top offset for the page header). */
@@ -17,13 +20,14 @@ interface Props {
 // Iframe host for the Kit Showcase. The showcase JS is pre-compiled on the
 // server (see kit-showcase-compiled.ts) so anonymous gallery visitors render
 // the preview without hitting /api/transpile, which requires auth.
-export function KitShowcaseFrame({ showcaseJs, tokensCss, height, fillViewport }: Props) {
+export function KitShowcaseFrame({ showcaseJs, tokensCss, kit, height, fillViewport }: Props) {
   const srcdoc = useMemo(
     () =>
       buildSrcdoc(showcaseJs, "App", {
         cssTokenBlock: tokensCss,
+        kit,
       }),
-    [showcaseJs, tokensCss],
+    [showcaseJs, tokensCss, kit],
   );
 
   const style: React.CSSProperties = fillViewport

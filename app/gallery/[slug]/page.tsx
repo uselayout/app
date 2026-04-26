@@ -13,6 +13,7 @@ import { UpvoteButton } from "@/components/gallery/UpvoteButton";
 import { CopyInline } from "@/components/gallery/CopyInline";
 import { KitDetailTabs } from "@/components/gallery/KitDetailTabs";
 import { KitShowcaseFrame } from "@/components/gallery/KitShowcaseFrame";
+import { ShareButton } from "@/components/gallery/ShareButton";
 import { getKitShowcaseJs } from "@/components/gallery/kit-showcase-compiled";
 
 interface PageProps {
@@ -84,13 +85,26 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
       ? kit.showcaseCustomJs
       : getKitShowcaseJs();
 
+  // Kit metadata exposed to the uniform showcase iframe via window.__KIT__.
+  // The Hero in kit-showcase-source.ts reads this to render a logo + name +
+  // description block matching the bespoke Notion-style design. Bespoke
+  // showcases ignore it because they hard-code their own hero.
+  const primaryLogo = kit.richBundle?.brandingAssets?.find(
+    (a) => /^(logo|primary|wordmark|mark)$/i.test(a.slot),
+  )?.url;
+  const kitMeta = {
+    name: kit.name,
+    description: kit.description,
+    logoUrl: primaryLogo,
+  };
+
   // Snapshot mode: render only the showcase iframe at full size, no chrome.
   // Used by Playwright to capture the card thumbnail (lib/gallery/snapshot.ts).
   if (isSnapshot) {
     return (
       <main className="min-h-screen bg-[var(--mkt-bg)]" data-mkt-theme="light">
         <div className="max-w-[1280px] mx-auto">
-          <KitShowcaseFrame showcaseJs={showcaseJs} tokensCss={kit.tokensCss} height={900} />
+          <KitShowcaseFrame showcaseJs={showcaseJs} tokensCss={kit.tokensCss} kit={kitMeta} height={900} />
         </div>
       </main>
     );
@@ -146,6 +160,7 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
                       initiallyUpvoted={initiallyUpvoted}
                       isLoggedIn={isLoggedIn}
                     />
+                    <ShareButton name={kit.name} description={kit.description} />
                     <span className="text-[12px] text-[var(--mkt-text-secondary)] px-2 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]">
                       {kit.licence}
                     </span>
@@ -185,6 +200,7 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
                     <KitShowcaseFrame
                       showcaseJs={showcaseJs}
                       tokensCss={kit.tokensCss}
+                      kit={kitMeta}
                       fillViewport
                     />
                   }
@@ -299,6 +315,13 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
                     value={`npx @layoutdesign/context install ${kit.slug}`}
                     label="Copy install command"
                   />
+                  <Link
+                    href="/docs/cli"
+                    className="inline-flex items-center gap-1 text-[12px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)] transition-colors self-start"
+                  >
+                    Read the CLI docs
+                    <span aria-hidden>→</span>
+                  </Link>
                 </div>
               </div>
 
