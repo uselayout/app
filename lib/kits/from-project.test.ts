@@ -44,8 +44,8 @@ describe("buildKitFromProject — tokens.json comprehensiveness", () => {
       project: project({ layoutMd }),
       name: "Test",
       tags: [],
-      licence: "mit",
-      tier: "lite",
+      licence: "MIT",
+      tier: "minimal",
       author: baseAuthor,
       include: { components: false, fonts: false, branding: false, context: false },
     });
@@ -90,8 +90,8 @@ describe("buildKitFromProject — tokens.json comprehensiveness", () => {
       project: project1,
       name: "Test",
       tags: [],
-      licence: "mit",
-      tier: "lite",
+      licence: "MIT",
+      tier: "minimal",
       author: baseAuthor,
       include: { components: false, fonts: false, branding: false, context: false },
     });

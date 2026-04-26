@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-explore-enter-submits",
+    title: "Explore: Enter submits, Shift+Enter adds a line break",
+    description:
+      "Explorer prompt fields now submit on Enter so you can dispatch a generation without reaching for Cmd+Enter. Hold Shift while pressing Enter to insert a newline if you want a multi-line prompt. Behaviour matches every other AI input you've used; both the main prompt and the Refine field follow the same convention.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
     id: "2026-w18-gallery-tokens-match-studio",
     title: "Gallery Tokens tab now lists everything the studio sees",
     description:
