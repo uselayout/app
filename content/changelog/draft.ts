@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-gallery-stable-during-bespoke-regen",
+    title: "Gallery stays online during bulk kit regeneration",
+    description:
+      "Generating a bespoke Live Preview for a kit means a long Claude call followed by a CPU-heavy TypeScript transpile. When several kits regenerated in parallel the staging container's single Node thread saturated, the readiness probe timed out, and the gallery briefly returned a 'no available server' page. Bulk regen now runs locally on the operator's machine and posts the finished bespoke straight to the kit; the live server only handles small DB writes. Kits stay served throughout.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
     id: "2026-w18-gallery-kit-style-profile",
     title: "Live Preview now feels like the actual brand",
     description:
