@@ -708,7 +708,7 @@ function RegenMenu({
       </button>
       {open && (
         <div
-          className="absolute right-0 mt-1 z-10 min-w-[180px] rounded-md py-1 shadow-lg"
+          className="absolute right-0 mt-1 z-[9999] min-w-[180px] rounded-md py-1 shadow-lg"
           style={{
             background: "var(--bg-elevated)",
             border: "1px solid var(--studio-border)",
@@ -835,7 +835,7 @@ function ActionMenu({
       </button>
       {open && (
         <div
-          className="absolute right-0 mt-1 z-10 min-w-[180px] rounded-md py-1 shadow-lg"
+          className="absolute right-0 mt-1 z-[9999] min-w-[180px] rounded-md py-1 shadow-lg"
           style={{
             background: "var(--bg-elevated)",
             border: "1px solid var(--studio-border)",
