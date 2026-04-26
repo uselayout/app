@@ -10,6 +10,51 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-gallery-kit-style-profile",
+    title: "Live Preview now feels like the actual brand",
+    description:
+      "Each kit's Live Preview used to render the same generic component sample with different colours swapped in — Stripe, Linear, and Apple all looked oddly similar. Now Claude derives a small per-kit style profile from layout.md and tokens.css describing how each block should render: button radius, fill style, input focus treatment, card elevation, badge shape, tab indicator, density. Apple gets soft 18px-ish buttons, Linear keeps pills, IBM gets sharp corners, Notion's cards get a subtle shadow. Auto-runs on every publish.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-gallery-rich-component-preview",
+    title: "Live Preview shows a full component palette",
+    description:
+      "The component sample on a kit page used to be three things: buttons, an input, a card. It now spans buttons (with size variants), four input types (search with icon, prefix, select, textarea), field states (default / focused / error), interactive toggles + checkboxes + radios, status badges, tabs, segmented control, an avatar group, progress + skeleton, an alert banner, KPI tiles, a rich card, and a mini data table. Hover states everywhere; controls actually flip when you click them.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-gallery-hero-and-share",
+    title: "Brand-aware hero + share button on the gallery",
+    description:
+      "Each kit page now leads with the brand's logo, name, and one-line description in the Live Preview header — same shape as the Notion-style header you may have seen on bespoke kits. Added a Share button next to the upvote / licence chips (Web Share where available, copy-link fallback). And a 'Read the CLI docs' link sits under the npm install command for anyone hitting Layout for the first time.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-gallery-fixes-borders-buttons",
+    title: "Live Preview rendering fixes",
+    description:
+      "Three quiet bugs squashed: card outlines on Linear no longer render in green (the picker was mistakenly grabbing semantic-state colours like --color-success-border before the neutral one); Primary and Accept button labels stay readable on kits with dark or near-black accents (Apple, Ramp, Nike) instead of disappearing into the background; the spacing and radius scale ladders now use a neutral text-tint instead of the kit's accent so the eye reads sizes, not a wall of brand colour.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-admin-kits-row-tidy",
+    title: "Tidier admin kit row + cached bespoke restore",
+    description:
+      "The admin Kits table row had grown to seven inline buttons; they're now grouped into Card / Status / Generate dropdowns with a clearer visual hierarchy. The Generate dropdown also gains two improvements: when a kit was Claude-generated then flipped to uniform, you can now Restore the cached bespoke instantly without re-running Claude; and a Profile column shows when each kit's style profile was last derived.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
     id: "2026-w18-curated-mode-seeding",
     title: "Light/Dark mode tabs in Curated populate themselves",
     description:
