@@ -38,11 +38,15 @@ export async function resolveBearerAdmin(
     .filter(Boolean);
   if (adminEmails.length === 0) return null;
 
+  // Always resolve to the FIRST email in the list. Using `.in()` against a
+  // multi-email ADMIN_EMAIL was non-deterministic — Postgres without an
+  // ORDER BY can return either match, so callers couldn't predict which
+  // org the bearer would land in. First-wins is documented and stable.
+  const primaryEmail = adminEmails[0];
   const { data, error } = await supabase
     .from("layout_user")
     .select("id, email, name, image")
-    .in("email", adminEmails)
-    .limit(1)
+    .eq("email", primaryEmail)
     .maybeSingle();
 
   if (error || !data) return null;
