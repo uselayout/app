@@ -2,8 +2,9 @@
 # the input JSON, so no point versioning them.
 gallery-batch.state.json
 
-# The actual 50-URL input lives outside git. Use the .example.json as a
-# template and copy it to gallery-batch.json locally.
+# Active input file is a per-run artefact: copy gallery-batch.seed.json to
+# gallery-batch.json locally before running, then tweak as needed. Kept
+# out of git so iterations don't churn commits.
 gallery-batch.json
 
 # Card images downloaded from Dropbox before each batch run. ~2MB total
