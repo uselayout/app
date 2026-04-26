@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-gallery-new-badge-and-cleaner-admin",
+    title: "Gallery cards get a New badge, admin row gets tidier",
+    description:
+      "Admins can now mark a kit as New (green badge on the gallery card, mirrors the Featured pattern). The admin Kits row is also cleaner: the three regen actions (showcase, preview, hero) collapsed into a single Generate dropdown so the row stops being a wall of buttons.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
     id: "2026-w17-gallery-pending-review",
     title: "Self-published kits go through admin review",
     description:

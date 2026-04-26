@@ -17,6 +17,7 @@ interface AdminKitRow {
   featured: boolean;
   hidden: boolean;
   unlisted: boolean;
+  is_new: boolean;
   status: "pending" | "approved";
   card_image_pref: "auto" | "custom" | "hero" | "preview";
   custom_card_image_url: string | null;
@@ -97,20 +98,20 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
 
   async function patch(
     id: string,
-    body: Partial<Pick<AdminKitRow, "featured" | "hidden" | "unlisted" | "card_image_pref">> & { cardImagePref?: AdminKitRow["card_image_pref"] },
+    body: {
+      featured?: boolean;
+      hidden?: boolean;
+      unlisted?: boolean;
+      isNew?: boolean;
+      cardImagePref?: AdminKitRow["card_image_pref"];
+    },
   ) {
     setBusy(id);
     try {
-      // Translate snake_case state-shape to the API's camelCase contract.
-      const apiBody: Record<string, unknown> = {};
-      if ("featured" in body) apiBody.featured = body.featured;
-      if ("hidden" in body) apiBody.hidden = body.hidden;
-      if ("unlisted" in body) apiBody.unlisted = body.unlisted;
-      if ("cardImagePref" in body) apiBody.cardImagePref = body.cardImagePref;
       const res = await fetch(`/api/admin/kits/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(apiBody),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "Update failed");
       toast("Kit updated", "success");
@@ -119,9 +120,10 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
           ? rows.map((r) => {
               if (r.id !== id) return r;
               const next = { ...r };
-              if ("featured" in body && body.featured !== undefined) next.featured = body.featured;
-              if ("hidden" in body && body.hidden !== undefined) next.hidden = body.hidden;
-              if ("unlisted" in body && body.unlisted !== undefined) next.unlisted = body.unlisted;
+              if (body.featured !== undefined) next.featured = body.featured;
+              if (body.hidden !== undefined) next.hidden = body.hidden;
+              if (body.unlisted !== undefined) next.unlisted = body.unlisted;
+              if (body.isNew !== undefined) next.is_new = body.isNew;
               if (body.cardImagePref !== undefined) next.card_image_pref = body.cardImagePref;
               return next;
             })
@@ -395,6 +397,9 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                         {kit.status === "pending" && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#f59e0b", color: "#1a0f00" }}>Pending</span>
                         )}
+                        {kit.is_new && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#10b981", color: "#04261a" }}>New</span>
+                        )}
                         {kit.featured && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--mkt-accent)", color: "#08090a" }}>Featured</span>
                         )}
@@ -543,6 +548,19 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                         <button
                           type="button"
                           disabled={busy === kit.id || !!anyJob}
+                          onClick={() => patch(kit.id, { isNew: !kit.is_new })}
+                          className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
+                          style={{
+                            background: kit.is_new ? "var(--bg-elevated)" : "transparent",
+                            color: kit.is_new ? "var(--text-primary)" : "var(--text-muted)",
+                            border: "1px solid var(--studio-border)",
+                          }}
+                        >
+                          {kit.is_new ? "Unmark new" : "Mark new"}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy === kit.id || !!anyJob}
                           onClick={() => patch(kit.id, { hidden: !kit.hidden })}
                           className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
                           style={{
@@ -553,45 +571,12 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                         >
                           {kit.hidden ? "Unhide" : "Hide"}
                         </button>
-                        <button
-                          type="button"
-                          disabled={!!showcaseJob}
-                          onClick={() => regenShowcase(kit.id, kit.name)}
-                          className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
-                          style={{
-                            border: "1px solid var(--studio-border)",
-                            color: showcaseJob ? "var(--mkt-accent)" : "var(--text-secondary)",
-                          }}
-                          title="Regenerate bespoke showcase via Claude Sonnet (~30s)"
-                        >
-                          {showcaseJob ? "Generating…" : "Regen showcase"}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!!previewJob}
-                          onClick={() => regenPreview(kit.id, kit.name)}
-                          className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
-                          style={{
-                            border: "1px solid var(--studio-border)",
-                            color: previewJob ? "var(--mkt-accent)" : "var(--text-secondary)",
-                          }}
-                          title="Regenerate PNG preview via Playwright (~45s)"
-                        >
-                          {previewJob ? "Capturing…" : "Regen preview"}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!!heroJob}
-                          onClick={() => regenHero(kit.id, kit.name)}
-                          className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
-                          style={{
-                            border: "1px solid var(--studio-border)",
-                            color: heroJob ? "var(--mkt-accent)" : "var(--text-secondary)",
-                          }}
-                          title="Regenerate stylised hero cover via GPT Image 2 (~30s)"
-                        >
-                          {heroJob ? "Generating…" : "Regen hero"}
-                        </button>
+                        <RegenMenu
+                          showcase={{ running: !!showcaseJob, label: showcaseJob ? `Showcase… ${formatElapsed(Date.now() - showcaseJob.startedAt)}` : "Regen showcase", onClick: () => regenShowcase(kit.id, kit.name) }}
+                          preview={{ running: !!previewJob, label: previewJob ? `Preview… ${formatElapsed(Date.now() - previewJob.startedAt)}` : "Regen preview", onClick: () => regenPreview(kit.id, kit.name) }}
+                          hero={{ running: !!heroJob, label: heroJob ? `Hero… ${formatElapsed(Date.now() - heroJob.startedAt)}` : "Regen hero", onClick: () => regenHero(kit.id, kit.name) }}
+                          anyJob={!!anyJob}
+                        />
                         <button
                           type="button"
                           disabled={busy === kit.id || !!anyJob}
@@ -611,6 +596,97 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface RegenAction {
+  running: boolean;
+  label: string;
+  onClick: () => void;
+}
+
+function RegenMenu({
+  showcase,
+  preview,
+  hero,
+  anyJob,
+}: {
+  showcase: RegenAction;
+  preview: RegenAction;
+  hero: RegenAction;
+  anyJob: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const running = showcase.running || preview.running || hero.running;
+  const label = showcase.running
+    ? showcase.label
+    : preview.running
+      ? preview.label
+      : hero.running
+        ? hero.label
+        : "Generate";
+
+  // Close on outside click.
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (!ref.current || ref.current.contains(e.target as Node)) return;
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        disabled={anyJob}
+        onClick={() => setOpen((v) => !v)}
+        className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40 inline-flex items-center gap-1"
+        style={{
+          border: "1px solid var(--studio-border)",
+          color: running ? "var(--mkt-accent)" : "var(--text-secondary)",
+        }}
+        title="Regenerate showcase, preview, or hero"
+      >
+        {label}
+        <span aria-hidden style={{ fontSize: 10, opacity: 0.7 }}>▾</span>
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 mt-1 z-10 min-w-[180px] rounded-md py-1 shadow-lg"
+          style={{
+            background: "var(--bg-elevated)",
+            border: "1px solid var(--studio-border)",
+          }}
+        >
+          {[
+            { ...showcase, hint: "Claude Sonnet · ~30s" },
+            { ...preview, hint: "Playwright · ~45s" },
+            { ...hero, hint: "GPT Image 2 · ~30s" },
+          ].map((item) => (
+            <button
+              key={item.label + item.hint}
+              type="button"
+              disabled={item.running}
+              onClick={() => {
+                setOpen(false);
+                item.onClick();
+              }}
+              className="w-full text-left px-3 py-2 text-[12px] transition-colors disabled:opacity-50 flex flex-col gap-0.5 hover:bg-[var(--bg-hover)]"
+              style={{ color: "var(--text-primary)" }}
+            >
+              <span>{item.label}</span>
+              <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                {item.hint}
+              </span>
+            </button>
+          ))}
         </div>
       )}
     </div>

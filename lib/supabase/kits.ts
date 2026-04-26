@@ -38,6 +38,7 @@ interface KitRow {
   featured: boolean;
   hidden: boolean;
   unlisted: boolean;
+  is_new: boolean;
   upvote_count: number;
   import_count: number;
   view_count: number;
@@ -57,7 +58,7 @@ interface KitRow {
 }
 
 const SUMMARY_COLUMNS =
-  "id, slug, name, description, tags, author_org_id, author_user_id, author_display_name, author_avatar_url, licence, preview_image_url, hero_image_url, custom_card_image_url, tier, featured, status, card_image_pref, upvote_count, import_count, created_at, updated_at";
+  "id, slug, name, description, tags, author_org_id, author_user_id, author_display_name, author_avatar_url, licence, preview_image_url, hero_image_url, custom_card_image_url, tier, featured, is_new, status, card_image_pref, upvote_count, import_count, created_at, updated_at";
 
 function rowToKit(row: KitRow): PublicKit {
   const author: KitAuthor = {
@@ -88,6 +89,7 @@ function rowToKit(row: KitRow): PublicKit {
     featured: row.featured,
     hidden: row.hidden,
     unlisted: row.unlisted,
+    isNew: row.is_new ?? false,
     status: (row.status as KitStatus) ?? "approved",
     cardImagePref: (row.card_image_pref as KitCardImagePref) ?? "auto",
     upvoteCount: row.upvote_count,
@@ -126,6 +128,7 @@ function rowToSummary(row: Partial<KitRow>): PublicKitSummary {
     customCardImageUrl: row.custom_card_image_url ?? undefined,
     tier: (row.tier as KitTier) ?? "minimal",
     featured: row.featured ?? false,
+    isNew: row.is_new ?? false,
     status: (row.status as KitStatus) ?? "approved",
     cardImagePref: (row.card_image_pref as KitCardImagePref) ?? "auto",
     upvoteCount: row.upvote_count ?? 0,
@@ -145,6 +148,7 @@ export type PublishKitInput = Omit<
   | "viewCount"
   | "featured"
   | "hidden"
+  | "isNew"
   | "githubFolder"
   | "githubSyncedAt"
   | "status"
@@ -166,6 +170,7 @@ type KitInsertRow = Omit<
   | "view_count"
   | "featured"
   | "hidden"
+  | "is_new"
   | "github_folder"
   | "github_synced_at"
   | "showcase_custom_tsx"
