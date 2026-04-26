@@ -1,12 +1,9 @@
 import "server-only";
 import {
-  updateKitShowcase,
   updateKitPreviewImage,
   updateKitHeroImage,
   updateKitStyleProfile,
-  setBespokeShowcase,
 } from "@/lib/supabase/kits";
-import { generateKitShowcase } from "@/lib/claude/generate-kit-showcase";
 import { generateKitStyleProfile } from "@/lib/claude/generate-kit-style-profile";
 import { captureAndUploadKitPreview } from "@/lib/gallery/snapshot";
 import { captureAndUploadKitHero } from "@/lib/gallery/hero";
@@ -47,31 +44,21 @@ export function runKitGenerationJobs(
     }
   })();
 
-  // Bespoke showcase: ALWAYS fires on publish now. The uniform template
-  // can only swap colours; bespoke writes brand-faithful TSX per kit
-  // (Linear renders Linear-style buttons, Stripe gets shadow CTAs, Apple
-  // gets iOS-style controls, etc). Auto-flips bespokeShowcase to true
-  // on success so the gallery page serves the new TSX. On failure the
-  // kit silently falls back to the uniform template — kit page never
-  // breaks.
-  void (async () => {
-    try {
-      const result = await generateKitShowcase({
-        kitName: kit.name,
-        kitDescription: kit.description,
-        kitTags: kit.tags,
-        layoutMd: kit.layoutMd,
-        tokensCss: kit.tokensCss,
-        brandingAssets: kit.richBundle?.brandingAssets,
-      });
-      const ok = await updateKitShowcase(kit.id, result.tsx, result.js);
-      if (ok && !kit.bespokeShowcase) {
-        await setBespokeShowcase(kit.id, true);
-      }
-    } catch (err) {
-      console.error(`[gen-jobs] showcase failed for ${kit.slug}:`, err);
-    }
-  })();
+  // Bespoke showcase generation is INTENTIONALLY NOT FIRED HERE.
+  //
+  // Server-side bespoke generation pegged the Node single-thread under
+  // sustained load (Claude streaming + TypeScript transpile per kit),
+  // which starved /api/health/ready and triggered Coolify to drop the
+  // backend ("no available server" 503s on the gallery).
+  //
+  // The bespoke flow is now opt-in via scripts/regen-bespoke.ts which
+  // runs Claude + transpile LOCALLY and POSTs the result to
+  // /api/admin/kits/[id]/showcase. Keeps the staging server free for
+  // serving requests.
+  //
+  // The kit publishes with style profile only (auto, fast, cheap) and
+  // renders via the uniform template. Run the bespoke regen script
+  // separately when you want kit-tailored TSX.
 
   void (async () => {
     try {
