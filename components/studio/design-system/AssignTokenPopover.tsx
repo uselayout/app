@@ -143,10 +143,7 @@ export function AssignTokenPopover({
   const isColourRole = expectedType === "color";
   const typoShape = role.category === "typography" ? typographySubShape(role.key) : null;
 
-  const INITIAL_LIMIT = 50;
-  const [showAll, setShowAll] = useState(false);
-
-  const { filteredTokens, totalCount } = useMemo(() => {
+  const { filteredTokens, totalCount, unfilteredCount } = useMemo(() => {
     let tokens = availableTokens.filter((u) => !u.hidden);
     // Filter by the role's expected token type (colour / typography / spacing / radius / effect / motion).
     tokens = tokens.filter((u) => u.type === expectedType);
@@ -154,6 +151,15 @@ export function AssignTokenPopover({
     if (typoShape) {
       tokens = tokens.filter((u) => valueMatchesTypographyShape(u.value, typoShape));
     }
+    // Dedupe-aware count of everything pickable (before search narrowing) so
+    // the header can show "X of Y" when search is active.
+    const seenAll = new Set<string>();
+    const allDeduped = tokens.filter((t) => {
+      const key = `${t.cssVariable ?? t.name}::${t.value}`;
+      if (seenAll.has(key)) return false;
+      seenAll.add(key);
+      return true;
+    });
     if (search) {
       const q = search.toLowerCase();
       tokens = tokens.filter(
@@ -183,10 +189,8 @@ export function AssignTokenPopover({
       seen.add(key);
       return true;
     });
-    const total = deduped.length;
-    const limited = showAll ? deduped : deduped.slice(0, INITIAL_LIMIT);
-    return { filteredTokens: limited, totalCount: total };
-  }, [availableTokens, expectedType, isColourRole, typoShape, search, showAll]);
+    return { filteredTokens: deduped, totalCount: deduped.length, unfilteredCount: allDeduped.length };
+  }, [availableTokens, expectedType, isColourRole, typoShape, search]);
 
   const handleSelect = (token: UnassignedItem) => {
     onAssign(token);
@@ -200,13 +204,23 @@ export function AssignTokenPopover({
       <PopoverContent
         align="start"
         sideOffset={6}
-        className="w-64 border-[var(--studio-border)] bg-[var(--bg-elevated)] p-0"
+        className="w-72 border-[var(--studio-border)] bg-[var(--bg-elevated)] p-0"
       >
-        <div className="border-b border-[var(--studio-border)] px-3 py-2">
-          <p className="text-[10px] font-medium text-[var(--text-secondary)]">
-            Assign to: {role.label}
-          </p>
-          <p className="mt-0.5 text-[9px] text-[var(--text-muted)]">{role.description}</p>
+        <div className="flex items-start gap-2 border-b border-[var(--studio-border)] px-3 py-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-medium text-[var(--text-secondary)]">
+              Assign to: {role.label}
+            </p>
+            <p className="mt-0.5 text-[9px] text-[var(--text-muted)]">{role.description}</p>
+          </div>
+          {unfilteredCount > 0 && (
+            <span
+              className="shrink-0 rounded bg-[var(--bg-hover)] px-1.5 py-0.5 font-mono text-[9px] text-[var(--text-muted)]"
+              title={search ? `${totalCount} match search of ${unfilteredCount} total` : `${unfilteredCount} tokens of this type`}
+            >
+              {search ? `${totalCount} / ${unfilteredCount}` : unfilteredCount}
+            </span>
+          )}
         </div>
 
         {/* Custom colour input */}
@@ -332,14 +346,6 @@ export function AssignTokenPopover({
                   )}
                 </button>
               ))}
-              {!showAll && totalCount > INITIAL_LIMIT && (
-                <button
-                  onClick={() => setShowAll(true)}
-                  className="w-full px-3 py-1.5 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-                >
-                  + {totalCount - INITIAL_LIMIT} more
-                </button>
-              )}
             </>
           )}
         </div>
