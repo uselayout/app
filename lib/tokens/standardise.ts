@@ -383,20 +383,26 @@ const FRAMEWORK_PREFIXES = ["grid-", "tw-", "transition-", "animation-", "contai
 const THIRD_PARTY_PATTERNS = ["fides-", "onetrust-", "iubenda-", "cookiebot-", "consent-", "cookie-banner", "hotjar-", "intercom-"];
 
 /**
- * Status-prefixed token names that belong to status/feedback roles, not
- * default roles. e.g. `success-border` is a Linear/Untitled-style "border
- * for success state" and should fill the Success role, not Default Border.
- * Without this demotion `success-border` ties with `normal-border` on score
- * (both end with -border) and steals the Default Border slot when it
- * happens to come first in iteration order.
+ * Words that mark a token as belonging to status/feedback roles, not default
+ * roles. Detected as a whole segment of the kebab/snake-cased name so we
+ * catch both prefix forms (success-border) and suffix forms (border-success,
+ * bg-warning, text-error). Without the demotion these tokens tie with the
+ * unprefixed normal/default variants on score and steal the default role
+ * purely on iteration order — Linear's `success-border` was beating
+ * `normal-border` for the Default Border slot before this fix.
  */
-const STATUS_NAME_PREFIXES = ["success", "warning", "error", "danger", "info", "positive", "negative", "destructive", "critical"];
+const STATUS_SEGMENT_WORDS = new Set([
+  "success", "warning", "error", "danger", "info", "positive", "negative", "destructive", "critical",
+]);
 
-/** Roles that are owned by the status category and should not penalise status-prefixed tokens. */
+/** Roles that are owned by the status category and should not penalise status-flavoured tokens. */
 const DEFAULT_TIER_CATEGORIES: ReadonlySet<string> = new Set(["backgrounds", "text", "borders", "accent"]);
 
-function isStatusPrefixed(strippedName: string): boolean {
-  return STATUS_NAME_PREFIXES.some((p) => strippedName.startsWith(`${p}-`) || strippedName.startsWith(`${p}_`));
+function isStatusFlavoured(strippedName: string): boolean {
+  for (const segment of strippedName.split(/[-_]/)) {
+    if (STATUS_SEGMENT_WORDS.has(segment)) return true;
+  }
+  return false;
 }
 
 /** Strip common vendor/framework prefixes from token names for matching. */
@@ -419,13 +425,13 @@ function scoreNameMatch(role: StandardRole, strippedName: string, rawName: strin
     score -= 5;
   }
 
-  // Demote status-prefixed tokens (success-*, warning-*, error-*, etc.) when
-  // matching default-tier roles (backgrounds/text/borders/accent). They're
-  // owned by the status category and would otherwise tie with the unprefixed
-  // normal/default variant on score and steal the default role purely on
-  // iteration order. The status keyword in the role's own keyword list still
-  // routes them to success/warning/error correctly.
-  if (DEFAULT_TIER_CATEGORIES.has(role.category) && isStatusPrefixed(strippedName)) {
+  // Demote status-flavoured tokens (any segment matches success / warning /
+  // error / danger / info / positive / negative / destructive / critical)
+  // when matching default-tier roles (backgrounds/text/borders/accent).
+  // Catches both prefix (success-border, warning-bg) and suffix (border-
+  // success, bg-warning) forms. Status roles themselves are exempt so the
+  // tokens still flow into Success / Warning / Error / Info as intended.
+  if (DEFAULT_TIER_CATEGORIES.has(role.category) && isStatusFlavoured(strippedName)) {
     score -= 5;
   }
 
