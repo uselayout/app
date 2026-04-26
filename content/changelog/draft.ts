@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-curated-mode-seeding",
+    title: "Light/Dark mode tabs in Curated populate themselves",
+    description:
+      "Multi-mode kits like the Figma SDS used to land users on a Curated view full of empty mode tabs. Three fixes: 1) the auto-fill now seeds every detected colour mode at once \u2014 SDS Light and SDS Dark fill from their respective token twins instead of waiting for a Copy from Light click; 2) non-colour modes (Desktop / Mobile / Tablet, which only tag spacing tokens) no longer leak into the colour-mode toggle and clutter it with empty tabs; 3) any mode whose name contains \u201cdark\u201d (SDS Dark, dark-theme, dark) now gets a moon icon for parity with Light\u2019s sun.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
     id: "2026-w18-gallery-kit-wishlist",
     title: "Wishlist on the Kit Gallery",
     description:

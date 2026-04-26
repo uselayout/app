@@ -20,7 +20,7 @@ import { BrandingTab } from "./BrandingTab";
 import { ContextDocsTab } from "./ContextDocsTab";
 import { useOrgStore } from "@/lib/store/organization";
 import { Plus } from "lucide-react";
-import { standardiseTokens } from "@/lib/tokens/standardise";
+import { standardiseTokens, seedModeAssignments, detectColourModes } from "@/lib/tokens/standardise";
 import type { TokenType } from "@/lib/types";
 import type { StandardisedTokenMap } from "@/lib/tokens/standard-schema";
 import type { ProjectStandardisation } from "@/lib/types";
@@ -105,7 +105,17 @@ export function DesignSystemPanel({
     try {
       const tokenMap = standardiseTokens(tokens, source);
 
-      const assignments = Object.fromEntries(tokenMap.assignments);
+      // Seed mode-tagged twins for any colour mode the tokens carry. Without
+      // this, multi-mode kits (Figma SDS: SDS Light + SDS Dark) leave the
+      // mode tabs empty until the user manually clicks "Copy from Light".
+      const colourModes = detectColourModes(tokens);
+      const allFlatTokens = [
+        ...tokens.colors, ...tokens.typography, ...tokens.spacing,
+        ...tokens.radius, ...tokens.effects, ...(tokens.motion ?? []),
+      ];
+      const seeded = seedModeAssignments(tokenMap.assignments, allFlatTokens, colourModes);
+
+      const assignments = Object.fromEntries(seeded);
       updateStandardisation(projectId, {
         kitPrefix: tokenMap.kitPrefix,
         assignments,
@@ -129,16 +139,22 @@ export function DesignSystemPanel({
     const source = project?.sourceUrl ?? extractionData?.sourceName ?? project?.name ?? "unknown";
     createSnapshot(projectId, "Before re-standardisation");
     const tokenMap = standardiseTokens(tokens, source);
+    const colourModes = detectColourModes(tokens);
+    const allFlatTokens = [
+      ...tokens.colors, ...tokens.typography, ...tokens.spacing,
+      ...tokens.radius, ...tokens.effects, ...(tokens.motion ?? []),
+    ];
+    const seeded = seedModeAssignments(tokenMap.assignments, allFlatTokens, colourModes);
     const serialisable: ProjectStandardisation = {
       kitPrefix: tokenMap.kitPrefix,
-      assignments: Object.fromEntries(tokenMap.assignments),
+      assignments: Object.fromEntries(seeded),
       unassigned: tokenMap.unassigned,
       antiPatterns: tokenMap.antiPatterns,
       standardisedAt: new Date().toISOString(),
     };
     updateStandardisation(projectId, serialisable);
     setViewMode("curated");
-  }, [tokens, project, projectId, updateStandardisation, createSnapshot]);
+  }, [tokens, project, projectId, updateStandardisation, createSnapshot, extractionData]);
 
   // Flatten all tokens for the curated view lookup
   const allTokensFlat = useMemo<ExtractedToken[]>(() => {
