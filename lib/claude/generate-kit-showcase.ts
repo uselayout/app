@@ -345,7 +345,7 @@ async function generateKitShowcaseInner(input: GenerateInput): Promise<Generated
 
   let js: string;
   try {
-    js = transpileTsx(tsx);
+    js = await transpileTsx(tsx);
   } catch (err) {
     throw new Error(
       "Generated showcase failed to transpile: " +
