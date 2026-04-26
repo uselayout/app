@@ -4,6 +4,7 @@ import {
   DEFAULT_STYLE_PROFILE,
   type KitStyleProfile,
 } from "@/lib/types/kit-style-profile";
+import { styleProfileLimit } from "@/lib/concurrency";
 
 // Claude derives the v2 KitStyleProfile from a kit's layout.md + tokens.css.
 // The output is structured JSON describing every brand-variable visual
@@ -179,8 +180,17 @@ function stripFences(raw: string): string {
  * Generate the v2 kit style profile via Claude. Always returns a valid
  * profile — falls back to DEFAULT_STYLE_PROFILE on any failure. Never
  * throws.
+ *
+ * Wrapped in styleProfileLimit (max 3 concurrent) so parallel publishes
+ * don't queue too many Claude streams on the Node event loop.
  */
 export async function generateKitStyleProfile(
+  input: GenerateProfileInput,
+): Promise<KitStyleProfile> {
+  return styleProfileLimit(() => generateKitStyleProfileInner(input));
+}
+
+async function generateKitStyleProfileInner(
   input: GenerateProfileInput,
 ): Promise<KitStyleProfile> {
   const anthropic = new Anthropic(input.apiKey ? { apiKey: input.apiKey } : {});

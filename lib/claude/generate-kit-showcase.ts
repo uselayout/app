@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { transpileTsx } from "@/lib/transpile";
+import { bespokeShowcaseLimit } from "@/lib/concurrency";
 
 // System prompt constraining Claude to emit a TSX module that renders a design
 // system showcase inside our existing iframe runtime. The iframe provides
@@ -213,8 +214,16 @@ function ensureExportDefault(code: string): string {
  * Generate a bespoke showcase for a kit. Returns both the raw TSX (for audit +
  * later regeneration) and the transpiled JS the iframe will run. Throws on any
  * validation failure so callers can keep the fallback to the uniform template.
+ *
+ * Wrapped in bespokeShowcaseLimit (max 2 concurrent) so parallel admin
+ * regens don't peg the Node single-thread on transpile and starve the
+ * /api/health/ready endpoint. Excess calls queue.
  */
 export async function generateKitShowcase(input: GenerateInput): Promise<GeneratedShowcase> {
+  return bespokeShowcaseLimit(() => generateKitShowcaseInner(input));
+}
+
+async function generateKitShowcaseInner(input: GenerateInput): Promise<GeneratedShowcase> {
   const anthropic = new Anthropic(input.apiKey ? { apiKey: input.apiKey } : {});
 
   const logo = input.brandingAssets?.find((a) => /^(logo|mark|wordmark)$/i.test(a.slot));
