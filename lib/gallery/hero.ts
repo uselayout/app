@@ -1,6 +1,7 @@
 import "server-only";
 import { generateImageRaw } from "@/lib/image/generate";
 import { uploadToBucket } from "@/lib/supabase/storage";
+import { heroGenerationLimit } from "@/lib/concurrency";
 import type { PublicKit } from "@/lib/types/kit";
 
 /**
@@ -224,28 +225,34 @@ export async function captureAndUploadKitHero(
   kit: PublicKit,
   options: GenerateHeroOptions = {},
 ): Promise<string> {
-  const references = await loadReferenceLogos(kit);
-  const { prompt, brandColours } = buildHeroPrompt(kit, references.length > 0);
+  // Single-flight via heroGenerationLimit. Multiple concurrent
+  // GPT Image 2 calls each decode a 2K base64 PNG into a heap
+  // Buffer (~2-4MB) before upload — under load this compounds
+  // with bespoke + Playwright snapshot to push the container OOM.
+  return heroGenerationLimit(async () => {
+    const references = await loadReferenceLogos(kit);
+    const { prompt, brandColours } = buildHeroPrompt(kit, references.length > 0);
 
-  console.log(
-    `[kit-hero] ${kit.slug}: ${references.length > 0 ? `${references.length} reference image(s)` : "text-only"}, palette ${brandColours.length}`,
-  );
+    console.log(
+      `[kit-hero] ${kit.slug}: ${references.length > 0 ? `${references.length} reference image(s)` : "text-only"}, palette ${brandColours.length}`,
+    );
 
-  const result = await generateImageRaw({
-    prompt,
-    brandColours: brandColours.length > 0 ? brandColours : undefined,
-    // "4:3" maps to 1536x1024 in the GPT Image 2 provider (mapSize in openai.ts)
-    aspectRatio: "4:3",
-    resolution: "2K",
-    forcedProvider: "openai",
-    openaiApiKey: options.openaiApiKey,
-    referenceImages: references.length > 0 ? references : undefined,
+    const result = await generateImageRaw({
+      prompt,
+      brandColours: brandColours.length > 0 ? brandColours : undefined,
+      // "4:3" maps to 1536x1024 in the GPT Image 2 provider (mapSize in openai.ts)
+      aspectRatio: "4:3",
+      resolution: "2K",
+      forcedProvider: "openai",
+      openaiApiKey: options.openaiApiKey,
+      referenceImages: references.length > 0 ? references : undefined,
+    });
+
+    const buffer = Buffer.from(result.data, "base64");
+    const ext = result.mimeType.includes("png") ? "png" : result.mimeType.includes("jpeg") ? "jpg" : "png";
+    const path = `kit-heroes/${kit.id}.${ext}`;
+    const url = await uploadToBucket("layout-images", path, buffer, result.mimeType, { upsert: true });
+    if (!url) throw new Error("Generated hero image but upload to storage failed");
+    return url;
   });
-
-  const buffer = Buffer.from(result.data, "base64");
-  const ext = result.mimeType.includes("png") ? "png" : result.mimeType.includes("jpeg") ? "jpg" : "png";
-  const path = `kit-heroes/${kit.id}.${ext}`;
-  const url = await uploadToBucket("layout-images", path, buffer, result.mimeType, { upsert: true });
-  if (!url) throw new Error("Generated hero image but upload to storage failed");
-  return url;
 }

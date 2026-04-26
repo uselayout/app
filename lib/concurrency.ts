@@ -76,3 +76,20 @@ export const bespokeShowcaseLimit = createLimiter(2, 180_000);
  * still bounded so we never repeat the CPU starvation incident.
  */
 export const styleProfileLimit = createLimiter(3, 90_000);
+
+/**
+ * Max 1 concurrent hero generation. GPT Image 2 takes ~30s and the
+ * response is decoded from base64 into a Buffer — under load this
+ * compounds with bespoke + snapshot to push the container over the
+ * edge. Single-flight is fine because publishes happen one-at-a-time.
+ */
+export const heroGenerationLimit = createLimiter(1, 120_000);
+
+/**
+ * Max 1 concurrent Playwright kit-card snapshot. A Chromium browser
+ * launch + viewport render + PNG capture is the heaviest single
+ * operation in the publish pipeline (~30s, 150-300MB RAM). Capping
+ * at 1 keeps memory bounded and stops two snapshots fighting for
+ * GPU/CPU on the same Linux container.
+ */
+export const kitSnapshotLimit = createLimiter(1, 120_000);
