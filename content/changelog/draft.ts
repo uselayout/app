@@ -13,7 +13,7 @@ export const draftEntries: ChangelogEntry[] = [
     id: "2026-w18-curated-auto-fill-from-tokens",
     title: "Auto-fill curated roles from your tokens",
     description:
-      "When the Curated Design System view shows empty role slots (after a fresh extraction or re-import), there's now an Auto-fill from tokens button next to the mode toggle. One click runs the matcher against your current token pool and snapshots the previous state so you can roll back. Also taught the matcher that a token literally named background-default belongs in the App Background slot, so semantic Figma tokens from systems like SDS map cleanly without manual assignment.",
+      "When the Curated Design System view shows empty role slots (after a fresh extraction or re-import), there's now an Auto-fill from tokens button next to the mode toggle. One click runs the matcher against your current token pool and snapshots the previous state so you can roll back. The matcher itself learnt the Figma SDS naming pattern: background-default and background-secondary now find App Background and Surface, background-tertiary fills Elevated, background-hover fills Hover, blanket fills Overlay, and text-neutral-secondary / text-neutral-tertiary land in Secondary and Muted text. Files using semantic Figma tokens map cleanly without manual assignment.",
     product: "studio",
     category: "improved",
     date: "2026-04-26",
