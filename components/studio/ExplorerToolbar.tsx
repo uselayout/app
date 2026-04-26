@@ -117,7 +117,7 @@ export function ExplorerToolbar({
   const [fileError, setFileError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contextFileInputRef = useRef<HTMLInputElement>(null);
-  const promptInputRef = useRef<HTMLInputElement>(null);
+  const promptInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Default to 1 variant when refining a selected variant, 2 for new generations
   useEffect(() => {
@@ -263,22 +263,24 @@ export function ExplorerToolbar({
     setFileError(null);
   }, [refinePrompt, variantCount, isGenerating, imageDataUrl, contextFiles, onRefine, removeImage]);
 
+  // Enter submits, Shift+Enter inserts a newline. Skip during IME composition
+  // so CJK input methods can commit without firing a submit.
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        handleSubmit();
-      }
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key !== "Enter" || e.shiftKey) return;
+      if (e.nativeEvent.isComposing) return;
+      e.preventDefault();
+      handleSubmit();
     },
     [handleSubmit]
   );
 
   const handleRefineKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        handleRefineSubmit();
-      }
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key !== "Enter" || e.shiftKey) return;
+      if (e.nativeEvent.isComposing) return;
+      e.preventDefault();
+      handleRefineSubmit();
     },
     [handleRefineSubmit]
   );
@@ -322,15 +324,15 @@ export function ExplorerToolbar({
                   ))}
                 </div>
               )}
-              <input
-                type="text"
+              <textarea
+                rows={1}
                 placeholder={`Refine "${selectedVariantName}"... e.g. "make the CTA more prominent"`}
                 value={refinePrompt}
                 onChange={(e) => setRefinePrompt(e.target.value)}
                 onKeyDown={handleRefineKeyDown}
                 onPaste={handlePaste}
                 disabled={isGenerating}
-                className="ml-2 flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--status-warning)]/50 outline-none disabled:opacity-50"
+                className="ml-2 flex-1 resize-none bg-transparent text-[13px] leading-snug text-[var(--text-primary)] placeholder:text-[var(--status-warning)]/50 outline-none disabled:opacity-50 max-h-40"
               />
             </div>
             {fileError && (
@@ -406,9 +408,9 @@ export function ExplorerToolbar({
               )}
 
               {/* Text input */}
-              <input
+              <textarea
                 ref={promptInputRef}
-                type="text"
+                rows={1}
                 placeholder={imageDataUrl
                   ? "Describe how to use this reference... e.g. \"redesign this using our design system\""
                   : contextFiles.length > 0
@@ -420,7 +422,7 @@ export function ExplorerToolbar({
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
                 disabled={isGenerating}
-                className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none disabled:opacity-50"
+                className="flex-1 resize-none bg-transparent text-[13px] leading-snug text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none disabled:opacity-50 max-h-40"
               />
             </div>
 
