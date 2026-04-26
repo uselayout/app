@@ -144,7 +144,7 @@ function App() {
       "[data-showcase-toggle]:hover, [data-showcase-checkbox]:hover, [data-showcase-radio]:hover { cursor: pointer; }",
       "[data-showcase-card]:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); cursor: pointer; transition: box-shadow 150ms ease, transform 150ms ease; }",
       "[data-showcase-input]:focus { outline: none; }",
-    ].join("\n");
+    ].join("\\n");
     document.head.appendChild(style);
     return () => style.remove();
   }, []);
