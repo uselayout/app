@@ -41,8 +41,6 @@ const Body = z.object({
     })
     .default({ components: false, fonts: false, branding: false, context: false }),
   publishAs: z.enum(["self", "layout"]).default("self"),
-  /** Opt into Claude-generated bespoke Live Preview. Default uses the uniform template. */
-  bespokeShowcase: z.boolean().default(false),
 });
 
 export async function POST(
@@ -107,10 +105,14 @@ export async function POST(
 
   // Layout-team publishes bypass the review queue and fire generation jobs
   // immediately. Self-publishes land in 'pending' for admin to approve.
+  // Bespoke is never set at publish time — server-side generation is
+  // disabled (it pegged the Node thread). Bespoke happens only via
+  // scripts/regen-bespoke.ts, which atomically writes both the TSX
+  // and flips the flag through /api/admin/kits/[id]/showcase.
   const kit = await publishKit({
     ...payload,
     status: wantsLayoutOfficial ? "approved" : "pending",
-    bespokeShowcase: input.bespokeShowcase,
+    bespokeShowcase: false,
   });
 
   if (wantsLayoutOfficial) {

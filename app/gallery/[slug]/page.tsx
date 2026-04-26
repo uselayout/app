@@ -85,6 +85,15 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
       ? kit.showcaseCustomJs
       : getKitShowcaseJs();
 
+  // Orphan detection. After the Studio publish modal stopped accepting
+  // bespoke=true at publish, this state should only happen if a kit was
+  // published before that change and never had regen-bespoke run on it.
+  if (kit.bespokeShowcase && !kit.showcaseCustomJs) {
+    console.warn(
+      `[gallery] kit ${kit.slug} (${kit.id}) has bespoke_showcase=true but no showcase_custom_js — falling back to uniform. Run scripts/regen-bespoke.ts for this slug, or flip bespoke_showcase=false in the DB.`,
+    );
+  }
+
   // Kit metadata exposed to the uniform showcase iframe via window.__KIT__.
   // The Hero in kit-showcase-source.ts reads this to render a logo + name +
   // description block matching the bespoke Notion-style design. Bespoke
