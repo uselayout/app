@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-admin-regen-no-503",
+    title: "Regenerating a kit from admin no longer takes the gallery offline",
+    description:
+      "Hitting Regenerate Showcase on a kit in the admin panel could push the staging container into 100% CPU and bounce every public page to a 'no available server' screen until the container restarted. The cause was a single regex used to strip @keyframes blocks from the kit's tokens.css before sending to Claude — its nested quantifiers caused catastrophic backtracking on tokens.css files with many brace pairs but no @keyframes (Linear's, for one). Replaced with a linear-time bracket counter, plus belt-and-braces caps so any future slow path can't starve the readiness probe either.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
     id: "2026-w18-gallery-stable-during-bespoke-regen",
     title: "Gallery stays online during bulk kit regeneration",
     description:
