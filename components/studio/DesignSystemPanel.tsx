@@ -133,6 +133,41 @@ export function DesignSystemPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokens, hasStandardisation]);
 
+  // Backfill mode-tagged assignments for projects that were standardised
+  // BEFORE seedModeAssignments shipped. Non-destructive: only adds twins
+  // for detected colour modes, never overwrites existing assignments. Runs
+  // once per session per project. Distinct from the standardisation auto-
+  // run above so user-confirmed work isn't snapshotted or replaced.
+  const ranModeBackfill = useRef(false);
+  useEffect(() => {
+    if (ranModeBackfill.current) return;
+    if (!tokens || !project?.standardisation) return;
+    const existing = project.standardisation.assignments;
+    if (Object.keys(existing).length === 0) return;
+    const colourModes = detectColourModes(tokens);
+    if (colourModes.length === 0) return;
+    const alreadyHasModeAssignments = Object.values(existing).some((a) => a.mode);
+    if (alreadyHasModeAssignments) {
+      ranModeBackfill.current = true;
+      return;
+    }
+    ranModeBackfill.current = true;
+
+    const allFlatTokens = [
+      ...tokens.colors, ...tokens.typography, ...tokens.spacing,
+      ...tokens.radius, ...tokens.effects, ...(tokens.motion ?? []),
+    ];
+    const baseMap = new Map(Object.entries(existing));
+    const seeded = seedModeAssignments(baseMap, allFlatTokens, colourModes);
+    if (seeded.size === baseMap.size) return;  // nothing new to add
+
+    updateStandardisation(projectId, {
+      ...project.standardisation,
+      assignments: Object.fromEntries(seeded),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokens, project?.standardisation, projectId]);
+
   // Re-standardise handler (for manual refresh)
   const handleRestandardise = useCallback(() => {
     if (!tokens) return;
