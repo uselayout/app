@@ -30,6 +30,7 @@ interface AdminKitRow {
   showcase_generated_at: string | null;
   preview_generated_at: string | null;
   hero_generated_at: string | null;
+  style_profile_generated_at: string | null;
 }
 
 type ToastFn = (msg: string, type?: "success" | "error") => void;
@@ -377,6 +378,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
             <thead>
               <tr style={{ background: "var(--bg-panel)" }}>
                 <th className="text-left font-medium px-3 py-2" style={{ color: "var(--text-muted)" }}>Kit</th>
+                <th className="text-left font-medium px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-muted)" }}>Profile</th>
                 <th className="text-left font-medium px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-muted)" }}>Showcase</th>
                 <th className="text-left font-medium px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-muted)" }}>Preview</th>
                 <th className="text-left font-medium px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-muted)" }}>Hero</th>
@@ -473,6 +475,16 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                             );
                           })}
                         </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-secondary)" }}>
+                      {jobFor(kit.id, "style-profile") ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--mkt-accent)" }} />
+                          Deriving… {formatElapsed(Date.now() - jobFor(kit.id, "style-profile")!.startedAt)}
+                        </span>
+                      ) : (
+                        <span className="text-[11px]">{formatTimestamp(kit.style_profile_generated_at)}</span>
                       )}
                     </td>
                     <td className="px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-secondary)" }}>

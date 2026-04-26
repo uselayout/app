@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from("layout_public_kit")
     .select(
-      "id, slug, name, description, tags, author_org_id, author_display_name, licence, tier, featured, hidden, unlisted, is_new, bespoke_showcase, status, card_image_pref, custom_card_image_url, hero_image_url, preview_image_url, upvote_count, import_count, created_at, updated_at, showcase_generated_at, preview_generated_at, hero_generated_at",
+      "id, slug, name, description, tags, author_org_id, author_display_name, licence, tier, featured, hidden, unlisted, is_new, bespoke_showcase, status, card_image_pref, custom_card_image_url, hero_image_url, preview_image_url, upvote_count, import_count, created_at, updated_at, showcase_generated_at, preview_generated_at, hero_generated_at, style_profile_generated_at",
     )
     .order("created_at", { ascending: false });
 
