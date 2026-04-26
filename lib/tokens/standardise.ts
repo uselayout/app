@@ -382,6 +382,23 @@ const FRAMEWORK_PREFIXES = ["grid-", "tw-", "transition-", "animation-", "contai
 /** Third-party overlay/consent/analytics tokens to exclude from standardisation */
 const THIRD_PARTY_PATTERNS = ["fides-", "onetrust-", "iubenda-", "cookiebot-", "consent-", "cookie-banner", "hotjar-", "intercom-"];
 
+/**
+ * Status-prefixed token names that belong to status/feedback roles, not
+ * default roles. e.g. `success-border` is a Linear/Untitled-style "border
+ * for success state" and should fill the Success role, not Default Border.
+ * Without this demotion `success-border` ties with `normal-border` on score
+ * (both end with -border) and steals the Default Border slot when it
+ * happens to come first in iteration order.
+ */
+const STATUS_NAME_PREFIXES = ["success", "warning", "error", "danger", "info", "positive", "negative", "destructive", "critical"];
+
+/** Roles that are owned by the status category and should not penalise status-prefixed tokens. */
+const DEFAULT_TIER_CATEGORIES: ReadonlySet<string> = new Set(["backgrounds", "text", "borders", "accent"]);
+
+function isStatusPrefixed(strippedName: string): boolean {
+  return STATUS_NAME_PREFIXES.some((p) => strippedName.startsWith(`${p}-`) || strippedName.startsWith(`${p}_`));
+}
+
 /** Strip common vendor/framework prefixes from token names for matching. */
 function stripCommonPrefixes(name: string): string {
   return name
@@ -399,6 +416,16 @@ function scoreNameMatch(role: StandardRole, strippedName: string, rawName: strin
 
   // Penalise overlay/modal/popup tokens (likely not core design system)
   if (rawName.includes("overlay") || rawName.includes("modal") || rawName.includes("popup") || rawName.includes("backdrop")) {
+    score -= 5;
+  }
+
+  // Demote status-prefixed tokens (success-*, warning-*, error-*, etc.) when
+  // matching default-tier roles (backgrounds/text/borders/accent). They're
+  // owned by the status category and would otherwise tie with the unprefixed
+  // normal/default variant on score and steal the default role purely on
+  // iteration order. The status keyword in the role's own keyword list still
+  // routes them to success/warning/error correctly.
+  if (DEFAULT_TIER_CATEGORIES.has(role.category) && isStatusPrefixed(strippedName)) {
     score -= 5;
   }
 
