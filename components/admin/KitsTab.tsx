@@ -354,7 +354,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
         </div>
       ) : (
         <div
-          className="rounded-md overflow-hidden"
+          className="rounded-md"
           style={{ border: "1px solid var(--studio-border)" }}
         >
           <table className="w-full text-xs">
@@ -405,8 +405,12 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                         )}
                         {kit.bespoke_showcase && (
                           <span
-                            className="text-[10px] px-1.5 py-0.5 rounded"
-                            style={{ background: "#8b5cf6", color: "#1a0633" }}
+                            className="text-[10px] px-1.5 py-0.5 rounded font-medium"
+                            style={{
+                              background: "rgba(139, 92, 246, 0.18)",
+                              color: "#c4b5fd",
+                              border: "1px solid rgba(139, 92, 246, 0.4)",
+                            }}
                             title="Live Preview uses the Claude-generated bespoke showcase. Click 'Use uniform layout' in Generate to revert."
                           >
                             Bespoke
@@ -516,73 +520,53 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                             e.target.value = "";
                           }}
                         />
-                        <button
-                          type="button"
-                          disabled={!!uploadJob || !!anyJob}
-                          onClick={() => fileInputs.current[kit.id]?.click()}
-                          className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
-                          style={{
-                            border: "1px solid var(--studio-border)",
-                            color: uploadJob ? "var(--mkt-accent)" : "var(--text-secondary)",
-                          }}
-                          title="Upload a custom 1440×1080 card image (PNG/JPG/WEBP)"
-                        >
-                          {uploadJob ? "Uploading…" : hasCustom ? "Replace card" : "Upload card"}
-                        </button>
-                        {hasCustom && (
-                          <button
-                            type="button"
-                            disabled={!!anyJob}
-                            onClick={() => removeCustomCard(kit.id, kit.name)}
-                            className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
-                            style={{
-                              border: "1px solid transparent",
-                              color: "var(--text-muted)",
-                            }}
-                            title="Remove the uploaded custom card image"
-                          >
-                            Clear card
-                          </button>
-                        )}
-                        <button
-                          type="button"
+                        <ActionMenu
+                          label={uploadJob ? "Uploading…" : "Card"}
+                          loading={!!uploadJob}
+                          disabled={!!anyJob}
+                          items={[
+                            {
+                              label: hasCustom ? "Replace card" : "Upload card",
+                              onClick: () => fileInputs.current[kit.id]?.click(),
+                              disabled: !!uploadJob,
+                              hint: "1440×1080 PNG/JPG/WEBP",
+                            },
+                            ...(hasCustom
+                              ? [{
+                                  label: "Clear card",
+                                  onClick: () => removeCustomCard(kit.id, kit.name),
+                                  hint: "Remove the uploaded image, fall back to auto",
+                                }]
+                              : []),
+                          ]}
+                        />
+                        <ActionMenu
+                          label="Status"
                           disabled={busy === kit.id || !!anyJob}
-                          onClick={() => patch(kit.id, { featured: !kit.featured })}
-                          className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
-                          style={{
-                            background: kit.featured ? "var(--bg-elevated)" : "transparent",
-                            color: kit.featured ? "var(--text-primary)" : "var(--text-muted)",
-                            border: "1px solid var(--studio-border)",
-                          }}
-                        >
-                          {kit.featured ? "Unfeature" : "Feature"}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busy === kit.id || !!anyJob}
-                          onClick={() => patch(kit.id, { isNew: !kit.is_new })}
-                          className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
-                          style={{
-                            background: kit.is_new ? "var(--bg-elevated)" : "transparent",
-                            color: kit.is_new ? "var(--text-primary)" : "var(--text-muted)",
-                            border: "1px solid var(--studio-border)",
-                          }}
-                        >
-                          {kit.is_new ? "Unmark new" : "Mark new"}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busy === kit.id || !!anyJob}
-                          onClick={() => patch(kit.id, { hidden: !kit.hidden })}
-                          className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
-                          style={{
-                            background: kit.hidden ? "var(--bg-elevated)" : "transparent",
-                            color: kit.hidden ? "var(--text-primary)" : "var(--text-muted)",
-                            border: "1px solid var(--studio-border)",
-                          }}
-                        >
-                          {kit.hidden ? "Unhide" : "Hide"}
-                        </button>
+                          items={[
+                            {
+                              label: kit.featured ? "Unfeature" : "Feature",
+                              onClick: () => patch(kit.id, { featured: !kit.featured }),
+                              active: kit.featured,
+                            },
+                            {
+                              label: kit.is_new ? "Unmark new" : "Mark new",
+                              onClick: () => patch(kit.id, { isNew: !kit.is_new }),
+                              active: kit.is_new,
+                            },
+                            {
+                              label: kit.hidden ? "Unhide" : "Hide",
+                              onClick: () => patch(kit.id, { hidden: !kit.hidden }),
+                              active: kit.hidden,
+                            },
+                            {
+                              label: "Delete kit",
+                              onClick: () => remove(kit.id, kit.name),
+                              danger: true,
+                              hint: "Permanently removes the kit",
+                            },
+                          ]}
+                        />
                         <RegenMenu
                           showcase={{
                             running: !!showcaseJob,
@@ -602,18 +586,6 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                           }
                           anyJob={!!anyJob}
                         />
-                        <button
-                          type="button"
-                          disabled={busy === kit.id || !!anyJob}
-                          onClick={() => remove(kit.id, kit.name)}
-                          className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40"
-                          style={{
-                            color: "#ef4444",
-                            border: "1px solid transparent",
-                          }}
-                        >
-                          Delete
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -734,6 +706,95 @@ function RegenMenu({
               </button>
             </>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface ActionMenuItem {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  /** Toggled-on state — gives the item a subtle highlighted background. */
+  active?: boolean;
+  /** Destructive action — renders the label in red. */
+  danger?: boolean;
+  /** One-line caption shown below the label. */
+  hint?: string;
+}
+
+function ActionMenu({
+  label,
+  items,
+  disabled,
+  loading,
+}: {
+  label: string;
+  items: ActionMenuItem[];
+  disabled?: boolean;
+  /** Tints the trigger label with the accent colour to signal in-flight work. */
+  loading?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (!ref.current || ref.current.contains(e.target as Node)) return;
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((v) => !v)}
+        className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40 inline-flex items-center gap-1"
+        style={{
+          border: "1px solid var(--studio-border)",
+          color: loading ? "var(--mkt-accent)" : "var(--text-secondary)",
+        }}
+      >
+        {label}
+        <span aria-hidden style={{ fontSize: 10, opacity: 0.7 }}>▾</span>
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 mt-1 z-10 min-w-[180px] rounded-md py-1 shadow-lg"
+          style={{
+            background: "var(--bg-elevated)",
+            border: "1px solid var(--studio-border)",
+          }}
+        >
+          {items.map((item, i) => (
+            <button
+              key={i}
+              type="button"
+              disabled={item.disabled}
+              onClick={() => {
+                setOpen(false);
+                item.onClick();
+              }}
+              className="w-full text-left px-3 py-2 text-[12px] transition-colors disabled:opacity-50 flex flex-col gap-0.5 hover:bg-[var(--bg-hover)]"
+              style={{
+                color: item.danger ? "#ef4444" : "var(--text-primary)",
+                background: item.active ? "var(--bg-hover)" : undefined,
+              }}
+            >
+              <span>{item.label}</span>
+              {item.hint && (
+                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                  {item.hint}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
       )}
     </div>
