@@ -48,7 +48,25 @@ describe("standardise status-prefix demotion (Linear scenario)", () => {
     expect(successAssignment!.originalName).toBe("success-border");
   });
 
-  it("does not demote status-prefixed tokens for the status category", () => {
+  it("picks normal-border over border-success (suffix form) for the default border role", () => {
+    // Same problem in mirror form: some kits use bg-success / border-error /
+    // text-warning rather than success-bg / error-border. Segment-based
+    // detection catches both.
+    const map = standardiseTokens(
+      tokens([
+        color("border-success", "hsl(145, 92%, 87%)"),
+        color("border-error", "hsl(359, 100%, 94%)"),
+        color("normal-border", "hsl(0, 0%, 93%)"),
+      ]),
+      "linear.app"
+    );
+
+    const borderAssignment = map.assignments.get("border");
+    expect(borderAssignment, "expected a default border assignment").toBeDefined();
+    expect(borderAssignment!.originalName).toBe("normal-border");
+  });
+
+  it("does not demote status-flavoured tokens for the status category", () => {
     // success-* tokens should still flow into status roles. They tie with
     // each other on score so iteration order picks one for `success` and
     // others go unassigned, but importantly NONE are demoted just for
