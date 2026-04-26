@@ -172,13 +172,17 @@ function classifyToken(name: string, value: string): ExtractedToken | null {
   const lower = name.toLowerCase();
   let type: TokenType | null = null;
 
-  // Name-based classification (matches css-extract.ts pattern)
-  if (lower.includes("color") || lower.includes("bg") || lower.includes("border") || lower.includes("fill") || lower.includes("stroke")) {
+  // Name-based classification (matches css-extract.ts pattern).
+  // Radius / rounded come BEFORE the colour heuristic because `border-radius`
+  // and `corner-radius` contain "border" but are universally radii — without
+  // the order swap an 8px value got typed as colour and rendered as a white
+  // swatch in the All Tokens BORDERS group.
+  if (lower.includes("radius") || lower.includes("rounded")) {
+    type = "radius";
+  } else if (lower.includes("color") || lower.includes("bg") || lower.includes("border") || lower.includes("fill") || lower.includes("stroke")) {
     type = "color";
   } else if (lower.includes("shadow") || lower.includes("blur") || lower.includes("opacity") || lower.includes("effect")) {
     type = "effect";
-  } else if (lower.includes("radius") || lower.includes("rounded")) {
-    type = "radius";
   } else if (lower.includes("font") || lower.includes("line-height") || lower.includes("letter-spacing") || lower.includes("text-size")) {
     type = "typography";
   } else if (lower.includes("spacing") || lower.includes("space") || lower.includes("gap") || lower.includes("padding") || lower.includes("margin") || lower.includes("inset")) {

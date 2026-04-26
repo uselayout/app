@@ -10,6 +10,24 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-gallery-tokens-match-studio",
+    title: "Gallery Tokens tab now lists everything the studio sees",
+    description:
+      "Kits like Linear documented tokens (accent-purple, surface-page, text-primary, normal-border) in the layout.md narrative that never made it into the published tokens.json, so the gallery's Tokens tab showed fewer tokens than the studio's All Tokens view. Publish now parses every CSS declaration found anywhere in layout.md and unions it with the project's extraction data, so gallery and studio agree. Existing extraction tokens still win on collision (the studio version is authoritative).",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-border-radius-classification",
+    title: "Border-radius tokens stop showing in the BORDERS group",
+    description:
+      "An 8px border-radius token was rendering as a white swatch in the All Tokens BORDERS group because the layout.md parser checked the word border before radius and classified the value as a colour. The order is reversed so border-radius / corner-radius go where they belong, while border-color / border-default / border-success still classify as colours.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
     id: "2026-w18-curated-status-prefix-demotion",
     title: "Status colours stop stealing default role slots",
     description:
