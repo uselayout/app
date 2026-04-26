@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Heart } from "lucide-react";
 import { listPublicKits } from "@/lib/supabase/kits";
+import { countPendingKitRequests } from "@/lib/supabase/kit-requests";
 import { GalleryPageClient } from "@/components/gallery/GalleryPageClient";
-import { KitRequestSection } from "@/components/gallery/KitRequestSection";
 import type { KitSort } from "@/lib/types/kit";
 
 export const metadata: Metadata = {
@@ -31,12 +32,15 @@ interface PageProps {
 export default async function GalleryPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const sort = parseSort(sp.sort);
-  const kits = await listPublicKits({
-    tag: sp.tag,
-    q: sp.q,
-    sort,
-    limit: 120,
-  });
+  const [kits, wishlistCount] = await Promise.all([
+    listPublicKits({
+      tag: sp.tag,
+      q: sp.q,
+      sort,
+      limit: 120,
+    }),
+    countPendingKitRequests(),
+  ]);
 
   const tagCounts = new Map<string, number>();
   for (const kit of kits) {
@@ -52,9 +56,21 @@ export default async function GalleryPage({ searchParams }: PageProps) {
       {/* Hero */}
       <section className="pt-[60px] pb-12 lg:pt-[100px] lg:pb-16">
         <div className="max-w-[1280px] mx-auto px-6">
-          <Link href="/" className="inline-flex mb-10" aria-label="Layout home">
-            <img src="/marketing/logo.svg" alt="Layout" width={99} height={24} className="mkt-logo" />
-          </Link>
+          <div className="flex items-center justify-between mb-10">
+            <Link href="/" className="inline-flex" aria-label="Layout home">
+              <img src="/marketing/logo.svg" alt="Layout" width={99} height={24} className="mkt-logo" />
+            </Link>
+            <Link
+              href="/gallery/wishlist"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--mkt-border-strong)] text-[13px] text-[var(--mkt-text-primary)] hover:bg-[var(--mkt-surface)] transition-colors"
+            >
+              <Heart className="w-3.5 h-3.5" aria-hidden />
+              Wishlist
+              <span className="inline-flex items-center justify-center min-w-[20px] h-[18px] px-1.5 rounded-full bg-[var(--mkt-surface)] text-[11px] font-medium text-[var(--mkt-text-secondary)]">
+                {wishlistCount}
+              </span>
+            </Link>
+          </div>
           <div className="flex flex-col gap-6 max-w-[820px]">
             <div className="inline-flex self-start items-center gap-2 px-3 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] text-[12px] text-[var(--mkt-text-secondary)]">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--mkt-accent)]" />
@@ -99,7 +115,6 @@ export default async function GalleryPage({ searchParams }: PageProps) {
             initialSort={sort}
             initialQ={sp.q}
           />
-          <KitRequestSection />
         </div>
       </section>
     </main>

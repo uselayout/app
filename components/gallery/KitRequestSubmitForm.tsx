@@ -64,10 +64,14 @@ export function KitRequestSubmitForm({ isLoggedIn }: Props) {
       className="flex flex-col sm:flex-row items-stretch gap-3 mb-6 max-w-[640px]"
     >
       <input
-        type="url"
+        type="text"
+        inputMode="url"
+        autoComplete="off"
+        autoCapitalize="none"
+        spellCheck={false}
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        placeholder="https://linear.app"
+        placeholder="linear.app or https://linear.app"
         aria-label="Kit URL"
         className="flex-1 min-w-0 px-4 py-2.5 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] text-[14px] text-[var(--mkt-text-primary)] placeholder:text-[var(--mkt-text-secondary)] focus:outline-none focus:border-[var(--mkt-accent)]"
         required

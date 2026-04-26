@@ -181,6 +181,18 @@ export async function listKitRequests(
   return requests.map((r) => ({ ...r, hasUpvoted: voted.has(r.id) }));
 }
 
+export async function countPendingKitRequests(): Promise<number> {
+  const { count, error } = await supabase
+    .from("layout_kit_request")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+  if (error) {
+    console.error("countPendingKitRequests failed:", error.message);
+    return 0;
+  }
+  return count ?? 0;
+}
+
 export async function listAllKitRequests(): Promise<KitRequest[]> {
   const { data, error } = await supabase
     .from("layout_kit_request")
