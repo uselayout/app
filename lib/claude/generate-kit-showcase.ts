@@ -210,9 +210,37 @@ function stripFences(raw: string): string {
 // them from tokens.css before sending to Claude so the model doesn't see them
 // in the first place.
 function stripMotionTokens(css: string): string {
-  // Remove @keyframes blocks (including their nested braces)
-  let out = css.replace(/@keyframes\s+[^{]*\{(?:[^{}]*\{[^{}]*\}[^{}]*)*[^{}]*\}/g, "");
-  // Remove lines declaring motion-family custom properties
+  // Strip @keyframes blocks. Earlier this used a single regex with nested
+  // quantifiers — `(?:[^{}]*\{[^{}]*\}[^{}]*)*` — which on tokens.css with
+  // many brace pairs but no @keyframes to anchor (Linear's, for one)
+  // exhibited catastrophic backtracking and pegged the Node thread until
+  // Coolify killed the container. Bracket-counter is O(n) and immune.
+  let out = "";
+  let i = 0;
+  while (i < css.length) {
+    const next = css.indexOf("@keyframes", i);
+    if (next === -1) {
+      out += css.slice(i);
+      break;
+    }
+    out += css.slice(i, next);
+    let j = next + "@keyframes".length;
+    while (j < css.length && css[j] !== "{") j++;
+    if (j >= css.length) {
+      out += css.slice(next);
+      break;
+    }
+    let depth = 1;
+    j++;
+    while (j < css.length && depth > 0) {
+      if (css[j] === "{") depth++;
+      else if (css[j] === "}") depth--;
+      j++;
+    }
+    i = j;
+  }
+  // Remove lines declaring motion-family custom properties. Per-line, no
+  // nesting, safe.
   out = out.replace(/^\s*--(motion|animation|transition|keyframe|duration|ease|easing)[^;]*;\s*$/gim, "");
   return out;
 }
