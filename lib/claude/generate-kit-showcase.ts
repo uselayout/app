@@ -131,7 +131,28 @@ function stripMotionTokens(css: string): string {
 }
 
 function hasExportDefault(code: string): boolean {
-  return /export\s+default\s+(App|\w+)/.test(code);
+  // Accept many export shapes Claude tends to emit:
+  //   export default App;
+  //   export default function App() { ... }
+  //   export default () => ...
+  //   export { App as default }
+  //   module.exports = App
+  return (
+    /export\s+default\s+/.test(code) ||
+    /export\s*\{\s*\w+\s+as\s+default\s*\}/.test(code) ||
+    /module\.exports\s*=\s*App/.test(code)
+  );
+}
+
+/** When Claude defines `function App` or `const App` but forgets to export
+ * it, append the export ourselves so the iframe runtime can pick it up.
+ * Cheaper than rejecting the whole generation. */
+function ensureExportDefault(code: string): string {
+  if (hasExportDefault(code)) return code;
+  if (/(?:function|const|let|var)\s+App\b/.test(code)) {
+    return code.trimEnd() + "\n\nexport default App;\n";
+  }
+  return code;
 }
 
 /**
@@ -185,9 +206,15 @@ export async function generateKitShowcase(input: GenerateInput): Promise<Generat
     .map((block) => block.text)
     .join("\n");
 
-  const tsx = stripFences(raw);
+  const tsx = ensureExportDefault(stripFences(raw));
 
   if (!hasExportDefault(tsx)) {
+    // Final safety net: log the first chunk so we can diagnose what
+    // Claude actually returned, instead of failing silently.
+    console.error(
+      "[bespoke-showcase] no export default found. First 300 chars of raw:",
+      raw.slice(0, 300),
+    );
     throw new Error("Generated showcase missing `export default App`.");
   }
   // JSX is fine — transpileTsx handles it with jsxFactory: React.createElement.

@@ -115,11 +115,13 @@ function ToastContainer({ toasts }: { toasts: Toast[] }) {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className="px-4 py-3 rounded-lg text-sm font-mono"
+          className="px-4 py-3 rounded-lg text-sm font-mono shadow-lg"
           style={{
-            background: t.type === "success" ? "var(--bg-elevated)" : "#3b1010",
-            border: `1px solid ${t.type === "success" ? "var(--studio-border-strong)" : "#7f1d1d"}`,
-            color: "var(--text-primary)",
+            // Hardcoded dark-on-light contrast so the toast is readable
+            // regardless of which admin route's CSS variables resolve here.
+            background: t.type === "success" ? "#1a1a20" : "#3b1010",
+            border: `1px solid ${t.type === "success" ? "rgba(255,255,255,0.18)" : "#7f1d1d"}`,
+            color: "#ffffff",
           }}
         >
           {t.message}

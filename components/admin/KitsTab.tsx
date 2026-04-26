@@ -479,8 +479,8 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                     </td>
                     <td className="px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-secondary)" }}>
                       {jobFor(kit.id, "style-profile") ? (
-                        <span className="inline-flex items-center gap-1.5">
-                          <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--mkt-accent)" }} />
+                        <span className="inline-flex items-center gap-1.5" style={{ color: "var(--text-primary)" }}>
+                          <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: "#2383e2" }} />
                           Deriving… {formatElapsed(Date.now() - jobFor(kit.id, "style-profile")!.startedAt)}
                         </span>
                       ) : (
@@ -489,8 +489,8 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                     </td>
                     <td className="px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-secondary)" }}>
                       {showcaseJob ? (
-                        <span className="inline-flex items-center gap-1.5">
-                          <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--mkt-accent)" }} />
+                        <span className="inline-flex items-center gap-1.5" style={{ color: "var(--text-primary)" }}>
+                          <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: "#2383e2" }} />
                           Generating… {formatElapsed(Date.now() - showcaseJob.startedAt)}
                         </span>
                       ) : (
@@ -499,8 +499,8 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                     </td>
                     <td className="px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-secondary)" }}>
                       {previewJob ? (
-                        <span className="inline-flex items-center gap-1.5">
-                          <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--mkt-accent)" }} />
+                        <span className="inline-flex items-center gap-1.5" style={{ color: "var(--text-primary)" }}>
+                          <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: "#2383e2" }} />
                           Capturing… {formatElapsed(Date.now() - previewJob.startedAt)}
                         </span>
                       ) : (
@@ -509,8 +509,8 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                     </td>
                     <td className="px-3 py-2 hidden lg:table-cell" style={{ color: "var(--text-secondary)" }}>
                       {heroJob ? (
-                        <span className="inline-flex items-center gap-1.5">
-                          <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--mkt-accent)" }} />
+                        <span className="inline-flex items-center gap-1.5" style={{ color: "var(--text-primary)" }}>
+                          <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: "#2383e2" }} />
                           Generating… {formatElapsed(Date.now() - heroJob.startedAt)}
                         </span>
                       ) : (
