@@ -122,7 +122,7 @@ const COLOUR_ROLES: StandardRole[] = [
     suffix: "bg-app",
     required: true,
     description: "Root application background. The outermost canvas colour.",
-    matchKeywords: ["bg-app", "background", "bg-base", "bg-default", "bg-body", "surface-dim", "app-bg", "body-bg", "canvas"],
+    matchKeywords: ["bg-app", "background", "background-default", "bg-base", "bg-default", "bg-body", "surface-dim", "app-bg", "body-bg", "canvas"],
     matchHints: { lightness: "lightest" },
   },
   {
