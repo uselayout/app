@@ -101,6 +101,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
   async function patch(
     id: string,
     body: {
+      name?: string;
       featured?: boolean;
       hidden?: boolean;
       unlisted?: boolean;
@@ -123,6 +124,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
           ? rows.map((r) => {
               if (r.id !== id) return r;
               const next = { ...r };
+              if (body.name !== undefined) next.name = body.name;
               if (body.featured !== undefined) next.featured = body.featured;
               if (body.hidden !== undefined) next.hidden = body.hidden;
               if (body.unlisted !== undefined) next.unlisted = body.unlisted;
@@ -407,14 +409,20 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                   >
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Link
-                          href={`/gallery/${kit.slug}`}
-                          target="_blank"
-                          className="font-medium hover:underline"
-                          style={{ color: "var(--text-primary)" }}
-                        >
-                          {kit.name}
-                        </Link>
+                        <KitNameCell
+                          kit={kit}
+                          onSave={async (value) => {
+                            await patch(kit.id, { name: value });
+                            // If the kit is currently bespoke, the cached
+                            // TSX has the old name baked in. Regenerate
+                            // so the gallery page reflects the rename.
+                            // Uniform kits read window.__KIT__.name and
+                            // update on next reload — no regen needed.
+                            if (kit.bespoke_showcase) {
+                              regenShowcase(kit.id, value);
+                            }
+                          }}
+                        />
                         {kit.status === "pending" && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#f59e0b", color: "#1a0f00" }}>Pending</span>
                         )}
@@ -699,7 +707,8 @@ function RegenMenu({
         className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40 inline-flex items-center gap-1"
         style={{
           border: "1px solid var(--studio-border)",
-          color: running ? "var(--mkt-accent)" : "var(--text-secondary)",
+          color: running ? "#2383e2" : "var(--text-secondary)",
+          background: running ? "rgba(35,131,226,0.08)" : undefined,
         }}
         title="Regenerate showcase, preview, or hero"
       >
@@ -781,6 +790,88 @@ function RegenMenu({
   );
 }
 
+function KitNameCell({
+  kit,
+  onSave,
+}: {
+  kit: AdminKitRow;
+  onSave: (name: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(kit.name);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  function commit() {
+    const trimmed = draft.trim();
+    setEditing(false);
+    if (!trimmed || trimmed === kit.name) {
+      setDraft(kit.name);
+      return;
+    }
+    onSave(trimmed);
+  }
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") {
+            setDraft(kit.name);
+            setEditing(false);
+          }
+        }}
+        className="font-medium px-1.5 py-0.5 rounded text-[12px] outline-none"
+        style={{
+          background: "var(--bg-surface)",
+          color: "var(--text-primary)",
+          border: "1px solid var(--studio-border-focus)",
+          minWidth: 160,
+        }}
+      />
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 group">
+      <Link
+        href={`/gallery/${kit.slug}`}
+        target="_blank"
+        className="font-medium hover:underline"
+        style={{ color: "var(--text-primary)" }}
+      >
+        {kit.name}
+      </Link>
+      <button
+        type="button"
+        onClick={() => {
+          setDraft(kit.name);
+          setEditing(true);
+        }}
+        title="Rename kit"
+        className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] px-1 rounded"
+        style={{
+          color: "var(--text-muted)",
+          border: "1px solid var(--studio-border)",
+        }}
+      >
+        Edit
+      </button>
+    </span>
+  );
+}
+
 interface ActionMenuItem {
   label: string;
   onClick: () => void;
@@ -827,7 +918,8 @@ function ActionMenu({
         className="px-2 py-1 rounded text-[11px] transition-colors disabled:opacity-40 inline-flex items-center gap-1"
         style={{
           border: "1px solid var(--studio-border)",
-          color: loading ? "var(--mkt-accent)" : "var(--text-secondary)",
+          color: loading ? "#2383e2" : "var(--text-secondary)",
+          background: loading ? "rgba(35,131,226,0.08)" : undefined,
         }}
       >
         {label}
