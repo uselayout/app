@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/api/admin-context";
 import { supabase } from "@/lib/supabase/client";
 
 const PatchBody = z.object({
+  name: z.string().min(1).max(120).optional(),
   featured: z.boolean().optional(),
   hidden: z.boolean().optional(),
   unlisted: z.boolean().optional(),
@@ -30,6 +31,7 @@ export async function PATCH(
 
   // Map camelCase API field to snake_case DB column.
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if ("name" in parsed.data) update.name = parsed.data.name;
   if ("featured" in parsed.data) update.featured = parsed.data.featured;
   if ("hidden" in parsed.data) update.hidden = parsed.data.hidden;
   if ("unlisted" in parsed.data) update.unlisted = parsed.data.unlisted;

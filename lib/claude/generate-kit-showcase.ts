@@ -23,7 +23,29 @@ Every kit renders the SAME set of sections in the SAME order so visitors can com
 
 Sections, in order:
 
-1. **Hero** — kit name as a large heading + one-line description. If brand assets are provided in the user message, render the primary logo as an \`<img src="..." alt="..." />\` (max-height 48-80px) at the top. **If NO brand assets are provided, render text only — no fake logo mark, no decorative SVG, no coloured shapes meant to evoke a logo.** No pills, eyebrows, or "Design System" tags.
+1. **Hero** — kit name as a large heading + one-line description.
+
+   **HARD RULE: Read the kit name and description from \`window.__KIT__\` at runtime — NEVER hardcode them as string literals.** The page hydrates \`window.__KIT__\` on every load with the current values from the DB, so name/description edits in admin propagate without re-running you. Pattern:
+
+   \`\`\`tsx
+   const kit = (window as any).__KIT__ ?? {};
+   const heading = kit.name ?? "Design System";
+   const sub = kit.description ?? "";
+   // <h1>{heading}</h1><p>{sub}</p>
+   \`\`\`
+
+   Do NOT write \`<h1>Airtable</h1>\` or \`<h1>{"Airtable"}</h1>\`. The string "Airtable" must not appear in your output for an Airtable kit. Read it from the global.
+ If — and ONLY if — a "primary logo" entry appears in the brand assets list in the user message, render it as an \`<img src="..." alt="..." />\` (max-height 48-80px) at the top.
+
+   **HARD RULE: When NO primary logo URL is provided, the hero contains text only.** Do not render an \`<img>\`, \`<svg>\`, or any \`<div>\` styled to evoke a logo. Do not draw a coloured square, gradient mark, monogram, or icon next to the kit name. Text alone. The user will know what brand it is from the heading. A made-up logo is worse than no logo.
+
+   Examples of what is FORBIDDEN when no primary logo is provided:
+   - A 32×32 rounded square with the kit's accent colour and the kit's first letter inside
+   - A grid of coloured squares meant to look like the brand's app icon
+   - An SVG mark guessed from the brand name
+   - Any decorative element to the left of the heading
+
+   No pills, eyebrows, or "Design System" tags.
 2. **Colour palette** — grouped by role (backgrounds, text, accent, borders, status, other)
 3. **Typography** — Display / Heading / Body / Caption samples
 4. **Spacing** — horizontal bars from smallest to largest \`--space-*\` token, neutral fill (NOT the brand accent)
