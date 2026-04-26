@@ -613,9 +613,15 @@ function ComponentsSection(props: { bg: string; text: string; accent: string; bo
       ButtonsBlock(blockProps),
       InputsBlock(blockProps),
       FormStatesRow(blockProps),
-      ControlsBlock(blockProps),
+      // ControlsBlock and TabsBlock use useState — they must be rendered
+      // via React.createElement (not called as plain functions) so React
+      // tracks their hooks in their own component scope. Otherwise their
+      // useState calls execute inside App's render frame, which means
+      // App's hook count differs across renders (early return when vars
+      // is null vs full render afterwards) → React error #310.
+      React.createElement(ControlsBlock, blockProps),
       StatusBadgesBlock(blockProps),
-      TabsBlock(blockProps),
+      React.createElement(TabsBlock, blockProps),
       AvatarsBlock(blockProps),
       ProgressBlock(blockProps),
       AlertBlock(blockProps),
