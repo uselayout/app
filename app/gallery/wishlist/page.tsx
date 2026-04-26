@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { listKitRequests } from "@/lib/supabase/kit-requests";
 import { KitRequestList } from "@/components/gallery/KitRequestList";
 import { KitRequestSubmitForm } from "@/components/gallery/KitRequestSubmitForm";
+import { GalleryThemeInit } from "@/components/gallery/GalleryThemeInit";
 
 export const metadata: Metadata = {
   title: "Kit Wishlist - Layout",
@@ -22,6 +23,7 @@ export default async function WishlistPage() {
 
   return (
     <main className="min-h-screen bg-[var(--mkt-bg)] text-[var(--mkt-text-primary)]">
+      <GalleryThemeInit />
       <section className="pt-[60px] pb-12 lg:pt-[100px] lg:pb-12">
         <div className="max-w-[1280px] mx-auto px-6">
           <div className="flex items-center justify-between mb-10">
