@@ -112,6 +112,8 @@ export interface PublicKit {
   featured: boolean;
   hidden: boolean;
   unlisted: boolean;
+  /** Admin-curated "New" badge. Surfaces on KitCard when true. */
+  isNew: boolean;
 
   upvoteCount: number;
   importCount: number;
@@ -153,6 +155,7 @@ export interface PublicKitSummary {
   customCardImageUrl?: string;
   tier: KitTier;
   featured: boolean;
+  isNew: boolean;
   status: KitStatus;
   cardImagePref: KitCardImagePref;
   upvoteCount: number;
@@ -175,6 +178,7 @@ export function kitSummary(kit: PublicKit): PublicKitSummary {
     customCardImageUrl: kit.customCardImageUrl,
     tier: kit.tier,
     featured: kit.featured,
+    isNew: kit.isNew,
     status: kit.status,
     cardImagePref: kit.cardImagePref,
     upvoteCount: kit.upvoteCount,
