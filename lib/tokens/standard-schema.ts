@@ -89,6 +89,8 @@ export interface TokenAssignment {
   confidence: "high" | "medium" | "low";
   /** Whether user manually confirmed or changed this assignment */
   userConfirmed: boolean;
+  /** Non-default mode tag (e.g. "dark", "SDS Dark"). Omitted for default/light. */
+  mode?: string;
 }
 
 export interface UnassignedToken {

@@ -64,18 +64,18 @@ export function CuratedTokenView({
   const addToken = useProjectStore((s) => s.addToken);
   const updateStandardisation = useProjectStore((s) => s.updateStandardisation);
 
-  // Mode awareness. Any project that extracted tokens tagged with a non-
-  // default mode (typically "dark") gets a mode toggle so users can curate
-  // each mode's role assignments independently. Projects without mode
-  // variants get the old single-view experience.
+  // Mode awareness. Curated only renders colour roles, so the toggle should
+  // only surface modes that have at least one colour-typed token (or an
+  // existing colour-role assignment). Otherwise non-colour modes leak in —
+  // e.g. the Figma SDS file tags spacing tokens with Desktop/Mobile/Tablet
+  // and those rendered as empty colour-mode tabs.
   const availableModes = useMemo(() => {
     const modes = new Set<string>();
     for (const t of allTokens) {
-      if (t.mode) modes.add(t.mode);
+      if (t.mode && t.type === "color") modes.add(t.mode);
     }
-    // Also surface modes already present in assignments (e.g. dark-only kits
-    // where every dark token has been assigned and removed from the
-    // unassigned list).
+    // Existing assignments are already colour-only because Curated renders
+    // only colour categories, so any mode tag found here is in scope.
     for (const a of Object.values(assignments)) {
       if (a.mode) modes.add(a.mode);
     }
@@ -395,7 +395,7 @@ export function CuratedTokenView({
                 }`}
                 title={`${m} mode assignments`}
               >
-                {m === "dark" ? <Moon className="h-3 w-3" /> : null}
+                {m.toLowerCase().includes("dark") ? <Moon className="h-3 w-3" /> : null}
                 <span className="capitalize">{m}</span>
               </button>
             ))}

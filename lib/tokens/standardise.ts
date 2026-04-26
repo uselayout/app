@@ -859,6 +859,75 @@ export function matchTokenToUnassignedRole(
 }
 
 /**
+ * Given a set of mode-undefined assignments produced by `standardiseTokens`,
+ * derive mode-tagged twins for each (role, mode) pair where a same-name token
+ * tagged with `mode` exists in the token pool.
+ *
+ * Reuses the matcher's role decisions — same role, different value per mode —
+ * so the SDS Light / SDS Dark tabs in Curated populate themselves on first
+ * load instead of requiring the user to click "Copy from Light" per tab.
+ *
+ * The returned map contains both the original base assignments AND the new
+ * mode-tagged ones, keyed via `assignmentKey(roleKey, mode)`. Existing
+ * mode-tagged entries (e.g. user-confirmed overrides) are not overwritten.
+ */
+export function seedModeAssignments(
+  baseAssignments: Map<string, TokenAssignment>,
+  allTokens: ExtractedToken[],
+  modes: readonly string[]
+): Map<string, TokenAssignment> {
+  const result = new Map<string, TokenAssignment>(baseAssignments);
+  if (modes.length === 0) return result;
+
+  // Index tokens by their identity (cssVariable ?? name) for fast twin lookup.
+  const byTarget = new Map<string, ExtractedToken[]>();
+  for (const t of allTokens) {
+    const key = t.cssVariable ?? t.name;
+    const list = byTarget.get(key);
+    if (list) list.push(t);
+    else byTarget.set(key, [t]);
+  }
+
+  for (const mode of modes) {
+    for (const [roleKey, base] of baseAssignments) {
+      // Skip if this (role, mode) is already tagged in the base map
+      // (defensive — base assignments today have no mode tag).
+      if (base.mode === mode) continue;
+      const compoundKey = `${roleKey}::${mode}`;
+      if (result.has(compoundKey)) continue;
+
+      const target = base.originalCssVariable ?? base.originalName;
+      const twins = byTarget.get(target) ?? [];
+      const twin = twins.find((t) => t.mode === mode);
+      if (!twin) continue;
+
+      result.set(compoundKey, {
+        ...base,
+        mode,
+        value: twin.value,
+        originalName: twin.name,
+        originalCssVariable: twin.cssVariable,
+      });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Detect distinct colour-token modes present in the extraction. Used by
+ * `seedModeAssignments` so the per-mode seeding only runs for modes that
+ * could actually fill colour roles.
+ */
+export function detectColourModes(tokens: ExtractedTokens): string[] {
+  const modes = new Set<string>();
+  for (const t of tokens.colors) {
+    if (t.mode) modes.add(t.mode);
+  }
+  return [...modes].sort();
+}
+
+/**
  * Get statistics about standardisation coverage.
  */
 export function getStandardisationStats(tokenMap: StandardisedTokenMap): {
