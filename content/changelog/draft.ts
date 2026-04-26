@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-curated-status-prefix-demotion",
+    title: "Status borders stop stealing the Default Border slot",
+    description:
+      "On kits with both status borders (success-border, info-border, warning-border, error-border) and a normal-border, the matcher could pick a status colour as the Default Border because both candidates tied on score and iteration order chose the wrong one. Tokens whose names start with a status word (success, warning, error, danger, info, positive, negative, destructive, critical) are now demoted when matching default-tier roles (backgrounds, text, borders, accent), so the unprefixed normal/default variant wins. Status roles themselves are unaffected.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
     id: "2026-w18-curated-picker-show-all",
     title: "Curated token picker shows every token",
     description:
