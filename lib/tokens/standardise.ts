@@ -383,24 +383,36 @@ const FRAMEWORK_PREFIXES = ["grid-", "tw-", "transition-", "animation-", "contai
 const THIRD_PARTY_PATTERNS = ["fides-", "onetrust-", "iubenda-", "cookiebot-", "consent-", "cookie-banner", "hotjar-", "intercom-"];
 
 /**
- * Words that mark a token as belonging to status/feedback roles, not default
- * roles. Detected as a whole segment of the kebab/snake-cased name so we
- * catch both prefix forms (success-border) and suffix forms (border-success,
- * bg-warning, text-error). Without the demotion these tokens tie with the
- * unprefixed normal/default variants on score and steal the default role
- * purely on iteration order — Linear's `success-border` was beating
- * `normal-border` for the Default Border slot before this fix.
+ * Words that mark a token as belonging to non-default roles. Detected as a
+ * whole segment of the kebab/snake-cased name so we catch both prefix forms
+ * (success-border, disabled-text) and suffix forms (border-success,
+ * text-disabled).
+ *
+ * Without the demotion these tokens tie with the unprefixed normal/default
+ * variants on score and steal the default role purely on iteration order —
+ * Linear's `success-border` was beating `normal-border` for the Default
+ * Border slot before this fix.
+ *
+ * Notably absent: `hover`, `focus`, `selected`, `pressed`, `active`. Those
+ * are referenced as keywords by dedicated roles (bg-hover, accent-hover,
+ * border-focus, bg-selected) — demoting them globally would break those
+ * roles' matching. `disabled` and `loading` have no dedicated role in the
+ * schema, so they're safe to demote.
  */
-const STATUS_SEGMENT_WORDS = new Set([
+const NON_DEFAULT_SEGMENT_WORDS = new Set([
+  // Status / feedback
   "success", "warning", "error", "danger", "info", "positive", "negative", "destructive", "critical",
+  // Disabled / loading — neither has a dedicated role; we don't want them
+  // filling default-tier slots.
+  "disabled", "loading",
 ]);
 
-/** Roles that are owned by the status category and should not penalise status-flavoured tokens. */
+/** Roles that are owned by the status category and should not penalise non-default-flavoured tokens. */
 const DEFAULT_TIER_CATEGORIES: ReadonlySet<string> = new Set(["backgrounds", "text", "borders", "accent"]);
 
-function isStatusFlavoured(strippedName: string): boolean {
+function isNonDefaultFlavoured(strippedName: string): boolean {
   for (const segment of strippedName.split(/[-_]/)) {
-    if (STATUS_SEGMENT_WORDS.has(segment)) return true;
+    if (NON_DEFAULT_SEGMENT_WORDS.has(segment)) return true;
   }
   return false;
 }
@@ -425,13 +437,14 @@ function scoreNameMatch(role: StandardRole, strippedName: string, rawName: strin
     score -= 5;
   }
 
-  // Demote status-flavoured tokens (any segment matches success / warning /
-  // error / danger / info / positive / negative / destructive / critical)
-  // when matching default-tier roles (backgrounds/text/borders/accent).
-  // Catches both prefix (success-border, warning-bg) and suffix (border-
-  // success, bg-warning) forms. Status roles themselves are exempt so the
-  // tokens still flow into Success / Warning / Error / Info as intended.
-  if (DEFAULT_TIER_CATEGORIES.has(role.category) && isStatusFlavoured(strippedName)) {
+  // Demote non-default-flavoured tokens (status: success/warning/error/
+  // danger/info/positive/negative/destructive/critical; state: disabled/
+  // selected/pressed/loading/active) when matching default-tier roles
+  // (backgrounds/text/borders/accent). Catches both prefix (success-border,
+  // disabled-text) and suffix (border-success, text-disabled) forms.
+  // Status roles themselves are exempt so the tokens still flow into
+  // Success / Warning / Error / Info as intended.
+  if (DEFAULT_TIER_CATEGORIES.has(role.category) && isNonDefaultFlavoured(strippedName)) {
     score -= 5;
   }
 

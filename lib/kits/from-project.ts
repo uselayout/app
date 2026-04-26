@@ -1,11 +1,14 @@
 import { generateTokensCss } from "@/lib/export/tokens-css";
 import { generateTokensJson } from "@/lib/export/tokens-json";
 import { deriveLayoutMd } from "@/lib/layout-md/derive";
+import { parseTokensFromLayoutMd } from "@/lib/tokens/parse-layout-md";
 import type {
   BrandingAsset,
   BrandingSlot,
   BrandingVariant,
   ContextDocument,
+  ExtractedToken,
+  ExtractedTokens,
   Project,
   UploadedFont,
 } from "@/lib/types";
@@ -51,14 +54,21 @@ export interface BuildKitInput {
 export function buildKitFromProject(input: BuildKitInput): PublishKitInput {
   const { project } = input;
 
-  const tokensCss = project.extractionData
-    ? generateTokensCss(project.extractionData.tokens)
-    : "";
-  const tokensJson = project.extractionData
-    ? (JSON.parse(generateTokensJson(project.extractionData.tokens)) as Record<string, unknown>)
-    : {};
-
   const layoutMd = deriveLayoutMd(project);
+
+  // Merge any tokens documented in the layout.md narrative (Quick Reference,
+  // Colour System, etc.) into the export. Without this, tokens that exist
+  // only in markdown and never made it into extractionData get dropped from
+  // tokens.json, so the gallery's Tokens tab shows fewer tokens than the
+  // studio's All Tokens view (which reads layout.md too via syncTokensFromLayoutMd).
+  const tokensForExport = mergeLayoutMdTokens(project.extractionData?.tokens, layoutMd);
+
+  const tokensCss = tokensForExport
+    ? generateTokensCss(tokensForExport)
+    : "";
+  const tokensJson = tokensForExport
+    ? (JSON.parse(generateTokensJson(tokensForExport)) as Record<string, unknown>)
+    : {};
 
   const kitJson: KitJson = {
     schemaVersion: 1,
@@ -199,4 +209,42 @@ function detectFontFormat(url: string): "woff2" | "woff" | "ttf" | "otf" {
   if (lower.endsWith(".woff")) return "woff";
   if (lower.endsWith(".ttf")) return "ttf";
   return "otf";
+}
+
+/**
+ * Union extractionData tokens with tokens parsed out of layout.md fenced
+ * blocks and tables. Existing extraction tokens win on collision (they're
+ * the authoritative versions edited by the user in the studio); markdown-
+ * only tokens are appended so they reach tokens.json / tokens.css.
+ *
+ * Returns null when the project has no extractionData and no parseable
+ * layout.md content, so callers can short-circuit empty exports.
+ */
+function mergeLayoutMdTokens(
+  extracted: ExtractedTokens | undefined,
+  layoutMd: string
+): ExtractedTokens | null {
+  const parsed = layoutMd ? parseTokensFromLayoutMd(layoutMd) : null;
+  const parsedTotal = parsed
+    ? parsed.colors.length + parsed.typography.length + parsed.spacing.length +
+      parsed.radius.length + parsed.effects.length + (parsed.motion?.length ?? 0)
+    : 0;
+  if (!extracted && parsedTotal === 0) return null;
+
+  const union = (existing: ExtractedToken[] | undefined, incoming: ExtractedToken[] | undefined): ExtractedToken[] => {
+    const map = new Map<string, ExtractedToken>();
+    for (const t of incoming ?? []) map.set(t.mode ? `${t.name}::${t.mode}` : t.name, t);
+    // Existing wins on collision — the studio version is authoritative.
+    for (const t of existing ?? []) map.set(t.mode ? `${t.name}::${t.mode}` : t.name, t);
+    return [...map.values()];
+  };
+
+  return {
+    colors: union(extracted?.colors, parsed?.colors),
+    typography: union(extracted?.typography, parsed?.typography),
+    spacing: union(extracted?.spacing, parsed?.spacing),
+    radius: union(extracted?.radius, parsed?.radius),
+    effects: union(extracted?.effects, parsed?.effects),
+    motion: union(extracted?.motion, parsed?.motion),
+  };
 }

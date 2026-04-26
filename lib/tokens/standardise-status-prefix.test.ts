@@ -66,6 +66,35 @@ describe("standardise status-prefix demotion (Linear scenario)", () => {
     expect(borderAssignment!.originalName).toBe("normal-border");
   });
 
+  it("demotes disabled-prefixed tokens for default-tier roles too", () => {
+    // disabled-* should not steal default text/border/bg roles even though
+    // there's no dedicated `disabled` role in the schema.
+    const map = standardiseTokens(
+      tokens([
+        color("disabled-text", "#999999"),
+        color("text-primary", "#111111"),
+      ]),
+      "ada-bank"
+    );
+    const textPrimary = map.assignments.get("text-primary");
+    expect(textPrimary, "expected a text-primary assignment").toBeDefined();
+    expect(textPrimary!.originalName).toBe("text-primary");
+  });
+
+  it("does not demote bg-selected candidates that contain 'active' or 'selected'", () => {
+    // bg-selected role's matchKeywords include "active" and "selected" by
+    // design — we mustn't kill those by over-aggressive demotion.
+    const map = standardiseTokens(
+      tokens([
+        color("bg-active", "#e7e7e7"),
+      ]),
+      "ada-bank"
+    );
+    const bgSelected = map.assignments.get("bg-selected");
+    expect(bgSelected, "expected a bg-selected assignment").toBeDefined();
+    expect(bgSelected!.originalName).toBe("bg-active");
+  });
+
   it("does not demote status-flavoured tokens for the status category", () => {
     // success-* tokens should still flow into status roles. They tie with
     // each other on score so iteration order picks one for `success` and
