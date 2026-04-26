@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/admin-context";
 import { approveKit, fetchKitById } from "@/lib/supabase/kits";
+import { linkRequestsForKit } from "@/lib/supabase/kit-requests";
 import { runKitGenerationJobs } from "@/lib/gallery/run-generation-jobs";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,12 @@ export async function POST(
   // any of them individually from the row if quality is poor.
   const origin = new URL(request.url).origin;
   runKitGenerationJobs({ ...kit, status: "approved" }, origin, openaiApiKey);
+
+  // Best-effort: mark any wishlist requests whose hostname matches the kit slug
+  // as fulfilled. Failures shouldn't block approval.
+  void linkRequestsForKit({ ...kit, status: "approved" }).catch((err) => {
+    console.error("linkRequestsForKit error:", err);
+  });
 
   return NextResponse.json({ ok: true });
 }

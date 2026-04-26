@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-gallery-kit-wishlist",
+    title: "Wishlist on the Kit Gallery",
+    description:
+      "Want a kit added to the gallery? Drop the URL on the new wishlist below the kit grid, and upvote the ones you'd actually use. The page auto-fetches the brand name from the URL so you only need to paste a link. Once a matching kit ships, your request gets marked fulfilled automatically.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-26",
+  },
+  {
     id: "2026-w18-explore-enter-submits",
     title: "Explore: Enter submits, Shift+Enter adds a line break",
     description:

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listPublicKits } from "@/lib/supabase/kits";
 import { GalleryPageClient } from "@/components/gallery/GalleryPageClient";
+import { KitRequestSection } from "@/components/gallery/KitRequestSection";
 import type { KitSort } from "@/lib/types/kit";
 
 export const metadata: Metadata = {
@@ -98,6 +99,7 @@ export default async function GalleryPage({ searchParams }: PageProps) {
             initialSort={sort}
             initialQ={sp.q}
           />
+          <KitRequestSection />
         </div>
       </section>
     </main>

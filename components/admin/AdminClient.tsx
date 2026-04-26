@@ -9,6 +9,7 @@ import { RoadmapTab } from "./RoadmapTab";
 import { VariantsTab } from "./VariantsTab";
 import { AIModelsTab } from "./AIModelsTab";
 import { KitsTab } from "./KitsTab";
+import { KitRequestsTab } from "./KitRequestsTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -2305,7 +2306,7 @@ function CreditsTab({ toast }: { toast: (msg: string, type?: "success" | "error"
 
 export function AdminClient() {
   const { data: session, isPending } = useSession();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "codes" | "requests" | "changelog" | "credits" | "ai-models" | "email" | "roadmap" | "variants" | "kits">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "codes" | "requests" | "changelog" | "credits" | "ai-models" | "email" | "roadmap" | "variants" | "kits" | "kit-requests">("dashboard");
   const { toasts, show: toast } = useToast();
   const [pendingCount, setPendingCount] = useState(0);
   const [stats, setStats] = useState<AdminStatsData | null>(null);
@@ -2385,6 +2386,7 @@ export function AdminClient() {
     { key: "email", label: "Email" },
     { key: "variants", label: "Variants" },
     { key: "kits", label: "Kits" },
+    { key: "kit-requests", label: "Kit requests" },
   ];
 
   return (
@@ -2478,6 +2480,9 @@ export function AdminClient() {
         )}
         {activeTab === "kits" && (
           <KitsTab toast={toast} />
+        )}
+        {activeTab === "kit-requests" && (
+          <KitRequestsTab toast={toast} />
         )}
       </div>
 
