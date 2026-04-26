@@ -150,6 +150,7 @@ async function regenOne(ctx: ApiCtx, slug: string, dryRun: boolean): Promise<voi
   const source = await fetchKitSourceById(ctx, kitId);
 
   console.log(`  ${slug}: generating bespoke (Claude + transpile)...`);
+  let lastReport = 0;
   const result = await generateKitShowcase({
     kitName: source.kitName,
     kitDescription: source.kitDescription,
@@ -157,7 +158,16 @@ async function regenOne(ctx: ApiCtx, slug: string, dryRun: boolean): Promise<voi
     layoutMd: source.layoutMd,
     tokensCss: source.tokensCss,
     brandingAssets: source.brandingAssets,
+    onProgress: (_delta, total) => {
+      // Print every 500 chars so the operator sees forward motion without
+      // flooding the terminal. ~5-15 updates over a typical generation.
+      if (total - lastReport >= 500) {
+        process.stdout.write(`\r  ${slug}: streaming... ${total} chars`);
+        lastReport = total;
+      }
+    },
   });
+  process.stdout.write(`\r  ${slug}: streamed ${result.tsx.length} chars total       \n`);
 
   if (dryRun) {
     console.log(

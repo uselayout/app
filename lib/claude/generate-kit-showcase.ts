@@ -163,6 +163,9 @@ interface GenerateInput {
   brandingAssets?: KitBrandingAsset[];
   apiKey?: string;
   modelId?: string;
+  /** Called with each text delta from the Claude stream. CLI scripts use it
+   * to print live progress so the operator can see the call is alive. */
+  onProgress?: (delta: string, totalChars: number) => void;
 }
 
 function stripFences(raw: string): string {
@@ -257,12 +260,25 @@ async function generateKitShowcaseInner(input: GenerateInput): Promise<Generated
     .filter(Boolean)
     .join("\n");
 
-  const response = await anthropic.messages.create({
+  // Streaming: gives CLI callers a progress signal so they can see the
+  // call is alive. The non-streaming path used to freeze terminals for
+  // 1-3 minutes with no output, indistinguishable from a network stall.
+  const stream = anthropic.messages.stream({
     model: input.modelId ?? "claude-sonnet-4-6",
     max_tokens: 16000,
     system: SYSTEM,
     messages: [{ role: "user", content: userMessage }],
   });
+
+  let totalChars = 0;
+  if (input.onProgress) {
+    stream.on("text", (delta) => {
+      totalChars += delta.length;
+      input.onProgress!(delta, totalChars);
+    });
+  }
+
+  const response = await stream.finalMessage();
 
   const raw = response.content
     .filter((block): block is Anthropic.TextBlock => block.type === "text")
