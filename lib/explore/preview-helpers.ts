@@ -149,11 +149,16 @@ export interface BuildSrcdocOptions {
   cssTokenBlock?: string;
   /** Kit metadata exposed to the iframe as window.__KIT__. Used by the
    * uniform showcase template to render a brand-aware hero (logo + name
-   * + description). Bespoke showcases ignore this and embed their own. */
+   * + description) AND to drive per-kit component styling via the
+   * styleProfile sub-field. Bespoke showcases ignore this and embed
+   * their own. */
   kit?: {
     name?: string;
     description?: string;
     logoUrl?: string;
+    /** Claude-derived style profile. Schema in lib/types/kit-style-profile.ts.
+     * Renderer falls back to its DEFAULT_STYLE_PROFILE when absent. */
+    styleProfile?: unknown;
   };
 }
 

@@ -140,6 +140,17 @@ export interface PublicKit {
   /** Admin-uploaded card image (1440x1080). Wins the fallback chain when present. */
   customCardImageUrl?: string;
 
+  /**
+   * Per-kit style profile derived by Claude from layout.md + tokens.css.
+   * Tells the uniform Live Preview how each block should render — radii,
+   * weights, paddings, fill style, density. Schema in
+   * lib/types/kit-style-profile.ts. Renderer falls back to
+   * DEFAULT_STYLE_PROFILE when null.
+   */
+  styleProfile?: import("./kit-style-profile").KitStyleProfile;
+  /** Timestamp of the last successful style profile generation. */
+  styleProfileGeneratedAt?: string;
+
   createdAt: string;
   updatedAt: string;
 }

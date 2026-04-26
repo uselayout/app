@@ -96,6 +96,7 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
     name: kit.name,
     description: kit.description,
     logoUrl: primaryLogo,
+    styleProfile: kit.styleProfile,
   };
 
   // Snapshot mode: render only the showcase iframe at full size, no chrome.

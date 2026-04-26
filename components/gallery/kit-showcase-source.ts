@@ -16,6 +16,31 @@ type CssVar = { name: string; value: string };
 
 type Category = "color" | "space" | "radius" | "shadow" | "font" | "other";
 
+// Style profile shape — a copy of lib/types/kit-style-profile.ts inlined
+// for the iframe runtime. Schema version 1. The host injects the kit's
+// profile via window.__KIT__.styleProfile; this DEFAULT runs when the
+// kit has no profile yet.
+type KitStyleProfile = {
+  version: 1;
+  mode: "light" | "dark";
+  density: "compact" | "comfortable" | "airy";
+  headingWeight: number;
+  button: { radius: string; weight: number; padding: string; fillStyle: "filled" | "shadowed" | "subtle" };
+  input: { radius: string; borderWidth: number; focusStyle: "ring" | "border" };
+  card: { radius: string; padding: number; elevation: "soft" | "shadow" | "elevated" };
+  badge: { shape: "pill" | "rounded" | "square"; weight: number };
+  tab: { indicator: "underline" | "pill" | "filled" | "subtle" };
+};
+
+const DEFAULT_STYLE_PROFILE: KitStyleProfile = {
+  version: 1, mode: "light", density: "comfortable", headingWeight: 700,
+  button: { radius: "var(--radius-lg, 999px)", weight: 500, padding: "10px 18px", fillStyle: "filled" },
+  input: { radius: "var(--radius-md, 8px)", borderWidth: 1, focusStyle: "ring" },
+  card: { radius: "var(--radius-lg, 12px)", padding: 20, elevation: "soft" },
+  badge: { shape: "pill", weight: 500 },
+  tab: { indicator: "underline" }
+};
+
 function readRootCssVars(): CssVar[] {
   const out: CssVar[] = [];
   const seen = new Set<string>();
@@ -141,25 +166,37 @@ function App() {
 
   const fontFamily = buckets.font.find((v: CssVar) => /family|sans|serif/.test(v.name))?.value || "system-ui, sans-serif";
 
+  // Read the kit's style profile from window.__KIT__. The host injects
+  // it via buildSrcdoc, the renderer falls back to DEFAULT_STYLE_PROFILE
+  // when no profile exists yet (newly published kit, or generation
+  // failed). Profile fields override radii/weights/etc. block-by-block.
+  const kitMeta = (typeof window !== "undefined" && (window as any).__KIT__) || {};
+  const profile = kitMeta.styleProfile || DEFAULT_STYLE_PROFILE;
+
+  // Density drives outer padding/gap so the showcase feels like the
+  // kit's natural density, not a generic comfortable mid-tone.
+  const outerGap = profile.density === "compact" ? 36 : profile.density === "airy" ? 60 : 48;
+  const outerPadding = profile.density === "compact" ? "24px 32px" : profile.density === "airy" ? "44px 56px" : "32px 40px";
+
   return React.createElement("div", {
     style: {
       minHeight: "100vh",
       background: bg,
       color: text,
       fontFamily,
-      padding: "32px 40px",
+      padding: outerPadding,
       display: "flex",
       flexDirection: "column",
-      gap: 48,
+      gap: outerGap,
     }
   },
-    Hero({ accent, border, surface, text, headingText }),
+    Hero({ accent, border, surface, text, headingText, profile }),
     PaletteSection({ colours: buckets.color, bg, text, accent, border, surface, headingText }),
-    TypographySection({ text, border, surface, accent, headingText }),
+    TypographySection({ text, border, surface, accent, headingText, profile }),
     SpacingSection({ spacing: sortSpacing(buckets.space), text, border, accent, surface, headingText }),
     RadiusSection({ radii: buckets.radius, text, border, surface, accent, headingText }),
     ShadowSection({ shadows: buckets.shadow, surface, text, border, headingText }),
-    ComponentsSection({ bg, text, accent, border, surface, headingText, radii })
+    ComponentsSection({ bg, text, accent, border, surface, headingText, radii, profile })
   );
 }
 
@@ -366,7 +403,7 @@ function SectionHeader(props: { label: string; title: string; count?: number; he
   );
 }
 
-function Hero(props: { accent: string; border: string; surface: string; text: string; headingText: string }) {
+function Hero(props: { accent: string; border: string; surface: string; text: string; headingText: string; profile: KitStyleProfile }) {
   // Kit metadata is injected by the iframe host as window.__KIT__. When
   // present, we render a logo + name + description hero — same shape as the
   // bespoke Notion showcase, so uniform and bespoke kits match aesthetically.
@@ -388,7 +425,7 @@ function Hero(props: { accent: string; border: string; surface: string; text: st
       style: { display: "block", maxHeight: 56, maxWidth: 200, objectFit: "contain", objectPosition: "left" }
     }) : null,
     React.createElement("h1", {
-      style: { fontSize: 44, lineHeight: 1.05, fontWeight: 700, margin: 0, letterSpacing: "-0.025em", color: props.headingText }
+      style: { fontSize: 44, lineHeight: 1.05, fontWeight: props.profile.headingWeight, margin: 0, letterSpacing: "-0.025em", color: props.headingText }
     }, name),
     React.createElement("p", {
       style: { margin: 0, fontSize: 16, lineHeight: 1.6, opacity: 0.7, maxWidth: 640 }
@@ -465,11 +502,13 @@ function PaletteSection(props: { colours: CssVar[]; bg: string; text: string; ac
   );
 }
 
-function TypographySection(props: { text: string; border: string; surface: string; accent: string; headingText: string }) {
+function TypographySection(props: { text: string; border: string; surface: string; accent: string; headingText: string; profile: KitStyleProfile }) {
+  // Display + heading samples follow the kit's heading weight; body / caption stay regular.
+  const hw = props.profile.headingWeight;
   const samples = [
-    { label: "Display", size: 48, weight: 500 },
-    { label: "Heading 1", size: 32, weight: 500 },
-    { label: "Heading 2", size: 24, weight: 500 },
+    { label: "Display", size: 48, weight: hw },
+    { label: "Heading 1", size: 32, weight: hw },
+    { label: "Heading 2", size: 24, weight: Math.max(500, hw - 100) },
     { label: "Body", size: 16, weight: 400 },
     { label: "Caption", size: 12, weight: 400 }
   ];
@@ -562,13 +601,14 @@ function ShadowSection(props: { shadows: CssVar[]; surface: string; text: string
   );
 }
 
-function ComponentsSection(props: { bg: string; text: string; accent: string; border: string; surface: string; headingText: string; radii: KitRadii }) {
+function ComponentsSection(props: { bg: string; text: string; accent: string; border: string; surface: string; headingText: string; radii: KitRadii; profile: KitStyleProfile }) {
   const onAccent = onColour(props.accent);
-  const blockProps = { bg: props.bg, text: props.text, accent: props.accent, border: props.border, surface: props.surface, onAccent: onAccent, radii: props.radii };
+  const blockProps = { bg: props.bg, text: props.text, accent: props.accent, border: props.border, surface: props.surface, onAccent: onAccent, radii: props.radii, profile: props.profile };
+  const sectionGap = props.profile.density === "compact" ? 22 : props.profile.density === "airy" ? 36 : 28;
   return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
     SectionHeader({ headingText: props.headingText, label: "Samples", title: "Components" }),
     React.createElement("div", {
-      style: { padding: 28, borderRadius: props.radii.lg, border: "1px solid " + props.border, background: props.surface, display: "flex", flexDirection: "column", gap: 28 }
+      style: { padding: props.profile.density === "compact" ? 22 : props.profile.density === "airy" ? 36 : 28, borderRadius: props.profile.card.radius, border: "1px solid " + props.border, background: props.surface, display: "flex", flexDirection: "column", gap: sectionGap }
     },
       ButtonsBlock(blockProps),
       InputsBlock(blockProps),
@@ -592,31 +632,41 @@ function Subhead(text: string) {
   }, text);
 }
 
-function ButtonsBlock(p: { text: string; accent: string; border: string; onAccent: string; radii: KitRadii }) {
-  // Buttons inherit the kit's largest non-pill radius. Linear (radius-lg
-  // = 9999px) keeps pills, Apple (~18px) renders softly curved, IBM
-  // (~8px) renders subtly rounded — instead of every kit looking pill.
-  const r = p.radii.lg;
+function ButtonsBlock(p: { text: string; accent: string; border: string; onAccent: string; radii: KitRadii; profile: KitStyleProfile }) {
+  // Profile-driven: radius, padding, weight, fillStyle all come from the
+  // kit's derived style profile. Falls back to KitRadii when the profile
+  // string is missing (defensive — parseStyleProfile guarantees it isn't).
+  const r = p.profile.button.radius || p.radii.lg;
+  const fw = p.profile.button.weight;
+  const pad = p.profile.button.padding;
+  const fill = p.profile.button.fillStyle;
+  // "shadowed" → solid + soft drop-shadow (Stripe-like).
+  // "subtle" → low-saturation tint not solid (Notion-like).
+  // "filled" → flat solid (default).
+  const primaryShadow = fill === "shadowed" ? "0 1px 2px rgba(0,0,0,0.08), 0 4px 12px " + withAlpha(p.accent, 0.25) : undefined;
+  const primaryBg = fill === "subtle" ? withAlpha(p.accent, 0.14) : p.accent;
+  const primaryColor = fill === "subtle" ? p.accent : p.onAccent;
+
   const btn = (label: string, variant: "primary" | "secondary" | "ghost" | "disabled", size: "sm" | "md" = "md") => {
-    const padding = size === "sm" ? "6px 12px" : "10px 18px";
+    const padding = size === "sm" ? "6px 12px" : pad;
     const fontSize = size === "sm" ? 12 : 14;
-    const baseTransition = { transition: "filter 120ms ease, background 120ms ease" };
+    const baseTransition = { transition: "filter 120ms ease, background 120ms ease, box-shadow 120ms ease" };
     if (variant === "primary") return React.createElement("button", {
       "data-showcase-btn": "true", "data-variant": "primary",
-      style: { ...baseTransition, background: p.accent, color: p.onAccent, border: "none", padding, borderRadius: r, fontSize, fontWeight: 500, cursor: "pointer" }
+      style: { ...baseTransition, background: primaryBg, color: primaryColor, border: "none", padding, borderRadius: r, fontSize, fontWeight: fw, cursor: "pointer", boxShadow: primaryShadow }
     }, label);
     if (variant === "secondary") return React.createElement("button", {
       "data-showcase-btn": "true", "data-variant": "secondary",
-      style: { ...baseTransition, background: "transparent", color: p.text, border: "1px solid " + p.border, padding, borderRadius: r, fontSize, fontWeight: 500, cursor: "pointer" }
+      style: { ...baseTransition, background: "transparent", color: p.text, border: "1px solid " + p.border, padding, borderRadius: r, fontSize, fontWeight: fw, cursor: "pointer" }
     }, label);
     if (variant === "ghost") return React.createElement("button", {
       "data-showcase-btn": "true", "data-variant": "ghost",
-      style: { ...baseTransition, background: "transparent", color: p.text, border: "none", padding, borderRadius: r, fontSize, fontWeight: 500, cursor: "pointer", opacity: 0.7 }
+      style: { ...baseTransition, background: "transparent", color: p.text, border: "none", padding, borderRadius: r, fontSize, fontWeight: fw, cursor: "pointer", opacity: 0.7 }
     }, label);
     return React.createElement("button", {
       "data-showcase-btn": "true", "data-variant": "disabled",
       disabled: true,
-      style: { background: p.accent, color: p.onAccent, border: "none", padding, borderRadius: r, fontSize, fontWeight: 500, opacity: 0.4 }
+      style: { background: primaryBg, color: primaryColor, border: "none", padding, borderRadius: r, fontSize, fontWeight: fw, opacity: 0.4 }
     }, label);
   };
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
@@ -663,8 +713,10 @@ function ChevronDown(props: { size?: number; opacity?: number }) {
   );
 }
 
-function InputsBlock(p: { bg: string; text: string; accent: string; border: string; radii: KitRadii }) {
-  const baseStyle = { padding: "10px 14px", borderRadius: p.radii.md, border: "1px solid " + p.border, background: p.bg, color: p.text, fontSize: 14, outline: "none", width: "100%" } as const;
+function InputsBlock(p: { bg: string; text: string; accent: string; border: string; radii: KitRadii; profile: KitStyleProfile }) {
+  const ir = p.profile.input.radius || p.radii.md;
+  const bw = p.profile.input.borderWidth;
+  const baseStyle = { padding: "10px 14px", borderRadius: ir, border: bw + "px solid " + p.border, background: p.bg, color: p.text, fontSize: 14, outline: "none", width: "100%" } as const;
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Inputs"),
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 } },
@@ -679,7 +731,7 @@ function InputsBlock(p: { bg: string; text: string; accent: string; border: stri
       ),
       // Prefixed
       React.createElement("div", {
-        style: { display: "flex", alignItems: "stretch", borderRadius: p.radii.md, border: "1px solid " + p.border, overflow: "hidden", background: p.bg }
+        style: { display: "flex", alignItems: "stretch", borderRadius: ir, border: bw + "px solid " + p.border, overflow: "hidden", background: p.bg }
       },
         React.createElement("span", {
           style: { padding: "10px 12px", fontSize: 14, opacity: 0.6, borderRight: "1px solid " + p.border }
@@ -708,19 +760,26 @@ function InputsBlock(p: { bg: string; text: string; accent: string; border: stri
   );
 }
 
-function FormStatesRow(p: { bg: string; text: string; accent: string; border: string; radii: KitRadii }) {
-  const inputBase = { padding: "10px 14px", borderRadius: p.radii.md, background: p.bg, color: p.text, fontSize: 14, outline: "none", flex: "1 1 200px" };
+function FormStatesRow(p: { bg: string; text: string; accent: string; border: string; radii: KitRadii; profile: KitStyleProfile }) {
+  const ir = p.profile.input.radius || p.radii.md;
+  const bw = p.profile.input.borderWidth;
+  const useRing = p.profile.input.focusStyle === "ring";
+  const inputBase = { padding: "10px 14px", borderRadius: ir, background: p.bg, color: p.text, fontSize: 14, outline: "none", flex: "1 1 200px" };
+  // "ring" = accent ring on focus (Stripe-style). "border" = just border colour shifts (Linear, Apple).
+  const focusedStyle = useRing
+    ? { ...inputBase, border: bw + "px solid " + p.accent, boxShadow: "0 0 0 3px " + withAlpha(p.accent, 0.18) }
+    : { ...inputBase, border: (bw + 0.5) + "px solid " + p.accent };
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Field states"),
     React.createElement("div", { style: { display: "flex", gap: 12, flexWrap: "wrap" } },
-      React.createElement("input", { defaultValue: "Default", style: { ...inputBase, border: "1px solid " + p.border } }),
-      React.createElement("input", { defaultValue: "Focused", style: { ...inputBase, border: "1px solid " + p.accent, boxShadow: "0 0 0 3px " + withAlpha(p.accent, 0.18) } }),
-      React.createElement("input", { defaultValue: "Error", style: { ...inputBase, border: "1px solid #e54d2e", color: "#e54d2e" } })
+      React.createElement("input", { defaultValue: "Default", style: { ...inputBase, border: bw + "px solid " + p.border } }),
+      React.createElement("input", { defaultValue: "Focused", style: focusedStyle }),
+      React.createElement("input", { defaultValue: "Error", style: { ...inputBase, border: bw + "px solid #e54d2e", color: "#e54d2e" } })
     )
   );
 }
 
-function ControlsBlock(p: { text: string; accent: string; border: string; bg: string; onAccent: string; radii: KitRadii }) {
+function ControlsBlock(p: { text: string; accent: string; border: string; bg: string; onAccent: string; radii: KitRadii; profile: KitStyleProfile }) {
   const [toggle1, setToggle1] = React.useState(true);
   const [toggle2, setToggle2] = React.useState(false);
   const [check1, setCheck1] = React.useState(true);
@@ -804,12 +863,14 @@ function ControlsBlock(p: { text: string; accent: string; border: string; bg: st
   );
 }
 
-function StatusBadgesBlock(p: { text: string; accent: string; border: string; radii: KitRadii }) {
-  // Badges keep the kit's pill radius (or 999 fallback) — pill is universal
-  // for status chips even on sharp-cornered kits like IBM.
+function StatusBadgesBlock(p: { text: string; accent: string; border: string; radii: KitRadii; profile: KitStyleProfile }) {
+  // Badge shape comes from profile: "pill" → kit's pill radius, "rounded"
+  // → kit's small radius, "square" → 0. Weight also profile-driven.
+  const badgeRadius = p.profile.badge.shape === "pill" ? p.radii.pill : p.profile.badge.shape === "rounded" ? p.radii.sm : "0px";
+  const fw = p.profile.badge.weight;
   const pill = (label: string, fill: string, color: string, dot?: string) =>
     React.createElement("span", {
-      style: { padding: "4px 10px", borderRadius: p.radii.pill, background: fill, color, fontSize: 12, fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 6 }
+      style: { padding: "4px 10px", borderRadius: badgeRadius, background: fill, color, fontSize: 12, fontWeight: fw, display: "inline-flex", alignItems: "center", gap: 6 }
     },
       dot ? React.createElement("span", { style: { width: 6, height: 6, borderRadius: "50%", background: dot, display: "inline-block" } }) : null,
       label
@@ -827,38 +888,67 @@ function StatusBadgesBlock(p: { text: string; accent: string; border: string; ra
       pill("Info",    "rgba(35, 131, 226, 0.18)", "#1a6dbd", "#2383e2"),
       // Outline variant for completeness
       React.createElement("span", {
-        style: { padding: "4px 10px", borderRadius: p.radii.pill, border: "1px solid " + p.border, color: p.text, fontSize: 12, fontWeight: 500 }
+        style: { padding: "4px 10px", borderRadius: badgeRadius, border: "1px solid " + p.border, color: p.text, fontSize: 12, fontWeight: fw }
       }, "Draft")
     )
   );
 }
 
-function TabsBlock(p: { text: string; accent: string; border: string; onAccent: string; radii: KitRadii }) {
+function TabsBlock(p: { text: string; accent: string; border: string; onAccent: string; radii: KitRadii; profile: KitStyleProfile }) {
   const tabLabels = ["Overview", "Activity", "Settings", "Members"];
   const segLabels = ["Day", "Week", "Month"];
   const [activeTab, setActiveTab] = React.useState(0);
   const [activeSeg, setActiveSeg] = React.useState(1);
+  const indicator = p.profile.tab.indicator;
+  // Different active-tab treatments:
+  //   underline = bottom border accent (Linear, Stripe, Notion)
+  //   pill      = active tab gets a pill background (Apple Music)
+  //   filled    = active tab gets full accent fill
+  //   subtle    = no border, just bold + colour shift
+  const tabStyle = (active: boolean) => {
+    const base: any = {
+      padding: "10px 14px",
+      fontSize: 13,
+      fontWeight: active ? 600 : 400,
+      color: active ? p.accent : p.text,
+      opacity: active ? 1 : 0.7,
+      background: "transparent",
+      cursor: "pointer",
+      transition: "color 120ms ease, opacity 120ms ease, border-color 120ms ease, background 120ms ease",
+      border: "none",
+    };
+    if (indicator === "underline") {
+      base.borderBottom = active ? "2px solid " + p.accent : "2px solid transparent";
+      base.marginBottom = -1;
+    } else if (indicator === "pill") {
+      if (active) {
+        base.background = withAlpha(p.accent, 0.14);
+        base.color = p.accent;
+        base.borderRadius = p.radii.pill;
+      }
+    } else if (indicator === "filled") {
+      if (active) {
+        base.background = p.accent;
+        base.color = p.onAccent;
+        base.borderRadius = p.profile.button.radius;
+      }
+    }
+    // subtle = no decoration; weight + colour already shifted above
+    return base;
+  };
+  const tabsContainer = indicator === "underline"
+    ? { display: "flex", borderBottom: "1px solid " + p.border, gap: 4 }
+    : { display: "flex", gap: 4 };
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Navigation"),
-    React.createElement("div", { style: { display: "flex", borderBottom: "1px solid " + p.border, gap: 4 } },
+    React.createElement("div", { style: tabsContainer },
       ...tabLabels.map((label: string, i: number) => {
         const active = i === activeTab;
         return React.createElement("button", {
           key: label,
           "data-showcase-tab": "true",
           onClick: () => setActiveTab(i),
-          style: {
-            padding: "10px 14px",
-            fontSize: 13,
-            fontWeight: active ? 600 : 400,
-            color: active ? p.accent : p.text,
-            opacity: active ? 1 : 0.7,
-            borderBottom: active ? "2px solid " + p.accent : "2px solid transparent",
-            marginBottom: -1,
-            background: "transparent",
-            cursor: "pointer",
-            transition: "color 120ms ease, opacity 120ms ease, border-color 120ms ease"
-          }
+          style: tabStyle(active)
         }, label);
       })
     ),
@@ -889,7 +979,7 @@ function TabsBlock(p: { text: string; accent: string; border: string; onAccent: 
   );
 }
 
-function AvatarsBlock(p: { text: string; accent: string; border: string; bg: string; radii: KitRadii }) {
+function AvatarsBlock(p: { text: string; accent: string; border: string; bg: string; radii: KitRadii; profile: KitStyleProfile }) {
   const initials = ["AS", "RK", "MJ", "EL", "TP"];
   const palette = [p.accent, "#2ea043", "#d49a15", "#2383e2", "#9d4edd"];
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
@@ -930,7 +1020,7 @@ function AvatarsBlock(p: { text: string; accent: string; border: string; bg: str
   );
 }
 
-function ProgressBlock(p: { text: string; accent: string; border: string; bg: string; radii: KitRadii }) {
+function ProgressBlock(p: { text: string; accent: string; border: string; bg: string; radii: KitRadii; profile: KitStyleProfile }) {
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Progress"),
     React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 14, maxWidth: 480 } },
@@ -954,7 +1044,7 @@ function ProgressBlock(p: { text: string; accent: string; border: string; bg: st
   );
 }
 
-function AlertBlock(p: { text: string; accent: string; border: string; onAccent: string; radii: KitRadii }) {
+function AlertBlock(p: { text: string; accent: string; border: string; onAccent: string; radii: KitRadii; profile: KitStyleProfile }) {
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Alert"),
     React.createElement("div", {
@@ -977,12 +1067,18 @@ function AlertBlock(p: { text: string; accent: string; border: string; onAccent:
   );
 }
 
-function CardBlock(p: { bg: string; text: string; accent: string; border: string; onAccent: string; radii: KitRadii }) {
+function CardBlock(p: { bg: string; text: string; accent: string; border: string; onAccent: string; radii: KitRadii; profile: KitStyleProfile }) {
+  const cr = p.profile.card.radius || p.radii.lg;
+  const cp = p.profile.card.padding;
+  const elev = p.profile.card.elevation;
+  // soft = border, no shadow (Linear, Stripe). shadow = both. elevated = shadow only.
+  const cardBorder = elev === "elevated" ? "none" : "1px solid " + p.border;
+  const cardShadow = elev === "soft" ? undefined : (elev === "elevated" ? "0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.05)" : "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04)");
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Card"),
     React.createElement("div", {
       "data-showcase-card": "true",
-      style: { padding: 20, borderRadius: p.radii.lg, border: "1px solid " + p.border, background: p.bg, display: "flex", flexDirection: "column", gap: 12, maxWidth: 480 }
+      style: { padding: cp, borderRadius: cr, border: cardBorder, background: p.bg, display: "flex", flexDirection: "column", gap: 12, maxWidth: 480, boxShadow: cardShadow }
     },
       React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
         React.createElement("span", { style: { width: 32, height: 32, borderRadius: p.radii.sm, background: p.accent } }),
@@ -996,16 +1092,16 @@ function CardBlock(p: { bg: string; text: string; accent: string; border: string
       ),
       React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
         React.createElement("span", {
-          style: { padding: "4px 10px", borderRadius: p.radii.pill, background: withAlpha(p.accent, 0.18), color: p.accent, fontSize: 12, fontWeight: 500 }
+          style: { padding: "4px 10px", borderRadius: p.profile.badge.shape === "pill" ? p.radii.pill : p.profile.badge.shape === "rounded" ? p.radii.sm : "0px", background: withAlpha(p.accent, 0.18), color: p.accent, fontSize: 12, fontWeight: p.profile.badge.weight }
         }, "In progress"),
         React.createElement("div", { style: { display: "flex", gap: 8 } },
           React.createElement("button", {
             "data-showcase-btn": "true", "data-variant": "primary",
-            style: { background: p.accent, color: p.onAccent, border: "none", padding: "6px 14px", borderRadius: p.radii.lg, fontSize: 12, fontWeight: 500, cursor: "pointer", transition: "filter 120ms ease" }
+            style: { background: p.accent, color: p.onAccent, border: "none", padding: "6px 14px", borderRadius: p.profile.button.radius, fontSize: 12, fontWeight: p.profile.button.weight, cursor: "pointer", transition: "filter 120ms ease" }
           }, "View"),
           React.createElement("button", {
             "data-showcase-btn": "true", "data-variant": "secondary",
-            style: { background: "transparent", color: p.text, border: "1px solid " + p.border, padding: "6px 14px", borderRadius: p.radii.lg, fontSize: 12, cursor: "pointer", transition: "filter 120ms ease, background 120ms ease" }
+            style: { background: "transparent", color: p.text, border: "1px solid " + p.border, padding: "6px 14px", borderRadius: p.profile.button.radius, fontSize: 12, cursor: "pointer", transition: "filter 120ms ease, background 120ms ease" }
           }, "Share")
         )
       )
@@ -1013,7 +1109,7 @@ function CardBlock(p: { bg: string; text: string; accent: string; border: string
   );
 }
 
-function StatTilesRow(props: { bg: string; text: string; accent: string; border: string; surface: string; radii: KitRadii }) {
+function StatTilesRow(props: { bg: string; text: string; accent: string; border: string; surface: string; radii: KitRadii; profile: KitStyleProfile }) {
   const tiles = [
     { label: "Active users", value: "12,408", delta: "+8.2%", positive: true },
     { label: "Conversion", value: "4.6%", delta: "+0.4 pp", positive: true },
@@ -1033,7 +1129,7 @@ function StatTilesRow(props: { bg: string; text: string; accent: string; border:
   );
 }
 
-function DataTablePreview(props: { bg: string; text: string; accent: string; border: string; surface: string; radii: KitRadii }) {
+function DataTablePreview(props: { bg: string; text: string; accent: string; border: string; surface: string; radii: KitRadii; profile: KitStyleProfile }) {
   const rows = [
     { id: "INC-204", name: "Render pipeline", status: "Open", updated: "2h ago" },
     { id: "INC-198", name: "Auth retry loop", status: "Triaged", updated: "5h ago" },

@@ -8,9 +8,10 @@ interface Props {
   showcaseJs: string;
   /** The kit's tokens.css. Injected verbatim as a <style> block inside the iframe. */
   tokensCss: string;
-  /** Kit metadata for the uniform Hero (logo + name + description).
+  /** Kit metadata for the uniform Hero (logo + name + description) and
+   * per-kit component styling via styleProfile.
    * Bespoke showcases ignore this and embed their own. */
-  kit?: { name?: string; description?: string; logoUrl?: string };
+  kit?: { name?: string; description?: string; logoUrl?: string; styleProfile?: unknown };
   /** Explicit pixel height. Overrides `fillViewport`. */
   height?: number;
   /** Fill the viewport (minus a top offset for the page header). */

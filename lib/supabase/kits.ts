@@ -13,6 +13,10 @@ import {
   type PublicKit,
   type PublicKitSummary,
 } from "@/lib/types/kit";
+import {
+  parseStyleProfile,
+  type KitStyleProfile,
+} from "@/lib/types/kit-style-profile";
 
 interface KitRow {
   id: string;
@@ -52,6 +56,8 @@ interface KitRow {
   hero_image_url: string | null;
   hero_generated_at: string | null;
   custom_card_image_url: string | null;
+  style_profile: unknown;
+  style_profile_generated_at: string | null;
   status: string;
   card_image_pref: string;
   created_at: string;
@@ -106,6 +112,10 @@ function rowToKit(row: KitRow): PublicKit {
     heroImageUrl: row.hero_image_url ?? undefined,
     heroGeneratedAt: row.hero_generated_at ?? undefined,
     customCardImageUrl: row.custom_card_image_url ?? undefined,
+    styleProfile: row.style_profile
+      ? (parseStyleProfile(row.style_profile) ?? undefined)
+      : undefined,
+    styleProfileGeneratedAt: row.style_profile_generated_at ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -185,6 +195,8 @@ type KitInsertRow = Omit<
   | "hero_image_url"
   | "hero_generated_at"
   | "custom_card_image_url"
+  | "style_profile"
+  | "style_profile_generated_at"
 >;
 
 export function kitToRow(kit: PublishKitInput): KitInsertRow {
@@ -333,6 +345,24 @@ export async function updateKitShowcase(
     })
     .eq("id", id);
   if (error) console.error("updateKitShowcase failed:", error.message);
+  return !error;
+}
+
+/** Persist a kit's Claude-derived style profile. Stamped with a timestamp
+ * so the admin UI can show "regenerated 2h ago" hints. */
+export async function updateKitStyleProfile(
+  id: string,
+  profile: KitStyleProfile,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("layout_public_kit")
+    .update({
+      style_profile: profile,
+      style_profile_generated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) console.error("updateKitStyleProfile failed:", error.message);
   return !error;
 }
 

@@ -36,7 +36,7 @@ type ToastFn = (msg: string, type?: "success" | "error") => void;
 
 interface RunningJob {
   kitId: string;
-  kind: "showcase" | "preview" | "hero" | "approve" | "upload";
+  kind: "showcase" | "preview" | "hero" | "approve" | "upload" | "style-profile";
   startedAt: number;
 }
 
@@ -284,6 +284,22 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
       toast(e instanceof Error ? e.message : "Hero generation failed", "error");
     } finally {
       setJobs((j) => j.filter((x) => !(x.kitId === id && x.kind === "hero")));
+    }
+  }
+
+  async function regenStyleProfile(id: string, name: string) {
+    setJobs((j) => [...j, { kitId: id, kind: "style-profile", startedAt: Date.now() }]);
+    toast(`Deriving style profile for "${name}"... ~5s`, "success");
+    try {
+      const res = await fetch(`/api/admin/kits/${id}/generate-style-profile`, { method: "POST" });
+      const body: { ok?: boolean; error?: string } = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `Style profile failed (HTTP ${res.status})`);
+      toast(`Style profile derived for "${name}"`, "success");
+      load();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Style profile generation failed", "error");
+    } finally {
+      setJobs((j) => j.filter((x) => !(x.kitId === id && x.kind === "style-profile")));
     }
   }
 
@@ -579,6 +595,13 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                           }}
                           preview={{ running: !!previewJob, label: previewJob ? `Preview… ${formatElapsed(Date.now() - previewJob.startedAt)}` : "Regen preview", onClick: () => regenPreview(kit.id, kit.name) }}
                           hero={{ running: !!heroJob, label: heroJob ? `Hero… ${formatElapsed(Date.now() - heroJob.startedAt)}` : "Regen hero", onClick: () => regenHero(kit.id, kit.name) }}
+                          styleProfile={{
+                            running: !!jobFor(kit.id, "style-profile"),
+                            label: jobFor(kit.id, "style-profile")
+                              ? `Style profile… ${formatElapsed(Date.now() - jobFor(kit.id, "style-profile")!.startedAt)}`
+                              : "Regen style profile",
+                            onClick: () => regenStyleProfile(kit.id, kit.name),
+                          }}
                           revertToUniform={
                             kit.bespoke_showcase
                               ? () => patch(kit.id, { bespokeShowcase: false })
@@ -614,6 +637,7 @@ function RegenMenu({
   showcase,
   preview,
   hero,
+  styleProfile,
   revertToUniform,
   restoreBespoke,
   anyJob,
@@ -621,6 +645,10 @@ function RegenMenu({
   showcase: RegenAction;
   preview: RegenAction;
   hero: RegenAction;
+  /** Style profile is the cheap Claude-derived JSON that drives the
+   * uniform template's per-kit button radius / input focus / card
+   * elevation / badge shape / tab indicator etc. ~$0.005, ~5s. */
+  styleProfile: RegenAction;
   /** Present only when the kit is currently bespoke. Flips back to the uniform template. */
   revertToUniform?: () => void;
   /** Present when the kit is currently uniform AND a cached bespoke exists.
@@ -694,6 +722,7 @@ function RegenMenu({
             <div style={{ height: 1, background: "var(--studio-border)", margin: "4px 0" }} />
           )}
           {[
+            { ...styleProfile, hint: "Claude Sonnet · ~5s · ~$0.005 · drives uniform template per-kit" },
             { ...showcase, hint: "Claude Sonnet · ~30s · costs credits" },
             { ...preview, hint: "Playwright · ~45s" },
             { ...hero, hint: "GPT Image 2 · ~30s · costs ~$0.04" },

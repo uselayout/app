@@ -3,8 +3,10 @@ import {
   updateKitShowcase,
   updateKitPreviewImage,
   updateKitHeroImage,
+  updateKitStyleProfile,
 } from "@/lib/supabase/kits";
 import { generateKitShowcase } from "@/lib/claude/generate-kit-showcase";
+import { generateKitStyleProfile } from "@/lib/claude/generate-kit-style-profile";
 import { captureAndUploadKitPreview } from "@/lib/gallery/snapshot";
 import { captureAndUploadKitHero } from "@/lib/gallery/hero";
 import type { PublicKit } from "@/lib/types/kit";
@@ -24,6 +26,26 @@ export function runKitGenerationJobs(
   origin: string,
   openaiApiKey?: string,
 ): void {
+  // Style profile: cheap (~$0.005/kit) Claude call that produces a
+  // small JSON describing how each block should render — radii,
+  // weights, paddings, fill style, density. The uniform Live Preview
+  // reads this via window.__KIT__ and tailors itself per kit.
+  // Falls back to DEFAULT_STYLE_PROFILE on failure.
+  void (async () => {
+    try {
+      const profile = await generateKitStyleProfile({
+        kitName: kit.name,
+        kitDescription: kit.description,
+        kitTags: kit.tags,
+        layoutMd: kit.layoutMd,
+        tokensCss: kit.tokensCss,
+      });
+      await updateKitStyleProfile(kit.id, profile);
+    } catch (err) {
+      console.error(`[gen-jobs] style profile failed for ${kit.slug}:`, err);
+    }
+  })();
+
   // Showcase generation only runs for kits the publisher (or admin) has
   // explicitly opted in for via the bespoke flag. Default kits render
   // through the uniform template — no Claude call, no cost, no variance.
