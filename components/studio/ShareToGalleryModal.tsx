@@ -338,10 +338,10 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
             <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)]">
               <span className="flex flex-col gap-0.5">
                 <span className="text-[13px] text-[var(--text-primary)] font-medium">
-                  Live Preview uses the uniform template
+                  Bespoke Live Preview generates on publish
                 </span>
                 <span className="text-[12px] text-[var(--text-muted)]">
-                  Your kit's tokens drive the colours, type, and shape. Layout admins can upgrade individual kits to a Claude-tailored bespoke layout from the admin panel.
+                  Claude writes a brand-faithful showcase tuned to your kit's tokens (~60s). The kit goes live with the uniform template first; bespoke replaces it as soon as it lands.
                 </span>
               </span>
             </div>
