@@ -105,6 +105,23 @@ function App() {
   const [vars, setVars] = React.useState<CssVar[] | null>(null);
   React.useEffect(() => {
     setVars(readRootCssVars());
+    // Hover/active interaction styles. Inline styles can't carry pseudo-
+    // class rules, so we append a small stylesheet once at mount. Uses
+    // filter() for brightness shifts so it works on any kit's accent
+    // without needing to compute a per-kit hover colour.
+    const style = document.createElement("style");
+    style.textContent = [
+      "[data-showcase-btn]:hover:not(:disabled) { filter: brightness(1.08); cursor: pointer; }",
+      "[data-showcase-btn]:active:not(:disabled) { filter: brightness(0.94); }",
+      "[data-showcase-btn][data-variant='secondary']:hover, [data-showcase-btn][data-variant='ghost']:hover { background: rgba(127,127,127,0.08); }",
+      "[data-showcase-tab]:hover { opacity: 1 !important; cursor: pointer; }",
+      "[data-showcase-segment]:hover { cursor: pointer; }",
+      "[data-showcase-toggle]:hover, [data-showcase-checkbox]:hover, [data-showcase-radio]:hover { cursor: pointer; }",
+      "[data-showcase-card]:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); cursor: pointer; transition: box-shadow 150ms ease, transform 150ms ease; }",
+      "[data-showcase-input]:focus { outline: none; }",
+    ].join("\n");
+    document.head.appendChild(style);
+    return () => style.remove();
   }, []);
 
   if (!vars) return React.createElement("div", { style: { padding: 24, color: "#999" } }, "Loading…");
@@ -116,9 +133,11 @@ function App() {
 
   const bg = pickBg(buckets.color);
   const text = pickText(buckets.color, bg);
+  const headingText = pickHeadingText(buckets.color, bg);
   const accent = pickAccent(buckets.color);
   const surface = pickSurface(buckets.color, bg);
   const border = pickBorder(buckets.color);
+  const radii = pickRadii(buckets.radius);
 
   const fontFamily = buckets.font.find((v: CssVar) => /family|sans|serif/.test(v.name))?.value || "system-ui, sans-serif";
 
@@ -134,13 +153,13 @@ function App() {
       gap: 48,
     }
   },
-    Hero({ accent, border, surface, text }),
-    PaletteSection({ colours: buckets.color, bg, text, accent, border, surface }),
-    TypographySection({ text, border, surface, accent }),
-    SpacingSection({ spacing: sortSpacing(buckets.space), text, border, accent, surface }),
-    RadiusSection({ radii: buckets.radius, text, border, surface, accent }),
-    ShadowSection({ shadows: buckets.shadow, surface, text, border }),
-    ComponentsSection({ bg, text, accent, border, surface })
+    Hero({ accent, border, surface, text, headingText }),
+    PaletteSection({ colours: buckets.color, bg, text, accent, border, surface, headingText }),
+    TypographySection({ text, border, surface, accent, headingText }),
+    SpacingSection({ spacing: sortSpacing(buckets.space), text, border, accent, surface, headingText }),
+    RadiusSection({ radii: buckets.radius, text, border, surface, accent, headingText }),
+    ShadowSection({ shadows: buckets.shadow, surface, text, border, headingText }),
+    ComponentsSection({ bg, text, accent, border, surface, headingText, radii })
   );
 }
 
@@ -246,6 +265,59 @@ function pickSurface(colours: CssVar[], bg: string): string {
   }
   return findByPattern(colours, [/-bg-surface$/, /-bg-elevated$/, /-surface$/]) || bg;
 }
+type KitRadii = { sm: string; md: string; lg: string; pill: string };
+
+/** Map the kit's --radius-* tokens to size buckets that the showcase blocks
+ * can reference (button + badge → pill, input + tile → md, card → lg). When
+ * a kit has no radius tokens, fall back to a sensible numeric scale. Apple-
+ * style soft kits and IBM-style sharp kits then visibly differ on the same
+ * components, instead of every block looking identical. */
+function pickRadii(radii: CssVar[]): KitRadii {
+  const parsed = radii
+    .map((r: CssVar) => ({ name: r.name, value: r.value, num: parseFloat(r.value) }))
+    .filter((r) => !isNaN(r.num) && r.num >= 0)
+    .sort((a, b) => a.num - b.num);
+  if (parsed.length === 0) return { sm: "4px", md: "8px", lg: "12px", pill: "999px" };
+
+  const ref = (entry: typeof parsed[0]) => "var(" + entry.name + ")";
+  const byName = (regex: RegExp) => parsed.find((r) => regex.test(r.name));
+
+  const small = byName(/(-sm|-small|-xs|-tight|-2xs)/) || parsed[0];
+  const medium = byName(/(-md|-medium|-default|-base|^--radius$)/) || parsed[Math.floor(parsed.length / 2)];
+  const finite = parsed.filter((r) => r.num <= 64);
+  const large = byName(/(-lg|-large|-xl)/) || finite[finite.length - 1] || parsed[parsed.length - 1];
+  const pillToken = byName(/(-full|-pill|-circle|-round)/);
+  const huge = parsed[parsed.length - 1];
+  const pill = pillToken ? ref(pillToken) : (huge.num >= 50 ? ref(huge) : "999px");
+
+  return { sm: ref(small), md: ref(medium), lg: ref(large), pill };
+}
+
+/** Pick a high-contrast text colour for headings. The general pickText
+ * accepts any token whose contrast ratio is ≥ 3 — fine for body copy but
+ * too soft for h1/h2 on light kits where the kit's --normal-text resolves
+ * to a medium grey. Find the colour with the strongest contrast against bg. */
+function pickHeadingText(colours: CssVar[], bg: string): string {
+  const bgLum = luminance(bg);
+  const preferDark = bgLum > 0.5;
+  let best: string | null = null;
+  let bestRatio = 0;
+  for (const v of colours) {
+    if (!isColour(v.value)) continue;
+    const lum = luminance(v.value);
+    // Heading must be near the polar opposite of bg, not a mid-tone.
+    const polarityOk = preferDark ? lum < 0.2 : lum > 0.8;
+    if (!polarityOk) continue;
+    const r = contrast(v.value, bg);
+    if (r === null) continue;
+    if (r > bestRatio) { bestRatio = r; best = v.value; }
+  }
+  if (best && bestRatio >= 7) return best;
+  // Hard fallback: ensure readable contrast even when the kit defines no
+  // strong polar tokens.
+  return preferDark ? "#08090a" : "#f7f8f8";
+}
+
 function pickBorder(colours: CssVar[]): string {
   // Many kits define semantic state borders (--color-success-border-default,
   // --color-error-border) before or alongside the neutral one. The previous
@@ -283,18 +355,18 @@ function pickBorder(colours: CssVar[]): string {
   return "rgba(0,0,0,0.12)";
 }
 
-function SectionHeader(props: { label: string; title: string; count?: number }) {
+function SectionHeader(props: { label: string; title: string; count?: number; headingText?: string }) {
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6 } },
     React.createElement("span", {
       style: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", opacity: 0.55 }
     }, props.label + (props.count !== undefined ? " · " + props.count : "")),
     React.createElement("h2", {
-      style: { fontSize: 28, lineHeight: 1.2, fontWeight: 500, margin: 0, letterSpacing: "-0.02em" }
+      style: { fontSize: 28, lineHeight: 1.2, fontWeight: 600, margin: 0, letterSpacing: "-0.02em", color: props.headingText }
     }, props.title)
   );
 }
 
-function Hero(props: { accent: string; border: string; surface: string; text: string }) {
+function Hero(props: { accent: string; border: string; surface: string; text: string; headingText: string }) {
   // Kit metadata is injected by the iframe host as window.__KIT__. When
   // present, we render a logo + name + description hero — same shape as the
   // bespoke Notion showcase, so uniform and bespoke kits match aesthetically.
@@ -316,15 +388,15 @@ function Hero(props: { accent: string; border: string; surface: string; text: st
       style: { display: "block", maxHeight: 56, maxWidth: 200, objectFit: "contain", objectPosition: "left" }
     }) : null,
     React.createElement("h1", {
-      style: { fontSize: 44, lineHeight: 1.05, fontWeight: 700, margin: 0, letterSpacing: "-0.025em" }
+      style: { fontSize: 44, lineHeight: 1.05, fontWeight: 700, margin: 0, letterSpacing: "-0.025em", color: props.headingText }
     }, name),
     React.createElement("p", {
-      style: { margin: 0, fontSize: 16, lineHeight: 1.6, opacity: 0.65, maxWidth: 640 }
+      style: { margin: 0, fontSize: 16, lineHeight: 1.6, opacity: 0.7, maxWidth: 640 }
     }, description)
   );
 }
 
-function PaletteSection(props: { colours: CssVar[]; bg: string; text: string; accent: string; border: string; surface: string }) {
+function PaletteSection(props: { colours: CssVar[]; bg: string; text: string; accent: string; border: string; surface: string; headingText: string }) {
   const groups: { title: string; match: RegExp }[] = [
     { title: "Backgrounds & surfaces", match: /-(bg|surface|panel|elevated)/ },
     { title: "Text", match: /-(text|fg|foreground|on-)/ },
@@ -388,12 +460,12 @@ function PaletteSection(props: { colours: CssVar[]; bg: string; text: string; ac
   }
 
   return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
-    SectionHeader({ label: "Colour", title: "Palette", count: props.colours.length }),
+    SectionHeader({ headingText: props.headingText, label: "Colour", title: "Palette", count: props.colours.length }),
     ...rendered
   );
 }
 
-function TypographySection(props: { text: string; border: string; surface: string; accent: string }) {
+function TypographySection(props: { text: string; border: string; surface: string; accent: string; headingText: string }) {
   const samples = [
     { label: "Display", size: 48, weight: 500 },
     { label: "Heading 1", size: 32, weight: 500 },
@@ -402,7 +474,7 @@ function TypographySection(props: { text: string; border: string; surface: strin
     { label: "Caption", size: 12, weight: 400 }
   ];
   return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
-    SectionHeader({ label: "Typography", title: "Scale" }),
+    SectionHeader({ headingText: props.headingText, label: "Typography", title: "Scale" }),
     React.createElement("div", {
       style: { display: "flex", flexDirection: "column", borderRadius: 14, border: "1px solid " + props.border, background: props.surface, overflow: "hidden" }
     },
@@ -423,14 +495,14 @@ function TypographySection(props: { text: string; border: string; surface: strin
   );
 }
 
-function SpacingSection(props: { spacing: CssVar[]; text: string; border: string; accent: string; surface: string }) {
+function SpacingSection(props: { spacing: CssVar[]; text: string; border: string; accent: string; surface: string; headingText: string }) {
   if (props.spacing.length === 0) return null;
   // Spacing bars communicate scale, not brand. Render with a neutral
   // text-derived tint so the eye reads size differences instead of
   // the kit's accent colour repeated 14 times down the column.
   const barFill = withAlpha(props.text, 0.25);
   return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
-    SectionHeader({ label: "Spacing", title: "Scale", count: props.spacing.length }),
+    SectionHeader({ headingText: props.headingText, label: "Spacing", title: "Scale", count: props.spacing.length }),
     React.createElement("div", {
       style: { display: "flex", flexDirection: "column", gap: 10, padding: 20, borderRadius: 14, border: "1px solid " + props.border, background: props.surface }
     },
@@ -447,11 +519,11 @@ function SpacingSection(props: { spacing: CssVar[]; text: string; border: string
   );
 }
 
-function RadiusSection(props: { radii: CssVar[]; text: string; border: string; surface: string; accent: string }) {
+function RadiusSection(props: { radii: CssVar[]; text: string; border: string; surface: string; accent: string; headingText: string }) {
   if (props.radii.length === 0) return null;
   const chipFill = withAlpha(props.text, 0.28);
   return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
-    SectionHeader({ label: "Shape", title: "Radius", count: props.radii.length }),
+    SectionHeader({ headingText: props.headingText, label: "Shape", title: "Radius", count: props.radii.length }),
     React.createElement("div", {
       style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }
     },
@@ -473,10 +545,10 @@ function RadiusSection(props: { radii: CssVar[]; text: string; border: string; s
   );
 }
 
-function ShadowSection(props: { shadows: CssVar[]; surface: string; text: string; border: string }) {
+function ShadowSection(props: { shadows: CssVar[]; surface: string; text: string; border: string; headingText: string }) {
   if (props.shadows.length === 0) return null;
   return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
-    SectionHeader({ label: "Depth", title: "Elevation", count: props.shadows.length }),
+    SectionHeader({ headingText: props.headingText, label: "Depth", title: "Elevation", count: props.shadows.length }),
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 } },
       ...props.shadows.map((v: CssVar) =>
         React.createElement("div", {
@@ -490,13 +562,13 @@ function ShadowSection(props: { shadows: CssVar[]; surface: string; text: string
   );
 }
 
-function ComponentsSection(props: { bg: string; text: string; accent: string; border: string; surface: string }) {
+function ComponentsSection(props: { bg: string; text: string; accent: string; border: string; surface: string; headingText: string; radii: KitRadii }) {
   const onAccent = onColour(props.accent);
-  const blockProps = { bg: props.bg, text: props.text, accent: props.accent, border: props.border, surface: props.surface, onAccent: onAccent };
+  const blockProps = { bg: props.bg, text: props.text, accent: props.accent, border: props.border, surface: props.surface, onAccent: onAccent, radii: props.radii };
   return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
-    SectionHeader({ label: "Samples", title: "Components" }),
+    SectionHeader({ headingText: props.headingText, label: "Samples", title: "Components" }),
     React.createElement("div", {
-      style: { padding: 28, borderRadius: 14, border: "1px solid " + props.border, background: props.surface, display: "flex", flexDirection: "column", gap: 28 }
+      style: { padding: 28, borderRadius: props.radii.lg, border: "1px solid " + props.border, background: props.surface, display: "flex", flexDirection: "column", gap: 28 }
     },
       ButtonsBlock(blockProps),
       InputsBlock(blockProps),
@@ -520,22 +592,31 @@ function Subhead(text: string) {
   }, text);
 }
 
-function ButtonsBlock(p: { text: string; accent: string; border: string; onAccent: string }) {
+function ButtonsBlock(p: { text: string; accent: string; border: string; onAccent: string; radii: KitRadii }) {
+  // Buttons inherit the kit's largest non-pill radius. Linear (radius-lg
+  // = 9999px) keeps pills, Apple (~18px) renders softly curved, IBM
+  // (~8px) renders subtly rounded — instead of every kit looking pill.
+  const r = p.radii.lg;
   const btn = (label: string, variant: "primary" | "secondary" | "ghost" | "disabled", size: "sm" | "md" = "md") => {
     const padding = size === "sm" ? "6px 12px" : "10px 18px";
     const fontSize = size === "sm" ? 12 : 14;
+    const baseTransition = { transition: "filter 120ms ease, background 120ms ease" };
     if (variant === "primary") return React.createElement("button", {
-      style: { background: p.accent, color: p.onAccent, border: "none", padding, borderRadius: 999, fontSize, fontWeight: 500, cursor: "pointer" }
+      "data-showcase-btn": "true", "data-variant": "primary",
+      style: { ...baseTransition, background: p.accent, color: p.onAccent, border: "none", padding, borderRadius: r, fontSize, fontWeight: 500, cursor: "pointer" }
     }, label);
     if (variant === "secondary") return React.createElement("button", {
-      style: { background: "transparent", color: p.text, border: "1px solid " + p.border, padding, borderRadius: 999, fontSize, fontWeight: 500, cursor: "pointer" }
+      "data-showcase-btn": "true", "data-variant": "secondary",
+      style: { ...baseTransition, background: "transparent", color: p.text, border: "1px solid " + p.border, padding, borderRadius: r, fontSize, fontWeight: 500, cursor: "pointer" }
     }, label);
     if (variant === "ghost") return React.createElement("button", {
-      style: { background: "transparent", color: p.text, border: "none", padding, borderRadius: 999, fontSize, fontWeight: 500, cursor: "pointer", opacity: 0.7 }
+      "data-showcase-btn": "true", "data-variant": "ghost",
+      style: { ...baseTransition, background: "transparent", color: p.text, border: "none", padding, borderRadius: r, fontSize, fontWeight: 500, cursor: "pointer", opacity: 0.7 }
     }, label);
     return React.createElement("button", {
+      "data-showcase-btn": "true", "data-variant": "disabled",
       disabled: true,
-      style: { background: p.accent, color: p.onAccent, border: "none", padding, borderRadius: 999, fontSize, fontWeight: 500, opacity: 0.4 }
+      style: { background: p.accent, color: p.onAccent, border: "none", padding, borderRadius: r, fontSize, fontWeight: 500, opacity: 0.4 }
     }, label);
   };
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
@@ -550,14 +631,40 @@ function ButtonsBlock(p: { text: string; accent: string; border: string; onAccen
       btn("Small", "primary", "sm"),
       btn("Small", "secondary", "sm"),
       React.createElement("button", {
-        style: { background: p.accent, color: p.onAccent, border: "none", width: 32, height: 32, borderRadius: 999, fontSize: 16, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }
+        "data-showcase-btn": "true", "data-variant": "primary",
+        style: { background: p.accent, color: p.onAccent, border: "none", width: 32, height: 32, borderRadius: p.radii.pill, fontSize: 16, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", transition: "filter 120ms ease" }
       }, "+")
     )
   );
 }
 
-function InputsBlock(p: { bg: string; text: string; accent: string; border: string }) {
-  const baseStyle = { padding: "10px 14px", borderRadius: 10, border: "1px solid " + p.border, background: p.bg, color: p.text, fontSize: 14, outline: "none", width: "100%" } as const;
+function SearchIcon(props: { size?: number; opacity?: number }) {
+  const size = props.size ?? 16;
+  return React.createElement("svg", {
+    width: size, height: size, viewBox: "0 0 24 24", fill: "none",
+    stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round",
+    style: { opacity: props.opacity ?? 0.6, flexShrink: 0 },
+    "aria-hidden": true
+  },
+    React.createElement("circle", { cx: 11, cy: 11, r: 8 }),
+    React.createElement("line", { x1: 21, y1: 21, x2: 16.65, y2: 16.65 })
+  );
+}
+
+function ChevronDown(props: { size?: number; opacity?: number }) {
+  const size = props.size ?? 16;
+  return React.createElement("svg", {
+    width: size, height: size, viewBox: "0 0 24 24", fill: "none",
+    stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round",
+    style: { opacity: props.opacity ?? 0.7, flexShrink: 0 },
+    "aria-hidden": true
+  },
+    React.createElement("polyline", { points: "6 9 12 15 18 9" })
+  );
+}
+
+function InputsBlock(p: { bg: string; text: string; accent: string; border: string; radii: KitRadii }) {
+  const baseStyle = { padding: "10px 14px", borderRadius: p.radii.md, border: "1px solid " + p.border, background: p.bg, color: p.text, fontSize: 14, outline: "none", width: "100%" } as const;
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Inputs"),
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 } },
@@ -566,13 +673,13 @@ function InputsBlock(p: { bg: string; text: string; accent: string; border: stri
         style: { position: "relative", display: "flex", alignItems: "center" }
       },
         React.createElement("span", {
-          style: { position: "absolute", left: 14, fontSize: 14, opacity: 0.5, pointerEvents: "none" }
-        }, "⌕"),
-        React.createElement("input", { placeholder: "Search…", style: { ...baseStyle, paddingLeft: 36 } })
+          style: { position: "absolute", left: 14, display: "inline-flex", color: p.text, pointerEvents: "none" }
+        }, SearchIcon({ size: 16, opacity: 0.55 })),
+        React.createElement("input", { placeholder: "Search…", style: { ...baseStyle, paddingLeft: 40 } })
       ),
       // Prefixed
       React.createElement("div", {
-        style: { display: "flex", alignItems: "stretch", borderRadius: 10, border: "1px solid " + p.border, overflow: "hidden", background: p.bg }
+        style: { display: "flex", alignItems: "stretch", borderRadius: p.radii.md, border: "1px solid " + p.border, overflow: "hidden", background: p.bg }
       },
         React.createElement("span", {
           style: { padding: "10px 12px", fontSize: 14, opacity: 0.6, borderRight: "1px solid " + p.border }
@@ -582,15 +689,15 @@ function InputsBlock(p: { bg: string; text: string; accent: string; border: stri
       // Select
       React.createElement("div", { style: { position: "relative", display: "flex", alignItems: "center" } },
         React.createElement("select", {
-          style: { ...baseStyle, appearance: "none", paddingRight: 36 }
+          style: { ...baseStyle, appearance: "none", paddingRight: 40 }
         },
           React.createElement("option", null, "United Kingdom"),
           React.createElement("option", null, "United States"),
           React.createElement("option", null, "Germany")
         ),
         React.createElement("span", {
-          style: { position: "absolute", right: 14, fontSize: 11, opacity: 0.5, pointerEvents: "none" }
-        }, "▾")
+          style: { position: "absolute", right: 14, display: "inline-flex", color: p.text, pointerEvents: "none" }
+        }, ChevronDown({ size: 16, opacity: 0.65 }))
       ),
       // Textarea
       React.createElement("textarea", {
@@ -601,8 +708,8 @@ function InputsBlock(p: { bg: string; text: string; accent: string; border: stri
   );
 }
 
-function FormStatesRow(p: { bg: string; text: string; accent: string; border: string }) {
-  const inputBase = { padding: "10px 14px", borderRadius: 10, background: p.bg, color: p.text, fontSize: 14, outline: "none", flex: "1 1 200px" };
+function FormStatesRow(p: { bg: string; text: string; accent: string; border: string; radii: KitRadii }) {
+  const inputBase = { padding: "10px 14px", borderRadius: p.radii.md, background: p.bg, color: p.text, fontSize: 14, outline: "none", flex: "1 1 200px" };
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Field states"),
     React.createElement("div", { style: { display: "flex", gap: 12, flexWrap: "wrap" } },
@@ -613,43 +720,96 @@ function FormStatesRow(p: { bg: string; text: string; accent: string; border: st
   );
 }
 
-function ControlsBlock(p: { text: string; accent: string; border: string; bg: string; onAccent: string }) {
+function ControlsBlock(p: { text: string; accent: string; border: string; bg: string; onAccent: string; radii: KitRadii }) {
+  const [toggle1, setToggle1] = React.useState(true);
+  const [toggle2, setToggle2] = React.useState(false);
+  const [check1, setCheck1] = React.useState(true);
+  const [check2, setCheck2] = React.useState(false);
+  const [radio, setRadio] = React.useState<"monthly" | "annual">("monthly");
+
+  const toggleEl = (on: boolean, onClick: () => void) =>
+    React.createElement("button", {
+      "data-showcase-toggle": "true",
+      onClick,
+      style: {
+        width: 36, height: 22, borderRadius: 999,
+        background: on ? p.accent : withAlpha(p.text, 0.16),
+        position: "relative", display: "inline-block",
+        border: "none", padding: 0,
+        transition: "background 150ms ease"
+      }
+    },
+      React.createElement("span", {
+        style: {
+          position: "absolute", top: 2, left: on ? 16 : 2,
+          width: 18, height: 18, borderRadius: "50%", background: "#fff",
+          transition: "left 150ms ease",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.15)"
+        }
+      })
+    );
+
+  const checkEl = (checked: boolean, onClick: () => void) =>
+    React.createElement("button", {
+      "data-showcase-checkbox": "true",
+      onClick,
+      style: {
+        width: 18, height: 18, borderRadius: p.radii.sm,
+        background: checked ? p.accent : "transparent",
+        color: p.onAccent,
+        border: checked ? "1.5px solid " + p.accent : "1.5px solid " + p.border,
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        fontSize: 12, fontWeight: 700,
+        padding: 0,
+        transition: "background 150ms ease, border-color 150ms ease"
+      }
+    }, checked ? "✓" : "");
+
+  const radioEl = (selected: boolean, onClick: () => void) =>
+    React.createElement("button", {
+      "data-showcase-radio": "true",
+      onClick,
+      style: {
+        width: 18, height: 18, borderRadius: "50%",
+        border: "1.5px solid " + (selected ? p.accent : p.border),
+        background: "transparent",
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        padding: 0,
+        transition: "border-color 150ms ease"
+      }
+    },
+      selected ? React.createElement("span", { style: { width: 9, height: 9, borderRadius: "50%", background: p.accent } }) : null
+    );
+
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Controls"),
     React.createElement("div", { style: { display: "flex", gap: 24, flexWrap: "wrap", alignItems: "center" } },
-      // Toggles (on / off)
       React.createElement("div", { style: { display: "flex", gap: 12, alignItems: "center" } },
-        React.createElement("span", { style: { width: 36, height: 22, borderRadius: 999, background: p.accent, position: "relative", display: "inline-block" } },
-          React.createElement("span", { style: { position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: "50%", background: "#fff" } })
-        ),
-        React.createElement("span", { style: { width: 36, height: 22, borderRadius: 999, background: withAlpha(p.text, 0.16), position: "relative", display: "inline-block" } },
-          React.createElement("span", { style: { position: "absolute", top: 2, left: 2, width: 18, height: 18, borderRadius: "50%", background: "#fff" } })
-        )
+        toggleEl(toggle1, () => setToggle1((v) => !v)),
+        toggleEl(toggle2, () => setToggle2((v) => !v))
       ),
-      // Checkboxes (checked, unchecked)
       React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", fontSize: 13 } },
-        React.createElement("span", { style: { width: 18, height: 18, borderRadius: 4, background: p.accent, color: p.onAccent, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 } }, "✓"),
+        checkEl(check1, () => setCheck1((v) => !v)),
         React.createElement("span", null, "Notifications"),
-        React.createElement("span", { style: { width: 18, height: 18, borderRadius: 4, border: "1.5px solid " + p.border, marginLeft: 14 } }),
+        checkEl(check2, () => setCheck2((v) => !v)),
         React.createElement("span", { style: { opacity: 0.7 } }, "Marketing")
       ),
-      // Radios (selected, unselected)
       React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", fontSize: 13 } },
-        React.createElement("span", { style: { width: 18, height: 18, borderRadius: "50%", border: "1.5px solid " + p.accent, display: "inline-flex", alignItems: "center", justifyContent: "center" } },
-          React.createElement("span", { style: { width: 9, height: 9, borderRadius: "50%", background: p.accent } })
-        ),
+        radioEl(radio === "monthly", () => setRadio("monthly")),
         React.createElement("span", null, "Monthly"),
-        React.createElement("span", { style: { width: 18, height: 18, borderRadius: "50%", border: "1.5px solid " + p.border, marginLeft: 14 } }),
-        React.createElement("span", { style: { opacity: 0.7 } }, "Annual")
+        radioEl(radio === "annual", () => setRadio("annual")),
+        React.createElement("span", { style: { opacity: radio === "annual" ? 1 : 0.7 } }, "Annual")
       )
     )
   );
 }
 
-function StatusBadgesBlock(p: { text: string; accent: string; border: string }) {
+function StatusBadgesBlock(p: { text: string; accent: string; border: string; radii: KitRadii }) {
+  // Badges keep the kit's pill radius (or 999 fallback) — pill is universal
+  // for status chips even on sharp-cornered kits like IBM.
   const pill = (label: string, fill: string, color: string, dot?: string) =>
     React.createElement("span", {
-      style: { padding: "4px 10px", borderRadius: 999, background: fill, color, fontSize: 12, fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 6 }
+      style: { padding: "4px 10px", borderRadius: p.radii.pill, background: fill, color, fontSize: 12, fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 6 }
     },
       dot ? React.createElement("span", { style: { width: 6, height: 6, borderRadius: "50%", background: dot, display: "inline-block" } }) : null,
       label
@@ -667,62 +827,70 @@ function StatusBadgesBlock(p: { text: string; accent: string; border: string }) 
       pill("Info",    "rgba(35, 131, 226, 0.18)", "#1a6dbd", "#2383e2"),
       // Outline variant for completeness
       React.createElement("span", {
-        style: { padding: "4px 10px", borderRadius: 999, border: "1px solid " + p.border, color: p.text, fontSize: 12, fontWeight: 500 }
+        style: { padding: "4px 10px", borderRadius: p.radii.pill, border: "1px solid " + p.border, color: p.text, fontSize: 12, fontWeight: 500 }
       }, "Draft")
     )
   );
 }
 
-function TabsBlock(p: { text: string; accent: string; border: string; onAccent: string }) {
-  const tabs: Array<{ label: string; active?: boolean }> = [
-    { label: "Overview", active: true },
-    { label: "Activity" },
-    { label: "Settings" },
-    { label: "Members" }
-  ];
+function TabsBlock(p: { text: string; accent: string; border: string; onAccent: string; radii: KitRadii }) {
+  const tabLabels = ["Overview", "Activity", "Settings", "Members"];
+  const segLabels = ["Day", "Week", "Month"];
+  const [activeTab, setActiveTab] = React.useState(0);
+  const [activeSeg, setActiveSeg] = React.useState(1);
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Navigation"),
     React.createElement("div", { style: { display: "flex", borderBottom: "1px solid " + p.border, gap: 4 } },
-      ...tabs.map((t) =>
-        React.createElement("span", {
-          key: t.label,
+      ...tabLabels.map((label: string, i: number) => {
+        const active = i === activeTab;
+        return React.createElement("button", {
+          key: label,
+          "data-showcase-tab": "true",
+          onClick: () => setActiveTab(i),
           style: {
             padding: "10px 14px",
             fontSize: 13,
-            fontWeight: t.active ? 600 : 400,
-            color: t.active ? p.accent : p.text,
-            opacity: t.active ? 1 : 0.7,
-            borderBottom: t.active ? "2px solid " + p.accent : "2px solid transparent",
+            fontWeight: active ? 600 : 400,
+            color: active ? p.accent : p.text,
+            opacity: active ? 1 : 0.7,
+            borderBottom: active ? "2px solid " + p.accent : "2px solid transparent",
             marginBottom: -1,
-            cursor: "pointer"
+            background: "transparent",
+            cursor: "pointer",
+            transition: "color 120ms ease, opacity 120ms ease, border-color 120ms ease"
           }
-        }, t.label)
-      )
+        }, label);
+      })
     ),
     // Segmented control
     React.createElement("div", {
-      style: { display: "inline-flex", padding: 4, borderRadius: 10, background: withAlpha(p.text, 0.06), gap: 2, alignSelf: "flex-start" }
+      style: { display: "inline-flex", padding: 4, borderRadius: p.radii.md, background: withAlpha(p.text, 0.06), gap: 2, alignSelf: "flex-start" }
     },
-      ...["Day", "Week", "Month"].map((l, i) =>
-        React.createElement("span", {
-          key: l,
+      ...segLabels.map((label: string, i: number) => {
+        const active = i === activeSeg;
+        return React.createElement("button", {
+          key: label,
+          "data-showcase-segment": "true",
+          onClick: () => setActiveSeg(i),
           style: {
             padding: "6px 14px",
-            borderRadius: 7,
+            borderRadius: p.radii.sm,
             fontSize: 12,
             fontWeight: 500,
-            background: i === 1 ? p.accent : "transparent",
-            color: i === 1 ? p.onAccent : p.text,
-            cursor: "pointer"
+            background: active ? p.accent : "transparent",
+            color: active ? p.onAccent : p.text,
+            border: "none",
+            cursor: "pointer",
+            transition: "background 150ms ease, color 150ms ease"
           }
-        }, l)
-      )
+        }, label);
+      })
     )
   );
 }
 
-function AvatarsBlock(p: { text: string; accent: string; border: string; bg: string }) {
-  const initials = ["MT", "BK", "SR", "JD", "LP"];
+function AvatarsBlock(p: { text: string; accent: string; border: string; bg: string; radii: KitRadii }) {
+  const initials = ["AS", "RK", "MJ", "EL", "TP"];
   const palette = [p.accent, "#2ea043", "#d49a15", "#2383e2", "#9d4edd"];
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("People"),
@@ -743,18 +911,18 @@ function AvatarsBlock(p: { text: string; accent: string; border: string; bg: str
       React.createElement("div", { style: { position: "relative", display: "inline-block" } },
         React.createElement("span", {
           style: { width: 40, height: 40, borderRadius: "50%", background: p.accent, color: "#fff", fontSize: 14, fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center" }
-        }, "MT"),
+        }, "AS"),
         React.createElement("span", {
           style: { position: "absolute", right: -2, bottom: -2, width: 12, height: 12, borderRadius: "50%", background: "#2ea043", border: "2px solid " + p.bg }
         })
       ),
       // Mini list-item
       React.createElement("div", {
-        style: { display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, border: "1px solid " + p.border }
+        style: { display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: p.radii.md, border: "1px solid " + p.border }
       },
-        React.createElement("span", { style: { width: 28, height: 28, borderRadius: "50%", background: palette[0], color: "#fff", fontSize: 11, fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center" } }, "MT"),
+        React.createElement("span", { style: { width: 28, height: 28, borderRadius: "50%", background: palette[0], color: "#fff", fontSize: 11, fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center" } }, "AS"),
         React.createElement("span", { style: { display: "flex", flexDirection: "column" } },
-          React.createElement("span", { style: { fontSize: 13, fontWeight: 500 } }, "Matt Thornhill"),
+          React.createElement("span", { style: { fontSize: 13, fontWeight: 500 } }, "Avery Sloan"),
           React.createElement("span", { style: { fontSize: 11, opacity: 0.6 } }, "Owner · 2m ago")
         )
       )
@@ -762,7 +930,7 @@ function AvatarsBlock(p: { text: string; accent: string; border: string; bg: str
   );
 }
 
-function ProgressBlock(p: { text: string; accent: string; border: string; bg: string }) {
+function ProgressBlock(p: { text: string; accent: string; border: string; bg: string; radii: KitRadii }) {
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Progress"),
     React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 14, maxWidth: 480 } },
@@ -772,25 +940,25 @@ function ProgressBlock(p: { text: string; accent: string; border: string; bg: st
           React.createElement("span", null, "Migration"),
           React.createElement("span", { style: { opacity: 0.7, fontFamily: "ui-monospace, monospace" } }, "64%")
         ),
-        React.createElement("div", { style: { height: 8, borderRadius: 999, background: withAlpha(p.text, 0.1), overflow: "hidden" } },
-          React.createElement("div", { style: { width: "64%", height: "100%", background: p.accent, borderRadius: 999 } })
+        React.createElement("div", { style: { height: 8, borderRadius: p.radii.pill, background: withAlpha(p.text, 0.1), overflow: "hidden" } },
+          React.createElement("div", { style: { width: "64%", height: "100%", background: p.accent, borderRadius: p.radii.pill } })
         )
       ),
       // Skeleton lines
       React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } },
-        React.createElement("div", { style: { height: 10, width: "70%", borderRadius: 6, background: withAlpha(p.text, 0.08) } }),
-        React.createElement("div", { style: { height: 10, width: "92%", borderRadius: 6, background: withAlpha(p.text, 0.08) } }),
-        React.createElement("div", { style: { height: 10, width: "48%", borderRadius: 6, background: withAlpha(p.text, 0.08) } })
+        React.createElement("div", { style: { height: 10, width: "70%", borderRadius: p.radii.sm, background: withAlpha(p.text, 0.08) } }),
+        React.createElement("div", { style: { height: 10, width: "92%", borderRadius: p.radii.sm, background: withAlpha(p.text, 0.08) } }),
+        React.createElement("div", { style: { height: 10, width: "48%", borderRadius: p.radii.sm, background: withAlpha(p.text, 0.08) } })
       )
     )
   );
 }
 
-function AlertBlock(p: { text: string; accent: string; border: string; onAccent: string }) {
+function AlertBlock(p: { text: string; accent: string; border: string; onAccent: string; radii: KitRadii }) {
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Alert"),
     React.createElement("div", {
-      style: { display: "flex", gap: 12, alignItems: "flex-start", padding: "14px 16px", borderRadius: 12, background: withAlpha(p.accent, 0.1), border: "1px solid " + withAlpha(p.accent, 0.3) }
+      style: { display: "flex", gap: 12, alignItems: "flex-start", padding: "14px 16px", borderRadius: p.radii.md, background: withAlpha(p.accent, 0.1), border: "1px solid " + withAlpha(p.accent, 0.3) }
     },
       React.createElement("span", {
         style: { flexShrink: 0, width: 22, height: 22, borderRadius: "50%", background: p.accent, color: p.onAccent, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700 }
@@ -802,20 +970,22 @@ function AlertBlock(p: { text: string; accent: string; border: string; onAccent:
         )
       ),
       React.createElement("button", {
-        style: { background: "transparent", color: p.text, border: "1px solid " + withAlpha(p.accent, 0.3), padding: "6px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer", flexShrink: 0 }
+        "data-showcase-btn": "true", "data-variant": "secondary",
+        style: { background: "transparent", color: p.text, border: "1px solid " + withAlpha(p.accent, 0.3), padding: "6px 12px", borderRadius: p.radii.md, fontSize: 12, cursor: "pointer", flexShrink: 0 }
       }, "View")
     )
   );
 }
 
-function CardBlock(p: { bg: string; text: string; accent: string; border: string; onAccent: string }) {
+function CardBlock(p: { bg: string; text: string; accent: string; border: string; onAccent: string; radii: KitRadii }) {
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
     Subhead("Card"),
     React.createElement("div", {
-      style: { padding: 20, borderRadius: 14, border: "1px solid " + p.border, background: p.bg, display: "flex", flexDirection: "column", gap: 12, maxWidth: 480 }
+      "data-showcase-card": "true",
+      style: { padding: 20, borderRadius: p.radii.lg, border: "1px solid " + p.border, background: p.bg, display: "flex", flexDirection: "column", gap: 12, maxWidth: 480 }
     },
       React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
-        React.createElement("span", { style: { width: 32, height: 32, borderRadius: 8, background: p.accent } }),
+        React.createElement("span", { style: { width: 32, height: 32, borderRadius: p.radii.sm, background: p.accent } }),
         React.createElement("div", { style: { display: "flex", flexDirection: "column" } },
           React.createElement("span", { style: { fontSize: 15, fontWeight: 500 } }, "Q3 product roadmap"),
           React.createElement("span", { style: { fontSize: 12, opacity: 0.6 } }, "Updated 2 hours ago")
@@ -826,14 +996,16 @@ function CardBlock(p: { bg: string; text: string; accent: string; border: string
       ),
       React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
         React.createElement("span", {
-          style: { padding: "4px 10px", borderRadius: 999, background: withAlpha(p.accent, 0.18), color: p.accent, fontSize: 12, fontWeight: 500 }
+          style: { padding: "4px 10px", borderRadius: p.radii.pill, background: withAlpha(p.accent, 0.18), color: p.accent, fontSize: 12, fontWeight: 500 }
         }, "In progress"),
         React.createElement("div", { style: { display: "flex", gap: 8 } },
           React.createElement("button", {
-            style: { background: p.accent, color: p.onAccent, border: "none", padding: "6px 14px", borderRadius: 999, fontSize: 12, fontWeight: 500, cursor: "pointer" }
+            "data-showcase-btn": "true", "data-variant": "primary",
+            style: { background: p.accent, color: p.onAccent, border: "none", padding: "6px 14px", borderRadius: p.radii.lg, fontSize: 12, fontWeight: 500, cursor: "pointer", transition: "filter 120ms ease" }
           }, "View"),
           React.createElement("button", {
-            style: { background: "transparent", color: p.text, border: "1px solid " + p.border, padding: "6px 14px", borderRadius: 999, fontSize: 12, cursor: "pointer" }
+            "data-showcase-btn": "true", "data-variant": "secondary",
+            style: { background: "transparent", color: p.text, border: "1px solid " + p.border, padding: "6px 14px", borderRadius: p.radii.lg, fontSize: 12, cursor: "pointer", transition: "filter 120ms ease, background 120ms ease" }
           }, "Share")
         )
       )
@@ -841,7 +1013,7 @@ function CardBlock(p: { bg: string; text: string; accent: string; border: string
   );
 }
 
-function StatTilesRow(props: { bg: string; text: string; accent: string; border: string; surface: string }) {
+function StatTilesRow(props: { bg: string; text: string; accent: string; border: string; surface: string; radii: KitRadii }) {
   const tiles = [
     { label: "Active users", value: "12,408", delta: "+8.2%", positive: true },
     { label: "Conversion", value: "4.6%", delta: "+0.4 pp", positive: true },
@@ -851,7 +1023,7 @@ function StatTilesRow(props: { bg: string; text: string; accent: string; border:
     ...tiles.map((t) =>
       React.createElement("div", {
         key: t.label,
-        style: { padding: 16, borderRadius: 12, border: "1px solid " + props.border, background: props.bg, display: "flex", flexDirection: "column", gap: 6 }
+        style: { padding: 16, borderRadius: props.radii.md, border: "1px solid " + props.border, background: props.bg, display: "flex", flexDirection: "column", gap: 6 }
       },
         React.createElement("span", { style: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.6 } }, t.label),
         React.createElement("span", { style: { fontSize: 24, fontWeight: 600, lineHeight: 1.1, letterSpacing: "-0.01em" } }, t.value),
@@ -861,7 +1033,7 @@ function StatTilesRow(props: { bg: string; text: string; accent: string; border:
   );
 }
 
-function DataTablePreview(props: { bg: string; text: string; accent: string; border: string; surface: string }) {
+function DataTablePreview(props: { bg: string; text: string; accent: string; border: string; surface: string; radii: KitRadii }) {
   const rows = [
     { id: "INC-204", name: "Render pipeline", status: "Open", updated: "2h ago" },
     { id: "INC-198", name: "Auth retry loop", status: "Triaged", updated: "5h ago" },
@@ -870,7 +1042,7 @@ function DataTablePreview(props: { bg: string; text: string; accent: string; bor
   const statusBg = (s: string) => s === "Open" ? withAlpha(props.accent, 0.18) : s === "Triaged" ? withAlpha(props.text, 0.12) : withAlpha(props.text, 0.06);
   const statusColor = (s: string) => s === "Open" ? props.accent : props.text;
   return React.createElement("div", {
-    style: { borderRadius: 12, border: "1px solid " + props.border, background: props.bg, overflow: "hidden" }
+    style: { borderRadius: props.radii.md, border: "1px solid " + props.border, background: props.bg, overflow: "hidden" }
   },
     React.createElement("div", {
       style: { display: "grid", gridTemplateColumns: "100px 1fr 110px 110px", gap: 12, padding: "10px 16px", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.55, borderBottom: "1px solid " + props.border, fontFamily: "ui-monospace, monospace" }
@@ -889,7 +1061,7 @@ function DataTablePreview(props: { bg: string; text: string; accent: string; bor
         React.createElement("span", null, r.name),
         React.createElement("span", null,
           React.createElement("span", {
-            style: { padding: "2px 10px", borderRadius: 999, background: statusBg(r.status), color: statusColor(r.status), fontSize: 11, fontWeight: 500 }
+            style: { padding: "2px 10px", borderRadius: props.radii.pill, background: statusBg(r.status), color: statusColor(r.status), fontSize: 11, fontWeight: 500 }
           }, r.status)
         ),
         React.createElement("span", { style: { opacity: 0.6, fontSize: 12 } }, r.updated)
