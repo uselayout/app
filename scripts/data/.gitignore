@@ -5,3 +5,7 @@ gallery-batch.state.json
 # The actual 50-URL input lives outside git. Use the .example.json as a
 # template and copy it to gallery-batch.json locally.
 gallery-batch.json
+
+# Card images downloaded from Dropbox before each batch run. ~2MB total
+# but conceptually per-user-asset state, not source.
+card-images/

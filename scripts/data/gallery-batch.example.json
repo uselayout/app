@@ -6,7 +6,8 @@
     "tags": ["dark", "minimal", "developer-tool", "saas"],
     "licence": "MIT",
     "tier": "rich",
-    "include": { "components": true, "fonts": true, "branding": true, "context": true }
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "linear.png"
   },
   {
     "url": "https://stripe.com",
@@ -15,6 +16,7 @@
     "tags": ["light", "minimal", "fintech", "saas"],
     "licence": "MIT",
     "tier": "rich",
-    "include": { "components": true, "fonts": true, "branding": true, "context": true }
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "stripe.png"
   }
 ]

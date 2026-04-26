@@ -31,6 +31,14 @@ const HOSTS = {
 
 type Env = keyof typeof HOSTS;
 
+const CARD_IMAGES_DIR = "scripts/data/card-images";
+const CARD_IMAGE_MIMES: Record<string, string> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+};
+
 interface InputEntry {
   url: string;
   name: string;
@@ -46,6 +54,13 @@ interface InputEntry {
     branding?: boolean;
     context?: boolean;
   };
+  /**
+   * Filename inside `scripts/data/card-images/` to upload as the kit's
+   * custom card image after publish. Must be exactly 1440x1080,
+   * PNG/JPG/WEBP, ≤ 8MB. Optional — skip to let the auto-generated hero
+   * appear on the gallery card instead.
+   */
+  cardImage?: string;
 }
 
 type Status =
@@ -67,6 +82,8 @@ interface StateEntry {
   attempts: number;
   lastAttempt?: string;
   publishedAt?: string;
+  cardImageUploaded?: boolean;
+  cardImageError?: string;
 }
 
 type StateFile = Record<string, StateEntry>;
@@ -245,6 +262,51 @@ async function streamLayoutMd(
 
 const nowIso = (): string => new Date().toISOString();
 
+function cardImagePath(filename: string): string {
+  return path.resolve(CARD_IMAGES_DIR, filename);
+}
+
+function cardImageMime(filename: string): string | null {
+  const ext = path.extname(filename).toLowerCase();
+  return CARD_IMAGE_MIMES[ext] ?? null;
+}
+
+/**
+ * POST a card image to /api/admin/kits/{id}/custom-card. Server enforces
+ * 1440x1080 PNG/JPG/WEBP at ≤ 8MB; we only handle the auth + multipart
+ * envelope. Throws on any non-2xx so callers can surface the message.
+ */
+async function uploadCardImage(
+  ctx: RequestContext,
+  kitId: string,
+  filename: string,
+): Promise<void> {
+  const fullPath = cardImagePath(filename);
+  if (!existsSync(fullPath)) {
+    throw new Error(`card image not found on disk: ${fullPath}`);
+  }
+  const mime = cardImageMime(filename);
+  if (!mime) {
+    throw new Error(`unsupported card image extension: ${filename}`);
+  }
+  const buffer = readFileSync(fullPath);
+  // Node 20+ has native FormData/Blob — both behave like the browser globals
+  // for fetch() multipart bodies.
+  const form = new FormData();
+  const blob = new Blob([new Uint8Array(buffer)], { type: mime });
+  form.append("file", blob, path.basename(filename));
+
+  const res = await fetch(`${ctx.host}/api/admin/kits/${kitId}/custom-card`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${ctx.apiKey}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`custom-card HTTP ${res.status}: ${text.slice(0, 300)}`);
+  }
+}
+
 interface ProjectShell {
   id: string;
   name: string;
@@ -387,6 +449,25 @@ async function processEntry(
   cur.error = undefined;
   saveState(statePath, state);
   log(`published → ${published.url ?? `/gallery/${published.slug}`}`);
+
+  // Custom card image upload runs AFTER publish so the kit row exists. A
+  // failure here doesn't roll the kit back — the published kit just falls
+  // through to the auto card-image chain. Re-run with --resume and the
+  // upload retries (state guard below).
+  if (entry.cardImage && !cur.cardImageUploaded) {
+    log(`uploading card image (${entry.cardImage})...`);
+    try {
+      await uploadCardImage(ctx, published.kitId, entry.cardImage);
+      cur.cardImageUploaded = true;
+      cur.cardImageError = undefined;
+      saveState(statePath, state);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      cur.cardImageError = message;
+      saveState(statePath, state);
+      console.warn(`  ⚠ card image upload failed: ${message}`);
+    }
+  }
 }
 
 async function main(): Promise<void> {
@@ -404,6 +485,34 @@ async function main(): Promise<void> {
   const entries = loadInput(inputPath);
   const state = loadState(statePath);
 
+  // Pre-flight: every cardImage referenced must exist locally. Failing here
+  // beats discovering missing files 30 minutes into a run.
+  const missingCards: string[] = [];
+  const badExtensions: string[] = [];
+  for (const e of entries) {
+    if (!e.cardImage) continue;
+    if (!cardImageMime(e.cardImage)) {
+      badExtensions.push(`${e.name}: ${e.cardImage}`);
+      continue;
+    }
+    if (!existsSync(cardImagePath(e.cardImage))) {
+      missingCards.push(`${e.name}: ${e.cardImage}`);
+    }
+  }
+  if (badExtensions.length > 0) {
+    console.error("Unsupported card image extensions (use .png/.jpg/.jpeg/.webp):");
+    for (const m of badExtensions) console.error(`  - ${m}`);
+    process.exit(1);
+  }
+  if (missingCards.length > 0) {
+    console.error(
+      `Missing ${missingCards.length} card image file(s) under ${path.resolve(CARD_IMAGES_DIR)}:`,
+    );
+    for (const m of missingCards) console.error(`  - ${m}`);
+    console.error("Drop the Dropbox folder contents in that directory and re-run.");
+    process.exit(1);
+  }
+
   console.log(`Batch gallery import → ${args.env} (${host})`);
   console.log(`  input:  ${inputPath} (${entries.length} entries)`);
   console.log(`  state:  ${statePath}`);
@@ -419,13 +528,42 @@ async function main(): Promise<void> {
 
   for (const entry of entries) {
     if (processed >= args.limit) break;
-    if (args.resume && state[entry.url]?.status === "published") {
+    const cached = state[entry.url];
+    const isPublished = cached?.status === "published";
+    const cardImageDone = !entry.cardImage || cached?.cardImageUploaded === true;
+
+    if (args.resume && isPublished && cardImageDone) {
       skipped += 1;
-      console.log(`⤼ skip (already published): ${entry.name}`);
+      console.log(`⤼ skip (already complete): ${entry.name}`);
       continue;
     }
+
     processed += 1;
     console.log(`[${processed}] ${entry.name}  (${entry.url})`);
+
+    // Already-published kit whose only outstanding work is a failed/missing
+    // card image upload — skip the heavy extraction/synth/publish steps and
+    // just retry the upload.
+    if (args.resume && isPublished && !cardImageDone && entry.cardImage && cached?.kitId) {
+      console.log(`  retrying card image upload (${entry.cardImage})...`);
+      try {
+        await uploadCardImage(ctx, cached.kitId, entry.cardImage);
+        cached.cardImageUploaded = true;
+        cached.cardImageError = undefined;
+        saveState(statePath, state);
+        succeeded += 1;
+        console.log("  ✔ card image uploaded");
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        cached.cardImageError = message;
+        saveState(statePath, state);
+        failed += 1;
+        console.error(`  failed: ${message}`);
+      }
+      console.log("");
+      continue;
+    }
+
     try {
       await processEntry(ctx, entry, state, statePath);
       succeeded += 1;
