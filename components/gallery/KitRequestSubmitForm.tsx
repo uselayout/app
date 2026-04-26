@@ -61,7 +61,7 @@ export function KitRequestSubmitForm({ isLoggedIn }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col sm:flex-row items-stretch gap-3 mb-6 max-w-[640px]"
+      className="flex flex-col sm:flex-row sm:flex-wrap items-stretch gap-3 mb-6 max-w-[640px]"
     >
       <input
         type="text"
