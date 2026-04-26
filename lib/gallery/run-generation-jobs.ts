@@ -47,15 +47,13 @@ export function runKitGenerationJobs(
     }
   })();
 
-  // Bespoke showcase generation, on every publish.
-  //
-  // We previously disabled this server-side because seven parallel
-  // bulk-regen calls pegged the Node thread on transpile, starving the
-  // healthcheck. The new operational profile is one-at-a-time manual
-  // publishing through Studio, so concurrency stays at 1-2 in practice.
-  // bespokeShowcaseLimit(2) inside generateKitShowcase queues anything
-  // unexpected. scripts/regen-bespoke.ts remains as a manual fallback
-  // if a publish-time generation fails.
+  // Bespoke and preview snapshot run SEQUENTIALLY in a single background
+  // task. Snapshot needs the bespoke TSX/JS to exist for the iframe to
+  // capture the right content; running them in parallel meant the
+  // snapshot raced the bespoke and often captured the uniform fallback.
+  // Sequencing them also stops the two heaviest CPU/memory operations
+  // from competing on a single Node thread, which was driving the
+  // healthcheck-failing 503s.
   void (async () => {
     try {
       const result = await generateKitShowcase({
@@ -71,9 +69,7 @@ export function runKitGenerationJobs(
     } catch (err) {
       console.error(`[gen-jobs] bespoke showcase failed for ${kit.slug}:`, err);
     }
-  })();
 
-  void (async () => {
     try {
       const url = await captureAndUploadKitPreview(kit.id, kit.slug, origin);
       if (url) await updateKitPreviewImage(kit.id, url);
@@ -82,6 +78,10 @@ export function runKitGenerationJobs(
     }
   })();
 
+  // Hero generation is independent of the bespoke + snapshot chain
+  // (it captures the brand image, not the showcase iframe). Runs in
+  // parallel with the chain above. Wrapped in heroGenerationLimit so
+  // multiple publishes queue rather than racing for memory.
   void (async () => {
     try {
       const url = await captureAndUploadKitHero(kit, { openaiApiKey });

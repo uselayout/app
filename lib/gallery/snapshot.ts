@@ -1,6 +1,7 @@
 import "server-only";
-import { chromium } from "playwright";
+import { chromium, type BrowserContext, type Page } from "playwright";
 import { uploadToBucket } from "@/lib/supabase/storage";
+import { kitSnapshotLimit } from "@/lib/concurrency";
 
 // Match the card's 4:3 aspect ratio so the screenshot fills the preview slot
 // without either letterboxing or the right/bottom of the showcase getting
@@ -27,9 +28,16 @@ export async function captureKitShowcasePng(
 ): Promise<Buffer | null> {
   const target = `${baseUrl.replace(/\/$/, "")}/gallery/${encodeURIComponent(kitSlug)}?snapshot=1`;
   const browser = await chromium.launch({ headless: true });
+  // Track context + page so we can close them even when the inner ops
+  // throw. Without this, a goto / screenshot timeout left the Chromium
+  // context + WebSocket open, accumulating zombie subprocesses on the
+  // staging container until file descriptors ran out and Coolify
+  // dropped the backend ("no available server").
+  let context: BrowserContext | null = null;
+  let page: Page | null = null;
   try {
-    const context = await browser.newContext({ viewport: VIEWPORT });
-    const page = await context.newPage();
+    context = await browser.newContext({ viewport: VIEWPORT });
+    page = await context.newPage();
     await page.goto(target, { waitUntil: "networkidle", timeout: NAV_TIMEOUT_MS });
     // Give the inner iframe enough time to load React from the CDN, run the
     // showcase JS, and paint. networkidle above does not wait for subframes.
@@ -45,6 +53,8 @@ export async function captureKitShowcasePng(
     });
     return buffer;
   } finally {
+    if (page) await page.close().catch(() => {});
+    if (context) await context.close().catch(() => {});
     await browser.close().catch(() => {});
   }
 }
@@ -58,12 +68,15 @@ export async function captureAndUploadKitPreview(
   kitSlug: string,
   baseUrl: string,
 ): Promise<string | null> {
-  const buffer = await captureKitShowcasePng(kitSlug, baseUrl).catch((err) => {
-    console.error(`[kit-snapshot] capture failed for ${kitSlug}:`, err);
-    return null;
+  // Single-flight via kitSnapshotLimit so two publishes can't launch
+  // two Chromiums on the same container. Excess calls queue.
+  return kitSnapshotLimit(async () => {
+    const buffer = await captureKitShowcasePng(kitSlug, baseUrl).catch((err) => {
+      console.error(`[kit-snapshot] capture failed for ${kitSlug}:`, err);
+      return null;
+    });
+    if (!buffer) return null;
+    const path = `kit-previews/${kitId}.png`;
+    return uploadToBucket("screenshots", path, buffer, "image/png", { upsert: true });
   });
-  if (!buffer) return null;
-
-  const path = `kit-previews/${kitId}.png`;
-  return uploadToBucket("screenshots", path, buffer, "image/png", { upsert: true });
 }
