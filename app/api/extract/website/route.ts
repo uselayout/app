@@ -6,6 +6,7 @@ import { uploadScreenshots } from "@/lib/supabase/storage";
 import { extractLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
 import { auth } from "@/lib/auth";
+import { resolveBearerAdmin } from "@/lib/api/admin-bearer";
 import { playwrightLimit } from "@/lib/concurrency";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 import { logApiCall } from "@/lib/logging/api-log";
@@ -27,11 +28,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
+  const bearerAdmin = await resolveBearerAdmin(request.headers);
+  const session = bearerAdmin
+    ? null
+    : await auth.api.getSession({ headers: request.headers });
+  if (!bearerAdmin && !session) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
-  const { success: allowed, reset } = checkUserRateLimit(session.user.id);
+  const userId = bearerAdmin?.id ?? session!.user.id;
+  const { success: allowed, reset } = checkUserRateLimit(userId);
   if (!allowed) {
     return rateLimitResponse(reset);
   }
@@ -113,8 +118,8 @@ export async function POST(request: NextRequest) {
         }
 
         const durationMs = Date.now() - startTime;
-        void logApiCall({ userId: session.user.id, endpoint: "extract/website", statusCode: 200, durationMs, metadata: { domain: new URL(url).hostname, projectId } });
-        void logEvent("extraction.complete", "studio", { userId: session.user.id, metadata: { sourceType: "website", domain: new URL(url).hostname, screenshotCount: result.screenshots.length, durationMs } });
+        void logApiCall({ userId: userId, endpoint: "extract/website", statusCode: 200, durationMs, metadata: { domain: new URL(url).hostname, projectId } });
+        void logEvent("extraction.complete", "studio", { userId: userId, metadata: { sourceType: "website", domain: new URL(url).hostname, screenshotCount: result.screenshots.length, durationMs } });
 
         try {
           send({ type: "complete", data: result });
@@ -127,8 +132,8 @@ export async function POST(request: NextRequest) {
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
-        void logApiCall({ userId: session.user.id, endpoint: "extract/website", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: message, metadata: { domain: new URL(url).hostname } });
-        void logEvent("extraction.failed", "studio", { userId: session.user.id, metadata: { sourceType: "website", error: message } });
+        void logApiCall({ userId: userId, endpoint: "extract/website", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: message, metadata: { domain: new URL(url).hostname } });
+        void logEvent("extraction.failed", "studio", { userId: userId, metadata: { sourceType: "website", error: message } });
         send({ type: "error", message });
       } finally {
         clearInterval(heartbeat);

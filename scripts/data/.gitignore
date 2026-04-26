@@ -1,0 +1,7 @@
+# Per-run state files written by import-gallery-batch.ts. Reproducible from
+# the input JSON, so no point versioning them.
+gallery-batch.state.json
+
+# The actual 50-URL input lives outside git. Use the .example.json as a
+# template and copy it to gallery-batch.json locally.
+gallery-batch.json

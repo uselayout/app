@@ -3,6 +3,7 @@ import { z } from "zod/v4";
 import { createLayoutMdStream } from "@/lib/claude/synthesise";
 import { resizeScreenshot } from "@/lib/util/resize-screenshot";
 import { auth } from "@/lib/auth";
+import { resolveBearerAdmin } from "@/lib/api/admin-bearer";
 import { checkQuota, deductCredit, refundCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
 import { generateLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit-instances";
@@ -98,13 +99,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Auth: get session
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
+  // Auth: bearer-admin token (batch scripts) OR Better Auth session cookie.
+  const bearerAdmin = await resolveBearerAdmin(request.headers);
+  const session = bearerAdmin
+    ? null
+    : await auth.api.getSession({ headers: request.headers });
+  if (!bearerAdmin && !session) {
     return Response.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const userId = session.user.id;
+  const userId = bearerAdmin?.id ?? session!.user.id;
 
   const { success: withinLimit, reset } = checkUserRateLimit(userId);
   if (!withinLimit) {
@@ -128,6 +132,12 @@ export async function POST(request: NextRequest) {
     if (userApiKey && userApiKey.startsWith("sk-ant-")) {
       mode = "byok";
       apiKey = userApiKey;
+    } else if (bearerAdmin) {
+      // Bearer-admin (batch scripts) uses the platform Anthropic key without
+      // touching the credit ledger — quota checks and credit deduction are
+      // skipped because the caller is acting as the platform itself.
+      mode = "byok";
+      apiKey = process.env.ANTHROPIC_API_KEY;
     } else {
       const quota = await checkQuota(userId, "layout-md");
       if (!quota.allowed) {
