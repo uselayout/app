@@ -23,7 +23,7 @@ Every kit renders the SAME set of sections in the SAME order so visitors can com
 
 Sections, in order:
 
-1. **Hero** — kit name as a large heading + one-line description. If brand assets are provided in the user message, render the primary logo as an \`<img src="..." alt="..." />\` (max-height 48-80px) at the top. No pills, eyebrows, or "Design System" tags.
+1. **Hero** — kit name as a large heading + one-line description. If brand assets are provided in the user message, render the primary logo as an \`<img src="..." alt="..." />\` (max-height 48-80px) at the top. **If NO brand assets are provided, render text only — no fake logo mark, no decorative SVG, no coloured shapes meant to evoke a logo.** No pills, eyebrows, or "Design System" tags.
 2. **Colour palette** — grouped by role (backgrounds, text, accent, borders, status, other)
 3. **Typography** — Display / Heading / Body / Caption samples
 4. **Spacing** — horizontal bars from smallest to largest \`--space-*\` token, neutral fill (NOT the brand accent)
@@ -71,6 +71,9 @@ This is the part most generators get wrong. Within each section, render the comp
 8. **Buttons painted on the accent must derive their text colour from the accent's luminance** — white if accent is dark, near-black if light. Never hardcode \`#fff\` or \`#000\` for that label without a luminance check.
 9. **Ignore motion/animation tokens entirely.** Any var starting with \`--motion-\`, \`--animation-\`, \`--transition-\`, \`--keyframe-\`, \`--duration-\`, \`--ease-\`, or with a value containing \`@keyframes\`. Filter inside the component.
 10. Make controls (toggle, checkbox, radio, tabs, segmented) **interactive** with \`useState\` so clicking flips state. Keep the visual treatment of each control matched to the brand (iOS toggle for Apple, simple capsule for Linear, etc.).
+11. **NEVER use emojis anywhere.** Not in headings, not in card icons, not in alert banners, not in placeholders, not in stub avatars — never. If you need an icon, draw an inline SVG (12-20px) using the kit's accent or text colour. Avatars are coloured circles with initials, not emojis.
+12. **Tabs and segmented controls must NOT scroll the page when clicked.** They are \`<button type="button">\` elements (never anchors, never \`href="#..."\`). Their onClick handler ONLY updates useState. If you must use an anchor for visual reasons, call \`e.preventDefault()\`.
+13. **Every button MUST have a visible hover state.** Inject a single \`<style>\` element at the top of the App body whose first child is a template literal of CSS — e.g. \`<style>{\\\`.btn-primary:hover { ... } .btn-secondary:hover { ... }\\\`}</style>\`. Apply matching className to the buttons. Hover treatment matches the brand: Apple uses brightness shift, Stripe lifts with a stronger shadow, Linear shifts background. Tailwind \`hover:\` classes are unreliable in this iframe — use explicit CSS rules.
 
 # Helper to copy verbatim
 
