@@ -38,9 +38,10 @@ export function KitRequestSubmitForm({ isLoggedIn }: Props) {
         error?: string;
       };
       if (res.ok && body.request) {
-        setMessage({ kind: "ok", text: `Added "${body.request.name}". Refreshing…` });
+        setMessage({ kind: "ok", text: `Added "${body.request.name}".` });
         setUrl("");
         router.refresh();
+        setTimeout(() => setMessage(null), 3000);
         return;
       }
       if (res.status === 409 && body.existing) {
