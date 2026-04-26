@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-curated-picker-show-all",
+    title: "Curated token picker shows every token",
+    description:
+      "Clicking an empty role slot or an existing swatch in the Curated Design System view used to hide everything past the first 50 tokens behind a low-contrast +N more text link. With 200+ colour tokens that meant most of your palette was effectively invisible. The picker now lists the full pool in a scrolling region, shows the total count in the header (and X / Y when search narrows it), and is slightly wider so longer token names like background-positive-secondary-hover stop truncating.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
     id: "2026-w18-curated-auto-fill-from-tokens",
     title: "Auto-fill curated roles from your tokens",
     description:
