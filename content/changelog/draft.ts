@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-explore-failed-render-actions",
+    title: "Better recovery when an Explorer variant fails to render",
+    description:
+      "When a generated variant hit a JavaScript error in the preview iframe, the only thing on offer was a Retry render button — which couldn't help, because the same code parses the same way every time. The card now shows the full error (with line and column), an expandable Show details panel for multi-line stack traces, and replaces Retry render with View code on parse-time errors so you can jump straight into inspect mode and look at the variant. Retry is still there for transient failures like a transpile timeout. The variant code is also logged to the browser console under [variant-render-error] so we can dig into the underlying bug from a screenshot.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-27",
+  },
+  {
     id: "2026-w18-layout-md-no-truncation",
     title: "Larger design systems now generate fully",
     description:
