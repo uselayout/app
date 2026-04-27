@@ -93,3 +93,12 @@ export const heroGenerationLimit = createLimiter(1, 120_000);
  * GPU/CPU on the same Linux container.
  */
 export const kitSnapshotLimit = createLimiter(1, 120_000);
+
+/**
+ * Max 1 concurrent staging→prod kit promote. Each promote is mostly
+ * network I/O (one POST + N storage uploads), but the storage uploads
+ * could include MB-scale font files and we don't want a misclick to
+ * fan out 10 promotes at once and saturate the upstream Supabase.
+ * Single-flight is fine — admin promotes happen one-at-a-time anyway.
+ */
+export const promoteLimit = createLimiter(1, 120_000);
