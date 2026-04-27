@@ -57,6 +57,33 @@ export function getStoredGoogleApiKey(): string {
   return localStorage.getItem(GOOGLE_STORAGE_KEY) ?? "";
 }
 
+const OPENAI_STORAGE_KEY = "sd_openai_key";
+
+export function useOpenAIKey() {
+  const [key, setKeyState] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem(OPENAI_STORAGE_KEY) ?? "";
+  });
+
+  const setKey = (k: string) => {
+    localStorage.setItem(OPENAI_STORAGE_KEY, k);
+    markKeySet("openai");
+    setKeyState(k);
+  };
+
+  const clearKey = () => {
+    localStorage.removeItem(OPENAI_STORAGE_KEY);
+    setKeyState("");
+  };
+
+  return { key, setKey, clearKey };
+}
+
+export function getStoredOpenAIKey(): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem(OPENAI_STORAGE_KEY) ?? "";
+}
+
 const FIGMA_STORAGE_KEY = "sd_figma_pat";
 
 export function useFigmaApiKey() {
@@ -110,11 +137,12 @@ export function wasKeyLost(storageKey: string): boolean {
 type KeyStatus = {
   hasAnthropicKey: boolean;
   hasGoogleKey: boolean;
+  hasOpenAIKey: boolean;
   hasFigmaKey: boolean;
   /** True if any key was previously set but is now missing */
   hasLostKeys: boolean;
   /** Which specific keys were lost */
-  lostKeys: ("anthropic" | "google" | "figma")[];
+  lostKeys: ("anthropic" | "google" | "openai" | "figma")[];
 };
 
 let keyStatusListeners: Array<() => void> = [];
@@ -132,18 +160,20 @@ function subscribeKeyStatus(listener: () => void) {
 
 function getKeyStatusSnapshot(): KeyStatus {
   if (typeof window === "undefined") {
-    return { hasAnthropicKey: false, hasGoogleKey: false, hasFigmaKey: false, hasLostKeys: false, lostKeys: [] };
+    return { hasAnthropicKey: false, hasGoogleKey: false, hasOpenAIKey: false, hasFigmaKey: false, hasLostKeys: false, lostKeys: [] };
   }
   const hasAnthropicKey = !!localStorage.getItem(STORAGE_KEY);
   const hasGoogleKey = !!localStorage.getItem(GOOGLE_STORAGE_KEY);
+  const hasOpenAIKey = !!localStorage.getItem(OPENAI_STORAGE_KEY);
   const hasFigmaKey = !!localStorage.getItem(FIGMA_STORAGE_KEY);
 
   const lostKeys: KeyStatus["lostKeys"] = [];
   if (wasKeyLost(STORAGE_KEY)) lostKeys.push("anthropic");
   if (wasKeyLost(GOOGLE_STORAGE_KEY)) lostKeys.push("google");
+  if (wasKeyLost(OPENAI_STORAGE_KEY)) lostKeys.push("openai");
   if (wasKeyLost(FIGMA_STORAGE_KEY)) lostKeys.push("figma");
 
-  return { hasAnthropicKey, hasGoogleKey, hasFigmaKey, hasLostKeys: lostKeys.length > 0, lostKeys };
+  return { hasAnthropicKey, hasGoogleKey, hasOpenAIKey, hasFigmaKey, hasLostKeys: lostKeys.length > 0, lostKeys };
 }
 
 // Cache the snapshot to avoid re-creating objects on every call
@@ -159,6 +189,7 @@ function refreshSnapshot() {
   if (
     next.hasAnthropicKey !== cachedSnapshot.hasAnthropicKey ||
     next.hasGoogleKey !== cachedSnapshot.hasGoogleKey ||
+    next.hasOpenAIKey !== cachedSnapshot.hasOpenAIKey ||
     next.hasFigmaKey !== cachedSnapshot.hasFigmaKey ||
     next.hasLostKeys !== cachedSnapshot.hasLostKeys
   ) {
@@ -191,8 +222,12 @@ export function useKeyStatus(): KeyStatus {
  * Call after saving a key to mark it as "ever set" for key-loss detection.
  * Also refreshes the reactive snapshot.
  */
-export function markKeySet(provider: "anthropic" | "google" | "figma") {
-  const storageKey = provider === "anthropic" ? STORAGE_KEY : provider === "google" ? GOOGLE_STORAGE_KEY : FIGMA_STORAGE_KEY;
+export function markKeySet(provider: "anthropic" | "google" | "openai" | "figma") {
+  const storageKey =
+    provider === "anthropic" ? STORAGE_KEY
+    : provider === "google" ? GOOGLE_STORAGE_KEY
+    : provider === "openai" ? OPENAI_STORAGE_KEY
+    : FIGMA_STORAGE_KEY;
   markKeyEverSet(storageKey);
   refreshSnapshot();
 }
@@ -203,6 +238,7 @@ export function dismissKeyLoss() {
   // Only clear ever_set for keys that are currently lost (not ones that are present)
   if (wasKeyLost(STORAGE_KEY)) localStorage.removeItem(STORAGE_KEY + EVER_SET_SUFFIX);
   if (wasKeyLost(GOOGLE_STORAGE_KEY)) localStorage.removeItem(GOOGLE_STORAGE_KEY + EVER_SET_SUFFIX);
+  if (wasKeyLost(OPENAI_STORAGE_KEY)) localStorage.removeItem(OPENAI_STORAGE_KEY + EVER_SET_SUFFIX);
   if (wasKeyLost(FIGMA_STORAGE_KEY)) localStorage.removeItem(FIGMA_STORAGE_KEY + EVER_SET_SUFFIX);
   refreshSnapshot();
 }

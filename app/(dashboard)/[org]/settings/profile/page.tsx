@@ -1,18 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useSession } from "@/lib/auth-client";
-import { User, Mail, Lock, Loader2, Check } from "lucide-react";
+import { User, Mail, Lock, Loader2, Check, ImagePlus, Trash2 } from "lucide-react";
+import { Avatar } from "@/components/gallery/Avatar";
 import { InviteCodesPanel } from "@/components/settings/InviteCodesPanel";
 
 export default function ProfilePage() {
-  const { data: session } = useSession();
+  const { data: session, refetch: refetchSession } = useSession();
   const user = session?.user;
 
   const [name, setName] = useState(user?.name || "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+
+  // Avatar upload state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarError("");
+    setAvatarBusy(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/user/avatar", { method: "POST", body });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error ?? "Upload failed");
+      }
+      await refetchSession?.();
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setAvatarBusy(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleAvatarRemove() {
+    setAvatarError("");
+    setAvatarBusy(true);
+    try {
+      const res = await fetch("/api/user/avatar", { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error ?? "Remove failed");
+      }
+      await refetchSession?.();
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : "Remove failed");
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
 
   // Password change
   const [currentPassword, setCurrentPassword] = useState("");
@@ -104,6 +149,60 @@ export default function ProfilePage() {
       <p className="mt-1 text-sm text-[var(--text-secondary)]">
         Manage your account details
       </p>
+
+      {/* Avatar */}
+      <div className="mt-8 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-5">
+        <div className="flex items-center gap-2">
+          <ImagePlus className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+          <p className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">
+            Profile picture
+          </p>
+        </div>
+        <div className="mt-4 flex items-center gap-4">
+          <Avatar
+            src={user && "image" in user ? ((user.image as string | null | undefined) ?? undefined) : undefined}
+            name={user?.name ?? user?.email}
+            size={64}
+          />
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={avatarBusy}
+                className="flex items-center gap-1.5 rounded-md border border-[var(--studio-border-strong)] px-3 py-1.5 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50"
+              >
+                {avatarBusy ? <Loader2 size={12} className="animate-spin" /> : <ImagePlus size={12} />}
+                {user && "image" in user && user.image ? "Change" : "Upload"}
+              </button>
+              {user && "image" in user && user.image && (
+                <button
+                  type="button"
+                  onClick={handleAvatarRemove}
+                  disabled={avatarBusy}
+                  className="flex items-center gap-1.5 rounded-md border border-[var(--studio-border)] px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50"
+                >
+                  <Trash2 size={12} />
+                  Remove
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-[var(--text-muted)]">
+              PNG, JPG or WEBP. Maximum 2MB. Shown on gallery kits you publish.
+            </p>
+            {avatarError && (
+              <p className="text-[11px] text-[var(--status-error,#ef4444)]">{avatarError}</p>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Email (read-only) */}
       <div className="mt-8 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-5">

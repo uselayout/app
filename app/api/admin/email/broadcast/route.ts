@@ -9,6 +9,7 @@ import { outreachEmailHtml } from "@/lib/email/templates/outreach";
 import { logBroadcastEmail } from "@/lib/email/log";
 import { getSuppressedEmails } from "@/lib/email/suppression";
 import { generateUnsubscribeUrl } from "@/lib/email/unsubscribe";
+import { substituteRecipientTokens } from "@/lib/email/tokens";
 
 const BroadcastSchema = z.object({
   subject: z.string().min(1).max(200),
@@ -132,21 +133,24 @@ export async function POST(request: NextRequest) {
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         };
 
+        const personalisedBody = substituteRecipientTokens(bodyHtml, recipient);
+        const personalisedSubject = substituteRecipientTokens(subject, recipient);
+
         if (isOutreach) {
           html = outreachEmailHtml({
             name: recipient.name,
-            bodyHtml,
+            bodyHtml: personalisedBody,
             unsubscribeUrl: unsubUrl,
             senderName: senderDisplayName,
           });
         } else {
-          html = wrapBroadcastHtml(bodyHtml, unsubUrl);
+          html = wrapBroadcastHtml(personalisedBody, unsubUrl);
         }
 
         try {
           const result = await sendEmail({
             to: recipient.email,
-            subject,
+            subject: personalisedSubject,
             html,
             from,
             headers,
@@ -154,7 +158,7 @@ export async function POST(request: NextRequest) {
 
           await logBroadcastEmail({
             recipientEmail: recipient.email,
-            subject,
+            subject: personalisedSubject,
             fromEmail,
             resendId: result.id,
           });
@@ -167,14 +171,14 @@ export async function POST(request: NextRequest) {
             try {
               const retryResult = await sendEmail({
                 to: recipient.email,
-                subject,
+                subject: personalisedSubject,
                 html,
                 from,
                 headers,
               });
               await logBroadcastEmail({
                 recipientEmail: recipient.email,
-                subject,
+                subject: personalisedSubject,
                 fromEmail,
                 resendId: retryResult.id,
               });

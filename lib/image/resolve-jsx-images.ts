@@ -55,13 +55,13 @@ export function hasJsxImageExpressions(code: string): boolean {
  * Transpile TSX and evaluate with mocked React to collect all
  * data-generate-image prop values as resolved strings.
  */
-function extractPromptsViaEval(code: string): CollectedImage[] {
+async function extractPromptsViaEval(code: string): Promise<CollectedImage[]> {
   const collected: CollectedImage[] = [];
 
   // Transpile TSX → JS (React.createElement calls)
   let transpiledJs: string;
   try {
-    transpiledJs = transpileTsx(code);
+    transpiledJs = await transpileTsx(code);
   } catch {
     return [];
   }
@@ -289,7 +289,7 @@ export async function resolveJsxImages(
   const dropLiterals = (items: CollectedImage[]) =>
     items.filter((c) => !literalPrompts.has(c.prompt));
 
-  const evalCollected = dropLiterals(extractPromptsViaEval(code));
+  const evalCollected = dropLiterals(await extractPromptsViaEval(code));
   const regexCollected = dropLiterals(extractPromptsViaRegex(code));
 
   const evalUniqueCount = new Set(evalCollected.map((c) => c.prompt)).size;
@@ -325,6 +325,7 @@ export async function resolveJsxImages(
           brandColours: options.brandColours,
           brandStyle: options.brandStyle,
           googleApiKey: options.googleApiKey,
+          openaiApiKey: options.openaiApiKey,
         }),
       ),
     );

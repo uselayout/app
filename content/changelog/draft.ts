@@ -10,6 +10,348 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-layout-md-no-truncation",
+    title: "Larger design systems now generate fully",
+    description:
+      "Pushing a really token-rich extraction (lots of CSS variables, fonts, components) could leave layout.md cut off mid-table inside Appendix A. Layout now uses each model's full output capacity, and if it still hits the limit, automatically continues the response from where it stopped. You get the complete file in one go. If even the continuation runs out of room, you'll see a clear marker in the file instead of a silent truncation.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-27",
+  },
+  {
+    id: "2026-w18-extension-install-docs",
+    title: "Chrome extension install instructions match the actual ZIP",
+    description:
+      "The install steps on the Chrome extension docs page told you to load a 'dist' folder inside the unzipped directory. The alpha ZIP doesn't contain one. manifest.json sits at the root of the unzipped folder. Updated the instructions so you select the layout-chrome-extension-alpha folder directly.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-27",
+  },
+  {
+    id: "2026-w18-admin-regen-no-503",
+    title: "Regenerating a kit from admin no longer takes the gallery offline",
+    description:
+      "Hitting Regenerate Showcase on a kit in the admin panel could push the staging container into 100% CPU and bounce every public page to a 'no available server' screen until the container restarted. The cause was a single regex used to strip @keyframes blocks from the kit's tokens.css before sending to Claude — its nested quantifiers caused catastrophic backtracking on tokens.css files with many brace pairs but no @keyframes (Linear's, for one). Replaced with a linear-time bracket counter, plus belt-and-braces caps so any future slow path can't starve the readiness probe either.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-gallery-stable-during-bespoke-regen",
+    title: "Gallery stays online during bulk kit regeneration",
+    description:
+      "Generating a bespoke Live Preview for a kit means a long Claude call followed by a CPU-heavy TypeScript transpile. When several kits regenerated in parallel the staging container's single Node thread saturated, the readiness probe timed out, and the gallery briefly returned a 'no available server' page. Bulk regen now runs locally on the operator's machine and posts the finished bespoke straight to the kit; the live server only handles small DB writes. Kits stay served throughout.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-gallery-kit-style-profile",
+    title: "Live Preview now feels like the actual brand",
+    description:
+      "Each kit's Live Preview used to render the same generic component sample with different colours swapped in — Stripe, Linear, and Apple all looked oddly similar. Now Claude derives a small per-kit style profile from layout.md and tokens.css describing how each block should render: button radius, fill style, input focus treatment, card elevation, badge shape, tab indicator, density. Apple gets soft 18px-ish buttons, Linear keeps pills, IBM gets sharp corners, Notion's cards get a subtle shadow. Auto-runs on every publish.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-gallery-rich-component-preview",
+    title: "Live Preview shows a full component palette",
+    description:
+      "The component sample on a kit page used to be three things: buttons, an input, a card. It now spans buttons (with size variants), four input types (search with icon, prefix, select, textarea), field states (default / focused / error), interactive toggles + checkboxes + radios, status badges, tabs, segmented control, an avatar group, progress + skeleton, an alert banner, KPI tiles, a rich card, and a mini data table. Hover states everywhere; controls actually flip when you click them.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-gallery-hero-and-share",
+    title: "Brand-aware hero + share button on the gallery",
+    description:
+      "Each kit page now leads with the brand's logo, name, and one-line description in the Live Preview header — same shape as the Notion-style header you may have seen on bespoke kits. Added a Share button next to the upvote / licence chips (Web Share where available, copy-link fallback). And a 'Read the CLI docs' link sits under the npm install command for anyone hitting Layout for the first time.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-gallery-fixes-borders-buttons",
+    title: "Live Preview rendering fixes",
+    description:
+      "Three quiet bugs squashed: card outlines on Linear no longer render in green (the picker was mistakenly grabbing semantic-state colours like --color-success-border before the neutral one); Primary and Accept button labels stay readable on kits with dark or near-black accents (Apple, Ramp, Nike) instead of disappearing into the background; the spacing and radius scale ladders now use a neutral text-tint instead of the kit's accent so the eye reads sizes, not a wall of brand colour.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-admin-kits-row-tidy",
+    title: "Tidier admin kit row + cached bespoke restore",
+    description:
+      "The admin Kits table row had grown to seven inline buttons; they're now grouped into Card / Status / Generate dropdowns with a clearer visual hierarchy. The Generate dropdown also gains two improvements: when a kit was Claude-generated then flipped to uniform, you can now Restore the cached bespoke instantly without re-running Claude; and a Profile column shows when each kit's style profile was last derived.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-curated-mode-seeding",
+    title: "Light/Dark mode tabs in Curated populate themselves",
+    description:
+      "Multi-mode kits like the Figma SDS used to land users on a Curated view full of empty mode tabs. Three fixes: 1) the auto-fill now seeds every detected colour mode at once \u2014 SDS Light and SDS Dark fill from their respective token twins instead of waiting for a Copy from Light click; 2) non-colour modes (Desktop / Mobile / Tablet, which only tag spacing tokens) no longer leak into the colour-mode toggle and clutter it with empty tabs; 3) any mode whose name contains \u201cdark\u201d (SDS Dark, dark-theme, dark) now gets a moon icon for parity with Light\u2019s sun.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-gallery-kit-wishlist",
+    title: "Wishlist on the Kit Gallery",
+    description:
+      "Want a kit added to the gallery? Drop the URL on the new wishlist below the kit grid, and upvote the ones you'd actually use. The page auto-fetches the brand name from the URL so you only need to paste a link. Once a matching kit ships, your request gets marked fulfilled automatically.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-explore-enter-submits",
+    title: "Explore: Enter submits, Shift+Enter adds a line break",
+    description:
+      "Explorer prompt fields now submit on Enter so you can dispatch a generation without reaching for Cmd+Enter. Hold Shift while pressing Enter to insert a newline if you want a multi-line prompt. Behaviour matches every other AI input you've used; both the main prompt and the Refine field follow the same convention.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-gallery-tokens-match-studio",
+    title: "Gallery Tokens tab now lists everything the studio sees",
+    description:
+      "Kits like Linear documented tokens (accent-purple, surface-page, text-primary, normal-border) in the layout.md narrative that never made it into the published tokens.json, so the gallery's Tokens tab showed fewer tokens than the studio's All Tokens view. Publish now parses every CSS declaration found anywhere in layout.md and unions it with the project's extraction data, so gallery and studio agree. Existing extraction tokens still win on collision (the studio version is authoritative).",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-border-radius-classification",
+    title: "Border-radius tokens stop showing in the BORDERS group",
+    description:
+      "An 8px border-radius token was rendering as a white swatch in the All Tokens BORDERS group because the layout.md parser checked the word border before radius and classified the value as a colour. The order is reversed so border-radius / corner-radius go where they belong, while border-color / border-default / border-success still classify as colours.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-curated-status-prefix-demotion",
+    title: "Status colours stop stealing default role slots",
+    description:
+      "On kits with status colours (success-border, info-bg, warning-text, border-error, etc.) and an unprefixed default variant (normal-border, bg-app, text-primary), the matcher could pick a status colour as the default because both candidates tied on score and iteration order chose the wrong one. Tokens with a status word in any segment (success, warning, error, danger, info, positive, negative, destructive, critical) are now demoted when matching default-tier roles (backgrounds, text, borders, accent), regardless of whether the status word appears as a prefix or suffix. Status roles themselves are unaffected.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-curated-picker-show-all",
+    title: "Curated token picker shows every token",
+    description:
+      "Clicking an empty role slot or an existing swatch in the Curated Design System view used to hide everything past the first 50 tokens behind a low-contrast +N more text link. With 200+ colour tokens that meant most of your palette was effectively invisible. The picker now lists the full pool in a scrolling region, shows the total count in the header (and X / Y when search narrows it), and is slightly wider so longer token names like background-positive-secondary-hover stop truncating.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-curated-auto-fill-from-tokens",
+    title: "Auto-fill curated roles from your tokens",
+    description:
+      "When the Curated Design System view shows empty role slots (after a fresh extraction or re-import), there's now an Auto-fill from tokens button next to the mode toggle. One click runs the matcher against your current token pool and snapshots the previous state so you can roll back. The matcher itself learnt the Figma SDS naming pattern: background-default and background-secondary now find App Background and Surface, background-tertiary fills Elevated, background-hover fills Hover, blanket fills Overlay, and text-neutral-secondary / text-neutral-tertiary land in Secondary and Muted text. Files using semantic Figma tokens map cleanly without manual assignment.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-gallery-uniform-by-default",
+    title: "Gallery Live Preview now uses our uniform template by default",
+    description:
+      "Every kit's Live Preview now renders through the hand-built Layout template by default. Faster (no AI wait), free (no Claude credits), and improvements ship to every kit at once. Existing kits with a Claude-generated bespoke showcase keep it. New publishes can still opt in to a bespoke AI layout via a checkbox on the Share modal.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-figma-plugin-0-2-11-no-collisions",
+    title: "Figma plugin keeps every colour ramp on extraction",
+    description:
+      "Files with multiple colour ramps (Brand, Red, Green, Yellow, Slate, Gray) were collapsing to a single greyscale palette because the plugin stripped the first slash segment from every variable name, so Brand/100 and Red/100 both became 100 and overwrote each other. Variable names now keep the full path, so every ramp and every semantic group (Background/Brand/Default, Text/Positive/Default, etc.) flows through to Layout. Re-download the plugin (v0.2.11) from the docs page to pick up the fix.",
+    product: "figma-plugin",
+    category: "fixed",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w18-gallery-new-badge-and-cleaner-admin",
+    title: "Gallery cards get a New badge, admin row gets tidier",
+    description:
+      "Admins can now mark a kit as New (green badge on the gallery card, mirrors the Featured pattern). The admin Kits row is also cleaner: the three regen actions (showcase, preview, hero) collapsed into a single Generate dropdown so the row stops being a wall of buttons.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
+  },
+  {
+    id: "2026-w17-gallery-pending-review",
+    title: "Self-published kits go through admin review",
+    description:
+      "Kits published from Studio now land in a Pending review queue and only appear on the public gallery once the Layout team approves. Approving fires the showcase, preview and hero generation jobs in one click. Quality control without friction; layout-team publishes still go straight live.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-25",
+  },
+  {
+    id: "2026-w17-gallery-card-image-control",
+    title: "Pick the gallery card image",
+    description:
+      "Admins can now choose which image shows on each kit's gallery card without regenerating: auto, custom upload, hero, or preview. Upload your own 1440\u00d71080 PNG/JPG/WEBP via the new Upload card button when AI-generated covers don't quite land.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-25",
+  },
+  {
+    id: "2026-w17-gallery-tokens-tab-full",
+    title: "Gallery Tokens tab now lists every token, not just colours",
+    description:
+      "The Tokens tab on each kit page now walks the full W3C DTCG tokens.json and surfaces colours (with swatches), typography (font families, sizes, weights, line heights), spacing (as scaled bars), radius (as rounded samples) and shadows. Previously nested tokens like color.bg.app or color.text.primary were being dropped, so the tab showed up empty on most kits.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-showcase-dark-text-fix",
+    title: "Showcase text stays readable on dark kits",
+    description:
+      "Kits with dark-first tokens (Linear-style) were rendering the showcase hero and section headers in near-black text on near-black backgrounds. Foreground picking now prefers semantic names like text-primary, foreground and text-default, then falls back to the highest-contrast token of the right polarity, then to a hard-coded near-white so we never render dark on dark again.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-admin-regen-hero-byok",
+    title: "Regen hero now honours your own OpenAI key",
+    description:
+      "Admins can generate Kit Gallery hero covers with their own OpenAI key. The Regen hero button in /admin > Kits forwards the key saved in Settings > API Keys on every call, falling back to the server-side OPENAI_API_KEY when one is set.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-kit-gallery-hero-image",
+    title: "Gallery cards get a stylised hero cover via GPT Image 2",
+    description:
+      "Every kit can now carry a second, marketing-grade preview image generated by GPT Image 2 from the kit's colours, tags and name. Card thumbnails prefer the hero when present, falling back to the Playwright screenshot and finally the gradient placeholder. Admins get a new Regen hero button in /admin > Kits alongside the existing Regen showcase and Regen preview actions. New kits auto-generate a hero on publish.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-admin-email-personalisation",
+    title: "Personalise broadcast emails with each recipient's name",
+    description:
+      "The admin Email tab now supports {{firstName}}, {{name}} and {{email}} placeholders anywhere in the subject or body. Each broadcast is personalised per recipient before sending, with a sensible fallback when no name is on file, so marketing emails always open with a real greeting instead of \"Hi ,\". Click the chips under the message box to insert a placeholder at the cursor.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-kit-gallery-ai-showcase",
+    title: "Claude writes a bespoke showcase for every new kit",
+    description:
+      "Publishing a kit now kicks off two background jobs: Claude Sonnet writes a bespoke design-system showcase tailored to the kit's aesthetic, and Playwright snapshots it as a PNG card thumbnail. Card previews on /gallery stop being gradient placeholders and start looking like the actual design system. Admins get Regen showcase and Regen preview buttons in the admin Kits tab to re-run either step for any existing kit.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-kit-gallery-showcase",
+    title: "Every kit in the Gallery renders live against its own tokens",
+    description:
+      "Gallery kit pages now show a Live Preview tab alongside the Tokens and layout.md tabs. The preview renders a uniform showcase (palette, typography scale, spacing, radius, shadows, sample components) styled with each kit's own CSS variables, so comparing kits is genuinely visual instead of staring at markdown.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-profile-avatar-upload",
+    title: "Upload a profile picture",
+    description:
+      "Settings > Profile now has a Profile picture section. Upload a PNG, JPG or WEBP (up to 2MB) and your avatar flows through to the Studio sidebar, the author row on any kit you publish, and anywhere your name appears.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-kit-gallery-public-browse",
+    title: "Browse community kits at layout.design/gallery",
+    description:
+      "A new public gallery page lists design-system kits anyone can import into Layout Studio with one click, or install from the CLI with npx @layoutdesign/context install <slug>. Filter by tag, search by name, sort by Featured / Top / New. Linear, Stripe and Notion lookalike kits are seeded to start.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-kit-gallery-share-and-import",
+    title: "Share your Studio project as a public kit",
+    description:
+      "A new Share button in the Studio top bar publishes the current project as a public kit (MIT or CC-BY by default, or bring your own licence). Pick minimal (tokens + layout.md only) or rich (components, fonts, branding, context docs too). The New Project modal also gets a Browse Kits tab for importing any public kit without leaving Studio.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-vs-design-md-comparison-page",
+    title: "How Layout compares to Google's design.md",
+    description:
+      "A new page at /vs/design-md lays out where Layout and Google's newly open-sourced design.md agree, where Layout goes further (multi-source extraction, Figma sync, Kit Gallery, AI variant generation), and what we're borrowing from them (CLI linter, diff command, formal spec, awesome-list distribution). Also added a Google design.md column to /docs/compare so you can see Layout's superset at a glance.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-companion-design-md-export",
+    title: "Export bundles now ship a companion design.md",
+    description:
+      "Your export ZIP now includes a design.md alongside layout.md, formatted for compatibility with Google's design.md spec. Agents trained on Google's format (Stitch, stitch-skills, and anything downstream of Google Labs Code) can read your design system without configuration. layout.md remains canonical and carries our extras (three-tier tokens, multi-mode, motion, confidence annotations) that design.md doesn't yet model.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-canonical-spec-url",
+    title: "layout.design/spec is the canonical spec URL",
+    description:
+      "Formal specification for the layout.md format is now reachable at layout.design/spec (redirects to the in-docs spec page). Clean URL to share with engineers, investors, and anyone writing a DESIGN.md-style file.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-openai-gpt-image-2",
+    title: "Generate logos and wordmarks with OpenAI GPT Image 2.0",
+    description:
+      "Add an OpenAI API key in Settings and Layout now routes text-heavy image prompts (logos, wordmarks, diagrams, posters) to OpenAI's new GPT Image 2.0, which renders text legibly where Gemini blurs it. Gemini still handles photos and illustrations. The Branding tab also gets a Generate with AI button so you can spin up a primary logo, wordmark or favicon from a prompt and use it everywhere the data-brand-logo attribute resolves.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-24",
+  },
+  {
+    id: "2026-w17-byok-credit-error-clarity",
+    title: "Clearer message when your own Anthropic credits run out",
+    description:
+      "If you're using your own Anthropic API key and it runs out of credits mid-generation, Layout now tells you clearly and points you to console.anthropic.com to top up, instead of showing a generic API error. You can also switch back to hosted mode from Settings if you'd rather Layout handle the billing.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-23",
+  },
+  {
+    id: "2026-w17-supabase-restart-resilience",
+    title: "Stay signed in during brief database restarts",
+    description:
+      "If the database briefly goes away (for a restart or migration), you'll now see a short \"Layout is briefly unavailable\" page instead of being logged out and bounced to the sign-in screen. Your session stays valid, and a quick refresh gets you back to work.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-23",
+  },
+  {
     id: "2026-w17-figma-plugin-variable-modes",
     title: "Light and dark Figma Variables sync as separate tokens",
     description:

@@ -7,7 +7,7 @@
  * This module runs CLIENT-SIDE — no server-only imports allowed.
  */
 
-import { getStoredGoogleApiKey } from "@/lib/hooks/use-api-key";
+import { getStoredGoogleApiKey, getStoredOpenAIKey } from "@/lib/hooks/use-api-key";
 
 // Matches both literal strings and JSX expressions: data-generate-image="..." or data-generate-image={...}
 const IMAGE_PLACEHOLDER_RE = /data-generate-image=(?:["'][^"']+["']|\{[^}]+\})/i;
@@ -67,6 +67,8 @@ export async function processCodeImages(
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     const googleKey = getStoredGoogleApiKey();
     if (googleKey) headers["X-Google-Api-Key"] = googleKey;
+    const openaiKey = getStoredOpenAIKey();
+    if (openaiKey) headers["X-OpenAI-Api-Key"] = openaiKey;
 
     // Use caller's signal if provided, otherwise create our own with 5-minute timeout
     const externalSignal = options.signal;

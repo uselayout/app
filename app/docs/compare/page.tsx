@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const COMPETITORS = [
   "Layout",
+  "Google design.md",
   "Paper.design",
   "Magic Patterns",
   "MagicPath",
@@ -27,6 +28,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Extract from Figma",
     values: {
       Layout: true,
+      "Google design.md": false,
       "Paper.design": false,
       "Magic Patterns": "Import only",
       MagicPath: "Import only",
@@ -39,6 +41,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Extract from live websites",
     values: {
       Layout: true,
+      "Google design.md": "Manual (Stitch)",
       "Paper.design": false,
       "Magic Patterns": "Chrome Ext",
       MagicPath: false,
@@ -51,6 +54,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "LLM-optimised context output",
     values: {
       Layout: "layout.md",
+      "Google design.md": "DESIGN.md",
       "Paper.design": false,
       "Magic Patterns": false,
       MagicPath: false,
@@ -63,6 +67,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Works in your IDE / terminal",
     values: {
       Layout: true,
+      "Google design.md": "CLI + skills",
       "Paper.design": "Desktop app",
       "Magic Patterns": false,
       MagicPath: false,
@@ -75,6 +80,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "MCP server for AI agents",
     values: {
       Layout: "14 tools",
+      "Google design.md": false,
       "Paper.design": "24 tools",
       "Magic Patterns": false,
       MagicPath: false,
@@ -87,6 +93,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Design system structuring",
     values: {
       Layout: "9-section file",
+      "Google design.md": "8-section file",
       "Paper.design": "Roadmap",
       "Magic Patterns": "Style presets",
       MagicPath: "Token presets",
@@ -99,6 +106,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Custom font support",
     values: {
       Layout: "Upload + auto-detect",
+      "Google design.md": false,
       "Paper.design": false,
       "Magic Patterns": false,
       MagicPath: false,
@@ -111,6 +119,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Multi-agent support",
     values: {
       Layout: "All major",
+      "Google design.md": "Agent Skills",
       "Paper.design": "All major",
       "Magic Patterns": "Own platform",
       MagicPath: "Own platform",
@@ -123,6 +132,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Open source",
     values: {
       Layout: "AGPL-3.0",
+      "Google design.md": "Apache 2.0",
       "Paper.design": false,
       "Magic Patterns": false,
       MagicPath: false,

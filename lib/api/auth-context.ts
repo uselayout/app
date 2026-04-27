@@ -7,11 +7,14 @@ import {
   type OrgRole,
   type Permission,
 } from "@/lib/types/organization";
+import { resolveBearerAdmin } from "@/lib/api/admin-bearer";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+type BetterAuthSession = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
+
 interface AuthResult {
-  session: Awaited<ReturnType<typeof auth.api.getSession>>;
+  session: BetterAuthSession;
   userId: string;
 }
 
@@ -21,9 +24,38 @@ interface OrgAuthResult extends AuthResult {
 }
 
 export async function requireAuth(): Promise<AuthResult | NextResponse> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const requestHeaders = await headers();
+
+  // Bearer-token path: lets batch scripts and internal tooling authenticate
+  // as the admin user without a Better Auth session cookie. Synthesises the
+  // minimum session shape downstream code reads (user.id/email/name/image).
+  const bearerAdmin = await resolveBearerAdmin(requestHeaders);
+  if (bearerAdmin) {
+    const syntheticSession = {
+      session: {
+        id: "bearer-admin",
+        userId: bearerAdmin.id,
+        token: "bearer-admin",
+        expiresAt: new Date(Date.now() + 3600_000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ipAddress: null,
+        userAgent: "bearer-admin",
+      },
+      user: {
+        id: bearerAdmin.id,
+        email: bearerAdmin.email,
+        name: bearerAdmin.name ?? "",
+        image: bearerAdmin.image,
+        emailVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    } as unknown as BetterAuthSession;
+    return { session: syntheticSession, userId: bearerAdmin.id };
+  }
+
+  const session = await auth.api.getSession({ headers: requestHeaders });
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });

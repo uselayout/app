@@ -490,6 +490,17 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
       ).slice(0, 50)
     : [];
 
+  // Split credit-balance errors by mode so platform outages stand out.
+  const creditBalanceSummary = (errors?.errors ?? []).reduce(
+    (acc, e) => {
+      if (e.metadata?.errorClass !== "credit_balance_exhausted") return acc;
+      if (e.metadata?.mode === "hosted") acc.platform += 1;
+      else acc.byok += 1;
+      return acc;
+    },
+    { platform: 0, byok: 0 }
+  );
+
   // Feature adoption breakdown helpers
   const toBreakdownItems = (
     record: Record<string, number> | undefined,
@@ -1057,6 +1068,26 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
       {/* H. Errors & Issues */}
       <SectionHeader title={`Errors & Issues (${timeRange === "today" ? "last 24h" : timeRange === "7d" ? "last 7 days" : timeRange === "90d" ? "last 90 days" : "last 30 days"})`} />
 
+      {/* Credit-balance summary: platform failures are ours to fix; BYOK failures are user billing. */}
+      {(creditBalanceSummary.platform > 0 || creditBalanceSummary.byok > 0) && (
+        <div
+          className="mb-3 rounded-md px-3 py-2 text-xs flex items-center gap-3"
+          style={{
+            background: creditBalanceSummary.platform > 0 ? "rgba(239,68,68,0.10)" : "var(--bg-surface)",
+            border: `1px solid ${creditBalanceSummary.platform > 0 ? "rgba(239,68,68,0.40)" : "var(--studio-border)"}`,
+          }}
+        >
+          <span style={{ color: creditBalanceSummary.platform > 0 ? "#ef4444" : "var(--text-secondary)", fontWeight: 500 }}>
+            {creditBalanceSummary.platform > 0
+              ? `${creditBalanceSummary.platform} platform credit failure${creditBalanceSummary.platform === 1 ? "" : "s"} — top up at console.anthropic.com`
+              : "Credit-balance errors"}
+          </span>
+          <span style={{ color: "var(--text-muted)" }}>
+            {creditBalanceSummary.byok} BYOK user{creditBalanceSummary.byok === 1 ? "" : "s"} also hit their own Anthropic limit
+          </span>
+        </div>
+      )}
+
       {/* Endpoint badges */}
       {errors && Object.keys(errors.countByEndpoint).length > 0 && (
         <div className="flex flex-wrap gap-2 mb-3">
@@ -1147,11 +1178,30 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
                   </td>
                   <td
                     className="px-3 py-2 font-mono"
-                    style={{ color: err.status >= 500 ? "#ef4444" : "#f59e0b" }}
+                    style={{
+                      color:
+                        err.metadata?.errorClass === "credit_balance_exhausted" && err.metadata?.mode === "byok"
+                          ? "var(--text-muted)"
+                          : err.status >= 500
+                            ? "#ef4444"
+                            : "#f59e0b",
+                    }}
                   >
                     {err.status}
                   </td>
                   <td className="px-3 py-2 max-w-[280px] truncate" style={{ color: "var(--text-secondary)" }}>
+                    {err.metadata?.errorClass === "credit_balance_exhausted" && (
+                      <span
+                        className="inline-block mr-2 px-1.5 py-0.5 rounded text-[10px] font-medium"
+                        style={{
+                          background: err.metadata?.mode === "hosted" ? "rgba(239,68,68,0.15)" : "rgba(107,114,128,0.15)",
+                          color: err.metadata?.mode === "hosted" ? "#ef4444" : "var(--text-muted)",
+                          border: `1px solid ${err.metadata?.mode === "hosted" ? "rgba(239,68,68,0.40)" : "var(--studio-border)"}`,
+                        }}
+                      >
+                        {err.metadata?.mode === "hosted" ? "Platform credits" : "User BYOK"}
+                      </span>
+                    )}
                     {err.message.length > 60 ? err.message.slice(0, 60) + "..." : err.message}
                   </td>
                   <td className="px-3 py-2 max-w-[120px] truncate font-mono" style={{ color: "var(--text-muted)" }}>

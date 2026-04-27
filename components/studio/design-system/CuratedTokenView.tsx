@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
-import { Plus, Sun, Moon } from "lucide-react";
+import { Plus, Sun, Moon, Wand2 } from "lucide-react";
 import type { ExtractedToken, ProjectStandardisation, DesignSystemSnapshot, TokenType } from "@/lib/types";
 import {
   SCHEMA_CATEGORIES,
@@ -43,6 +43,7 @@ interface CuratedTokenViewProps {
   onUpdateToken: (tokenType: "colors" | "typography" | "spacing" | "radius" | "effects", name: string, value: string) => void;
   onRemoveToken: (tokenType: "colors" | "typography" | "spacing" | "radius" | "effects", names: string[]) => void;
   onRenameToken: (tokenType: "colors" | "typography" | "spacing" | "radius" | "effects", oldName: string, newName: string) => void;
+  onRestandardise?: () => void;
 }
 
 export function CuratedTokenView({
@@ -55,6 +56,7 @@ export function CuratedTokenView({
   onUpdateToken,
   onRemoveToken,
   onRenameToken,
+  onRestandardise,
 }: CuratedTokenViewProps) {
   const { assignments } = standardisation;
   const assignTokenToRole = useProjectStore((s) => s.assignTokenToRole);
@@ -62,18 +64,18 @@ export function CuratedTokenView({
   const addToken = useProjectStore((s) => s.addToken);
   const updateStandardisation = useProjectStore((s) => s.updateStandardisation);
 
-  // Mode awareness. Any project that extracted tokens tagged with a non-
-  // default mode (typically "dark") gets a mode toggle so users can curate
-  // each mode's role assignments independently. Projects without mode
-  // variants get the old single-view experience.
+  // Mode awareness. Curated only renders colour roles, so the toggle should
+  // only surface modes that have at least one colour-typed token (or an
+  // existing colour-role assignment). Otherwise non-colour modes leak in —
+  // e.g. the Figma SDS file tags spacing tokens with Desktop/Mobile/Tablet
+  // and those rendered as empty colour-mode tabs.
   const availableModes = useMemo(() => {
     const modes = new Set<string>();
     for (const t of allTokens) {
-      if (t.mode) modes.add(t.mode);
+      if (t.mode && t.type === "color") modes.add(t.mode);
     }
-    // Also surface modes already present in assignments (e.g. dark-only kits
-    // where every dark token has been assigned and removed from the
-    // unassigned list).
+    // Existing assignments are already colour-only because Curated renders
+    // only colour categories, so any mode tag found here is in scope.
     for (const a of Object.values(assignments)) {
       if (a.mode) modes.add(a.mode);
     }
@@ -353,6 +355,20 @@ export function CuratedTokenView({
               Copy from Light
             </button>
           )}
+        {/* Run the standardiser against the current token pool. Useful when
+            assignments are empty (fresh import) or stale (extraction names
+            changed under existing assignments). Snapshots before running so
+            user-confirmed work can be rolled back. */}
+        {onRestandardise && (
+          <button
+            onClick={onRestandardise}
+            className="flex items-center gap-1 rounded-md border border-[var(--studio-border)] bg-[var(--bg-panel)] px-2.5 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+            title="Auto-fill empty role slots by running the matcher against your current tokens. Existing assignments are snapshotted so you can roll back."
+          >
+            <Wand2 className="h-3 w-3" />
+            Auto-fill from tokens
+          </button>
+        )}
         {/* Mode toggle — only rendered when the project has mode variants. */}
         {hasModes && (
           <div className="flex items-center rounded-md border border-[var(--studio-border)] bg-[var(--bg-panel)] p-0.5">
@@ -379,7 +395,7 @@ export function CuratedTokenView({
                 }`}
                 title={`${m} mode assignments`}
               >
-                {m === "dark" ? <Moon className="h-3 w-3" /> : null}
+                {m.toLowerCase().includes("dark") ? <Moon className="h-3 w-3" /> : null}
                 <span className="capitalize">{m}</span>
               </button>
             ))}

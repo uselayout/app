@@ -310,9 +310,11 @@ GOOGLE_AI_API_KEY=...                 # Optional: for AI image generation (plann
 
 **Two-step process:**
 1. Add entries to `content/changelog/draft.ts` (same format as existing entries)
-2. Run `npx tsx scripts/add-changelog.ts` to sync them to Supabase
+2. Run `npx tsx scripts/add-changelog.ts --env staging` (or `--env production`) to sync them to the right Supabase via SSH+docker.
 
 The admin UI reads from Supabase (`layout_changelog_draft` table). The sync script upserts entries by ID, so it's safe to run multiple times.
+
+**Do NOT** rely on `.env.local` for changelog/migration sync — local dev `.env.local` may point at a Supabase that isn't used for Layout (e.g. `supabase.unified.studio`). Always use the `--env` flag, which targets the correct container on the Hetzner box (`94.130.130.22`). Same rule for migrations: pipe SQL via `ssh root@94.130.130.22 "docker exec -i supabase-db-<service> psql -U postgres"` (see `memory/project_staging_environment.md` for container IDs).
 
 - **Products:** `studio`, `cli`, `figma-plugin`, `chrome-extension`
 - **Categories:** `new` (brand new feature), `improved` (enhancement), `fixed` (bug fix)

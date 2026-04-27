@@ -64,7 +64,10 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24,
     cookieCache: {
       enabled: true,
-      maxAge: 60 * 5,
+      // Longer cache means a Supabase restart up to this duration won't
+      // knock active users to the login page. Tradeoff: manually-revoked
+      // sessions take up to this long to take effect.
+      maxAge: 60 * 30,
     },
   },
   trustedOrigins: [

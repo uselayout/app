@@ -20,7 +20,7 @@ import { BrandingTab } from "./BrandingTab";
 import { ContextDocsTab } from "./ContextDocsTab";
 import { useOrgStore } from "@/lib/store/organization";
 import { Plus } from "lucide-react";
-import { standardiseTokens } from "@/lib/tokens/standardise";
+import { standardiseTokens, seedModeAssignments, detectColourModes } from "@/lib/tokens/standardise";
 import type { TokenType } from "@/lib/types";
 import type { StandardisedTokenMap } from "@/lib/tokens/standard-schema";
 import type { ProjectStandardisation } from "@/lib/types";
@@ -105,7 +105,17 @@ export function DesignSystemPanel({
     try {
       const tokenMap = standardiseTokens(tokens, source);
 
-      const assignments = Object.fromEntries(tokenMap.assignments);
+      // Seed mode-tagged twins for any colour mode the tokens carry. Without
+      // this, multi-mode kits (Figma SDS: SDS Light + SDS Dark) leave the
+      // mode tabs empty until the user manually clicks "Copy from Light".
+      const colourModes = detectColourModes(tokens);
+      const allFlatTokens = [
+        ...tokens.colors, ...tokens.typography, ...tokens.spacing,
+        ...tokens.radius, ...tokens.effects, ...(tokens.motion ?? []),
+      ];
+      const seeded = seedModeAssignments(tokenMap.assignments, allFlatTokens, colourModes);
+
+      const assignments = Object.fromEntries(seeded);
       updateStandardisation(projectId, {
         kitPrefix: tokenMap.kitPrefix,
         assignments,
@@ -123,22 +133,63 @@ export function DesignSystemPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokens, hasStandardisation]);
 
+  // Backfill mode-tagged assignments for projects that were standardised
+  // BEFORE seedModeAssignments shipped. Non-destructive: only adds twins
+  // for detected colour modes, never overwrites existing assignments. Runs
+  // once per session per project. Distinct from the standardisation auto-
+  // run above so user-confirmed work isn't snapshotted or replaced.
+  const ranModeBackfill = useRef(false);
+  useEffect(() => {
+    if (ranModeBackfill.current) return;
+    if (!tokens || !project?.standardisation) return;
+    const existing = project.standardisation.assignments;
+    if (Object.keys(existing).length === 0) return;
+    const colourModes = detectColourModes(tokens);
+    if (colourModes.length === 0) return;
+    const alreadyHasModeAssignments = Object.values(existing).some((a) => a.mode);
+    if (alreadyHasModeAssignments) {
+      ranModeBackfill.current = true;
+      return;
+    }
+    ranModeBackfill.current = true;
+
+    const allFlatTokens = [
+      ...tokens.colors, ...tokens.typography, ...tokens.spacing,
+      ...tokens.radius, ...tokens.effects, ...(tokens.motion ?? []),
+    ];
+    const baseMap = new Map(Object.entries(existing));
+    const seeded = seedModeAssignments(baseMap, allFlatTokens, colourModes);
+    if (seeded.size === baseMap.size) return;  // nothing new to add
+
+    updateStandardisation(projectId, {
+      ...project.standardisation,
+      assignments: Object.fromEntries(seeded),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokens, project?.standardisation, projectId]);
+
   // Re-standardise handler (for manual refresh)
   const handleRestandardise = useCallback(() => {
     if (!tokens) return;
     const source = project?.sourceUrl ?? extractionData?.sourceName ?? project?.name ?? "unknown";
     createSnapshot(projectId, "Before re-standardisation");
     const tokenMap = standardiseTokens(tokens, source);
+    const colourModes = detectColourModes(tokens);
+    const allFlatTokens = [
+      ...tokens.colors, ...tokens.typography, ...tokens.spacing,
+      ...tokens.radius, ...tokens.effects, ...(tokens.motion ?? []),
+    ];
+    const seeded = seedModeAssignments(tokenMap.assignments, allFlatTokens, colourModes);
     const serialisable: ProjectStandardisation = {
       kitPrefix: tokenMap.kitPrefix,
-      assignments: Object.fromEntries(tokenMap.assignments),
+      assignments: Object.fromEntries(seeded),
       unassigned: tokenMap.unassigned,
       antiPatterns: tokenMap.antiPatterns,
       standardisedAt: new Date().toISOString(),
     };
     updateStandardisation(projectId, serialisable);
     setViewMode("curated");
-  }, [tokens, project, projectId, updateStandardisation, createSnapshot]);
+  }, [tokens, project, projectId, updateStandardisation, createSnapshot, extractionData]);
 
   // Flatten all tokens for the curated view lookup
   const allTokensFlat = useMemo<ExtractedToken[]>(() => {
@@ -448,6 +499,7 @@ export function DesignSystemPanel({
             onUpdateToken={handleUpdateToken}
             onRemoveToken={(tokenType, names) => handleRemoveToken(tokenType, names)}
             onRenameToken={handleRenameToken}
+            onRestandardise={handleRestandardise}
           />
         )}
 

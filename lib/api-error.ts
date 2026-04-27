@@ -49,6 +49,48 @@ export function isTransientError(err: unknown): boolean {
   return false;
 }
 
+export type ApiErrorClass =
+  | "credit_balance_exhausted"
+  | "context_too_large"
+  | "authentication"
+  | "rate_limited"
+  | "overloaded";
+
+/**
+ * Classifies an Anthropic/Google/etc API error into a stable category for
+ * logging and admin filtering. Returns a normalised HTTP status so downstream
+ * logs accurately reflect billing vs. server issues — an exhausted credit
+ * balance is a 402, not a 500.
+ */
+export function classifyApiError(err: unknown): {
+  errorClass: ApiErrorClass | null;
+  status: number;
+} {
+  const info = extractErrorInfo(err);
+  const type = info.type ?? "";
+  const msg = info.error ?? "";
+
+  if (type === "invalid_request_error" && /credit balance/i.test(msg)) {
+    return { errorClass: "credit_balance_exhausted", status: 402 };
+  }
+  if (
+    type === "invalid_request_error" &&
+    (msg.includes("too many tokens") || msg.includes("context length") || msg.includes("too long"))
+  ) {
+    return { errorClass: "context_too_large", status: 400 };
+  }
+  if (info.status === 401 || /authentication|invalid api key/i.test(msg)) {
+    return { errorClass: "authentication", status: 401 };
+  }
+  if (type === "rate_limit_error" || /rate limit/i.test(msg)) {
+    return { errorClass: "rate_limited", status: 429 };
+  }
+  if (type === "overloaded_error" || info.status === 529 || /overloaded/i.test(msg)) {
+    return { errorClass: "overloaded", status: 529 };
+  }
+  return { errorClass: null, status: typeof info.status === "number" ? info.status : 500 };
+}
+
 /**
  * Maps raw API errors to user-friendly messages.
  */
@@ -66,6 +108,8 @@ export function friendlyApiError(err: unknown): string {
     (msg.includes("too many tokens") || msg.includes("context length") || msg.includes("too long"))
   )
     return "This design system is too large for a single generation. Try a smaller file or reduce the number of styles.";
+  if (type === "invalid_request_error" && /credit balance/i.test(msg))
+    return "Your Anthropic API key is out of credits. Top up at console.anthropic.com and try again, or switch to hosted mode in Settings.";
   if (msg.includes("authentication") || msg.includes("401"))
     return "Authentication failed. Check your API key in Settings.";
   if (

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   });
 
   try {
-    let js = transpileTsx(strippedCode);
+    let js = await transpileTsx(strippedCode);
     // Restore base64 data URLs in the transpiled output
     for (let i = 0; i < dataUrlPlaceholders.length; i++) {
       js = js.replace(`__DATA_URL_${i}__`, dataUrlPlaceholders[i]);

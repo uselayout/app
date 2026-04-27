@@ -1,0 +1,82 @@
+import "server-only";
+import { chromium, type BrowserContext, type Page } from "playwright";
+import { uploadToBucket } from "@/lib/supabase/storage";
+import { kitSnapshotLimit } from "@/lib/concurrency";
+
+// Match the card's 4:3 aspect ratio so the screenshot fills the preview slot
+// without either letterboxing or the right/bottom of the showcase getting
+// cropped. 1440x1080 gives the showcase 1080px of vertical room (enough for
+// hero + palette + typography to render), which is the most visually
+// interesting part for the card thumbnail.
+const VIEWPORT = { width: 1440, height: 1080 };
+const NAV_TIMEOUT_MS = 30_000;
+const RENDER_WAIT_MS = 2_500;
+
+/**
+ * Playwright-based PNG generator for gallery cards. Navigates to the kit's
+ * detail page in snapshot mode, waits for the showcase iframe to finish
+ * rendering, and returns a PNG buffer.
+ *
+ * The detail page opts into snapshot mode when `?snapshot=1` is set on the
+ * URL — in that state it hides the outer chrome (header, back link, tabs,
+ * sidebar) and renders only the showcase iframe at full width. See
+ * app/gallery/[slug]/page.tsx.
+ */
+export async function captureKitShowcasePng(
+  kitSlug: string,
+  baseUrl: string,
+): Promise<Buffer | null> {
+  const target = `${baseUrl.replace(/\/$/, "")}/gallery/${encodeURIComponent(kitSlug)}?snapshot=1`;
+  const browser = await chromium.launch({ headless: true });
+  // Track context + page so we can close them even when the inner ops
+  // throw. Without this, a goto / screenshot timeout left the Chromium
+  // context + WebSocket open, accumulating zombie subprocesses on the
+  // staging container until file descriptors ran out and Coolify
+  // dropped the backend ("no available server").
+  let context: BrowserContext | null = null;
+  let page: Page | null = null;
+  try {
+    context = await browser.newContext({ viewport: VIEWPORT });
+    page = await context.newPage();
+    await page.goto(target, { waitUntil: "networkidle", timeout: NAV_TIMEOUT_MS });
+    // Give the inner iframe enough time to load React from the CDN, run the
+    // showcase JS, and paint. networkidle above does not wait for subframes.
+    await page.waitForTimeout(RENDER_WAIT_MS);
+    // Clip to viewport (not fullPage) so the capture is exactly 1440x1080.
+    // Anything past the fold is intentionally cropped — the detail page
+    // shows the full scrollable showcase.
+    const buffer = await page.screenshot({
+      type: "png",
+      fullPage: false,
+      clip: { x: 0, y: 0, width: VIEWPORT.width, height: VIEWPORT.height },
+      timeout: 15_000,
+    });
+    return buffer;
+  } finally {
+    if (page) await page.close().catch(() => {});
+    if (context) await context.close().catch(() => {});
+    await browser.close().catch(() => {});
+  }
+}
+
+/**
+ * Capture the showcase PNG and upload it to the screenshots bucket. Returns
+ * the proxied /api/storage URL on success, null on failure.
+ */
+export async function captureAndUploadKitPreview(
+  kitId: string,
+  kitSlug: string,
+  baseUrl: string,
+): Promise<string | null> {
+  // Single-flight via kitSnapshotLimit so two publishes can't launch
+  // two Chromiums on the same container. Excess calls queue.
+  return kitSnapshotLimit(async () => {
+    const buffer = await captureKitShowcasePng(kitSlug, baseUrl).catch((err) => {
+      console.error(`[kit-snapshot] capture failed for ${kitSlug}:`, err);
+      return null;
+    });
+    if (!buffer) return null;
+    const path = `kit-previews/${kitId}.png`;
+    return uploadToBucket("screenshots", path, buffer, "image/png", { upsert: true });
+  });
+}

@@ -15,7 +15,9 @@ import { EditorPanel } from "@/components/studio/EditorPanel";
 import { SourcePanel } from "@/components/studio/SourcePanel";
 import { ExplorerCanvas } from "@/components/studio/ExplorerCanvas";
 import { ExportModal } from "@/components/studio/ExportModal";
+import { ShareToGalleryModal } from "@/components/studio/ShareToGalleryModal";
 import { ExtractionDiffModal } from "@/components/studio/ExtractionDiffModal";
+import { useOrgStore } from "@/lib/store/organization";
 import { diffExtractions } from "@/lib/extraction/diff";
 import type { ExtractionDiff } from "@/lib/extraction/diff";
 import type { DesignVariant, ExtractionResult, SourceType, ContextFile } from "@/lib/types";
@@ -212,6 +214,8 @@ export default function StudioPage({
   const extractionStarted = useRef(false);
   const autoGenerateStarted = useRef(false);
   const [showExport, setShowExport] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const currentOrgSlug = useOrgStore((s) => s.currentOrg()?.slug);
   const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved" | "design-system">(
     tabParam === "editor" ? "editor" : "canvas"
   );
@@ -546,6 +550,7 @@ export default function StudioPage({
         onNameChange={(name) => updateProjectName(id, name)}
         onReExtract={handleReExtract}
         onExport={() => setShowExport(true)}
+        onShareToGallery={currentOrgSlug ? () => setShowShare(true) : undefined}
         showSourceToggle={centreView === "editor"}
       />
       <div className="flex-1 overflow-hidden">
@@ -596,6 +601,14 @@ export default function StudioPage({
       </div>
       {showExport && (
         <ExportModal project={project} onClose={() => setShowExport(false)} />
+      )}
+      {showShare && currentOrgSlug && (
+        <ShareToGalleryModal
+          project={project}
+          orgSlug={currentOrgSlug}
+          open={showShare}
+          onClose={() => setShowShare(false)}
+        />
       )}
       {pendingDiff && (
         <ExtractionDiffModal

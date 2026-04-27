@@ -57,3 +57,39 @@ export const playwrightLimit = createLimiter(6, 120_000);
 
 /** Max 10 concurrent Claude API generation streams (60s queue timeout) */
 export const generationLimit = createLimiter(10, 60_000);
+
+/**
+ * Max 2 concurrent bespoke showcase generations. Tighter than
+ * generationLimit because each call ends with `transpileTsx()` — a
+ * synchronous TypeScript compile that pegs the Node single-thread.
+ * Seven of these in flight at once saturated the CPU and blocked the
+ * /api/health/ready endpoint, causing Coolify to mark the container
+ * unhealthy and Traefik to drop the backend. 2 keeps headroom for
+ * other request handlers. 3 min queue (bespoke generation can take
+ * 60-90s with max_tokens 16000).
+ */
+export const bespokeShowcaseLimit = createLimiter(2, 180_000);
+
+/**
+ * Max 3 concurrent style-profile generations. Shorter Claude output
+ * (JSON, ~3000 tokens), no transpile, so cheaper than bespoke — but
+ * still bounded so we never repeat the CPU starvation incident.
+ */
+export const styleProfileLimit = createLimiter(3, 90_000);
+
+/**
+ * Max 1 concurrent hero generation. GPT Image 2 takes ~30s and the
+ * response is decoded from base64 into a Buffer — under load this
+ * compounds with bespoke + snapshot to push the container over the
+ * edge. Single-flight is fine because publishes happen one-at-a-time.
+ */
+export const heroGenerationLimit = createLimiter(1, 120_000);
+
+/**
+ * Max 1 concurrent Playwright kit-card snapshot. A Chromium browser
+ * launch + viewport render + PNG capture is the heaviest single
+ * operation in the publish pipeline (~30s, 150-300MB RAM). Capping
+ * at 1 keeps memory bounded and stops two snapshots fighting for
+ * GPU/CPU on the same Linux container.
+ */
+export const kitSnapshotLimit = createLimiter(1, 120_000);

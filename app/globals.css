@@ -343,8 +343,11 @@
 /* ── Marketing page ─────────────────────────────────────────────────────────── */
 
 :root {
-  /* Marketing design tokens */
+  /* Marketing design tokens (dark) */
   --mkt-bg: #080705;
+  --mkt-surface: #16161d;          /* cards, inputs — distinct from bg */
+  --mkt-surface-elevated: #1f1f27; /* hover/selected surfaces */
+  --mkt-surface-muted: #0f0f13;    /* subtle panels (gallery preview gradient) */
   --mkt-accent: #e4f222;
   --mkt-text-primary: #f7f8f8;
   --mkt-text-secondary: #8a8f98;
@@ -353,7 +356,34 @@
   --mkt-btn-primary-text: #08090a;
   --mkt-btn-secondary-bg: #28282c;
   --mkt-btn-secondary-border: #3e3e44;
-  --mkt-border: rgba(255, 255, 255, 0.08);
+  --mkt-border: rgba(255, 255, 255, 0.10);
+  --mkt-border-strong: rgba(255, 255, 255, 0.22);
+}
+
+/* Marketing logo ships as a white-on-transparent SVG. In light-mode contexts
+   we invert it to black so the wordmark stays legible. Applied via a class on
+   the img, not a global img selector, to avoid touching other assets. */
+[data-mkt-theme="light"] .mkt-logo {
+  filter: brightness(0);
+}
+
+/* Light variant for pages that opt in via data-mkt-theme="light". Accent
+   stays yellow so the brand cue survives. */
+[data-mkt-theme="light"] {
+  --mkt-bg: #fafaf7;
+  --mkt-surface: #ffffff;
+  --mkt-surface-elevated: #f4f4ee;
+  --mkt-surface-muted: #f1f1eb;
+  --mkt-accent: #e4f222;
+  --mkt-text-primary: #111114;
+  --mkt-text-secondary: #5c5e63;
+  --mkt-text-muted: #9097a0;
+  --mkt-btn-primary-bg: #111114;
+  --mkt-btn-primary-text: #ffffff;
+  --mkt-btn-secondary-bg: #eceadd;
+  --mkt-btn-secondary-border: #d9d6c4;
+  --mkt-border: rgba(17, 17, 20, 0.10);
+  --mkt-border-strong: rgba(17, 17, 20, 0.20);
 }
 
 /* Entrance animations */

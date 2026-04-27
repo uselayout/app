@@ -1,0 +1,562 @@
+[
+  {
+    "url": "https://linear.app",
+    "name": "Linear",
+    "description": "Dark, ultra-minimal developer-tool aesthetic. Tight spacing, indigo accent, monospace touches. The reference point for modern issue-tracker UI.",
+    "tags": ["dark", "minimal", "developer-tool", "saas", "productivity"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "Linaer.png"
+  },
+  {
+    "url": "https://stripe.com",
+    "name": "Stripe",
+    "description": "Light, high-trust palette with generous whitespace, gradient hero panels, and crisp typography. Sets the bar for fintech and developer-API marketing sites.",
+    "tags": ["light", "fintech", "saas", "developer-tool", "gradient", "premium"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "Stripe.png"
+  },
+  {
+    "url": "https://www.notion.so",
+    "name": "Notion",
+    "description": "Light, content-first, block-based interface. Generous typography, emoji-friendly accents, and a warm neutral palette geared towards docs and knowledge work.",
+    "tags": ["light", "content-first", "minimal", "productivity", "knowledge-base"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "Notion.png"
+  },
+  {
+    "url": "https://vercel.com",
+    "name": "Vercel",
+    "description": "Mono-chrome dark aesthetic with sharp geometric edges and Geist typography. The canonical look for modern frontend infrastructure.",
+    "tags": ["dark", "minimal", "developer-tool", "infra", "monochrome"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "Vercel.png"
+  },
+  {
+    "url": "https://www.figma.com",
+    "name": "Figma",
+    "description": "Light, energetic palette with multi-colour accents and rounded UI. Designed to showcase the playful, multiplayer nature of design tooling.",
+    "tags": ["light", "vibrant", "design-tool", "saas", "creative"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "Figma.png"
+  },
+  {
+    "url": "https://www.apple.com",
+    "name": "Apple",
+    "description": "Premium minimalism: full-bleed product photography, generous whitespace, San Francisco type, and restrained black-on-white hierarchy.",
+    "tags": ["light", "minimal", "premium", "consumer", "hardware", "ecommerce"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "Apple.png"
+  },
+  {
+    "url": "https://www.adobe.com",
+    "name": "Adobe",
+    "description": "Bold, creative aesthetic anchored by Adobe Red. High-contrast type, image-led sections, and dense product navigation typical of mature creative suites.",
+    "tags": ["light", "creative", "design-tool", "enterprise", "bold"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "adobe.png"
+  },
+  {
+    "url": "https://asana.com",
+    "name": "Asana",
+    "description": "Friendly, warm palette led by coral and orange. Rounded shapes, illustrative hero art, and approachable copy aimed at non-technical teams.",
+    "tags": ["light", "friendly", "productivity", "project-management", "saas"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "asana.png"
+  },
+  {
+    "url": "https://attio.com",
+    "name": "Attio",
+    "description": "Dark, minimal CRM aesthetic. Dense data tables, subtle gradients, and editorial typography aimed at modern revenue teams.",
+    "tags": ["dark", "minimal", "crm", "saas", "productivity"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "attio.png"
+  },
+  {
+    "url": "https://monzo.com",
+    "name": "Monzo",
+    "description": "Vibrant coral red on white with bold sans-serif headlines. Mobile-first banking aesthetic that reads as energetic and consumer-friendly.",
+    "tags": ["light", "vibrant", "fintech", "banking", "mobile-first"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "monzo.png"
+  },
+  {
+    "url": "https://www.airbnb.com",
+    "name": "Airbnb",
+    "description": "Photography-led marketplace UI. Soft rosy red accent, rounded cards, and Cereal type. Optimised for browsing and booking.",
+    "tags": ["light", "marketplace", "travel", "consumer", "photography-heavy"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "Airbnb.png"
+  },
+  {
+    "url": "https://claude.ai",
+    "name": "Claude",
+    "description": "Warm editorial aesthetic with beige and burnt-orange accents, serif headlines, and a deliberately literary tone. Calm and reflective for AI conversation.",
+    "tags": ["light", "warm", "ai", "editorial", "serif"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "Claude.png"
+  },
+  {
+    "url": "https://www.ibm.com",
+    "name": "IBM",
+    "description": "Corporate enterprise aesthetic built on IBM Plex. Strict grid, blue accent, and dense informational layout aimed at B2B buyers.",
+    "tags": ["light", "enterprise", "corporate", "b2b", "ibm-plex"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "IBM.png"
+  },
+  {
+    "url": "https://feyapp.com",
+    "name": "Fey",
+    "description": "Dark, premium investing-app aesthetic. Tight monospace data, neon accents, and editorial typography. Polished and product-led.",
+    "tags": ["dark", "premium", "fintech", "investing", "monospace"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "fey.png"
+  },
+  {
+    "url": "https://www.uber.com",
+    "name": "Uber",
+    "description": "Black-and-white modernist aesthetic. Geometric type, full-bleed photography, and a deliberate absence of colour outside imagery.",
+    "tags": ["light", "monochrome", "consumer", "mobility", "minimal"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "Uber.png"
+  },
+  {
+    "url": "https://ramp.com",
+    "name": "Ramp",
+    "description": "Calm, premium fintech aesthetic. Cream backgrounds, dark editorial type, and minimal use of colour. Confident and B2B-targeted.",
+    "tags": ["light", "premium", "fintech", "b2b", "editorial"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "ramp.png"
+  },
+  {
+    "url": "https://www.clay.com",
+    "name": "Clay",
+    "description": "Vivid gradient-led aesthetic with bold sans-serif headlines and animated illustrations. Energetic and product-forward for sales tooling.",
+    "tags": ["light", "vibrant", "gradient", "sales", "saas"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "clay.png"
+  },
+  {
+    "url": "https://folk.app",
+    "name": "Folk",
+    "description": "Soft, light CRM aesthetic with pastel accents and friendly rounded UI. Approachable contact management for small teams.",
+    "tags": ["light", "friendly", "crm", "productivity", "saas"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "folk.png"
+  },
+  {
+    "url": "https://www.nike.com",
+    "name": "Nike",
+    "description": "High-impact, bold consumer ecommerce. Full-bleed photography, oversized type, and tight black-on-white grids built around product hero shots.",
+    "tags": ["light", "bold", "ecommerce", "fashion", "sports"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "nike.png"
+  },
+  {
+    "url": "https://wise.com",
+    "name": "Wise",
+    "description": "Green-on-white friendly fintech aesthetic. Bold sans-serif headlines, illustrative spot art, and a confident global-money tone.",
+    "tags": ["light", "friendly", "fintech", "banking", "global"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "wise.png"
+  },
+  {
+    "url": "https://www.xero.com",
+    "name": "Xero",
+    "description": "Bright cyan-blue accent on white. Confident, professional accounting-software aesthetic with rounded UI and approachable type.",
+    "tags": ["light", "professional", "fintech", "accounting", "saas"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "xero.png"
+  },
+  {
+    "url": "https://cursor.com",
+    "name": "Cursor",
+    "description": "Dark, minimal IDE-led aesthetic. Mono-spaced code surfaces, restrained accent colour, and a focus on motion in product demos.",
+    "tags": ["dark", "minimal", "ai", "developer-tool", "ide"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "cursor.png"
+  },
+  {
+    "url": "https://www.paypal.com",
+    "name": "PayPal",
+    "description": "Trustworthy, navy-and-blue financial UI. Rounded shapes, friendly type, and a heritage palette that reads as established and consumer-friendly.",
+    "tags": ["light", "blue", "fintech", "payments", "consumer"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "Paypal.png"
+  },
+  {
+    "url": "https://www.hellobonsai.com",
+    "name": "Bonsai",
+    "description": "Soft greens and warm neutrals aimed at freelancers. Friendly type, approachable illustrations, and a calm productivity tone.",
+    "tags": ["light", "friendly", "freelance", "productivity", "saas"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "bonsai.png"
+  },
+  {
+    "url": "https://contra.com",
+    "name": "Contra",
+    "description": "Vibrant pink-and-orange marketplace aesthetic for independent freelancers. Confident type, generous whitespace, and bold portrait photography.",
+    "tags": ["light", "vibrant", "marketplace", "freelance", "creative"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "contra.png"
+  },
+  {
+    "url": "https://www.klarna.com",
+    "name": "Klarna",
+    "description": "Soft pink palette with confident sans-serif and friendly photography. The poster child of buy-now-pay-later consumer fintech.",
+    "tags": ["light", "friendly", "fintech", "payments", "ecommerce"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "klarna.png"
+  },
+  {
+    "url": "https://openai.com",
+    "name": "OpenAI",
+    "description": "Restrained, editorial AI aesthetic. Mostly black-and-white with monospace accents, generous whitespace, and a research-publication feel.",
+    "tags": ["light", "editorial", "ai", "minimal", "monospace"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "openai.png"
+  },
+  {
+    "url": "https://sentry.io",
+    "name": "Sentry",
+    "description": "Dark, developer-focused aesthetic with deep purple accents and Rubik typography. Built around real product screenshots and observability data.",
+    "tags": ["dark", "developer-tool", "observability", "saas", "purple"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "sentry.png"
+  },
+  {
+    "url": "https://www.google.com",
+    "name": "Google",
+    "description": "Iconic primary-colour palette on white. Friendly, approachable consumer UI with Material-style components and generous touch targets.",
+    "tags": ["light", "friendly", "consumer", "search", "material"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "google.png"
+  },
+  {
+    "url": "https://www.duolingo.com",
+    "name": "Duolingo",
+    "description": "Playful gamified aesthetic. Bright green accent, rounded illustrative mascot art, and friendly chunky type aimed at consumer learning.",
+    "tags": ["light", "playful", "education", "mobile", "gamification"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "duoling.png"
+  },
+  {
+    "url": "https://www.spotify.com",
+    "name": "Spotify",
+    "description": "Dark consumer aesthetic with vivid green accent. Album-art-led layouts, bold display type, and a music-first content density.",
+    "tags": ["dark", "consumer", "music", "media", "vibrant"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "spotify.png"
+  },
+  {
+    "url": "https://www.revolut.com",
+    "name": "Revolut",
+    "description": "Premium dark fintech aesthetic. Crisp typography, neon accent moments, and editorial product photography. Confident global-finance tone.",
+    "tags": ["dark", "premium", "fintech", "banking", "mobile-first"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "Revolut.png"
+  },
+  {
+    "url": "https://cash.app",
+    "name": "Cash App",
+    "description": "Bright lime-green payments aesthetic. Bold display type, expressive product photography, and a youth-coded mobile-first feel.",
+    "tags": ["light", "bold", "fintech", "payments", "mobile-first"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "cashapp.png"
+  },
+  {
+    "url": "https://clickup.com",
+    "name": "ClickUp",
+    "description": "Vivid multi-colour productivity aesthetic. Pink-purple-blue gradients, dense feature lists, and an enthusiastic everything-app tone.",
+    "tags": ["light", "vibrant", "gradient", "productivity", "project-management"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "clickup.png"
+  },
+  {
+    "url": "https://www.netflix.com",
+    "name": "Netflix",
+    "description": "Cinematic dark aesthetic. Iconic red accent, full-bleed key-art rows, and a content-first browsing experience.",
+    "tags": ["dark", "cinematic", "media", "streaming", "entertainment"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "netflix.png"
+  },
+  {
+    "url": "https://www.shopify.com",
+    "name": "Shopify",
+    "description": "Confident green-on-light commerce aesthetic. Approachable display type, illustrative panels, and a small-business-friendly tone.",
+    "tags": ["light", "friendly", "ecommerce", "saas", "b2b"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "shopify.png"
+  },
+  {
+    "url": "https://www.zendesk.com",
+    "name": "Zendesk",
+    "description": "Warm, professional support-software aesthetic. Soft greens, conversational illustrations, and product-led marketing layouts.",
+    "tags": ["light", "professional", "customer-support", "saas", "b2b"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "zendesk.png"
+  },
+  {
+    "url": "https://www.dropbox.com",
+    "name": "Dropbox",
+    "description": "Friendly cloud-storage aesthetic. Confident Sharp Grotesk type, indigo accents, and bold full-bleed colour panels.",
+    "tags": ["light", "friendly", "productivity", "storage", "saas"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "dropbox.png"
+  },
+  {
+    "url": "https://posthog.com",
+    "name": "PostHog",
+    "description": "Playful product-analytics aesthetic with hedgehog mascot. Bright yellow on white, monospace product data, and an irreverent developer tone.",
+    "tags": ["light", "playful", "developer-tool", "analytics", "saas"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "posthog.png"
+  },
+  {
+    "url": "https://webflow.com",
+    "name": "Webflow",
+    "description": "Designer-targeted website-builder aesthetic. Cool blues, dense product UI screenshots, and confident editorial sections aimed at studios.",
+    "tags": ["light", "design-tool", "website-builder", "saas", "creative"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "webflow.png"
+  },
+  {
+    "url": "https://www.airtable.com",
+    "name": "Airtable",
+    "description": "Vivid red-orange accent on white. Spreadsheet-meets-database UI with dense colourful records, friendly type, and product-led marketing.",
+    "tags": ["light", "vibrant", "database", "productivity", "saas"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "airtable.png"
+  },
+  {
+    "url": "https://www.coinbase.com",
+    "name": "Coinbase",
+    "description": "Crisp blue-on-white crypto aesthetic. Confident geometric Coinbase Sans, generous whitespace, and a regulated-finance tone.",
+    "tags": ["light", "blue", "fintech", "crypto", "consumer"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "coinbase.png"
+  },
+  {
+    "url": "https://supabase.com",
+    "name": "Supabase",
+    "description": "Dark developer-tool aesthetic with vivid Supabase-green accents. Mono-spaced code surfaces, dense docs, and an open-source community tone.",
+    "tags": ["dark", "developer-tool", "database", "infra", "open-source"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "supabase.png"
+  },
+  {
+    "url": "https://dovetail.com",
+    "name": "Dovetail",
+    "description": "Vivid multi-colour user-research aesthetic. Soft pinks and purples, expressive illustrations, and a research-team-friendly tone.",
+    "tags": ["light", "vibrant", "research", "ux", "saas"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "doevtail.png"
+  },
+  {
+    "url": "https://www.doordash.com",
+    "name": "DoorDash",
+    "description": "Warm red-on-white delivery aesthetic. Photography-led food imagery, rounded UI, and a friendly local-merchant tone.",
+    "tags": ["light", "friendly", "delivery", "marketplace", "food"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "doordash.png"
+  },
+  {
+    "url": "https://www.intercom.com",
+    "name": "Intercom",
+    "description": "Conversational support-software aesthetic. Cobalt-blue accent, illustrative messenger graphics, and confident product-led marketing.",
+    "tags": ["light", "conversational", "customer-support", "saas", "b2b"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "intercom.png"
+  },
+  {
+    "url": "https://www.mercedes-benz.com",
+    "name": "Mercedes-Benz",
+    "description": "Luxury automotive aesthetic. Black, silver, and editorial photography. Confident serif accents and a heritage premium-brand tone.",
+    "tags": ["dark", "luxury", "automotive", "premium", "consumer"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "mercedes.png"
+  },
+  {
+    "url": "https://mixpanel.com",
+    "name": "Mixpanel",
+    "description": "Purple-led product-analytics aesthetic. Data-heavy hero charts, confident sans-serif type, and a B2B product-team tone.",
+    "tags": ["light", "purple", "analytics", "saas", "b2b"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "mixpanel.png"
+  },
+  {
+    "url": "https://www.pinterest.com",
+    "name": "Pinterest",
+    "description": "Iconic masonry-grid visual-discovery aesthetic. Red accent, image-led UI, and a feed-first browsing experience.",
+    "tags": ["light", "social", "visual", "marketplace", "consumer"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "pintrest.png"
+  },
+  {
+    "url": "https://www.whatsapp.com",
+    "name": "WhatsApp",
+    "description": "Friendly mobile-messaging aesthetic. Vivid teal-green accent, conversational chat-bubble UI, and a global-consumer tone.",
+    "tags": ["light", "friendly", "messaging", "mobile-first", "social"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "whastapp.png"
+  },
+  {
+    "url": "https://www.headspace.com",
+    "name": "Headspace",
+    "description": "Warm, calming wellness aesthetic. Soft orange palette, friendly illustrative characters, and approachable rounded type.",
+    "tags": ["light", "warm", "wellness", "mobile", "consumer"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "headspace.png"
+  },
+  {
+    "url": "https://www.microsoft.com",
+    "name": "Microsoft",
+    "description": "Fluent enterprise aesthetic. Cobalt blue accent, Segoe-family typography, and product-tile-led navigation aimed at enterprise buyers.",
+    "tags": ["light", "enterprise", "productivity", "fluent", "b2b"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "microsoft.png"
+  },
+  {
+    "url": "https://elevenlabs.io",
+    "name": "ElevenLabs",
+    "description": "Dark AI-voice aesthetic. Subtle gradients, mono-spaced code, and a research-tool tone for synthetic-voice tooling.",
+    "tags": ["dark", "ai", "voice", "developer-tool", "saas"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "elevenlbas.png"
+  },
+  {
+    "url": "https://www.salesforce.com",
+    "name": "Salesforce",
+    "description": "Enterprise CRM aesthetic. Cobalt-blue palette, dense feature navigation, and Lightning-style components aimed at large B2B buyers.",
+    "tags": ["light", "enterprise", "crm", "b2b", "lightning"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "salesforce.png"
+  },
+  {
+    "url": "https://customer.io",
+    "name": "Customer.io",
+    "description": "Crisp marketing-automation aesthetic. Cool blues on white, illustrative spot art, and product-screenshot-driven sections aimed at growth teams.",
+    "tags": ["light", "blue", "marketing", "automation", "saas"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "customer.io.png"
+  },
+  {
+    "url": "https://www.perplexity.ai",
+    "name": "Perplexity",
+    "description": "Dark AI-search aesthetic. Mint-teal accents, condensed editorial typography, and a clean answer-engine UI.",
+    "tags": ["dark", "ai", "search", "minimal", "productivity"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "perpelixity.png"
+  }
+]

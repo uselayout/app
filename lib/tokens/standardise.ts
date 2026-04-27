@@ -382,6 +382,41 @@ const FRAMEWORK_PREFIXES = ["grid-", "tw-", "transition-", "animation-", "contai
 /** Third-party overlay/consent/analytics tokens to exclude from standardisation */
 const THIRD_PARTY_PATTERNS = ["fides-", "onetrust-", "iubenda-", "cookiebot-", "consent-", "cookie-banner", "hotjar-", "intercom-"];
 
+/**
+ * Words that mark a token as belonging to non-default roles. Detected as a
+ * whole segment of the kebab/snake-cased name so we catch both prefix forms
+ * (success-border, disabled-text) and suffix forms (border-success,
+ * text-disabled).
+ *
+ * Without the demotion these tokens tie with the unprefixed normal/default
+ * variants on score and steal the default role purely on iteration order —
+ * Linear's `success-border` was beating `normal-border` for the Default
+ * Border slot before this fix.
+ *
+ * Notably absent: `hover`, `focus`, `selected`, `pressed`, `active`. Those
+ * are referenced as keywords by dedicated roles (bg-hover, accent-hover,
+ * border-focus, bg-selected) — demoting them globally would break those
+ * roles' matching. `disabled` and `loading` have no dedicated role in the
+ * schema, so they're safe to demote.
+ */
+const NON_DEFAULT_SEGMENT_WORDS = new Set([
+  // Status / feedback
+  "success", "warning", "error", "danger", "info", "positive", "negative", "destructive", "critical",
+  // Disabled / loading — neither has a dedicated role; we don't want them
+  // filling default-tier slots.
+  "disabled", "loading",
+]);
+
+/** Roles that are owned by the status category and should not penalise non-default-flavoured tokens. */
+const DEFAULT_TIER_CATEGORIES: ReadonlySet<string> = new Set(["backgrounds", "text", "borders", "accent"]);
+
+function isNonDefaultFlavoured(strippedName: string): boolean {
+  for (const segment of strippedName.split(/[-_]/)) {
+    if (NON_DEFAULT_SEGMENT_WORDS.has(segment)) return true;
+  }
+  return false;
+}
+
 /** Strip common vendor/framework prefixes from token names for matching. */
 function stripCommonPrefixes(name: string): string {
   return name
@@ -399,6 +434,17 @@ function scoreNameMatch(role: StandardRole, strippedName: string, rawName: strin
 
   // Penalise overlay/modal/popup tokens (likely not core design system)
   if (rawName.includes("overlay") || rawName.includes("modal") || rawName.includes("popup") || rawName.includes("backdrop")) {
+    score -= 5;
+  }
+
+  // Demote non-default-flavoured tokens (status: success/warning/error/
+  // danger/info/positive/negative/destructive/critical; state: disabled/
+  // selected/pressed/loading/active) when matching default-tier roles
+  // (backgrounds/text/borders/accent). Catches both prefix (success-border,
+  // disabled-text) and suffix (border-success, text-disabled) forms.
+  // Status roles themselves are exempt so the tokens still flow into
+  // Success / Warning / Error / Info as intended.
+  if (DEFAULT_TIER_CATEGORIES.has(role.category) && isNonDefaultFlavoured(strippedName)) {
     score -= 5;
   }
 
@@ -810,6 +856,75 @@ export function matchTokenToUnassignedRole(
     standardName: buildStandardName(kitPrefix, best.role.suffix),
     confidence: best.confidence,
   };
+}
+
+/**
+ * Given a set of mode-undefined assignments produced by `standardiseTokens`,
+ * derive mode-tagged twins for each (role, mode) pair where a same-name token
+ * tagged with `mode` exists in the token pool.
+ *
+ * Reuses the matcher's role decisions — same role, different value per mode —
+ * so the SDS Light / SDS Dark tabs in Curated populate themselves on first
+ * load instead of requiring the user to click "Copy from Light" per tab.
+ *
+ * The returned map contains both the original base assignments AND the new
+ * mode-tagged ones, keyed via `assignmentKey(roleKey, mode)`. Existing
+ * mode-tagged entries (e.g. user-confirmed overrides) are not overwritten.
+ */
+export function seedModeAssignments(
+  baseAssignments: Map<string, TokenAssignment>,
+  allTokens: ExtractedToken[],
+  modes: readonly string[]
+): Map<string, TokenAssignment> {
+  const result = new Map<string, TokenAssignment>(baseAssignments);
+  if (modes.length === 0) return result;
+
+  // Index tokens by their identity (cssVariable ?? name) for fast twin lookup.
+  const byTarget = new Map<string, ExtractedToken[]>();
+  for (const t of allTokens) {
+    const key = t.cssVariable ?? t.name;
+    const list = byTarget.get(key);
+    if (list) list.push(t);
+    else byTarget.set(key, [t]);
+  }
+
+  for (const mode of modes) {
+    for (const [roleKey, base] of baseAssignments) {
+      // Skip if this (role, mode) is already tagged in the base map
+      // (defensive — base assignments today have no mode tag).
+      if (base.mode === mode) continue;
+      const compoundKey = `${roleKey}::${mode}`;
+      if (result.has(compoundKey)) continue;
+
+      const target = base.originalCssVariable ?? base.originalName;
+      const twins = byTarget.get(target) ?? [];
+      const twin = twins.find((t) => t.mode === mode);
+      if (!twin) continue;
+
+      result.set(compoundKey, {
+        ...base,
+        mode,
+        value: twin.value,
+        originalName: twin.name,
+        originalCssVariable: twin.cssVariable,
+      });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Detect distinct colour-token modes present in the extraction. Used by
+ * `seedModeAssignments` so the per-mode seeding only runs for modes that
+ * could actually fill colour roles.
+ */
+export function detectColourModes(tokens: ExtractedTokens): string[] {
+  const modes = new Set<string>();
+  for (const t of tokens.colors) {
+    if (t.mode) modes.add(t.mode);
+  }
+  return [...modes].sort();
 }
 
 /**

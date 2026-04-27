@@ -8,6 +8,8 @@ import { DashboardTab } from "./DashboardTab";
 import { RoadmapTab } from "./RoadmapTab";
 import { VariantsTab } from "./VariantsTab";
 import { AIModelsTab } from "./AIModelsTab";
+import { KitsTab } from "./KitsTab";
+import { KitRequestsTab } from "./KitRequestsTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -113,11 +115,13 @@ function ToastContainer({ toasts }: { toasts: Toast[] }) {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className="px-4 py-3 rounded-lg text-sm font-mono"
+          className="px-4 py-3 rounded-lg text-sm font-mono shadow-lg"
           style={{
-            background: t.type === "success" ? "var(--bg-elevated)" : "#3b1010",
-            border: `1px solid ${t.type === "success" ? "var(--studio-border-strong)" : "#7f1d1d"}`,
-            color: "var(--text-primary)",
+            // Hardcoded dark-on-light contrast so the toast is readable
+            // regardless of which admin route's CSS variables resolve here.
+            background: t.type === "success" ? "#1a1a20" : "#3b1010",
+            border: `1px solid ${t.type === "success" ? "rgba(255,255,255,0.18)" : "#7f1d1d"}`,
+            color: "#ffffff",
           }}
         >
           {t.message}
@@ -2304,7 +2308,7 @@ function CreditsTab({ toast }: { toast: (msg: string, type?: "success" | "error"
 
 export function AdminClient() {
   const { data: session, isPending } = useSession();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "codes" | "requests" | "changelog" | "credits" | "ai-models" | "email" | "roadmap" | "variants">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "codes" | "requests" | "changelog" | "credits" | "ai-models" | "email" | "roadmap" | "variants" | "kits" | "kit-requests">("dashboard");
   const { toasts, show: toast } = useToast();
   const [pendingCount, setPendingCount] = useState(0);
   const [stats, setStats] = useState<AdminStatsData | null>(null);
@@ -2383,6 +2387,8 @@ export function AdminClient() {
     { key: "ai-models", label: "AI Models" },
     { key: "email", label: "Email" },
     { key: "variants", label: "Variants" },
+    { key: "kits", label: "Kits" },
+    { key: "kit-requests", label: "Kit requests" },
   ];
 
   return (
@@ -2473,6 +2479,12 @@ export function AdminClient() {
         )}
         {activeTab === "variants" && (
           <VariantsTab />
+        )}
+        {activeTab === "kits" && (
+          <KitsTab toast={toast} />
+        )}
+        {activeTab === "kit-requests" && (
+          <KitRequestsTab toast={toast} />
         )}
       </div>
 

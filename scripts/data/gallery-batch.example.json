@@ -1,0 +1,22 @@
+[
+  {
+    "url": "https://linear.app",
+    "name": "Linear",
+    "description": "Dark, minimal developer-tool aesthetic. Tight spacing, indigo accent, JetBrains Mono.",
+    "tags": ["dark", "minimal", "developer-tool", "saas"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "linear.png"
+  },
+  {
+    "url": "https://stripe.com",
+    "name": "Stripe",
+    "description": "Clean, high-trust light palette with generous spacing. Suited to fintech and checkout flows.",
+    "tags": ["light", "minimal", "fintech", "saas"],
+    "licence": "MIT",
+    "tier": "rich",
+    "include": { "components": true, "fonts": true, "branding": true, "context": true },
+    "cardImage": "stripe.png"
+  }
+]

@@ -3,12 +3,14 @@ import { z } from "zod/v4";
 import { createLayoutMdStream } from "@/lib/claude/synthesise";
 import { resizeScreenshot } from "@/lib/util/resize-screenshot";
 import { auth } from "@/lib/auth";
+import { resolveBearerAdmin } from "@/lib/api/admin-bearer";
 import { checkQuota, deductCredit, refundCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
 import { generateLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 import { logApiCall } from "@/lib/logging/api-log";
+import { classifyApiError } from "@/lib/api-error";
 import { logEvent } from "@/lib/logging/platform-event";
 import { fetchProjectById } from "@/lib/supabase/db";
 import type { ExtractionResult, ExtractedToken } from "@/lib/types";
@@ -72,13 +74,19 @@ const RequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const ip = await getClientIp();
-  const { success } = generateLimiter.check(20, ip);
-  if (!success) {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429, headers: { "Retry-After": "60" } }
-    );
+  // Resolve bearer-admin first so batch jobs skip rate limits.
+  // ADMIN_API_KEY is server-side only.
+  const bearerAdmin = await resolveBearerAdmin(request.headers);
+
+  if (!bearerAdmin) {
+    const ip = await getClientIp();
+    const { success } = generateLimiter.check(20, ip);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers: { "Retry-After": "60" } }
+      );
+    }
   }
 
   let body: unknown;
@@ -97,17 +105,21 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Auth: get session
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
+  // Auth: bearer-admin token (batch scripts) OR Better Auth session cookie.
+  const session = bearerAdmin
+    ? null
+    : await auth.api.getSession({ headers: request.headers });
+  if (!bearerAdmin && !session) {
     return Response.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const userId = session.user.id;
+  const userId = bearerAdmin?.id ?? session!.user.id;
 
-  const { success: withinLimit, reset } = checkUserRateLimit(userId);
-  if (!withinLimit) {
-    return rateLimitResponse(reset);
+  if (!bearerAdmin) {
+    const { success: withinLimit, reset } = checkUserRateLimit(userId);
+    if (!withinLimit) {
+      return rateLimitResponse(reset);
+    }
   }
 
   if (isShuttingDown()) {
@@ -127,6 +139,12 @@ export async function POST(request: NextRequest) {
     if (userApiKey && userApiKey.startsWith("sk-ant-")) {
       mode = "byok";
       apiKey = userApiKey;
+    } else if (bearerAdmin) {
+      // Bearer-admin (batch scripts) uses the platform Anthropic key without
+      // touching the credit ledger — quota checks and credit deduction are
+      // skipped because the caller is acting as the platform itself.
+      mode = "byok";
+      apiKey = process.env.ANTHROPIC_API_KEY;
     } else {
       const quota = await checkQuota(userId, "layout-md");
       if (!quota.allowed) {
@@ -212,7 +230,7 @@ export async function POST(request: NextRequest) {
     // Log usage on success, refund credit on failure
     void usage
       .then((u) => {
-        void logApiCall({ userId, endpoint: "generate/layout-md", statusCode: 200, durationMs: Date.now() - startTime, metadata: apiLogMetadata });
+        void logApiCall({ userId, endpoint: "generate/layout-md", statusCode: 200, durationMs: Date.now() - startTime, metadata: { ...apiLogMetadata, mode } });
         void logEvent("layout_md.created", "studio", { userId, metadata: { sourceType: extractionData.sourceType, componentCount: extractionData.components.length } });
         return logUsage({
           userId,
@@ -225,7 +243,15 @@ export async function POST(request: NextRequest) {
       })
       .catch(async (err) => {
         console.error("Stream failed, refunding credit:", err);
-        void logApiCall({ userId, endpoint: "generate/layout-md", statusCode: 500, durationMs: Date.now() - startTime, errorMessage: err instanceof Error ? err.message : String(err), metadata: apiLogMetadata });
+        const { errorClass, status } = classifyApiError(err);
+        void logApiCall({
+          userId,
+          endpoint: "generate/layout-md",
+          statusCode: status,
+          durationMs: Date.now() - startTime,
+          errorMessage: err instanceof Error ? err.message : String(err),
+          metadata: { ...apiLogMetadata, mode, errorClass },
+        });
         if (mode === "hosted") {
           await refundCredit(userId, "layout-md");
         }

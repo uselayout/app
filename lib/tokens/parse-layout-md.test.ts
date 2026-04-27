@@ -31,6 +31,24 @@ describe('parseTokensFromLayoutMd', () => {
     expect(result.radius[0].type).toBe('radius');
   });
 
+  it('classifies --border-radius as radius, not colour', () => {
+    // Order regression: `border` matched before `radius` so 8px got typed as
+    // colour and rendered as a white swatch in the All Tokens BORDERS group.
+    const md = wrapCss('--border-radius: 8px;\n--corner-radius: 4px;');
+    const result = parseTokensFromLayoutMd(md);
+    expect(result.radius).toHaveLength(2);
+    expect(result.colors).toHaveLength(0);
+  });
+
+  it('still classifies --border-color and --border-default as colour', () => {
+    // The order swap above must not change colour classification of normal
+    // border tokens.
+    const md = wrapCss('--border-color: #383838;\n--border-default: #cac4d0;');
+    const result = parseTokensFromLayoutMd(md);
+    expect(result.colors).toHaveLength(2);
+    expect(result.radius).toHaveLength(0);
+  });
+
   it('parses typography tokens (font-family, font-size, line-height)', () => {
     const md = wrapCss(
       '--font-family-sans: "Inter", sans-serif;\n--font-size-lg: 1.125rem;\n--line-height-normal: 1.5;'

@@ -4,7 +4,7 @@ import { isMaintenanceMode } from "@/lib/maintenance";
 
 // All /api/ routes handle their own auth and return JSON 401 responses.
 // Redirecting them to /login would return HTML, breaking client-side JSON parsing.
-const PUBLIC_PATHS = ["/login", "/signup", "/request-access", "/forgot-password", "/reset-password", "/api/", "/docs", "/pricing", "/invite", "/showcase", "/terms", "/privacy", "/changelog", "/roadmap"];
+const PUBLIC_PATHS = ["/login", "/signup", "/request-access", "/forgot-password", "/reset-password", "/api/", "/docs", "/pricing", "/invite", "/showcase", "/terms", "/privacy", "/changelog", "/roadmap", "/unavailable", "/gallery", "/vs", "/spec"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -48,12 +48,17 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!session) {
+    // DB-level failure: don't kick the user to login (their session row and
+    // cookie are almost certainly still valid). Serve a 503 "briefly
+    // unavailable" page so they can retry once Supabase is back.
+    if (sessionError) {
+      const unavailableUrl = new URL("/unavailable", request.url);
+      return NextResponse.rewrite(unavailableUrl, { status: 503, headers: { "Retry-After": "30" } });
+    }
+    // No session cookie (or expired): genuine unauthenticated request.
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
-    // Tell the login page which kind of session miss this was. `error` covers
-    // the thrown-exception case (likely env / DB), `expired` the benign
-    // no-cookie case. The login page can render different copy for each.
-    loginUrl.searchParams.set("reason", sessionError ? "error" : "expired");
+    loginUrl.searchParams.set("reason", "expired");
     return NextResponse.redirect(loginUrl);
   }
 
