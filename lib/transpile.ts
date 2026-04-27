@@ -39,8 +39,30 @@ export async function transpileTsx(code: string): Promise<string> {
   const errorDiag = result.diagnostics?.find((d) => d.category === DiagnosticCategory.Error);
   if (errorDiag) {
     const msg = flattenDiagnosticMessageText(errorDiag.messageText, "\n");
-    throw new Error(`TSX syntax error: ${msg}`);
+    throw new TranspileError(`TSX syntax error: ${msg}`, locateError(code, errorDiag.start));
   }
 
   return result.outputText;
+}
+
+/** Subclass so the API route can pull line/col without parsing the message. */
+export class TranspileError extends Error {
+  constructor(message: string, public readonly position: { line: number; column: number } | null) {
+    super(message);
+    this.name = "TranspileError";
+  }
+}
+
+/** Translate a TS character offset into 1-indexed line/column for the editor. */
+function locateError(code: string, start: number | undefined): { line: number; column: number } | null {
+  if (start === undefined || start < 0) return null;
+  let line = 1;
+  let lastNewline = -1;
+  for (let i = 0; i < start && i < code.length; i++) {
+    if (code.charCodeAt(i) === 10 /* \n */) {
+      line++;
+      lastNewline = i;
+    }
+  }
+  return { line, column: start - lastNewline };
 }

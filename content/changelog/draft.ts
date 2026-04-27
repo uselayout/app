@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-explore-split-view-code-editor",
+    title: "Edit a variant's code right next to its preview",
+    description:
+      "Inspect mode now has a Code button in the top bar. Click it and a Monaco editor opens to the right of the preview, bound to the variant's TSX. Type in the code, the preview re-renders after a brief debounce. Drag the inspector to change a colour, the code on the right updates to match. If your edit produces a syntax error, the line is squiggled red in the editor and the same error shows in the preview pane — much faster than the regenerate-and-pray loop. The pane remembers its width across sessions, and clicking View code on a failed render now lands you directly in the editor with the broken line highlighted.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-27",
+  },
+  {
     id: "2026-w18-transpile-rejects-syntax-errors",
     title: "Clearer errors when an AI-generated variant has a typo",
     description:

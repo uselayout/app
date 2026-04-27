@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUp, ImagePlus, GitCompareArrows, Trash2, MousePointer2, X, AlertTriangle } from "lucide-react";
+import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUp, ImagePlus, GitCompareArrows, Trash2, MousePointer2, X, AlertTriangle, Code2 } from "lucide-react";
 import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import { getInspectorScript } from "@/lib/explore/inspector-script";
 import { pushManualEdit, pushAiEdit, pushRollback, undoLastEdit } from "@/lib/explore/edit-history";
@@ -10,6 +10,7 @@ import { Tooltip as TooltipPrimitive } from "radix-ui";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ElementInspector } from "@/components/studio/ElementInspector";
 import { EditHistoryPanel } from "@/components/studio/EditHistoryPanel";
+import { VariantCodeEditor } from "@/components/studio/VariantCodeEditor";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { countPlaceholderImages } from "@/lib/image/placeholder";
 import { PaperIcon } from "@/components/studio/PaperPushModal";
@@ -707,6 +708,10 @@ export function VariantCard({
   const [showRefineInput, setShowRefineInput] = useState(false);
   const [refineText, setRefineText] = useState("");
   const [inspectMode, setInspectMode] = useState(false);
+  const [codePaneOpen, setCodePaneOpen] = useState(false);
+  const [codePaneWidth, setCodePaneWidth] = useState(480);
+  const [transpileErrorPos, setTranspileErrorPos] = useState<{ line: number; column: number; message: string } | null>(null);
+  const editHistoryRef = useRef<EditHistory>([]);
   const placeholderImageCount = useMemo(() => countPlaceholderImages(variant.code), [variant.code]);
   const [isApplying, setIsApplying] = useState(false);
   const [applyElapsed, setApplyElapsed] = useState(0);
@@ -717,6 +722,20 @@ export function VariantCard({
   const [contentHeight, setContentHeight] = useState<number | null>(null);
 
   const editHistory = variant.editHistory ?? [];
+  editHistoryRef.current = editHistory;
+
+  // Restore the user's preferred code-pane width from localStorage. Stored
+  // separately from the open/closed state so the pane stays at their
+  // preferred size when they reopen it later.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("layout.variantCodePaneWidth");
+    if (!stored) return;
+    const parsed = Number(stored);
+    if (Number.isFinite(parsed) && parsed >= 320 && parsed <= 1200) {
+      setCodePaneWidth(parsed);
+    }
+  }, []);
 
   // Transpile when code changes (not on inspectMode toggle)
   useEffect(() => {
@@ -737,10 +756,17 @@ export function VariantCard({
 
         if (!res.ok) {
           const errData = await res.json().catch(() => null);
-          setPreviewError(errData?.error || "Transpilation failed");
+          const errMsg: string = errData?.error || "Transpilation failed";
+          setPreviewError(errMsg);
+          if (typeof errData?.line === "number" && typeof errData?.column === "number") {
+            setTranspileErrorPos({ line: errData.line, column: errData.column, message: errMsg });
+          } else {
+            setTranspileErrorPos(null);
+          }
           return;
         }
 
+        setTranspileErrorPos(null);
         const { js } = await res.json();
         if (cancelled) return;
 
@@ -858,6 +884,49 @@ export function VariantCard({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [inspectMode, editHistory, onCodeUpdate]);
+
+  // Code-pane edit. Mirrors handleStyleEdits' commit pattern (push a manual
+  // edit, propagate up via onCodeUpdate). VariantCodeEditor already debounces
+  // its onChange, so this fires at most once per ~800ms while typing.
+  const handleCodeEdit = useCallback((nextCode: string) => {
+    if (!onCodeUpdate) return;
+    if (nextCode === variant.code) return;
+    const newHistory = pushManualEdit(editHistoryRef.current, variant.code, nextCode, [], "Code edit");
+    onCodeUpdate(nextCode, newHistory);
+  }, [variant.code, onCodeUpdate]);
+
+  // Drag-to-resize the code pane. Manual handler instead of pulling in a
+  // resizable-panels lib for one drag affordance.
+  const handleResizePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startWidth = codePaneWidth;
+    const max = Math.min(1200, window.innerWidth - 320);
+
+    function onMove(ev: PointerEvent) {
+      const delta = startX - ev.clientX; // dragging left = wider
+      const next = Math.max(320, Math.min(max, startWidth + delta));
+      setCodePaneWidth(next);
+    }
+    function onUp() {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      // Persist after release so we don't thrash localStorage during the drag.
+      // setCodePaneWidth has already run; this functional update reads the
+      // committed value, writes it, and returns it unchanged.
+      setCodePaneWidth((current) => {
+        try {
+          window.localStorage.setItem("layout.variantCodePaneWidth", String(current));
+        } catch {
+          // localStorage may be unavailable (privacy mode); ignore.
+        }
+        return current;
+      });
+    }
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  }, [codePaneWidth]);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(variant.code);
@@ -1246,10 +1315,10 @@ export function VariantCard({
               </button>
             ) : (
               <button
-                onClick={(e) => { e.stopPropagation(); setInspectMode(true); }}
+                onClick={(e) => { e.stopPropagation(); setCodePaneOpen(true); setInspectMode(true); }}
                 className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-[var(--bg-hover)] px-3 py-1.5 text-[11px] text-[var(--text-primary)] transition-all hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)]"
               >
-                <MousePointer2 size={12} />
+                <Code2 size={12} />
                 View code
               </button>
             )}
@@ -1367,14 +1436,48 @@ export function VariantCard({
                 )}
               </button>
             )}
-            <button
-              onClick={(e) => { e.preventDefault(); toggleInspectMode(e); }}
-              className="flex items-center gap-1.5 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-            >
-              <X size={12} />
-              Exit Inspector
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); setCodePaneOpen((v) => !v); }}
+                className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition-colors ${
+                  codePaneOpen
+                    ? "border-[var(--studio-accent)] bg-[var(--studio-accent-subtle)] text-[var(--text-primary)]"
+                    : "border-[var(--studio-border)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                }`}
+              >
+                <Code2 size={12} />
+                Code
+              </button>
+              <button
+                onClick={(e) => { e.preventDefault(); toggleInspectMode(e); }}
+                className="flex items-center gap-1.5 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+              >
+                <X size={12} />
+                Exit Inspector
+              </button>
+            </div>
           </div>
+
+          {/* Code pane (split view) */}
+          {codePaneOpen && (
+            <>
+              <div
+                onPointerDown={handleResizePointerDown}
+                className="w-1 shrink-0 cursor-col-resize bg-[var(--studio-border)] hover:bg-[var(--studio-border-strong)] transition-colors"
+                title="Drag to resize"
+              />
+              <div
+                className="shrink-0 border-l border-[var(--studio-border)] bg-[var(--bg-panel)] pt-12"
+                style={{ width: codePaneWidth }}
+              >
+                <VariantCodeEditor
+                  value={variant.code}
+                  onChange={handleCodeEdit}
+                  errorAt={transpileErrorPos}
+                />
+              </div>
+            </>
+          )}
 
           {/* Edit history sidebar */}
           {editHistory.length > 0 && (
