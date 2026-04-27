@@ -98,12 +98,18 @@ export async function POST(request: Request) {
     .eq("slug", kit.slug)
     .maybeSingle();
 
+  // Public origin for response URLs. Prefer NEXT_PUBLIC_APP_URL because behind
+  // Coolify/Traefik the inbound request URL resolves to the container's internal
+  // listen address (e.g. http://0.0.0.0:3000), not the public origin.
+  const publicOrigin = (
+    process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin
+  ).replace(/\/$/, "");
+
   if (existing && !overwrite) {
-    const origin = new URL(request.url).origin;
     return NextResponse.json(
       {
         error: "slug_exists",
-        existingProdUrl: `${origin}/gallery/${kit.slug}`,
+        existingProdUrl: `${publicOrigin}/gallery/${kit.slug}`,
       },
       { status: 409 },
     );
@@ -165,11 +171,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const origin = new URL(request.url).origin;
   return NextResponse.json({
     kitId: row.id,
     slug: row.slug,
-    url: `${origin}/gallery/${row.slug}`,
+    url: `${publicOrigin}/gallery/${row.slug}`,
     overwritten: !!existing,
   });
 }
