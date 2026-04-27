@@ -69,12 +69,72 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
   const tickRef = useRef<number | null>(null);
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
+  const [promotedSlugs, setPromotedSlugs] = useState<Set<string>>(new Set());
+  const [promoteConfigured, setPromoteConfigured] = useState(false);
+
   const load = useCallback(() => {
     fetch("/api/admin/kits")
       .then((r) => r.json())
       .then((body: { kits: AdminKitRow[] }) => setKits(body.kits))
       .catch((e) => toast(e instanceof Error ? e.message : "Failed to load kits", "error"));
   }, [toast]);
+
+  const loadPromotedStatus = useCallback(() => {
+    fetch("/api/admin/kits/promoted-status")
+      .then((r) => r.json())
+      .then((body: { promotedSlugs: string[]; configured: boolean }) => {
+        setPromotedSlugs(new Set(body.promotedSlugs));
+        setPromoteConfigured(body.configured);
+      })
+      .catch(() => {
+        // best-effort — badge just won't show
+      });
+  }, []);
+
+  const promote = useCallback(
+    async (kitId: string, kitName: string, kitSlug: string, overwrite: boolean) => {
+      const verb = overwrite ? "Republish" : "Publish";
+      const onProd = promotedSlugs.has(kitSlug);
+      if (!overwrite && onProd) {
+        // shouldn't happen — UI should call republish path — but be safe
+        if (!confirm(`'${kitName}' already exists on production. Republish (overwrite)?`)) return;
+        overwrite = true;
+      } else if (!confirm(`${verb} '${kitName}' to layout.design?`)) {
+        return;
+      }
+      setBusy(kitId);
+      try {
+        const url = `/api/admin/kits/${kitId}/promote${overwrite ? "?overwrite=true" : ""}`;
+        const resp = await fetch(url, { method: "POST" });
+        const body = await resp.json();
+        if (resp.status === 409 && body.canOverwrite) {
+          if (confirm(`Already on prod (${body.existingProdUrl}). Republish (overwrite)?`)) {
+            await promote(kitId, kitName, kitSlug, true);
+          }
+          return;
+        }
+        if (!resp.ok) {
+          throw new Error(body.error || `${resp.status}`);
+        }
+        const storage = body.storage as { copied: number; failed: number; bytes: number };
+        const sizeKb = (storage.bytes / 1024).toFixed(1);
+        const msg = storage.failed
+          ? `Promoted, but ${storage.failed} storage uploads failed. Check audit log.`
+          : `Promoted: ${storage.copied} files (${sizeKb}kb) → ${body.prodUrl}`;
+        toast(msg, storage.failed ? "error" : "success");
+        loadPromotedStatus();
+      } catch (e) {
+        toast(e instanceof Error ? e.message : "Promote failed", "error");
+      } finally {
+        setBusy(null);
+      }
+    },
+    [promotedSlugs, toast, loadPromotedStatus],
+  );
+
+  useEffect(() => {
+    loadPromotedStatus();
+  }, [loadPromotedStatus]);
 
   useEffect(() => {
     load();
@@ -444,6 +504,19 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                         {kit.unlisted && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ border: "1px solid var(--studio-border)", color: "var(--text-muted)" }}>Unlisted</span>
                         )}
+                        {promoteConfigured && promotedSlugs.has(kit.slug) && (
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded"
+                            style={{
+                              background: "rgba(34, 197, 94, 0.15)",
+                              color: "#86efac",
+                              border: "1px solid rgba(34, 197, 94, 0.4)",
+                            }}
+                            title="This kit is published on layout.design"
+                          >
+                            Live on prod
+                          </span>
+                        )}
                       </div>
                       <div className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
                         {kit.slug} · {kit.licence} · {kit.tier}
@@ -598,6 +671,25 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                               danger: true,
                               hint: "Permanently removes the kit",
                             },
+                            ...(promoteConfigured && kit.status === "approved"
+                              ? [
+                                  {
+                                    label: promotedSlugs.has(kit.slug)
+                                      ? "Republish to production"
+                                      : "Publish to production",
+                                    onClick: () =>
+                                      promote(
+                                        kit.id,
+                                        kit.name,
+                                        kit.slug,
+                                        promotedSlugs.has(kit.slug),
+                                      ),
+                                    hint: promotedSlugs.has(kit.slug)
+                                      ? "Overwrite existing kit on layout.design"
+                                      : "Copy this kit + storage to layout.design",
+                                  },
+                                ]
+                              : []),
                           ]}
                         />
                         <RegenMenu
