@@ -6,6 +6,7 @@ import type {
 import type { ExtractionResult, ExtractedToken, ProjectStandardisation } from "@/lib/types";
 import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
 import { isTransientError, friendlyApiError } from "@/lib/api-error";
+import { getModelMaxOutputTokens } from "@/lib/ai/models";
 import { buildLayoutDigest } from "./layout-digest";
 
 const SYSTEM_PROMPT = `You are a design system architect synthesizing extracted design data into a layout.md context file. This file will be consumed by AI coding agents (Claude Code, Cursor, Copilot) to generate pixel-accurate UI components.
@@ -587,68 +588,114 @@ export function createLayoutMdStream(
   };
 
   const MAX_RETRIES = 2;
+  const MAX_CONTINUATIONS = 3;
 
   const FINAL_MESSAGE_TIMEOUT_MS = 30_000;
+  const TRUNCATION_NOTICE =
+    "\n\n<!-- layout.md output exceeded the model's response cap. Click Regenerate to extend it. -->";
 
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
       let hasEnqueued = false;
+      let totalInputTokens = 0;
+      let totalOutputTokens = 0;
+      let accumulatedAssistantText = "";
+
+      const maxOutputTokens = await getModelMaxOutputTokens(modelId);
 
       try {
-        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-          try {
-            const msgStream = anthropic.messages.stream({
-              model: modelId,
-              max_tokens: 16384,
-              system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
-              messages: [{ role: "user", content: userContent }],
-            });
+        for (
+          let continuation = 0;
+          continuation <= MAX_CONTINUATIONS;
+          continuation++
+        ) {
+          // Build messages: user content always; assistant prefix only after the
+          // first iteration. The trailing whitespace trim is required because
+          // Anthropic rejects assistant turns ending with whitespace.
+          const messages: Anthropic.MessageParam[] = [
+            { role: "user", content: userContent },
+          ];
+          const trimmedAssistant = accumulatedAssistantText.replace(/\s+$/, "");
+          if (trimmedAssistant.length > 0) {
+            messages.push({ role: "assistant", content: trimmedAssistant });
+          }
 
-            for await (const event of msgStream) {
-              if (
-                event.type === "content_block_delta" &&
-                event.delta.type === "text_delta"
-              ) {
-                hasEnqueued = true;
-                controller.enqueue(encoder.encode(event.delta.text));
-              }
-            }
+          let stopReason: string | null | undefined;
+          let attemptDone = false;
 
-            // Race finalMessage against a timeout to prevent indefinite hangs
-            const finalMessage = await Promise.race([
-              msgStream.finalMessage(),
-              new Promise<null>((resolve) =>
-                setTimeout(() => resolve(null), FINAL_MESSAGE_TIMEOUT_MS)
-              ),
-            ]);
-
-            if (finalMessage) {
-              settle.resolve({
-                inputTokens: finalMessage.usage.input_tokens,
-                outputTokens: finalMessage.usage.output_tokens,
+          for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            try {
+              const msgStream = anthropic.messages.stream({
+                model: modelId,
+                max_tokens: maxOutputTokens,
+                system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+                messages,
               });
-            } else {
-              // Timed out waiting for final usage stats; content was streamed OK
-              settle.resolve({ inputTokens: 0, outputTokens: 0 });
-            }
-            return; // success
-          } catch (err) {
-            // Only retry if no content has been sent to the client yet
-            // (retrying after partial output would produce corrupted content)
-            if (!hasEnqueued && isTransientError(err) && attempt < MAX_RETRIES) {
-              const delay = Math.pow(2, attempt) * 2000 + Math.random() * 1000;
-              await new Promise((r) => setTimeout(r, delay));
-              continue;
-            }
 
-            const friendly = friendlyApiError(err);
-            controller.enqueue(
-              encoder.encode(`\n\n[Error generating layout.md: ${friendly}]`)
-            );
-            settle.reject(err);
+              for await (const event of msgStream) {
+                if (
+                  event.type === "content_block_delta" &&
+                  event.delta.type === "text_delta"
+                ) {
+                  hasEnqueued = true;
+                  controller.enqueue(encoder.encode(event.delta.text));
+                  accumulatedAssistantText += event.delta.text;
+                }
+              }
+
+              // Race finalMessage against a timeout to prevent indefinite hangs
+              const finalMessage = await Promise.race([
+                msgStream.finalMessage(),
+                new Promise<null>((resolve) =>
+                  setTimeout(() => resolve(null), FINAL_MESSAGE_TIMEOUT_MS)
+                ),
+              ]);
+
+              if (finalMessage) {
+                totalInputTokens += finalMessage.usage.input_tokens;
+                totalOutputTokens += finalMessage.usage.output_tokens;
+                stopReason = finalMessage.stop_reason;
+              }
+              attemptDone = true;
+              break;
+            } catch (err) {
+              // Only retry if no content has been sent to the client yet
+              // (retrying after partial output would produce corrupted content)
+              if (!hasEnqueued && isTransientError(err) && attempt < MAX_RETRIES) {
+                const delay = Math.pow(2, attempt) * 2000 + Math.random() * 1000;
+                await new Promise((r) => setTimeout(r, delay));
+                continue;
+              }
+
+              const friendly = friendlyApiError(err);
+              controller.enqueue(
+                encoder.encode(`\n\n[Error generating layout.md: ${friendly}]`)
+              );
+              settle.reject(err);
+              return;
+            }
+          }
+
+          if (!attemptDone) return;
+
+          if (stopReason !== "max_tokens") {
+            settle.resolve({
+              inputTokens: totalInputTokens,
+              outputTokens: totalOutputTokens,
+            });
             return;
           }
+
+          if (continuation === MAX_CONTINUATIONS) {
+            controller.enqueue(encoder.encode(TRUNCATION_NOTICE));
+            settle.resolve({
+              inputTokens: totalInputTokens,
+              outputTokens: totalOutputTokens,
+            });
+            return;
+          }
+          // else: outer loop continues with the accumulated assistant prefix
         }
       } finally {
         controller.close();
