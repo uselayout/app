@@ -171,7 +171,7 @@ export async function POST(request: Request) {
 
   await upsertProject(updatedProject, org.ownerId);
 
-  const origin = new URL(request.url).origin;
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
   // Auto-generate layout.md on first arrival if the project doesn't have one yet.
   // Skips the flag on subsequent pushes so existing layout.md isn't clobbered.
   const needsGeneration = !updatedProject.layoutMd || updatedProject.layoutMd.length === 0;
