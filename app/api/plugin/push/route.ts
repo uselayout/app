@@ -175,9 +175,10 @@ export async function POST(request: Request) {
   // Auto-generate layout.md on first arrival if the project doesn't have one yet.
   // Skips the flag on subsequent pushes so existing layout.md isn't clobbered.
   const needsGeneration = !updatedProject.layoutMd || updatedProject.layoutMd.length === 0;
+  const studioPath = `/${org.slug}/projects/${updatedProject.id}/studio`;
   const url = needsGeneration
-    ? `${origin}/studio/${updatedProject.id}?auto-generate=1`
-    : `${origin}/studio/${updatedProject.id}`;
+    ? `${origin}${studioPath}?auto-generate=1`
+    : `${origin}${studioPath}`;
 
   void logEvent("plugin.figma.push_tokens", "figma-plugin", { orgId: auth.orgId, metadata: { tokenCount, componentCount: components.length, fileKey } });
 

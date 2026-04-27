@@ -577,6 +577,7 @@ export default function StudioPage({
               projectId={project.id}
               orgId={project.orgId}
               extractionData={project.extractionData}
+              isRegenerating={isRegenerating}
             />
           }
           canvasPanel={

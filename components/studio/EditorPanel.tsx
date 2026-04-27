@@ -34,6 +34,7 @@ interface EditorPanelProps {
   projectId?: string;
   orgId?: string;
   extractionData?: ExtractionResult;
+  isRegenerating?: boolean;
 }
 
 const STUDIO_THEME_DARK: monacoType.editor.IStandaloneThemeData = {
@@ -94,9 +95,11 @@ const STUDIO_THEME_LIGHT: monacoType.editor.IStandaloneThemeData = {
   },
 };
 
-export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId, orgId, extractionData }: EditorPanelProps) {
+export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId, orgId, extractionData, isRegenerating = false }: EditorPanelProps) {
   const { resolvedTheme } = useTheme();
   const editorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
+  const isRegeneratingRef = useRef(isRegenerating);
+  isRegeneratingRef.current = isRegenerating;
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "idle">("idle");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -210,6 +213,15 @@ export function EditorPanel({ value, onChange, tokenSuggestions = [], projectId,
         // Skip the change if we're programmatically reverting — the guard
         // below fires its own model.pushEditOperations and we'd recurse.
         if (revertingRef.current) return;
+
+        // Programmatic value-prop replacement during regeneration arrives as a
+        // whole-document edit which would otherwise trip the derived guard
+        // dozens of times per stream and stack toasts. Refresh decorations
+        // only.
+        if (isRegeneratingRef.current) {
+          applyDerivedDecorations(editor);
+          return;
+        }
 
         // Check each change against the current derived ranges. If any edit
         // overlaps, revert by restoring the pre-change text at that spot.
