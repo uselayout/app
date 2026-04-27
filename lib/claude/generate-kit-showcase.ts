@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { transpileTsx } from "@/lib/transpile";
 import { bespokeShowcaseLimit } from "@/lib/concurrency";
+import { getModelMaxOutputTokens } from "@/lib/ai/models";
 
 // System prompt constraining Claude to emit a TSX module that renders a design
 // system showcase inside our existing iframe runtime. The iframe provides
@@ -333,13 +334,16 @@ async function generateKitShowcaseInner(input: GenerateInput): Promise<Generated
     .filter(Boolean)
     .join("\n");
 
+  const modelId = input.modelId ?? "claude-sonnet-4-6";
+  const maxTokens = await getModelMaxOutputTokens(modelId);
+
   // Streaming: gives CLI callers a progress signal so they can see the
   // call is alive. The non-streaming path used to freeze terminals for
   // 1-3 minutes with no output, indistinguishable from a network stall.
   const stream = anthropic.messages.stream(
     {
-      model: input.modelId ?? "claude-sonnet-4-6",
-      max_tokens: 16000,
+      model: modelId,
+      max_tokens: maxTokens,
       system: SYSTEM,
       messages: [{ role: "user", content: userMessage }],
     },

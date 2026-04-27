@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { StreamWithUsage, TokenUsageResult } from "@/lib/types/billing";
+import { getModelMaxOutputTokens } from "@/lib/ai/models";
 import { applyPatches, parsePatches, type PatchApplyError } from "./edit-patches";
 
 const EDIT_SYSTEM_PROMPT = `You are a surgical editor for a layout.md file (a structured design system specification). You receive the current file and a user instruction.
@@ -47,10 +48,11 @@ export async function planEdit(
   modelId: string = "claude-sonnet-4-6"
 ): Promise<EditPlanResult> {
   const anthropic = new Anthropic({ apiKey });
+  const maxTokens = await getModelMaxOutputTokens(modelId);
 
   const response = await anthropic.messages.create({
     model: modelId,
-    max_tokens: 8192,
+    max_tokens: maxTokens,
     system: EDIT_SYSTEM_PROMPT,
     messages: [
       {
@@ -113,11 +115,12 @@ export function createFixStream(
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
+      const maxTokens = await getModelMaxOutputTokens(modelId);
 
       try {
         const msgStream = anthropic.messages.stream({
           model: modelId,
-          max_tokens: 8192,
+          max_tokens: maxTokens,
           system: FIX_SYSTEM_PROMPT,
           messages: [
             {

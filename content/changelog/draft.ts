@@ -10,6 +10,24 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-layout-md-no-truncation",
+    title: "Larger design systems now generate fully",
+    description:
+      "Pushing a really token-rich extraction (lots of CSS variables, fonts, components) could leave layout.md cut off mid-table inside Appendix A. Layout now uses each model's full output capacity, and if it still hits the limit, automatically continues the response from where it stopped. You get the complete file in one go. If even the continuation runs out of room, you'll see a clear marker in the file instead of a silent truncation.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-27",
+  },
+  {
+    id: "2026-w18-extension-install-docs",
+    title: "Chrome extension install instructions match the actual ZIP",
+    description:
+      "The install steps on the Chrome extension docs page told you to load a 'dist' folder inside the unzipped directory. The alpha ZIP doesn't contain one. manifest.json sits at the root of the unzipped folder. Updated the instructions so you select the layout-chrome-extension-alpha folder directly.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-27",
+  },
+  {
     id: "2026-w18-admin-regen-no-503",
     title: "Regenerating a kit from admin no longer takes the gallery offline",
     description:

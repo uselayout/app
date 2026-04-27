@@ -199,6 +199,20 @@ export async function getModelById(id: string): Promise<AiModel | null> {
   return models.find((m) => m.id === id) ?? null;
 }
 
+/**
+ * Get the max output tokens supported by a model.
+ * Falls back to 64K (Sonnet 4.6 default) when the model isn't found,
+ * which prevents silent truncation when the model registry is unreachable.
+ * Pass a smaller `fallback` for tasks that intentionally cap output below model capability.
+ */
+export async function getModelMaxOutputTokens(
+  modelId: string,
+  fallback = 64_000
+): Promise<number> {
+  const model = await getModelById(modelId);
+  return model?.maxOutputTokens ?? fallback;
+}
+
 /** Get credit cost for a model (returns 1 as fallback). */
 export async function getModelCreditCost(modelId: string): Promise<number> {
   const model = await getModelById(modelId);
