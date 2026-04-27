@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-explore-refine-feedback-and-resize",
+    title: "Clearer feedback when you refine a variant + grabbier code-pane handle",
+    description:
+      "Hitting Enter on a per-variant refine prompt now shows a 'Refining…' overlay on the originating card while the AI is running, and the skeleton card below says 'Refining \"variant name\"…' instead of a generic 'Generating…'. Also widened the split-view code pane's resize handle from a 1px line to a proper 8px hit area, and made it use pointer capture so dragging across the inspector iframe no longer kills the drag.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-27",
+  },
+  {
     id: "2026-w18-explore-split-view-code-editor",
     title: "Edit a variant's code right next to its preview",
     description:

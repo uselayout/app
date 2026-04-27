@@ -662,6 +662,8 @@ interface VariantCardProps {
   brandingAssets?: BrandingAsset[];
   /** When true, card animates in with a scale-up + fade-in entrance */
   isNewlyGenerated?: boolean;
+  /** True while a refine for THIS card is in flight — drives a "Refining…" overlay. */
+  isRefining?: boolean;
 }
 
 export function VariantCard({
@@ -689,6 +691,7 @@ export function VariantCard({
   uploadedFonts,
   brandingAssets,
   isNewlyGenerated = false,
+  isRefining = false,
 }: VariantCardProps) {
   // Top-down clip-path reveal for newly generated variants.
   // Starts fully clipped, reveals when preview iframe loads.
@@ -895,11 +898,21 @@ export function VariantCard({
     onCodeUpdate(nextCode, newHistory);
   }, [variant.code, onCodeUpdate]);
 
-  // Drag-to-resize the code pane. Manual handler instead of pulling in a
-  // resizable-panels lib for one drag affordance.
+  // Drag-to-resize the code pane. setPointerCapture routes pointermove
+  // events back to the handle even when the cursor is over the inspector
+  // iframe — without it, the iframe absorbs the events and the drag dies
+  // after a few pixels.
   const handleResizePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+
+    const target = e.currentTarget;
+    try {
+      target.setPointerCapture(e.pointerId);
+    } catch {
+      // Some browsers throw if already captured; ignore.
+    }
+
     const startX = e.clientX;
     const startWidth = codePaneWidth;
     const max = Math.min(1200, window.innerWidth - 320);
@@ -909,12 +922,16 @@ export function VariantCard({
       const next = Math.max(320, Math.min(max, startWidth + delta));
       setCodePaneWidth(next);
     }
-    function onUp() {
-      document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onUp);
+    function onUp(ev: PointerEvent) {
+      try {
+        target.releasePointerCapture(ev.pointerId);
+      } catch {
+        // ignore
+      }
+      target.removeEventListener("pointermove", onMove);
+      target.removeEventListener("pointerup", onUp);
+      target.removeEventListener("pointercancel", onUp);
       // Persist after release so we don't thrash localStorage during the drag.
-      // setCodePaneWidth has already run; this functional update reads the
-      // committed value, writes it, and returns it unchanged.
       setCodePaneWidth((current) => {
         try {
           window.localStorage.setItem("layout.variantCodePaneWidth", String(current));
@@ -924,8 +941,9 @@ export function VariantCard({
         return current;
       });
     }
-    document.addEventListener("pointermove", onMove);
-    document.addEventListener("pointerup", onUp);
+    target.addEventListener("pointermove", onMove);
+    target.addEventListener("pointerup", onUp);
+    target.addEventListener("pointercancel", onUp);
   }, [codePaneWidth]);
 
   const handleCopy = useCallback(() => {
@@ -1267,6 +1285,19 @@ export function VariantCard({
         </div>
       )}
 
+      {/* Refining overlay — shows while a refine for THIS card is in flight,
+          so the user has feedback on the card they pressed Enter on (the
+          new sibling card with its skeleton appears below the existing
+          batches and may be off-screen). */}
+      {isRefining && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-[var(--bg-app)]/40 backdrop-blur-[1px]">
+          <div className="flex items-center gap-2 rounded-md border border-[var(--studio-border)] bg-[var(--bg-elevated)] px-3 py-1.5 shadow-lg">
+            <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
+            <span className="text-[11px] text-[var(--text-secondary)]">Refining…</span>
+          </div>
+        </div>
+      )}
+
       {/* Inspect mode indicator */}
       {inspectMode && (
         <div className="absolute -right-1.5 -top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500">
@@ -1463,9 +1494,13 @@ export function VariantCard({
             <>
               <div
                 onPointerDown={handleResizePointerDown}
-                className="w-1 shrink-0 cursor-col-resize bg-[var(--studio-border)] hover:bg-[var(--studio-border-strong)] transition-colors"
+                className="group relative z-20 w-2 shrink-0 cursor-col-resize touch-none select-none"
+                style={{ touchAction: "none" }}
                 title="Drag to resize"
-              />
+              >
+                {/* 1px visible line, centered in the 8px hit area */}
+                <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[var(--studio-border)] group-hover:bg-[var(--studio-accent)] group-active:bg-[var(--studio-accent)] transition-colors" />
+              </div>
               <div
                 className="shrink-0 border-l border-[var(--studio-border)] bg-[var(--bg-panel)] pt-12"
                 style={{ width: codePaneWidth }}

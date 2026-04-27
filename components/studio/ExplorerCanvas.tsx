@@ -190,6 +190,10 @@ export function ExplorerCanvas({
   const streamingBatchRef = useRef<string | null>(null);
   const pendingBatchCountRef = useRef(0);
   const generatingSessionRef = useRef<string | null>(null);
+  // The variant whose Refine button kicked off the in-flight generation,
+  // so we can show a "Refining…" overlay on the originating card and a
+  // "Refining {name}" header above the new skeleton.
+  const [refineSourceVariant, setRefineSourceVariant] = useState<{ id: string; name: string } | null>(null);
 
   // Use specific selectors — destructuring `useOnboardingStore()` subscribes to
   // the whole store (persisted) and forces a render-time read of state that
@@ -714,6 +718,7 @@ export function ExplorerCanvas({
       if (isGenerating || !currentExploration) return;
 
       setIsGenerating(true);
+      setRefineSourceVariant({ id: variant.id, name: variant.name });
       setGenerationError(null);
       setQuotaError(null);
       abortRef.current = new AbortController();
@@ -751,6 +756,7 @@ export function ExplorerCanvas({
         setGenerationError(friendlyError({ error: message }));
       } finally {
         setIsGenerating(false);
+        setRefineSourceVariant(null);
         abortRef.current = null;
       }
     },
@@ -1285,6 +1291,7 @@ export function ExplorerCanvas({
                         (c) => c.sourceVariantId === variant.id || !c.sourceVariantId
                       ).length ?? 0}
                       isNewlyGenerated={variant.batchId === streamingBatchRef.current}
+                      isRefining={refineSourceVariant?.id === variant.id}
                     />
                   ))}
                   {/* Shimmer skeletons for remaining slots — inline so cards stay in place */}
@@ -1330,7 +1337,9 @@ export function ExplorerCanvas({
                   <div className="flex items-center gap-3 py-3">
                     <div className="h-px flex-1 bg-[var(--studio-border)]" />
                     <span className="shrink-0 text-[11px] text-[var(--text-muted)] animate-pulse">
-                      {generationStatus ?? "Generating…"}
+                      {refineSourceVariant
+                        ? `Refining "${refineSourceVariant.name}"…`
+                        : generationStatus ?? "Generating…"}
                     </span>
                     <div className="h-px flex-1 bg-[var(--studio-border)]" />
                   </div>
