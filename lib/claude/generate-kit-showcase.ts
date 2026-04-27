@@ -46,7 +46,16 @@ Sections, in order:
    - An SVG mark guessed from the brand name
    - Any decorative element to the left of the heading
 
-   No pills, eyebrows, or "Design System" tags.
+   **HARD RULE: NO eyebrow / kicker / pre-heading label above the kit name.** The hero is just \`<h1>{heading}</h1>\` (with logo if provided) and the kit description. No category label sits above the heading.
+
+   Examples of what is FORBIDDEN as an eyebrow:
+   - \`<span>DESIGN SYSTEM</span>\` or \`<span>Design System</span>\` above the heading
+   - \`<div>Design Tokens</div>\`, \`<div>Brand</div>\`, \`<div>Style Guide</div>\`, \`<div>UI Kit</div>\` as a kicker
+   - Any uppercase tracked-out label sitting above the heading
+   - A "tag" or "pill" element (small rounded background, accent-coloured text, fontSize ≤12px, letterSpacing > 0) appearing before or beside the heading
+   - A small icon-with-label combo at the top of the hero
+
+   The kit name alone is the hero. Description goes underneath as plain prose. Nothing above the heading.
 2. **Colour palette** — grouped by role (backgrounds, text, accent, borders, status, other)
 3. **Typography** — Display / Heading / Body / Caption samples
 4. **Spacing** — horizontal bars from smallest to largest \`--space-*\` token, neutral fill (NOT the brand accent)
@@ -263,19 +272,54 @@ function hasExportDefault(code: string): boolean {
 /** When Claude defines `function App` or `const App` but forgets to export
  * it, append the export ourselves so the iframe runtime can pick it up.
  * Cheaper than rejecting the whole generation. */
-/** When the kit has no primary logo asset, strip every <img> tag from
- * the generated TSX. Belt-and-braces against Claude inventing a fake
- * brand mark even after the prompt forbids it. Only fires when the
- * caller didn't pass a primary logo, so legitimate logo <img>s on
- * brand-asset-bearing kits aren't touched. */
-function stripImgsWhenNoLogo(code: string, hadPrimaryLogo: boolean): string {
+/** Belt-and-braces post-processor: when the kit has no primary logo,
+ * strip every fabrication Claude tends to invent in the hero region —
+ * <img>, <svg> mark, and "DESIGN SYSTEM" / "Design Tokens" / "UI Kit"
+ * eyebrow spans. Only fires when no primary logo was provided, so kits
+ * that legitimately have brand assets aren't touched. The post-processor
+ * is the safety net for when prompt rules get ignored under generation
+ * pressure (which happens — see commits 3b2c662, 49e7035 for prior
+ * tightenings on the same surface).
+ *
+ * Renamed from stripImgsWhenNoLogo (which only handled the <img> case). */
+export function stripFakeBrandingWhenNoLogo(code: string, hadPrimaryLogo: boolean): string {
   if (hadPrimaryLogo) return code;
-  // Self-closing: <img src="..." />
-  let out = code.replace(/<img\b[^>]*\/>/gi, "");
-  // Open + close: <img src="...">  ... </img>
+
+  let out = code;
+
+  // 1. Strip every <img> tag (existing behaviour). Three forms covering
+  //    self-closing, open+close, and bare void-element style.
+  out = out.replace(/<img\b[^>]*\/>/gi, "");
   out = out.replace(/<img\b[^>]*>\s*<\/img>/gi, "");
-  // Bare opening tag with no slash (HTML void element style)
   out = out.replace(/<img\b[^>]*>/gi, "");
+
+  // 2. Strip <svg>...</svg> blocks that appear before the first <h1.
+  //    Heuristic: a logo-shaped SVG lives in the hero region; legitimate
+  //    icons (status badges, status dots, table chevrons) live further
+  //    down. The first <h1 is a reliable hero/body boundary because
+  //    Claude always renders the kit name as the top heading.
+  const heroBoundary = out.search(/<h1\b/i);
+  if (heroBoundary > 0) {
+    const head = out.slice(0, heroBoundary).replace(/<svg\b[\s\S]*?<\/svg>/gi, "");
+    out = head + out.slice(heroBoundary);
+  }
+
+  // 3. Strip eyebrow / kicker labels — short text wrapped in a span/div/p
+  //    that contains a known fabricated label AND has eyebrow-style CSS
+  //    (uppercase, letter-spaced, or tiny font-size). Three signals must
+  //    line up so we don't accidentally strip a legitimate paragraph.
+  const FORBIDDEN_LABELS = /(Design System|Design Tokens|Style Guide|Brand Guide|UI Kit|Design Kit)/i;
+  const EYEBROW_STYLE = /(textTransform[^,}]*uppercase|letterSpacing|fontSize\s*:\s*['"](?:1[0-2]|9)px)/i;
+  out = out.replace(
+    /<(span|div|p)\b([^>]*)>([\s\S]*?)<\/\1>/gi,
+    (match, _tag, attrs, inner) => {
+      if (typeof inner !== "string" || inner.length > 40) return match;
+      if (!FORBIDDEN_LABELS.test(inner)) return match;
+      if (!EYEBROW_STYLE.test(attrs ?? "")) return match;
+      return "";
+    },
+  );
+
   return out;
 }
 
@@ -367,7 +411,7 @@ async function generateKitShowcaseInner(input: GenerateInput): Promise<Generated
 
   const hadPrimaryLogo = !!logo;
   const tsx = ensureExportDefault(
-    stripImgsWhenNoLogo(stripFences(raw), hadPrimaryLogo),
+    stripFakeBrandingWhenNoLogo(stripFences(raw), hadPrimaryLogo),
   );
 
   if (!hasExportDefault(tsx)) {
