@@ -607,6 +607,17 @@ function tryDirectStyleEdits(code: string, edits: StyleEdit[]): { code: string; 
   return { code: result, remaining };
 }
 
+// Errors from the preview iframe split into two camps:
+//   1. Transient — transpile HTTP failures, rate limits, fetch aborts. A retry
+//      can resolve these, so we show "Retry render".
+//   2. Deterministic — JS parse / runtime errors (SyntaxError, ReferenceError,
+//      TypeError) emitted by the iframe's window.onerror. The transpile output
+//      is pure for a given input, so retrying produces the same failure. For
+//      these we offer "View code" instead, so the user has a path forward.
+function isTransientPreviewError(error: string): boolean {
+  return /^(Transpilation failed|Too many requests|Preview failed|Network|Failed to fetch)/i.test(error);
+}
+
 function Tip({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
   return (
     <TooltipPrimitive.Root delayDuration={wide ? 300 : undefined}>
@@ -771,13 +782,21 @@ export function VariantCard({
       if (e.data?.type !== "layout-preview-error") return;
       // Only handle errors from our own iframe
       if (e.source !== iframeRef.current?.contentWindow) return;
-      const errorLine = String(e.data.error).split("\n")[0];
-      setPreviewError(errorLine);
+      const fullError = String(e.data.error);
+      setPreviewError(fullError);
       setPreviewReady(false);
+      // Diagnostic: surface the offending code so users (and we) can locate
+      // the bad fragment when a deterministic SyntaxError comes from
+      // about:srcdoc. Truncated to keep the console readable.
+      console.warn("[variant-render-error]", {
+        variantId: variant.id,
+        error: fullError,
+        code: variant.code.slice(0, 4000),
+      });
     }
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [variant.id, variant.code]);
 
   // Rebuild srcdoc when inspectMode toggles (no re-transpile, instant)
   useEffect(() => {
@@ -1207,14 +1226,33 @@ export function VariantCard({
               <AlertTriangle size={18} className="text-[var(--status-error)]" />
             </div>
             <p className="text-xs font-medium text-[var(--text-primary)]">Failed to render</p>
-            <p className="max-w-[220px] text-center text-[10px] leading-relaxed text-[var(--status-error)]/70 line-clamp-2">{previewError}</p>
-            <button
-              onClick={(e) => { e.stopPropagation(); setRetryKey((k) => k + 1); }}
-              className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-[var(--bg-hover)] px-3 py-1.5 text-[11px] text-[var(--text-primary)] transition-all hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)]"
-            >
-              <RotateCw size={12} />
-              Retry render
-            </button>
+            <p className="max-w-[220px] text-center text-[10px] leading-relaxed text-[var(--status-error)]/70 line-clamp-2">{previewError.split("\n")[0]}</p>
+            {previewError.includes("\n") && (
+              <details
+                className="max-w-[220px] text-[10px] leading-relaxed text-[var(--text-muted)]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <summary className="cursor-pointer text-center hover:text-[var(--text-secondary)]">Show details</summary>
+                <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-[var(--bg-hover)] p-2 text-left">{previewError}</pre>
+              </details>
+            )}
+            {isTransientPreviewError(previewError) ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); setRetryKey((k) => k + 1); }}
+                className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-[var(--bg-hover)] px-3 py-1.5 text-[11px] text-[var(--text-primary)] transition-all hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)]"
+              >
+                <RotateCw size={12} />
+                Retry render
+              </button>
+            ) : (
+              <button
+                onClick={(e) => { e.stopPropagation(); setInspectMode(true); }}
+                className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-[var(--bg-hover)] px-3 py-1.5 text-[11px] text-[var(--text-primary)] transition-all hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)]"
+              >
+                <MousePointer2 size={12} />
+                View code
+              </button>
+            )}
           </div>
         ) : inspectMode ? (
           <iframe
