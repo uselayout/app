@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-transpile-rejects-syntax-errors",
+    title: "Clearer errors when an AI-generated variant has a typo",
+    description:
+      "If Claude generated a variant with a JavaScript typo (we saw one with i / > 0 instead of i > 0), TypeScript would emit broken JS without complaining and the preview iframe was the first thing to choke on it — surfacing a cryptic 'Unexpected token >' at a random srcdoc line. The transpile API now checks TypeScript's diagnostics and rejects the request with a clear 'TSX syntax error: Expression expected.' message, which the variant card shows directly. Means a one-character regen fixes it instead of a guessing game.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-27",
+  },
+  {
     id: "2026-w18-explore-failed-render-actions",
     title: "Better recovery when an Explorer variant fails to render",
     description:
