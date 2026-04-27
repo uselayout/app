@@ -164,11 +164,15 @@ export default function ChromeExtensionPage() {
             <strong className="font-semibold text-[#0a0a0a]">
               Load unpacked
             </strong>{" "}
-            and select the{" "}
+            and select the unzipped{" "}
             <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
-              dist
+              layout-chrome-extension-alpha
             </code>{" "}
-            folder inside the unzipped directory
+            folder (the one that contains{" "}
+            <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+              manifest.json
+            </code>
+            )
           </li>
           <li>
             The Layout icon appears in your Chrome toolbar. Click it to open the
