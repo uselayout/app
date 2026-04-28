@@ -339,9 +339,35 @@ function ensureExportDefault(code: string): string {
  * Wrapped in bespokeShowcaseLimit (max 2 concurrent) so parallel admin
  * regens don't peg the Node single-thread on transpile and starve the
  * /api/health/ready endpoint. Excess calls queue.
+ *
+ * Retries once on TSX validation failures (transpile error, missing
+ * `export default`, empty output). These are caused by Claude emitting
+ * non-deterministic output with a typo or truncated JSX, and a fresh
+ * sample usually parses cleanly. Network/abort errors are not retried.
  */
 export async function generateKitShowcase(input: GenerateInput): Promise<GeneratedShowcase> {
-  return bespokeShowcaseLimit(() => generateKitShowcaseInner(input));
+  return bespokeShowcaseLimit(async () => {
+    try {
+      return await generateKitShowcaseInner(input);
+    } catch (err) {
+      if (input.signal?.aborted) throw err;
+      if (!isRetryableShowcaseError(err)) throw err;
+      console.warn(
+        "[bespoke-showcase] retrying after validation failure:",
+        err instanceof Error ? err.message : String(err),
+      );
+      return generateKitShowcaseInner(input);
+    }
+  });
+}
+
+function isRetryableShowcaseError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : "";
+  return (
+    msg.startsWith("Generated showcase failed to transpile:") ||
+    msg === "Generated showcase missing `export default App`." ||
+    msg === "Transpilation produced empty output."
+  );
 }
 
 async function generateKitShowcaseInner(input: GenerateInput): Promise<GeneratedShowcase> {
