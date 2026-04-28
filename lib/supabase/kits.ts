@@ -31,6 +31,7 @@ interface KitRow {
   licence: string;
   licence_custom: string | null;
   preview_image_url: string | null;
+  homepage_url: string | null;
   layout_md: string;
   tokens_css: string;
   tokens_json: unknown;
@@ -85,6 +86,7 @@ function rowToKit(row: KitRow): PublicKit {
     licence: row.licence as KitLicence,
     licenceCustom: row.licence_custom ?? undefined,
     previewImageUrl: row.preview_image_url ?? undefined,
+    homepageUrl: row.homepage_url ?? undefined,
     layoutMd: row.layout_md,
     tokensCss: row.tokens_css,
     tokensJson: (row.tokens_json as Record<string, unknown>) ?? {},
@@ -213,6 +215,7 @@ export function kitToRow(kit: PublishKitInput): KitInsertRow {
     licence: kit.licence,
     licence_custom: kit.licenceCustom ?? null,
     preview_image_url: kit.previewImageUrl ?? null,
+    homepage_url: kit.homepageUrl ?? null,
     layout_md: kit.layoutMd,
     tokens_css: kit.tokensCss,
     tokens_json: kit.tokensJson,

@@ -25,6 +25,7 @@ interface AdminKitRow {
   custom_card_image_url: string | null;
   hero_image_url: string | null;
   preview_image_url: string | null;
+  homepage_url: string | null;
   upvote_count: number;
   import_count: number;
   created_at: string;
@@ -170,6 +171,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
       isNew?: boolean;
       bespokeShowcase?: boolean;
       cardImagePref?: AdminKitRow["card_image_pref"];
+      homepageUrl?: string | null;
     },
   ) {
     setBusy(id);
@@ -194,6 +196,7 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
               if (body.isNew !== undefined) next.is_new = body.isNew;
               if (body.bespokeShowcase !== undefined) next.bespoke_showcase = body.bespokeShowcase;
               if (body.cardImagePref !== undefined) next.card_image_pref = body.cardImagePref;
+              if (body.homepageUrl !== undefined) next.homepage_url = body.homepageUrl;
               return next;
             })
           : rows,
@@ -524,6 +527,10 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                       <KitDescriptionCell
                         kit={kit}
                         onSave={(value) => patch(kit.id, { description: value })}
+                      />
+                      <KitHomepageUrlCell
+                        kit={kit}
+                        onSave={(value) => patch(kit.id, { homepageUrl: value || null })}
                       />
                       {showCardPicker && (
                         <div className="mt-2 inline-flex items-center gap-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
@@ -1088,6 +1095,90 @@ function KitDescriptionCell({
           setEditing(true);
         }}
         title="Edit description"
+        className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] px-1 rounded shrink-0"
+        style={{
+          color: "var(--text-muted)",
+          border: "1px solid var(--studio-border)",
+        }}
+      >
+        Edit
+      </button>
+    </div>
+  );
+}
+
+function KitHomepageUrlCell({
+  kit,
+  onSave,
+}: {
+  kit: AdminKitRow;
+  onSave: (url: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(kit.homepage_url ?? "");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  function commit() {
+    const trimmed = draft.trim();
+    setEditing(false);
+    if (trimmed === (kit.homepage_url ?? "")) return;
+    onSave(trimmed);
+  }
+
+  if (editing) {
+    return (
+      <div className="mt-1">
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") {
+              setDraft(kit.homepage_url ?? "");
+              setEditing(false);
+            }
+          }}
+          type="url"
+          placeholder="https://pinterest.com"
+          className="w-full max-w-xl px-2 py-1 rounded text-[11px] outline-none"
+          style={{
+            background: "var(--bg-surface)",
+            color: "var(--text-primary)",
+            border: "1px solid var(--studio-border-focus)",
+          }}
+        />
+        <div className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+          Brand homepage · Enter to save · Esc to cancel · empty to clear
+        </div>
+      </div>
+    );
+  }
+
+  const empty = !kit.homepage_url;
+  return (
+    <div
+      className="mt-1 text-[11px] group inline-flex items-start gap-1 max-w-xl"
+      style={{ color: empty ? "var(--text-muted)" : "var(--text-secondary)" }}
+    >
+      <span className="cursor-text" onClick={() => setEditing(true)}>
+        {empty ? "Add homepage URL…" : kit.homepage_url}
+      </span>
+      <button
+        type="button"
+        onClick={() => {
+          setDraft(kit.homepage_url ?? "");
+          setEditing(true);
+        }}
+        title="Edit homepage URL"
         className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] px-1 rounded shrink-0"
         style={{
           color: "var(--text-muted)",

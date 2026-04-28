@@ -14,6 +14,11 @@ const PatchBody = z.object({
   isNew: z.boolean().optional(),
   bespokeShowcase: z.boolean().optional(),
   cardImagePref: z.enum(["auto", "custom", "hero", "preview"]).optional(),
+  // Empty string or null clears the URL; otherwise must parse as a URL.
+  homepageUrl: z
+    .union([z.literal(""), z.url().max(500)])
+    .nullable()
+    .optional(),
 });
 
 export async function PATCH(
@@ -42,6 +47,10 @@ export async function PATCH(
   if ("isNew" in parsed.data) update.is_new = parsed.data.isNew;
   if ("bespokeShowcase" in parsed.data) update.bespoke_showcase = parsed.data.bespokeShowcase;
   if ("cardImagePref" in parsed.data) update.card_image_pref = parsed.data.cardImagePref;
+  if ("homepageUrl" in parsed.data) {
+    // Treat empty string and null the same — both clear the column.
+    update.homepage_url = parsed.data.homepageUrl ? parsed.data.homepageUrl : null;
+  }
 
   // When renaming or editing the description on a bespoke kit, the cached
   // showcase TSX has the old strings baked in (Claude wrote them as
