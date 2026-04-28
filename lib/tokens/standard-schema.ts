@@ -347,6 +347,26 @@ const COLOUR_ROLES: StandardRole[] = [
     description: "Text colour on surface / card backgrounds (if different from text-primary).",
     matchKeywords: ["surface-foreground", "card-foreground", "on-surface", "on-card"],
   },
+  {
+    key: "accent-warm",
+    label: "Warm Accent",
+    category: "accent",
+    suffix: "accent-warm",
+    required: false,
+    description: "Secondary brand colour with a warm hue (yellow / orange / coral / pink). Used for tile backgrounds, decorative panels, secondary CTAs.",
+    matchKeywords: ["accent-warm", "brand-warm", "warm", "yellow", "orange", "coral", "amber", "pink", "salmon", "peach"],
+    // No matchHints: Pass 2 would grab whatever's most saturated regardless
+    // of hue. This role is hue-keyed via the dedicated Pass 3 picker.
+  },
+  {
+    key: "accent-cool",
+    label: "Cool Accent",
+    category: "accent",
+    suffix: "accent-cool",
+    required: false,
+    description: "Secondary brand colour with a cool hue (purple / indigo / violet / teal). Used for tile backgrounds, decorative panels, secondary CTAs.",
+    matchKeywords: ["accent-cool", "brand-cool", "cool", "purple", "violet", "indigo", "lavender", "teal", "cyan"],
+  },
 
   // ── Status / Feedback ──
   {

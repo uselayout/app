@@ -291,6 +291,71 @@ export const extractButtonColourCensusScript = `() => {
   return colourMap;
 }`;
 
+/**
+ * Bounded DOM walk that records non-default background colours on every
+ * visible element, capped at 5000 nodes. Skips elements inside <svg> so
+ * decorative icon fills don't pollute the palette. Output mirrors
+ * extractButtonColourCensusScript: \`{ [rgbaValue]: { count, elements } }\`,
+ * scored by occurrence × bbox area in the builder.
+ *
+ * This catches saturated brand colours that live on bespoke marketing tiles
+ * (Headspace yellow phone-card, pink "Always-there support" panel, purple
+ * Sleepcast tile) which the 44-selector targeted sample never reaches.
+ *
+ * Excludes:
+ * - Transparent / fully-translucent backgrounds
+ * - Page-default white (rgb > 240 on all channels) and near-black greys
+ * - Greyscale fills (channel range < 12) — these belong to the neutral scale
+ * - Cookie / consent / dialog overlays
+ * - Elements inside <svg> (decorative icons would flood the palette)
+ * - Zero-area / display:none elements
+ */
+export const extractSurfaceColourCensusScript = `() => {
+  const MAX_NODES = 5000;
+  const colourMap = {};
+  const all = document.querySelectorAll('*');
+  const limit = Math.min(all.length, MAX_NODES);
+  const excluded = '[class*="cookie"], [class*="consent"], [id*="cookie"], [id*="consent"], dialog, [role="dialog"]';
+
+  for (let i = 0; i < limit; i++) {
+    const el = all[i];
+    // Skip SVG descendants (icon fills aren't design tokens)
+    if (el.closest && el.closest('svg')) continue;
+    if (el.closest && el.closest(excluded)) continue;
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+
+    const bg = cs.backgroundColor;
+    if (!bg || bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') continue;
+
+    const m = bg.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)(?:,\\s*([\\d.]+))?/);
+    if (!m) continue;
+    const r = parseInt(m[1], 10), g = parseInt(m[2], 10), b = parseInt(m[3], 10);
+    const a = m[4] !== undefined ? parseFloat(m[4]) : 1;
+    if (a < 0.5) continue; // mostly transparent — not a surface colour
+    if (r > 240 && g > 240 && b > 240) continue; // page-default white-ish
+    if (r < 16 && g < 16 && b < 16) continue; // near-black
+    const range = Math.max(r, g, b) - Math.min(r, g, b);
+    if (range < 12) continue; // greyscale — handled by neutral scale
+
+    const rect = el.getBoundingClientRect();
+    const area = Math.round(rect.width * rect.height);
+    if (area < 400) continue; // too small to be a meaningful surface (under 20×20)
+
+    if (!colourMap[bg]) colourMap[bg] = { count: 0, elements: [] };
+    colourMap[bg].count++;
+    if (colourMap[bg].elements.length < 4) {
+      colourMap[bg].elements.push({
+        tag: el.tagName.toLowerCase(),
+        text: (el.textContent?.trim() || '').slice(0, 40),
+        area,
+        color: cs.color,
+      });
+    }
+  }
+  return colourMap;
+}`;
+
 export const extractInteractiveStatesScript = `() => {
   const stateSelectors = [':hover', ':focus', ':active', ':disabled', ':focus-visible'];
   const states = {};
