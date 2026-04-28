@@ -8,6 +8,7 @@ import {
   extractBreakpointsScript,
   extractRadiusCensusScript,
   extractButtonColourCensusScript,
+  extractSurfaceColourCensusScript,
   extractInteractiveStatesScript,
   extractComponentPatternsScript,
   extractTypographyCensusScript,
@@ -23,6 +24,7 @@ import {
   buildShadowTokensFromCensus,
   buildMotionTokensFromCensus,
   buildColourTokensFromCensus,
+  buildSurfaceColoursFromCensus,
 } from "./scale-builder";
 import { partitionNoise } from "@/lib/extraction/noise";
 import { dedupeTokensByValue } from "@/lib/extraction/dedupe";
@@ -159,6 +161,27 @@ export async function extractFromWebsite({
     await page.waitForLoadState("load", { timeout: 15000 }).catch(() => {});
     await page.waitForTimeout(2000);
 
+    // Scroll-and-settle: trigger paint of below-the-fold content (lazy-loaded
+    // images, intersection-observer animations, deferred sections) before any
+    // DOM walks run. Without this, sites whose colour-rich tiles sit below
+    // the initial 1440x900 viewport (Headspace, most marketing pages) emit a
+    // palette dominated by header / hero only.
+    onProgress?.("settle", 20, "Scrolling page to surface lazy content...");
+    try {
+      await page.evaluate(`async () => {
+        const step = Math.max(200, Math.floor(window.innerHeight * 0.8));
+        const max = document.documentElement.scrollHeight;
+        for (let y = 0; y < max; y += step) {
+          window.scrollTo(0, y);
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        window.scrollTo(0, 0);
+        await new Promise((r) => setTimeout(r, 300));
+      }`);
+    } catch {
+      // Non-fatal — continue with whatever's painted.
+    }
+
     // Extract CSS variables (now returns both flat and mode-tagged versions)
     onProgress?.("css", 25, "Extracting CSS custom properties...");
     const cssResult: {
@@ -199,6 +222,14 @@ export async function extractFromWebsite({
     onProgress?.("buttons", 61, "Surveying button colours...");
     const buttonColourCensus: Record<string, { count: number; elements: Array<{ tag: string; text: string; area: number; color: string }> }> =
       await page.evaluate(`(${extractButtonColourCensusScript})()`);
+
+    // Bounded DOM walk for surface / panel / tile background colours. Catches
+    // bespoke marketing tile colours (Headspace yellow phone-card, pink hero
+    // panel, purple Sleepcast tile) that the 44-selector targeted sample
+    // never reaches. Skips elements inside <svg> so icon fills don't pollute.
+    onProgress?.("surfaces", 61, "Surveying surface colours...");
+    const surfaceColourCensus: Record<string, { count: number; elements: Array<{ tag: string; text: string; area: number; color: string }> }> =
+      await page.evaluate(`(${extractSurfaceColourCensusScript})()`);
 
     // Survey typography: distinct font-size / font-weight / line-height /
     // letter-spacing values across visible text. Populates real type scale
@@ -427,6 +458,16 @@ export async function extractFromWebsite({
     const minedBrandCtas = buildColourTokensFromCensus(buttonColourCensus);
     const seenColourValues = new Set(colors.map((t) => t.value.trim().toLowerCase()));
     for (const t of minedBrandCtas) {
+      if (seenColourValues.has(t.value.trim().toLowerCase())) continue;
+      colors.push(t);
+      seenColourValues.add(t.value.trim().toLowerCase());
+    }
+
+    // Promote saturated surface colours from the bounded DOM walk so warm /
+    // cool brand tile colours land in the palette even when they aren't on
+    // any CTA element (Headspace pink hero card, purple Sleepcast tile).
+    const minedSurfaces = buildSurfaceColoursFromCensus(surfaceColourCensus);
+    for (const t of minedSurfaces) {
       if (seenColourValues.has(t.value.trim().toLowerCase())) continue;
       colors.push(t);
       seenColourValues.add(t.value.trim().toLowerCase());

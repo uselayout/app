@@ -222,6 +222,11 @@ export function buildMotionTokensFromCensus(census: {
   return out;
 }
 
+type SurfaceColourCensus = Record<
+  string,
+  { count: number; elements: Array<{ tag: string; text: string; area: number; color: string }> }
+>;
+
 type ButtonColourCensus = Record<
   string,
   { count: number; elements: Array<{ tag: string; text: string; area: number; color: string }> }
@@ -331,4 +336,99 @@ export function buildColourTokensFromCensus(census: ButtonColourCensus | undefin
   }
 
   return out;
+}
+
+/**
+ * Mine surface / panel / tile background colours from the bounded DOM walk
+ * census. Returns up to `maxTokens` distinct-hue saturated surfaces sorted
+ * by area-weighted occurrence. Greys, near-whites, and near-blacks are
+ * filtered upstream by the page script — this builder only handles
+ * deduplication-by-hue and the final token shape.
+ *
+ * Hue distance threshold of 25° keeps near-duplicate tints (e.g. two
+ * slightly different yellows) collapsed into one token rather than
+ * emitting both — but allows yellow + pink + purple + orange to all
+ * coexist when a site uses a multi-colour brand palette like Headspace.
+ *
+ * Each surface lands as `--brand-surface-N` with `groupName: "Brand"` so
+ * the curated view surfaces them under Brand alongside the CTA tokens.
+ */
+export function buildSurfaceColoursFromCensus(
+  census: SurfaceColourCensus | undefined,
+  maxTokens = 6
+): ExtractedToken[] {
+  if (!census) return [];
+
+  type Scored = {
+    value: string;
+    rgb: { r: number; g: number; b: number };
+    hue: number;
+    chroma: number;
+    count: number;
+    totalArea: number;
+    score: number;
+    sample: string;
+  };
+
+  const scored: Scored[] = [];
+  for (const [value, info] of Object.entries(census)) {
+    const rgb = parseColour(value);
+    if (!rgb) continue;
+    if (isNearWhite(rgb) || isNearBlack(rgb) || isGrey(rgb)) continue;
+    const totalArea = info.elements.reduce((sum, e) => sum + (e.area || 0), 0);
+    if (totalArea < 1000) continue; // require some real estate before promoting
+    const score = info.count * Math.max(totalArea, 1000);
+    const sampleText = info.elements.find((e) => e.text)?.text ?? info.elements[0]?.tag ?? "";
+    const hue = hueOfRgb(rgb);
+    const chroma = (Math.max(rgb.r, rgb.g, rgb.b) - Math.min(rgb.r, rgb.g, rgb.b)) / 255;
+    scored.push({ value, rgb, hue, chroma, count: info.count, totalArea, score, sample: sampleText });
+  }
+  if (scored.length === 0) return [];
+
+  scored.sort((a, b) => b.score - a.score);
+
+  // Distinct-hue dedupe: drop any candidate within 25° of an already-picked hue.
+  // Keep the higher-scoring one (which is already first because we sorted by score).
+  const picked: Scored[] = [];
+  for (const cand of scored) {
+    if (picked.length >= maxTokens) break;
+    const tooClose = picked.some((p) => hueDistance(p.hue, cand.hue) < 25);
+    if (tooClose) continue;
+    picked.push(cand);
+  }
+
+  return picked.map((s, i) => {
+    const preview = s.sample ? ` — e.g. "${s.sample.slice(0, 30)}"` : "";
+    return {
+      name: `brand-surface-${i + 1}`,
+      value: s.value,
+      type: "color" as TokenType,
+      category: "semantic" as const,
+      cssVariable: `--brand-surface-${i + 1}`,
+      groupName: "Brand",
+      originalName: `${s.value} (surface census)`,
+      description: `Brand surface, dominant on ${s.count} element${s.count === 1 ? "" : "s"}${preview} /* mined from computed styles */`,
+    };
+  });
+}
+
+/** Hue (0-360°) of an RGB triple. Returns 0 for greyscale (caller should filter first). */
+function hueOfRgb({ r, g, b }: { r: number; g: number; b: number }): number {
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const range = max - min;
+  if (range === 0) return 0;
+  let h: number;
+  if (max === r) h = ((g - b) / range) % 6;
+  else if (max === g) h = (b - r) / range + 2;
+  else h = (r - g) / range + 4;
+  h *= 60;
+  if (h < 0) h += 360;
+  return h;
+}
+
+/** Shortest angular distance between two hues, 0-180°. */
+function hueDistance(a: number, b: number): number {
+  const d = Math.abs(a - b);
+  return Math.min(d, 360 - d);
 }

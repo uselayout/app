@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-extraction-warm-cool-colours",
+    title: "Site extraction now picks up brand yellows, pinks, and purples",
+    description:
+      "Extracting a colourful site like headspace.com used to produce a layout.md dominated by neutrals and one or two blues — the yellow banner, pink hero card, and purple Sleepcast tile mostly didn't make it through. The extractor now scrolls the page so below-the-fold sections paint, runs a bounded DOM walk that captures non-default background colours on every visible element (skipping SVG icon fills so decorative illustration colours don't pollute the palette), and the standardiser has new accent-warm and accent-cool roles plus a relaxed yellow gate so vivid brand surfaces actually land in the curated palette instead of being dropped or mis-categorised as generic surface tokens.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-28",
+  },
+  {
     id: "2026-w18-kit-visit-site-link",
     title: "Visit-site link on kit pages",
     description:
