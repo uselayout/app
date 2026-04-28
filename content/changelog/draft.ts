@@ -10,6 +10,24 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-kit-visit-site-link",
+    title: "Visit-site link on kit pages",
+    description:
+      "Kit pages now show a small \"Visit pinterest.com ↗\" pill next to the licence chip when the brand has a homepage URL set, so visitors can jump from the kit straight to the design system in the wild. Layout admins can paste the URL into the Kits tab in the admin panel.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-28",
+  },
+  {
+    id: "2026-w18-bespoke-showcase-auto-retry",
+    title: "Fewer failed kit showcase generations",
+    description:
+      "When Claude occasionally emitted a typo in the ~50KB of TSX it generates for a bespoke kit showcase, the whole generation failed and the kit ended up without its bespoke preview. The generator now retries once on a transpile error or missing export — almost always succeeds on the second sample without operator intervention.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-28",
+  },
+  {
     id: "2026-w18-explore-refine-feedback-and-resize",
     title: "Clearer feedback when you refine a variant + grabbier code-pane handle",
     description:
