@@ -537,6 +537,16 @@ export function HeroMock() {
                 <FigmaIcon className="h-3 w-3" />
                 Push to Figma
               </button>
+              <button
+                className="inline-flex items-center gap-1.5 rounded-md border h-[30px] px-3 text-xs font-medium transition-colors hover:bg-white/5"
+                style={{
+                  borderColor: 'rgba(255,255,255,0.07)',
+                  color: STUDIO_TOKENS.textPrimary,
+                }}
+              >
+                <PaperIcon className="h-3 w-3" />
+                Push to Paper
+              </button>
             </div>
           </div>
         </div>

@@ -59,7 +59,7 @@ export function ExplorerSection() {
           className="object-cover"
           aria-hidden="true"
         />
-        <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
+        <div className="absolute inset-3 lg:inset-5">
           <MockFrame ariaLabel="Explorer six-variant grid">
             <ExplorerMock />
           </MockFrame>
