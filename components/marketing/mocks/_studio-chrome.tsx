@@ -255,6 +255,28 @@ export function StudioSurface({
 }
 
 /**
+ * Paper.design logo — used in "Push to Paper" actions on variant cards.
+ * Inline SVG so the marketing bundle doesn't need to pull in the full
+ * PaperPushModal from the Studio internals.
+ */
+export function PaperIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 300 300"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M82.48 52.5H247.5V130.7c0 13.5-.32 28.4.04 41.8-24.93-.18-50.13.28-75-.06V247.5c-12.97-.23-26.5-.04-39.52-.04H52.54V82.52c9.98-.1 20.1-.02 30.1-.01-.3-9.9.06-20.1-.08-30Z"
+        fill="currentColor"
+        opacity={0.9}
+      />
+    </svg>
+  );
+}
+
+/**
  * Hover-reveal tooltip. Use to wrap any icon-only button so users
  * discover what each action does, like Cursor's chrome.
  *

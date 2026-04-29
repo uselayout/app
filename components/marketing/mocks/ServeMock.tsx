@@ -104,8 +104,8 @@ export function ServeMock() {
         </div>
       </div>
 
-      {/* Body: editor (top) + terminal (bottom) */}
-      <div className="flex-1 grid grid-rows-[1fr_280px] min-h-0">
+      {/* Body: editor (top) + terminal (bottom — taller to show install + storybook detection) */}
+      <div className="flex-1 grid grid-rows-[1fr_400px] min-h-0">
         {/* Editor */}
         <div className="flex flex-col min-h-0 overflow-hidden">
           {/* File tabs */}
@@ -254,27 +254,42 @@ export function ServeMock() {
           </div>
           {/* Terminal lines */}
           <div className="flex-1 overflow-hidden px-4 py-2 space-y-[1px] min-h-0">
-            <TerminalLine delay={0.15} type="cmd">
+            <TerminalLine delay={0.1} type="cmd">
               <span style={{ color: STUDIO_TOKENS.textMuted }}>$ </span>npx @layoutdesign/context install
             </TerminalLine>
-            <TerminalLine delay={0.22} type="info">→ Found .layout/ in /acme-app</TerminalLine>
-            <TerminalLine delay={0.3} type="ok">✓ Configured Claude Code · Cursor · Windsurf · Copilot · Codex · Gemini CLI</TerminalLine>
-            <TerminalLine delay={0.4} type="ok">✓ Started preview server :4321</TerminalLine>
-            <TerminalLine delay={0.5} type="info"> </TerminalLine>
-            <TerminalLine delay={0.58} type="cmd">
+            <TerminalLine delay={0.18} type="info">→ Found .layout/ in /acme-app</TerminalLine>
+            <TerminalLine delay={0.26} type="info"> </TerminalLine>
+            <TerminalLine delay={0.32} type="data">  Scanning project for components…</TerminalLine>
+            <TerminalLine delay={0.4} type="ok">  ✓ Found Storybook (.storybook/main.ts) · CSF3</TerminalLine>
+            <TerminalLine delay={0.48} type="ok">  ✓ Discovered 12 components · 27 stories</TerminalLine>
+            <TerminalLine delay={0.56} type="info"> </TerminalLine>
+            <TerminalLine delay={0.6} type="data">  components/</TerminalLine>
+            <TerminalLine delay={0.66} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Button</span>.stories.tsx     → 3 variants <span style={{ color: STUDIO_TOKENS.textMuted }}>(primary, secondary, ghost)</span></TerminalLine>
+            <TerminalLine delay={0.72} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Card</span>.stories.tsx       → 4 variants <span style={{ color: STUDIO_TOKENS.textMuted }}>(elevated, outlined, ghost, +1)</span></TerminalLine>
+            <TerminalLine delay={0.78} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Input</span>.stories.tsx      → 2 variants <span style={{ color: STUDIO_TOKENS.textMuted }}>(default, error)</span></TerminalLine>
+            <TerminalLine delay={0.84} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Badge</span>.stories.tsx      → 5 variants <span style={{ color: STUDIO_TOKENS.textMuted }}>(success, warning, info, …)</span></TerminalLine>
+            <TerminalLine delay={0.9} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Tabs</span>.stories.tsx       → 1 variant</TerminalLine>
+            <TerminalLine delay={0.96} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Modal</span>.stories.tsx      → 3 variants <span style={{ color: STUDIO_TOKENS.textMuted }}>(default, drawer, sheet)</span></TerminalLine>
+            <TerminalLine delay={1.02} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Toast</span>.stories.tsx      → 4 variants</TerminalLine>
+            <TerminalLine delay={1.08} type="data">    <span style={{ color: STUDIO_TOKENS.textMuted }}>+ 5 more components</span></TerminalLine>
+            <TerminalLine delay={1.14} type="info"> </TerminalLine>
+            <TerminalLine delay={1.2} type="ok">✓ Configured Claude Code · Cursor · Windsurf · Copilot · Codex · Gemini CLI</TerminalLine>
+            <TerminalLine delay={1.28} type="ok">✓ Started preview server :4321</TerminalLine>
+            <TerminalLine delay={1.36} type="info"> </TerminalLine>
+            <TerminalLine delay={1.42} type="cmd">
               <span style={{ color: STUDIO_TOKENS.textMuted }}>$ </span>cursor agent
             </TerminalLine>
-            <TerminalLine delay={0.66} type="info">› Building SignInForm.tsx</TerminalLine>
-            <TerminalLine delay={0.74} type="mcp">  ◆ MCP → get_design_system</TerminalLine>
-            <TerminalLine delay={0.8} type="data">    17 tokens · 12 components · 2 modes</TerminalLine>
-            <TerminalLine delay={0.88} type="mcp">  ◆ MCP → get_component(Button)</TerminalLine>
-            <TerminalLine delay={0.94} type="data">    variant: primary | secondary | ghost</TerminalLine>
-            <TerminalLine delay={1.02} type="mcp">  ◆ MCP → check_compliance</TerminalLine>
-            <TerminalLine delay={1.1} type="ok">    ✓ 92/100 · on-system</TerminalLine>
+            <TerminalLine delay={1.5} type="info">› Building SignInForm.tsx</TerminalLine>
+            <TerminalLine delay={1.58} type="mcp">  ◆ MCP → list_components</TerminalLine>
+            <TerminalLine delay={1.64} type="data">    12 components · 27 stories indexed (CSF3 + args)</TerminalLine>
+            <TerminalLine delay={1.72} type="mcp">  ◆ MCP → get_component(Button)</TerminalLine>
+            <TerminalLine delay={1.78} type="data">    variant: primary | secondary | ghost · with story args</TerminalLine>
+            <TerminalLine delay={1.86} type="mcp">  ◆ MCP → check_compliance</TerminalLine>
+            <TerminalLine delay={1.92} type="ok">    ✓ 92/100 · on-system · 0 hardcoded values</TerminalLine>
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 1.25 }}
+              transition={{ duration: 0.3, delay: 2.05 }}
               viewport={{ once: true, margin: '-10%' }}
               className="font-mono text-[11.5px] leading-[1.6]"
               style={{ color: STUDIO_TOKENS.textPrimary }}
