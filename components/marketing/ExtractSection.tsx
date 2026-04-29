@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MarketingVideo } from '@/components/marketing/MarketingVideo';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { ExtractMock } from '@/components/marketing/mocks/ExtractMock';
 
 export function ExtractSection() {
   return (
@@ -54,7 +55,9 @@ export function ExtractSection() {
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
         <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
-          <MarketingVideo src="/marketing/videos/extract.mp4" />
+          <MockFrame ariaLabel="Extraction in progress with live layout.md">
+            <ExtractMock />
+          </MockFrame>
         </div>
       </motion.div>
     </section>
