@@ -1,41 +1,47 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Lock, ArrowLeft, ArrowRight, RotateCw } from 'lucide-react';
+import { STUDIO_TOKENS } from './_studio-chrome';
 
 interface TokenRowProps {
   hex: string;
   name: string;
   match: 'on-system' | 'close' | 'off';
   delay: number;
+  selected?: boolean;
+  onClick: () => void;
 }
 
-function TokenRow({ hex, name, match, delay }: TokenRowProps) {
+function TokenRow({ hex, name, match, delay, selected, onClick }: TokenRowProps) {
   const matchColour =
-    match === 'on-system' ? 'text-emerald-300' : match === 'close' ? 'text-amber-300' : 'text-rose-300';
-  const matchDot =
-    match === 'on-system' ? 'bg-emerald-400' : match === 'close' ? 'bg-amber-300' : 'bg-rose-400';
+    match === 'on-system' ? STUDIO_TOKENS.statusSuccess : match === 'close' ? STUDIO_TOKENS.statusWarning : STUDIO_TOKENS.statusError;
   return (
     <motion.div
       initial={{ opacity: 0, x: 8 }}
       whileInView={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.35, delay, ease: [0, 0, 0.2, 1] }}
       viewport={{ once: true, margin: '-10%' }}
-      className="flex items-center gap-2.5 rounded-md bg-white/[0.02] border border-white/8 px-2.5 py-1.5"
+      onClick={onClick}
+      className="flex items-center gap-2 rounded px-2 py-1.5 cursor-pointer transition-colors"
+      style={{
+        backgroundColor: selected ? STUDIO_TOKENS.bgHover : 'transparent',
+      }}
     >
       <div
-        className="h-5 w-5 rounded border border-white/15 shrink-0"
-        style={{ backgroundColor: hex }}
+        className="h-4 w-4 shrink-0 rounded-full border"
+        style={{ backgroundColor: hex, borderColor: STUDIO_TOKENS.border }}
       />
       <div className="flex flex-col min-w-0 flex-1">
-        <span className="font-mono text-[10.5px] text-white/85 truncate leading-none">{name}</span>
-        <span className="font-mono text-[9px] text-white/40 mt-0.5 leading-none">{hex.toUpperCase()}</span>
-      </div>
-      <div className={`flex items-center gap-1 ${matchColour}`}>
-        <span className={`h-1 w-1 rounded-full ${matchDot}`} />
-        <span className="font-mono text-[9px]">
-          {match === 'on-system' ? '✓' : match === 'close' ? '~' : '✗'}
+        <span className="font-mono text-[11px] truncate" style={{ color: STUDIO_TOKENS.textPrimary }}>
+          {name}
         </span>
       </div>
+      <span className="font-mono text-[9.5px]" style={{ color: STUDIO_TOKENS.textMuted }}>
+        {hex.toUpperCase()}
+      </span>
+      <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: matchColour }} />
     </motion.div>
   );
 }
@@ -50,58 +56,68 @@ const STRIPE_TOKENS = [
   { hex: '#FF5996', name: '--accent-pink', match: 'off' as const },
 ];
 
+const SIDEBAR_TABS = ['Tokens', 'Inspect', 'Score', 'Push'] as const;
+
 export function ExtensionMock() {
+  const [activeTab, setActiveTab] = useState<typeof SIDEBAR_TABS[number]>('Tokens');
+  const [selected, setSelected] = useState<string | null>('--brand-primary');
+
   return (
     <div
-      className="absolute inset-0 flex flex-col text-white"
+      className="absolute inset-0 flex flex-col"
       style={{
-        backgroundColor: '#0C0C0E',
+        backgroundColor: STUDIO_TOKENS.bgApp,
+        color: STUDIO_TOKENS.textPrimary,
         fontFamily: '"Geist", "Inter", -apple-system, sans-serif',
         colorScheme: 'dark',
       }}
     >
       {/* Browser chrome */}
-      <div className="flex items-center gap-2 border-b border-white/10 bg-[#1F1F23] px-4 py-2.5 shrink-0">
-        <div className="flex gap-1.5">
-          <div className="h-3 w-3 rounded-full bg-[#FF5F57]" />
-          <div className="h-3 w-3 rounded-full bg-[#FEBC2E]" />
-          <div className="h-3 w-3 rounded-full bg-[#28C840]" />
+      <div
+        className="flex items-center gap-2 border-b px-4 py-2 shrink-0"
+        style={{ backgroundColor: '#1F1F23', borderColor: STUDIO_TOKENS.border }}
+      >
+        <div className="flex items-center gap-1">
+          <button className="h-6 w-6 rounded transition-colors hover:bg-white/8 flex items-center justify-center" style={{ color: STUDIO_TOKENS.textMuted }}>
+            <ArrowLeft className="h-3.5 w-3.5" />
+          </button>
+          <button className="h-6 w-6 rounded transition-colors hover:bg-white/8 flex items-center justify-center" style={{ color: STUDIO_TOKENS.textMuted }}>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+          <button className="h-6 w-6 rounded transition-colors hover:bg-white/8 flex items-center justify-center" style={{ color: STUDIO_TOKENS.textMuted }}>
+            <RotateCw className="h-3 w-3" />
+          </button>
         </div>
-        <div className="flex items-center gap-1 ml-2">
-          <button className="h-6 w-6 rounded text-white/45 hover:bg-white/10 flex items-center justify-center text-[14px]">←</button>
-          <button className="h-6 w-6 rounded text-white/45 hover:bg-white/10 flex items-center justify-center text-[14px]">→</button>
-          <button className="h-6 w-6 rounded text-white/45 hover:bg-white/10 flex items-center justify-center text-[12px]">↻</button>
-        </div>
-        <div className="flex-1 flex items-center gap-2 rounded-full bg-[#37373D] px-3 py-1 mx-2">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.5">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
-          <span className="font-mono text-[11px] text-white/65">stripe.com</span>
-          <span className="ml-auto flex items-center gap-1.5 text-[10px] font-mono text-emerald-300/85">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="#E4F222">
-              <path d="M2 17l10 5 10-5M2 12l10 5 10-5M12 2L2 7l10 5 10-5-10-5z" />
-            </svg>
-            Layout · active
+        <div className="flex-1 flex items-center gap-2 rounded-full px-3 py-1 mx-2" style={{ backgroundColor: '#37373D' }}>
+          <Lock className="h-3 w-3" style={{ color: STUDIO_TOKENS.textMuted }} />
+          <span className="font-mono text-[11px]" style={{ color: STUDIO_TOKENS.textPrimary }}>
+            stripe.com
+          </span>
+          <span className="ml-auto flex items-center gap-1.5 text-[10px] font-mono" style={{ color: STUDIO_TOKENS.statusSuccess }}>
+            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: STUDIO_TOKENS.statusSuccess }} />
+            Layout active
           </span>
         </div>
-        <button className="h-7 w-7 rounded bg-[#E4F222] flex items-center justify-center text-[11px] font-bold text-black">
+        <button
+          className="h-7 w-7 rounded flex items-center justify-center text-[11px] font-bold"
+          style={{ backgroundColor: STUDIO_TOKENS.accent, color: STUDIO_TOKENS.textOnAccent }}
+          title="Layout extension"
+        >
           L
         </button>
       </div>
 
       {/* Body */}
       <div className="flex-1 grid grid-cols-[1fr_320px] min-h-0">
-        {/* Webpage preview (faux Stripe) */}
-        <div className="flex flex-col bg-white text-black overflow-hidden min-h-0">
-          {/* Faux nav */}
+        {/* Faux Stripe webpage */}
+        <div className="flex flex-col bg-white text-[#0A2540] overflow-hidden min-h-0 relative">
+          {/* Nav */}
           <div className="flex items-center justify-between border-b border-black/8 px-6 py-3 shrink-0 bg-white">
             <div className="flex items-center gap-6">
               <span className="text-[14px] font-bold text-[#0A2540]">Stripe</span>
-              <span className="text-[11px] text-[#425466]">Products</span>
-              <span className="text-[11px] text-[#425466]">Solutions</span>
-              <span className="text-[11px] text-[#425466]">Developers</span>
-              <span className="text-[11px] text-[#425466]">Pricing</span>
+              {['Products', 'Solutions', 'Developers', 'Pricing'].map((n) => (
+                <span key={n} className="text-[11px] text-[#425466]">{n}</span>
+              ))}
             </div>
             <button className="rounded-full bg-[#635BFF] px-3 py-1 text-[10.5px] font-medium text-white">
               Sign in
@@ -111,7 +127,7 @@ export function ExtensionMock() {
           <div className="flex-1 grid grid-cols-[1.3fr_1fr] gap-6 px-6 py-6 overflow-hidden bg-gradient-to-br from-white via-[#F6F9FC] to-[#E0E7FF]">
             <div className="flex flex-col justify-center gap-3">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-[#635BFF]">Built for Scale</span>
-              <h1 className="text-[28px] leading-tight font-semibold text-[#0A2540]">
+              <h1 className="text-[28px] leading-tight font-semibold">
                 Financial<br />infrastructure<br />for the internet
               </h1>
               <p className="text-[12px] text-[#425466] leading-snug max-w-[80%]">
@@ -137,50 +153,78 @@ export function ExtensionMock() {
               </div>
             </div>
           </div>
-          {/* Inspector callout pinned to hero CTA */}
+          {/* Inspector tooltip */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, delay: 0.6, ease: [0, 0, 0.2, 1] }}
             viewport={{ once: true, margin: '-10%' }}
             className="absolute pointer-events-none"
-            style={{
-              top: '54%',
-              left: '15%',
-            }}
+            style={{ top: '52%', left: '14%' }}
           >
-            <div className="rounded-md bg-[#0A2540] text-white px-2.5 py-1 text-[9.5px] font-mono shadow-lg whitespace-nowrap">
-              <span className="text-[#E4F222]">●</span> button.cta · bg #635BFF · radius 9999
+            <div className="rounded-md px-2.5 py-1.5 text-[10px] font-mono shadow-lg whitespace-nowrap" style={{ backgroundColor: '#0A2540', color: 'white' }}>
+              <span style={{ color: '#E4F222' }}>●</span> button.cta · bg #635BFF · radius 9999
             </div>
           </motion.div>
         </div>
 
         {/* Sidebar (extension popup) */}
-        <div className="flex flex-col border-l border-white/10 min-h-0 bg-[#0C0C0E]">
-          <div className="flex items-center justify-between border-b border-white/10 px-3.5 py-2 shrink-0">
+        <div
+          className="flex flex-col border-l min-h-0"
+          style={{ backgroundColor: STUDIO_TOKENS.bgPanel, borderColor: STUDIO_TOKENS.border }}
+        >
+          {/* Sidebar header */}
+          <div
+            className="flex items-center justify-between border-b px-3.5 py-2 shrink-0"
+            style={{ borderColor: STUDIO_TOKENS.border }}
+          >
             <div className="flex items-center gap-1.5">
-              <div className="h-4 w-4 rounded-sm bg-[#E4F222] flex items-center justify-center text-[9px] font-bold text-black">
+              <div
+                className="h-4 w-4 rounded-sm flex items-center justify-center text-[9px] font-bold"
+                style={{ backgroundColor: STUDIO_TOKENS.accent, color: STUDIO_TOKENS.textOnAccent }}
+              >
                 L
               </div>
-              <span className="font-mono text-[10.5px] text-white/85">layout</span>
-            </div>
-            <div className="flex items-center gap-1 rounded-md bg-white/5 p-0.5 text-[9px] font-mono">
-              <button className="rounded-sm px-1.5 py-0.5 bg-white/10 text-white">Tokens</button>
-              <button className="rounded-sm px-1.5 py-0.5 text-white/45">Inspect</button>
-              <button className="rounded-sm px-1.5 py-0.5 text-white/45">Score</button>
-              <button className="rounded-sm px-1.5 py-0.5 text-white/45">Push</button>
+              <span className="font-mono text-[11px]" style={{ color: STUDIO_TOKENS.textPrimary }}>
+                Layout · acme
+              </span>
             </div>
           </div>
 
-          {/* Tokens */}
+          {/* Sidebar tabs */}
+          <div
+            className="flex items-center border-b px-2 py-1.5 shrink-0 gap-1"
+            style={{ borderColor: STUDIO_TOKENS.border }}
+          >
+            {SIDEBAR_TABS.map((t) => (
+              <button
+                key={t}
+                onClick={() => setActiveTab(t)}
+                className="rounded-md px-2 py-1 text-[11px] font-medium transition-colors"
+                style={{
+                  backgroundColor: activeTab === t ? STUDIO_TOKENS.border : 'transparent',
+                  color: activeTab === t ? STUDIO_TOKENS.textPrimary : STUDIO_TOKENS.textMuted,
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          {/* Tokens list */}
           <div className="flex-1 overflow-hidden px-3.5 py-3 flex flex-col gap-3 min-h-0">
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-[9.5px] uppercase tracking-wider text-white/45">
-                Extracted · 7 tokens
+              <span
+                className="font-mono text-[9.5px] font-semibold uppercase tracking-wider"
+                style={{ color: STUDIO_TOKENS.textMuted }}
+              >
+                Extracted · {STRIPE_TOKENS.length} tokens
               </span>
-              <span className="font-mono text-[9px] text-white/30">stripe.com</span>
+              <span className="font-mono text-[9px]" style={{ color: STUDIO_TOKENS.textMuted }}>
+                stripe.com
+              </span>
             </div>
-            <div className="flex flex-col gap-1.5 overflow-hidden">
+            <div className="flex flex-col gap-1 overflow-hidden">
               {STRIPE_TOKENS.map((t, i) => (
                 <TokenRow
                   key={t.name}
@@ -188,45 +232,75 @@ export function ExtensionMock() {
                   name={t.name}
                   match={t.match}
                   delay={0.15 + i * 0.06}
+                  selected={selected === t.name}
+                  onClick={() => setSelected(t.name)}
                 />
               ))}
             </div>
 
-            {/* Compliance score block */}
+            {/* Compliance card */}
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.65, ease: [0, 0, 0.2, 1] }}
               viewport={{ once: true, margin: '-10%' }}
-              className="flex flex-col gap-2 rounded-md border border-white/10 bg-white/[0.025] px-3 py-2.5 mt-auto"
+              className="flex flex-col gap-2 rounded-md border px-3 py-2.5 mt-auto"
+              style={{
+                borderColor: STUDIO_TOKENS.border,
+                backgroundColor: STUDIO_TOKENS.bgSurface,
+              }}
             >
               <div className="flex items-baseline justify-between">
-                <span className="font-mono text-[9.5px] uppercase tracking-wider text-white/45">
+                <span
+                  className="font-mono text-[9.5px] font-semibold uppercase tracking-wider"
+                  style={{ color: STUDIO_TOKENS.textMuted }}
+                >
                   Compliance
                 </span>
-                <span className="font-mono text-[9px] text-white/30">vs your kit</span>
+                <span className="font-mono text-[9px]" style={{ color: STUDIO_TOKENS.textMuted }}>
+                  vs your kit
+                </span>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-[28px] font-semibold leading-none text-white tabular-nums">87</span>
-                <span className="font-mono text-[10px] text-white/40">/100</span>
-                <span className="ml-auto font-mono text-[9.5px] text-emerald-300/80">on-brand</span>
+                <span
+                  className="text-[28px] font-semibold leading-none tabular-nums"
+                  style={{ color: STUDIO_TOKENS.statusSuccess }}
+                >
+                  87
+                </span>
+                <span className="font-mono text-[10px]" style={{ color: STUDIO_TOKENS.textMuted }}>
+                  / 100
+                </span>
+                <span className="ml-auto font-mono text-[9.5px]" style={{ color: STUDIO_TOKENS.statusSuccess }}>
+                  on-brand
+                </span>
               </div>
-              <div className="h-1 rounded-full bg-white/8 overflow-hidden">
+              <div
+                className="h-1 rounded-full overflow-hidden"
+                style={{ backgroundColor: STUDIO_TOKENS.bgElevated }}
+              >
                 <motion.div
                   initial={{ width: 0 }}
                   whileInView={{ width: '87%' }}
                   transition={{ duration: 0.8, delay: 0.85, ease: [0, 0, 0.2, 1] }}
                   viewport={{ once: true, margin: '-10%' }}
-                  className="h-full rounded-full bg-[#E4F222]"
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: STUDIO_TOKENS.statusSuccess }}
                 />
               </div>
             </motion.div>
 
             <div className="flex items-center gap-2">
-              <button className="flex-1 rounded-md bg-[#E4F222] px-2 py-1.5 text-[10px] font-medium text-black">
+              <button
+                className="flex-1 rounded-md px-2 py-1.5 text-[10.5px] font-medium transition-colors hover:opacity-90"
+                style={{ backgroundColor: STUDIO_TOKENS.accent, color: STUDIO_TOKENS.textOnAccent }}
+              >
                 Push to Layout →
               </button>
-              <button className="rounded-md border border-white/15 px-2 py-1.5 text-[10px] font-mono text-white/70">
+              <button
+                className="rounded-md border px-2 py-1.5 text-[10.5px] font-mono transition-colors hover:bg-white/5"
+                style={{ borderColor: STUDIO_TOKENS.borderStrong, color: STUDIO_TOKENS.textSecondary }}
+              >
                 Copy MCP
               </button>
             </div>
