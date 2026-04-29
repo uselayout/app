@@ -234,6 +234,62 @@ export function SourcePanel({
   );
 }
 
+interface ViewDef {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+interface ViewSidebarProps {
+  views: ViewDef[];
+  activeView: string;
+  onView: (id: string) => void;
+}
+
+/**
+ * Leftmost vertical activity bar — VS Code / Linear / Cursor pattern. Sits
+ * before the SourcePanel so the eye reads `views → tabs → content` left to
+ * right. 44px wide; size-7 rounded-md icon buttons; active button gets a
+ * 2px lime left-edge bar + a subtle bg-hover background.
+ */
+export function ViewSidebar({ views, activeView, onView }: ViewSidebarProps) {
+  return (
+    <div
+      className="flex flex-col items-center gap-1 py-2 border-r shrink-0"
+      style={{
+        width: 44,
+        borderColor: STUDIO_TOKENS.border,
+        backgroundColor: STUDIO_TOKENS.bgPanel,
+      }}
+    >
+      {views.map((v) => {
+        const Icon = v.icon;
+        const active = v.id === activeView;
+        return (
+          <Tooltip key={v.id} label={v.label}>
+            <button
+              onClick={() => onView(v.id)}
+              className="relative flex size-7 items-center justify-center rounded-md transition-all"
+              style={{
+                backgroundColor: active ? STUDIO_TOKENS.bgHover : 'transparent',
+                color: active ? STUDIO_TOKENS.textPrimary : STUDIO_TOKENS.textMuted,
+              }}
+            >
+              {active && (
+                <span
+                  className="absolute -left-2 top-1/2 -translate-y-1/2 h-4 w-[2px] rounded-r-full"
+                  style={{ backgroundColor: STUDIO_TOKENS.brand }}
+                />
+              )}
+              <Icon className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
  * "Studio surface" — the right-hand main area. Just a flex-1 column with bg-surface.
  */
