@@ -54,7 +54,7 @@ export function ExtractSection() {
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
-        <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
+        <div className="absolute inset-3 lg:inset-5">
           <MockFrame ariaLabel="Extraction in progress with live layout.md">
             <ExtractMock />
           </MockFrame>

@@ -51,7 +51,7 @@ export function ServeSection() {
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
-        <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
+        <div className="absolute inset-3 lg:inset-5">
           <MockFrame ariaLabel="MCP install and AI agent code generation">
             <ServeMock />
           </MockFrame>

@@ -155,8 +155,8 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
           style={{ zIndex: 0 }}
         />
 
-        {/* Mock container */}
-        <div className="relative z-10 aspect-[1280/810] rounded-[6px] overflow-hidden w-full bg-[#0C0C0E]">
+        {/* Mock container — no overflow-hidden so MockFrame's outer shadow can extend into the aurora zone */}
+        <div className="relative z-10 aspect-[1280/810] w-full">
           <MockFrame ariaLabel="Layout Studio explorer demo">
             <HeroMock />
           </MockFrame>
