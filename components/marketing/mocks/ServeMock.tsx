@@ -2,74 +2,132 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileCode2, Terminal as TerminalIcon, X, Folder, ChevronRight } from 'lucide-react';
+import {
+  FileCode2,
+  X,
+  Sparkles,
+  ShieldCheck,
+  Check,
+  Send,
+  User,
+  Cpu,
+} from 'lucide-react';
 import { STUDIO_TOKENS } from './_studio-chrome';
 
+/**
+ * ServeMock — the "Two commands. Every AI tool. Zero config." section.
+ *
+ * Story (per agent reviews): the magic isn't the install — it's that the
+ * AI agent reaches for the design system BEFORE writing code. So:
+ *
+ *  ┌──────────────────────────────────────────────────────────┐
+ *  │ slim install-confirmed strip (one line, muted)          │
+ *  ├────────────────────────────┬─────────────────────────────┤
+ *  │ Cursor agent chat (left)   │ SignInForm.tsx (right)     │
+ *  │  user prompt               │  syntax-highlighted code   │
+ *  │  MCP tool calls (the hero) │  with --token classes      │
+ *  │  writing... cursor blinks  │  highlighted in lime       │
+ *  ├────────────────────────────┴─────────────────────────────┤
+ *  │ compliance badge: 92/100 · on-system · 0 hardcoded      │
+ *  └──────────────────────────────────────────────────────────┘
+ */
+
+// ─── Code editor ────────────────────────────────────────────────────────────
+
 interface CodeLineProps {
-  children: React.ReactNode;
+  number: number;
   delay: number;
   highlight?: boolean;
-  number: number;
+  children: React.ReactNode;
 }
 
-function CodeLine({ children, delay, highlight, number }: CodeLineProps) {
+function CodeLine({ number, delay, highlight, children }: CodeLineProps) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
       transition={{ duration: 0.25, delay, ease: 'linear' }}
       viewport={{ once: true, margin: '-10%' }}
-      className="flex items-baseline px-3"
-      style={{ backgroundColor: highlight ? 'rgba(228,242,34,0.06)' : 'transparent' }}
+      className="flex items-baseline px-3 py-[1px]"
+      style={{ backgroundColor: highlight ? 'rgba(228,242,34,0.07)' : 'transparent' }}
     >
       <span
-        className="select-none w-7 text-right pr-3 text-[11px] tabular-nums shrink-0 font-mono"
-        style={{ color: 'rgba(255,255,255,0.25)' }}
+        className="select-none w-7 text-right pr-3 text-[12px] tabular-nums shrink-0 font-mono"
+        style={{ color: 'rgba(255,255,255,0.22)' }}
       >
         {number}
       </span>
-      <div className="font-mono text-[12px] leading-[1.7]" style={{ color: 'rgba(232,232,240,0.85)' }}>
+      <div className="font-mono text-[12.5px] leading-[1.7]" style={{ color: 'rgba(232,232,240,0.85)' }}>
         {children}
       </div>
     </motion.div>
   );
 }
 
-interface TerminalLineProps {
-  children: React.ReactNode;
+// ─── Chat ───────────────────────────────────────────────────────────────────
+
+interface ChatLineProps {
   delay: number;
-  type?: 'cmd' | 'info' | 'ok' | 'mcp' | 'data';
+  children: React.ReactNode;
+  className?: string;
 }
 
-function TerminalLine({ children, delay, type = 'info' }: TerminalLineProps) {
-  const colour =
-    type === 'cmd'
-      ? STUDIO_TOKENS.textPrimary
-      : type === 'ok'
-      ? 'rgb(134,239,172)'
-      : type === 'mcp'
-      ? '#E4F222'
-      : type === 'data'
-      ? STUDIO_TOKENS.textSecondary
-      : STUDIO_TOKENS.textSecondary;
+function ChatLine({ delay, children, className = '' }: ChatLineProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: -4 }}
-      whileInView={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, y: 4 }}
+      whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay, ease: [0, 0, 0.2, 1] }}
       viewport={{ once: true, margin: '-10%' }}
-      className="font-mono text-[11.5px] leading-[1.6] whitespace-pre"
-      style={{ color: colour }}
+      className={className}
     >
       {children}
     </motion.div>
   );
 }
 
-const FILES = ['SignInForm.tsx', 'tokens.css', 'tailwind.config.ts'];
+interface MCPCallProps {
+  delay: number;
+  tool: string;
+  args?: string;
+  result: React.ReactNode;
+  ok?: boolean;
+}
+
+function MCPCall({ delay, tool, args, result, ok }: MCPCallProps) {
+  return (
+    <ChatLine delay={delay} className="flex flex-col gap-1 pl-1.5">
+      <div className="flex items-center gap-1.5 font-mono text-[11.5px]">
+        <span style={{ color: STUDIO_TOKENS.brand }}>◆</span>
+        <span style={{ color: STUDIO_TOKENS.textPrimary }}>
+          {tool}
+          {args && (
+            <>
+              <span style={{ color: STUDIO_TOKENS.textMuted }}>(</span>
+              <span style={{ color: STUDIO_TOKENS.textSecondary }}>{args}</span>
+              <span style={{ color: STUDIO_TOKENS.textMuted }}>)</span>
+            </>
+          )}
+        </span>
+      </div>
+      <div
+        className="font-mono text-[11px] pl-4 flex items-center gap-1"
+        style={{ color: ok ? 'rgb(110,231,183)' : STUDIO_TOKENS.textMuted }}
+      >
+        {ok && <Check className="h-2.5 w-2.5 shrink-0" strokeWidth={3} />}
+        {!ok && <span style={{ color: 'rgba(255,255,255,0.25)' }}>→</span>}
+        <span>{result}</span>
+      </div>
+    </ChatLine>
+  );
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
+const AI_TOOLS = ['Claude Code', 'Cursor', 'Windsurf', 'Copilot', 'Codex', 'Gemini CLI'];
 
 export function ServeMock() {
-  const [activeFile, setActiveFile] = useState('SignInForm.tsx');
+  const [chatPrompt, setChatPrompt] = useState('');
 
   return (
     <div
@@ -81,84 +139,234 @@ export function ServeMock() {
         colorScheme: 'dark',
       }}
     >
-      {/* IDE-style top bar — file path breadcrumb (not Studio TopBar; this is the user's editor) */}
+      {/* Top strip — install confirmed, muted, single line */}
       <div
-        className="flex h-9 items-center justify-between border-b px-4 shrink-0"
+        className="flex items-center justify-between border-b h-9 px-4 shrink-0"
         style={{ borderColor: STUDIO_TOKENS.border }}
       >
-        <div className="flex items-center gap-1.5 text-[11px] font-mono" style={{ color: STUDIO_TOKENS.textMuted }}>
-          <Folder className="h-3 w-3" />
-          <span>acme-app</span>
-          <ChevronRight className="h-2.5 w-2.5" />
-          <span>src</span>
-          <ChevronRight className="h-2.5 w-2.5" />
-          <span>components</span>
-          <ChevronRight className="h-2.5 w-2.5" />
-          <span style={{ color: STUDIO_TOKENS.textPrimary }}>{activeFile}</span>
+        <div className="flex items-center gap-2 font-mono text-[11.5px]">
+          <Check className="h-3 w-3 shrink-0" style={{ color: STUDIO_TOKENS.statusSuccess }} strokeWidth={3} />
+          <span style={{ color: STUDIO_TOKENS.textMuted }}>$</span>
+          <span style={{ color: STUDIO_TOKENS.textPrimary }}>npx @layoutdesign/context install</span>
         </div>
-        <div className="flex items-center gap-2 text-[10px] font-mono" style={{ color: STUDIO_TOKENS.textMuted }}>
-          <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: STUDIO_TOKENS.statusSuccess }} />
-            Layout MCP · 12 tools
-          </span>
+        <div className="flex items-center gap-1.5 text-[10.5px] font-mono" style={{ color: STUDIO_TOKENS.textMuted }}>
+          <span>configured</span>
+          {AI_TOOLS.map((t, i) => (
+            <span key={t} className="flex items-center gap-1.5">
+              <span style={{ color: STUDIO_TOKENS.textPrimary }}>{t}</span>
+              {i < AI_TOOLS.length - 1 && <span style={{ color: STUDIO_TOKENS.border }}>·</span>}
+            </span>
+          ))}
+          <span style={{ color: STUDIO_TOKENS.border }}>·</span>
+          <span>12 MCP tools ready</span>
         </div>
       </div>
 
-      {/* Body: editor (top) + terminal (bottom — taller to show install + storybook detection) */}
-      <div className="flex-1 grid grid-rows-[1fr_400px] min-h-0">
-        {/* Editor */}
+      {/* Body — agent chat (left) + code editor (right) */}
+      <div className="flex-1 grid grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] min-h-0">
+        {/* AGENT CHAT (LEFT) ────────────────────────────────────────────── */}
+        <div
+          className="flex flex-col min-h-0 overflow-hidden border-r"
+          style={{ borderColor: STUDIO_TOKENS.border, backgroundColor: STUDIO_TOKENS.bgPanel }}
+        >
+          {/* Chat header */}
+          <div
+            className="flex items-center justify-between border-b px-4 py-2.5 shrink-0"
+            style={{ borderColor: STUDIO_TOKENS.border }}
+          >
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" style={{ color: STUDIO_TOKENS.brand }} />
+              <span className="text-[12px] font-medium" style={{ color: STUDIO_TOKENS.textPrimary }}>
+                Cursor agent
+              </span>
+              <span className="text-[10.5px] font-mono" style={{ color: STUDIO_TOKENS.textMuted }}>
+                · acme-app
+              </span>
+            </div>
+            <span
+              className="font-mono text-[10px] px-1.5 py-0.5 rounded"
+              style={{
+                backgroundColor: 'rgba(228,242,34,0.08)',
+                color: STUDIO_TOKENS.brand,
+                border: `1px solid rgba(228,242,34,0.25)`,
+              }}
+            >
+              ◆ Layout MCP
+            </span>
+          </div>
+
+          {/* Chat thread */}
+          <div className="flex-1 overflow-hidden px-4 py-4 flex flex-col gap-4 min-h-0">
+            {/* User prompt */}
+            <ChatLine delay={0.1}>
+              <div className="flex items-start gap-2">
+                <div
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                  style={{ backgroundColor: STUDIO_TOKENS.bgElevated }}
+                >
+                  <User className="h-3 w-3" style={{ color: STUDIO_TOKENS.textSecondary }} />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[10.5px] font-medium" style={{ color: STUDIO_TOKENS.textMuted }}>
+                    You
+                  </span>
+                  <p className="text-[13px] leading-snug" style={{ color: STUDIO_TOKENS.textPrimary }}>
+                    Build me a sign-in form using our design system.
+                  </p>
+                </div>
+              </div>
+            </ChatLine>
+
+            {/* Agent response */}
+            <ChatLine delay={0.25}>
+              <div className="flex items-start gap-2">
+                <div
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                  style={{ backgroundColor: 'rgba(228,242,34,0.12)' }}
+                >
+                  <Cpu className="h-3 w-3" style={{ color: STUDIO_TOKENS.brand }} />
+                </div>
+                <div className="flex flex-col gap-2 flex-1 min-w-0">
+                  <span className="text-[10.5px] font-medium" style={{ color: STUDIO_TOKENS.textMuted }}>
+                    Cursor · with Layout MCP
+                  </span>
+                  <p className="text-[12.5px] leading-snug" style={{ color: STUDIO_TOKENS.textPrimary }}>
+                    Reading your design system before I write any code…
+                  </p>
+                </div>
+              </div>
+            </ChatLine>
+
+            {/* MCP tool calls — the hero of this section */}
+            <div className="pl-8 flex flex-col gap-2.5">
+              <MCPCall
+                delay={0.45}
+                tool="get_design_system"
+                result="17 tokens · 12 components · 2 modes (light + dark)"
+              />
+              <MCPCall
+                delay={0.7}
+                tool="get_component"
+                args="Button"
+                result="variants: primary · secondary · ghost"
+              />
+              <MCPCall
+                delay={0.95}
+                tool="check_compliance"
+                ok
+                result="92/100 · on-system"
+              />
+            </div>
+
+            {/* Writing... */}
+            <ChatLine delay={1.2} className="pl-8">
+              <div className="flex items-center gap-2 text-[12.5px]" style={{ color: STUDIO_TOKENS.textPrimary }}>
+                <FileCode2 className="h-3 w-3" style={{ color: STUDIO_TOKENS.textMuted }} />
+                <span>Writing</span>
+                <code
+                  className="font-mono text-[11.5px] px-1 py-0.5 rounded"
+                  style={{
+                    backgroundColor: STUDIO_TOKENS.bgElevated,
+                    color: STUDIO_TOKENS.textPrimary,
+                  }}
+                >
+                  SignInForm.tsx
+                </code>
+                <motion.span
+                  initial={{ opacity: 0.4 }}
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                  className="inline-block w-[6px] h-[14px] align-text-bottom"
+                  style={{ backgroundColor: STUDIO_TOKENS.textPrimary }}
+                />
+              </div>
+            </ChatLine>
+          </div>
+
+          {/* Chat input (mock) */}
+          <div className="border-t px-3 py-2.5 shrink-0" style={{ borderColor: STUDIO_TOKENS.border }}>
+            <div
+              className="flex items-center gap-2 rounded-md border px-3 py-2"
+              style={{
+                borderColor: STUDIO_TOKENS.border,
+                backgroundColor: STUDIO_TOKENS.bgSurface,
+              }}
+            >
+              <input
+                value={chatPrompt}
+                onChange={(e) => setChatPrompt(e.target.value)}
+                placeholder="Ask Cursor anything…"
+                className="flex-1 bg-transparent text-[12px] outline-none"
+                style={{ color: STUDIO_TOKENS.textPrimary }}
+              />
+              <button
+                className="flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:opacity-90"
+                style={{
+                  backgroundColor: STUDIO_TOKENS.textPrimary,
+                  color: STUDIO_TOKENS.bgApp,
+                }}
+              >
+                <Send className="h-2.5 w-2.5" strokeWidth={2.5} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* CODE EDITOR (RIGHT) ──────────────────────────────────────────── */}
         <div className="flex flex-col min-h-0 overflow-hidden">
-          {/* File tabs */}
+          {/* Single file tab */}
           <div
             className="flex items-end border-b shrink-0"
             style={{ borderColor: STUDIO_TOKENS.border, backgroundColor: STUDIO_TOKENS.bgPanel }}
           >
-            {FILES.map((f) => {
-              const active = f === activeFile;
-              return (
-                <button
-                  key={f}
-                  onClick={() => setActiveFile(f)}
-                  className="flex items-center gap-2 px-3 py-2 text-[11.5px] font-mono border-r border-t-2 transition-colors"
-                  style={{
-                    backgroundColor: active ? STUDIO_TOKENS.bgSurface : 'transparent',
-                    color: active ? STUDIO_TOKENS.textPrimary : STUDIO_TOKENS.textMuted,
-                    borderRightColor: STUDIO_TOKENS.border,
-                    borderTopColor: active ? '#E4F222' : 'transparent',
-                  }}
-                >
-                  <FileCode2 className="h-3 w-3" />
-                  {f}
-                  {active && <X className="h-2.5 w-2.5 ml-1 opacity-50" />}
-                </button>
-              );
-            })}
+            <div
+              className="flex items-center gap-2 px-3.5 py-2 text-[11.5px] font-mono border-r border-t-2 -mb-px"
+              style={{
+                backgroundColor: STUDIO_TOKENS.bgSurface,
+                color: STUDIO_TOKENS.textPrimary,
+                borderRightColor: STUDIO_TOKENS.border,
+                borderTopColor: STUDIO_TOKENS.brand,
+              }}
+            >
+              <FileCode2 className="h-3 w-3" style={{ color: STUDIO_TOKENS.textMuted }} />
+              SignInForm.tsx
+              <X className="h-2.5 w-2.5 ml-1 opacity-40" />
+            </div>
+            <div
+              className="ml-auto flex items-center gap-1.5 pr-4 text-[10.5px] font-mono"
+              style={{ color: STUDIO_TOKENS.textMuted }}
+            >
+              <span>TypeScript React</span>
+              <span style={{ color: STUDIO_TOKENS.border }}>·</span>
+              <span>UTF-8</span>
+            </div>
           </div>
+
           {/* Code area */}
           <div
-            className="flex-1 overflow-hidden py-2 min-h-0"
+            className="flex-1 overflow-hidden py-3 min-h-0"
             style={{ backgroundColor: STUDIO_TOKENS.bgSurface }}
           >
-            <CodeLine delay={0.1} number={1}>
+            <CodeLine number={1} delay={1.4}>
               <span style={{ color: '#A78BFA' }}>import</span>
               <span> {'{ Button }'} </span>
               <span style={{ color: '#A78BFA' }}>from</span>
               <span style={{ color: '#34D399' }}> {"'@/ui/button'"}</span>
             </CodeLine>
-            <CodeLine delay={0.16} number={2}>
+            <CodeLine number={2} delay={1.46}>
               <span> </span>
             </CodeLine>
-            <CodeLine delay={0.22} number={3}>
+            <CodeLine number={3} delay={1.52}>
               <span style={{ color: '#A78BFA' }}>export function</span>
               <span style={{ color: '#FBD38D' }}> SignInForm</span>
               <span>{'() {'}</span>
             </CodeLine>
-            <CodeLine delay={0.28} number={4}>
+            <CodeLine number={4} delay={1.58}>
               <span>  </span>
               <span style={{ color: '#A78BFA' }}>return</span>
               <span> (</span>
             </CodeLine>
-            <CodeLine delay={0.34} number={5}>
+            <CodeLine number={5} delay={1.64}>
               <span>    {'<'}</span>
               <span style={{ color: '#F687B3' }}>form</span>
               <span> </span>
@@ -167,142 +375,108 @@ export function ServeMock() {
               <span style={{ color: '#34D399' }}>{'"flex flex-col gap-3"'}</span>
               <span>{'>'}</span>
             </CodeLine>
-            <CodeLine delay={0.4} number={6}>
+            <CodeLine number={6} delay={1.7}>
               <span>      {'<'}</span>
               <span style={{ color: '#F687B3' }}>input</span>
-              <span> </span>
+            </CodeLine>
+            <CodeLine number={7} delay={1.76} highlight>
+              <span>        </span>
               <span style={{ color: '#FBD38D' }}>className</span>
               <span>=</span>
               <span style={{ color: '#34D399' }}>{'"rounded-md bg-[--bg-surface] px-3 py-2"'}</span>
+            </CodeLine>
+            <CodeLine number={8} delay={1.82}>
+              <span>        </span>
+              <span style={{ color: '#FBD38D' }}>placeholder</span>
+              <span>=</span>
+              <span style={{ color: '#34D399' }}>{'"Email"'}</span>
               <span> {'/>'}</span>
             </CodeLine>
-            <CodeLine delay={0.48} number={7} highlight>
+            <CodeLine number={9} delay={1.88}>
               <span>      {'<'}</span>
               <span style={{ color: '#FBD38D' }}>Button</span>
-              <span> </span>
+            </CodeLine>
+            <CodeLine number={10} delay={1.94} highlight>
+              <span>        </span>
               <span style={{ color: '#FBD38D' }}>className</span>
               <span>=</span>
               <span style={{ color: '#34D399' }}>{'"bg-[--accent] text-[--text-on-accent] rounded-md"'}</span>
-              <span>{'>'}</span>
             </CodeLine>
-            <CodeLine delay={0.55} number={8}>
+            <CodeLine number={11} delay={2}>
+              <span>      {'>'}</span>
+            </CodeLine>
+            <CodeLine number={12} delay={2.06}>
               <span>        Sign in</span>
             </CodeLine>
-            <CodeLine delay={0.62} number={9}>
+            <CodeLine number={13} delay={2.12}>
               <span>      {'</'}</span>
               <span style={{ color: '#FBD38D' }}>Button</span>
               <span>{'>'}</span>
             </CodeLine>
-            <CodeLine delay={0.68} number={10}>
+            <CodeLine number={14} delay={2.18}>
               <span>    {'</'}</span>
               <span style={{ color: '#F687B3' }}>form</span>
               <span>{'>'}</span>
             </CodeLine>
-            <CodeLine delay={0.74} number={11}>
+            <CodeLine number={15} delay={2.24}>
               <span>  )</span>
             </CodeLine>
-            <CodeLine delay={0.8} number={12}>
+            <CodeLine number={16} delay={2.3}>
               <span>{'}'}</span>
             </CodeLine>
-            {/* Inline MCP callout */}
-            <motion.div
-              initial={{ opacity: 0, y: 4 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 1.0, ease: [0, 0, 0.2, 1] }}
-              viewport={{ once: true, margin: '-10%' }}
-              className="mx-3 mt-3 rounded-md border px-3 py-2 text-[11px] font-mono inline-flex flex-col gap-0.5"
-              style={{
-                borderColor: 'rgba(228,242,34,0.3)',
-                backgroundColor: 'rgba(228,242,34,0.05)',
-                width: 'fit-content',
-              }}
-            >
-              <div className="flex items-center gap-1.5" style={{ color: 'rgba(228,242,34,0.85)' }}>
-                <span>◆</span>
-                <span>Layout MCP · resolved</span>
-              </div>
-              <div style={{ color: STUDIO_TOKENS.textSecondary }}>
-                <span style={{ color: STUDIO_TOKENS.textPrimary }}>--accent</span>
-                {' → '}
-                <span style={{ color: '#E4F222' }}>#E4F222</span>
-                {' · on-system ✓'}
-              </div>
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Terminal (bottom) */}
-        <div
-          className="flex flex-col min-h-0 overflow-hidden border-t"
-          style={{
-            borderColor: STUDIO_TOKENS.border,
-            backgroundColor: STUDIO_TOKENS.bgPanel,
-          }}
-        >
-          {/* Terminal header */}
-          <div
-            className="flex h-7 items-center justify-between border-b px-3 shrink-0"
-            style={{ borderColor: STUDIO_TOKENS.border }}
-          >
-            <div className="flex items-center gap-1.5 text-[11px] font-mono" style={{ color: STUDIO_TOKENS.textPrimary }}>
-              <TerminalIcon className="h-3 w-3" />
-              <span>zsh — acme-app</span>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] font-mono" style={{ color: STUDIO_TOKENS.textMuted }}>
-              <span style={{ color: 'rgb(110,231,183)' }}>● preview :4321</span>
-            </div>
-          </div>
-          {/* Terminal lines */}
-          <div className="flex-1 overflow-hidden px-4 py-2 space-y-[1px] min-h-0">
-            <TerminalLine delay={0.1} type="cmd">
-              <span style={{ color: STUDIO_TOKENS.textMuted }}>$ </span>npx @layoutdesign/context install
-            </TerminalLine>
-            <TerminalLine delay={0.18} type="info">→ Found .layout/ in /acme-app</TerminalLine>
-            <TerminalLine delay={0.26} type="info"> </TerminalLine>
-            <TerminalLine delay={0.32} type="data">  Scanning project for components…</TerminalLine>
-            <TerminalLine delay={0.4} type="ok">  ✓ Found Storybook (.storybook/main.ts) · CSF3</TerminalLine>
-            <TerminalLine delay={0.48} type="ok">  ✓ Discovered 12 components · 27 stories</TerminalLine>
-            <TerminalLine delay={0.56} type="info"> </TerminalLine>
-            <TerminalLine delay={0.6} type="data">  components/</TerminalLine>
-            <TerminalLine delay={0.66} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Button</span>.stories.tsx     → 3 variants <span style={{ color: STUDIO_TOKENS.textMuted }}>(primary, secondary, ghost)</span></TerminalLine>
-            <TerminalLine delay={0.72} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Card</span>.stories.tsx       → 4 variants <span style={{ color: STUDIO_TOKENS.textMuted }}>(elevated, outlined, ghost, +1)</span></TerminalLine>
-            <TerminalLine delay={0.78} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Input</span>.stories.tsx      → 2 variants <span style={{ color: STUDIO_TOKENS.textMuted }}>(default, error)</span></TerminalLine>
-            <TerminalLine delay={0.84} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Badge</span>.stories.tsx      → 5 variants <span style={{ color: STUDIO_TOKENS.textMuted }}>(success, warning, info, …)</span></TerminalLine>
-            <TerminalLine delay={0.9} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Tabs</span>.stories.tsx       → 1 variant</TerminalLine>
-            <TerminalLine delay={0.96} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Modal</span>.stories.tsx      → 3 variants <span style={{ color: STUDIO_TOKENS.textMuted }}>(default, drawer, sheet)</span></TerminalLine>
-            <TerminalLine delay={1.02} type="data">    <span style={{ color: STUDIO_TOKENS.textPrimary }}>Toast</span>.stories.tsx      → 4 variants</TerminalLine>
-            <TerminalLine delay={1.08} type="data">    <span style={{ color: STUDIO_TOKENS.textMuted }}>+ 5 more components</span></TerminalLine>
-            <TerminalLine delay={1.14} type="info"> </TerminalLine>
-            <TerminalLine delay={1.2} type="ok">✓ Configured Claude Code · Cursor · Windsurf · Copilot · Codex · Gemini CLI</TerminalLine>
-            <TerminalLine delay={1.28} type="ok">✓ Started preview server :4321</TerminalLine>
-            <TerminalLine delay={1.36} type="info"> </TerminalLine>
-            <TerminalLine delay={1.42} type="cmd">
-              <span style={{ color: STUDIO_TOKENS.textMuted }}>$ </span>cursor agent
-            </TerminalLine>
-            <TerminalLine delay={1.5} type="info">› Building SignInForm.tsx</TerminalLine>
-            <TerminalLine delay={1.58} type="mcp">  ◆ MCP → list_components</TerminalLine>
-            <TerminalLine delay={1.64} type="data">    12 components · 27 stories indexed (CSF3 + args)</TerminalLine>
-            <TerminalLine delay={1.72} type="mcp">  ◆ MCP → get_component(Button)</TerminalLine>
-            <TerminalLine delay={1.78} type="data">    variant: primary | secondary | ghost · with story args</TerminalLine>
-            <TerminalLine delay={1.86} type="mcp">  ◆ MCP → check_compliance</TerminalLine>
-            <TerminalLine delay={1.92} type="ok">    ✓ 92/100 · on-system · 0 hardcoded values</TerminalLine>
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 2.05 }}
-              viewport={{ once: true, margin: '-10%' }}
-              className="font-mono text-[11.5px] leading-[1.6]"
-              style={{ color: STUDIO_TOKENS.textPrimary }}
-            >
-              <span style={{ color: STUDIO_TOKENS.textMuted }}>$ </span>
-              <span
-                className="inline-block w-[6px] h-3.5 align-middle ml-0.5 animate-pulse"
-                style={{ backgroundColor: STUDIO_TOKENS.textPrimary }}
-              />
-            </motion.div>
           </div>
         </div>
       </div>
+
+      {/* Bottom strip — compliance verdict, full width */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 2.4 }}
+        viewport={{ once: true, margin: '-10%' }}
+        className="flex items-center justify-between border-t h-11 px-4 shrink-0"
+        style={{
+          borderColor: STUDIO_TOKENS.border,
+          backgroundColor: STUDIO_TOKENS.bgPanel,
+        }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div
+            className="flex h-6 w-6 items-center justify-center rounded-md"
+            style={{ backgroundColor: 'rgba(52,199,89,0.12)' }}
+          >
+            <ShieldCheck className="h-3.5 w-3.5" style={{ color: STUDIO_TOKENS.statusSuccess }} />
+          </div>
+          <div className="flex items-baseline gap-2.5">
+            <span
+              className="text-[14px] font-semibold tabular-nums"
+              style={{ color: STUDIO_TOKENS.textPrimary }}
+            >
+              92/100
+            </span>
+            <span className="text-[11px]" style={{ color: STUDIO_TOKENS.textSecondary }}>
+              on-system
+            </span>
+            <span style={{ color: STUDIO_TOKENS.border }}>·</span>
+            <span className="text-[11px]" style={{ color: STUDIO_TOKENS.textSecondary }}>
+              0 hardcoded values
+            </span>
+            <span style={{ color: STUDIO_TOKENS.border }}>·</span>
+            <span className="text-[11px]" style={{ color: STUDIO_TOKENS.textSecondary }}>
+              2 token references
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-[10.5px] font-mono" style={{ color: STUDIO_TOKENS.textMuted }}>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="h-1.5 w-1.5 rounded-full"
+              style={{ backgroundColor: STUDIO_TOKENS.statusSuccess }}
+            />
+            ready to ship
+          </span>
+        </div>
+      </motion.div>
     </div>
   );
 }
