@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MarketingVideo } from '@/components/marketing/MarketingVideo';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { CompletenessMock } from '@/components/marketing/mocks/CompletenessMock';
 
 export function CompletenessSection() {
   return (
@@ -57,7 +58,9 @@ export function CompletenessSection() {
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
         <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
-          <MarketingVideo src="/marketing/videos/completeness.mp4" ariaLabel="Completeness scoring demo" />
+          <MockFrame ariaLabel="Completeness score and breakdown">
+            <CompletenessMock />
+          </MockFrame>
         </div>
       </motion.div>
     </section>
