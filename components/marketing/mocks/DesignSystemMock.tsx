@@ -12,7 +12,7 @@ import {
   Terminal,
   Plus,
 } from 'lucide-react';
-import { StudioWindow, SourcePanel, StudioSurface, STUDIO_TOKENS } from './_studio-chrome';
+import { StudioWindow, SourcePanel, StudioSurface, STUDIO_TOKENS, MODE_TOKENS } from './_studio-chrome';
 
 const TABS = [
   { id: 'tokens', label: 'Tokens', icon: Palette },
@@ -96,6 +96,7 @@ interface SwatchTileProps {
 }
 
 function SwatchTile({ token, mode, delay, selected, onClick }: SwatchTileProps) {
+  const m = MODE_TOKENS[mode];
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.85, y: 4 }}
@@ -106,24 +107,25 @@ function SwatchTile({ token, mode, delay, selected, onClick }: SwatchTileProps) 
       onClick={onClick}
     >
       <motion.div
-        animate={{ backgroundColor: token.hex[mode] }}
+        animate={{ backgroundColor: token.hex[mode], borderColor: m.border }}
         transition={{ duration: 0.35, ease: [0, 0, 0.2, 1] }}
         className="h-12 w-12 rounded-lg border transition-all hover:scale-105"
         style={{
-          borderColor: selected ? STUDIO_TOKENS.accent : STUDIO_TOKENS.border,
-          boxShadow: selected ? `0 0 0 2px ${STUDIO_TOKENS.bgApp}, 0 0 0 4px ${STUDIO_TOKENS.accent}33` : 'none',
+          boxShadow: selected ? `0 0 0 2px ${m.surface}, 0 0 0 4px ${STUDIO_TOKENS.brand}66` : 'none',
         }}
       />
-      <span className="font-mono text-[10px] leading-none truncate w-full text-center" style={{ color: STUDIO_TOKENS.textSecondary }}>
+      <motion.span
+        animate={{ color: m.textSecondary }}
+        className="font-mono text-[10px] leading-none truncate w-full text-center"
+      >
         {token.name}
-      </span>
+      </motion.span>
       <motion.span
         key={token.hex[mode]}
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        animate={{ opacity: 1, color: m.textMuted }}
         transition={{ duration: 0.25, delay: 0.05 }}
         className="font-mono text-[9px] leading-none -mt-1"
-        style={{ color: STUDIO_TOKENS.textMuted }}
       >
         {token.hex[mode].toUpperCase()}
       </motion.span>
@@ -220,176 +222,188 @@ export function DesignSystemMock() {
       </SourcePanel>
 
       <StudioSurface>
-        <div className="flex flex-col gap-5 px-7 py-7 overflow-hidden">
-          {/* Colour groups grid */}
-          <div className="flex flex-col gap-2.5">
-            <div className="flex items-baseline justify-between">
-              <h3
-                className="text-[10px] font-semibold uppercase tracking-wider"
-                style={{ color: STUDIO_TOKENS.textMuted }}
-              >
-                Colours · 13 tokens
-              </h3>
-              <button
-                className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded transition-colors hover:bg-white/5"
-                style={{ color: STUDIO_TOKENS.textSecondary }}
-              >
-                <Plus className="h-2.5 w-2.5" />
-                Add token
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-5">
-              {COLOUR_GROUPS.map((group, gi) => (
-                <div key={group.label} className="flex flex-col gap-2">
-                  <div className="flex items-baseline gap-2">
-                    <span
+        <motion.div
+          animate={{ backgroundColor: MODE_TOKENS[mode].surface }}
+          transition={{ duration: 0.4, ease: [0, 0, 0.2, 1] }}
+          className="flex flex-col gap-5 px-7 py-7 overflow-hidden h-full"
+        >
+          {(() => {
+            const m = MODE_TOKENS[mode];
+            return (
+              <>
+                {/* Colour groups grid */}
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-baseline justify-between">
+                    <motion.h3
+                      animate={{ color: m.textMuted }}
                       className="text-[10px] font-semibold uppercase tracking-wider"
-                      style={{ color: STUDIO_TOKENS.textMuted }}
                     >
-                      {group.label}
-                    </span>
+                      Colours · 13 tokens
+                    </motion.h3>
+                    <motion.button
+                      animate={{ color: m.textSecondary }}
+                      className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded"
+                    >
+                      <Plus className="h-2.5 w-2.5" />
+                      Add token
+                    </motion.button>
                   </div>
-                  <div className="flex flex-wrap gap-x-2 gap-y-2">
-                    {group.tokens.map((token, ti) => (
-                      <SwatchTile
-                        key={token.name}
-                        token={token}
-                        mode={mode}
-                        delay={0.1 + gi * 0.05 + ti * 0.04}
-                        selected={selectedToken === token.name}
-                        onClick={() => setSelectedToken(token.name)}
-                      />
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+                    {COLOUR_GROUPS.map((group, gi) => (
+                      <div key={group.label} className="flex flex-col gap-2">
+                        <motion.span
+                          animate={{ color: m.textMuted }}
+                          className="text-[10px] font-semibold uppercase tracking-wider"
+                        >
+                          {group.label}
+                        </motion.span>
+                        <div className="flex flex-wrap gap-x-2 gap-y-2">
+                          {group.tokens.map((token, ti) => (
+                            <SwatchTile
+                              key={token.name}
+                              token={token}
+                              mode={mode}
+                              delay={0.1 + gi * 0.05 + ti * 0.04}
+                              selected={selectedToken === token.name}
+                              onClick={() => setSelectedToken(token.name)}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Type scale + Radius row */}
-          <div className="grid grid-cols-2 gap-8">
-            <div className="flex flex-col gap-2.5">
-              <h3
-                className="text-[10px] font-semibold uppercase tracking-wider"
-                style={{ color: STUDIO_TOKENS.textMuted }}
-              >
-                Type scale · {TYPE_SCALE.length}
-              </h3>
-              <div className="flex flex-col gap-1.5">
-                {TYPE_SCALE.map((t, i) => (
-                  <motion.div
-                    key={t.name}
-                    initial={{ opacity: 0, x: 4 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: 0.4 + i * 0.05 }}
-                    viewport={{ once: true, margin: '-10%' }}
-                    className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 cursor-pointer transition-colors hover:bg-white/[0.03]"
-                    style={{
-                      borderColor: STUDIO_TOKENS.border,
-                      backgroundColor: 'rgba(255,255,255,0.02)',
-                    }}
-                  >
-                    <div className="flex items-baseline gap-3 min-w-0">
-                      <span
-                        className="leading-none shrink-0"
-                        style={{
-                          fontSize: t.size,
-                          fontWeight: t.weight,
-                          color: STUDIO_TOKENS.textPrimary,
-                        }}
-                      >
-                        {t.sample}
-                      </span>
-                      <span className="font-mono text-[10px] truncate" style={{ color: STUDIO_TOKENS.textSecondary }}>
-                        {t.name}
-                      </span>
+                {/* Type scale + Radius row */}
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="flex flex-col gap-2.5">
+                    <motion.h3
+                      animate={{ color: m.textMuted }}
+                      className="text-[10px] font-semibold uppercase tracking-wider"
+                    >
+                      Type scale · {TYPE_SCALE.length}
+                    </motion.h3>
+                    <div className="flex flex-col gap-1.5">
+                      {TYPE_SCALE.map((t, i) => (
+                        <motion.div
+                          key={t.name}
+                          initial={{ opacity: 0, x: 4 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: 0.4 + i * 0.05 }}
+                          viewport={{ once: true, margin: '-10%' }}
+                          animate={{
+                            backgroundColor: m.cardBg,
+                            borderColor: m.border,
+                          }}
+                          className="flex items-center justify-between gap-3 rounded-md border px-3 py-2"
+                        >
+                          <div className="flex items-baseline gap-3 min-w-0">
+                            <motion.span
+                              animate={{ color: m.textPrimary }}
+                              className="leading-none shrink-0"
+                              style={{ fontSize: t.size, fontWeight: t.weight }}
+                            >
+                              {t.sample}
+                            </motion.span>
+                            <motion.span
+                              animate={{ color: m.textSecondary }}
+                              className="font-mono text-[10px] truncate"
+                            >
+                              {t.name}
+                            </motion.span>
+                          </div>
+                          <motion.span
+                            animate={{ color: m.textMuted }}
+                            className="font-mono text-[10px] shrink-0"
+                          >
+                            {t.size}/{t.weight}
+                          </motion.span>
+                        </motion.div>
+                      ))}
                     </div>
-                    <span className="font-mono text-[10px] shrink-0" style={{ color: STUDIO_TOKENS.textMuted }}>
-                      {t.size}/{t.weight}
-                    </span>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
+                  </div>
 
-            <div className="flex flex-col gap-2.5">
-              <h3
-                className="text-[10px] font-semibold uppercase tracking-wider"
-                style={{ color: STUDIO_TOKENS.textMuted }}
-              >
-                Radius · {RADIUS_TOKENS.length}
-              </h3>
-              <div className="flex items-end gap-3">
-                {RADIUS_TOKENS.map((r, i) => (
-                  <motion.div
-                    key={r.name}
-                    initial={{ opacity: 0, y: 4 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.6 + i * 0.05 }}
-                    viewport={{ once: true, margin: '-10%' }}
-                    className="flex flex-col items-center gap-1.5"
-                  >
-                    <div
-                      className="h-10 w-10 border"
-                      style={{
-                        borderRadius: Math.min(r.value, 18),
-                        borderColor: STUDIO_TOKENS.borderStrong,
-                        backgroundColor: 'rgba(255,255,255,0.05)',
-                      }}
-                    />
-                    <span className="font-mono text-[10px] leading-none" style={{ color: STUDIO_TOKENS.textSecondary }}>
-                      {r.name}
-                    </span>
-                  </motion.div>
-                ))}
-              </div>
+                  <div className="flex flex-col gap-2.5">
+                    <motion.h3
+                      animate={{ color: m.textMuted }}
+                      className="text-[10px] font-semibold uppercase tracking-wider"
+                    >
+                      Radius · {RADIUS_TOKENS.length}
+                    </motion.h3>
+                    <div className="flex items-end gap-3">
+                      {RADIUS_TOKENS.map((r, i) => (
+                        <motion.div
+                          key={r.name}
+                          initial={{ opacity: 0, y: 4 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: 0.6 + i * 0.05 }}
+                          viewport={{ once: true, margin: '-10%' }}
+                          className="flex flex-col items-center gap-1.5"
+                        >
+                          <motion.div
+                            animate={{ borderColor: m.borderStrong, backgroundColor: m.cardBg }}
+                            className="h-10 w-10 border"
+                            style={{ borderRadius: Math.min(r.value, 18) }}
+                          />
+                          <motion.span
+                            animate={{ color: m.textSecondary }}
+                            className="font-mono text-[10px] leading-none"
+                          >
+                            {r.name}
+                          </motion.span>
+                        </motion.div>
+                      ))}
+                    </div>
 
-              {/* Components preview */}
-              <div className="flex flex-col gap-2 mt-4">
-                <h3
-                  className="text-[10px] font-semibold uppercase tracking-wider"
-                  style={{ color: STUDIO_TOKENS.textMuted }}
-                >
-                  Components · 12
-                </h3>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    className="rounded-md px-3 py-1.5 text-[11px] font-medium"
-                    style={{ backgroundColor: STUDIO_TOKENS.accent, color: STUDIO_TOKENS.textOnAccent }}
-                  >
-                    Primary
-                  </button>
-                  <button
-                    className="rounded-md border px-3 py-1.5 text-[11px] font-medium"
-                    style={{
-                      borderColor: STUDIO_TOKENS.borderStrong,
-                      backgroundColor: 'rgba(255,255,255,0.03)',
-                      color: STUDIO_TOKENS.textPrimary,
-                    }}
-                  >
-                    Secondary
-                  </button>
-                  <button
-                    className="rounded-md px-3 py-1.5 text-[11px] font-medium"
-                    style={{ color: STUDIO_TOKENS.textSecondary }}
-                  >
-                    Ghost
-                  </button>
-                  <span
-                    className="rounded-full border px-2 py-0.5 text-[10px] font-mono"
-                    style={{
-                      borderColor: 'rgba(52,199,89,0.3)',
-                      backgroundColor: 'rgba(52,199,89,0.08)',
-                      color: 'rgb(110,231,183)',
-                    }}
-                  >
-                    Live
-                  </span>
+                    {/* Components preview */}
+                    <div className="flex flex-col gap-2 mt-4">
+                      <motion.h3
+                        animate={{ color: m.textMuted }}
+                        className="text-[10px] font-semibold uppercase tracking-wider"
+                      >
+                        Components · 12
+                      </motion.h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <motion.button
+                          animate={{ backgroundColor: m.accent, color: m.accentText }}
+                          className="rounded-md px-3 py-1.5 text-[11px] font-medium"
+                        >
+                          Primary
+                        </motion.button>
+                        <motion.button
+                          animate={{
+                            borderColor: m.borderStrong,
+                            backgroundColor: m.cardBg,
+                            color: m.textPrimary,
+                          }}
+                          className="rounded-md border px-3 py-1.5 text-[11px] font-medium"
+                        >
+                          Secondary
+                        </motion.button>
+                        <motion.button
+                          animate={{ color: m.textSecondary }}
+                          className="rounded-md px-3 py-1.5 text-[11px] font-medium"
+                        >
+                          Ghost
+                        </motion.button>
+                        <span
+                          className="rounded-full border px-2 py-0.5 text-[10px] font-mono"
+                          style={{
+                            borderColor: 'rgba(52,199,89,0.3)',
+                            backgroundColor: 'rgba(52,199,89,0.08)',
+                            color: mode === 'dark' ? 'rgb(110,231,183)' : '#22863A',
+                          }}
+                        >
+                          Live
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
+              </>
+            );
+          })()}
+        </motion.div>
       </StudioSurface>
     </StudioWindow>
   );

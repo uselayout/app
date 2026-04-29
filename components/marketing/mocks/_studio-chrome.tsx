@@ -15,6 +15,41 @@
 import type { ReactNode } from 'react';
 import { PanelLeft, RefreshCw, Share2, Figma as FigmaIcon, Globe } from 'lucide-react';
 
+/**
+ * Mode-aware "canvas tokens" for the design-system mocks. When a user toggles
+ * Dark/Light in a DS mock, the *canvas* (preview surface) flips to that mode
+ * — bg, text, borders, CTAs all swap. Studio chrome (TopBar, SourcePanel)
+ * stays in STUDIO_TOKENS dark since the editor itself doesn't change theme.
+ *
+ * Mirrors the real Layout multi-mode pattern at app/globals.css :root vs :root.light.
+ */
+export const MODE_TOKENS = {
+  dark: {
+    surface: '#1A1A20',
+    textPrimary: '#EDEDF4',
+    textSecondary: '#A6A6B0',
+    textMuted: '#7A7A85',
+    border: 'rgba(255,255,255,0.10)',
+    borderStrong: 'rgba(255,255,255,0.22)',
+    cardBg: 'rgba(255,255,255,0.025)',
+    accent: '#E6E6E6',
+    accentText: '#08090a',
+  },
+  light: {
+    surface: '#FFFFFF',
+    textPrimary: '#1A1A1A',
+    textSecondary: '#525252',
+    textMuted: '#737373',
+    border: 'rgba(0,0,0,0.10)',
+    borderStrong: 'rgba(0,0,0,0.18)',
+    cardBg: 'rgba(0,0,0,0.025)',
+    accent: '#1A1A1A',
+    accentText: '#FFFFFF',
+  },
+} as const;
+
+export type CanvasMode = keyof typeof MODE_TOKENS;
+
 export const STUDIO_TOKENS = {
   bgApp: '#0C0C0E',
   bgPanel: '#141418',
