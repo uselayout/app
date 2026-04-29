@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MarketingVideo } from '@/components/marketing/MarketingVideo';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { DesignSystemMock } from '@/components/marketing/mocks/DesignSystemMock';
 
 export function DesignSystemSection() {
   return (
@@ -57,7 +58,9 @@ export function DesignSystemSection() {
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
         <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
-          <MarketingVideo src="/marketing/videos/design-system.mp4" ariaLabel="Design system dashboard demo" />
+          <MockFrame ariaLabel="Design system dashboard">
+            <DesignSystemMock />
+          </MockFrame>
         </div>
       </motion.div>
     </section>
