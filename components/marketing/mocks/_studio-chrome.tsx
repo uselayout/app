@@ -175,8 +175,11 @@ interface SourceTabStripProps {
 export function SourceTabStrip({ tabs, activeTab, onTab, trailing }: SourceTabStripProps) {
   return (
     <div
-      className="flex items-center gap-1 border-b px-2 py-1.5 shrink-0"
-      style={{ borderColor: STUDIO_TOKENS.border }}
+      className="flex items-center gap-1 border-b px-2 py-1.5 shrink-0 overflow-x-auto"
+      style={{
+        borderColor: STUDIO_TOKENS.border,
+        scrollbarWidth: 'none',
+      }}
     >
       {tabs.map((tab) => {
         const Icon = tab.icon;

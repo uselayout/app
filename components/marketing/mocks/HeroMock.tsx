@@ -716,7 +716,7 @@ export function HeroMock() {
       <ViewSidebar views={VIEWS} activeView={activeView} onView={setActiveView} />
 
       {/* SourcePanel persists across all views */}
-      <SourcePanel tabs={TABS} activeTab={activeTab} onTab={setActiveTab} width={300}>
+      <SourcePanel tabs={TABS} activeTab={activeTab} onTab={setActiveTab} width={340}>
         {activeTab === 'tokens' && <TokensPanel selected={selectedToken} setSelected={setSelectedToken} />}
         {activeTab === 'components' && <ComponentsPanel />}
         {activeTab === 'screenshots' && <ScreenshotsPanel />}

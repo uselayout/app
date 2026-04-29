@@ -24,47 +24,51 @@ const TABS = [
   { id: 'connect', label: 'Connect', icon: Terminal },
 ];
 
+type Mode = 'dark' | 'light';
+
 interface Swatch {
   name: string;
-  hex: string;
+  hex: Record<Mode, string>;
 }
 interface Group {
   label: string;
   tokens: Swatch[];
 }
 
+// Token names stable across modes; only hex values swap. Mirrors how the
+// real Layout multi-mode system works (per app/globals.css :root vs :root.light).
 const COLOUR_GROUPS: Group[] = [
   {
     label: 'Brand',
     tokens: [
-      { name: 'accent', hex: '#E4F222' },
-      { name: 'accent-soft', hex: '#3A3F0A' },
+      { name: 'accent', hex: { dark: '#E4F222', light: '#E4F222' } },
+      { name: 'accent-soft', hex: { dark: '#3A3F0A', light: '#F5FAB5' } },
     ],
   },
   {
     label: 'Surface',
     tokens: [
-      { name: 'bg-app', hex: '#0C0C0E' },
-      { name: 'bg-panel', hex: '#141418' },
-      { name: 'bg-surface', hex: '#1A1A20' },
-      { name: 'bg-elevated', hex: '#222228' },
-      { name: 'bg-hover', hex: '#2A2A32' },
+      { name: 'bg-app', hex: { dark: '#0C0C0E', light: '#FAFAFA' } },
+      { name: 'bg-panel', hex: { dark: '#141418', light: '#F0F0F2' } },
+      { name: 'bg-surface', hex: { dark: '#1A1A20', light: '#FFFFFF' } },
+      { name: 'bg-elevated', hex: { dark: '#222228', light: '#FFFFFF' } },
+      { name: 'bg-hover', hex: { dark: '#2A2A32', light: '#EBEBED' } },
     ],
   },
   {
     label: 'Text',
     tokens: [
-      { name: 'text-primary', hex: '#EDEDF4' },
-      { name: 'text-secondary', hex: '#A6A6B0' },
-      { name: 'text-muted', hex: '#7A7A85' },
+      { name: 'text-primary', hex: { dark: '#EDEDF4', light: '#1A1A1A' } },
+      { name: 'text-secondary', hex: { dark: '#A6A6B0', light: '#525252' } },
+      { name: 'text-muted', hex: { dark: '#7A7A85', light: '#737373' } },
     ],
   },
   {
     label: 'Status',
     tokens: [
-      { name: 'success', hex: '#34C759' },
-      { name: 'warning', hex: '#FF9F0A' },
-      { name: 'error', hex: '#FF453A' },
+      { name: 'success', hex: { dark: '#34C759', light: '#22863A' } },
+      { name: 'warning', hex: { dark: '#FF9F0A', light: '#D97706' } },
+      { name: 'error', hex: { dark: '#FF453A', light: '#DC2626' } },
     ],
   },
 ];
@@ -85,12 +89,13 @@ const RADIUS_TOKENS = [
 
 interface SwatchTileProps {
   token: Swatch;
+  mode: Mode;
   delay: number;
   selected?: boolean;
   onClick?: () => void;
 }
 
-function SwatchTile({ token, delay, selected, onClick }: SwatchTileProps) {
+function SwatchTile({ token, mode, delay, selected, onClick }: SwatchTileProps) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.85, y: 4 }}
@@ -100,10 +105,11 @@ function SwatchTile({ token, delay, selected, onClick }: SwatchTileProps) {
       className="flex flex-col items-center gap-1.5 w-[72px] cursor-pointer"
       onClick={onClick}
     >
-      <div
+      <motion.div
+        animate={{ backgroundColor: token.hex[mode] }}
+        transition={{ duration: 0.35, ease: [0, 0, 0.2, 1] }}
         className="h-12 w-12 rounded-lg border transition-all hover:scale-105"
         style={{
-          backgroundColor: token.hex,
           borderColor: selected ? STUDIO_TOKENS.accent : STUDIO_TOKENS.border,
           boxShadow: selected ? `0 0 0 2px ${STUDIO_TOKENS.bgApp}, 0 0 0 4px ${STUDIO_TOKENS.accent}33` : 'none',
         }}
@@ -111,9 +117,16 @@ function SwatchTile({ token, delay, selected, onClick }: SwatchTileProps) {
       <span className="font-mono text-[10px] leading-none truncate w-full text-center" style={{ color: STUDIO_TOKENS.textSecondary }}>
         {token.name}
       </span>
-      <span className="font-mono text-[9px] leading-none -mt-1" style={{ color: STUDIO_TOKENS.textMuted }}>
-        {token.hex.toUpperCase()}
-      </span>
+      <motion.span
+        key={token.hex[mode]}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.25, delay: 0.05 }}
+        className="font-mono text-[9px] leading-none -mt-1"
+        style={{ color: STUDIO_TOKENS.textMuted }}
+      >
+        {token.hex[mode].toUpperCase()}
+      </motion.span>
     </motion.div>
   );
 }
@@ -176,9 +189,11 @@ export function DesignSystemMock() {
                       backgroundColor: selectedToken === t.name ? STUDIO_TOKENS.bgHover : 'transparent',
                     }}
                   >
-                    <div
+                    <motion.div
+                      animate={{ backgroundColor: t.hex[mode] }}
+                      transition={{ duration: 0.35, ease: [0, 0, 0.2, 1] }}
                       className="h-4 w-4 shrink-0 rounded-full border"
-                      style={{ backgroundColor: t.hex, borderColor: STUDIO_TOKENS.border }}
+                      style={{ borderColor: STUDIO_TOKENS.border }}
                     />
                     <span
                       className="text-xs font-mono truncate flex-1"
@@ -186,12 +201,16 @@ export function DesignSystemMock() {
                     >
                       --{t.name}
                     </span>
-                    <span
+                    <motion.span
+                      key={t.hex[mode]}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.25, delay: 0.05 }}
                       className="text-[10px] font-mono"
                       style={{ color: STUDIO_TOKENS.textMuted }}
                     >
-                      {t.hex.toUpperCase()}
-                    </span>
+                      {t.hex[mode].toUpperCase()}
+                    </motion.span>
                   </div>
                 ))}
               </div>
@@ -235,6 +254,7 @@ export function DesignSystemMock() {
                       <SwatchTile
                         key={token.name}
                         token={token}
+                        mode={mode}
                         delay={0.1 + gi * 0.05 + ti * 0.04}
                         selected={selectedToken === token.name}
                         onClick={() => setSelectedToken(token.name)}

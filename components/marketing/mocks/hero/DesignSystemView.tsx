@@ -8,40 +8,42 @@ import { STUDIO_TOKENS } from '../_studio-chrome';
 const HUB_TABS = ['Tokens', 'Assets', 'Context'] as const;
 type HubTab = typeof HUB_TABS[number];
 
-interface Swatch { name: string; hex: string }
+type Mode = 'dark' | 'light';
+
+interface Swatch { name: string; hex: Record<Mode, string> }
 
 const COLOUR_GROUPS: { label: string; tokens: Swatch[] }[] = [
   {
     label: 'Brand',
     tokens: [
-      { name: 'accent', hex: '#E4F222' },
-      { name: 'accent-soft', hex: '#3A3F0A' },
+      { name: 'accent', hex: { dark: '#E4F222', light: '#E4F222' } },
+      { name: 'accent-soft', hex: { dark: '#3A3F0A', light: '#F5FAB5' } },
     ],
   },
   {
     label: 'Surface',
     tokens: [
-      { name: 'bg-app', hex: '#0C0C0E' },
-      { name: 'bg-panel', hex: '#141418' },
-      { name: 'bg-surface', hex: '#1A1A20' },
-      { name: 'bg-elevated', hex: '#222228' },
-      { name: 'bg-hover', hex: '#2A2A32' },
+      { name: 'bg-app', hex: { dark: '#0C0C0E', light: '#FAFAFA' } },
+      { name: 'bg-panel', hex: { dark: '#141418', light: '#F0F0F2' } },
+      { name: 'bg-surface', hex: { dark: '#1A1A20', light: '#FFFFFF' } },
+      { name: 'bg-elevated', hex: { dark: '#222228', light: '#FFFFFF' } },
+      { name: 'bg-hover', hex: { dark: '#2A2A32', light: '#EBEBED' } },
     ],
   },
   {
     label: 'Text',
     tokens: [
-      { name: 'text-primary', hex: '#EDEDF4' },
-      { name: 'text-secondary', hex: '#A6A6B0' },
-      { name: 'text-muted', hex: '#7A7A85' },
+      { name: 'text-primary', hex: { dark: '#EDEDF4', light: '#1A1A1A' } },
+      { name: 'text-secondary', hex: { dark: '#A6A6B0', light: '#525252' } },
+      { name: 'text-muted', hex: { dark: '#7A7A85', light: '#737373' } },
     ],
   },
   {
     label: 'Status',
     tokens: [
-      { name: 'success', hex: '#34C759' },
-      { name: 'warning', hex: '#FF9F0A' },
-      { name: 'error', hex: '#FF453A' },
+      { name: 'success', hex: { dark: '#34C759', light: '#22863A' } },
+      { name: 'warning', hex: { dark: '#FF9F0A', light: '#D97706' } },
+      { name: 'error', hex: { dark: '#FF453A', light: '#DC2626' } },
     ],
   },
 ];
@@ -60,7 +62,7 @@ const RADIUS = [
   { name: 'pill', value: 999 },
 ];
 
-function SwatchTile({ token, delay }: { token: Swatch; delay: number }) {
+function SwatchTile({ token, mode, delay }: { token: Swatch; mode: Mode; delay: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.85 }}
@@ -69,9 +71,11 @@ function SwatchTile({ token, delay }: { token: Swatch; delay: number }) {
       viewport={{ once: true, margin: '-10%' }}
       className="flex flex-col items-center gap-1.5 w-[72px] cursor-pointer"
     >
-      <div
+      <motion.div
+        animate={{ backgroundColor: token.hex[mode] }}
+        transition={{ duration: 0.35, ease: [0, 0, 0.2, 1] }}
         className="h-12 w-12 rounded-lg border transition-all hover:scale-105"
-        style={{ backgroundColor: token.hex, borderColor: STUDIO_TOKENS.border }}
+        style={{ borderColor: STUDIO_TOKENS.border }}
       />
       <span
         className="font-mono text-[10px] leading-none truncate w-full text-center"
@@ -79,18 +83,23 @@ function SwatchTile({ token, delay }: { token: Swatch; delay: number }) {
       >
         {token.name}
       </span>
-      <span
+      <motion.span
+        key={token.hex[mode]}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.25, delay: 0.05 }}
         className="font-mono text-[9px] leading-none -mt-1"
         style={{ color: STUDIO_TOKENS.textMuted }}
       >
-        {token.hex.toUpperCase()}
-      </span>
+        {token.hex[mode].toUpperCase()}
+      </motion.span>
     </motion.div>
   );
 }
 
 export function DesignSystemView() {
   const [activeTab, setActiveTab] = useState<HubTab>('Tokens');
+  const [mode, setMode] = useState<Mode>('dark');
 
   return (
     <>
@@ -114,21 +123,29 @@ export function DesignSystemView() {
         ))}
         <div className="ml-auto flex items-center gap-2">
           <div
-            className="flex items-center gap-1 rounded-md border p-0.5 text-[10px] font-mono"
+            className="relative flex items-center rounded-md border p-0.5 text-[10px] font-mono"
             style={{ borderColor: STUDIO_TOKENS.borderStrong }}
           >
-            <button
-              className="rounded-sm px-2 py-0.5 font-medium uppercase tracking-wider"
-              style={{ backgroundColor: STUDIO_TOKENS.accent, color: STUDIO_TOKENS.textOnAccent }}
-            >
-              Dark
-            </button>
-            <button
-              className="rounded-sm px-2 py-0.5 font-medium uppercase tracking-wider"
-              style={{ color: STUDIO_TOKENS.textMuted }}
-            >
-              Light
-            </button>
+            {(['dark', 'light'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className="relative rounded-sm px-2 py-0.5 font-medium uppercase tracking-wider transition-colors z-10"
+                style={{
+                  color: mode === m ? STUDIO_TOKENS.textOnAccent : STUDIO_TOKENS.textMuted,
+                }}
+              >
+                {mode === m && (
+                  <motion.span
+                    layoutId="hero-ds-mode-pill"
+                    className="absolute inset-0 rounded-sm"
+                    style={{ backgroundColor: STUDIO_TOKENS.brand }}
+                    transition={{ duration: 0.25, ease: [0, 0, 0.2, 1] }}
+                  />
+                )}
+                <span className="relative">{m}</span>
+              </button>
+            ))}
           </div>
           <button
             className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-white/5"
@@ -160,7 +177,7 @@ export function DesignSystemView() {
                 </div>
                 <div className="flex flex-wrap gap-x-2 gap-y-2">
                   {group.tokens.map((t, ti) => (
-                    <SwatchTile key={t.name} token={t} delay={0.1 + gi * 0.05 + ti * 0.04} />
+                    <SwatchTile key={t.name} token={t} mode={mode} delay={0.1 + gi * 0.05 + ti * 0.04} />
                   ))}
                 </div>
               </div>
