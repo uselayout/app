@@ -27,7 +27,18 @@ import {
   BookMarked,
   Check,
 } from 'lucide-react';
-import { StudioWindow, SourcePanel, StudioSurface, STUDIO_TOKENS } from './_studio-chrome';
+import { StudioWindow, SourcePanel, StudioSurface, Tooltip, STUDIO_TOKENS } from './_studio-chrome';
+
+const ACTIONS = [
+  { Icon: ThumbsUp, label: 'Good' },
+  { Icon: ThumbsDown, label: 'Bad' },
+  { Icon: MousePointer2, label: 'Inspect & edit' },
+  { Icon: Copy, label: 'Copy code' },
+  { Icon: RotateCw, label: 'Regenerate' },
+  { Icon: Monitor, label: 'Responsive preview' },
+  { Icon: FigmaIcon, label: 'Push to Figma' },
+  { Icon: BookMarked, label: 'Add to library' },
+];
 
 const TABS = [
   { id: 'tokens', label: 'Tokens', icon: Palette },
@@ -238,14 +249,15 @@ function VariantCard({ variant, selected, delay, onClick }: VariantCardProps) {
           opacity: selected ? 1 : undefined,
         }}
       >
-        {[ThumbsUp, ThumbsDown, MousePointer2, Copy, RotateCw, Monitor, FigmaIcon, BookMarked].map((Icon, i) => (
-          <button
-            key={i}
-            className="flex h-5 w-5 items-center justify-center rounded transition-colors hover:bg-white/8"
-            style={{ color: STUDIO_TOKENS.textMuted }}
-          >
-            <Icon className="h-3 w-3" />
-          </button>
+        {ACTIONS.map(({ Icon, label }, i) => (
+          <Tooltip key={i} label={label}>
+            <button
+              className="flex h-5 w-5 items-center justify-center rounded transition-colors hover:bg-white/10"
+              style={{ color: STUDIO_TOKENS.textMuted }}
+            >
+              <Icon className="h-3 w-3" />
+            </button>
+          </Tooltip>
         ))}
       </div>
     </motion.div>

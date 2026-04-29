@@ -25,7 +25,16 @@ import {
   RotateCw,
   Check,
 } from 'lucide-react';
-import { StudioWindow, SourcePanel, StudioSurface, STUDIO_TOKENS } from './_studio-chrome';
+import { StudioWindow, SourcePanel, StudioSurface, Tooltip, STUDIO_TOKENS } from './_studio-chrome';
+
+const ACTIONS = [
+  { Icon: ThumbsUp, label: 'Good' },
+  { Icon: ThumbsDown, label: 'Bad' },
+  { Icon: MousePointer2, label: 'Inspect & edit' },
+  { Icon: Copy, label: 'Copy code' },
+  { Icon: RotateCw, label: 'Regenerate' },
+  { Icon: FigmaIcon, label: 'Push to Figma' },
+];
 
 const TABS = [
   { id: 'tokens', label: 'Tokens', icon: Palette },
@@ -210,14 +219,15 @@ function VariantTile({ variant, selected, delay, onClick }: VariantTileProps) {
         className="flex items-center gap-1 border-t px-2.5 py-1.5"
         style={{ borderColor: STUDIO_TOKENS.border }}
       >
-        {[ThumbsUp, ThumbsDown, MousePointer2, Copy, RotateCw, FigmaIcon].map((Icon, i) => (
-          <button
-            key={i}
-            className="flex h-4 w-4 items-center justify-center rounded transition-colors hover:bg-white/8"
-            style={{ color: STUDIO_TOKENS.textMuted }}
-          >
-            <Icon className="h-2.5 w-2.5" />
-          </button>
+        {ACTIONS.map(({ Icon, label }, i) => (
+          <Tooltip key={i} label={label}>
+            <button
+              className="flex h-4 w-4 items-center justify-center rounded transition-colors hover:bg-white/10"
+              style={{ color: STUDIO_TOKENS.textMuted }}
+            >
+              <Icon className="h-2.5 w-2.5" />
+            </button>
+          </Tooltip>
         ))}
       </div>
     </motion.div>
