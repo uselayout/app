@@ -3,7 +3,8 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSession } from '@/lib/auth-client';
-import { MarketingVideo } from '@/components/marketing/MarketingVideo';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { HeroMock } from '@/components/marketing/mocks/HeroMock';
 
 const TOOL_ICONS: { name: string; src: string }[] = [
   { name: 'Claude', src: '/marketing/icons/claude.svg' },
@@ -154,9 +155,11 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
           style={{ zIndex: 0 }}
         />
 
-        {/* Video container */}
-        <div className="relative z-10 aspect-[1280/810] rounded-[6px] bg-white overflow-hidden w-full">
-          <MarketingVideo src="/marketing/videos/hero-demo.mp4" />
+        {/* Mock container */}
+        <div className="relative z-10 aspect-[1280/810] rounded-[6px] overflow-hidden w-full bg-[#0C0C0E]">
+          <MockFrame ariaLabel="Layout Studio explorer demo">
+            <HeroMock />
+          </MockFrame>
         </div>
       </div>
     </section>

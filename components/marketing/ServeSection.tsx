@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MarketingVideo } from '@/components/marketing/MarketingVideo';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { ServeMock } from '@/components/marketing/mocks/ServeMock';
 
 export function ServeSection() {
   return (
@@ -51,7 +52,9 @@ export function ServeSection() {
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
         <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
-          <MarketingVideo src="/marketing/videos/serve.mp4" />
+          <MockFrame ariaLabel="MCP install and AI agent code generation">
+            <ServeMock />
+          </MockFrame>
         </div>
       </motion.div>
     </section>

@@ -2,7 +2,8 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { MarketingVideo } from '@/components/marketing/MarketingVideo';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { ExplorerMock } from '@/components/marketing/mocks/ExplorerMock';
 
 export function ExplorerSection() {
   return (
@@ -59,7 +60,9 @@ export function ExplorerSection() {
           aria-hidden="true"
         />
         <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
-          <MarketingVideo src="/marketing/videos/explorer.mp4" ariaLabel="Explorer section demo" />
+          <MockFrame ariaLabel="Explorer six-variant grid">
+            <ExplorerMock />
+          </MockFrame>
         </div>
       </motion.div>
     </section>
