@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-extraction-diff-modal-scroll",
+    title: "Re-extraction diff modal scrolls properly with lots of token changes",
+    description:
+      "When a re-extraction produced more tokens than fit in the Extraction Changes modal (think 50+ token diffs), the list silently clipped at the visible area and the rest were unreachable — wheel and trackpad did nothing. The modal now uses a proper grid layout with a definite scrollable region, so every change is reachable regardless of how many tokens the diff contains.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-29",
+  },
+  {
     id: "2026-w18-extraction-warm-cool-colours",
     title: "Site extraction now picks up brand yellows, pinks, and purples",
     description:
