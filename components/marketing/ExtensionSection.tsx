@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MarketingVideo } from '@/components/marketing/MarketingVideo';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { ExtensionMock } from '@/components/marketing/mocks/ExtensionMock';
 
 export function ExtensionSection() {
   return (
@@ -60,7 +61,9 @@ export function ExtensionSection() {
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
         <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
-          <MarketingVideo src="/marketing/videos/extension.mp4" ariaLabel="Chrome extension demo" />
+          <MockFrame ariaLabel="Chrome extension extracting tokens from a webpage">
+            <ExtensionMock />
+          </MockFrame>
         </div>
       </motion.div>
     </section>
