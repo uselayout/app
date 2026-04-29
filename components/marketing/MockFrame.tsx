@@ -22,12 +22,14 @@ export function MockFrame({ children, ariaLabel, className }: MockFrameProps) {
       role="img"
       aria-label={ariaLabel}
       style={{
-        // 1px outer bright ring + 1px inner subtle highlight + a wide soft shadow
+        // 1px brighter outer ring + 1px inner top highlight + soft drop shadow.
+        // Outer ring is bumped (0.28) so the window edge clearly separates from
+        // the dark page bg even when the section's aurora glow is subtle.
         boxShadow: [
-          '0 0 0 1px rgba(255,255,255,0.16)',
-          'inset 0 1px 0 rgba(255,255,255,0.06)',
-          '0 18px 48px -12px rgba(0,0,0,0.55)',
-          '0 4px 12px -2px rgba(0,0,0,0.4)',
+          '0 0 0 1px rgba(255,255,255,0.28)',
+          'inset 0 1px 0 rgba(255,255,255,0.12)',
+          '0 24px 56px -12px rgba(0,0,0,0.6)',
+          '0 4px 14px -2px rgba(0,0,0,0.45)',
         ].join(', '),
       }}
     >
