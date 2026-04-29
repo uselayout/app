@@ -182,18 +182,18 @@ export function SourceTabStrip({ tabs, activeTab, onTab, trailing }: SourceTabSt
         const Icon = tab.icon;
         const active = tab.id === activeTab;
         return (
-          <button
-            key={tab.id}
-            onClick={() => onTab(tab.id)}
-            title={tab.label}
-            className="flex size-7 items-center justify-center rounded-md transition-all"
-            style={{
-              backgroundColor: active ? STUDIO_TOKENS.border : 'transparent',
-              color: active ? STUDIO_TOKENS.textPrimary : STUDIO_TOKENS.textMuted,
-            }}
-          >
-            <Icon className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip key={tab.id} label={tab.label} side="below">
+            <button
+              onClick={() => onTab(tab.id)}
+              className="flex size-7 items-center justify-center rounded-md transition-all"
+              style={{
+                backgroundColor: active ? STUDIO_TOKENS.border : 'transparent',
+                color: active ? STUDIO_TOKENS.textPrimary : STUDIO_TOKENS.textMuted,
+              }}
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
         );
       })}
       <div className="flex-1" />
@@ -250,6 +250,48 @@ export function StudioSurface({
       style={{ backgroundColor: STUDIO_TOKENS.bgSurface }}
     >
       {children}
+    </div>
+  );
+}
+
+/**
+ * Hover-reveal tooltip. Use to wrap any icon-only button so users
+ * discover what each action does, like Cursor's chrome.
+ *
+ * Tooltip appears ABOVE the trigger by default. `side="below"` puts it
+ * beneath instead (use when the trigger is near the top of an
+ * overflow-hidden container).
+ */
+export function Tooltip({
+  label,
+  children,
+  side = 'above',
+  className = '',
+}: {
+  label: string;
+  children: ReactNode;
+  side?: 'above' | 'below';
+  className?: string;
+}) {
+  const positionClass =
+    side === 'above'
+      ? 'bottom-full mb-1.5'
+      : 'top-full mt-1.5';
+  return (
+    <div className={`relative group/tt inline-flex ${className}`}>
+      {children}
+      <div
+        className={`absolute left-1/2 -translate-x-1/2 ${positionClass} px-2 py-1 rounded text-[10px] font-medium whitespace-nowrap opacity-0 group-hover/tt:opacity-100 transition-opacity pointer-events-none z-20`}
+        style={{
+          backgroundColor: STUDIO_TOKENS.bgElevated,
+          color: STUDIO_TOKENS.textPrimary,
+          border: `1px solid ${STUDIO_TOKENS.borderStrong}`,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+        }}
+        role="tooltip"
+      >
+        {label}
+      </div>
     </div>
   );
 }
