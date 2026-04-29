@@ -27,7 +27,7 @@ import {
   BookMarked,
   Check,
 } from 'lucide-react';
-import { StudioWindow, SourcePanel, StudioSurface, Tooltip, STUDIO_TOKENS } from './_studio-chrome';
+import { StudioWindow, SourcePanel, StudioSurface, Tooltip, PaperIcon, STUDIO_TOKENS } from './_studio-chrome';
 
 const ACTIONS = [
   { Icon: ThumbsUp, label: 'Good' },
@@ -37,6 +37,7 @@ const ACTIONS = [
   { Icon: RotateCw, label: 'Regenerate' },
   { Icon: Monitor, label: 'Responsive preview' },
   { Icon: FigmaIcon, label: 'Push to Figma' },
+  { Icon: PaperIcon, label: 'Push to Paper' },
   { Icon: BookMarked, label: 'Add to library' },
 ];
 
