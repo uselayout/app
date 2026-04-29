@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
 import { EmailTab } from "./EmailTab";
@@ -12,6 +13,36 @@ import { KitsTab } from "./KitsTab";
 import { KitRequestsTab } from "./KitRequestsTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+type AdminTab =
+  | "dashboard"
+  | "codes"
+  | "requests"
+  | "changelog"
+  | "credits"
+  | "ai-models"
+  | "email"
+  | "roadmap"
+  | "variants"
+  | "kits"
+  | "kit-requests";
+
+const ADMIN_TABS: readonly AdminTab[] = [
+  "dashboard",
+  "codes",
+  "requests",
+  "changelog",
+  "credits",
+  "ai-models",
+  "email",
+  "roadmap",
+  "variants",
+  "kits",
+  "kit-requests",
+] as const;
+
+const isAdminTab = (v: string | null): v is AdminTab =>
+  v !== null && (ADMIN_TABS as readonly string[]).includes(v);
 
 interface InviteCodeRow {
   code: string;
@@ -2308,7 +2339,21 @@ function CreditsTab({ toast }: { toast: (msg: string, type?: "success" | "error"
 
 export function AdminClient() {
   const { data: session, isPending } = useSession();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "codes" | "requests" | "changelog" | "credits" | "ai-models" | "email" | "roadmap" | "variants" | "kits" | "kit-requests">("dashboard");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const activeTab: AdminTab = isAdminTab(tabParam) ? tabParam : "dashboard";
+
+  const setActiveTab = useCallback(
+    (tab: AdminTab) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (tab === "dashboard") params.delete("tab");
+      else params.set("tab", tab);
+      const qs = params.toString();
+      router.replace(qs ? `/admin?${qs}` : "/admin", { scroll: false });
+    },
+    [router, searchParams],
+  );
   const { toasts, show: toast } = useToast();
   const [pendingCount, setPendingCount] = useState(0);
   const [stats, setStats] = useState<AdminStatsData | null>(null);
