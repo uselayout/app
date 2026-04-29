@@ -228,8 +228,8 @@ export function ExplorerView() {
 
   return (
     <>
-      {/* Variant grid (top) */}
-      <div className="mx-3 mt-3 grid grid-cols-3 gap-3 items-start">
+      {/* Variant grid (top) — 2-up like the real Explorer (matches user's Studio behaviour) */}
+      <div className="mx-3 mt-3 grid grid-cols-2 gap-3 items-start">
         {VARIANTS.map((v, i) => (
           <VariantCard
             key={v.id}

@@ -303,10 +303,79 @@ function InspectPage({
   );
 }
 
+interface PageElement {
+  label: string;
+  styleSummary: string;
+  tokenRef: string;
+  tooltipPos: React.CSSProperties;
+}
+
+const PAGE_ELEMENTS: Record<string, PageElement> = {
+  'sign-in': {
+    label: 'button.sign-in',
+    styleSummary: 'bg #635BFF · radius 9999 · 12/medium',
+    tokenRef: '--brand-primary',
+    tooltipPos: { top: 56, right: 24 },
+  },
+  eyebrow: {
+    label: 'span.eyebrow',
+    styleSummary: 'color #635BFF · 10/semibold · uppercase',
+    tokenRef: '--brand-primary',
+    tooltipPos: { top: 138, left: 28 },
+  },
+  'hero-title': {
+    label: 'h1.hero-title',
+    styleSummary: 'color #0A2540 · 28px/600',
+    tokenRef: '--brand-deep',
+    tooltipPos: { top: 192, left: 28 },
+  },
+  'cta-primary': {
+    label: 'button.cta-primary',
+    styleSummary: 'bg #635BFF · radius 9999 · 11/medium',
+    tokenRef: '--brand-primary',
+    tooltipPos: { top: 396, left: 28 },
+  },
+  'cta-secondary': {
+    label: 'button.cta-secondary',
+    styleSummary: 'border #0A2540/15 · radius 9999 · 11/medium',
+    tokenRef: '--brand-deep',
+    tooltipPos: { top: 396, left: 200 },
+  },
+  gradient: {
+    label: 'div.hero-art',
+    styleSummary: 'gradient · radius 12 · shadow-lg',
+    tokenRef: '--accent-pink',
+    tooltipPos: { top: 110, right: 30 },
+  },
+};
+
 export function ExtensionMock() {
   const [bottomTab, setBottomTab] = useState<BottomTabId>('tools');
   const [activeTool, setActiveTool] = useState<ToolId>('inspect');
-  const [selected, setSelected] = useState<string | null>('--brand-primary');
+  const [selectedEl, setSelectedEl] = useState<string>('cta-primary');
+  const selectedToken = PAGE_ELEMENTS[selectedEl]?.tokenRef ?? null;
+
+  // Allow user to click a token row in the sidebar — jump selection to the
+  // first page element that uses that token.
+  const setSelectedToken = (tokenName: string | null) => {
+    if (!tokenName) return;
+    const elId = Object.entries(PAGE_ELEMENTS).find(([, m]) => m.tokenRef === tokenName)?.[0];
+    if (elId) setSelectedEl(elId);
+  };
+
+  // Reusable selection-ring overlay — wraps the actual element so the lime
+  // ring sits flush against its bounding box (Figma-style selection).
+  const selectionRing = (id: string) => {
+    if (selectedEl !== id) return null;
+    return (
+      <span
+        className="absolute -inset-[3px] pointer-events-none rounded-[5px]"
+        style={{
+          boxShadow: `0 0 0 2px ${STUDIO_TOKENS.brand}, 0 0 0 4px rgba(228,242,34,0.18)`,
+        }}
+      />
+    );
+  };
 
   return (
     <div
@@ -354,8 +423,9 @@ export function ExtensionMock() {
 
       {/* Body */}
       <div className="flex-1 grid grid-cols-[1fr_320px] min-h-0">
-        {/* Faux Stripe webpage */}
+        {/* Faux Stripe webpage — clickable elements drive the inspector */}
         <div className="flex flex-col bg-white text-[#0A2540] overflow-hidden min-h-0 relative">
+          {/* Top nav */}
           <div className="flex items-center justify-between border-b border-black/8 px-6 py-3 shrink-0 bg-white">
             <div className="flex items-center gap-6">
               <span className="text-[14px] font-bold text-[#0A2540]">Stripe</span>
@@ -363,55 +433,115 @@ export function ExtensionMock() {
                 <span key={n} className="text-[11px] text-[#425466]">{n}</span>
               ))}
             </div>
-            <button className="rounded-full bg-[#635BFF] px-3 py-1 text-[10.5px] font-medium text-white">
-              Sign in
-            </button>
+            <span className="relative inline-block">
+              <button
+                onClick={() => setSelectedEl('sign-in')}
+                className="rounded-full bg-[#635BFF] px-3 py-1 text-[10.5px] font-medium text-white cursor-pointer"
+              >
+                Sign in
+              </button>
+              {selectionRing('sign-in')}
+            </span>
           </div>
+
+          {/* Hero */}
           <div className="flex-1 grid grid-cols-[1.3fr_1fr] gap-6 px-6 py-6 overflow-hidden bg-gradient-to-br from-white via-[#F6F9FC] to-[#E0E7FF]">
             <div className="flex flex-col justify-center gap-3">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#635BFF]">Built for Scale</span>
-              <h1 className="text-[28px] leading-tight font-semibold">
-                Financial<br />infrastructure<br />for the internet
-              </h1>
+              <span className="relative inline-block self-start">
+                <span
+                  onClick={() => setSelectedEl('eyebrow')}
+                  className="block text-[10px] font-semibold uppercase tracking-wider text-[#635BFF] cursor-pointer"
+                >
+                  Built for Scale
+                </span>
+                {selectionRing('eyebrow')}
+              </span>
+
+              <span className="relative inline-block self-start">
+                <h1
+                  onClick={() => setSelectedEl('hero-title')}
+                  className="text-[28px] leading-tight font-semibold cursor-pointer"
+                >
+                  Financial<br />infrastructure<br />for the internet
+                </h1>
+                {selectionRing('hero-title')}
+              </span>
+
               <p className="text-[12px] text-[#425466] leading-snug max-w-[80%]">
                 Millions of businesses use Stripe to accept payments, send payouts, and manage their businesses online.
               </p>
+
               <div className="flex items-center gap-2 mt-1">
-                <button className="rounded-full bg-[#635BFF] px-3 py-1.5 text-[11px] font-medium text-white">
-                  Start now →
-                </button>
-                <button className="rounded-full border border-[#0A2540]/15 bg-white px-3 py-1.5 text-[11px] font-medium text-[#0A2540]">
-                  Contact sales
-                </button>
+                <span className="relative inline-block">
+                  <button
+                    onClick={() => setSelectedEl('cta-primary')}
+                    className="rounded-full bg-[#635BFF] px-3 py-1.5 text-[11px] font-medium text-white cursor-pointer"
+                  >
+                    Start now →
+                  </button>
+                  {selectionRing('cta-primary')}
+                </span>
+                <span className="relative inline-block">
+                  <button
+                    onClick={() => setSelectedEl('cta-secondary')}
+                    className="rounded-full border border-[#0A2540]/15 bg-white px-3 py-1.5 text-[11px] font-medium text-[#0A2540] cursor-pointer"
+                  >
+                    Contact sales
+                  </button>
+                  {selectionRing('cta-secondary')}
+                </span>
               </div>
             </div>
-            <div
-              className="rounded-xl shadow-lg relative overflow-hidden"
-              style={{ background: 'linear-gradient(135deg, #635BFF 0%, #0073E6 50%, #FF5996 100%)' }}
-            >
-              <div className="absolute inset-0 flex items-end p-3">
-                <div className="rounded-md bg-white/15 backdrop-blur px-2.5 py-1 text-[9px] font-mono text-white">
-                  payment.success
+
+            {/* Gradient art block */}
+            <div className="relative">
+              <div
+                onClick={() => setSelectedEl('gradient')}
+                className="rounded-xl shadow-lg relative overflow-hidden h-full cursor-pointer"
+                style={{ background: 'linear-gradient(135deg, #635BFF 0%, #0073E6 50%, #FF5996 100%)' }}
+              >
+                <div className="absolute inset-0 flex items-end p-3">
+                  <div className="rounded-md bg-white/15 backdrop-blur px-2.5 py-1 text-[9px] font-mono text-white">
+                    payment.success
+                  </div>
                 </div>
               </div>
+              {selectionRing('gradient')}
             </div>
           </div>
-          {/* Element-picker selection ring + tooltip */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.5 }}
-            viewport={{ once: true, margin: '-10%' }}
-            className="absolute pointer-events-none"
-            style={{ top: '57%', left: '15%' }}
-          >
-            <div
-              className="rounded-md px-2.5 py-1.5 text-[10px] font-mono shadow-lg whitespace-nowrap"
-              style={{ backgroundColor: '#0A2540', color: 'white' }}
+
+          {/* Dynamic inspector tooltip — moves with the selection */}
+          {PAGE_ELEMENTS[selectedEl] && (
+            <motion.div
+              key={selectedEl}
+              initial={{ opacity: 0, y: -2 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.18, ease: [0, 0, 0.2, 1] }}
+              className="absolute pointer-events-none z-10"
+              style={PAGE_ELEMENTS[selectedEl].tooltipPos}
             >
-              <span style={{ color: STUDIO_TOKENS.brand }}>●</span> button.cta · bg #635BFF · radius 9999
-            </div>
-          </motion.div>
+              <div
+                className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-mono shadow-lg whitespace-nowrap"
+                style={{ backgroundColor: '#0A2540', color: 'white' }}
+              >
+                <span style={{ color: STUDIO_TOKENS.brand }}>●</span>
+                <span>{PAGE_ELEMENTS[selectedEl].label}</span>
+                <span style={{ color: 'rgba(255,255,255,0.4)' }}>·</span>
+                <span style={{ color: 'rgba(255,255,255,0.7)' }}>
+                  {PAGE_ELEMENTS[selectedEl].styleSummary}
+                </span>
+              </div>
+              <div
+                className="mt-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-mono"
+                style={{
+                  backgroundColor: 'rgba(228,242,34,0.95)',
+                  color: '#0C0C0E',
+                }}
+              >
+                → token: {PAGE_ELEMENTS[selectedEl].tokenRef}
+              </div>
+            </motion.div>
+          )}
         </div>
 
         {/* Sidebar — REAL Layout extension structure (3 bottom tabs + tools page) */}
@@ -425,8 +555,8 @@ export function ExtensionMock() {
             {bottomTab === 'tools' && (
               activeTool ? (
                 <InspectPage
-                  selected={selected}
-                  setSelected={setSelected}
+                  selected={selectedToken}
+                  setSelected={setSelectedToken}
                   onBack={() => setActiveTool(null)}
                 />
               ) : (

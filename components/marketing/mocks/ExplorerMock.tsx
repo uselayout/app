@@ -284,8 +284,8 @@ export function ExplorerMock() {
       </SourcePanel>
 
       <StudioSurface>
-        {/* 3x2 variant grid (top) */}
-        <div className="mx-3 mt-3 grid grid-cols-3 grid-rows-2 gap-2.5 items-start">
+        {/* 2x3 variant grid (top) — 2 columns, matches real Explorer */}
+        <div className="mx-3 mt-3 grid grid-cols-2 gap-2.5 items-start">
           {VARIANTS.map((v, i) => (
             <VariantTile
               key={i}
