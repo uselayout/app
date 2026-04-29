@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MarketingVideo } from '@/components/marketing/MarketingVideo';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { FigmaLoopMock } from '@/components/marketing/mocks/FigmaLoopMock';
 
 export function FigmaLoopSection() {
   return (
@@ -63,7 +64,9 @@ export function FigmaLoopSection() {
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
         <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
-          <MarketingVideo src="/marketing/videos/figma-loop.mp4" />
+          <MockFrame ariaLabel="Figma to Layout Studio bidirectional sync">
+            <FigmaLoopMock />
+          </MockFrame>
         </div>
       </motion.div>
     </section>

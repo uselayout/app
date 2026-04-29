@@ -1,23 +1,36 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { FileCode2, Terminal as TerminalIcon, X, Folder, ChevronRight } from 'lucide-react';
+import { STUDIO_TOKENS } from './_studio-chrome';
 
 interface CodeLineProps {
   children: React.ReactNode;
   delay: number;
   highlight?: boolean;
+  number: number;
 }
 
-function CodeLine({ children, delay, highlight }: CodeLineProps) {
+function CodeLine({ children, delay, highlight, number }: CodeLineProps) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
       transition={{ duration: 0.25, delay, ease: 'linear' }}
       viewport={{ once: true, margin: '-10%' }}
-      className={`px-4 py-[1px] ${highlight ? 'bg-[#E4F222]/[0.07]' : ''}`}
+      className="flex items-baseline px-3"
+      style={{ backgroundColor: highlight ? 'rgba(228,242,34,0.06)' : 'transparent' }}
     >
-      {children}
+      <span
+        className="select-none w-7 text-right pr-3 text-[11px] tabular-nums shrink-0 font-mono"
+        style={{ color: 'rgba(255,255,255,0.25)' }}
+      >
+        {number}
+      </span>
+      <div className="font-mono text-[12px] leading-[1.7]" style={{ color: 'rgba(232,232,240,0.85)' }}>
+        {children}
+      </div>
     </motion.div>
   );
 }
@@ -31,229 +44,248 @@ interface TerminalLineProps {
 function TerminalLine({ children, delay, type = 'info' }: TerminalLineProps) {
   const colour =
     type === 'cmd'
-      ? 'text-white'
+      ? STUDIO_TOKENS.textPrimary
       : type === 'ok'
-      ? 'text-emerald-300'
+      ? 'rgb(134,239,172)'
       : type === 'mcp'
-      ? 'text-[#E4F222]'
+      ? '#E4F222'
       : type === 'data'
-      ? 'text-white/55'
-      : 'text-white/65';
+      ? STUDIO_TOKENS.textSecondary
+      : STUDIO_TOKENS.textSecondary;
   return (
     <motion.div
       initial={{ opacity: 0, x: -4 }}
       whileInView={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay, ease: [0, 0, 0.2, 1] }}
       viewport={{ once: true, margin: '-10%' }}
-      className={`font-mono text-[11px] leading-[1.55] whitespace-pre ${colour}`}
+      className="font-mono text-[11.5px] leading-[1.6] whitespace-pre"
+      style={{ color: colour }}
     >
       {children}
     </motion.div>
   );
 }
 
+const FILES = ['SignInForm.tsx', 'tokens.css', 'tailwind.config.ts'];
+
 export function ServeMock() {
+  const [activeFile, setActiveFile] = useState('SignInForm.tsx');
+
   return (
     <div
-      className="absolute inset-0 flex flex-col text-white"
+      className="absolute inset-0 flex flex-col"
       style={{
-        backgroundColor: '#0C0C0E',
+        backgroundColor: STUDIO_TOKENS.bgApp,
+        color: STUDIO_TOKENS.textPrimary,
         fontFamily: '"Geist", "Inter", -apple-system, sans-serif',
         colorScheme: 'dark',
       }}
     >
-      {/* Window chrome */}
-      <div className="flex items-center justify-between border-b border-white/10 bg-black/40 px-4 py-2.5 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="flex gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-full bg-white/15" />
-            <div className="h-2.5 w-2.5 rounded-full bg-white/15" />
-            <div className="h-2.5 w-2.5 rounded-full bg-white/15" />
-          </div>
-          <span className="font-mono text-[11px] text-white/50">acme-app · ~/projects</span>
+      {/* IDE-style top bar — file path breadcrumb (not Studio TopBar; this is the user's editor) */}
+      <div
+        className="flex h-9 items-center justify-between border-b px-4 shrink-0"
+        style={{ borderColor: STUDIO_TOKENS.border }}
+      >
+        <div className="flex items-center gap-1.5 text-[11px] font-mono" style={{ color: STUDIO_TOKENS.textMuted }}>
+          <Folder className="h-3 w-3" />
+          <span>acme-app</span>
+          <ChevronRight className="h-2.5 w-2.5" />
+          <span>src</span>
+          <ChevronRight className="h-2.5 w-2.5" />
+          <span>components</span>
+          <ChevronRight className="h-2.5 w-2.5" />
+          <span style={{ color: STUDIO_TOKENS.textPrimary }}>{activeFile}</span>
         </div>
-        <div className="flex items-center gap-3 text-[10px] font-mono text-white/40">
-          <span className="flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
-            MCP connected · 12 tools
+        <div className="flex items-center gap-2 text-[10px] font-mono" style={{ color: STUDIO_TOKENS.textMuted }}>
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: STUDIO_TOKENS.statusSuccess }} />
+            Layout MCP · 12 tools
           </span>
         </div>
       </div>
 
-      {/* Body: code (left) + terminal (right) */}
-      <div className="flex-1 grid grid-cols-2 min-h-0">
-        {/* Code editor */}
-        <div className="flex flex-col border-r border-white/10 min-h-0">
-          <div className="flex items-center gap-1 border-b border-white/8 bg-black/30 px-3 py-1.5 shrink-0">
-            <div className="flex items-center gap-1.5 rounded-t-md bg-white/[0.04] border-t border-x border-white/10 px-2.5 py-1 text-[10px] font-mono text-white/80 -mb-px">
-              <span className="text-[#E4F222]">●</span>
-              SignInForm.tsx
-            </div>
-            <div className="rounded-t-md px-2.5 py-1 text-[10px] font-mono text-white/40">
-              tokens.css
-            </div>
-            <div className="rounded-t-md px-2.5 py-1 text-[10px] font-mono text-white/40">
-              tailwind.config.ts
-            </div>
-            <div className="ml-auto flex items-center gap-1.5 text-[10px] font-mono text-white/35">
-              <span>cursor</span>
-              <span className="text-white/20">·</span>
-              <span>auto-saved</span>
-            </div>
+      {/* Body: editor (top) + terminal (bottom) */}
+      <div className="flex-1 grid grid-rows-[1fr_280px] min-h-0">
+        {/* Editor */}
+        <div className="flex flex-col min-h-0 overflow-hidden">
+          {/* File tabs */}
+          <div
+            className="flex items-end border-b shrink-0"
+            style={{ borderColor: STUDIO_TOKENS.border, backgroundColor: STUDIO_TOKENS.bgPanel }}
+          >
+            {FILES.map((f) => {
+              const active = f === activeFile;
+              return (
+                <button
+                  key={f}
+                  onClick={() => setActiveFile(f)}
+                  className="flex items-center gap-2 px-3 py-2 text-[11.5px] font-mono border-r border-t-2 transition-colors"
+                  style={{
+                    backgroundColor: active ? STUDIO_TOKENS.bgSurface : 'transparent',
+                    color: active ? STUDIO_TOKENS.textPrimary : STUDIO_TOKENS.textMuted,
+                    borderRightColor: STUDIO_TOKENS.border,
+                    borderTopColor: active ? '#E4F222' : 'transparent',
+                  }}
+                >
+                  <FileCode2 className="h-3 w-3" />
+                  {f}
+                  {active && <X className="h-2.5 w-2.5 ml-1 opacity-50" />}
+                </button>
+              );
+            })}
           </div>
-          <div className="flex-1 overflow-hidden font-mono text-[11.5px] leading-[1.6] text-white/85 py-2 min-h-0">
-            <CodeLine delay={0.1}>
-              <span className="text-white/30 mr-3 select-none">1</span>
-              <span className="text-purple-300">import</span>
-              <span className="text-white/85"> {'{ Button }'} </span>
-              <span className="text-purple-300">from</span>
-              <span className="text-emerald-300"> {"'@/ui/button'"}</span>
+          {/* Code area */}
+          <div
+            className="flex-1 overflow-hidden py-2 min-h-0"
+            style={{ backgroundColor: STUDIO_TOKENS.bgSurface }}
+          >
+            <CodeLine delay={0.1} number={1}>
+              <span style={{ color: '#A78BFA' }}>import</span>
+              <span> {'{ Button }'} </span>
+              <span style={{ color: '#A78BFA' }}>from</span>
+              <span style={{ color: '#34D399' }}> {"'@/ui/button'"}</span>
             </CodeLine>
-            <CodeLine delay={0.15}>
-              <span className="text-white/30 mr-3 select-none">2</span>
-              <span className="text-white/40"> </span>
+            <CodeLine delay={0.16} number={2}>
+              <span> </span>
             </CodeLine>
-            <CodeLine delay={0.2}>
-              <span className="text-white/30 mr-3 select-none">3</span>
-              <span className="text-purple-300">export function</span>
-              <span className="text-yellow-200"> SignInForm</span>
-              <span className="text-white/85">() {`{`}</span>
+            <CodeLine delay={0.22} number={3}>
+              <span style={{ color: '#A78BFA' }}>export function</span>
+              <span style={{ color: '#FBD38D' }}> SignInForm</span>
+              <span>{'() {'}</span>
             </CodeLine>
-            <CodeLine delay={0.25}>
-              <span className="text-white/30 mr-3 select-none">4</span>
-              <span className="text-white/85">  </span>
-              <span className="text-purple-300">return</span>
-              <span className="text-white/85"> (</span>
+            <CodeLine delay={0.28} number={4}>
+              <span>  </span>
+              <span style={{ color: '#A78BFA' }}>return</span>
+              <span> (</span>
             </CodeLine>
-            <CodeLine delay={0.3}>
-              <span className="text-white/30 mr-3 select-none">5</span>
-              <span className="text-white/85">    {'<'}</span>
-              <span className="text-rose-300">form</span>
-              <span className="text-white/85"> </span>
-              <span className="text-amber-200">className</span>
-              <span className="text-white/85">=</span>
-              <span className="text-emerald-300">{'"flex flex-col gap-3"'}</span>
-              <span className="text-white/85">{'>'}</span>
+            <CodeLine delay={0.34} number={5}>
+              <span>    {'<'}</span>
+              <span style={{ color: '#F687B3' }}>form</span>
+              <span> </span>
+              <span style={{ color: '#FBD38D' }}>className</span>
+              <span>=</span>
+              <span style={{ color: '#34D399' }}>{'"flex flex-col gap-3"'}</span>
+              <span>{'>'}</span>
             </CodeLine>
-            <CodeLine delay={0.35}>
-              <span className="text-white/30 mr-3 select-none">6</span>
-              <span className="text-white/85">      {'<'}</span>
-              <span className="text-rose-300">input</span>
-              <span className="text-white/85"> </span>
-              <span className="text-amber-200">className</span>
-              <span className="text-white/85">=</span>
-              <span className="text-emerald-300">{'"rounded-md bg-[--bg-surface] px-3 py-2"'}</span>
-              <span className="text-white/85"> {'/>'}</span>
+            <CodeLine delay={0.4} number={6}>
+              <span>      {'<'}</span>
+              <span style={{ color: '#F687B3' }}>input</span>
+              <span> </span>
+              <span style={{ color: '#FBD38D' }}>className</span>
+              <span>=</span>
+              <span style={{ color: '#34D399' }}>{'"rounded-md bg-[--bg-surface] px-3 py-2"'}</span>
+              <span> {'/>'}</span>
             </CodeLine>
-            <CodeLine delay={0.4} highlight>
-              <span className="text-white/30 mr-3 select-none">7</span>
-              <span className="text-white/85">      {'<'}</span>
-              <span className="text-yellow-200">Button</span>
-              <span className="text-white/85"> </span>
-              <span className="text-amber-200">variant</span>
-              <span className="text-white/85">=</span>
-              <span className="text-emerald-300">{'"primary"'}</span>
-              <span className="text-white/85"> </span>
-              <span className="text-amber-200">className</span>
-              <span className="text-white/85">=</span>
-              <span className="text-emerald-300">{'"bg-[--accent] text-[--text-on-accent]"'}</span>
-              <span className="text-white/85">{'>'}</span>
+            <CodeLine delay={0.48} number={7} highlight>
+              <span>      {'<'}</span>
+              <span style={{ color: '#FBD38D' }}>Button</span>
+              <span> </span>
+              <span style={{ color: '#FBD38D' }}>className</span>
+              <span>=</span>
+              <span style={{ color: '#34D399' }}>{'"bg-[--accent] text-[--text-on-accent] rounded-md"'}</span>
+              <span>{'>'}</span>
             </CodeLine>
-            <CodeLine delay={0.45}>
-              <span className="text-white/30 mr-3 select-none">8</span>
-              <span className="text-white/85">        Sign in</span>
+            <CodeLine delay={0.55} number={8}>
+              <span>        Sign in</span>
             </CodeLine>
-            <CodeLine delay={0.5}>
-              <span className="text-white/30 mr-3 select-none">9</span>
-              <span className="text-white/85">      {'</'}</span>
-              <span className="text-yellow-200">Button</span>
-              <span className="text-white/85">{'>'}</span>
+            <CodeLine delay={0.62} number={9}>
+              <span>      {'</'}</span>
+              <span style={{ color: '#FBD38D' }}>Button</span>
+              <span>{'>'}</span>
             </CodeLine>
-            <CodeLine delay={0.55}>
-              <span className="text-white/30 mr-3 select-none">10</span>
-              <span className="text-white/85">    {'</'}</span>
-              <span className="text-rose-300">form</span>
-              <span className="text-white/85">{'>'}</span>
+            <CodeLine delay={0.68} number={10}>
+              <span>    {'</'}</span>
+              <span style={{ color: '#F687B3' }}>form</span>
+              <span>{'>'}</span>
             </CodeLine>
-            <CodeLine delay={0.6}>
-              <span className="text-white/30 mr-3 select-none">11</span>
-              <span className="text-white/85">  )</span>
+            <CodeLine delay={0.74} number={11}>
+              <span>  )</span>
             </CodeLine>
-            <CodeLine delay={0.65}>
-              <span className="text-white/30 mr-3 select-none">12</span>
-              <span className="text-white/85">{`}`}</span>
+            <CodeLine delay={0.8} number={12}>
+              <span>{'}'}</span>
             </CodeLine>
-            <div className="px-4 py-3 mt-2">
-              <motion.div
-                initial={{ opacity: 0, y: 4 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.85, ease: [0, 0, 0.2, 1] }}
-                viewport={{ once: true, margin: '-10%' }}
-                className="rounded-md border border-[#E4F222]/30 bg-[#E4F222]/[0.04] px-3 py-2 text-[10.5px] font-mono"
-              >
-                <div className="flex items-center gap-1.5 text-[#E4F222]/85 mb-0.5">
-                  <span>◆</span>
-                  <span>Layout MCP</span>
-                </div>
-                <div className="text-white/65 leading-snug">
-                  Resolved <span className="text-white">--accent</span> →{' '}
-                  <span className="text-[#E4F222]">#E4F222</span> · on-system ✓
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </div>
-
-        {/* Terminal */}
-        <div className="flex flex-col bg-[#08080A] min-h-0">
-          <div className="flex items-center gap-2 border-b border-white/8 px-3 py-1.5 shrink-0">
-            <span className="font-mono text-[10px] text-white/55">▶ zsh</span>
-            <span className="ml-auto font-mono text-[10px] text-white/35">acme-app</span>
-          </div>
-          <div className="flex-1 overflow-hidden px-4 py-2.5 min-h-0 space-y-[1px]">
-            <TerminalLine delay={0.1} type="cmd"><span className="text-white/45">$ </span>npx @layoutdesign/context install</TerminalLine>
-            <TerminalLine delay={0.18} type="info">→ Found .layout/ in /acme-app</TerminalLine>
-            <TerminalLine delay={0.26} type="ok">✓ Configured Claude Code</TerminalLine>
-            <TerminalLine delay={0.32} type="ok">✓ Configured Cursor</TerminalLine>
-            <TerminalLine delay={0.38} type="ok">✓ Configured Windsurf</TerminalLine>
-            <TerminalLine delay={0.44} type="ok">✓ Configured Copilot, Codex, Gemini CLI</TerminalLine>
-            <TerminalLine delay={0.52} type="ok">✓ Started preview server :4321</TerminalLine>
-            <TerminalLine delay={0.6} type="info"> </TerminalLine>
-            <TerminalLine delay={0.66} type="cmd"><span className="text-white/45">$ </span>cursor agent</TerminalLine>
-            <TerminalLine delay={0.74} type="info">› Building SignInForm.tsx</TerminalLine>
-            <TerminalLine delay={0.82} type="mcp">  ◆ MCP → get_design_system</TerminalLine>
-            <TerminalLine delay={0.88} type="data">    17 tokens · 12 components · 6 kits</TerminalLine>
-            <TerminalLine delay={0.96} type="mcp">  ◆ MCP → get_component(Button)</TerminalLine>
-            <TerminalLine delay={1.02} type="data">    variant: primary | secondary | ghost</TerminalLine>
-            <TerminalLine delay={1.1} type="mcp">  ◆ MCP → check_compliance</TerminalLine>
-            <TerminalLine delay={1.18} type="ok">    ✓ 92/100 · on-system</TerminalLine>
-            <TerminalLine delay={1.26} type="info"> </TerminalLine>
+            {/* Inline MCP callout */}
             <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 1.4 }}
+              initial={{ opacity: 0, y: 4 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 1.0, ease: [0, 0, 0.2, 1] }}
               viewport={{ once: true, margin: '-10%' }}
-              className="font-mono text-[11px] leading-[1.55] text-white"
+              className="mx-3 mt-3 rounded-md border px-3 py-2 text-[11px] font-mono inline-flex flex-col gap-0.5"
+              style={{
+                borderColor: 'rgba(228,242,34,0.3)',
+                backgroundColor: 'rgba(228,242,34,0.05)',
+                width: 'fit-content',
+              }}
             >
-              <span className="text-white/45">$ </span>
-              <span className="inline-block w-2 h-3.5 align-middle bg-white/80 ml-0.5 animate-pulse" />
+              <div className="flex items-center gap-1.5" style={{ color: 'rgba(228,242,34,0.85)' }}>
+                <span>◆</span>
+                <span>Layout MCP · resolved</span>
+              </div>
+              <div style={{ color: STUDIO_TOKENS.textSecondary }}>
+                <span style={{ color: STUDIO_TOKENS.textPrimary }}>--accent</span>
+                {' → '}
+                <span style={{ color: '#E4F222' }}>#E4F222</span>
+                {' · on-system ✓'}
+              </div>
             </motion.div>
           </div>
         </div>
-      </div>
 
-      {/* Footer status */}
-      <div className="flex items-center justify-between border-t border-white/10 bg-black/30 px-4 py-2 shrink-0 text-[10px] font-mono">
-        <div className="flex items-center gap-3 text-white/45">
-          <span>SignInForm.tsx · TS · UTF-8 · LF</span>
-        </div>
-        <div className="flex items-center gap-3 text-white/45">
-          <span className="flex items-center gap-1 text-emerald-300/80">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
-            preview :4321
-          </span>
-          <span className="text-white/20">·</span>
-          <span>auto-context on</span>
+        {/* Terminal (bottom) */}
+        <div
+          className="flex flex-col min-h-0 overflow-hidden border-t"
+          style={{
+            borderColor: STUDIO_TOKENS.border,
+            backgroundColor: STUDIO_TOKENS.bgPanel,
+          }}
+        >
+          {/* Terminal header */}
+          <div
+            className="flex h-7 items-center justify-between border-b px-3 shrink-0"
+            style={{ borderColor: STUDIO_TOKENS.border }}
+          >
+            <div className="flex items-center gap-1.5 text-[11px] font-mono" style={{ color: STUDIO_TOKENS.textPrimary }}>
+              <TerminalIcon className="h-3 w-3" />
+              <span>zsh — acme-app</span>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] font-mono" style={{ color: STUDIO_TOKENS.textMuted }}>
+              <span style={{ color: 'rgb(110,231,183)' }}>● preview :4321</span>
+            </div>
+          </div>
+          {/* Terminal lines */}
+          <div className="flex-1 overflow-hidden px-4 py-2 space-y-[1px] min-h-0">
+            <TerminalLine delay={0.15} type="cmd">
+              <span style={{ color: STUDIO_TOKENS.textMuted }}>$ </span>npx @layoutdesign/context install
+            </TerminalLine>
+            <TerminalLine delay={0.22} type="info">→ Found .layout/ in /acme-app</TerminalLine>
+            <TerminalLine delay={0.3} type="ok">✓ Configured Claude Code · Cursor · Windsurf · Copilot · Codex · Gemini CLI</TerminalLine>
+            <TerminalLine delay={0.4} type="ok">✓ Started preview server :4321</TerminalLine>
+            <TerminalLine delay={0.5} type="info"> </TerminalLine>
+            <TerminalLine delay={0.58} type="cmd">
+              <span style={{ color: STUDIO_TOKENS.textMuted }}>$ </span>cursor agent
+            </TerminalLine>
+            <TerminalLine delay={0.66} type="info">› Building SignInForm.tsx</TerminalLine>
+            <TerminalLine delay={0.74} type="mcp">  ◆ MCP → get_design_system</TerminalLine>
+            <TerminalLine delay={0.8} type="data">    17 tokens · 12 components · 2 modes</TerminalLine>
+            <TerminalLine delay={0.88} type="mcp">  ◆ MCP → get_component(Button)</TerminalLine>
+            <TerminalLine delay={0.94} type="data">    variant: primary | secondary | ghost</TerminalLine>
+            <TerminalLine delay={1.02} type="mcp">  ◆ MCP → check_compliance</TerminalLine>
+            <TerminalLine delay={1.1} type="ok">    ✓ 92/100 · on-system</TerminalLine>
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 1.25 }}
+              viewport={{ once: true, margin: '-10%' }}
+              className="font-mono text-[11.5px] leading-[1.6]"
+              style={{ color: STUDIO_TOKENS.textPrimary }}
+            >
+              <span style={{ color: STUDIO_TOKENS.textMuted }}>$ </span>
+              <span
+                className="inline-block w-[6px] h-3.5 align-middle ml-0.5 animate-pulse"
+                style={{ backgroundColor: STUDIO_TOKENS.textPrimary }}
+              />
+            </motion.div>
+          </div>
         </div>
       </div>
     </div>

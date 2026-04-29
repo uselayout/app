@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MarketingVideo } from '@/components/marketing/MarketingVideo';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { ContextGapMock } from '@/components/marketing/mocks/ContextGapMock';
 
 export function ContextGapSection() {
   return (
@@ -60,7 +61,9 @@ export function ContextGapSection() {
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
         <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
-          <MarketingVideo src="/marketing/videos/context-gap.mp4" />
+          <MockFrame ariaLabel="Without Layout vs with Layout — same prompt, different output">
+            <ContextGapMock />
+          </MockFrame>
         </div>
       </motion.div>
     </section>
