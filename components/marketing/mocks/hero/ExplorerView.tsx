@@ -147,6 +147,162 @@ const VARIANTS: Variant[] = [
       </div>
     ),
   },
+  {
+    id: 4,
+    name: 'Pricing — three-tier ladder',
+    rationale: 'Starter / Pro / Team with Pro highlighted in lime.',
+    health: 94,
+    render: () => (
+      <div className="w-full h-full bg-white text-[#0C0C0E] grid grid-cols-3 gap-1.5 p-3">
+        {[
+          { name: 'Starter', price: '$0', highlight: false },
+          { name: 'Pro', price: '$24', highlight: true },
+          { name: 'Team', price: '$96', highlight: false },
+        ].map((t) => (
+          <div
+            key={t.name}
+            className="flex flex-col rounded-md border p-2 gap-1"
+            style={{
+              borderColor: t.highlight ? '#0C0C0E' : 'rgba(0,0,0,0.10)',
+              backgroundColor: t.highlight ? '#0C0C0E' : '#FFFFFF',
+              color: t.highlight ? '#FFFFFF' : '#0C0C0E',
+            }}
+          >
+            <span className="text-[9px] font-medium uppercase tracking-wider opacity-60">
+              {t.name}
+            </span>
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-[16px] font-semibold leading-none">{t.price}</span>
+              <span className="text-[8px] opacity-55">/mo</span>
+            </div>
+            <ul className="flex flex-col gap-0.5 text-[8.5px] mt-1 opacity-80">
+              <li className="flex items-center gap-1"><Check className="h-2 w-2" />core</li>
+              <li className="flex items-center gap-1"><Check className="h-2 w-2" />sync</li>
+              {t.highlight && <li className="flex items-center gap-1"><Check className="h-2 w-2" />MCP</li>}
+            </ul>
+            <div
+              className="mt-auto rounded text-center text-[9px] font-medium py-1"
+              style={{
+                backgroundColor: t.highlight ? '#E4F222' : 'rgba(0,0,0,0.06)',
+                color: t.highlight ? '#0C0C0E' : '#0C0C0E',
+              }}
+            >
+              {t.highlight ? 'Choose' : 'Pick'}
+            </div>
+          </div>
+        ))}
+      </div>
+    ),
+  },
+  {
+    id: 5,
+    name: 'Pricing — annual toggle',
+    rationale: 'Monthly/Yearly switch, Save 20% pill, single hero card.',
+    health: 88,
+    render: () => (
+      <div className="w-full h-full bg-white text-[#0C0C0E] flex flex-col gap-2 px-5 py-4">
+        <div className="flex items-center justify-center">
+          <div className="relative flex items-center rounded-full border border-black/12 p-0.5 text-[9px] font-medium">
+            <span className="px-2.5 py-0.5 text-black/55">Monthly</span>
+            <span className="rounded-full bg-[#0C0C0E] px-2.5 py-0.5 text-white">Yearly</span>
+          </div>
+          <span className="ml-2 rounded-full bg-[#E4F222] px-1.5 py-0.5 text-[8.5px] font-semibold text-[#0C0C0E]">
+            Save 20%
+          </span>
+        </div>
+        <div className="rounded-lg border border-black/10 bg-black/[0.02] p-3 flex flex-col gap-1.5">
+          <span className="text-[9.5px] font-medium uppercase tracking-wider text-black/55">
+            Pro · annual
+          </span>
+          <div className="flex items-baseline gap-1">
+            <span className="text-[26px] font-semibold leading-none">$19</span>
+            <span className="text-[10.5px] text-black/55">/ mo</span>
+            <span className="ml-auto text-[9px] text-black/40 line-through">$24</span>
+          </div>
+          <p className="text-[10px] text-black/55 leading-snug">
+            Billed $228 yearly. Cancel anytime.
+          </p>
+          <button className="mt-1 w-full rounded-md bg-[#0C0C0E] px-2.5 py-1.5 text-[11px] font-medium text-white">
+            Upgrade
+          </button>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 6,
+    name: 'Pricing — feature comparison',
+    rationale: 'Pro vs Free table with checks and crosses.',
+    health: 91,
+    render: () => (
+      <div className="w-full h-full bg-white text-[#0C0C0E] flex flex-col gap-2 p-4">
+        <h4 className="text-[14px] font-semibold leading-tight">Compare plans.</h4>
+        <div className="flex flex-col rounded-md border border-black/10 overflow-hidden">
+          <div className="grid grid-cols-[1.4fr_1fr_1fr] bg-black/[0.04] border-b border-black/8 px-2 py-1 text-[9px] font-mono text-black/55 uppercase tracking-wider">
+            <span>Feature</span>
+            <span className="text-center">Free</span>
+            <span className="text-center font-semibold text-[#0C0C0E]">Pro</span>
+          </div>
+          {[
+            { f: 'Extractions', free: '3 / mo', pro: 'Unlimited' },
+            { f: 'MCP tools', free: false, pro: true },
+            { f: 'Figma sync', free: false, pro: true },
+            { f: 'Team kits', free: false, pro: true },
+          ].map((row) => (
+            <div
+              key={row.f}
+              className="grid grid-cols-[1.4fr_1fr_1fr] border-b border-black/6 px-2 py-1 text-[10px] last:border-b-0"
+            >
+              <span className="text-black/75">{row.f}</span>
+              <span className="text-center text-black/55">
+                {typeof row.free === 'string' ? row.free : row.free ? <Check className="inline h-2.5 w-2.5" /> : <span className="opacity-30">—</span>}
+              </span>
+              <span className="text-center text-[#0C0C0E] font-medium">
+                {typeof row.pro === 'string' ? row.pro : row.pro ? <Check className="inline h-2.5 w-2.5" /> : <span className="opacity-30">—</span>}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 7,
+    name: 'Pricing — testimonial card',
+    rationale: 'Quote-led layout with avatar row and CTA underneath.',
+    health: 87,
+    render: () => (
+      <div className="w-full h-full bg-white text-[#0C0C0E] flex flex-col gap-2 px-5 py-4">
+        <div className="flex items-center gap-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <span key={i} className="text-[10px] text-[#E4B400] leading-none">★</span>
+          ))}
+          <span className="ml-1 text-[9px] font-mono text-black/45">4.9 · 240 teams</span>
+        </div>
+        <p className="text-[12px] leading-snug font-medium text-[#0C0C0E]">
+          “Layout cut our design-to-code review loop from days to hours.”
+        </p>
+        <div className="flex items-center gap-2 mt-1">
+          <div className="flex -space-x-1.5">
+            {['#E4F222', '#A78BFA', '#34D399'].map((c) => (
+              <span
+                key={c}
+                className="size-5 rounded-full border-2 border-white"
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+          <div className="flex flex-col leading-tight">
+            <span className="text-[10px] font-semibold">Maya Chen</span>
+            <span className="text-[8.5px] text-black/50">Head of Design · Linear</span>
+          </div>
+        </div>
+        <button className="mt-auto w-full rounded-md border border-black/12 bg-[#E4F222] px-2.5 py-1.5 text-[11px] font-semibold text-[#0C0C0E]">
+          Start 14-day trial
+        </button>
+      </div>
+    ),
+  },
 ];
 
 interface VariantCardProps {
@@ -229,7 +385,7 @@ function VariantCard({ variant, selected, delay, onClick }: VariantCardProps) {
 
 export function ExplorerView() {
   const [selectedVariant, setSelectedVariant] = useState<number>(2);
-  const [variantCount, setVariantCount] = useState(3);
+  const [variantCount, setVariantCount] = useState(VARIANTS.length);
   const [prompt, setPrompt] = useState('');
 
   return (
@@ -318,7 +474,7 @@ export function ExplorerView() {
                 {variantCount}
               </span>
               <button
-                onClick={() => setVariantCount((c) => Math.min(6, c + 1))}
+                onClick={() => setVariantCount((c) => Math.min(8, c + 1))}
                 className="rounded p-0.5 transition-colors hover:bg-white/5"
                 style={{ color: STUDIO_TOKENS.textSecondary }}
               >
