@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-screenshots-relative-url-fix",
+    title: "Screenshots show up again in the Source Panel",
+    description:
+      "Screenshots stopped rendering for projects that uploaded their captures to Supabase Storage — the Source Panel was wrapping the proxy URL `/api/storage/screenshots/...` in a `data:image/png;base64,` prefix, producing an `ERR_INVALID_URL` and two empty card placeholders. The renderer now treats any path starting with `/` as already-resolvable and shows the image directly.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-30",
+  },
+  {
     id: "2026-w18-extraction-svg-and-pill-cta-colours",
     title: "Site extraction now picks up logo colours and pill-shaped header CTAs",
     description:

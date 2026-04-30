@@ -49,6 +49,11 @@ interface SourcePanelProps {
 
 type TabId = "tokens" | "components" | "screenshots" | "icons" | "fonts" | "branding" | "context" | "quality" | "connect" | "figma";
 
+function screenshotSrc(src: string): string {
+  if (src.startsWith("data:") || src.startsWith("http") || src.startsWith("/")) return src;
+  return `data:image/png;base64,${src}`;
+}
+
 function SourcePanelEmptyState({
   projectId,
   hasLayoutMd,
@@ -1465,7 +1470,7 @@ function ScreenshotsTab({
                 className="w-full overflow-hidden rounded border border-[var(--studio-border)] transition-colors hover:border-[var(--studio-border-strong)]"
               >
                 <img
-                  src={src.startsWith("data:") || src.startsWith("http") ? src : `data:image/png;base64,${src}`}
+                  src={screenshotSrc(src)}
                   alt={`Screenshot ${i + 1}`}
                   className="h-auto w-full"
                 />
@@ -1496,11 +1501,7 @@ function ScreenshotsTab({
             <X className="h-5 w-5 text-[var(--text-primary)]" />
           </button>
           <img
-            src={
-              screenshots[lightboxIdx].startsWith("data:") || screenshots[lightboxIdx].startsWith("http")
-                ? screenshots[lightboxIdx]
-                : `data:image/png;base64,${screenshots[lightboxIdx]}`
-            }
+            src={screenshotSrc(screenshots[lightboxIdx])}
             alt={`Screenshot ${lightboxIdx + 1}`}
             className="max-h-[90vh] max-w-[90vw] rounded-lg"
             onClick={(e) => e.stopPropagation()}
