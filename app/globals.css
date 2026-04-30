@@ -350,8 +350,8 @@
   --mkt-surface-muted: #0f0f13;    /* subtle panels (gallery preview gradient) */
   --mkt-accent: #e4f222;
   --mkt-text-primary: #f7f8f8;
-  --mkt-text-secondary: #b4b8c0;   /* bumped 8a8f98 → b4b8c0 for AAA contrast (~9:1) on near-black bg */
-  --mkt-text-muted: #93989f;       /* bumped 717377 → 93989f for AA contrast (~6.8:1) — 4.36:1 was failing AA */
+  --mkt-text-secondary: #8a8f98;
+  --mkt-text-muted: #717377;
   --mkt-btn-primary-bg: #e6e6e6;
   --mkt-btn-primary-text: #08090a;
   --mkt-btn-secondary-bg: #28282c;
