@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUp, ImagePlus, GitCompareArrows, Trash2, MousePointer2, X, AlertTriangle } from "lucide-react";
+import { Check, ThumbsUp, ThumbsDown, Copy, RotateCw, Figma, Monitor, BookMarked, ArrowUp, ImagePlus, GitCompareArrows, Trash2, MousePointer2, X, AlertTriangle, Code2 } from "lucide-react";
 import { extractComponentName, buildSrcdoc, sanitizeRelativeSrc } from "@/lib/explore/preview-helpers";
 import { getInspectorScript } from "@/lib/explore/inspector-script";
 import { pushManualEdit, pushAiEdit, pushRollback, undoLastEdit } from "@/lib/explore/edit-history";
@@ -10,6 +10,7 @@ import { Tooltip as TooltipPrimitive } from "radix-ui";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ElementInspector } from "@/components/studio/ElementInspector";
 import { EditHistoryPanel } from "@/components/studio/EditHistoryPanel";
+import { VariantCodeEditor } from "@/components/studio/VariantCodeEditor";
 import { getStoredApiKey } from "@/lib/hooks/use-api-key";
 import { countPlaceholderImages } from "@/lib/image/placeholder";
 import { PaperIcon } from "@/components/studio/PaperPushModal";
@@ -661,6 +662,8 @@ interface VariantCardProps {
   brandingAssets?: BrandingAsset[];
   /** When true, card animates in with a scale-up + fade-in entrance */
   isNewlyGenerated?: boolean;
+  /** True while a refine for THIS card is in flight — drives a "Refining…" overlay. */
+  isRefining?: boolean;
 }
 
 export function VariantCard({
@@ -688,6 +691,7 @@ export function VariantCard({
   uploadedFonts,
   brandingAssets,
   isNewlyGenerated = false,
+  isRefining = false,
 }: VariantCardProps) {
   // Top-down clip-path reveal for newly generated variants.
   // Starts fully clipped, reveals when preview iframe loads.
@@ -707,6 +711,10 @@ export function VariantCard({
   const [showRefineInput, setShowRefineInput] = useState(false);
   const [refineText, setRefineText] = useState("");
   const [inspectMode, setInspectMode] = useState(false);
+  const [codePaneOpen, setCodePaneOpen] = useState(false);
+  const [codePaneWidth, setCodePaneWidth] = useState(480);
+  const [transpileErrorPos, setTranspileErrorPos] = useState<{ line: number; column: number; message: string } | null>(null);
+  const editHistoryRef = useRef<EditHistory>([]);
   const placeholderImageCount = useMemo(() => countPlaceholderImages(variant.code), [variant.code]);
   const [isApplying, setIsApplying] = useState(false);
   const [applyElapsed, setApplyElapsed] = useState(0);
@@ -717,6 +725,20 @@ export function VariantCard({
   const [contentHeight, setContentHeight] = useState<number | null>(null);
 
   const editHistory = variant.editHistory ?? [];
+  editHistoryRef.current = editHistory;
+
+  // Restore the user's preferred code-pane width from localStorage. Stored
+  // separately from the open/closed state so the pane stays at their
+  // preferred size when they reopen it later.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("layout.variantCodePaneWidth");
+    if (!stored) return;
+    const parsed = Number(stored);
+    if (Number.isFinite(parsed) && parsed >= 320 && parsed <= 1200) {
+      setCodePaneWidth(parsed);
+    }
+  }, []);
 
   // Transpile when code changes (not on inspectMode toggle)
   useEffect(() => {
@@ -737,10 +759,17 @@ export function VariantCard({
 
         if (!res.ok) {
           const errData = await res.json().catch(() => null);
-          setPreviewError(errData?.error || "Transpilation failed");
+          const errMsg: string = errData?.error || "Transpilation failed";
+          setPreviewError(errMsg);
+          if (typeof errData?.line === "number" && typeof errData?.column === "number") {
+            setTranspileErrorPos({ line: errData.line, column: errData.column, message: errMsg });
+          } else {
+            setTranspileErrorPos(null);
+          }
           return;
         }
 
+        setTranspileErrorPos(null);
         const { js } = await res.json();
         if (cancelled) return;
 
@@ -858,6 +887,64 @@ export function VariantCard({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [inspectMode, editHistory, onCodeUpdate]);
+
+  // Code-pane edit. Mirrors handleStyleEdits' commit pattern (push a manual
+  // edit, propagate up via onCodeUpdate). VariantCodeEditor already debounces
+  // its onChange, so this fires at most once per ~800ms while typing.
+  const handleCodeEdit = useCallback((nextCode: string) => {
+    if (!onCodeUpdate) return;
+    if (nextCode === variant.code) return;
+    const newHistory = pushManualEdit(editHistoryRef.current, variant.code, nextCode, [], "Code edit");
+    onCodeUpdate(nextCode, newHistory);
+  }, [variant.code, onCodeUpdate]);
+
+  // Drag-to-resize the code pane. setPointerCapture routes pointermove
+  // events back to the handle even when the cursor is over the inspector
+  // iframe — without it, the iframe absorbs the events and the drag dies
+  // after a few pixels.
+  const handleResizePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const target = e.currentTarget;
+    try {
+      target.setPointerCapture(e.pointerId);
+    } catch {
+      // Some browsers throw if already captured; ignore.
+    }
+
+    const startX = e.clientX;
+    const startWidth = codePaneWidth;
+    const max = Math.min(1200, window.innerWidth - 320);
+
+    function onMove(ev: PointerEvent) {
+      const delta = startX - ev.clientX; // dragging left = wider
+      const next = Math.max(320, Math.min(max, startWidth + delta));
+      setCodePaneWidth(next);
+    }
+    function onUp(ev: PointerEvent) {
+      try {
+        target.releasePointerCapture(ev.pointerId);
+      } catch {
+        // ignore
+      }
+      target.removeEventListener("pointermove", onMove);
+      target.removeEventListener("pointerup", onUp);
+      target.removeEventListener("pointercancel", onUp);
+      // Persist after release so we don't thrash localStorage during the drag.
+      setCodePaneWidth((current) => {
+        try {
+          window.localStorage.setItem("layout.variantCodePaneWidth", String(current));
+        } catch {
+          // localStorage may be unavailable (privacy mode); ignore.
+        }
+        return current;
+      });
+    }
+    target.addEventListener("pointermove", onMove);
+    target.addEventListener("pointerup", onUp);
+    target.addEventListener("pointercancel", onUp);
+  }, [codePaneWidth]);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(variant.code);
@@ -1198,6 +1285,19 @@ export function VariantCard({
         </div>
       )}
 
+      {/* Refining overlay — shows while a refine for THIS card is in flight,
+          so the user has feedback on the card they pressed Enter on (the
+          new sibling card with its skeleton appears below the existing
+          batches and may be off-screen). */}
+      {isRefining && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-[var(--bg-app)]/40 backdrop-blur-[1px]">
+          <div className="flex items-center gap-2 rounded-md border border-[var(--studio-border)] bg-[var(--bg-elevated)] px-3 py-1.5 shadow-lg">
+            <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--studio-border-strong)] border-t-[var(--studio-accent)]" />
+            <span className="text-[11px] text-[var(--text-secondary)]">Refining…</span>
+          </div>
+        </div>
+      )}
+
       {/* Inspect mode indicator */}
       {inspectMode && (
         <div className="absolute -right-1.5 -top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500">
@@ -1246,10 +1346,10 @@ export function VariantCard({
               </button>
             ) : (
               <button
-                onClick={(e) => { e.stopPropagation(); setInspectMode(true); }}
+                onClick={(e) => { e.stopPropagation(); setCodePaneOpen(true); setInspectMode(true); }}
                 className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-[var(--bg-hover)] px-3 py-1.5 text-[11px] text-[var(--text-primary)] transition-all hover:bg-[var(--studio-accent)] hover:text-[var(--text-on-accent)]"
               >
-                <MousePointer2 size={12} />
+                <Code2 size={12} />
                 View code
               </button>
             )}
@@ -1367,14 +1467,52 @@ export function VariantCard({
                 )}
               </button>
             )}
-            <button
-              onClick={(e) => { e.preventDefault(); toggleInspectMode(e); }}
-              className="flex items-center gap-1.5 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
-            >
-              <X size={12} />
-              Exit Inspector
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); setCodePaneOpen((v) => !v); }}
+                className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition-colors ${
+                  codePaneOpen
+                    ? "border-[var(--studio-accent)] bg-[var(--studio-accent-subtle)] text-[var(--text-primary)]"
+                    : "border-[var(--studio-border)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                }`}
+              >
+                <Code2 size={12} />
+                Code
+              </button>
+              <button
+                onClick={(e) => { e.preventDefault(); toggleInspectMode(e); }}
+                className="flex items-center gap-1.5 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+              >
+                <X size={12} />
+                Exit Inspector
+              </button>
+            </div>
           </div>
+
+          {/* Code pane (split view) */}
+          {codePaneOpen && (
+            <>
+              <div
+                onPointerDown={handleResizePointerDown}
+                className="group relative z-20 w-2 shrink-0 cursor-col-resize touch-none select-none"
+                style={{ touchAction: "none" }}
+                title="Drag to resize"
+              >
+                {/* 1px visible line, centered in the 8px hit area */}
+                <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[var(--studio-border)] group-hover:bg-[var(--studio-accent)] group-active:bg-[var(--studio-accent)] transition-colors" />
+              </div>
+              <div
+                className="shrink-0 border-l border-[var(--studio-border)] bg-[var(--bg-panel)] pt-12"
+                style={{ width: codePaneWidth }}
+              >
+                <VariantCodeEditor
+                  value={variant.code}
+                  onChange={handleCodeEdit}
+                  errorAt={transpileErrorPos}
+                />
+              </div>
+            </>
+          )}
 
           {/* Edit history sidebar */}
           {editHistory.length > 0 && (

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { transpileTsx } from "@/lib/transpile";
+import { transpileTsx, TranspileError } from "@/lib/transpile";
 import { transpileLimiter } from "@/lib/rate-limit-instances";
 import { getClientIp } from "@/lib/get-client-ip";
 import { auth } from "@/lib/auth";
@@ -51,8 +51,10 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ js });
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const position = err instanceof TranspileError ? err.position : null;
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : String(err) },
+      position ? { error: message, line: position.line, column: position.column } : { error: message },
       { status: 400 }
     );
   }

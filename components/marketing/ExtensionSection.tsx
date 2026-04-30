@@ -1,7 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MarketingVideo } from '@/components/marketing/MarketingVideo';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { ExtensionMock } from '@/components/marketing/mocks/ExtensionMock';
+import { ExtensionMobileMock } from '@/components/marketing/mocks/ExtensionMobileMock';
 
 export function ExtensionSection() {
   return (
@@ -51,7 +53,7 @@ export function ExtensionSection() {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="w-[1280px] max-w-full mx-auto aspect-[1280/810] relative overflow-hidden rounded-[6px]"
+        className="hidden md:block w-[1280px] max-w-full mx-auto aspect-[1280/810] relative overflow-hidden rounded-[6px]"
       >
         <img
           src="/marketing/aurora-drift.webp"
@@ -59,9 +61,22 @@ export function ExtensionSection() {
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
-        <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
-          <MarketingVideo src="/marketing/videos/extension.mp4" ariaLabel="Chrome extension demo" />
+        <div className="absolute inset-3 lg:inset-5">
+          <MockFrame ariaLabel="Chrome extension extracting tokens from a webpage">
+            <ExtensionMock />
+          </MockFrame>
         </div>
+      </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        viewport={{ once: true }}
+        className="md:hidden w-full max-w-[420px] mx-auto aspect-[3/4] relative px-4"
+      >
+        <MockFrame ariaLabel="Chrome extension — mobile preview">
+          <ExtensionMobileMock />
+        </MockFrame>
       </motion.div>
     </section>
   );

@@ -1,7 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MarketingVideo } from '@/components/marketing/MarketingVideo';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { ServeMock } from '@/components/marketing/mocks/ServeMock';
+import { ServeMobileMock } from '@/components/marketing/mocks/ServeMobileMock';
 
 export function ServeSection() {
   return (
@@ -42,7 +44,7 @@ export function ServeSection() {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="w-[1280px] max-w-full mx-auto aspect-[1280/808] relative overflow-hidden rounded-[6px]"
+        className="hidden md:block w-[1280px] max-w-full mx-auto aspect-[1280/808] relative overflow-hidden rounded-[6px]"
       >
         <img
           src="/marketing/aurora-serve.webp"
@@ -50,9 +52,22 @@ export function ServeSection() {
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
-        <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
-          <MarketingVideo src="/marketing/videos/serve.mp4" />
+        <div className="absolute inset-3 lg:inset-5">
+          <MockFrame ariaLabel="MCP install and AI agent code generation">
+            <ServeMock />
+          </MockFrame>
         </div>
+      </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        viewport={{ once: true }}
+        className="md:hidden w-full max-w-[420px] mx-auto aspect-[3/4] relative px-4"
+      >
+        <MockFrame ariaLabel="MCP install — mobile preview">
+          <ServeMobileMock />
+        </MockFrame>
       </motion.div>
     </section>
   );

@@ -93,6 +93,11 @@ export interface PublicKit {
 
   previewImageUrl?: string;
 
+  /** Brand homepage URL — surfaced as a "Visit pinterest.com" pill on the
+   * detail page when set. Distinct from `sourceProjectId` / extraction
+   * source URL, which point at the design-system docs Layout extracted from. */
+  homepageUrl?: string;
+
   layoutMd: string;
   tokensCss: string;
   tokensJson: Record<string, unknown>;

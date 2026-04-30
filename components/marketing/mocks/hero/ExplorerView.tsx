@@ -1,0 +1,535 @@
+'use client';
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Minus,
+  Plus,
+  ArrowUp,
+  Split,
+  Download,
+  ImagePlus,
+  Paperclip,
+  ChevronDown,
+  ThumbsUp,
+  ThumbsDown,
+  MousePointer2,
+  Copy,
+  Monitor,
+  RotateCw,
+  BookMarked,
+  Check,
+  Figma as FigmaIcon,
+} from 'lucide-react';
+import { Tooltip, PaperIcon, STUDIO_TOKENS } from '../_studio-chrome';
+
+const ACTIONS = [
+  { Icon: ThumbsUp, label: 'Good' },
+  { Icon: ThumbsDown, label: 'Bad' },
+  { Icon: MousePointer2, label: 'Inspect & edit' },
+  { Icon: Copy, label: 'Copy code' },
+  { Icon: RotateCw, label: 'Regenerate' },
+  { Icon: Monitor, label: 'Responsive preview' },
+  { Icon: FigmaIcon, label: 'Push to Figma' },
+  { Icon: PaperIcon, label: 'Push to Paper' },
+  { Icon: BookMarked, label: 'Add to library' },
+];
+
+interface Variant {
+  id: number;
+  name: string;
+  rationale: string;
+  health: number;
+  render: () => React.ReactNode;
+}
+
+const VARIANTS: Variant[] = [
+  {
+    id: 1,
+    name: 'Pricing — minimal centred',
+    rationale: 'Single column, lime CTA, three-feature checklist.',
+    health: 92,
+    render: () => (
+      <div className="w-full h-full bg-white text-[#0C0C0E] flex flex-col items-center justify-center gap-2 px-6 py-7">
+        <span className="rounded-full border border-black/12 bg-black/[0.04] px-2 py-0.5 text-[10px] font-medium text-black/60">
+          Pro · billed monthly
+        </span>
+        <div className="flex items-baseline gap-1 mt-1">
+          <span className="text-[36px] font-semibold leading-none">$24</span>
+          <span className="text-[12px] text-black/55">/ mo</span>
+        </div>
+        <h4 className="text-[15px] font-semibold mt-1">Ship faster.</h4>
+        <p className="text-[11px] text-black/55 max-w-[88%] text-center leading-snug">
+          From design system to production in minutes.
+        </p>
+        <ul className="flex flex-col gap-1 text-[10px] text-black/70 w-full max-w-[140px] mt-1">
+          {['Unlimited extractions', 'All MCP tools', 'Figma sync'].map((f) => (
+            <li key={f} className="flex items-center gap-1.5">
+              <Check className="h-2.5 w-2.5 text-[#5A6608]" />
+              {f}
+            </li>
+          ))}
+        </ul>
+        <button className="mt-2 w-full max-w-[140px] rounded-md bg-[#0C0C0E] px-2.5 py-1.5 text-[11px] font-medium text-white">
+          Get started →
+        </button>
+      </div>
+    ),
+  },
+  {
+    id: 2,
+    name: 'Pricing — split with art',
+    rationale: 'Left-aligned copy, gradient art block on right.',
+    health: 86,
+    render: () => (
+      <div className="w-full h-full bg-white text-[#0C0C0E] grid grid-cols-[1.2fr_1fr]">
+        <div className="flex flex-col justify-center gap-2 px-5">
+          <span className="text-[9px] font-medium uppercase tracking-wider text-black/55">
+            Dashboard
+          </span>
+          <h4 className="text-[18px] font-semibold leading-tight">Compile design.</h4>
+          <p className="text-[11px] text-black/55 leading-snug">
+            Tokens, types, components — served to every AI agent.
+          </p>
+          <div className="flex items-center gap-1.5 mt-2">
+            <button className="rounded-md bg-[#0C0C0E] px-2 py-1 text-[10px] font-medium text-white whitespace-nowrap">
+              Try it
+            </button>
+            <button className="rounded-md border border-black/12 px-2 py-1 text-[10px] font-medium text-[#0C0C0E] whitespace-nowrap">
+              Docs
+            </button>
+          </div>
+        </div>
+        <div
+          className="h-full"
+          style={{ background: 'linear-gradient(135deg, #E4F222 0%, #3A3F0A 100%)' }}
+        />
+      </div>
+    ),
+  },
+  {
+    id: 3,
+    name: 'Pricing — stat hero',
+    rationale: 'Three live metrics over a progress bar; NEW pill.',
+    health: 90,
+    render: () => (
+      <div className="w-full h-full bg-white text-[#0C0C0E] flex flex-col gap-2.5 p-5">
+        <div className="flex items-center justify-between">
+          <span className="rounded border border-emerald-600/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700">
+            NEW
+          </span>
+          <span className="font-mono text-[9px] text-black/40">layout v1</span>
+        </div>
+        <h4 className="text-[16px] font-semibold leading-snug">
+          The compiler<br />for design systems.
+        </h4>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { v: '17', l: 'tokens' },
+            { v: '12', l: 'components' },
+            { v: '6', l: 'kits' },
+          ].map((s) => (
+            <div key={s.l} className="rounded-md border border-black/8 bg-black/[0.025] px-2 py-1.5">
+              <div className="text-[14px] font-semibold leading-none">{s.v}</div>
+              <div className="text-[8.5px] font-mono text-black/50 mt-0.5">{s.l}</div>
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-col gap-1 mt-auto">
+          <div className="h-1 w-full rounded-full bg-black/10">
+            <div className="h-1 w-[68%] rounded-full bg-[#E4F222]" />
+          </div>
+          <div className="flex items-center justify-between text-[9px] font-mono text-black/45">
+            <span>health · 87/100</span>
+            <span>synced</span>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 4,
+    name: 'Pricing — three-tier ladder',
+    rationale: 'Starter / Pro / Team with Pro highlighted in lime.',
+    health: 94,
+    render: () => (
+      <div className="w-full h-full bg-white text-[#0C0C0E] grid grid-cols-3 gap-1.5 p-3">
+        {[
+          { name: 'Starter', price: '$0', highlight: false },
+          { name: 'Pro', price: '$24', highlight: true },
+          { name: 'Team', price: '$96', highlight: false },
+        ].map((t) => (
+          <div
+            key={t.name}
+            className="flex flex-col rounded-md border p-2 gap-1"
+            style={{
+              borderColor: t.highlight ? '#0C0C0E' : 'rgba(0,0,0,0.10)',
+              backgroundColor: t.highlight ? '#0C0C0E' : '#FFFFFF',
+              color: t.highlight ? '#FFFFFF' : '#0C0C0E',
+            }}
+          >
+            <span className="text-[9px] font-medium uppercase tracking-wider opacity-60">
+              {t.name}
+            </span>
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-[16px] font-semibold leading-none">{t.price}</span>
+              <span className="text-[8px] opacity-55">/mo</span>
+            </div>
+            <ul className="flex flex-col gap-0.5 text-[8.5px] mt-1 opacity-80">
+              <li className="flex items-center gap-1"><Check className="h-2 w-2" />core</li>
+              <li className="flex items-center gap-1"><Check className="h-2 w-2" />sync</li>
+              {t.highlight && <li className="flex items-center gap-1"><Check className="h-2 w-2" />MCP</li>}
+            </ul>
+            <div
+              className="mt-auto rounded text-center text-[9px] font-medium py-1"
+              style={{
+                backgroundColor: t.highlight ? '#E4F222' : 'rgba(0,0,0,0.06)',
+                color: t.highlight ? '#0C0C0E' : '#0C0C0E',
+              }}
+            >
+              {t.highlight ? 'Choose' : 'Pick'}
+            </div>
+          </div>
+        ))}
+      </div>
+    ),
+  },
+  {
+    id: 5,
+    name: 'Pricing — annual toggle',
+    rationale: 'Monthly/Yearly switch, Save 20% pill, single hero card.',
+    health: 88,
+    render: () => (
+      <div className="w-full h-full bg-white text-[#0C0C0E] flex flex-col gap-2 px-5 py-4">
+        <div className="flex items-center justify-center">
+          <div className="relative flex items-center rounded-full border border-black/12 p-0.5 text-[9px] font-medium">
+            <span className="px-2.5 py-0.5 text-black/55">Monthly</span>
+            <span className="rounded-full bg-[#0C0C0E] px-2.5 py-0.5 text-white">Yearly</span>
+          </div>
+          <span className="ml-2 rounded-full bg-[#E4F222] px-1.5 py-0.5 text-[8.5px] font-semibold text-[#0C0C0E]">
+            Save 20%
+          </span>
+        </div>
+        <div className="rounded-lg border border-black/10 bg-black/[0.02] p-3 flex flex-col gap-1.5">
+          <span className="text-[9.5px] font-medium uppercase tracking-wider text-black/55">
+            Pro · annual
+          </span>
+          <div className="flex items-baseline gap-1">
+            <span className="text-[26px] font-semibold leading-none">$19</span>
+            <span className="text-[10.5px] text-black/55">/ mo</span>
+            <span className="ml-auto text-[9px] text-black/40 line-through">$24</span>
+          </div>
+          <p className="text-[10px] text-black/55 leading-snug">
+            Billed $228 yearly. Cancel anytime.
+          </p>
+          <button className="mt-1 w-full rounded-md bg-[#0C0C0E] px-2.5 py-1.5 text-[11px] font-medium text-white">
+            Upgrade
+          </button>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 6,
+    name: 'Pricing — feature comparison',
+    rationale: 'Pro vs Free table with checks and crosses.',
+    health: 91,
+    render: () => (
+      <div className="w-full h-full bg-white text-[#0C0C0E] flex flex-col gap-2 p-4">
+        <h4 className="text-[14px] font-semibold leading-tight">Compare plans.</h4>
+        <div className="flex flex-col rounded-md border border-black/10 overflow-hidden">
+          <div className="grid grid-cols-[1.4fr_1fr_1fr] bg-black/[0.04] border-b border-black/8 px-2 py-1 text-[9px] font-mono text-black/55 uppercase tracking-wider">
+            <span>Feature</span>
+            <span className="text-center">Free</span>
+            <span className="text-center font-semibold text-[#0C0C0E]">Pro</span>
+          </div>
+          {[
+            { f: 'Extractions', free: '3 / mo', pro: 'Unlimited' },
+            { f: 'MCP tools', free: false, pro: true },
+            { f: 'Figma sync', free: false, pro: true },
+            { f: 'Team kits', free: false, pro: true },
+          ].map((row) => (
+            <div
+              key={row.f}
+              className="grid grid-cols-[1.4fr_1fr_1fr] border-b border-black/6 px-2 py-1 text-[10px] last:border-b-0"
+            >
+              <span className="text-black/75">{row.f}</span>
+              <span className="text-center text-black/55">
+                {typeof row.free === 'string' ? row.free : row.free ? <Check className="inline h-2.5 w-2.5" /> : <span className="opacity-30">—</span>}
+              </span>
+              <span className="text-center text-[#0C0C0E] font-medium">
+                {typeof row.pro === 'string' ? row.pro : row.pro ? <Check className="inline h-2.5 w-2.5" /> : <span className="opacity-30">—</span>}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 7,
+    name: 'Pricing — testimonial card',
+    rationale: 'Quote-led layout with avatar row and CTA underneath.',
+    health: 87,
+    render: () => (
+      <div className="w-full h-full bg-white text-[#0C0C0E] flex flex-col gap-2 px-5 py-4">
+        <div className="flex items-center gap-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <span key={i} className="text-[10px] text-[#E4B400] leading-none">★</span>
+          ))}
+          <span className="ml-1 text-[9px] font-mono text-black/45">4.9 · 240 teams</span>
+        </div>
+        <p className="text-[12px] leading-snug font-medium text-[#0C0C0E]">
+          “Layout cut our design-to-code review loop from days to hours.”
+        </p>
+        <div className="flex items-center gap-2 mt-1">
+          <div className="flex -space-x-1.5">
+            {['#E4F222', '#A78BFA', '#34D399'].map((c) => (
+              <span
+                key={c}
+                className="size-5 rounded-full border-2 border-white"
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+          <div className="flex flex-col leading-tight">
+            <span className="text-[10px] font-semibold">Maya Chen</span>
+            <span className="text-[8.5px] text-black/50">Head of Design · Linear</span>
+          </div>
+        </div>
+        <button className="mt-auto w-full rounded-md border border-black/12 bg-[#E4F222] px-2.5 py-1.5 text-[11px] font-semibold text-[#0C0C0E]">
+          Start 14-day trial
+        </button>
+      </div>
+    ),
+  },
+];
+
+interface VariantCardProps {
+  variant: Variant;
+  selected: boolean;
+  delay: number;
+  onClick: () => void;
+}
+
+function VariantCard({ variant, selected, delay, onClick }: VariantCardProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay, ease: [0, 0, 0.2, 1] }}
+      viewport={{ once: true, margin: '-10%' }}
+      className="relative cursor-pointer"
+      onClick={onClick}
+    >
+      {/* Inner card: rounded + overflow-hidden so previews clip cleanly */}
+      <div
+        className="group flex flex-col rounded-xl overflow-hidden transition-all"
+        style={{
+          backgroundColor: selected ? STUDIO_TOKENS.bgElevated : STUDIO_TOKENS.bgSurface,
+          border: `1px solid ${selected ? STUDIO_TOKENS.accent : STUDIO_TOKENS.border}`,
+          boxShadow: selected ? `0 0 0 1px ${STUDIO_TOKENS.accent}33` : 'none',
+        }}
+      >
+      <div className="aspect-[4/3] overflow-hidden" style={{ backgroundColor: '#FFFFFF' }}>
+        {variant.render()}
+      </div>
+      <div className="flex flex-col gap-1 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[13px] font-semibold truncate" style={{ color: STUDIO_TOKENS.textPrimary }}>
+            {variant.name}
+          </span>
+          <span
+            className="rounded-full px-1.5 py-[1px] text-[10px] font-semibold tabular-nums shrink-0"
+            style={{
+              backgroundColor:
+                variant.health >= 90 ? 'rgba(52,199,89,0.15)' : 'rgba(228,242,34,0.12)',
+              color: variant.health >= 90 ? 'rgb(110,231,183)' : '#E4F222',
+            }}
+          >
+            {variant.health}
+          </span>
+        </div>
+        <p className="text-[11px] leading-snug line-clamp-2" style={{ color: STUDIO_TOKENS.textSecondary }}>
+          {variant.rationale}
+        </p>
+      </div>
+      <div
+        className="flex items-center gap-1 border-t px-3 py-2 transition-opacity"
+        style={{ borderColor: STUDIO_TOKENS.border, opacity: selected ? 1 : undefined }}
+      >
+        {ACTIONS.map(({ Icon, label }, i) => (
+          <Tooltip key={i} label={label}>
+            <button
+              className="flex h-5 w-5 items-center justify-center rounded transition-colors hover:bg-white/10"
+              style={{ color: STUDIO_TOKENS.textMuted }}
+            >
+              <Icon className="h-3 w-3" />
+            </button>
+          </Tooltip>
+        ))}
+      </div>
+      </div>
+      {/* Selection check badge — outside the overflow-hidden inner card so it can stick out */}
+      {selected && (
+        <div
+          className="absolute -right-1.5 -top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full"
+          style={{ backgroundColor: STUDIO_TOKENS.accent }}
+        >
+          <Check className="h-3 w-3" style={{ color: STUDIO_TOKENS.textOnAccent }} />
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+export function ExplorerView() {
+  const [selectedVariant, setSelectedVariant] = useState<number>(2);
+  const [variantCount, setVariantCount] = useState(VARIANTS.length);
+  const [prompt, setPrompt] = useState('');
+
+  return (
+    <>
+      {/* Variants area — scrollable so all variants are reachable; toolbar stays pinned below */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="mx-3 mt-3 mb-3 grid grid-cols-2 gap-3 items-start">
+          {VARIANTS.map((v, i) => (
+            <VariantCard
+              key={v.id}
+              variant={v}
+              selected={selectedVariant === v.id}
+              delay={0.15 + i * 0.08}
+              onClick={() => setSelectedVariant(v.id)}
+            />
+          ))}
+        </div>
+      </div>
+      {/* Explorer toolbar (bottom — chat-input style) */}
+      <div
+        className="mx-3 mb-3 flex flex-col rounded-lg border shrink-0"
+        style={{ borderColor: STUDIO_TOKENS.border, backgroundColor: STUDIO_TOKENS.bgSurface }}
+      >
+        <div className="p-2.5">
+          <div className="relative">
+            <div
+              className="flex min-h-[68px] items-start rounded-md border px-3.5 py-3"
+              style={{
+                borderColor: STUDIO_TOKENS.border,
+                backgroundColor: STUDIO_TOKENS.accentSubtle,
+                boxShadow: '0 0 0 1px rgba(0,0,0,0.2)',
+              }}
+            >
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder='Describe what to explore... e.g. "a pricing card with feature tiers"'
+                rows={1}
+                className="flex-1 resize-none bg-transparent text-[13px] leading-snug outline-none"
+                style={{ color: STUDIO_TOKENS.textPrimary }}
+              />
+            </div>
+            <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5">
+              <Tooltip label="Attach context files">
+                <button
+                  className="flex items-center justify-center size-6 rounded-full bg-transparent border transition-colors hover:opacity-80"
+                  style={{ borderColor: STUDIO_TOKENS.border, color: STUDIO_TOKENS.textMuted }}
+                >
+                  <Paperclip className="h-3 w-3" />
+                </button>
+              </Tooltip>
+              <Tooltip label="Attach reference image">
+                <button
+                  className="flex items-center justify-center size-6 rounded-full bg-transparent border transition-colors hover:opacity-80"
+                  style={{ borderColor: STUDIO_TOKENS.border, color: STUDIO_TOKENS.textMuted }}
+                >
+                  <ImagePlus className="h-3 w-3" />
+                </button>
+              </Tooltip>
+              {prompt.trim() && (
+                <button
+                  className="flex items-center justify-center size-6 rounded-full transition-colors hover:opacity-90"
+                  style={{ backgroundColor: STUDIO_TOKENS.textPrimary, color: STUDIO_TOKENS.bgApp }}
+                >
+                  <ArrowUp className="h-3 w-3" strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+        <div
+          className="flex h-[38px] items-center justify-between border-t px-5 pr-4 whitespace-nowrap"
+          style={{ borderColor: 'rgba(255,255,255,0.05)' }}
+        >
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs" style={{ color: STUDIO_TOKENS.textPrimary }}>Variants:</span>
+              <button
+                onClick={() => setVariantCount((c) => Math.max(1, c - 1))}
+                className="rounded p-0.5 transition-colors hover:bg-white/5"
+                style={{ color: STUDIO_TOKENS.textSecondary }}
+              >
+                <Minus className="h-3 w-3" />
+              </button>
+              <span className="w-4 text-center text-xs font-medium" style={{ color: STUDIO_TOKENS.textPrimary }}>
+                {variantCount}
+              </span>
+              <button
+                onClick={() => setVariantCount((c) => Math.min(8, c + 1))}
+                className="rounded p-0.5 transition-colors hover:bg-white/5"
+                style={{ color: STUDIO_TOKENS.textSecondary }}
+              >
+                <Plus className="h-3 w-3" />
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs" style={{ color: STUDIO_TOKENS.textPrimary }}>Model:</span>
+              <div
+                className="relative inline-flex items-center gap-1 rounded-md border pl-2 pr-2 py-0.5 text-xs cursor-pointer hover:bg-white/5 transition-colors"
+                style={{
+                  borderColor: 'rgba(255,255,255,0.08)',
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  color: STUDIO_TOKENS.textPrimary,
+                }}
+              >
+                Sonnet 4.6
+                <ChevronDown className="h-2.5 w-2.5" />
+              </div>
+            </div>
+            <button
+              className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors hover:bg-white/5"
+              style={{ color: STUDIO_TOKENS.textPrimary }}
+            >
+              <Split className="h-3 w-3" />
+              Compare
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Tooltip label="Import from Figma">
+              <button
+                className="inline-flex items-center gap-1.5 rounded-md border h-[30px] px-3 text-xs font-medium transition-colors hover:bg-white/5"
+                style={{ borderColor: 'rgba(255,255,255,0.07)', color: STUDIO_TOKENS.textPrimary }}
+              >
+                <Download className="h-3 w-3" />
+                Import
+              </button>
+            </Tooltip>
+            <button
+              className="inline-flex items-center gap-1.5 rounded-md border h-[30px] px-3 text-xs font-medium transition-colors hover:bg-white/5"
+              style={{ borderColor: 'rgba(255,255,255,0.07)', color: STUDIO_TOKENS.textPrimary }}
+            >
+              <FigmaIcon className="h-3 w-3" />
+              Push to Figma
+            </button>
+            <button
+              className="inline-flex items-center gap-1.5 rounded-md border h-[30px] px-3 text-xs font-medium transition-colors hover:bg-white/5"
+              style={{ borderColor: 'rgba(255,255,255,0.07)', color: STUDIO_TOKENS.textPrimary }}
+            >
+              <PaperIcon className="h-3 w-3" />
+              Push to Paper
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

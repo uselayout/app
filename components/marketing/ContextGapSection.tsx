@@ -1,7 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MarketingVideo } from '@/components/marketing/MarketingVideo';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { ContextGapMock } from '@/components/marketing/mocks/ContextGapMock';
+import { ContextGapMobileMock } from '@/components/marketing/mocks/ContextGapMobileMock';
 
 export function ContextGapSection() {
   return (
@@ -46,12 +48,13 @@ export function ContextGapSection() {
         </div>
       </div>
 
+      {/* Desktop */}
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="w-[1280px] max-w-full mx-auto aspect-[1280/810] relative overflow-hidden rounded-[6px]"
+        className="hidden md:block w-[1280px] max-w-full mx-auto aspect-[1280/810] relative overflow-hidden rounded-[6px]"
       >
         <img
           src="/marketing/aurora-context-gap.webp"
@@ -59,8 +62,24 @@ export function ContextGapSection() {
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
-        <div className="absolute inset-3 lg:inset-5 overflow-hidden rounded-[6px]">
-          <MarketingVideo src="/marketing/videos/context-gap.mp4" />
+        <div className="absolute inset-3 lg:inset-5">
+          <MockFrame ariaLabel="Without Layout vs with Layout — same prompt, different output">
+            <ContextGapMock />
+          </MockFrame>
+        </div>
+      </motion.div>
+      {/* Mobile */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        viewport={{ once: true }}
+        className="md:hidden w-full max-w-[420px] mx-auto aspect-[3/4] relative px-4"
+      >
+        <div className="relative w-full h-full">
+          <MockFrame ariaLabel="Without Layout vs with Layout — mobile preview">
+            <ContextGapMobileMock />
+          </MockFrame>
         </div>
       </motion.div>
     </section>

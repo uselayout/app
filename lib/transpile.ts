@@ -1,4 +1,4 @@
-import { transpileModule, ModuleKind, JsxEmit, ScriptTarget } from "typescript";
+import { DiagnosticCategory, flattenDiagnosticMessageText, JsxEmit, ModuleKind, ScriptTarget, transpileModule } from "typescript";
 
 /**
  * JSX/TSX → CommonJS JS transform.
@@ -19,6 +19,7 @@ import { transpileModule, ModuleKind, JsxEmit, ScriptTarget } from "typescript";
 export async function transpileTsx(code: string): Promise<string> {
   await new Promise<void>((resolve) => setImmediate(resolve));
   const result = transpileModule(code, {
+    reportDiagnostics: true,
     compilerOptions: {
       module: ModuleKind.CommonJS,
       jsx: JsxEmit.React,
@@ -29,5 +30,39 @@ export async function transpileTsx(code: string): Promise<string> {
     },
     fileName: "component.tsx",
   });
+
+  // transpileModule happily emits broken JS even when it parses syntax
+  // errors (e.g. an AI-generated typo like `i / > 0 ? ... : ...`). The
+  // iframe is then the first thing to parse the output strictly, and
+  // surfaces a cryptic "Unexpected token '>'" at a random srcdoc line.
+  // Surface the real error here so /api/transpile returns a clear 400.
+  const errorDiag = result.diagnostics?.find((d) => d.category === DiagnosticCategory.Error);
+  if (errorDiag) {
+    const msg = flattenDiagnosticMessageText(errorDiag.messageText, "\n");
+    throw new TranspileError(`TSX syntax error: ${msg}`, locateError(code, errorDiag.start));
+  }
+
   return result.outputText;
+}
+
+/** Subclass so the API route can pull line/col without parsing the message. */
+export class TranspileError extends Error {
+  constructor(message: string, public readonly position: { line: number; column: number } | null) {
+    super(message);
+    this.name = "TranspileError";
+  }
+}
+
+/** Translate a TS character offset into 1-indexed line/column for the editor. */
+function locateError(code: string, start: number | undefined): { line: number; column: number } | null {
+  if (start === undefined || start < 0) return null;
+  let line = 1;
+  let lastNewline = -1;
+  for (let i = 0; i < start && i < code.length; i++) {
+    if (code.charCodeAt(i) === 10 /* \n */) {
+      line++;
+      lastNewline = i;
+    }
+  }
+  return { line, column: start - lastNewline };
 }

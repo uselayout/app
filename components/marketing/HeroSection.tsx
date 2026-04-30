@@ -3,7 +3,9 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSession } from '@/lib/auth-client';
-import { MarketingVideo } from '@/components/marketing/MarketingVideo';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { HeroMock } from '@/components/marketing/mocks/HeroMock';
+import { HeroMobileMock } from '@/components/marketing/mocks/HeroMobileMock';
 
 const TOOL_ICONS: { name: string; src: string }[] = [
   { name: 'Claude', src: '/marketing/icons/claude.svg' },
@@ -154,9 +156,18 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
           style={{ zIndex: 0 }}
         />
 
-        {/* Video container */}
-        <div className="relative z-10 aspect-[1280/810] rounded-[6px] bg-white overflow-hidden w-full">
-          <MarketingVideo src="/marketing/videos/hero-demo.mp4" />
+        {/* Desktop: full Studio frame. Hidden below md (768px). */}
+        <div className="hidden md:block relative z-10 aspect-[1280/810] w-full">
+          <MockFrame ariaLabel="Layout Studio explorer demo">
+            <HeroMock />
+          </MockFrame>
+        </div>
+        {/* Mobile: curated single-variant card with mini chrome. Studio is desktop-only;
+            this shows the strongest moment of Explorer rather than shrinking the full frame. */}
+        <div className="md:hidden relative z-10 aspect-[3/4] w-full max-w-[420px] mx-auto">
+          <MockFrame ariaLabel="Layout Studio explorer — mobile preview">
+            <HeroMobileMock />
+          </MockFrame>
         </div>
       </div>
     </section>

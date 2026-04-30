@@ -115,6 +115,74 @@ const MAX_TYPOGRAPHY_TOKENS = 75;
 const MAX_COMPUTED_STYLES = 30;
 const MAX_SCREENSHOTS = 3;
 
+/**
+ * Filter `standardisation.unassigned` for saturated colour tokens that look
+ * like brand colours (chroma > 0.15, lightness 0.2-0.9), capped at `max`.
+ * Used to surface orphan brand colours to Claude during synthesis so they
+ * land under a brand/accent group instead of being mis-categorised.
+ */
+export function pickSaturatedOrphanColours(
+  unassigned: Array<{ name: string; cssVariable?: string; value: string; type: string; hidden: boolean }>,
+  max = 6
+): Array<{ name: string; cssVariable?: string; value: string }> {
+  type Scored = { name: string; cssVariable?: string; value: string; chroma: number; hue: number };
+  const scored: Scored[] = [];
+
+  for (const t of unassigned) {
+    if (t.hidden) continue;
+    if (t.type !== "color") continue;
+    const rgb = parseRgbFromAnyValue(t.value);
+    if (!rgb) continue;
+    const max255 = Math.max(rgb.r, rgb.g, rgb.b);
+    const min255 = Math.min(rgb.r, rgb.g, rgb.b);
+    const chroma = (max255 - min255) / 255;
+    if (chroma <= 0.15) continue; // skip greys / near-neutrals
+    const lightness = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+    if (lightness <= 0.2 || lightness >= 0.9) continue; // skip near-black / near-white
+
+    const range = max255 - min255;
+    let hue: number;
+    if (max255 === rgb.r) hue = ((rgb.g - rgb.b) / range) % 6;
+    else if (max255 === rgb.g) hue = (rgb.b - rgb.r) / range + 2;
+    else hue = (rgb.r - rgb.g) / range + 4;
+    hue *= 60;
+    if (hue < 0) hue += 360;
+
+    scored.push({ name: t.name, cssVariable: t.cssVariable, value: t.value, chroma, hue });
+  }
+
+  // Distinct-hue dedupe (25° window) so we don't waste slots on near-identical
+  // tints. Sort by chroma desc — most saturated wins each hue bucket.
+  scored.sort((a, b) => b.chroma - a.chroma);
+  const picked: Scored[] = [];
+  for (const cand of scored) {
+    if (picked.length >= max) break;
+    const tooClose = picked.some((p) => {
+      const d = Math.abs(p.hue - cand.hue);
+      return Math.min(d, 360 - d) < 25;
+    });
+    if (tooClose) continue;
+    picked.push(cand);
+  }
+
+  return picked.map(({ name, cssVariable, value }) => ({ name, cssVariable, value }));
+}
+
+function parseRgbFromAnyValue(value: string): { r: number; g: number; b: number } | null {
+  const v = value.trim();
+  // hex (#fff or #ffffff or #ffffffaa)
+  let h = v.startsWith("#") ? v.slice(1) : "";
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  if (h.length === 8) h = h.slice(0, 6);
+  if (h.length === 6 && /^[0-9a-f]{6}$/i.test(h)) {
+    return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) };
+  }
+  // rgb / rgba
+  const rgb = v.toLowerCase().match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (rgb) return { r: parseInt(rgb[1], 10), g: parseInt(rgb[2], 10), b: parseInt(rgb[3], 10) };
+  return null;
+}
+
 /** Priority order for CSS variable truncation (lower = higher priority). */
 function cssVarPriority(name: string): number {
   const lower = name.toLowerCase();
@@ -207,6 +275,28 @@ function buildUserContent(
 
     for (const [cat, lines] of Object.entries(byCategory)) {
       sections.push(`/* ── Curated ${cat.toUpperCase()} ── */\n${lines.join("\n")}`);
+    }
+
+    // Saturated unassigned colours: tokens the standardiser couldn't slot into
+    // a canonical role but which are visibly part of the brand palette
+    // (e.g. Headspace's pink hero card, second yellow, coral mascot). Without
+    // this hint Claude tends to bury them in the generic CSS-variables dump
+    // and they get mislabelled as `--*-color-surface...`. Surfacing them
+    // explicitly lets Claude name them sensibly under the accent / brand
+    // grouping. Skip user-hidden tokens.
+    const orphanBrandColours = pickSaturatedOrphanColours(standardisation.unassigned, 6);
+    if (orphanBrandColours.length > 0) {
+      const lines = orphanBrandColours.map(
+        (t) => `  ${t.cssVariable ?? t.name}: ${t.value};`
+      );
+      sections.push(
+        `\n--- ADDITIONAL BRAND COLOURS DETECTED (saturated, unassigned to standard roles) ---\n` +
+        `These saturated colours appear in the extraction but didn't match any canonical role. ` +
+        `They are likely secondary brand colours (decorative tile backgrounds, illustration accents). ` +
+        `Document them in the Colour System section under an "Accent / Brand" subgroup with descriptive names ` +
+        `(e.g. --color-accent-warm, --color-accent-cool, --color-accent-pink) — never as generic surface tokens.\n` +
+        lines.join("\n")
+      );
     }
 
     // Anti-patterns from standardisation

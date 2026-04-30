@@ -68,7 +68,17 @@ export function standardiseTokens(
     { roleKey: "bg-app", picker: (ts) => ts.sort((a, b) => b.lightness - a.lightness)[0]?.token ?? null },
     { roleKey: "bg-surface", picker: (ts) => { const sorted = ts.sort((a, b) => b.lightness - a.lightness); return sorted[1]?.token ?? null; } },
     { roleKey: "text-primary", picker: (ts) => ts.sort((a, b) => a.lightness - b.lightness)[0]?.token ?? null },
-    { roleKey: "text-secondary", picker: (ts) => { const sorted = ts.sort((a, b) => a.lightness - b.lightness); return sorted.find((t) => t.lightness > 0.15 && t.lightness < 0.5)?.token ?? null; } },
+    { roleKey: "text-secondary", picker: (ts) => {
+      // Require low chroma so a saturated brand surface (e.g. Headspace's
+      // purple Sleepcast tile #7B57D3, lightness 0.44, chroma 0.49) doesn't
+      // get mis-assigned as secondary body text.
+      const sorted = ts.sort((a, b) => a.lightness - b.lightness);
+      return sorted.find((t) => {
+        if (t.lightness <= 0.15 || t.lightness >= 0.5) return false;
+        const chroma = parseChroma(t.token.value) ?? estimateChromaFromHex(t.token.value);
+        return chroma < 0.15;
+      })?.token ?? null;
+    }},
     { roleKey: "accent", picker: (ts) => {
       const chromaTokens = ts
         .map((t) => ({ ...t, chroma: parseChroma(t.token.value) ?? estimateChromaFromHex(t.token.value) }))
@@ -76,12 +86,28 @@ export function standardiseTokens(
         .sort((a, b) => b.chroma - a.chroma);
       return chromaTokens[0]?.token ?? null;
     }},
+    // Warm / cool accent slots catch saturated brand surfaces that don't fit
+    // the primary `accent` slot. These run BEFORE status fallbacks so a
+    // vivid yellow tile lands in `accent-warm` (a brand colour) rather than
+    // `warning` (a semantic alert state). If a site has explicit semantic
+    // warning tokens they're already named (e.g. `--color-warning`) and
+    // claimed by Pass 1 before fallback fires.
+    //
+    // Hue ranges: warm = 0-60° + 320-360° (red/orange/yellow + pink/magenta),
+    // cool = 180-280° (cyan/blue/purple). Both require chroma > 0.15 and
+    // lightness 0.2-0.9 — same gate as the `accent` picker — and prefer
+    // the most saturated remaining candidate.
+    { roleKey: "accent-warm", picker: (ts) => pickByHueRange(ts, [[0, 60], [320, 360]]) },
+    { roleKey: "accent-cool", picker: (ts) => pickByHueRange(ts, [[180, 280]]) },
     { roleKey: "success", picker: (ts) => {
       const greens = ts.filter((t) => { const rgb = parseHexToRgb(t.token.value); return rgb && rgb.g > rgb.r * 1.3 && rgb.g > rgb.b * 1.3; });
       return greens[0]?.token ?? null;
     }},
     { roleKey: "warning", picker: (ts) => {
-      const oranges = ts.filter((t) => { const rgb = parseHexToRgb(t.token.value); return rgb && rgb.r > 180 && rgb.g > 100 && rgb.g < 200 && rgb.b < 100; });
+      // Range widened from g<200 to g<230 so brand yellows land in the
+      // warning slot when accent-warm is already taken (Headspace #FFCE00
+      // has g=206 — previously rejected outright by g<200).
+      const oranges = ts.filter((t) => { const rgb = parseHexToRgb(t.token.value); return rgb && rgb.r > 180 && rgb.g > 100 && rgb.g < 230 && rgb.b < 100; });
       return oranges[0]?.token ?? null;
     }},
     { roleKey: "error", picker: (ts) => {
@@ -90,22 +116,29 @@ export function standardiseTokens(
     }},
   ];
 
-  for (const fallback of colourFallbacks) {
-    if (assignments.has(fallback.roleKey)) continue;
-    const role = STANDARD_SCHEMA.roles.find((r) => r.key === fallback.roleKey);
-    if (!role) continue;
+  // Helper: run all colour fallback pickers once, filling any unassigned role
+  // they have a candidate for. Captured as a closure so it can run again after
+  // Pass 7 releases hue-mismatched tokens — letting a yellow that was wrongly
+  // grabbed by accent-hover land in accent-warm or warning on the second pass.
+  const runColourFallbacks = () => {
+    for (const fallback of colourFallbacks) {
+      if (assignments.has(fallback.roleKey)) continue;
+      const role = STANDARD_SCHEMA.roles.find((r) => r.key === fallback.roleKey);
+      if (!role) continue;
 
-    const unassignedColours = allTokens
-      .filter((t) => !assignedTokenNames.has(tokenKey(t)) && (t.sourceType === "color" || t.type === "color"))
-      .map((t) => ({ token: t, lightness: parseLightness(t.value) }))
-      .filter((x) => x.lightness !== null) as { token: FlatToken; lightness: number }[];
+      const unassignedColours = allTokens
+        .filter((t) => !assignedTokenNames.has(tokenKey(t)) && (t.sourceType === "color" || t.type === "color"))
+        .map((t) => ({ token: t, lightness: parseLightness(t.value) }))
+        .filter((x) => x.lightness !== null) as { token: FlatToken; lightness: number }[];
 
-    const picked = fallback.picker(unassignedColours);
-    if (picked) {
-      assignments.set(fallback.roleKey, buildAssignment(role, picked, prefix, "low"));
-      assignedTokenNames.add(tokenKey(picked));
+      const picked = fallback.picker(unassignedColours);
+      if (picked) {
+        assignments.set(fallback.roleKey, buildAssignment(role, picked, prefix, "low"));
+        assignedTokenNames.add(tokenKey(picked));
+      }
     }
-  }
+  };
+  runColourFallbacks();
 
   // Pass 4: Value-based fallback for spacing roles
   // Sort spacing tokens by pixel value and assign to scale positions
@@ -255,6 +288,12 @@ export function standardiseTokens(
       }
     }
   }
+
+  // Re-run colour fallbacks so any token Pass 7 just released (e.g. a yellow
+  // that was greedily grabbed by accent-hover but had the wrong hue) gets a
+  // chance to land in accent-warm / accent-cool / warning instead of being
+  // dropped into the unassigned pool.
+  runColourFallbacks();
 
   // Build unassigned list
   const unassigned: UnassignedToken[] = allTokens
@@ -674,6 +713,31 @@ function hueFromAny(value: string): number | null {
 
 function rgbToLightness(r: number, g: number, b: number): number {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+/**
+ * Pass 3 helper: pick the most-saturated unassigned colour whose hue falls in
+ * one of the supplied ranges, with `chroma > 0.15` and `lightness 0.2-0.9`.
+ * Used by the `accent-warm` and `accent-cool` fallback pickers so a saturated
+ * second / third brand colour can be slotted into a hue-keyed role rather
+ * than getting stranded in the unassigned pool.
+ */
+function pickByHueRange(
+  ts: { token: FlatToken; lightness: number }[],
+  ranges: ReadonlyArray<readonly [number, number]>
+): FlatToken | null {
+  const inRange = ts
+    .map((t) => ({
+      token: t.token,
+      lightness: t.lightness,
+      hue: hueFromAny(t.token.value),
+      chroma: parseChroma(t.token.value) ?? estimateChromaFromHex(t.token.value),
+    }))
+    .filter((x): x is { token: FlatToken; lightness: number; hue: number; chroma: number } => x.hue !== null)
+    .filter((x) => x.chroma > 0.15 && x.lightness > 0.2 && x.lightness < 0.9)
+    .filter((x) => ranges.some(([lo, hi]) => x.hue >= lo && x.hue <= hi))
+    .sort((a, b) => b.chroma - a.chroma);
+  return inRange[0]?.token ?? null;
 }
 
 // ---------------------------------------------------------------------------

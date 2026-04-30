@@ -141,6 +141,18 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
 
   const relatedKits = await fetchRelatedKits(kit.slug, kit.tags, 3);
 
+  // Display host for the "Visit pinterest.com" pill. `kit.homepageUrl` is
+  // validated as a URL by the admin PATCH route, but defend against legacy
+  // rows or hand-edited DB values by falling back to no pill on parse failure.
+  let homepageHost: string | null = null;
+  if (kit.homepageUrl) {
+    try {
+      homepageHost = new URL(kit.homepageUrl).hostname.replace(/^www\./, "");
+    } catch {
+      homepageHost = null;
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[var(--mkt-bg)] text-[var(--mkt-text-primary)]">
       <GalleryThemeInit />
@@ -171,6 +183,17 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
                       isLoggedIn={isLoggedIn}
                     />
                     <ShareButton name={kit.name} description={kit.description} />
+                    {homepageHost && kit.homepageUrl && (
+                      <a
+                        href={kit.homepageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[12px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)] transition-colors px-2 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]"
+                      >
+                        Visit {homepageHost}
+                        <span aria-hidden>↗</span>
+                      </a>
+                    )}
                     <span className="text-[12px] text-[var(--mkt-text-secondary)] px-2 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]">
                       {kit.licence}
                     </span>

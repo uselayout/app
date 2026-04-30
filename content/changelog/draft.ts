@@ -10,6 +10,69 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-extraction-diff-modal-scroll",
+    title: "Re-extraction diff modal scrolls properly with lots of token changes",
+    description:
+      "When a re-extraction produced more tokens than fit in the Extraction Changes modal (think 50+ token diffs), the list silently clipped at the visible area and the rest were unreachable — wheel and trackpad did nothing. The modal now uses a proper grid layout with a definite scrollable region, so every change is reachable regardless of how many tokens the diff contains.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-29",
+  },
+  {
+    id: "2026-w18-extraction-warm-cool-colours",
+    title: "Site extraction now picks up brand yellows, pinks, and purples",
+    description:
+      "Extracting a colourful site like headspace.com used to produce a layout.md dominated by neutrals and one or two blues — the yellow banner, pink hero card, and purple Sleepcast tile mostly didn't make it through. The extractor now scrolls the page so below-the-fold sections paint, runs a bounded DOM walk that captures non-default background colours on every visible element (skipping SVG icon fills so decorative illustration colours don't pollute the palette), and the standardiser has new accent-warm and accent-cool roles plus a relaxed yellow gate so vivid brand surfaces actually land in the curated palette instead of being dropped or mis-categorised as generic surface tokens.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-28",
+  },
+  {
+    id: "2026-w18-kit-visit-site-link",
+    title: "Visit-site link on kit pages",
+    description:
+      "Kit pages now show a small \"Visit pinterest.com ↗\" pill next to the licence chip when the brand has a homepage URL set, so visitors can jump from the kit straight to the design system in the wild. Layout admins can paste the URL into the Kits tab in the admin panel.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-28",
+  },
+  {
+    id: "2026-w18-bespoke-showcase-auto-retry",
+    title: "Fewer failed kit showcase generations",
+    description:
+      "When Claude occasionally emitted a typo in the ~50KB of TSX it generates for a bespoke kit showcase, the whole generation failed and the kit ended up without its bespoke preview. The generator now retries once on a transpile error or missing export — almost always succeeds on the second sample without operator intervention.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-04-28",
+  },
+  {
+    id: "2026-w18-explore-refine-feedback-and-resize",
+    title: "Clearer feedback when you refine a variant + grabbier code-pane handle",
+    description:
+      "Hitting Enter on a per-variant refine prompt now shows a 'Refining…' overlay on the originating card while the AI is running, and the skeleton card below says 'Refining \"variant name\"…' instead of a generic 'Generating…'. Also widened the split-view code pane's resize handle from a 1px line to a proper 8px hit area, and made it use pointer capture so dragging across the inspector iframe no longer kills the drag.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-27",
+  },
+  {
+    id: "2026-w18-explore-split-view-code-editor",
+    title: "Edit a variant's code right next to its preview",
+    description:
+      "Inspect mode now has a Code button in the top bar. Click it and a Monaco editor opens to the right of the preview, bound to the variant's TSX. Type in the code, the preview re-renders after a brief debounce. Drag the inspector to change a colour, the code on the right updates to match. If your edit produces a syntax error, the line is squiggled red in the editor and the same error shows in the preview pane — much faster than the regenerate-and-pray loop. The pane remembers its width across sessions, and clicking View code on a failed render now lands you directly in the editor with the broken line highlighted.",
+    product: "studio",
+    category: "new",
+    date: "2026-04-27",
+  },
+  {
+    id: "2026-w18-transpile-rejects-syntax-errors",
+    title: "Clearer errors when an AI-generated variant has a typo",
+    description:
+      "If Claude generated a variant with a JavaScript typo (we saw one with i / > 0 instead of i > 0), TypeScript would emit broken JS without complaining and the preview iframe was the first thing to choke on it — surfacing a cryptic 'Unexpected token >' at a random srcdoc line. The transpile API now checks TypeScript's diagnostics and rejects the request with a clear 'TSX syntax error: Expression expected.' message, which the variant card shows directly. Means a one-character regen fixes it instead of a guessing game.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-27",
+  },
+  {
     id: "2026-w18-explore-failed-render-actions",
     title: "Better recovery when an Explorer variant fails to render",
     description:
