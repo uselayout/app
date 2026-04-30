@@ -234,20 +234,20 @@ export function ExplorerView() {
 
   return (
     <>
-      {/* Variant grid (top) — 2-up like the real Explorer (matches user's Studio behaviour) */}
-      <div className="mx-3 mt-3 grid grid-cols-2 gap-3 items-start">
-        {VARIANTS.map((v, i) => (
-          <VariantCard
-            key={v.id}
-            variant={v}
-            selected={selectedVariant === v.id}
-            delay={0.15 + i * 0.08}
-            onClick={() => setSelectedVariant(v.id)}
-          />
-        ))}
+      {/* Variants area — flex-1 + overflow-hidden so the toolbar below stays visible */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="mx-3 mt-3 grid grid-cols-2 gap-3 items-start">
+          {VARIANTS.slice(0, 2).map((v, i) => (
+            <VariantCard
+              key={v.id}
+              variant={v}
+              selected={selectedVariant === v.id}
+              delay={0.15 + i * 0.08}
+              onClick={() => setSelectedVariant(v.id)}
+            />
+          ))}
+        </div>
       </div>
-      {/* Spacer pushes toolbar to bottom */}
-      <div className="flex-1 min-h-0" />
       {/* Explorer toolbar (bottom — chat-input style) */}
       <div
         className="mx-3 mb-3 flex flex-col rounded-lg border shrink-0"

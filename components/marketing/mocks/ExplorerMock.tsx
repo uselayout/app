@@ -288,19 +288,20 @@ export function ExplorerMock() {
       </SourcePanel>
 
       <StudioSurface>
-        {/* 2x3 variant grid (top) — 2 columns, matches real Explorer */}
-        <div className="mx-3 mt-3 grid grid-cols-2 gap-2.5 items-start">
-          {VARIANTS.map((v, i) => (
-            <VariantTile
-              key={i}
-              variant={v}
-              selected={selected === i}
-              delay={0.12 + i * 0.06}
-              onClick={() => setSelected(i)}
-            />
-          ))}
+        {/* Variants area — flex-1 + overflow-hidden so the toolbar below stays visible */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="mx-3 mt-3 grid grid-cols-2 gap-2.5 items-start">
+            {VARIANTS.slice(0, 4).map((v, i) => (
+              <VariantTile
+                key={i}
+                variant={v}
+                selected={selected === i}
+                delay={0.12 + i * 0.06}
+                onClick={() => setSelected(i)}
+              />
+            ))}
+          </div>
         </div>
-        <div className="flex-1 min-h-0" />
         {/* Toolbar (bottom) */}
         <div
           className="mx-3 mb-3 flex flex-col rounded-lg border shrink-0"
