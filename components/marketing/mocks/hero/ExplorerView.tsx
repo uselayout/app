@@ -234,10 +234,10 @@ export function ExplorerView() {
 
   return (
     <>
-      {/* Variants area — flex-1 + overflow-hidden so the toolbar below stays visible */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <div className="mx-3 mt-3 grid grid-cols-2 gap-3 items-start">
-          {VARIANTS.slice(0, 2).map((v, i) => (
+      {/* Variants area — scrollable so all variants are reachable; toolbar stays pinned below */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="mx-3 mt-3 mb-3 grid grid-cols-2 gap-3 items-start">
+          {VARIANTS.map((v, i) => (
             <VariantCard
               key={v.id}
               variant={v}
