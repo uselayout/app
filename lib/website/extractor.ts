@@ -9,6 +9,7 @@ import {
   extractRadiusCensusScript,
   extractButtonColourCensusScript,
   extractSurfaceColourCensusScript,
+  extractSvgColourCensusScript,
   extractInteractiveStatesScript,
   extractComponentPatternsScript,
   extractTypographyCensusScript,
@@ -25,6 +26,7 @@ import {
   buildMotionTokensFromCensus,
   buildColourTokensFromCensus,
   buildSurfaceColoursFromCensus,
+  buildSvgColoursFromCensus,
 } from "./scale-builder";
 import { partitionNoise } from "@/lib/extraction/noise";
 import { dedupeTokensByValue } from "@/lib/extraction/dedupe";
@@ -230,6 +232,12 @@ export async function extractFromWebsite({
     onProgress?.("surfaces", 61, "Surveying surface colours...");
     const surfaceColourCensus: Record<string, { count: number; elements: Array<{ tag: string; text: string; area: number; color: string }> }> =
       await page.evaluate(`(${extractSurfaceColourCensusScript})()`);
+
+    // SVG fill census — captures brand-mark colours (logos, accent glyphs) that
+    // the surface walk skips because it explicitly ignores <svg> descendants.
+    onProgress?.("svg", 61, "Surveying svg fills...");
+    const svgColourCensus: Record<string, { count: number; elements: Array<{ tag: string; text: string; area: number; color: string }> }> =
+      await page.evaluate(`(${extractSvgColourCensusScript})()`);
 
     // Survey typography: distinct font-size / font-weight / line-height /
     // letter-spacing values across visible text. Populates real type scale
@@ -468,6 +476,16 @@ export async function extractFromWebsite({
     // any CTA element (Headspace pink hero card, purple Sleepcast tile).
     const minedSurfaces = buildSurfaceColoursFromCensus(surfaceColourCensus);
     for (const t of minedSurfaces) {
+      if (seenColourValues.has(t.value.trim().toLowerCase())) continue;
+      colors.push(t);
+      seenColourValues.add(t.value.trim().toLowerCase());
+    }
+
+    // Promote SVG fills (brand-mark colours) — the surface walk skips <svg>
+    // descendants, so without this YC's orange "Y" and similar logo-only
+    // accents would never reach the palette.
+    const minedSvg = buildSvgColoursFromCensus(svgColourCensus);
+    for (const t of minedSvg) {
       if (seenColourValues.has(t.value.trim().toLowerCase())) continue;
       colors.push(t);
       seenColourValues.add(t.value.trim().toLowerCase());

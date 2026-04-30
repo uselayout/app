@@ -257,16 +257,29 @@ export const extractRadiusCensusScript = `() => {
 export const extractButtonColourCensusScript = `() => {
   const selectors = [
     'button:not([disabled])', 'a[class*="btn"]', 'a[class*="button"]',
-    'a[class*="cta"]', '[role="button"]', '[class*="btn-primary"]',
+    'a[class*="cta"]', 'a[class*="apply"]', 'a[class*="primary"]',
+    '[role="button"]', '[class*="btn-primary"]',
     '[class*="button-primary"]', '[class*="btn-secondary"]',
     '[class*="button-secondary"]',
+    // Header / nav links with a meaningful background (covers YC's plain
+    // "<a class=apply>Apply</a>" pill and similar bare anchors that don't
+    // match any of the above class patterns).
+    'header a', 'nav a', '[role="banner"] a', '[class*="topbar"] a',
   ];
   const colourMap = {};
+  const seen = new Set();
   const excluded = '[class*="cookie"], [class*="consent"], [class*="banner"], [id*="cookie"], [id*="consent"], dialog, [role="dialog"]';
+  function isPillShape(cs, rect) {
+    const r = parseFloat(cs.borderRadius);
+    if (Number.isNaN(r) || rect.height <= 0) return false;
+    // Border-radius >= half the height ≈ pill. Also accept >= 9999px sentinel.
+    return r >= rect.height / 2 - 1 || r >= 9999;
+  }
   for (const sel of selectors) {
     try {
       const els = document.querySelectorAll(sel);
       for (const el of Array.from(els).slice(0, 30)) {
+        if (seen.has(el)) continue;
         if (el.closest(excluded)) continue;
         const cs = getComputedStyle(el);
         const bg = cs.backgroundColor;
@@ -274,6 +287,17 @@ export const extractButtonColourCensusScript = `() => {
         // Skip white/near-white backgrounds
         const m = bg.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);
         if (m && parseInt(m[1]) > 240 && parseInt(m[2]) > 240 && parseInt(m[3]) > 240) continue;
+        // For bare header/nav anchors, require pill shape OR meaningful padding so
+        // we don't sweep up generic body links that inherit a card background.
+        const tag = el.tagName.toLowerCase();
+        const isBareAnchor = tag === 'a' && !/btn|button|cta|apply|primary/i.test(el.className || '');
+        if (isBareAnchor) {
+          const rect0 = el.getBoundingClientRect();
+          const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+          const hasPad = !Number.isNaN(padX) && padX >= 12;
+          if (!isPillShape(cs, rect0) && !hasPad) continue;
+        }
+        seen.add(el);
         if (!colourMap[bg]) colourMap[bg] = { count: 0, elements: [] };
         colourMap[bg].count++;
         if (colourMap[bg].elements.length < 3) {
@@ -351,6 +375,98 @@ export const extractSurfaceColourCensusScript = `() => {
         area,
         color: cs.color,
       });
+    }
+  }
+  return colourMap;
+}`;
+
+/**
+ * Census of saturated SVG fills. Reads each SVG's fill attribute and
+ * computed fill style, skipping decorative greys and unset values. Returns
+ * the same shape as extractButtonColourCensusScript so a single builder can
+ * consume it. Logo marks (YC orange "Y", Vercel's triangle) live here.
+ *
+ * Skips:
+ * - SVGs inside cookie/consent overlays
+ * - fill: none / currentColor / context-fill / transparent / black
+ * - Pure greys (range < 12) — likely UI icon strokes
+ * - Zero-area elements (display:none, viewBox-only paths off-canvas)
+ *
+ * Surfaces ROOT svg fills first (the brand mark itself), then descendant
+ * shapes only if they're significantly bigger than 16x16 — this avoids
+ * flooding the palette with a hundred tiny path fills from sprite sheets.
+ */
+export const extractSvgColourCensusScript = `() => {
+  const colourMap = {};
+  const excluded = '[class*="cookie"], [class*="consent"], [id*="cookie"], [id*="consent"], dialog, [role="dialog"]';
+
+  function record(el, fill, area) {
+    if (!fill) return;
+    const f = fill.trim().toLowerCase();
+    if (f === 'none' || f === 'currentcolor' || f === 'context-fill' || f === 'transparent') return;
+    let r, g, b, a = 1;
+    const m = fill.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (m) {
+      const hex = m[1].length === 3
+        ? m[1].split('').map(c => c + c).join('')
+        : m[1];
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+    } else {
+      const rgbm = fill.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)(?:,\\s*([\\d.]+))?/);
+      if (!rgbm) return;
+      r = parseInt(rgbm[1], 10);
+      g = parseInt(rgbm[2], 10);
+      b = parseInt(rgbm[3], 10);
+      a = rgbm[4] !== undefined ? parseFloat(rgbm[4]) : 1;
+    }
+    if (a < 0.5) return;
+    if (r > 240 && g > 240 && b > 240) return;
+    if (r < 16 && g < 16 && b < 16) return;
+    const range = Math.max(r, g, b) - Math.min(r, g, b);
+    if (range < 12) return; // greyscale icon stroke
+    const key = 'rgb(' + r + ', ' + g + ', ' + b + ')';
+    if (!colourMap[key]) colourMap[key] = { count: 0, elements: [] };
+    colourMap[key].count++;
+    if (colourMap[key].elements.length < 4) {
+      colourMap[key].elements.push({
+        tag: el.tagName.toLowerCase(),
+        text: (el.getAttribute('aria-label') || el.textContent?.trim() || '').slice(0, 40),
+        area,
+        color: '',
+      });
+    }
+  }
+
+  function fillOf(el) {
+    const attr = el.getAttribute && el.getAttribute('fill');
+    if (attr) return attr;
+    try {
+      const cs = getComputedStyle(el);
+      return cs.fill || '';
+    } catch { return ''; }
+  }
+
+  const svgs = document.querySelectorAll('svg');
+  for (const svg of svgs) {
+    if (svg.closest && svg.closest(excluded)) continue;
+    const svgRect = svg.getBoundingClientRect();
+    const svgArea = Math.round(svgRect.width * svgRect.height);
+    if (svgArea < 64) continue; // smaller than 8x8, decorative
+
+    // Root-level fill (brand-mark colour usually lives on a top rect/path)
+    const rootFill = fillOf(svg);
+    if (rootFill) record(svg, rootFill, svgArea);
+
+    // Descendant shapes — only those that contribute meaningful area
+    const shapes = svg.querySelectorAll('rect, path, circle, polygon, ellipse, text');
+    for (const shape of shapes) {
+      const f = fillOf(shape);
+      if (!f) continue;
+      // Approximate shape area as a fraction of svg bounding box (cheap; the
+      // exact bbox per path is expensive and we only need a relative weight).
+      record(shape, f, Math.max(svgArea, 64));
     }
   }
   return colourMap;

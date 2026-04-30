@@ -412,6 +412,65 @@ export function buildSurfaceColoursFromCensus(
   });
 }
 
+/**
+ * Mine saturated SVG fills from the SVG census. Logo marks (YC's orange Y,
+ * Stripe's purple gradient stops) live here. No area floor — a 32x32 logo
+ * is meaningful even if it's the only place the brand colour appears.
+ *
+ * Returns at most `maxTokens` distinct-hue colours, sorted by occurrence.
+ * Tagged `--brand-mark-N` so the curated view groups them under Brand.
+ */
+export function buildSvgColoursFromCensus(
+  census: SurfaceColourCensus | undefined,
+  maxTokens = 4,
+): ExtractedToken[] {
+  if (!census) return [];
+
+  type Scored = {
+    value: string;
+    rgb: { r: number; g: number; b: number };
+    hue: number;
+    chroma: number;
+    count: number;
+    sample: string;
+  };
+
+  const scored: Scored[] = [];
+  for (const [value, info] of Object.entries(census)) {
+    const rgb = parseColour(value);
+    if (!rgb) continue;
+    if (isNearWhite(rgb) || isNearBlack(rgb) || isGrey(rgb)) continue;
+    const chroma = (Math.max(rgb.r, rgb.g, rgb.b) - Math.min(rgb.r, rgb.g, rgb.b)) / 255;
+    if (chroma < 0.15) continue;
+    const sampleText = info.elements.find((e) => e.text)?.text ?? info.elements[0]?.tag ?? "";
+    scored.push({ value, rgb, hue: hueOfRgb(rgb), chroma, count: info.count, sample: sampleText });
+  }
+  if (scored.length === 0) return [];
+
+  scored.sort((a, b) => b.count * b.chroma - a.count * a.chroma);
+
+  const picked: Scored[] = [];
+  for (const cand of scored) {
+    if (picked.length >= maxTokens) break;
+    if (picked.some((p) => hueDistance(p.hue, cand.hue) < 25)) continue;
+    picked.push(cand);
+  }
+
+  return picked.map((s, i) => {
+    const preview = s.sample ? ` — e.g. "${s.sample.slice(0, 30)}"` : "";
+    return {
+      name: `brand-mark-${i + 1}`,
+      value: s.value,
+      type: "color" as TokenType,
+      category: "semantic" as const,
+      cssVariable: `--brand-mark-${i + 1}`,
+      groupName: "Brand",
+      originalName: `${s.value} (svg census)`,
+      description: `Brand mark fill on ${s.count} svg shape${s.count === 1 ? "" : "s"}${preview} /* mined from svg fill */`,
+    };
+  });
+}
+
 /** Hue (0-360°) of an RGB triple. Returns 0 for greyscale (caller should filter first). */
 function hueOfRgb({ r, g, b }: { r: number; g: number; b: number }): number {
   const max = Math.max(r, g, b);

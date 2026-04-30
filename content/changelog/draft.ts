@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-extraction-svg-and-pill-cta-colours",
+    title: "Site extraction now picks up logo colours and pill-shaped header CTAs",
+    description:
+      "Extracting a site like ycombinator.com used to drop the brand orange entirely — the orange lives on an inline SVG logo and a plain `<a>` apply pill that didn't match the button selector, so it never reached the palette. The extractor now mines fills from every SVG (capturing logo-mark colours), and the CTA selector recognises pill-shaped header and nav anchors even when their class names don't include words like \"btn\" or \"button\". Brand-mark colours land as `--brand-mark-N` tokens grouped under Brand alongside the existing `--brand-primary-cta` and `--brand-surface-N` mined tokens.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-30",
+  },
+  {
     id: "2026-w18-extraction-diff-modal-scroll",
     title: "Re-extraction diff modal scrolls properly with lots of token changes",
     description:
