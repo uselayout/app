@@ -163,22 +163,18 @@ function VariantCard({ variant, selected, delay, onClick }: VariantCardProps) {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay, ease: [0, 0, 0.2, 1] }}
       viewport={{ once: true, margin: '-10%' }}
-      className="group relative flex flex-col rounded-xl overflow-hidden cursor-pointer transition-all"
+      className="relative cursor-pointer"
       onClick={onClick}
-      style={{
-        backgroundColor: selected ? STUDIO_TOKENS.bgElevated : STUDIO_TOKENS.bgSurface,
-        border: `1px solid ${selected ? STUDIO_TOKENS.accent : STUDIO_TOKENS.border}`,
-        boxShadow: selected ? `0 0 0 1px ${STUDIO_TOKENS.accent}33` : 'none',
-      }}
     >
-      {selected && (
-        <div
-          className="absolute -right-1.5 -top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full"
-          style={{ backgroundColor: STUDIO_TOKENS.accent }}
-        >
-          <Check className="h-3 w-3" style={{ color: STUDIO_TOKENS.textOnAccent }} />
-        </div>
-      )}
+      {/* Inner card: rounded + overflow-hidden so previews clip cleanly */}
+      <div
+        className="group flex flex-col rounded-xl overflow-hidden transition-all"
+        style={{
+          backgroundColor: selected ? STUDIO_TOKENS.bgElevated : STUDIO_TOKENS.bgSurface,
+          border: `1px solid ${selected ? STUDIO_TOKENS.accent : STUDIO_TOKENS.border}`,
+          boxShadow: selected ? `0 0 0 1px ${STUDIO_TOKENS.accent}33` : 'none',
+        }}
+      >
       <div className="aspect-[4/3] overflow-hidden" style={{ backgroundColor: '#FFFFFF' }}>
         {variant.render()}
       </div>
@@ -217,6 +213,16 @@ function VariantCard({ variant, selected, delay, onClick }: VariantCardProps) {
           </Tooltip>
         ))}
       </div>
+      </div>
+      {/* Selection check badge — outside the overflow-hidden inner card so it can stick out */}
+      {selected && (
+        <div
+          className="absolute -right-1.5 -top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full"
+          style={{ backgroundColor: STUDIO_TOKENS.accent }}
+        >
+          <Check className="h-3 w-3" style={{ color: STUDIO_TOKENS.textOnAccent }} />
+        </div>
+      )}
     </motion.div>
   );
 }

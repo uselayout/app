@@ -304,7 +304,7 @@ export function ViewSidebar({ views, activeView, onView }: ViewSidebarProps) {
         const Icon = v.icon;
         const active = v.id === activeView;
         return (
-          <Tooltip key={v.id} label={v.label}>
+          <Tooltip key={v.id} label={v.label} side="right">
             <button
               onClick={() => onView(v.id)}
               className="relative flex size-7 items-center justify-center rounded-md transition-all"
@@ -374,9 +374,11 @@ export function PaperIcon({ className = '' }: { className?: string }) {
  * Hover-reveal tooltip. Use to wrap any icon-only button so users
  * discover what each action does, like Cursor's chrome.
  *
- * Tooltip appears ABOVE the trigger by default. `side="below"` puts it
- * beneath instead (use when the trigger is near the top of an
- * overflow-hidden container).
+ * Sides:
+ *  - `above` (default): vertically stacked, centred horizontally
+ *  - `below`: same but underneath the trigger
+ *  - `right`: side-by-side, useful for left-edge vertical sidebars
+ *    where `above` would clip past the parent's left edge
  */
 export function Tooltip({
   label,
@@ -386,18 +388,20 @@ export function Tooltip({
 }: {
   label: string;
   children: ReactNode;
-  side?: 'above' | 'below';
+  side?: 'above' | 'below' | 'right';
   className?: string;
 }) {
   const positionClass =
     side === 'above'
-      ? 'bottom-full mb-1.5'
-      : 'top-full mt-1.5';
+      ? 'bottom-full left-1/2 -translate-x-1/2 mb-1.5'
+      : side === 'below'
+        ? 'top-full left-1/2 -translate-x-1/2 mt-1.5'
+        : 'left-full top-1/2 -translate-y-1/2 ml-2';
   return (
     <div className={`relative group/tt inline-flex ${className}`}>
       {children}
       <div
-        className={`absolute left-1/2 -translate-x-1/2 ${positionClass} px-2 py-1 rounded text-[10px] font-medium whitespace-nowrap opacity-0 group-hover/tt:opacity-100 transition-opacity pointer-events-none z-20`}
+        className={`absolute ${positionClass} px-2 py-1 rounded text-[10px] font-medium whitespace-nowrap opacity-0 group-hover/tt:opacity-100 transition-opacity pointer-events-none z-20`}
         style={{
           backgroundColor: STUDIO_TOKENS.bgElevated,
           color: STUDIO_TOKENS.textPrimary,

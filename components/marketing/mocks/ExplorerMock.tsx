@@ -181,21 +181,16 @@ function VariantTile({ variant, selected, delay, onClick }: VariantTileProps) {
       transition={{ duration: 0.4, delay, ease: [0, 0, 0.2, 1] }}
       viewport={{ once: true, margin: '-10%' }}
       onClick={onClick}
-      className="group relative flex flex-col rounded-xl overflow-hidden cursor-pointer transition-all"
-      style={{
-        backgroundColor: selected ? STUDIO_TOKENS.bgElevated : STUDIO_TOKENS.bgSurface,
-        border: `1px solid ${selected ? STUDIO_TOKENS.accent : STUDIO_TOKENS.border}`,
-        boxShadow: selected ? `0 0 0 1px ${STUDIO_TOKENS.accent}33` : 'none',
-      }}
+      className="relative cursor-pointer"
     >
-      {selected && (
-        <div
-          className="absolute -right-1.5 -top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full"
-          style={{ backgroundColor: STUDIO_TOKENS.accent }}
-        >
-          <Check className="h-3 w-3" style={{ color: STUDIO_TOKENS.textOnAccent }} />
-        </div>
-      )}
+      <div
+        className="group flex flex-col rounded-xl overflow-hidden transition-all"
+        style={{
+          backgroundColor: selected ? STUDIO_TOKENS.bgElevated : STUDIO_TOKENS.bgSurface,
+          border: `1px solid ${selected ? STUDIO_TOKENS.accent : STUDIO_TOKENS.border}`,
+          boxShadow: selected ? `0 0 0 1px ${STUDIO_TOKENS.accent}33` : 'none',
+        }}
+      >
       <div className="aspect-[4/3] bg-white">{variant.render()}</div>
       <div className="flex flex-col gap-0.5 p-2.5">
         <div className="flex items-center justify-between gap-2">
@@ -231,6 +226,15 @@ function VariantTile({ variant, selected, delay, onClick }: VariantTileProps) {
           </Tooltip>
         ))}
       </div>
+      </div>
+      {selected && (
+        <div
+          className="absolute -right-1.5 -top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full"
+          style={{ backgroundColor: STUDIO_TOKENS.accent }}
+        >
+          <Check className="h-3 w-3" style={{ color: STUDIO_TOKENS.textOnAccent }} />
+        </div>
+      )}
     </motion.div>
   );
 }
