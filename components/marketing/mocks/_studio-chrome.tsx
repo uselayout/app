@@ -12,8 +12,19 @@
  * runs with `<html class="light">` which would flip Studio :root tokens.
  */
 
-import type { ReactNode } from 'react';
-import { PanelLeft, RefreshCw, Share2, Figma as FigmaIcon, Globe } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  PanelLeft,
+  RefreshCw,
+  Share2,
+  Figma as FigmaIcon,
+  Globe,
+  Download,
+  X,
+  FileText,
+  Check,
+} from 'lucide-react';
 
 /**
  * Mode-aware "canvas tokens" for the design-system mocks. When a user toggles
@@ -98,6 +109,7 @@ export function StudioWindow({
   children,
 }: StudioWindowProps) {
   const SourceIcon = sourceType === 'figma' ? FigmaIcon : Globe;
+  const [exportOpen, setExportOpen] = useState(false);
   return (
     <div
       className="absolute inset-0 flex flex-col"
@@ -173,7 +185,8 @@ export function StudioWindow({
           )}
           {showExport && (
             <button
-              className="flex items-center justify-center h-7 px-[13px] rounded-[4px] text-[12px] font-medium transition-colors"
+              onClick={() => setExportOpen(true)}
+              className="flex items-center justify-center h-7 px-[13px] rounded-[4px] text-[12px] font-medium transition-colors hover:opacity-90"
               style={{
                 backgroundColor: STUDIO_TOKENS.accent,
                 color: STUDIO_TOKENS.textOnAccent,
@@ -187,7 +200,144 @@ export function StudioWindow({
 
       {/* Body */}
       <div className="flex flex-1 min-h-0">{children}</div>
+
+      {/* Export modal — overlays the entire mock when Export is clicked */}
+      <AnimatePresence>
+        {exportOpen && <ExportModal onClose={() => setExportOpen(false)} />}
+      </AnimatePresence>
     </div>
+  );
+}
+
+// ─── Export modal ──────────────────────────────────────────────────────────
+
+const FORMAT_OPTIONS = [
+  { id: 'claude-md', label: 'CLAUDE.md', description: 'Design system rules for Claude Code' },
+  { id: 'cursor-rules', label: '.cursor/rules', description: 'Design system rules for Cursor' },
+  { id: 'agents-md', label: 'AGENTS.md', description: 'Context for Codex, Jules, Factory, Amp' },
+  { id: 'tokens-css', label: 'tokens.css', description: 'CSS custom properties for all tokens' },
+  { id: 'tokens-json', label: 'tokens.json', description: 'W3C DTCG format design tokens' },
+  { id: 'tailwind-config', label: 'tailwind.config.js', description: 'Tailwind CSS theme extension' },
+];
+
+function ExportModal({ onClose }: { onClose: () => void }) {
+  const [selected, setSelected] = useState(new Set(FORMAT_OPTIONS.map((f) => f.id)));
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      onClick={onClose}
+      className="absolute inset-0 z-30 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 4 }}
+        transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-xl border shadow-[0_0_80px_rgba(0,0,0,0.6)] overflow-hidden"
+        style={{ backgroundColor: STUDIO_TOKENS.bgElevated, borderColor: STUDIO_TOKENS.borderStrong }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between border-b px-5 py-3.5"
+          style={{ borderColor: STUDIO_TOKENS.border }}
+        >
+          <div className="flex items-center gap-2">
+            <Download className="h-3.5 w-3.5" style={{ color: STUDIO_TOKENS.brand }} />
+            <h2 className="text-[13px] font-semibold" style={{ color: STUDIO_TOKENS.textPrimary }}>
+              Export AI Kit
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded p-1 transition-colors hover:bg-white/5"
+            style={{ color: STUDIO_TOKENS.textMuted }}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        {/* Format list */}
+        <div className="p-4 space-y-2 max-h-[440px] overflow-y-auto">
+          <p className="mb-2 text-[11px]" style={{ color: STUDIO_TOKENS.textSecondary }}>
+            Select formats to include in your bundle:
+          </p>
+          {FORMAT_OPTIONS.map((format) => {
+            const isSelected = selected.has(format.id);
+            return (
+              <button
+                key={format.id}
+                onClick={() => toggle(format.id)}
+                className="flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors"
+                style={{
+                  borderColor: isSelected ? STUDIO_TOKENS.accent : STUDIO_TOKENS.border,
+                  backgroundColor: isSelected
+                    ? 'rgba(230,230,230,0.06)'
+                    : STUDIO_TOKENS.bgSurface,
+                }}
+              >
+                <div
+                  className="flex h-4 w-4 shrink-0 items-center justify-center rounded border"
+                  style={{
+                    borderColor: isSelected ? STUDIO_TOKENS.accent : STUDIO_TOKENS.border,
+                    backgroundColor: isSelected ? STUDIO_TOKENS.accent : 'transparent',
+                  }}
+                >
+                  {isSelected && (
+                    <Check className="h-2.5 w-2.5" style={{ color: STUDIO_TOKENS.textOnAccent }} strokeWidth={3} />
+                  )}
+                </div>
+                <FileText className="h-3.5 w-3.5 shrink-0" style={{ color: STUDIO_TOKENS.textMuted }} />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[12px] font-medium" style={{ color: STUDIO_TOKENS.textPrimary }}>
+                    {format.label}
+                  </div>
+                  <div className="text-[10px]" style={{ color: STUDIO_TOKENS.textMuted }}>
+                    {format.description}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Always-included note */}
+        <div
+          className="border-t px-5 py-2.5"
+          style={{ borderColor: STUDIO_TOKENS.border }}
+        >
+          <p className="text-[10px]" style={{ color: STUDIO_TOKENS.textMuted }}>
+            layout.md is always included in the bundle.
+          </p>
+        </div>
+
+        {/* Action */}
+        <div className="border-t px-5 py-3.5" style={{ borderColor: STUDIO_TOKENS.border }}>
+          <button
+            className="h-9 w-full rounded-md text-[12.5px] font-medium transition-colors hover:opacity-90 flex items-center justify-center gap-2"
+            style={{
+              backgroundColor: STUDIO_TOKENS.accent,
+              color: STUDIO_TOKENS.textOnAccent,
+            }}
+          >
+            <Download className="h-3.5 w-3.5" />
+            Download bundle ({selected.size} formats)
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
