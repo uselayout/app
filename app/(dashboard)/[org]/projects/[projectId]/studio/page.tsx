@@ -200,6 +200,10 @@ export default function StudioPage({
   const [whatsNextDismissed, setWhatsNextDismissed] = useState(false);
   const [pendingFigmaImage, setPendingFigmaImage] = useState<string | null>(null);
   const [pendingFigmaContext, setPendingFigmaContext] = useState<ContextFile[] | null>(null);
+  const [libraryRefreshNonce, setLibraryRefreshNonce] = useState(0);
+  const handleLibraryUpdated = useCallback(() => {
+    setLibraryRefreshNonce((n) => n + 1);
+  }, []);
 
   // Wire up callback refs for the polling effect (declared before state was available)
   setPendingImageRef.current = setPendingFigmaImage;
@@ -224,6 +228,45 @@ export default function StudioPage({
       setCentreView("editor");
     }
   }, [searchParams, id, syncTokensFromLayoutMd]);
+
+  // When opened from the Chrome extension's "Open in Studio" button (?source=figma),
+  // refresh immediately and consume the pending screenshot — don't wait up to 10s
+  // for the next polling tick. If nothing's there after a few retries, surface a
+  // visible message so the user knows the push didn't land here.
+  const sourceConsumedRef = useRef(false);
+  const [pushScreenshotMissing, setPushScreenshotMissing] = useState(false);
+  useEffect(() => {
+    if (sourceConsumedRef.current) return;
+    if (!project?.id) return;
+    if (searchParams.get("source") !== "figma") return;
+    sourceConsumedRef.current = true;
+
+    const tryLoadScreenshot = async (attempts = 0): Promise<void> => {
+      await refreshProject(project.id);
+      const fresh = useProjectStore.getState().projects.find((p) => p.id === project.id);
+      const screenshot = fresh?.pendingCanvasImage ?? null;
+
+      if (screenshot) {
+        pendingImageConsumedRef.current = true;
+        setPendingFigmaImage(screenshot);
+        setCentreView("canvas");
+        useProjectStore.setState((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === project.id ? { ...p, pendingCanvasImage: null } : p
+          ),
+        }));
+        fetch(`/api/projects/${project.id}/clear-canvas-image`, { method: "POST" }).catch(() => {});
+        return;
+      }
+      if (attempts < 3) {
+        await new Promise((r) => setTimeout(r, 1000));
+        return tryLoadScreenshot(attempts + 1);
+      }
+      setPushScreenshotMissing(true);
+    };
+
+    void tryLoadScreenshot();
+  }, [project?.id, searchParams, refreshProject]);
 
   // Sync URL when view changes programmatically (e.g. from saved library "Open in Canvas")
   const handleCentreViewChange = useCallback(
@@ -599,6 +642,7 @@ export default function StudioPage({
               initialImage={pendingFigmaImage ?? undefined}
               initialContextFiles={pendingFigmaContext ?? undefined}
               onInitialImageConsumed={handleInitialImageConsumed}
+              onLibraryUpdated={handleLibraryUpdated}
               extractedFonts={extractedFonts}
               extractedFontDeclarations={extractedFontDeclarations}
               uploadedFonts={project.uploadedFonts}
@@ -608,6 +652,7 @@ export default function StudioPage({
           savedPanel={
             <SavedLibraryView
               projectId={project.id}
+              refreshNonce={libraryRefreshNonce}
               onNavigateToCanvas={() => handleCentreViewChange("canvas")}
               onOpenInCanvas={handleOpenSavedInCanvas}
             />
@@ -646,6 +691,23 @@ export default function StudioPage({
         >
           <span className="text-xs text-red-400">Failed to save changes — your edits may be lost on refresh</span>
           <button className="text-[10px] text-red-400/60 hover:text-red-400 shrink-0">Dismiss</button>
+        </div>
+      )}
+      {pushScreenshotMissing && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex max-w-xl items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/15 px-5 py-3 backdrop-blur-md shadow-lg shadow-amber-500/10 animate-in slide-in-from-bottom-2 fade-in duration-200">
+          <div className="mt-1 h-2 w-2 rounded-full bg-amber-400 shrink-0" />
+          <div className="text-sm text-[var(--text-primary)] leading-snug">
+            <div className="font-medium">No pushed screenshot found for this project</div>
+            <div className="text-xs text-[var(--text-secondary)] mt-0.5">
+              The Chrome extension may be pointed at a different organisation or environment (production vs staging). Check the API URL and selected project in the extension Settings.
+            </div>
+          </div>
+          <button
+            onClick={() => setPushScreenshotMissing(false)}
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] shrink-0 ml-1"
+          >
+            Dismiss
+          </button>
         </div>
       )}
       {(pluginTokensUpdated || fontUploaded) && (

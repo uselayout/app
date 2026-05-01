@@ -22,6 +22,7 @@ const CreateComponentSchema = z.object({
   tags: z.array(z.string()).optional(),
   source: z.enum(["manual", "explorer", "extraction", "figma"]).optional(),
   designType: z.enum(["component", "page"]).optional(),
+  projectId: z.string().optional(),
 });
 
 export async function GET(
@@ -80,11 +81,13 @@ export async function POST(
 
   let slug = nameToComponentSlug(parsed.data.name);
 
-  // Ensure slug uniqueness (scoped to org + project_id=NULL for org-wide components)
-  const existing = await getComponentBySlug(orgId, slug, null);
+  // Ensure slug uniqueness scoped to (org, project_id) — org-wide saves use NULL,
+  // project-scoped saves (e.g. from the Explorer) check uniqueness within that project.
+  const slugScope = parsed.data.projectId ?? null;
+  const existing = await getComponentBySlug(orgId, slug, slugScope);
   if (existing) {
     let suffix = 2;
-    while (await getComponentBySlug(orgId, `${slug}-${suffix}`, null)) {
+    while (await getComponentBySlug(orgId, `${slug}-${suffix}`, slugScope)) {
       suffix++;
     }
     slug = `${slug}-${suffix}`;
@@ -102,6 +105,7 @@ export async function POST(
   try {
     const component = await createComponent({
       orgId,
+      projectId: parsed.data.projectId,
       name: parsed.data.name,
       slug,
       code: parsed.data.code,

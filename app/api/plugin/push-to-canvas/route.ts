@@ -61,10 +61,24 @@ export async function POST(request: Request) {
     );
   }
 
-  // Use specified project if provided, otherwise fall back to most recently updated
-  const project = projectId
-    ? projects.find((p) => p.id === projectId) ?? projects[0]
-    : projects[0];
+  // If a projectId was provided but doesn't belong to this organisation,
+  // fail loudly instead of silently writing to a different project — that
+  // mismatch was the most common cause of "I pushed but Studio is empty".
+  let project: Project;
+  if (projectId) {
+    const match = projects.find((p) => p.id === projectId);
+    if (!match) {
+      return NextResponse.json(
+        {
+          error: `Project ${projectId} not found in this organisation. The extension may be pointed at a different organisation or environment.`,
+        },
+        { status: 404, headers: CORS }
+      );
+    }
+    project = match;
+  } else {
+    project = projects[0];
+  }
 
   // Store screenshot as pending canvas image (NOT in extractionData.screenshots)
   // extractionData.screenshots are extraction screenshots used for layout.md generation
@@ -78,6 +92,11 @@ export async function POST(request: Request) {
   await upsertProject(updatedProject, org.ownerId);
 
   const url = `/studio/${project.id}?tab=explorer&source=figma`;
+
+  // Logged so we can spot env/project mismatches in deployment logs.
+  console.info(
+    `[push-to-canvas] org=${auth.orgId} project=${project.id} sizeKb=${Math.round(screenshot.length / 1024)}`
+  );
 
   void logEvent("plugin.figma.push", "figma-plugin", { orgId: auth.orgId, metadata: { projectId: project.id } });
 

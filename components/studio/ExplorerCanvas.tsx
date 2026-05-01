@@ -89,6 +89,8 @@ interface ExplorerCanvasProps {
   initialImage?: string;
   initialContextFiles?: ContextFile[];
   onInitialImageConsumed?: () => void;
+  /** Called after a variant is saved to the library so the parent can refresh other library views. */
+  onLibraryUpdated?: () => void;
   extractedFonts?: string[];
   extractedFontDeclarations?: FontDeclaration[];
   uploadedFonts?: UploadedFont[];
@@ -106,6 +108,7 @@ export function ExplorerCanvas({
   initialImage,
   initialContextFiles,
   onInitialImageConsumed,
+  onLibraryUpdated,
   extractedFonts = [],
   extractedFontDeclarations,
   uploadedFonts,
@@ -137,17 +140,24 @@ export function ExplorerCanvas({
   const [savedLibraryComponents, setSavedLibraryComponents] = useState<
     Array<{ name: string; description: string | null; code: string }>
   >([]);
-  useEffect(() => {
+  const refreshSavedLibraryComponents = useCallback(() => {
     if (!orgId) return;
     fetch(`/api/organizations/${orgId}/components`)
       .then((r) => (r.ok ? r.json() : []))
       .then((comps: Array<{ name: string; description: string | null; code: string; status: string }>) => {
+        // Include both approved and draft so newly saved variants immediately
+        // contribute to the AI prompt context (saves default to "draft").
         setSavedLibraryComponents(
-          comps.filter((c) => c.status === "approved").map((c) => ({ name: c.name, description: c.description, code: c.code }))
+          comps
+            .filter((c) => c.status === "approved" || c.status === "draft")
+            .map((c) => ({ name: c.name, description: c.description, code: c.code }))
         );
       })
       .catch(() => {});
   }, [orgId]);
+  useEffect(() => {
+    refreshSavedLibraryComponents();
+  }, [refreshSavedLibraryComponents]);
 
   // Parse design tokens from layoutMd for the inspector's token suggestions
   const allDesignTokens: ExtractedToken[] = useMemo(() => {
@@ -1511,7 +1521,12 @@ export function ExplorerCanvas({
       {promoteVariant && (
         <PromoteToLibraryModal
           variant={promoteVariant}
+          projectId={projectId}
           onClose={() => setPromoteVariant(null)}
+          onSuccess={() => {
+            refreshSavedLibraryComponents();
+            onLibraryUpdated?.();
+          }}
         />
       )}
 

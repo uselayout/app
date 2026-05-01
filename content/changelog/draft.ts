@@ -10,6 +10,22 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w18-explorer-save-to-library-shows-up",
+    title: "Variants saved from the Explorer now show up in the project library",
+    description: "Adding a generated variant to the library from the Explorer would close the modal but the component never appeared in the Saved tab. Saves now scope to the current project (matching how the library reads), and the Saved tab refreshes immediately so your component is there as soon as you click Save.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-05-01",
+  },
+  {
+    id: "2026-w18-extension-env-mismatch-warnings",
+    title: "Clearer warnings when the Chrome extension is pointed at the wrong environment",
+    description: "Pushing a screenshot from the Chrome extension to Layout Studio could silently land in the wrong environment (production vs staging) with no obvious feedback. Settings now shows which environment you&rsquo;re connected to, the Capture page tells you exactly where the screenshot is going, and Studio shows a visible warning when it expected a pushed screenshot but didn&rsquo;t find one.",
+    product: "chrome-extension",
+    category: "improved",
+    date: "2026-05-01",
+  },
+  {
     id: "2026-w18-screenshots-relative-url-fix",
     title: "Screenshots show up again in the Source Panel",
     description:
@@ -26,6 +42,15 @@ export const draftEntries: ChangelogEntry[] = [
     product: "studio",
     category: "improved",
     date: "2026-04-30",
+  },
+  {
+    id: "2026-w18-extension-disconnect-button",
+    title: "Disconnect button works in the Chrome extension",
+    description:
+      "Clicking Disconnect in the Chrome extension Settings page did nothing — the page stayed in the Connected state and the API key was never removed. The button now properly clears your saved API key, organisation, and active project so you can sign back in with a different account or start fresh.",
+    product: "chrome-extension",
+    category: "fixed",
+    date: "2026-05-01",
   },
   {
     id: "2026-w18-extraction-diff-modal-scroll",
