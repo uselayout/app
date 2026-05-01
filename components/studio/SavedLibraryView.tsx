@@ -11,6 +11,8 @@ import type { Component } from "@/lib/types/component";
 interface SavedLibraryViewProps {
   /** When present, scope the library to components saved from this project. */
   projectId?: string;
+  /** Bumping this triggers a re-fetch (used after a save from the Explorer). */
+  refreshNonce?: number;
   onNavigateToCanvas?: () => void;
   onOpenInCanvas?: (code: string, name: string) => void;
   onPushToFigma?: (code: string, name: string) => void;
@@ -170,7 +172,7 @@ function SavedCard({
   );
 }
 
-export function SavedLibraryView({ projectId, onNavigateToCanvas, onOpenInCanvas, onPushToFigma }: SavedLibraryViewProps) {
+export function SavedLibraryView({ projectId, refreshNonce, onNavigateToCanvas, onOpenInCanvas, onPushToFigma }: SavedLibraryViewProps) {
   const orgId = useOrgStore((s) => s.currentOrgId);
   const [components, setComponents] = useState<Component[]>([]);
   const [loading, setLoading] = useState(true);
@@ -198,7 +200,7 @@ export function SavedLibraryView({ projectId, onNavigateToCanvas, onOpenInCanvas
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [orgId, projectId]);
+  }, [orgId, projectId, refreshNonce]);
 
   const handleCopyCode = useCallback(async (comp: Component) => {
     const ok = await copyToClipboard(comp.code);

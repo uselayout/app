@@ -11,12 +11,14 @@ interface PromoteToLibraryModalProps {
   variant: DesignVariant;
   onClose: () => void;
   onSuccess?: () => void;
+  projectId?: string;
 }
 
 export function PromoteToLibraryModal({
   variant,
   onClose,
   onSuccess,
+  projectId,
 }: PromoteToLibraryModalProps) {
   const orgId = useOrgStore((s) => s.currentOrgId);
   const markStep = useOnboardingStore((s) => s.markStep);
@@ -75,6 +77,7 @@ export function PromoteToLibraryModal({
             tags: tags.length > 0 ? tags : undefined,
             source: "explorer" as const,
             designType,
+            projectId,
           }),
         });
 
@@ -92,7 +95,7 @@ export function PromoteToLibraryModal({
         setSaving(false);
       }
     },
-    [orgId, name, category, description, tagsInput, designType, variant.code, onClose, onSuccess, markStep]
+    [orgId, name, category, description, tagsInput, designType, variant.code, projectId, onClose, onSuccess, markStep]
   );
 
   return (

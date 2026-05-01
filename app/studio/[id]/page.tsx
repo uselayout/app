@@ -232,6 +232,7 @@ export default function StudioPage({
   // When opened from extension (source=figma), refresh project from DB
   // to get the pendingCanvasImage the extension just pushed
   const sourceConsumed = useRef(false);
+  const [pushScreenshotMissing, setPushScreenshotMissing] = useState(false);
   useEffect(() => {
     if (sourceParam === "figma" && !sourceConsumed.current) {
       sourceConsumed.current = true;
@@ -249,6 +250,8 @@ export default function StudioPage({
           // DB write may not have settled — retry after delay
           await new Promise((r) => setTimeout(r, 1000));
           return tryLoadScreenshot(attempts + 1);
+        } else {
+          setPushScreenshotMissing(true);
         }
       };
 
@@ -625,6 +628,23 @@ export default function StudioPage({
         >
           <span className="text-xs text-red-400">Failed to save changes — your edits may be lost on refresh</span>
           <button className="text-[10px] text-red-400/60 hover:text-red-400 shrink-0">Dismiss</button>
+        </div>
+      )}
+      {pushScreenshotMissing && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex max-w-xl items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/15 px-5 py-3 backdrop-blur-md shadow-lg shadow-amber-500/10 animate-in slide-in-from-bottom-2 fade-in duration-200">
+          <div className="mt-1 h-2 w-2 rounded-full bg-amber-400 shrink-0" />
+          <div className="text-sm text-[var(--text-primary)] leading-snug">
+            <div className="font-medium">No pushed screenshot found for this project</div>
+            <div className="text-xs text-[var(--text-secondary)] mt-0.5">
+              The Chrome extension may be pointed at a different organisation or environment (production vs staging). Check the API URL and selected project in the extension Settings.
+            </div>
+          </div>
+          <button
+            onClick={() => setPushScreenshotMissing(false)}
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] shrink-0 ml-1"
+          >
+            Dismiss
+          </button>
         </div>
       )}
       {(pluginTokensUpdated || fontUploaded) && (
