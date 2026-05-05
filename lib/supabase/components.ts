@@ -7,6 +7,7 @@ import type {
   ComponentStatus,
   ComponentVariant,
   ComponentVersion,
+  EditSchema,
 } from "@/lib/types/component";
 
 // ─── Row Types ────────────────────────────────────────────────────────────────
@@ -31,6 +32,8 @@ interface ComponentRow {
   created_by: string | null;
   source: string | null;
   design_type: string;
+  edit_schema: unknown;
+  linked_component_name: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -71,6 +74,8 @@ function rowToComponent(row: ComponentRow): Component {
     createdBy: row.created_by,
     source: row.source as ComponentSource | null,
     designType: (row.design_type ?? "component") as Component["designType"],
+    editSchema: (row.edit_schema as EditSchema | null) ?? null,
+    linkedComponentName: row.linked_component_name ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -222,6 +227,8 @@ export async function createComponent(data: {
   designType?: "component" | "page";
   createdBy?: string;
   projectId?: string;
+  editSchema?: EditSchema;
+  linkedComponentName?: string;
 }): Promise<Component | null> {
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
@@ -249,6 +256,8 @@ export async function createComponent(data: {
       created_by: data.createdBy ?? null,
       source: data.source ?? null,
       design_type: data.designType ?? "component",
+      edit_schema: data.editSchema ?? null,
+      linked_component_name: data.linkedComponentName ?? null,
       created_at: now,
       updated_at: now,
     });
@@ -293,6 +302,8 @@ export async function updateComponent(
     props?: ComponentProp[];
     variants?: ComponentVariant[];
     states?: ComponentState[];
+    editSchema?: EditSchema | null;
+    linkedComponentName?: string | null;
   }
 ): Promise<void> {
   const row: Record<string, unknown> = {
@@ -308,6 +319,8 @@ export async function updateComponent(
   if (updates.props !== undefined) row.props = updates.props;
   if (updates.variants !== undefined) row.variants = updates.variants;
   if (updates.states !== undefined) row.states = updates.states;
+  if (updates.editSchema !== undefined) row.edit_schema = updates.editSchema;
+  if (updates.linkedComponentName !== undefined) row.linked_component_name = updates.linkedComponentName;
 
   const { error } = await supabase
     .from("layout_component")

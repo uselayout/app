@@ -1,8 +1,9 @@
 "use client";
 
 import { Dialog as DialogPrimitive } from "radix-ui";
-import { ExternalLink, Wand2, X } from "lucide-react";
+import { ExternalLink, Loader2, RefreshCw, Wand2, X } from "lucide-react";
 import type { ExtractedComponent, ExtractedComponentVariant } from "@/lib/types";
+import type { Component } from "@/lib/types/component";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -12,7 +13,13 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   /** Project-level Figma file URL — fallback when component lacks figmaUrl. */
   figmaFileUrl?: string;
-  /** Fired when user clicks "Generate code". Phase 3 will wire to Explorer. */
+  /** Saved Component generated from this imported component, if any. */
+  linkedComponent?: Component | null;
+  /** Generation in progress (true while POST is running). */
+  generating?: boolean;
+  /** Generation error message, shown inline. */
+  generationError?: string | null;
+  /** Fired when the user clicks "Generate code" / "Regenerate". */
   onGenerateCode?: (component: ExtractedComponent) => void;
 }
 
@@ -21,6 +28,9 @@ export function ComponentInspectorDrawer({
   open,
   onOpenChange,
   figmaFileUrl,
+  linkedComponent,
+  generating,
+  generationError,
   onGenerateCode,
 }: Props) {
   if (!component) return null;
@@ -53,9 +63,20 @@ export function ComponentInspectorDrawer({
               <VariantGrid variants={component.variantDetails} />
             ) : null}
             <Properties component={component} />
+            {linkedComponent ? (
+              <GeneratedCodeView linkedComponent={linkedComponent} />
+            ) : null}
+            {generationError ? (
+              <ErrorBanner message={generationError} />
+            ) : null}
           </div>
 
-          <Footer component={component} onGenerateCode={onGenerateCode} />
+          <Footer
+            component={component}
+            linkedComponent={linkedComponent}
+            generating={generating}
+            onGenerateCode={onGenerateCode}
+          />
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
@@ -246,25 +267,69 @@ function Properties({ component }: { component: ExtractedComponent }) {
   );
 }
 
+function GeneratedCodeView({ linkedComponent }: { linkedComponent: Component }) {
+  return (
+    <div className="border-t border-[var(--studio-border)] px-5 py-4">
+      <h3 className="mb-2 flex items-center justify-between text-[10px] font-medium uppercase tracking-wide text-[var(--text-muted)]">
+        <span>Generated code</span>
+        <span className="font-mono normal-case tracking-normal opacity-60">
+          v{linkedComponent.version}
+        </span>
+      </h3>
+      <pre className="max-h-[280px] overflow-auto rounded border border-[var(--studio-border)] bg-[var(--bg-app)] p-3 text-[10px] leading-snug text-[var(--text-secondary)] font-mono">
+        <code>{linkedComponent.code}</code>
+      </pre>
+      <p className="mt-2 text-[10px] text-[var(--text-muted)]">
+        Form editor with token pickers + live preview ships in the next update.
+      </p>
+    </div>
+  );
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div className="mx-5 mb-4 rounded-md border border-[var(--color-error,#b3261e)]/40 bg-[var(--color-error,#b3261e)]/10 px-3 py-2 text-[11px] text-[var(--color-error,#b3261e)]">
+      {message}
+    </div>
+  );
+}
+
 function Footer({
   component,
+  linkedComponent,
+  generating,
   onGenerateCode,
 }: {
   component: ExtractedComponent;
+  linkedComponent?: Component | null;
+  generating?: boolean;
   onGenerateCode?: (component: ExtractedComponent) => void;
 }) {
+  const hasCode = Boolean(linkedComponent);
+  const label = hasCode ? "Regenerate" : "Generate code from this component";
+  const Icon = hasCode ? RefreshCw : Wand2;
   return (
     <div className="border-t border-[var(--studio-border)] px-5 py-3">
       <Button
         onClick={() => onGenerateCode?.(component)}
-        disabled={!onGenerateCode}
+        disabled={!onGenerateCode || generating}
         className="w-full bg-[var(--studio-accent)] text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)]"
       >
-        <Wand2 className="mr-2 h-3.5 w-3.5" />
-        Generate code from this component
+        {generating ? (
+          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <Icon className="mr-2 h-3.5 w-3.5" />
+        )}
+        {generating
+          ? hasCode
+            ? "Regenerating…"
+            : "Generating…"
+          : label}
       </Button>
       <p className="mt-2 text-center text-[10px] text-[var(--text-muted)]">
-        Opens the Explorer with this component as the reference
+        {hasCode
+          ? "Regenerating overwrites the saved component."
+          : "Uses your design tokens + the Figma reference image."}
       </p>
     </div>
   );

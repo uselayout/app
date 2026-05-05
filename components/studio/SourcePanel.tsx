@@ -16,6 +16,7 @@ import { BrandingTab } from "@/components/studio/BrandingTab";
 import { AddTokenForm } from "@/components/studio/AddTokenForm";
 import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
 import { ComponentInspectorDrawer } from "@/components/studio/ComponentInspectorDrawer";
+import type { Component as SavedComponent } from "@/lib/types/component";
 import { resolveTokenValue } from "@/lib/util/color";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
@@ -259,7 +260,13 @@ function SourcePanelInner({
           <TokensTab tokens={extractionData.tokens} cssVariables={extractionData.cssVariables} projectId={projectId} sourceType={extractionData.sourceType} layoutMd={layoutMd ?? ""} />
         )}
         {activeTab === "components" && extractionData && (
-          <ComponentsTab components={extractionData.components} sourceType={extractionData.sourceType} sourceUrl={extractionData.sourceUrl} />
+          <ComponentsTab
+            components={extractionData.components}
+            sourceType={extractionData.sourceType}
+            sourceUrl={extractionData.sourceUrl}
+            orgId={currentOrgId}
+            projectId={projectId}
+          />
         )}
         {activeTab === "screenshots" && extractionData && (
           <ScreenshotsTab screenshots={extractionData.screenshots} onDelete={handleDeleteScreenshot} onAdd={handleAddScreenshot} />
@@ -1316,10 +1323,14 @@ function ComponentsTab({
   components,
   sourceType,
   sourceUrl,
+  orgId,
+  projectId,
 }: {
   components: ExtractedComponent[];
   sourceType?: string;
   sourceUrl?: string;
+  orgId?: string | null;
+  projectId?: string;
 }) {
   // Filter out Figma icon components
   const filteredComponents = components.filter(
@@ -1344,6 +1355,65 @@ function ComponentsTab({
   // Project-level Figma URL fallback (component-level deep links live on each component when present)
   const figmaUrl = sourceUrl?.match(/figma\.com/) ? sourceUrl : undefined;
   const [selected, setSelected] = useState<ExtractedComponent | null>(null);
+  /** Saved Components keyed by their linkedComponentName (= imported component name). */
+  const [linkedComponents, setLinkedComponents] = useState<Record<string, SavedComponent>>({});
+  const [generatingFor, setGeneratingFor] = useState<string | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+
+  // Fetch any pre-existing linked components on mount so the drawer shows
+  // saved code immediately when the user clicks an imported component.
+  useEffect(() => {
+    if (!orgId || !projectId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/organizations/${orgId}/components?projectId=${projectId}`
+        );
+        if (!res.ok) return;
+        const list: SavedComponent[] = await res.json();
+        if (cancelled) return;
+        const map: Record<string, SavedComponent> = {};
+        for (const c of list) {
+          if (c.source === "figma" && c.linkedComponentName) {
+            map[c.linkedComponentName] = c;
+          }
+        }
+        setLinkedComponents(map);
+      } catch {
+        // Non-fatal: drawer will just show the empty/generate state.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId, projectId]);
+
+  const handleGenerateCode = async (component: ExtractedComponent) => {
+    if (!orgId || !projectId) {
+      setGenerationError("Project not ready — try reopening this page.");
+      return;
+    }
+    setGeneratingFor(component.name);
+    setGenerationError(null);
+    try {
+      const res = await fetch("/api/components/generate-from-figma-component", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orgId, projectId, componentName: component.name }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Generation failed (${res.status})`);
+      }
+      const saved: SavedComponent = await res.json();
+      setLinkedComponents((prev) => ({ ...prev, [component.name]: saved }));
+    } catch (err) {
+      setGenerationError(err instanceof Error ? err.message : "Generation failed");
+    } finally {
+      setGeneratingFor(null);
+    }
+  };
 
   return (
     <>
@@ -1421,9 +1491,17 @@ function ComponentsTab({
       <ComponentInspectorDrawer
         component={selected}
         open={selected !== null}
-        onOpenChange={(o) => { if (!o) setSelected(null); }}
+        onOpenChange={(o) => {
+          if (!o) {
+            setSelected(null);
+            setGenerationError(null);
+          }
+        }}
         figmaFileUrl={figmaUrl}
-        // onGenerateCode is wired in Phase 3 when Explorer integration lands
+        linkedComponent={selected ? linkedComponents[selected.name] ?? null : null}
+        generating={selected ? generatingFor === selected.name : false}
+        generationError={generationError}
+        onGenerateCode={orgId && projectId ? handleGenerateCode : undefined}
       />
     </>
   );

@@ -10,6 +10,7 @@ export type PlatformEventType =
   | "variant.rated"
   | "component.saved"
   | "component.copied"
+  | "component.generated_from_figma"
   | "export.bundle"
   | "export.pull"
   | "mcp.tool_call"
