@@ -2,7 +2,79 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { ContentBlockParam } from "@anthropic-ai/sdk/resources/messages";
 import { getModelMaxOutputTokens } from "@/lib/ai/models";
 import type { EditSchema } from "@/lib/types/component";
-import type { ExtractedComponent, ExtractedToken } from "@/lib/types";
+import type { ExtractedComponent, ExtractedToken, TokenType } from "@/lib/types";
+
+const TOKEN_CONTEXT_CAP = 100;
+const SEMANTIC_NAME_FRAGMENTS = [
+  "primary",
+  "secondary",
+  "tertiary",
+  "surface",
+  "background",
+  "outline",
+  "border",
+  "text",
+  "on-",
+  "error",
+  "warning",
+  "success",
+  "info",
+  "accent",
+  "muted",
+  "subtle",
+  "elevated",
+  "panel",
+];
+
+/**
+ * Filter the project's full token list down to a bounded, relevant subset
+ * for AI generation context. For Material-3-scale projects with 500+ tokens
+ * we'd otherwise blow Claude's input budget AND degrade output quality
+ * (more options ≠ better generations — the model picks worse defaults
+ * when buried in primitives).
+ */
+function filterRelevantTokens(
+  component: ExtractedComponent,
+  allTokens: ExtractedToken[]
+): ExtractedToken[] {
+  if (allTokens.length <= TOKEN_CONTEXT_CAP) return allTokens;
+
+  const desc = (component.description ?? "").toLowerCase();
+  const propKeys = component.properties ? Object.keys(component.properties).join(" ").toLowerCase() : "";
+  const blob = `${desc} ${propKeys}`;
+
+  const include: Set<TokenType> = new Set(["color", "spacing", "radius"]);
+  if (/text|label|title|heading|caption|body|paragraph|copy/.test(blob)) {
+    include.add("typography");
+  } else {
+    include.add("typography");
+  }
+  if (/shadow|elevation|elevated|raised|float|depth/.test(blob)) {
+    include.add("effect");
+  }
+  if (/motion|animation|transition|duration|easing/.test(blob)) {
+    include.add("motion");
+  }
+
+  const candidates = allTokens.filter((t) => include.has(t.type));
+  if (candidates.length <= TOKEN_CONTEXT_CAP) return candidates;
+
+  // Two-pass: prefer semantically-named tokens (primary, surface, on-*, etc.)
+  // then fill remaining slots in document order.
+  const isSemantic = (t: ExtractedToken) => {
+    const name = t.name.toLowerCase();
+    return SEMANTIC_NAME_FRAGMENTS.some((frag) => name.includes(frag));
+  };
+  const semantic = candidates.filter(isSemantic);
+  const primitive = candidates.filter((t) => !isSemantic(t));
+
+  const result = semantic.slice(0, TOKEN_CONTEXT_CAP);
+  for (const t of primitive) {
+    if (result.length >= TOKEN_CONTEXT_CAP) break;
+    result.push(t);
+  }
+  return result;
+}
 
 const SYSTEM_PROMPT = `You generate a single React component (TSX) from a Figma component reference.
 
@@ -83,7 +155,8 @@ export async function generateComponent(
   const anthropic = new Anthropic({ apiKey: input.apiKey });
   const maxTokens = await getModelMaxOutputTokens(modelId);
 
-  const tokenList = renderTokenListForPrompt(input.tokens);
+  const filteredTokens = filterRelevantTokens(input.component, input.tokens);
+  const tokenList = renderTokenListForPrompt(filteredTokens);
   const componentMeta = renderComponentMeta(input.component);
 
   const userText = `# Project tokens (use only these — refer by CSS variable name)
