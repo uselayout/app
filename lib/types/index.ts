@@ -107,12 +107,32 @@ export interface ComponentProperty {
   preferredValues?: string[];
 }
 
+export interface ExtractedComponentVariant {
+  /** Display name from Figma, e.g. "Size=Medium, State=Hover". */
+  name: string;
+  /** Variant property values, e.g. { Size: "Medium", State: "Hover" }. */
+  properties?: Record<string, string>;
+  /** Storage proxy URL for variant thumbnail (PNG). */
+  imageUrl?: string;
+}
+
 export interface ExtractedComponent {
   name: string;
   description?: string;
   variantCount: number;
+  /** Legacy: variant names from REST/Playwright extraction. */
   variants?: string[];
   properties?: Record<string, ComponentProperty>;
+  /** Storage proxy URL for the primary component thumbnail (PNG @2x). */
+  imageUrl?: string;
+  /** Figma node ID — used for "Open in Figma" deep link. */
+  figmaNodeId?: string;
+  /** Direct Figma URL for the component. */
+  figmaUrl?: string;
+  /** Variant property axes, e.g. { Size: ["Small","Medium","Large"], State: ["default","hover"] }. */
+  variantGroupProperties?: Record<string, string[]>;
+  /** Rich per-variant data with thumbnails and property values. */
+  variantDetails?: ExtractedComponentVariant[];
 }
 
 export interface ScannedComponent {

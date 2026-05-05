@@ -24,11 +24,31 @@ const TokenEntrySchema = z.object({
   mode: z.string().optional().nullable(),
 });
 
+// Accept proxy-relative paths (e.g. "/api/storage/...") or absolute URLs.
+const ImageUrlSchema = z
+  .string()
+  .min(1)
+  .max(2048)
+  .refine((s) => s.startsWith("/api/storage/") || /^https?:\/\//.test(s), {
+    message: "Must be a /api/storage/ proxy path or http(s) URL",
+  });
+
+const ComponentVariantSchema = z.object({
+  name: z.string(),
+  properties: z.record(z.string(), z.string()).optional(),
+  imageUrl: ImageUrlSchema.optional(),
+});
+
 const ComponentSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   variants: z.number().optional(),
   props: z.array(z.string()).optional(),
+  imageUrl: ImageUrlSchema.optional(),
+  figmaNodeId: z.string().optional(),
+  figmaUrl: z.string().url().optional(),
+  variantGroupProperties: z.record(z.string(), z.array(z.string())).optional(),
+  variantDetails: z.array(ComponentVariantSchema).optional(),
 });
 
 const PushSchema = z.object({
@@ -158,6 +178,11 @@ export async function POST(request: Request) {
         name: c.name,
         description: c.description,
         variantCount: c.variants ?? 1,
+        imageUrl: c.imageUrl,
+        figmaNodeId: c.figmaNodeId,
+        figmaUrl: c.figmaUrl,
+        variantGroupProperties: c.variantGroupProperties,
+        variantDetails: c.variantDetails,
       })),
       screenshots: [],
       fonts: [],
