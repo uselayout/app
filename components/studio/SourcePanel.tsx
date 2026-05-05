@@ -15,6 +15,7 @@ import { ContextDocsTab } from "@/components/studio/ContextDocsTab";
 import { BrandingTab } from "@/components/studio/BrandingTab";
 import { AddTokenForm } from "@/components/studio/AddTokenForm";
 import { ColorPickerPopover } from "@/components/studio/ColorPickerPopover";
+import { ComponentInspectorDrawer } from "@/components/studio/ComponentInspectorDrawer";
 import { resolveTokenValue } from "@/lib/util/color";
 import { useProjectStore } from "@/lib/store/project";
 import { useOrgStore } from "@/lib/store/organization";
@@ -1340,63 +1341,91 @@ function ComponentsTab({
     );
   }
 
-  // Link to the Figma file (component-level deep linking requires node_id which we don't store)
+  // Project-level Figma URL fallback (component-level deep links live on each component when present)
   const figmaUrl = sourceUrl?.match(/figma\.com/) ? sourceUrl : undefined;
+  const [selected, setSelected] = useState<ExtractedComponent | null>(null);
 
   return (
-    <div className="p-2 space-y-1">
-      {filteredComponents.map((component) => {
-        const componentUrl = figmaUrl;
+    <>
+      <div className="p-2 space-y-1">
+        {filteredComponents.map((component) => {
+          const componentUrl = component.figmaUrl ?? figmaUrl;
 
-        return (
-          <div
-            key={component.name}
-            className="flex items-center gap-2 rounded px-2 py-2 transition-colors hover:bg-[var(--bg-hover)]"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="truncate text-xs font-medium text-[var(--text-primary)]">
-                  {component.name}
-                </span>
-                {component.variantCount > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="bg-[var(--bg-elevated)] text-[var(--text-muted)] text-[10px] px-1.5 py-0"
-                  >
-                    {component.variantCount} {sourceType === "website" ? "styles" : "variants"}
-                  </Badge>
+          return (
+            <div
+              key={component.name}
+              role="button"
+              tabIndex={0}
+              onClick={() => setSelected(component)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelected(component);
+                }
+              }}
+              className="flex w-full items-center gap-2 rounded px-2 py-2 text-left transition-colors hover:bg-[var(--bg-hover)] focus:outline-none focus:ring-1 focus:ring-[var(--studio-border-focus)] cursor-pointer"
+            >
+              {component.imageUrl ? (
+                <img
+                  src={component.imageUrl}
+                  alt=""
+                  className="h-8 w-8 shrink-0 rounded border border-[var(--studio-border)] bg-[var(--bg-surface)] object-contain"
+                  loading="lazy"
+                />
+              ) : null}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-xs font-medium text-[var(--text-primary)]">
+                    {component.name}
+                  </span>
+                  {component.variantCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="bg-[var(--bg-elevated)] text-[var(--text-muted)] text-[10px] px-1.5 py-0"
+                    >
+                      {component.variantCount} {sourceType === "website" ? "styles" : "variants"}
+                    </Badge>
+                  )}
+                </div>
+                {component.description && (
+                  <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
+                    {component.description}
+                  </p>
+                )}
+                {component.properties && Object.keys(component.properties).length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {Object.entries(component.properties).map(([key, prop]) => (
+                      <span key={key} className="rounded bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] font-mono">
+                        {key}: {prop.type}{prop.defaultValue ? ` = ${prop.defaultValue}` : ""}
+                      </span>
+                    ))}
+                  </div>
                 )}
               </div>
-              {component.description && (
-                <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
-                  {component.description}
-                </p>
-              )}
-              {component.properties && Object.keys(component.properties).length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {Object.entries(component.properties).map(([key, prop]) => (
-                    <span key={key} className="rounded bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] font-mono">
-                      {key}: {prop.type}{prop.defaultValue ? ` = ${prop.defaultValue}` : ""}
-                    </span>
-                  ))}
-                </div>
+              {componentUrl && (
+                <a
+                  href={componentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="shrink-0"
+                  title={`Open ${component.name} in Figma`}
+                >
+                  <ExternalLink className="h-3 w-3 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors" />
+                </a>
               )}
             </div>
-            {componentUrl && (
-              <a
-                href={componentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0"
-                title={`Open ${component.name} in Figma`}
-              >
-                <ExternalLink className="h-3 w-3 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors" />
-              </a>
-            )}
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+      <ComponentInspectorDrawer
+        component={selected}
+        open={selected !== null}
+        onOpenChange={(o) => { if (!o) setSelected(null); }}
+        figmaFileUrl={figmaUrl}
+        // onGenerateCode is wired in Phase 3 when Explorer integration lands
+      />
+    </>
   );
 }
 
