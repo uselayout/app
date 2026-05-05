@@ -4,9 +4,14 @@ import { requireOrgAuth } from "@/lib/api/auth-context";
 import {
   deleteComponent,
   getComponent,
+  getComponentsByProject,
   updateComponent,
   updateComponentCode,
 } from "@/lib/supabase/components";
+import { fetchProjectById } from "@/lib/supabase/db";
+import { supabase } from "@/lib/supabase/client";
+import { syncComponentsSection } from "@/lib/layout-md/sync-components-section";
+import type { EditSchema } from "@/lib/types/component";
 
 const UpdateComponentSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -20,6 +25,8 @@ const UpdateComponentSchema = z.object({
   props: z.array(z.any()).optional(),
   variants: z.array(z.any()).optional(),
   states: z.array(z.any()).optional(),
+  editSchema: z.unknown().optional(),
+  linkedComponentName: z.string().nullable().optional(),
 });
 
 export async function GET(
@@ -74,7 +81,14 @@ export async function PATCH(
     );
   }
 
-  const { code, compiledJs, changeSummary, ...metadataUpdates } = parsed.data;
+  const {
+    code,
+    compiledJs,
+    changeSummary,
+    editSchema,
+    linkedComponentName,
+    ...metadataUpdates
+  } = parsed.data;
 
   if (code !== undefined) {
     await updateComponentCode(
@@ -86,16 +100,57 @@ export async function PATCH(
     );
   }
 
-  // Apply metadata updates if any non-code fields were provided
-  const hasMetadataUpdates = Object.values(metadataUpdates).some(
-    (v) => v !== undefined
-  );
+  // Apply metadata updates (and edit_schema / linked_component_name when set)
+  const hasMetadataUpdates =
+    Object.values(metadataUpdates).some((v) => v !== undefined) ||
+    editSchema !== undefined ||
+    linkedComponentName !== undefined;
   if (hasMetadataUpdates) {
-    await updateComponent(componentId, metadataUpdates);
+    await updateComponent(componentId, {
+      ...metadataUpdates,
+      editSchema: editSchema as EditSchema | null | undefined,
+      linkedComponentName,
+    });
   }
 
   const updated = await getComponent(componentId);
+
+  // Auto-sync layout.md Section 5 whenever a linked component is mutated.
+  // Fire-and-forget so the response stays snappy for the editor.
+  if (updated && updated.linkedComponentName && updated.projectId) {
+    void autoSyncLayoutMd(orgId, updated.projectId);
+  }
+
   return NextResponse.json(updated);
+}
+
+/**
+ * Re-render Section 5 of layout.md from the project's imported components +
+ * currently-saved linked components, then write it back. Logs and swallows
+ * errors so a sync failure never propagates back to the user's save.
+ */
+async function autoSyncLayoutMd(orgId: string, projectId: string): Promise<void> {
+  try {
+    const project = await fetchProjectById(projectId);
+    if (!project || project.orgId !== orgId) return;
+    const linked = await getComponentsByProject(orgId, projectId);
+    const newLayoutMd = syncComponentsSection({
+      layoutMd: project.layoutMd ?? "",
+      importedComponents: project.extractionData?.components ?? [],
+      linkedComponents: linked,
+    });
+    if (newLayoutMd === project.layoutMd) return;
+    const { error } = await supabase
+      .from("layout_projects")
+      .update({ layout_md: newLayoutMd, updated_at: new Date().toISOString() })
+      .eq("id", projectId)
+      .eq("org_id", orgId);
+    if (error) {
+      console.error("layout.md auto-sync failed:", error.message);
+    }
+  } catch (err) {
+    console.error("layout.md auto-sync exception:", err);
+  }
 }
 
 export async function DELETE(

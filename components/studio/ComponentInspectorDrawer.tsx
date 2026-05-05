@@ -3,14 +3,17 @@
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { ExternalLink, Loader2, RefreshCw, Wand2, X } from "lucide-react";
 import type { ExtractedComponent, ExtractedComponentVariant } from "@/lib/types";
-import type { Component } from "@/lib/types/component";
+import type { Component, EditSchema } from "@/lib/types/component";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ComponentEditor } from "@/components/studio/inspector/ComponentEditor";
 
 interface Props {
   component: ExtractedComponent | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Project id — required to render the form editor (token lookups, preview). */
+  projectId?: string;
   /** Project-level Figma file URL — fallback when component lacks figmaUrl. */
   figmaFileUrl?: string;
   /** Saved Component generated from this imported component, if any. */
@@ -21,17 +24,24 @@ interface Props {
   generationError?: string | null;
   /** Fired when the user clicks "Generate code" / "Regenerate". */
   onGenerateCode?: (component: ExtractedComponent) => void;
+  /** Fired when the user clicks Save changes in the editor. */
+  onSaveEdits?: (componentId: string, next: { code: string; editSchema: EditSchema }) => void | Promise<void>;
+  /** Fired when the user clicks Save as new variant. */
+  onSaveAsNewVariant?: (componentId: string, next: { code: string; editSchema: EditSchema }) => void | Promise<void>;
 }
 
 export function ComponentInspectorDrawer({
   component,
   open,
   onOpenChange,
+  projectId,
   figmaFileUrl,
   linkedComponent,
   generating,
   generationError,
   onGenerateCode,
+  onSaveEdits,
+  onSaveAsNewVariant,
 }: Props) {
   if (!component) return null;
 
@@ -63,7 +73,22 @@ export function ComponentInspectorDrawer({
               <VariantGrid variants={component.variantDetails} />
             ) : null}
             <Properties component={component} />
-            {linkedComponent ? (
+            {linkedComponent && projectId ? (
+              <ComponentEditor
+                projectId={projectId}
+                linkedComponent={linkedComponent}
+                onSave={
+                  onSaveEdits
+                    ? (next) => onSaveEdits(linkedComponent.id, next)
+                    : undefined
+                }
+                onSaveAsNew={
+                  onSaveAsNewVariant
+                    ? (next) => onSaveAsNewVariant(linkedComponent.id, next)
+                    : undefined
+                }
+              />
+            ) : linkedComponent ? (
               <GeneratedCodeView linkedComponent={linkedComponent} />
             ) : null}
             {generationError ? (

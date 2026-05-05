@@ -1415,6 +1415,64 @@ function ComponentsTab({
     }
   };
 
+  const handleSaveEdits: NonNullable<
+    React.ComponentProps<typeof ComponentInspectorDrawer>["onSaveEdits"]
+  > = async (componentId, next) => {
+    if (!orgId) return;
+    const res = await fetch(
+      `/api/organizations/${orgId}/components/${componentId}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: next.code,
+          editSchema: next.editSchema,
+          changeSummary: "Edited via inspector",
+        }),
+      }
+    );
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setGenerationError(body.error ?? `Save failed (${res.status})`);
+      return;
+    }
+    const updated: SavedComponent = await res.json();
+    if (updated.linkedComponentName) {
+      setLinkedComponents((prev) => ({ ...prev, [updated.linkedComponentName!]: updated }));
+    }
+  };
+
+  const handleSaveAsNewVariant: NonNullable<
+    React.ComponentProps<typeof ComponentInspectorDrawer>["onSaveAsNewVariant"]
+  > = async (componentId, next) => {
+    if (!orgId || !projectId) return;
+    // Look up the source name to derive a variant name.
+    const sourceName = Object.entries(linkedComponents).find(
+      ([, c]) => c.id === componentId
+    )?.[0];
+    const newName = sourceName ? `${sourceName} (variant)` : "New variant";
+    const res = await fetch(
+      `/api/organizations/${orgId}/components`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newName,
+          code: next.code,
+          source: "figma",
+          designType: "component",
+          projectId,
+        }),
+      }
+    );
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setGenerationError(body.error ?? `Save failed (${res.status})`);
+    }
+    // Note: we don't replace the canonical linkedComponent here — the new row
+    // is a sibling. It'll appear in the saved-library tab.
+  };
+
   return (
     <>
       <div className="p-2 space-y-1">
@@ -1497,11 +1555,14 @@ function ComponentsTab({
             setGenerationError(null);
           }
         }}
+        projectId={projectId}
         figmaFileUrl={figmaUrl}
         linkedComponent={selected ? linkedComponents[selected.name] ?? null : null}
         generating={selected ? generatingFor === selected.name : false}
         generationError={generationError}
         onGenerateCode={orgId && projectId ? handleGenerateCode : undefined}
+        onSaveEdits={orgId ? handleSaveEdits : undefined}
+        onSaveAsNewVariant={orgId && projectId ? handleSaveAsNewVariant : undefined}
       />
     </>
   );
