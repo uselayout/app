@@ -155,12 +155,22 @@ export class ComponentGenerationError extends Error {
   }
 }
 
+/**
+ * Practical output cap for a single component generation. The model's full
+ * max (e.g. 128k for Opus 4.7) is way more than we need — typical TSX +
+ * edit schema is 1-3k output tokens — and forces the Anthropic SDK to demand
+ * streaming because the implied timeout exceeds 10 minutes. 8k leaves
+ * headroom for unusually large components without flipping into stream mode.
+ */
+const COMPONENT_OUTPUT_CAP = 8000;
+
 export async function generateComponent(
   input: GenerateComponentInput
 ): Promise<GenerateComponentResult> {
   const modelId = input.modelId ?? "claude-sonnet-4-6";
   const anthropic = new Anthropic({ apiKey: input.apiKey });
-  const maxTokens = await getModelMaxOutputTokens(modelId);
+  const modelMax = await getModelMaxOutputTokens(modelId);
+  const maxTokens = Math.min(modelMax, COMPONENT_OUTPUT_CAP);
 
   const filteredTokens = filterRelevantTokens(input.component, input.tokens);
   const tokenList = renderTokenListForPrompt(filteredTokens);
