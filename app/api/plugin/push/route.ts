@@ -60,6 +60,13 @@ const PushSchema = z.object({
     effects: z.array(TokenEntrySchema).default([]),
   }),
   components: z.array(ComponentSchema).default([]),
+  /**
+   * Plugin's extraction scope:
+   *   "currentPage" — partial push, server merges into existing inventory
+   *   "all"         — authoritative full sync, server replaces inventory
+   * Older plugin versions (≤0.4.1) omit this; treat as merge for back-compat.
+   */
+  scope: z.enum(["currentPage", "all"]).optional(),
   fileName: z.string().optional(),
   fileKey: z.string().optional(),
   projectId: z.string().optional(),
@@ -88,7 +95,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { tokens, components, fileName, fileKey, projectId: requestedProjectId, projectName } = parsed.data;
+  const { tokens, components, scope, fileName, fileKey, projectId: requestedProjectId, projectName } = parsed.data;
 
   // Get org to obtain the owner's userId (needed for project upsert)
   const org = await getOrganization(auth.orgId);
@@ -174,7 +181,7 @@ export async function POST(request: Request) {
         effects: mapTokens(tokens.effects, "effect"),
         motion: [],
       },
-      components: mergeComponents(
+      components: reconcileComponents(
         project.extractionData?.components ?? [],
         components.map((c) => ({
           name: c.name,
@@ -185,7 +192,8 @@ export async function POST(request: Request) {
           figmaUrl: c.figmaUrl,
           variantGroupProperties: c.variantGroupProperties,
           variantDetails: c.variantDetails,
-        }))
+        })),
+        scope ?? "currentPage"
       ),
       screenshots: [],
       fonts: [],
@@ -217,19 +225,24 @@ export async function POST(request: Request) {
 }
 
 /**
- * Merge incoming component metadata into the project's existing component
- * inventory by name. Pages pushed earlier are preserved when the user pushes
- * a different page later (Phase 5 scope picker). Same-name entries are
- * fully replaced by the incoming version, so re-pushes update thumbnails
- * and variant detail rather than stacking stale data.
+ * Reconcile incoming components against the project's existing inventory.
  *
- * Trade-off: components removed from Figma still linger in extractionData
- * until a `scope: "all"` push or a manual cleanup. Acceptable for MVP.
+ * scope === "all": authoritative full sync — replace the inventory with
+ *   the incoming list. Drops any components not in the push (e.g. deleted
+ *   from Figma since the last sync). This is what users want when they
+ *   pick "Push everything" in the plugin's scope picker.
+ *
+ * scope === "currentPage" (default): partial push — merge by name. Same-
+ *   name entries fully replace the existing record so thumbnails update
+ *   cleanly; components from pages NOT in this push are preserved so the
+ *   user can build up the inventory page-by-page without losing prior work.
  */
-function mergeComponents(
+function reconcileComponents(
   existing: ExtractedComponent[],
-  incoming: ExtractedComponent[]
+  incoming: ExtractedComponent[],
+  scope: "currentPage" | "all"
 ): ExtractedComponent[] {
+  if (scope === "all") return incoming;
   const merged = new Map<string, ExtractedComponent>();
   for (const e of existing) merged.set(e.name, e);
   for (const c of incoming) merged.set(c.name, c);
