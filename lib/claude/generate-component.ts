@@ -126,6 +126,13 @@ export interface GenerateComponentInput {
   tokens: ExtractedToken[];
   /** Optional layout.md excerpt for design philosophy / patterns. */
   layoutMdExcerpt?: string;
+  /**
+   * Reference image bytes — passed as base64 inline to Claude rather than as
+   * a URL. URL passing fails on private deployments (HTTP basic auth on
+   * staging, localhost in dev) because Claude can't reach those URLs. The
+   * caller resolves the imageUrl to bytes via Supabase storage.
+   */
+  imageData?: { base64: string; mediaType: "image/png" | "image/jpeg" | "image/webp" | "image/gif" };
   /** Override the default model. */
   modelId?: string;
   /** Anthropic API key — overrides env. */
@@ -173,12 +180,14 @@ Generate the TSX + edit schema now. The user will edit token values via form
 controls in Layout, so prefer rich token coverage on every visible element.`;
 
   const userContent: ContentBlockParam[] = [{ type: "text", text: userText }];
-  if (input.component.imageUrl) {
-    // The image lives behind /api/storage/... so the model needs an absolute
-    // URL. Caller is expected to resolve to absolute when imageUrl is relative.
+  if (input.imageData) {
     userContent.push({
       type: "image",
-      source: { type: "url", url: input.component.imageUrl },
+      source: {
+        type: "base64",
+        media_type: input.imageData.mediaType,
+        data: input.imageData.base64,
+      },
     });
   }
 

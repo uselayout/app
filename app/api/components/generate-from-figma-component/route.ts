@@ -65,14 +65,13 @@ export async function POST(request: Request) {
     tokens.push(...t.colors, ...t.typography, ...t.spacing, ...t.radius, ...t.effects);
   }
 
-  let absoluteImageUrl: string | undefined;
-  if (importedComponent.imageUrl) {
-    const origin =
-      process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
-    absoluteImageUrl = importedComponent.imageUrl.startsWith("http")
-      ? importedComponent.imageUrl
-      : `${origin}${importedComponent.imageUrl}`;
-  }
+  // Resolve the proxy URL to the underlying Supabase Storage object and
+  // download bytes server-side. We send those bytes inline (base64) to
+  // Claude rather than the proxy URL, because Claude can't reach private
+  // deployments (HTTP basic auth on staging, localhost in dev).
+  const imageData = importedComponent.imageUrl
+    ? await fetchImageAsBase64(importedComponent.imageUrl)
+    : null;
 
   // Trim layout.md so we don't blow the context budget on huge specs.
   const layoutMdExcerpt = project.layoutMd
@@ -82,9 +81,10 @@ export async function POST(request: Request) {
   let result;
   try {
     result = await generateComponent({
-      component: { ...importedComponent, imageUrl: absoluteImageUrl },
+      component: importedComponent,
       tokens,
       layoutMdExcerpt,
+      imageData: imageData ?? undefined,
     });
   } catch (err) {
     if (err instanceof ComponentGenerationError) {
@@ -152,4 +152,44 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json(component, { status: 201 });
+}
+
+const SUPPORTED_IMAGE_MIME = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+]);
+
+/**
+ * Resolve a Layout proxy URL ("/api/storage/<bucket>/<path>") to its public
+ * Supabase Storage URL, download the bytes, and base64-encode them. Used to
+ * pass component thumbnails to Claude inline — sending the proxy URL itself
+ * fails on private deployments (staging is behind HTTP basic auth) because
+ * Anthropic can't fetch the image.
+ *
+ * Returns null on any failure so the caller can fall back to text-only
+ * generation rather than 500'ing the whole request.
+ */
+async function fetchImageAsBase64(
+  url: string
+): Promise<{ base64: string; mediaType: "image/png" | "image/jpeg" | "image/webp" | "image/gif" } | null> {
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const PROXY_PREFIX = "/api/storage/";
+  let fetchUrl = url;
+  if (url.startsWith(PROXY_PREFIX) && SUPABASE_URL) {
+    const storagePath = url.slice(PROXY_PREFIX.length);
+    fetchUrl = `${SUPABASE_URL}/storage/v1/object/public/${storagePath}`;
+  }
+  try {
+    const res = await fetch(fetchUrl);
+    if (!res.ok) return null;
+    const contentType = (res.headers.get("content-type") ?? "image/png").split(";")[0].trim();
+    if (!SUPPORTED_IMAGE_MIME.has(contentType)) return null;
+    const buf = await res.arrayBuffer();
+    const base64 = Buffer.from(buf).toString("base64");
+    return { base64, mediaType: contentType as "image/png" | "image/jpeg" | "image/webp" | "image/gif" };
+  } catch {
+    return null;
+  }
 }

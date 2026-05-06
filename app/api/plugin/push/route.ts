@@ -4,7 +4,7 @@ import { requireMcpAuth } from "@/lib/api/mcp-auth";
 import { getOrganization } from "@/lib/supabase/organization";
 import { fetchAllProjects, upsertProject } from "@/lib/supabase/db";
 import { logEvent } from "@/lib/logging/platform-event";
-import type { Project } from "@/lib/types";
+import type { ExtractedComponent, Project } from "@/lib/types";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -174,16 +174,19 @@ export async function POST(request: Request) {
         effects: mapTokens(tokens.effects, "effect"),
         motion: [],
       },
-      components: components.map((c) => ({
-        name: c.name,
-        description: c.description,
-        variantCount: c.variants ?? 1,
-        imageUrl: c.imageUrl,
-        figmaNodeId: c.figmaNodeId,
-        figmaUrl: c.figmaUrl,
-        variantGroupProperties: c.variantGroupProperties,
-        variantDetails: c.variantDetails,
-      })),
+      components: mergeComponents(
+        project.extractionData?.components ?? [],
+        components.map((c) => ({
+          name: c.name,
+          description: c.description,
+          variantCount: c.variants ?? 1,
+          imageUrl: c.imageUrl,
+          figmaNodeId: c.figmaNodeId,
+          figmaUrl: c.figmaUrl,
+          variantGroupProperties: c.variantGroupProperties,
+          variantDetails: c.variantDetails,
+        }))
+      ),
       screenshots: [],
       fonts: [],
       animations: [],
@@ -211,4 +214,24 @@ export async function POST(request: Request) {
     { projectId: updatedProject.id, url },
     { headers: CORS }
   );
+}
+
+/**
+ * Merge incoming component metadata into the project's existing component
+ * inventory by name. Pages pushed earlier are preserved when the user pushes
+ * a different page later (Phase 5 scope picker). Same-name entries are
+ * fully replaced by the incoming version, so re-pushes update thumbnails
+ * and variant detail rather than stacking stale data.
+ *
+ * Trade-off: components removed from Figma still linger in extractionData
+ * until a `scope: "all"` push or a manual cleanup. Acceptable for MVP.
+ */
+function mergeComponents(
+  existing: ExtractedComponent[],
+  incoming: ExtractedComponent[]
+): ExtractedComponent[] {
+  const merged = new Map<string, ExtractedComponent>();
+  for (const e of existing) merged.set(e.name, e);
+  for (const c of incoming) merged.set(c.name, c);
+  return Array.from(merged.values());
 }
