@@ -22,136 +22,165 @@ const Body = z.object({
   componentName: z.string().min(1).max(120),
 });
 
+type Phase =
+  | "parse-body"
+  | "auth"
+  | "load-project"
+  | "find-imported-component"
+  | "resolve-image"
+  | "generate"
+  | "transpile"
+  | "create-component"
+  | "log";
+
 export async function POST(request: Request) {
-  let body: unknown;
+  // Tracks which step we're in so an unexpected throw lands in the catch
+  // with a useful "where" tag in the response body. Diagnoses 500s without
+  // requiring server log access.
+  let phase: Phase = "parse-body";
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
 
-  const parsed = Body.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid body", details: parsed.error.flatten() },
-      { status: 400 }
-    );
-  }
-
-  const { orgId, projectId, componentName } = parsed.data;
-
-  const auth = await requireOrgAuth(orgId, "createProject");
-  if (auth instanceof NextResponse) return auth;
-
-  const project = await fetchProjectById(projectId);
-  if (!project || project.orgId !== orgId) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
-  }
-
-  const importedComponent = project.extractionData?.components?.find(
-    (c) => c.name === componentName
-  );
-  if (!importedComponent) {
-    return NextResponse.json(
-      { error: `Imported component "${componentName}" not found on this project` },
-      { status: 404 }
-    );
-  }
-
-  // Flatten tokens for the prompt and resolve a relative imageUrl to absolute.
-  const tokens: ExtractedToken[] = [];
-  if (project.extractionData?.tokens) {
-    const t = project.extractionData.tokens;
-    tokens.push(...t.colors, ...t.typography, ...t.spacing, ...t.radius, ...t.effects);
-  }
-
-  // Resolve the proxy URL to the underlying Supabase Storage object and
-  // download bytes server-side. We send those bytes inline (base64) to
-  // Claude rather than the proxy URL, because Claude can't reach private
-  // deployments (HTTP basic auth on staging, localhost in dev).
-  const imageData = importedComponent.imageUrl
-    ? await fetchImageAsBase64(importedComponent.imageUrl)
-    : null;
-
-  // Trim layout.md so we don't blow the context budget on huge specs.
-  const layoutMdExcerpt = project.layoutMd
-    ? project.layoutMd.slice(0, 8000)
-    : undefined;
-
-  let result;
-  try {
-    result = await generateComponent({
-      component: importedComponent,
-      tokens,
-      layoutMdExcerpt,
-      imageData: imageData ?? undefined,
-    });
-  } catch (err) {
-    if (err instanceof ComponentGenerationError) {
+    const parsed = Body.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: err.message, rawModelOutput: err.rawModelOutput },
-        { status: 502 }
+        { error: "Invalid body", details: parsed.error.flatten() },
+        { status: 400 }
       );
     }
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Generation failed" },
-      { status: 500 }
-    );
-  }
 
-  // Find a unique slug scoped to this project. The convention used by the
-  // existing components POST endpoint adds a numeric suffix when needed.
-  let slug = nameToComponentSlug(componentName);
-  if (await getComponentBySlug(orgId, slug, projectId)) {
-    let suffix = 2;
-    while (await getComponentBySlug(orgId, `${slug}-${suffix}`, projectId)) {
-      suffix++;
+    const { orgId, projectId, componentName } = parsed.data;
+
+    phase = "auth";
+    const auth = await requireOrgAuth(orgId, "createProject");
+    if (auth instanceof NextResponse) return auth;
+
+    phase = "load-project";
+    const project = await fetchProjectById(projectId);
+    if (!project || project.orgId !== orgId) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
-    slug = `${slug}-${suffix}`;
-  }
 
-  let compiledJs: string | undefined;
-  try {
-    compiledJs = await transpileTsx(result.code);
-  } catch {
-    // Non-fatal: drawer falls back to raw code view.
-  }
+    phase = "find-imported-component";
+    const importedComponent = project.extractionData?.components?.find(
+      (c) => c.name === componentName
+    );
+    if (!importedComponent) {
+      return NextResponse.json(
+        { error: `Imported component "${componentName}" not found on this project` },
+        { status: 404 }
+      );
+    }
 
-  const component = await createComponent({
-    orgId,
-    projectId,
-    name: componentName,
-    slug,
-    code: result.code,
-    compiledJs,
-    description: importedComponent.description,
-    category: "imported",
-    source: "figma",
-    designType: "component",
-    createdBy: auth.userId,
-    editSchema: result.editSchema,
-    linkedComponentName: componentName,
-  });
+    const tokens: ExtractedToken[] = [];
+    if (project.extractionData?.tokens) {
+      const t = project.extractionData.tokens;
+      tokens.push(...t.colors, ...t.typography, ...t.spacing, ...t.radius, ...t.effects);
+    }
 
-  if (!component) {
+    phase = "resolve-image";
+    const imageData = importedComponent.imageUrl
+      ? await fetchImageAsBase64(importedComponent.imageUrl)
+      : null;
+
+    const layoutMdExcerpt = project.layoutMd
+      ? project.layoutMd.slice(0, 8000)
+      : undefined;
+
+    phase = "generate";
+    let result;
+    try {
+      result = await generateComponent({
+        component: importedComponent,
+        tokens,
+        layoutMdExcerpt,
+        imageData: imageData ?? undefined,
+      });
+    } catch (err) {
+      if (err instanceof ComponentGenerationError) {
+        return NextResponse.json(
+          { error: err.message, rawModelOutput: err.rawModelOutput, where: phase },
+          { status: 502 }
+        );
+      }
+      throw err;
+    }
+
+    phase = "create-component";
+    let slug = nameToComponentSlug(componentName);
+    if (await getComponentBySlug(orgId, slug, projectId)) {
+      let suffix = 2;
+      while (await getComponentBySlug(orgId, `${slug}-${suffix}`, projectId)) {
+        suffix++;
+      }
+      slug = `${slug}-${suffix}`;
+    }
+
+    phase = "transpile";
+    let compiledJs: string | undefined;
+    try {
+      compiledJs = await transpileTsx(result.code);
+    } catch {
+      // Non-fatal — drawer falls back to raw code view.
+    }
+
+    phase = "create-component";
+    const component = await createComponent({
+      orgId,
+      projectId,
+      name: componentName,
+      slug,
+      code: result.code,
+      compiledJs,
+      description: importedComponent.description,
+      category: "imported",
+      source: "figma",
+      designType: "component",
+      createdBy: auth.userId,
+      editSchema: result.editSchema,
+      linkedComponentName: componentName,
+    });
+
+    if (!component) {
+      return NextResponse.json(
+        { error: "Failed to save generated component", where: phase },
+        { status: 500 }
+      );
+    }
+
+    phase = "log";
+    void logEvent("component.generated_from_figma", "studio", {
+      userId: auth.userId,
+      orgId,
+      metadata: {
+        componentName,
+        projectId,
+        inputTokens: result.usage.inputTokens,
+        outputTokens: result.usage.outputTokens,
+      },
+    });
+
+    return NextResponse.json(component, { status: 201 });
+  } catch (err) {
+    // Surface the actual failure to the client so we can debug from the
+    // browser Network tab without needing server log access.
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error(
+      `[generate-from-figma-component] failed at phase=${phase}:`,
+      message,
+      stack ?? ""
+    );
     return NextResponse.json(
-      { error: "Failed to save generated component" },
+      { error: message, where: phase },
       { status: 500 }
     );
   }
-
-  void logEvent("component.generated_from_figma", "studio", {
-    userId: auth.userId,
-    orgId,
-    metadata: {
-      componentName,
-      projectId,
-      inputTokens: result.usage.inputTokens,
-      outputTokens: result.usage.outputTokens,
-    },
-  });
-
-  return NextResponse.json(component, { status: 201 });
 }
 
 const SUPPORTED_IMAGE_MIME = new Set([
