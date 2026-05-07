@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
-import { ExternalLink, Loader2, RefreshCw, Wand2, X } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, Loader2, RefreshCw, Wand2, X } from "lucide-react";
 import type { ExtractedComponent, ExtractedComponentVariant } from "@/lib/types";
 import type { Component, EditSchema } from "@/lib/types/component";
 import { Badge } from "@/components/ui/badge";
@@ -66,34 +67,57 @@ export function ComponentInspectorDrawer({
           />
 
           <div className="flex-1 overflow-y-auto">
-            <Thumbnail component={component} />
-            <Description component={component} />
-            <VariantAxes axes={variantAxes} />
-            {hasVariantDetails && component.variantDetails ? (
-              <VariantGrid variants={component.variantDetails} />
-            ) : null}
-            <Properties component={component} />
+            {/*
+              When a saved component exists, lead with the live preview + form.
+              That's the primary surface — the user is here to edit. The Figma
+              reference (thumbnail, variant grid, raw properties) drops below
+              as secondary "is my generated version close?" comparison context.
+
+              When there's no saved component yet, the Figma reference is the
+              only thing worth showing — leave it at the top.
+            */}
             {linkedComponent && projectId ? (
-              <ComponentEditor
-                projectId={projectId}
-                linkedComponent={linkedComponent}
-                onSave={
-                  onSaveEdits
-                    ? (next) => onSaveEdits(linkedComponent.id, next)
-                    : undefined
-                }
-                onSaveAsNew={
-                  onSaveAsNewVariant
-                    ? (next) => onSaveAsNewVariant(linkedComponent.id, next)
-                    : undefined
-                }
-              />
-            ) : linkedComponent ? (
-              <GeneratedCodeView linkedComponent={linkedComponent} />
-            ) : null}
-            {generationError ? (
-              <ErrorBanner message={generationError} />
-            ) : null}
+              <>
+                <ComponentEditor
+                  projectId={projectId}
+                  linkedComponent={linkedComponent}
+                  onSave={
+                    onSaveEdits
+                      ? (next) => onSaveEdits(linkedComponent.id, next)
+                      : undefined
+                  }
+                  onSaveAsNew={
+                    onSaveAsNewVariant
+                      ? (next) => onSaveAsNewVariant(linkedComponent.id, next)
+                      : undefined
+                  }
+                />
+                {generationError ? (
+                  <ErrorBanner message={generationError} />
+                ) : null}
+                <FigmaReference
+                  component={component}
+                  variantAxes={variantAxes}
+                  hasVariantDetails={hasVariantDetails}
+                />
+              </>
+            ) : (
+              <>
+                <Thumbnail component={component} />
+                <Description component={component} />
+                <VariantAxes axes={variantAxes} />
+                {hasVariantDetails && component.variantDetails ? (
+                  <VariantGrid variants={component.variantDetails} />
+                ) : null}
+                <Properties component={component} />
+                {linkedComponent ? (
+                  <GeneratedCodeView linkedComponent={linkedComponent} />
+                ) : null}
+                {generationError ? (
+                  <ErrorBanner message={generationError} />
+                ) : null}
+              </>
+            )}
           </div>
 
           <Footer
@@ -288,6 +312,58 @@ function Properties({ component }: { component: ExtractedComponent }) {
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Wraps the original Figma artefacts (description, variant axes, variant
+ * thumbnails, raw properties) under a collapsible "From Figma" header so the
+ * editor stays visually dominant once a saved component exists. Closed by
+ * default — open it when the user wants to compare against the source.
+ */
+function FigmaReference({
+  component,
+  variantAxes,
+  hasVariantDetails,
+}: {
+  component: ExtractedComponent;
+  variantAxes: [string, string[]][];
+  hasVariantDetails: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-t border-[var(--studio-border)]">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-2 px-5 py-3 text-left transition-colors hover:bg-[var(--bg-hover)]"
+      >
+        {open ? (
+          <ChevronDown className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+        ) : (
+          <ChevronRight className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+        )}
+        <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--text-muted)]">
+          From Figma
+        </span>
+        {hasVariantDetails ? (
+          <span className="ml-auto text-[10px] text-[var(--text-muted)] opacity-60">
+            {component.variantDetails?.length ?? 0} variants
+          </span>
+        ) : null}
+      </button>
+      {open ? (
+        <div className="border-t border-[var(--studio-border)] pt-1">
+          <Thumbnail component={component} />
+          <Description component={component} />
+          <VariantAxes axes={variantAxes} />
+          {hasVariantDetails && component.variantDetails ? (
+            <VariantGrid variants={component.variantDetails} />
+          ) : null}
+          <Properties component={component} />
+        </div>
+      ) : null}
     </div>
   );
 }

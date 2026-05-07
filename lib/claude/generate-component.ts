@@ -95,8 +95,37 @@ TSX RULES:
 - Inline styles only via the \`style\` prop. No Tailwind classes. No external CSS.
 - NEVER use emoji or Unicode glyphs (✓ ★ → ⚡). Use inline <svg> for icons.
 - Tag every editable element with a stable \`data-edit-id="<id>"\` attribute. The id must match an entry in the JSON schema below.
-- Variant props (Size, State, Theme, etc.) must be wired as props on the function component with sensible defaults that match the schema's "variants" map.
-- Render a single representative variant by default. Variant prop changes must affect visible output.
+- Use double quotes for the data-edit-id attribute value: data-edit-id="root", NOT data-edit-id={'root'}. The form editor's apply layer relies on this exact form.
+
+VARIANT WIRING (critical — this section is non-negotiable):
+- Every variant axis present in the schema's "variants" map MUST be wired as a TSX prop AND must produce a visible visual change when toggled.
+- Use the EXACT axis names from the imported component's variantGroupProperties as prop names (case-sensitive). If Figma calls the axis "State" with values "Default", "Hover", "Disabled", the prop is named \`State\` and accepts those exact strings.
+- Branch styles inside the component on each axis. A single \`Size\` prop is not enough — \`State\` must change colour/opacity/cursor, \`Variant\` must change background/border/text, \`Theme\` must flip the colour scheme, etc.
+- Concrete pattern (DO follow this shape):
+
+    function Button({ Size = "Medium", State = "Default", Variant = "Primary" }) {
+      const padX = Size === "Small" ? "var(--space-2)" : Size === "Large" ? "var(--space-6)" : "var(--space-4)";
+      const padY = Size === "Small" ? "var(--space-1)" : Size === "Large" ? "var(--space-3)" : "var(--space-2)";
+      const bg =
+        Variant === "Primary" ? "var(--color-primary)"
+        : Variant === "Subtle" ? "var(--color-surface)"
+        : "transparent";
+      const fg = Variant === "Primary" ? "var(--color-on-primary)" : "var(--color-on-surface)";
+      const opacity = State === "Disabled" ? 0.5 : 1;
+      const cursor = State === "Disabled" ? "not-allowed" : "pointer";
+      const filter = State === "Hover" ? "brightness(1.05)" : undefined;
+      return (
+        <button data-edit-id="root" style={{ background: bg, color: fg, padding: padY + " " + padX, opacity, cursor, filter }}>
+          <span data-edit-id="label">Button</span>
+        </button>
+      );
+    }
+
+- Render a single representative variant by default (the prop defaults). Variant prop changes from outside MUST visibly change the rendered output.
+
+TOKEN CATEGORY DISCIPLINE:
+- Match each prop to the right token category. paddingX/paddingY/gap/margin → spacing-token. background/borderColor → color-token. borderRadius → radius-token. fontFamily/fontSize/lineHeight → type-token. boxShadow → shadow-token.
+- DO NOT pick tokens whose names suggest a different role for a prop (e.g. don't use --Stroke-Border as a paddingY value just because the project has it). If no good token exists for a property, omit the prop from the schema rather than picking a wrong-category one.
 
 JSON SCHEMA RULES:
 - Shape: { "version": 1, "elements": [...], "variants": { "PropName": ["v1","v2"] }, "sourceComponentName": "..." }
