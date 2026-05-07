@@ -38,6 +38,20 @@ function escapeRegex(s: string): string {
 /**
  * Swap the CSS variable name used for a token-typed prop on a specific
  * element. Both `oldVar` and `newVar` are bare names — e.g. "--color-primary".
+ *
+ * Strategy is element-scoped FIRST: locate the JSX opening tag for
+ * `data-edit-id="<elementId>"` and replace `var(--oldVar)` only within that
+ * tag. This is the right behaviour when the AI uses inline style values
+ * (the prompt strongly encourages this).
+ *
+ * Fallback: if the var() reference isn't present in the open tag (because
+ * the AI extracted it to a const, ternary, or helper outside the JSX), the
+ * function does a whole-file replacement instead. Trade-off: when two
+ * elements share the same token via the same const, changing one form prop
+ * also changes other elements that reference the same const. In practice
+ * users find this acceptable because the const exists precisely because the
+ * values are meant to track — but worth documenting. Regenerating with the
+ * latest prompt produces inline-style TSX that doesn't trigger the fallback.
  */
 export function applyTokenSwap(
   code: string,
@@ -46,12 +60,27 @@ export function applyTokenSwap(
   newVar: string
 ): string {
   if (oldVar === newVar) return code;
+  const needle = `var(${oldVar})`;
+  const replacement = `var(${newVar})`;
+
+  // Element-scoped path
   const range = findOpenTagRange(code, elementId);
-  if (!range) return code;
-  const replaced = range.tag
-    .split(`var(${oldVar})`)
-    .join(`var(${newVar})`);
-  return code.slice(0, range.start) + replaced + code.slice(range.end);
+  if (range && range.tag.includes(needle)) {
+    const replaced = range.tag.split(needle).join(replacement);
+    return code.slice(0, range.start) + replaced + code.slice(range.end);
+  }
+
+  // Whole-file fallback for AI generations that use const/ternary indirection
+  if (code.includes(needle)) {
+    if (typeof console !== "undefined" && typeof console.warn === "function") {
+      console.warn(
+        `[applyTokenSwap] '${oldVar}' wasn't inline on data-edit-id="${elementId}"; falling back to whole-file replace. Other elements sharing this token will also update. Regenerate this component to switch back to element-scoped edits.`
+      );
+    }
+    return code.split(needle).join(replacement);
+  }
+
+  return code;
 }
 
 /**

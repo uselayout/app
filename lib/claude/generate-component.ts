@@ -97,6 +97,20 @@ TSX RULES:
 - Tag every editable element with a stable \`data-edit-id="<id>"\` attribute. The id must match an entry in the JSON schema below.
 - Use double quotes for the data-edit-id attribute value: data-edit-id="root", NOT data-edit-id={'root'}. The form editor's apply layer relies on this exact form.
 
+STYLE EXPRESSIONS — INLINE ONLY (critical for the form editor):
+- EVERY \`var(--token)\` reference MUST appear directly inside the \`style\` prop expression on the JSX element that uses it. The form editor scopes token swaps to the JSX opening tag — refs that live elsewhere do not get updated when the user changes a token.
+- DO NOT extract style values to const variables outside the JSX, e.g. \`const bg = "var(--primary)"\` then \`style={{ background: bg }}\`. Inline the var() ref directly: \`style={{ background: "var(--primary)" }}\`.
+- DO NOT compute styles via helper functions or spread style objects from outside.
+- For variant branching, use INLINE ternaries inside the style object:
+
+    style={{
+      background: Variant === "Primary" ? "var(--Brand-500)" : "var(--Brand-100)",
+      cursor: State === "Disabled" ? "not-allowed" : "pointer",
+      opacity: State === "Disabled" ? 0.5 : 1,
+    }}
+
+- This rule is non-negotiable. Generated components without inline var() refs will not let the user edit them properly.
+
 VARIANT WIRING (critical — this section is non-negotiable):
 - Every variant axis present in the schema's "variants" map MUST be wired as a TSX prop AND must produce a visible visual change when toggled.
 - Use the EXACT axis names from the imported component's variantGroupProperties as prop names (case-sensitive). If Figma calls the axis "State" with values "Default", "Hover", "Disabled", the prop is named \`State\` and accepts those exact strings.
