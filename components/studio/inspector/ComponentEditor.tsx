@@ -36,23 +36,33 @@ export function ComponentEditor({ projectId, linkedComponent, onSave, onSaveAsNe
   const initialSchema = linkedComponent.editSchema;
   const initialCode = linkedComponent.code;
 
-  const [schema, setSchema] = useState<EditSchema | null>(initialSchema);
-  const [code, setCode] = useState(initialCode);
+  // Lazy initialisers so the default-value computation runs once on mount,
+  // not on every render.
+  const [schema, setSchema] = useState<EditSchema | null>(() => initialSchema);
+  const [code, setCode] = useState(() => initialCode);
   const [variantValues, setVariantValues] = useState<Record<string, string>>(
-    initialSchema ? defaultVariantValues(initialSchema) : {}
+    () => (initialSchema ? defaultVariantValues(initialSchema) : {})
   );
 
-  const tokens = useProjectStore((s) => {
-    const ed = s.projects.find((p) => p.id === projectId)?.extractionData;
-    if (!ed) return [] as ExtractedToken[];
+  // Select extractionData by reference (stable across renders unless the
+  // project itself changes), then derive the flattened tokens via useMemo.
+  // Returning a new array directly from the Zustand selector caused
+  // ComponentEditor to render in a loop — every store subscription
+  // notification produced a fresh reference, which any deps using `tokens`
+  // would treat as new. (React error #185 reproduces from that path.)
+  const extractionData = useProjectStore(
+    (s) => s.projects.find((p) => p.id === projectId)?.extractionData
+  );
+  const tokens = useMemo<ExtractedToken[]>(() => {
+    if (!extractionData) return [];
     return [
-      ...ed.tokens.colors,
-      ...ed.tokens.typography,
-      ...ed.tokens.spacing,
-      ...ed.tokens.radius,
-      ...ed.tokens.effects,
+      ...extractionData.tokens.colors,
+      ...extractionData.tokens.typography,
+      ...extractionData.tokens.spacing,
+      ...extractionData.tokens.radius,
+      ...extractionData.tokens.effects,
     ];
-  });
+  }, [extractionData]);
 
   const dirty = code !== initialCode;
 

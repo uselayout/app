@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildSrcdoc,
   extractComponentName,
@@ -39,9 +39,13 @@ export function ComponentPreview({ projectId, code, variantValues, width, classN
   const extractionData = useProjectStore(
     (s) => s.projects.find((p) => p.id === projectId)?.extractionData
   );
-  const cssTokenBlock = buildCssTokenBlock(
-    extractionData?.cssVariables,
-    extractionData?.tokens
+  // Memoised so the value used in the effect deps is stable across renders.
+  // buildCssTokenBlock returns a new string instance every call; without
+  // useMemo, that string referenced from the deps array thrashed the effect
+  // and produced React error #185 (Maximum update depth exceeded).
+  const cssTokenBlock = useMemo(
+    () => buildCssTokenBlock(extractionData?.cssVariables, extractionData?.tokens),
+    [extractionData?.cssVariables, extractionData?.tokens]
   );
 
   useEffect(() => {
