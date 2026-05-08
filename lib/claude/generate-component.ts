@@ -104,12 +104,22 @@ STYLE EXPRESSIONS — INLINE ONLY (critical for the form editor):
 - For variant branching, use INLINE ternaries inside the style object:
 
     style={{
-      background: Variant === "Primary" ? "var(--Brand-500)" : "var(--Brand-100)",
-      cursor: State === "Disabled" ? "not-allowed" : "pointer",
-      opacity: State === "Disabled" ? 0.5 : 1,
+      background: variant === "primary" ? "var(--brand-500)" : "var(--brand-100)",
+      cursor: state === "disabled" ? "not-allowed" : "pointer",
+      opacity: state === "disabled" ? 0.5 : 1,
     }}
 
+- DO NOT use the \`var(--name, fallback)\` two-argument form. Always plain \`var(--name)\`. Fallbacks make swaps fragile.
 - This rule is non-negotiable. Generated components without inline var() refs will not let the user edit them properly.
+
+TOKEN NAME EXACTNESS:
+- Use each token name VERBATIM as it appears in the "Project tokens" section below. Do not change case, do not add or remove hyphens, do not invent variants. If the list shows \`--brand-400\`, you MUST write \`var(--brand-400)\` — never \`var(--Brand-400)\`, \`var(--BRAND-400)\`, or \`var(--brand_400)\`.
+- The schema's "value" field for token props MUST also use the exact same name string. Schema and TSX must agree byte-for-byte on the token name.
+
+NO HARDCODED VALUES FOR TOKENISED PROPERTIES:
+- If the project provides a token category for a property, you MUST use a token from that category. Do not write \`padding: "12px"\` when spacing-tokens exist. Do not write \`borderRadius: "8px"\` when radius-tokens exist. Do not write \`color: "#fff"\` when color-tokens exist.
+- Acceptable inline string concatenation for compound properties: \`padding: \\\`\${"var(--space-3)"} \${"var(--space-6)"}\\\`\` — though \`paddingX\` / \`paddingY\` as separate style keys with single var() refs is clearer and preferred.
+- If no token of the right category exists for a property you need, omit that property from the schema rather than picking a wrong-category token (e.g. don't use --stroke-border for paddingY just because nothing else fits).
 
 VARIANT WIRING (critical — this section is non-negotiable):
 - Every variant axis present in the schema's "variants" map MUST be wired as a TSX prop AND must produce a visible visual change when toggled.

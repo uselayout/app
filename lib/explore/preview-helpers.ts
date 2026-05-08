@@ -160,6 +160,14 @@ export interface BuildSrcdocOptions {
      * Renderer falls back to its DEFAULT_STYLE_PROFILE when absent. */
     styleProfile?: unknown;
   };
+  /**
+   * Props to pass when mounting the resolved component. Used by the
+   * inspector form editor's variant toggles — instead of appending a
+   * wrapper TSX (which gets shadowed by the original module's default
+   * export), we pass props directly to the React.createElement call.
+   * JSON-serialisable values only.
+   */
+  mountProps?: Record<string, string | number | boolean>;
 }
 
 export function buildSrcdoc(js: string, componentName: string, opts?: BuildSrcdocOptions): string;
@@ -207,6 +215,13 @@ export function buildSrcdoc(
   const kitJson = opts.kit
     ? JSON.stringify(opts.kit).replace(/</g, "\\u003c").replace(/>/g, "\\u003e")
     : null;
+
+  // Props the iframe should pass when mounting the resolved component.
+  // Embedded as a JSON literal in the IIFE; "null" when absent so the
+  // existing `React.createElement(C)` call shape stays the same.
+  const mountPropsJson = opts.mountProps
+    ? JSON.stringify(opts.mountProps).replace(/</g, "\\u003c").replace(/>/g, "\\u003e")
+    : "null";
 
   return `<!DOCTYPE html>
 <html><head>
@@ -256,7 +271,8 @@ window.addEventListener('load',function(){
       '  var C=_exp["default"]||_exp["${componentName}"]||_exp;',
       '  if(typeof C==="object"&&C.default)C=C.default;',
       '  if(typeof C!=="function"&&!(typeof C==="object"&&C)){showError("Component not found in module exports");return;}',
-      '  ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(C));',
+      '  var __mountProps=${mountPropsJson};',
+      '  ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(C,__mountProps));',
       '  document.addEventListener("click",function(e){var t=e.target;while(t&&t.tagName!=="A")t=t.parentElement;if(t)e.preventDefault();},true);',
       '})();'
     ].join('\\n');

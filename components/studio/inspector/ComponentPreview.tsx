@@ -7,7 +7,6 @@ import {
   sanitizeRelativeSrc,
   buildCssTokenBlock,
 } from "@/lib/explore/preview-helpers";
-import { buildVariantInvocation, detectExportName } from "@/lib/component-edits/apply";
 import { useProjectStore } from "@/lib/store/project";
 import { Loader2 } from "lucide-react";
 
@@ -54,11 +53,7 @@ export function ComponentPreview({ projectId, code, variantValues, width, classN
 
     const handle = window.setTimeout(async () => {
       try {
-        const exportName = detectExportName(code);
-        const wrapper = Object.keys(variantValues).length > 0
-          ? buildVariantInvocation(exportName, variantValues)
-          : "";
-        const fullCode = sanitizeRelativeSrc(`${code}\n\n${wrapper}`);
+        const fullCode = sanitizeRelativeSrc(code);
 
         const res = await fetch("/api/transpile", {
           method: "POST",
@@ -72,11 +67,16 @@ export function ComponentPreview({ projectId, code, variantValues, width, classN
         const { js } = await res.json();
         if (cancelled) return;
 
-        // Render the wrapper if present, otherwise fall back to the
-        // component's own export name.
-        const renderName =
-          Object.keys(variantValues).length > 0 ? "__PreviewWrapper" : extractComponentName(code);
-        const srcdoc = buildSrcdoc(js, renderName, { cssTokenBlock });
+        // Variant prop values are passed via mountProps so React.createElement
+        // can apply them to the resolved default export. The earlier wrapper
+        // approach (appending a __PreviewWrapper to the source TSX) was
+        // shadowed by `_exp["default"]` in the iframe's resolver, so the
+        // wrapper never ran and variants never had any effect.
+        const componentName = extractComponentName(code);
+        const srcdoc = buildSrcdoc(js, componentName, {
+          cssTokenBlock,
+          mountProps: variantValues,
+        });
         if (iframeRef.current) {
           iframeRef.current.srcdoc = srcdoc;
         }

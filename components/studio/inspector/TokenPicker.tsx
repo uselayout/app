@@ -22,11 +22,25 @@ interface Props {
  * pick from the design system's token list, so off-brand values are
  * structurally impossible.
  */
+/**
+ * Resolve the actual CSS variable name for a token. Prefer cssVariable (the
+ * sanitised name that lives in the project's tokens.css and srcdoc CSS block)
+ * over a derived name from the friendly label — Figma layer names are often
+ * "Brand-400" while the actual CSS var emitted is "--brand-400". Sending
+ * "--Brand-400" to applyTokenSwap leaves the iframe rendering an unresolved
+ * CSS var that falls through to the default value.
+ */
+function tokenVar(t: ExtractedToken): string {
+  return t.cssVariable ?? `--${t.name}`;
+}
+
 export function TokenPicker({ label, value, category, tokens, onChange }: Props) {
   const [open, setOpen] = useState(false);
 
   const candidates = tokens.filter((t) => t.type === category);
-  const current = candidates.find((t) => `--${t.name}` === value || t.cssVariable === value);
+  const current = candidates.find(
+    (t) => tokenVar(t) === value || `--${t.name}` === value || t.cssVariable === value
+  );
 
   return (
     <div className="flex items-center justify-between gap-3">
@@ -39,7 +53,7 @@ export function TokenPicker({ label, value, category, tokens, onChange }: Props)
           >
             {category === "color" ? <Swatch token={current} /> : null}
             <span className="flex-1 truncate text-left">
-              {current ? `--${current.name}` : value}
+              {current ? tokenVar(current) : value}
             </span>
             <ChevronDown className="h-3 w-3 opacity-60" />
           </button>
@@ -57,8 +71,9 @@ export function TokenPicker({ label, value, category, tokens, onChange }: Props)
             ) : (
               <ul className="space-y-0.5">
                 {candidates.map((t) => {
-                  const varName = `--${t.name}`;
-                  const isActive = varName === value || t.cssVariable === value;
+                  const varName = tokenVar(t);
+                  const isActive =
+                    varName === value || `--${t.name}` === value || t.cssVariable === value;
                   return (
                     <li key={t.name}>
                       <button
@@ -73,7 +88,7 @@ export function TokenPicker({ label, value, category, tokens, onChange }: Props)
                         }
                       >
                         {category === "color" ? <Swatch token={t} /> : null}
-                        <span className="flex-1 truncate text-left">--{t.name}</span>
+                        <span className="flex-1 truncate text-left">{varName}</span>
                         <span className="truncate text-[var(--text-muted)] opacity-70">{t.value}</span>
                       </button>
                     </li>
