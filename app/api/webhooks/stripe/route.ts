@@ -7,6 +7,7 @@ import {
 import { resetMonthlyCreditsByOrg, addTopupCredits } from "@/lib/billing/credits";
 import { getPersonalOrg } from "@/lib/supabase/organization";
 import { supabase } from "@/lib/supabase/client";
+import { recordAffiliateConversion } from "@/lib/supabase/affiliates";
 import type Stripe from "stripe";
 
 // Stripe v20: period dates live on SubscriptionItem, not Subscription
@@ -205,6 +206,27 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       periodStart,
       periodEnd
     );
+  }
+
+  // Affiliate commission recording. Skipped silently if not GBP since
+  // commissions are denominated in GBP throughout. Failures don't break
+  // subscription processing — Stripe will retry the whole webhook.
+  if (invoice.currency === "gbp" && invoice.amount_paid > 0) {
+    try {
+      const result = await recordAffiliateConversion({
+        userId: existing.userId,
+        stripeInvoiceId: invoice.id ?? "",
+        invoiceTotalGbp: invoice.amount_paid / 100,
+        invoicePaidAt: new Date((invoice.created ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+      });
+      if (result.attributed && result.reason !== "already-recorded") {
+        console.log(`[affiliate] recorded conversion ${result.conversionId} for invoice ${invoice.id}`);
+      }
+    } catch (err) {
+      // Log but don't throw — affiliate attribution must never break the
+      // primary billing path. Webhook will be marked processed regardless.
+      console.error("[affiliate] recordAffiliateConversion failed:", err);
+    }
   }
 }
 

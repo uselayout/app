@@ -412,3 +412,115 @@ function makeCode(): string {
   }
   return s;
 }
+
+// ─── Commission recording (called from Stripe webhook) ────────────────────────
+
+/**
+ * Compute commission percentage for a tier given how many months have
+ * elapsed since the user redeemed the invite code.
+ *
+ *   standard: flat 20%
+ *   flagship: 40% month 1, 35% months 2-12, 30% month 13+
+ *
+ * monthsSinceRedeem is integer months, 1-indexed for the redemption month.
+ */
+export function commissionPctFor(tier: CommissionTier, monthsSinceRedeem: number): number {
+  if (tier === "standard") return 20;
+  if (monthsSinceRedeem <= 1) return 40;
+  if (monthsSinceRedeem <= 12) return 35;
+  return 30;
+}
+
+/**
+ * Whole months between two ISO dates. Month 1 = redemption month itself.
+ * Uses calendar-month difference so monthly billing aligns naturally.
+ */
+export function monthsBetween(redeemedAt: string, paidAt: string): number {
+  const a = new Date(redeemedAt);
+  const b = new Date(paidAt);
+  const months = (b.getUTCFullYear() - a.getUTCFullYear()) * 12 + (b.getUTCMonth() - a.getUTCMonth());
+  return Math.max(1, months + 1);
+}
+
+export interface RecordConversionInput {
+  userId: string;
+  stripeInvoiceId: string;
+  invoiceTotalGbp: number;
+  invoicePaidAt: string; // ISO timestamp
+}
+
+export interface RecordConversionResult {
+  attributed: boolean;
+  reason?: string;
+  conversionId?: string;
+}
+
+/**
+ * Record a paid Stripe invoice as an affiliate conversion if the user
+ * redeemed an affiliate-attributed invite code. Idempotent on
+ * stripe_invoice_id (unique constraint at the DB level + ON CONFLICT
+ * handling here). Safe to call for every paid invoice; returns
+ * `attributed: false` when there's no affiliate to attribute to.
+ */
+export async function recordAffiliateConversion(
+  input: RecordConversionInput
+): Promise<RecordConversionResult> {
+  // 1. Find an attributed invite code the user redeemed.
+  const { data: codeRow, error: codeErr } = await supabase
+    .from("invite_codes")
+    .select("code, affiliate_id, redeemed_at")
+    .eq("redeemed_by", input.userId)
+    .not("affiliate_id", "is", null)
+    .order("redeemed_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (codeErr) {
+    throw new Error(`recordAffiliateConversion lookup: ${codeErr.message}`);
+  }
+  if (!codeRow || !codeRow.affiliate_id || !codeRow.redeemed_at) {
+    return { attributed: false, reason: "no-attributed-code" };
+  }
+
+  // 2. Resolve commission tier.
+  const { data: affRow, error: affErr } = await supabase
+    .from("affiliates")
+    .select("commission_tier")
+    .eq("id", codeRow.affiliate_id)
+    .single();
+  if (affErr || !affRow) {
+    throw new Error(`recordAffiliateConversion affiliate: ${affErr?.message ?? "missing"}`);
+  }
+
+  const tier = affRow.commission_tier as CommissionTier;
+  const months = monthsBetween(codeRow.redeemed_at, input.invoicePaidAt);
+  const pct = commissionPctFor(tier, months);
+  const commissionGbp = Math.round(input.invoiceTotalGbp * pct) / 100;
+
+  // 3. Insert. Idempotent on stripe_invoice_id UNIQUE constraint.
+  const { data: convRow, error: insertErr } = await supabase
+    .from("affiliate_conversions")
+    .insert({
+      affiliate_id: codeRow.affiliate_id,
+      user_id: input.userId,
+      invite_code: codeRow.code,
+      stripe_invoice_id: input.stripeInvoiceId,
+      invoice_total_gbp: input.invoiceTotalGbp.toFixed(2),
+      months_since_redeem: months,
+      commission_pct: pct,
+      commission_gbp: commissionGbp.toFixed(2),
+      invoice_paid_at: input.invoicePaidAt,
+    })
+    .select("id")
+    .single();
+
+  if (insertErr) {
+    // 23505 = unique_violation. Treat as already-recorded (Stripe retry).
+    if (insertErr.code === "23505") {
+      return { attributed: true, reason: "already-recorded" };
+    }
+    throw new Error(`recordAffiliateConversion insert: ${insertErr.message}`);
+  }
+
+  return { attributed: true, conversionId: convRow.id };
+}
