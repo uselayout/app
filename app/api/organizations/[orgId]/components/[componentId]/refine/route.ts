@@ -7,12 +7,16 @@ import {
   ComponentGenerationError,
 } from "@/lib/claude/generate-component";
 import { refineComponent } from "@/lib/claude/refine-component";
+import { checkQuota, deductCredit, refundCredit } from "@/lib/billing/credits";
 import { logEvent } from "@/lib/logging/platform-event";
 import type { ExtractedToken } from "@/lib/types";
 
 const Body = z.object({
   instruction: z.string().min(1).max(500),
 });
+
+const REFINE_CREDIT_TYPE = "edit" as const;
+const REFINE_CREDIT_COST = 1;
 
 /**
  * Apply a natural-language refinement to a saved Component without a full
@@ -88,6 +92,31 @@ export async function POST(
     ? project.layoutMd.slice(0, 8000)
     : undefined;
 
+  // Billing — BYOK header takes precedence; otherwise charge hosted credits.
+  // Refund on any error so failed refinements don't burn the user's quota.
+  const userApiKey = request.headers.get("X-Api-Key") || undefined;
+  const useByok = !!(userApiKey && userApiKey.startsWith("sk-ant-"));
+  let creditDeducted = false;
+  let effectiveApiKey = userApiKey;
+  if (!useByok) {
+    const quota = await checkQuota(auth.userId, REFINE_CREDIT_TYPE, REFINE_CREDIT_COST);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        { error: quota.reason, code: "QUOTA_EXCEEDED", remaining: quota.remaining },
+        { status: 402 }
+      );
+    }
+    const deducted = await deductCredit(auth.userId, REFINE_CREDIT_TYPE, REFINE_CREDIT_COST);
+    if (!deducted) {
+      return NextResponse.json(
+        { error: "No credits remaining.", code: "QUOTA_EXCEEDED" },
+        { status: 402 }
+      );
+    }
+    creditDeducted = true;
+    effectiveApiKey = process.env.ANTHROPIC_API_KEY;
+  }
+
   try {
     const result = await refineComponent({
       code: component.code,
@@ -96,6 +125,7 @@ export async function POST(
       tokens,
       pinnedTokenVars: Array.from(pinnedTokenVars),
       layoutMdExcerpt,
+      apiKey: effectiveApiKey,
     });
 
     void logEvent("component.refined", "studio", {
@@ -114,6 +144,9 @@ export async function POST(
       editSchema: result.editSchema,
     });
   } catch (err) {
+    if (creditDeducted) {
+      await refundCredit(auth.userId, REFINE_CREDIT_TYPE).catch(() => {});
+    }
     if (err instanceof ComponentGenerationError) {
       return NextResponse.json(
         { error: err.message, rawModelOutput: err.rawModelOutput },

@@ -14,7 +14,11 @@ import {
   ComponentGenerationError,
   generateComponent,
 } from "@/lib/claude/generate-component";
+import { checkQuota, deductCredit, refundCredit } from "@/lib/billing/credits";
 import type { ExtractedToken } from "@/lib/types";
+
+const GENERATE_CREDIT_TYPE = "explore" as const;
+const GENERATE_CREDIT_COST = 1;
 
 const Body = z.object({
   orgId: z.string(),
@@ -30,6 +34,7 @@ type Phase =
   | "find-imported-component"
   | "resolve-image"
   | "load-existing-components"
+  | "billing"
   | "generate"
   | "transpile"
   | "create-component"
@@ -40,6 +45,8 @@ export async function POST(request: Request) {
   // with a useful "where" tag in the response body. Diagnoses 500s without
   // requiring server log access.
   let phase: Phase = "parse-body";
+  // Hoisted so the outer catch can refund even on errors after deduction.
+  let creditDeductedFor: string | null = null;
   try {
     let body: unknown;
     try {
@@ -133,6 +140,39 @@ export async function POST(request: Request) {
       for (const m of matches) pinnedTokenVars.add(m[1]);
     }
 
+    // Billing — BYOK header takes precedence; otherwise charge hosted credits.
+    // Refunded on any error after this point so failed generations don't
+    // burn the user's quota.
+    phase = "billing";
+    const userApiKey = request.headers.get("X-Api-Key") || undefined;
+    const useByok = !!(userApiKey && userApiKey.startsWith("sk-ant-"));
+    let effectiveApiKey = userApiKey;
+    if (!useByok) {
+      const quota = await checkQuota(auth.userId, GENERATE_CREDIT_TYPE, GENERATE_CREDIT_COST);
+      if (!quota.allowed) {
+        return NextResponse.json(
+          { error: quota.reason, code: "QUOTA_EXCEEDED", remaining: quota.remaining },
+          { status: 402 }
+        );
+      }
+      const deducted = await deductCredit(auth.userId, GENERATE_CREDIT_TYPE, GENERATE_CREDIT_COST);
+      if (!deducted) {
+        return NextResponse.json(
+          { error: "No credits remaining.", code: "QUOTA_EXCEEDED" },
+          { status: 402 }
+        );
+      }
+      creditDeductedFor = auth.userId;
+      effectiveApiKey = process.env.ANTHROPIC_API_KEY;
+    }
+    // Refund helper — every early-return / throw path after deduction calls
+    // this so failed generations don't burn the user's quota.
+    const refundIfBilled = async () => {
+      if (!creditDeductedFor) return;
+      await refundCredit(creditDeductedFor, GENERATE_CREDIT_TYPE).catch(() => {});
+      creditDeductedFor = null;
+    };
+
     phase = "generate";
     let result;
     try {
@@ -143,8 +183,10 @@ export async function POST(request: Request) {
         imageData: imageData ?? undefined,
         existingComponents,
         pinnedTokenVars: Array.from(pinnedTokenVars),
+        apiKey: effectiveApiKey,
       });
     } catch (err) {
+      await refundIfBilled();
       if (err instanceof ComponentGenerationError) {
         return NextResponse.json(
           { error: err.message, rawModelOutput: err.rawModelOutput, where: phase },
@@ -190,6 +232,7 @@ export async function POST(request: Request) {
     });
 
     if (!component) {
+      await refundIfBilled();
       return NextResponse.json(
         { error: "Failed to save generated component", where: phase },
         { status: 500 }
@@ -210,6 +253,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json(component, { status: 201 });
   } catch (err) {
+    // Refund the credit so a failed generation (anywhere in the pipeline)
+    // doesn't burn the user's quota.
+    if (creditDeductedFor) {
+      await refundCredit(creditDeductedFor, GENERATE_CREDIT_TYPE).catch(() => {});
+    }
     // Surface the actual failure to the client so we can debug from the
     // browser Network tab without needing server log access.
     const message = err instanceof Error ? err.message : String(err);

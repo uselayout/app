@@ -135,11 +135,19 @@ export function ComponentEditor({ projectId, linkedComponent, onSave, onSaveAsNe
     setRefining(true);
     setRefineError(null);
     try {
+      // BYOK header — same pattern as Generate. With a key in Settings the
+      // server uses it and skips credit deduction; without one the user's
+      // hosted quota is charged 1 credit per refine call.
+      const { getStoredApiKey } = await import("@/lib/hooks/use-api-key");
+      const apiKey = getStoredApiKey();
       const res = await fetch(
         `/api/organizations/${linkedComponent.orgId}/components/${linkedComponent.id}/refine`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(apiKey ? { "X-Api-Key": apiKey } : {}),
+          },
           body: JSON.stringify({ instruction: refineInput.trim() }),
         }
       );

@@ -1397,9 +1397,17 @@ function ComponentsTab({
     setGeneratingFor(component.name);
     setGenerationError(null);
     try {
+      // BYOK header — if the user has their own Anthropic key in Settings,
+      // the server will use it and skip credit deduction. Without it the
+      // user's hosted quota is charged.
+      const { getStoredApiKey } = await import("@/lib/hooks/use-api-key");
+      const apiKey = getStoredApiKey();
       const res = await fetch("/api/components/generate-from-figma-component", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(apiKey ? { "X-Api-Key": apiKey } : {}),
+        },
         body: JSON.stringify({ orgId, projectId, componentName: component.name }),
       });
       if (!res.ok) {
