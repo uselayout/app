@@ -11,6 +11,7 @@ export type PlatformEventType =
   | "component.saved"
   | "component.copied"
   | "component.generated_from_figma"
+  | "component.refined"
   | "export.bundle"
   | "export.pull"
   | "mcp.tool_call"

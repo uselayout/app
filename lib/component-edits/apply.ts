@@ -60,53 +60,32 @@ export function applyTokenSwap(
   newVar: string
 ): string {
   if (oldVar === newVar) return code;
-
-  // Match `var(--old)` AND `var(--old, fallback)` — capture the trailing
-  // close-paren or comma so we can preserve any fallback expression after.
-  // Also match a few common case-variants of the old name (lowercase /
-  // capitalised) since the AI sometimes emits a different case than what
-  // the project's actual CSS variable uses.
-  const candidates = uniqueCases(oldVar);
+  const re = new RegExp(`var\\(${escapeRegex(oldVar)}(\\s*[,)])`, "g");
 
   // Element-scoped path
   const range = findOpenTagRange(code, elementId);
   if (range) {
-    for (const candidate of candidates) {
-      const re = new RegExp(`var\\(${escapeRegex(candidate)}(\\s*[,)])`, "g");
-      if (re.test(range.tag)) {
-        re.lastIndex = 0;
-        const replaced = range.tag.replace(re, `var(${newVar}$1`);
-        return code.slice(0, range.start) + replaced + code.slice(range.end);
-      }
+    re.lastIndex = 0;
+    if (re.test(range.tag)) {
+      re.lastIndex = 0;
+      const replaced = range.tag.replace(re, `var(${newVar}$1`);
+      return code.slice(0, range.start) + replaced + code.slice(range.end);
     }
   }
 
   // Whole-file fallback for AI generations that use const/ternary indirection
-  for (const candidate of candidates) {
-    const re = new RegExp(`var\\(${escapeRegex(candidate)}(\\s*[,)])`, "g");
-    if (re.test(code)) {
-      re.lastIndex = 0;
-      if (typeof console !== "undefined" && typeof console.warn === "function") {
-        console.warn(
-          `[applyTokenSwap] '${oldVar}' wasn't inline on data-edit-id="${elementId}"; falling back to whole-file replace. Other elements sharing this token will also update. Regenerate this component to switch back to element-scoped edits.`
-        );
-      }
-      return code.replace(re, `var(${newVar}$1`);
+  re.lastIndex = 0;
+  if (re.test(code)) {
+    re.lastIndex = 0;
+    if (typeof console !== "undefined" && typeof console.warn === "function") {
+      console.warn(
+        `[applyTokenSwap] '${oldVar}' wasn't inline on data-edit-id="${elementId}"; falling back to whole-file replace. Other elements sharing this token will also update. Regenerate this component to switch back to element-scoped edits.`
+      );
     }
+    return code.replace(re, `var(${newVar}$1`);
   }
 
   return code;
-}
-
-/**
- * Some AI outputs capitalise CSS variable names ("--Brand-400") while the
- * actual project CSS uses lowercase ("--brand-400"). The schema may also
- * disagree with the TSX. Try the original first, then a few common
- * case variants so a token swap doesn't silently no-op on case drift.
- */
-function uniqueCases(varName: string): string[] {
-  const out = new Set<string>([varName, varName.toLowerCase(), varName.toUpperCase()]);
-  return Array.from(out);
 }
 
 /**

@@ -44,6 +44,8 @@ export function ComponentInspectorDrawer({
   onSaveEdits,
   onSaveAsNewVariant,
 }: Props) {
+  const [editorDirty, setEditorDirty] = useState(false);
+
   if (!component) return null;
 
   const figmaUrl = component.figmaUrl ?? figmaFileUrl;
@@ -51,6 +53,22 @@ export function ComponentInspectorDrawer({
   const variantAxes = component.variantGroupProperties
     ? Object.entries(component.variantGroupProperties)
     : [];
+
+  // Confirm before destroying unsaved edits via Regenerate.
+  const guardedGenerateCode = onGenerateCode
+    ? (c: ExtractedComponent) => {
+        if (
+          editorDirty &&
+          typeof window !== "undefined" &&
+          !window.confirm(
+            "You have unsaved edits in this component. Regenerating will replace them with a fresh AI generation. Continue?"
+          )
+        ) {
+          return;
+        }
+        onGenerateCode(c);
+      }
+    : undefined;
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -91,6 +109,7 @@ export function ComponentInspectorDrawer({
                       ? (next) => onSaveAsNewVariant(linkedComponent.id, next)
                       : undefined
                   }
+                  onDirtyChange={setEditorDirty}
                 />
                 {generationError ? (
                   <ErrorBanner message={generationError} />
@@ -124,7 +143,7 @@ export function ComponentInspectorDrawer({
             component={component}
             linkedComponent={linkedComponent}
             generating={generating}
-            onGenerateCode={onGenerateCode}
+            onGenerateCode={guardedGenerateCode}
           />
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>

@@ -33,22 +33,34 @@ const SEMANTIC_NAME_FRAGMENTS = [
  * (more options ≠ better generations — the model picks worse defaults
  * when buried in primitives).
  */
-function filterRelevantTokens(
+export function filterRelevantTokens(
   component: ExtractedComponent,
-  allTokens: ExtractedToken[]
+  allTokens: ExtractedToken[],
+  pinnedTokenVars?: string[]
 ): ExtractedToken[] {
-  if (allTokens.length <= TOKEN_CONTEXT_CAP) return allTokens;
+  // Pinned tokens are always kept first — they're referenced by existing
+  // components we want this generation to compose against, so the AI MUST
+  // see them in the prompt's token list regardless of the relevance cap.
+  const pinSet = new Set(pinnedTokenVars ?? []);
+  const pinned: ExtractedToken[] = [];
+  const rest: ExtractedToken[] = [];
+  for (const t of allTokens) {
+    const varName = t.cssVariable ?? `--${t.name}`;
+    if (pinSet.has(varName)) pinned.push(t);
+    else rest.push(t);
+  }
+
+  if (allTokens.length <= TOKEN_CONTEXT_CAP) {
+    // Below the cap — still return pinned-first so the AI sees them at the
+    // top of the list (slight ranking signal).
+    return [...pinned, ...rest];
+  }
 
   const desc = (component.description ?? "").toLowerCase();
   const propKeys = component.properties ? Object.keys(component.properties).join(" ").toLowerCase() : "";
   const blob = `${desc} ${propKeys}`;
 
-  const include: Set<TokenType> = new Set(["color", "spacing", "radius"]);
-  if (/text|label|title|heading|caption|body|paragraph|copy/.test(blob)) {
-    include.add("typography");
-  } else {
-    include.add("typography");
-  }
+  const include: Set<TokenType> = new Set(["color", "spacing", "radius", "typography"]);
   if (/shadow|elevation|elevated|raised|float|depth/.test(blob)) {
     include.add("effect");
   }
@@ -56,8 +68,9 @@ function filterRelevantTokens(
     include.add("motion");
   }
 
-  const candidates = allTokens.filter((t) => include.has(t.type));
-  if (candidates.length <= TOKEN_CONTEXT_CAP) return candidates;
+  const candidates = rest.filter((t) => include.has(t.type));
+  const budget = Math.max(0, TOKEN_CONTEXT_CAP - pinned.length);
+  if (candidates.length <= budget) return [...pinned, ...candidates];
 
   // Two-pass: prefer semantically-named tokens (primary, surface, on-*, etc.)
   // then fill remaining slots in document order.
@@ -68,7 +81,7 @@ function filterRelevantTokens(
   const semantic = candidates.filter(isSemantic);
   const primitive = candidates.filter((t) => !isSemantic(t));
 
-  const result = semantic.slice(0, TOKEN_CONTEXT_CAP);
+  const result = [...pinned, ...semantic.slice(0, budget)];
   for (const t of primitive) {
     if (result.length >= TOKEN_CONTEXT_CAP) break;
     result.push(t);
@@ -182,7 +195,32 @@ DESIGN FIDELITY:
 - Match the Figma component's structure, hierarchy, and visual character as closely as the reference image and metadata allow.
 - If a reference image is attached, treat it as the source of truth for layout, proportions, and visual weight.
 - If the imported component has variant axes (e.g. Size, State), reflect them as TSX props.
-- If unsure about a value, prefer a token that exists in the project's design system over a hardcoded value.`;
+- If unsure about a value, prefer a token that exists in the project's design system over a hardcoded value.
+
+ACCESSIBILITY BASELINE (always apply):
+- Interactive elements (buttons, links, inputs, selects, switches, checkboxes, etc.) must use the correct semantic tag — \`<button>\` for actions, \`<a>\` for navigation, \`<input>\` for fields. Never \`<div onClick>\`.
+- Icon-only buttons MUST have an \`aria-label\` describing the action (e.g. close, expand, remove).
+- Inputs MUST be associated with a \`<label>\` or carry an \`aria-label\`. Helper / error text MUST be linked via \`aria-describedby\`. Error state MUST set \`aria-invalid\`.
+- Modals / dialogs use \`role="dialog"\` (or the native \`<dialog>\` element), \`aria-modal="true"\`, and \`aria-labelledby\` pointing at the title id.
+- Toggles / switches use \`role="switch"\` with \`aria-checked\`.
+- Tabs use \`role="tablist"\` / \`tab\` / \`tabpanel\` with \`aria-selected\` and \`tabIndex\` to support arrow-key roving focus.
+- Tables use \`<table>\` / \`<thead>\` / \`<th scope="col">\`. Status toasts use \`role="status"\` (polite) or \`role="alert"\` (assertive) depending on severity.
+- Focus state must be visible. Use a token-based ring (e.g. \`outline: "2px solid var(--color-outline-focus)"\` or a \`box-shadow\` ring) — never \`outline: none\` without a replacement. If the project has a focus-ring colour token, use it; otherwise use an existing accent token.
+- Touch targets for icon buttons should be at least 32–40px on a side via padding, even when the icon glyph itself is smaller.
+
+ANIMATION GUIDANCE:
+- Do NOT import or use framer-motion, lucide-react, or any third-party motion library. The preview iframe doesn't have them and they will error.
+- Animate with inline CSS only: \`transition: "background 0.15s, opacity 0.15s"\` for hover/state changes; CSS keyframes for skeletons/spinners.
+- Skeleton loaders: use a CSS \`@keyframes shimmer\` injected inline via \`style={{ animation: "shimmer 1.5s ease-in-out infinite" }}\` and a wrapper \`<style>\` element. Wrap motion in \`@media (prefers-reduced-motion: reduce)\` so it disables for users who opt out.
+- Toggle thumb-slide: use \`transition: transform 0.15s ease\` plus \`transform: translateX(...)\` keyed off the State variant. Don't use \`transition: all\`.
+
+PORTAL-REQUIRING COMPONENTS (modals, dropdowns, tooltips, popovers, toasts):
+- The preview iframe is a single document with no portal root. Rendering a modal at \`document.body\` won't escape any scroll/overflow parents.
+- For these components, render them inline at the top of the component (still inside the data-edit-id="root" element) with an overlay sibling. The preview will show the modal/dropdown/tooltip open by default — that's the intended behaviour for the Layout inspector (it visualises the OPEN state of the component, not the closed trigger).
+- For dialogs that depend on focus trap / Esc / return-focus behaviour, set the right ARIA but don't write the JS — note that the user's production codebase will wire those handlers when they import the component. The inline preview just renders the visual.
+
+NO TAILWIND / CSS CLASSES:
+- The preview iframe loads Tailwind CDN for general utilities, but mixing Tailwind with the inline-style approach causes confusion. Use ONLY \`style={{ ... }}\` for ALL visual properties. Never \`className\` for styling. Class names are only acceptable when the project's existing components use them via an established pattern (rare).`;
 
 export interface ExistingComponentReference {
   name: string;
@@ -213,6 +251,13 @@ export interface GenerateComponentInput {
    * a slightly-different visual treatment.
    */
   existingComponents?: ExistingComponentReference[];
+  /**
+   * Token CSS variable names (e.g. `--brand-700`) that must always be
+   * included in the prompt's token list, regardless of the relevance
+   * filter. Used to guarantee tokens referenced by existing components
+   * survive context bounding so composition stays consistent.
+   */
+  pinnedTokenVars?: string[];
   /** Override the default model. */
   modelId?: string;
   /** Anthropic API key — overrides env. */
@@ -252,7 +297,11 @@ export async function generateComponent(
   const modelMax = await getModelMaxOutputTokens(modelId);
   const maxTokens = Math.min(modelMax, COMPONENT_OUTPUT_CAP);
 
-  const filteredTokens = filterRelevantTokens(input.component, input.tokens);
+  const filteredTokens = filterRelevantTokens(
+    input.component,
+    input.tokens,
+    input.pinnedTokenVars
+  );
   const tokenList = renderTokenListForPrompt(filteredTokens);
   const componentMeta = renderComponentMeta(input.component);
   const existingComponentsBlock = renderExistingComponents(input.existingComponents ?? []);
@@ -304,7 +353,7 @@ controls in Layout, so prefer rich token coverage on every visible element.`;
     throw new ComponentGenerationError(parsed.error, rawModelOutput);
   }
 
-  const validation = validateEditSchema(parsed.code, parsed.editSchema);
+  const validation = validateEditSchema(parsed.code, parsed.editSchema, input.tokens);
   if (!validation.ok) {
     throw new ComponentGenerationError(validation.error, rawModelOutput);
   }
@@ -314,7 +363,7 @@ controls in Layout, so prefer rich token coverage on every visible element.`;
 
 // ---------- Helpers ----------
 
-function renderTokenListForPrompt(tokens: ExtractedToken[]): string {
+export function renderTokenListForPrompt(tokens: ExtractedToken[]): string {
   if (tokens.length === 0) return "(no tokens — use neutral defaults)";
   const grouped: Record<string, ExtractedToken[]> = {};
   for (const t of tokens) {
@@ -408,7 +457,7 @@ interface ParseFailure {
 }
 type ParseResult = ParseSuccess | ParseFailure;
 
-function parseTsxAndSchema(text: string): ParseResult {
+export function parseTsxAndSchema(text: string): ParseResult {
   const tsxMatch = text.match(/```tsx\s*\n([\s\S]*?)```/);
   if (!tsxMatch) {
     return { ok: false, error: "No tsx code block found in model output" };
@@ -444,11 +493,24 @@ interface ValidateFailure { ok: false; error: string; }
 type ValidateResult = ValidateSuccess | ValidateFailure;
 
 /**
- * Pull every data-edit-id="..." from the TSX and confirm it matches the schema
- * 1:1. Catches the most common AI failure mode (drifting ids between TSX and
- * JSON) before we save anything.
+ * Validate the AI's output. Catches the most common generation failure modes
+ * before we save:
+ *
+ * 1. data-edit-id markers in TSX must 1:1 match schema element ids
+ * 2. Every variant axis in schema.variants must appear as a destructured
+ *    parameter in the function signature (otherwise the form's variant
+ *    toggle silently does nothing — the prop never reaches the renderer).
+ * 3. Every token-typed schema prop's `value` must reference a real token
+ *    in the project (otherwise the picker shows nothing and the iframe
+ *    renders an unresolved var()).
+ * 4. Text-typed schema props can't target an element whose JSX body
+ *    contains nested children — applyTextChange would wipe them.
  */
-function validateEditSchema(code: string, schema: EditSchema): ValidateResult {
+export function validateEditSchema(
+  code: string,
+  schema: EditSchema,
+  projectTokens: ExtractedToken[]
+): ValidateResult {
   const tsxIds = new Set(
     [...code.matchAll(/data-edit-id\s*=\s*["']([^"']+)["']/g)].map((m) => m[1])
   );
@@ -470,5 +532,89 @@ function validateEditSchema(code: string, schema: EditSchema): ValidateResult {
   if (schema.elements.length === 0) {
     return { ok: false, error: "Schema has zero editable elements" };
   }
+
+  // Variant axes must be in the function signature
+  if (schema.variants && Object.keys(schema.variants).length > 0) {
+    const sigMatch = code.match(/function\s+\w+\s*\(\s*\{([^}]*)\}/);
+    const params = sigMatch
+      ? new Set(
+          sigMatch[1]
+            .split(",")
+            .map((s) => s.trim().split(/[=:\s]/)[0])
+            .filter(Boolean)
+        )
+      : new Set<string>();
+    const missingAxes = Object.keys(schema.variants).filter((axis) => !params.has(axis));
+    if (missingAxes.length > 0) {
+      return {
+        ok: false,
+        error: `Variant axes in schema not destructured in function signature (would render no-op on toggle): ${missingAxes.join(", ")}. Function signature parameters: ${sigMatch?.[1].trim() ?? "<not found>"}`,
+      };
+    }
+  }
+
+  // Token values must reference real tokens of the right category
+  const projectVars = new Map<string, ExtractedToken>();
+  for (const t of projectTokens) {
+    const varName = t.cssVariable ?? `--${t.name}`;
+    projectVars.set(varName, t);
+  }
+  const typeToCategory: Record<string, "color" | "spacing" | "radius" | "typography" | "effect"> = {
+    "color-token": "color",
+    "spacing-token": "spacing",
+    "radius-token": "radius",
+    "type-token": "typography",
+    "shadow-token": "effect",
+  };
+  for (const el of schema.elements) {
+    for (const prop of el.props) {
+      if (prop.type in typeToCategory) {
+        const expected = typeToCategory[prop.type];
+        const tokenName = (prop as { value: string }).value;
+        const token = projectVars.get(tokenName);
+        if (!token) {
+          return {
+            ok: false,
+            error: `Schema references unknown token "${tokenName}" on element "${el.id}" / prop "${prop.key}". Token must exist in the project's ${expected} tokens.`,
+          };
+        }
+        if (token.type !== expected) {
+          return {
+            ok: false,
+            error: `Schema marks "${tokenName}" as ${prop.type} but the project token is type "${token.type}". Pick a token of the right category.`,
+          };
+        }
+      }
+    }
+  }
+
+  // Text props can't target elements with nested children
+  for (const el of schema.elements) {
+    const hasTextProp = el.props.some((p) => p.type === "text" && p.key === "content");
+    if (!hasTextProp) continue;
+    const openTagPattern = new RegExp(
+      `<(\\w+)\\b[^>]*?\\bdata-edit-id\\s*=\\s*["']${escapeRegexLocal(el.id)}["'][^>]*?(\\/?)>`,
+      "s"
+    );
+    const m = code.match(openTagPattern);
+    if (!m || m.index === undefined) continue;
+    const tagName = m[1];
+    if (m[2] === "/") continue; // self-closing, no children possible
+    const tail = code.slice(m.index + m[0].length);
+    const closeMatch = tail.match(new RegExp(`</${tagName}\\s*>`));
+    if (!closeMatch || closeMatch.index === undefined) continue;
+    const inner = tail.slice(0, closeMatch.index);
+    if (/<[^>]/.test(inner)) {
+      return {
+        ok: false,
+        error: `Element "${el.id}" has a text content prop in schema but its JSX contains nested children (<${tagName}>...). Text edit would wipe them. Either move text into a leaf child with its own data-edit-id, or remove the content prop from this element.`,
+      };
+    }
+  }
+
   return { ok: true };
+}
+
+function escapeRegexLocal(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

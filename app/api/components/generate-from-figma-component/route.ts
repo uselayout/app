@@ -123,6 +123,16 @@ export async function POST(request: Request) {
         variantAxes: c.editSchema?.variants,
       }));
 
+    // Pin any token referenced by an existing component so the token-list
+    // filter never drops them. Composing against an existing Button is
+    // useless if the Button's `--brand-700` got filtered out for the new
+    // component's token budget.
+    const pinnedTokenVars = new Set<string>();
+    for (const ec of existingComponents) {
+      const matches = ec.codeSnippet.matchAll(/var\(\s*(--[a-zA-Z0-9_-]+)/g);
+      for (const m of matches) pinnedTokenVars.add(m[1]);
+    }
+
     phase = "generate";
     let result;
     try {
@@ -132,6 +142,7 @@ export async function POST(request: Request) {
         layoutMdExcerpt,
         imageData: imageData ?? undefined,
         existingComponents,
+        pinnedTokenVars: Array.from(pinnedTokenVars),
       });
     } catch (err) {
       if (err instanceof ComponentGenerationError) {

@@ -47,6 +47,23 @@ export function ComponentPreview({ projectId, code, variantValues, width, classN
     [extractionData?.cssVariables, extractionData?.tokens]
   );
 
+  // Listen for runtime errors postMessage'd from inside the preview iframe.
+  // Without this the iframe's window.onerror handler bubbles up its message
+  // via window.parent.postMessage and we silently drop it — the user sees a
+  // blank preview with no idea what went wrong (typical case: Claude wrote
+  // a Tailwind className or an unsupported hook).
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      const data = event.data;
+      if (data && data.type === "layout-preview-error" && typeof data.error === "string") {
+        setError(data.error);
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     setPending(true);

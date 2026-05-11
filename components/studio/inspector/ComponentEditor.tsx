@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, RotateCcw } from "lucide-react";
 import type { Component, EditableElement, EditSchema, TokenProp } from "@/lib/types/component";
 import type { ExtractedToken, TokenType } from "@/lib/types";
 import {
@@ -23,6 +23,8 @@ interface Props {
   onSave?: (next: { code: string; editSchema: EditSchema }) => Promise<void> | void;
   /** Fired when the user clicks Save as new variant. Phase 4 wires this. */
   onSaveAsNew?: (next: { code: string; editSchema: EditSchema }) => Promise<void> | void;
+  /** Reports unsaved-edit state up so the drawer can warn before Regenerate. */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 /**
@@ -32,7 +34,7 @@ interface Props {
  * changes are NOT mutations of the TSX — they're passed to the preview as
  * props instead, since the generated component is a function of those props.
  */
-export function ComponentEditor({ projectId, linkedComponent, onSave, onSaveAsNew }: Props) {
+export function ComponentEditor({ projectId, linkedComponent, onSave, onSaveAsNew, onDirtyChange }: Props) {
   const initialSchema = linkedComponent.editSchema;
   const initialCode = linkedComponent.code;
 
@@ -43,6 +45,18 @@ export function ComponentEditor({ projectId, linkedComponent, onSave, onSaveAsNe
   const [variantValues, setVariantValues] = useState<Record<string, string>>(
     () => (initialSchema ? defaultVariantValues(initialSchema) : {})
   );
+
+  // Reset local state when the underlying saved component changes (e.g.
+  // after a Regenerate or after the drawer switches to a different
+  // component). Without this, useState's initialiser only runs on mount
+  // and the old code/schema would linger over the new linkedComponent.
+  useEffect(() => {
+    setSchema(linkedComponent.editSchema);
+    setCode(linkedComponent.code);
+    setVariantValues(
+      linkedComponent.editSchema ? defaultVariantValues(linkedComponent.editSchema) : {}
+    );
+  }, [linkedComponent.id, linkedComponent.code, linkedComponent.editSchema]);
 
   // Select extractionData by reference (stable across renders unless the
   // project itself changes), then derive the flattened tokens via useMemo.
@@ -64,12 +78,20 @@ export function ComponentEditor({ projectId, linkedComponent, onSave, onSaveAsNe
     ];
   }, [extractionData]);
 
-  const dirty = code !== initialCode;
+  const dirty = code !== linkedComponent.code;
+
+  // Report dirty state up so the drawer can warn before a destructive
+  // action like Regenerate.
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
 
   const reset = () => {
-    setSchema(initialSchema);
-    setCode(initialCode);
-    setVariantValues(initialSchema ? defaultVariantValues(initialSchema) : {});
+    setSchema(linkedComponent.editSchema);
+    setCode(linkedComponent.code);
+    setVariantValues(
+      linkedComponent.editSchema ? defaultVariantValues(linkedComponent.editSchema) : {}
+    );
   };
 
   if (!schema) {
@@ -98,6 +120,43 @@ export function ComponentEditor({ projectId, linkedComponent, onSave, onSaveAsNe
 
   const handleVariantChange = (axis: string, value: string) => {
     setVariantValues((v) => ({ ...v, [axis]: value }));
+  };
+
+  // Refine via natural-language chat — for "make the corners smaller" /
+  // "use the brand colour for the title" style fixes that the form pickers
+  // can't reach (because they're not in the schema, or because the change
+  // crosses multiple props). Server returns updated TSX + schema; user
+  // previews and then Saves via the usual flow.
+  const [refineInput, setRefineInput] = useState("");
+  const [refining, setRefining] = useState(false);
+  const [refineError, setRefineError] = useState<string | null>(null);
+  const submitRefine = async () => {
+    if (!refineInput.trim() || refining) return;
+    setRefining(true);
+    setRefineError(null);
+    try {
+      const res = await fetch(
+        `/api/organizations/${linkedComponent.orgId}/components/${linkedComponent.id}/refine`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ instruction: refineInput.trim() }),
+        }
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Refine failed (${res.status})`);
+      }
+      const result = (await res.json()) as { code: string; editSchema: EditSchema };
+      setCode(result.code);
+      setSchema(result.editSchema);
+      setVariantValues(defaultVariantValues(result.editSchema));
+      setRefineInput("");
+    } catch (err) {
+      setRefineError(err instanceof Error ? err.message : "Refine failed");
+    } finally {
+      setRefining(false);
+    }
   };
 
   return (
@@ -136,6 +195,48 @@ export function ComponentEditor({ projectId, linkedComponent, onSave, onSaveAsNe
           onTextChange={handleTextChange}
         />
       ))}
+
+      {/*
+        Natural-language refine — for things the form pickers can't reach.
+        Examples: "make the corners smaller", "use the brand colour for the
+        title", "remove the icon". Server returns updated TSX + schema and
+        the user reviews via the preview before saving.
+      */}
+      <Section title="Refine with AI">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={refineInput}
+              onChange={(e) => setRefineInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  submitRefine();
+                }
+              }}
+              disabled={refining}
+              placeholder="e.g. make the corners smaller, use the brand colour for the title"
+              className="flex-1 rounded border border-[var(--studio-border)] bg-[var(--bg-app)] px-2 py-1.5 text-[11px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--studio-border-focus)] disabled:opacity-50"
+            />
+            <button
+              type="button"
+              onClick={submitRefine}
+              disabled={!refineInput.trim() || refining}
+              className="inline-flex items-center gap-1.5 rounded bg-[var(--studio-accent)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)] disabled:opacity-40"
+            >
+              {refining ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+              {refining ? "Refining…" : "Apply"}
+            </button>
+          </div>
+          {refineError ? (
+            <p className="text-[10px] text-[var(--color-error,#b3261e)]">{refineError}</p>
+          ) : null}
+          <p className="text-[10px] text-[var(--text-muted)]">
+            Returns a new draft you can preview, then Save or Reset. Doesn&rsquo;t auto-commit.
+          </p>
+        </div>
+      </Section>
 
       <div className="flex items-center justify-between gap-2 border-t border-[var(--studio-border)] px-5 py-3">
         <button
