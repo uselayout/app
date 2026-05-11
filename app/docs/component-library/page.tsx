@@ -40,12 +40,24 @@ export default function ComponentLibraryPage() {
             <tbody className="divide-y divide-gray-100">
               {[
                 [
+                  "Generate from imported Figma",
+                  "Click any imported component in the Studio Source Panel and choose Generate code. Claude produces canonical TSX + a token-driven edit schema using your design system.",
+                ],
+                [
                   "Save from Explorer",
                   "Click \"Add to Library\" on any Explorer variant to save it as a reusable component or full page.",
                 ],
                 [
+                  "Form editor with live preview",
+                  "Generated components open in an inspector drawer with token pickers, variant toggles, and a debounced live preview. Edits are deterministic — no AI roundtrip per change.",
+                ],
+                [
                   "Component / Page types",
                   "Choose whether a saved variant is a component (reusable UI element) or a full page design.",
+                ],
+                [
+                  "Auto-sync to layout.md",
+                  "Saving a generated component regenerates Section 5 of layout.md with the canonical TSX, so Cursor / CLI / MCP consumers always see the latest version.",
                 ],
                 [
                   "Metadata",
@@ -140,6 +152,53 @@ export default function ComponentLibraryPage() {
           Saving from the Explorer is the fastest way to build your library.
           Generate multiple variants, pick the best ones, and save them with
           meaningful categories and tags.
+        </Callout>
+      </section>
+
+      {/* Generate from imported Figma component */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          Generate from an imported Figma component
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          After pushing a design system from the{" "}
+          <Link href="/docs/figma-plugin" className="text-gray-900 hover:underline">
+            Figma plugin
+          </Link>
+          , every imported component appears in the Studio Source Panel&apos;s
+          Components tab with a thumbnail. Click a row to open the inspector
+          drawer, then click <strong>Generate code from this component</strong>.
+        </p>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Claude produces canonical TSX using only your design system tokens
+          and a JSON edit schema that powers the form editor. The result is
+          saved as a Component in your library, linked by name to the
+          imported component, with{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            source: &quot;figma&quot;
+          </code>
+          .
+        </p>
+        <p className="text-base text-gray-600 leading-relaxed">
+          From the form editor you can swap any token, toggle variants
+          (Size / State / Variant etc.), edit text content, and watch the
+          live preview update in &lt;100ms. Most edits are deterministic
+          string mutations on the saved TSX — only Regenerate calls the AI
+          again. Saving auto-syncs Section 5 of layout.md so your downstream
+          coding agents (Cursor, Claude Code) see the latest canonical
+          implementation.
+        </p>
+
+        <Callout type="info">
+          When you generate a component that visually contains another
+          component you&apos;ve already saved (e.g. a Notification with a
+          Button inside), the AI is shown your existing components and is
+          asked to match their tokens, structure, and variant prop names.
+          Your exported codebase will then{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            import {"{"} Button {"}"}
+          </code>{" "}
+          rather than re-implement a slightly-different one.
         </Callout>
       </section>
 

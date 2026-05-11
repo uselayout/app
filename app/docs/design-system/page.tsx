@@ -246,6 +246,59 @@ export default function DesignSystemHubPage() {
         </p>
       </section>
 
+      {/* Section 5 — Components */}
+      <section className="space-y-5">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          Section 5 &mdash; canonical Components
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Section 5 of layout.md is auto-populated from the saved components
+          in your project. Every time you save changes in the{" "}
+          <Link href="/docs/studio" className="text-gray-900 hover:underline">
+            inspector drawer&apos;s form editor
+          </Link>
+          , Layout regenerates the section with one{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            ### &lt;ComponentName&gt;
+          </code>{" "}
+          block per imported component &mdash; description, variant axes, and
+          a fenced{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">tsx</code>{" "}
+          block containing the canonical implementation.
+        </p>
+        <p className="text-base text-gray-600 leading-relaxed">
+          When you export the bundle, the same content is extracted verbatim
+          into{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            .cursor/rules/&lt;name&gt;-components.mdc
+          </code>{" "}
+          with{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            globs: [&quot;**/*.tsx&quot;]
+          </code>
+          , so Cursor auto-attaches the components rule whenever the user
+          edits a TSX file. Claude Code reads it via{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            CLAUDE.md
+          </code>
+          . MCP consumers get the same TSX from{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            get_component
+          </code>
+          .
+        </p>
+        <Callout type="info">
+          If you haven&apos;t generated code for a component yet, Section 5
+          shows the placeholder line{" "}
+          <em>
+            &quot;No canonical TSX yet &mdash; click this component in the
+            Studio inspector and choose Generate code.&quot;
+          </em>{" "}
+          Until then the component is metadata-only and downstream agents
+          will improvise.
+        </Callout>
+      </section>
+
       {/* Prev / Next */}
       <nav className="flex items-center justify-between border-t border-gray-200 pt-8">
         <div>

@@ -204,6 +204,76 @@ export default function StudioPage() {
               source (Figma, Code, or both), import path, and Storybook story
               count if detected. Icons are automatically filtered from the list.
             </p>
+            <p className="text-base text-gray-600 leading-relaxed">
+              <strong className="font-semibold text-[#0a0a0a]">
+                Click any component row
+              </strong>{" "}
+              to open the Component Inspector drawer (see below) — the
+              thumbnail, variant grid, and form editor for that component.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 p-5 space-y-3">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              Component Inspector
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              A right-side drawer that opens when you click any imported
+              Figma component. Shows the parent thumbnail, the variant grid
+              (representative sample of up to 24 variants spanning all
+              property axes), variant axis labels, properties, and a deep
+              link back to the source in Figma.
+            </p>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Click{" "}
+              <strong className="font-semibold text-[#0a0a0a]">
+                Generate code from this component
+              </strong>{" "}
+              and Layout calls Claude with your project&apos;s design
+              tokens and the component thumbnail to produce a canonical
+              TSX implementation plus a structured edit schema. The result
+              is saved as a project Component, linked to the imported
+              component name.
+            </p>
+            <p className="text-base text-gray-600 leading-relaxed">
+              The inspector then switches to the{" "}
+              <strong className="font-semibold text-[#0a0a0a]">
+                form editor
+              </strong>
+              : a live preview on top with token pickers, variant toggles,
+              text inputs, and Save/Reset controls underneath. Token
+              pickers only show your design system tokens, so off-brand
+              values are structurally impossible. Variant toggles
+              re-render the component with different prop values. Every
+              change updates the preview within a couple hundred
+              milliseconds; nothing is sent back to the AI for routine
+              edits.
+            </p>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Click{" "}
+              <strong className="font-semibold text-[#0a0a0a]">
+                Save changes
+              </strong>{" "}
+              and Layout regenerates Section 5 of your{" "}
+              <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+                layout.md
+              </code>{" "}
+              with the new canonical TSX, so any subsequent export bundle
+              or MCP{" "}
+              <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+                get_component
+              </code>{" "}
+              call returns your edited version. When you regenerate another
+              component that visually contains one you&apos;ve already
+              saved (e.g. a Notification that uses your Button), the AI is
+              shown the existing components and instructed to reuse the
+              same tokens and variant prop names so your downstream codebase
+              can{" "}
+              <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+                import {"{"} Button {"}"}
+              </code>{" "}
+              rather than reinvent.
+            </p>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">

@@ -40,7 +40,7 @@ export default function FigmaPluginPage() {
           Download Figma Plugin (Alpha)
         </a>
         <p className="text-sm text-gray-500">
-          v0.2.12 &middot; Requires Figma desktop app
+          v0.4.4 &middot; Requires Figma desktop app
         </p>
       </section>
 
@@ -86,7 +86,16 @@ export default function FigmaPluginPage() {
                   "Knows what designer is looking at",
                   "No selection awareness",
                 ],
-                ["Speed", "Instant extraction", "~30 seconds"],
+                [
+                  "Speed",
+                  "Seconds for tokens; minutes for huge libraries (with progress bar + cancel)",
+                  "~30 seconds",
+                ],
+                [
+                  "Push scope",
+                  "Current page or full document (component thumbnails per variant)",
+                  "Whole file in one pass",
+                ],
               ].map(([feature, plugin, web]) => (
                 <tr key={feature} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-[#0a0a0a] whitespace-nowrap">
@@ -106,7 +115,7 @@ export default function FigmaPluginPage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Plugin Panels</h2>
 
         <div className="space-y-4">
-          <div className="rounded-xl border border-gray-200 p-5 space-y-2">
+          <div className="rounded-xl border border-gray-200 p-5 space-y-3">
             <h3 className="text-lg font-semibold text-[#0a0a0a]">Export</h3>
             <p className="text-base text-gray-600 leading-relaxed">
               One-click AI Kit export. Extracts all design tokens (colours,
@@ -119,6 +128,31 @@ export default function FigmaPluginPage() {
               token, so light and dark (or any other modes) flow through to
               Layout as separate mode-tagged tokens instead of collapsing
               into one.
+            </p>
+            <p className="text-base text-gray-600 leading-relaxed">
+              For larger libraries the Export panel is built for control:
+              before extracting, a count preview shows how many components
+              and variants are on the current page vs. across the whole
+              file, and you can pick {" "}
+              <strong className="font-semibold text-[#0a0a0a]">
+                current page only
+              </strong>{" "}
+              (recommended) or{" "}
+              <strong className="font-semibold text-[#0a0a0a]">all pages</strong>.
+              A determinate progress bar shows the active stage and counter
+              (Capturing thumbnails, Uploading thumbnails, Saving to Layout)
+              and a Cancel button is available the whole time. The page-count
+              preview keeps updating live as you switch pages in Figma, so
+              you can re-extract a different page without closing the
+              plugin.
+            </p>
+            <p className="text-base text-gray-600 leading-relaxed">
+              For component-set pushes the plugin captures a PNG thumbnail
+              for the parent component plus up to 24 representative child
+              variants (sampled to maximise property-axis coverage rather
+              than the first 24 in document order). Layout uses these
+              thumbnails in the inspector drawer and as the visual reference
+              the AI sees when generating code.
             </p>
           </div>
 
@@ -381,6 +415,18 @@ export default function FigmaPluginPage() {
           <li>
             Push to Canvas lets designers trigger AI variant generation without
             leaving Figma
+          </li>
+          <li>
+            For Material 3-class libraries (50+ component sets, hundreds of
+            variants), push one page at a time. Current page is the
+            default scope; the progress bar tells you exactly how long the
+            push will take.
+          </li>
+          <li>
+            Partial pushes are additive. Pushing page A then page B leaves
+            both pages&apos; components in your Layout project. Pushing &quot;all
+            pages&quot; replaces the inventory authoritatively (use this to
+            drop components you&apos;ve removed from Figma).
           </li>
           <li>
             The plugin stores your API key in Figma&apos;s client storage. It
