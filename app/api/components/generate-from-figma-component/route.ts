@@ -96,9 +96,13 @@ export async function POST(request: Request) {
 
     // Load other generated components on this project so the model can
     // compose against them instead of inlining duplicate buttons / icons /
-    // etc. with mismatched tokens.
+    // etc. with mismatched tokens. Dedupe by name and keep only the latest
+    // version of each — every regenerate creates a new row, and feeding the
+    // model five different historical Buttons just wastes context and
+    // confuses it about which Button is current.
     phase = "load-existing-components";
     const allSaved = await getComponentsByProject(orgId, projectId);
+    const seenName = new Set<string>();
     const existingComponents = allSaved
       .filter(
         (c) =>
@@ -107,6 +111,11 @@ export async function POST(request: Request) {
           c.name !== componentName
       )
       .sort((a, b) => (b.updatedAt > a.updatedAt ? 1 : -1))
+      .filter((c) => {
+        if (seenName.has(c.name)) return false;
+        seenName.add(c.name);
+        return true;
+      })
       .slice(0, 8)
       .map((c) => ({
         name: c.name,
