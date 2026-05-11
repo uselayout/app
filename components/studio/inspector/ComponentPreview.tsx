@@ -76,6 +76,7 @@ export function ComponentPreview({ projectId, code, variantValues, width, classN
         const srcdoc = buildSrcdoc(js, componentName, {
           cssTokenBlock,
           mountProps: variantValues,
+          centerContent: true,
         });
         if (iframeRef.current) {
           iframeRef.current.srcdoc = srcdoc;

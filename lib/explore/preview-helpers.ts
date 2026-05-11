@@ -168,6 +168,13 @@ export interface BuildSrcdocOptions {
    * JSON-serialisable values only.
    */
   mountProps?: Record<string, string | number | boolean>;
+  /**
+   * Center the rendered component horizontally + vertically in the iframe.
+   * Used by the inspector preview where the component is small relative to
+   * the preview surface. Off by default so the Explorer's full-page
+   * variant previews (which expect top-left rendering) are unaffected.
+   */
+  centerContent?: boolean;
 }
 
 export function buildSrcdoc(js: string, componentName: string, opts?: BuildSrcdocOptions): string;
@@ -233,7 +240,7 @@ ${fontResult.linkTags}
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></${"script"}>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></${"script"}>
 ${iconScriptTags}
-<style>${fontResult.fontFaceCSS ? fontResult.fontFaceCSS + "\n" : ""}body{margin:0;font-family:${bodyFont}}a[href]{cursor:default}</style>
+<style>${fontResult.fontFaceCSS ? fontResult.fontFaceCSS + "\n" : ""}body{margin:0;font-family:${bodyFont}}${opts.centerContent ? "html,body{height:100%}body{display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}#root{display:flex;align-items:center;justify-content:center}" : ""}a[href]{cursor:default}</style>
 ${opts.cssTokenBlock ? `<style>${opts.cssTokenBlock}</style>` : ""}
 ${kitJson ? `<script>window.__KIT__=${kitJson};</${"script"}>` : ""}
 </head><body>
