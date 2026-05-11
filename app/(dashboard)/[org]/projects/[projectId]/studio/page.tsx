@@ -117,7 +117,27 @@ export default function StudioPage({
         });
       }
     }, 10_000);
-    return () => clearInterval(interval);
+
+    // Instant refresh when the user tabs back from Figma. The 10s poll
+    // above is the safety net; this catches the much more common case of
+    // "I pushed from the plugin and switched to the browser" without the
+    // delay. Debounced so a rapid focus/blur flicker doesn't double-fire.
+    let visTimer: ReturnType<typeof setTimeout> | null = null;
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      if (visTimer) clearTimeout(visTimer);
+      visTimer = setTimeout(() => {
+        refreshProject(project.id);
+      }, 150);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onVisibility);
+    return () => {
+      clearInterval(interval);
+      if (visTimer) clearTimeout(visTimer);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onVisibility);
+    };
   }, [project?.id, refreshProject]);
 
   const handleRegenerateLayoutMd = useCallback(async () => {
