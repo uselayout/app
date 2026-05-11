@@ -121,6 +121,13 @@ NO HARDCODED VALUES FOR TOKENISED PROPERTIES:
 - Acceptable inline string concatenation for compound properties: \`padding: \\\`\${"var(--space-3)"} \${"var(--space-6)"}\\\`\` — though \`paddingX\` / \`paddingY\` as separate style keys with single var() refs is clearer and preferred.
 - If no token of the right category exists for a property you need, omit that property from the schema rather than picking a wrong-category token (e.g. don't use --stroke-border for paddingY just because nothing else fits).
 
+COMPOSITION — reuse the user's existing components:
+- The user message may include an "Existing components in this design system" section listing other components the user has already saved for this project.
+- If your component visually contains any of them (e.g. you are generating a Notification or Card with a button inside, and a Button already exists), inline the SAME structure, the SAME tokens, and the SAME variant prop names as the existing component.
+- Do NOT invent a different visual treatment. Do NOT pick different tokens for the embedded button than the saved Button uses.
+- The user's exported codebase will import the saved component via \`import { Button } from './Button'\`. Your inline copy is only for the preview iframe (which can't resolve cross-file imports). Treat the inline as a duplicate-for-preview, not a redesign.
+- If you reuse a component this way, do NOT add separate \`data-edit-id\`s for its internal elements. The user edits the source component on its own; the embedded copy should be a faithful inline render only.
+
 VARIANT WIRING (critical — this section is non-negotiable):
 - Every variant axis present in the schema's "variants" map MUST be wired as a TSX prop AND must produce a visible visual change when toggled.
 - Use the EXACT axis names from the imported component's variantGroupProperties as prop names (case-sensitive). If Figma calls the axis "State" with values "Default", "Hover", "Disabled", the prop is named \`State\` and accepts those exact strings.
@@ -173,6 +180,14 @@ DESIGN FIDELITY:
 - If the imported component has variant axes (e.g. Size, State), reflect them as TSX props.
 - If unsure about a value, prefer a token that exists in the project's design system over a hardcoded value.`;
 
+export interface ExistingComponentReference {
+  name: string;
+  /** Truncated TSX of the saved component — enough for the model to match style. */
+  codeSnippet: string;
+  /** Variant axes from the existing component's editSchema, if any. */
+  variantAxes?: Record<string, string[]>;
+}
+
 export interface GenerateComponentInput {
   component: ExtractedComponent;
   /** Flattened token list — used to constrain the AI to real tokens. */
@@ -186,6 +201,14 @@ export interface GenerateComponentInput {
    * caller resolves the imageUrl to bytes via Supabase storage.
    */
   imageData?: { base64: string; mediaType: "image/png" | "image/jpeg" | "image/webp" | "image/gif" };
+  /**
+   * Other saved components from the same project. When the component we're
+   * generating visually contains any of these, the model must match their
+   * token choices, structure, and variant prop names so the exported
+   * codebase can `import { Button } from './Button'` rather than reinvent
+   * a slightly-different visual treatment.
+   */
+  existingComponents?: ExistingComponentReference[];
   /** Override the default model. */
   modelId?: string;
   /** Anthropic API key — overrides env. */
@@ -228,12 +251,13 @@ export async function generateComponent(
   const filteredTokens = filterRelevantTokens(input.component, input.tokens);
   const tokenList = renderTokenListForPrompt(filteredTokens);
   const componentMeta = renderComponentMeta(input.component);
+  const existingComponentsBlock = renderExistingComponents(input.existingComponents ?? []);
 
   const userText = `# Project tokens (use only these — refer by CSS variable name)
 
 ${tokenList}
 
-# Imported Figma component metadata
+${existingComponentsBlock}# Imported Figma component metadata
 
 ${componentMeta}
 
@@ -303,6 +327,48 @@ function renderTokenListForPrompt(tokens: ExtractedToken[]): string {
           .join("\n")
     )
     .join("\n\n");
+}
+
+/**
+ * Render the user's other saved components as compose-against context. The
+ * model uses this to inline the SAME implementation when a Button (or any
+ * other saved component) visually appears inside the component being
+ * generated — rather than reinventing a slightly-different visual.
+ *
+ * The user's exported codebase will import these components from their own
+ * files, so the inlined copy here exists only so the preview iframe (single
+ * file, no module resolution) renders correctly.
+ */
+function renderExistingComponents(
+  refs: Array<{ name: string; codeSnippet: string; variantAxes?: Record<string, string[]> }>
+): string {
+  if (refs.length === 0) return "";
+  const blocks = refs.map((r) => {
+    const axes = r.variantAxes
+      ? "\nVariants: " +
+        Object.entries(r.variantAxes)
+          .map(([k, v]) => `${k}=[${v.join(", ")}]`)
+          .join("; ")
+      : "";
+    return `## ${r.name}${axes}\n\`\`\`tsx\n${r.codeSnippet.trim()}\n\`\`\``;
+  });
+  return `# Existing components in this design system
+
+The user has already generated and saved these components for this project.
+
+If the component you're generating visually contains any of them (e.g. a
+Notification containing a Button, a Card with an Icon Button, a Form with
+text Inputs), inline a copy that uses THE SAME TOKENS, THE SAME STRUCTURE,
+and THE SAME variant prop names as the existing component. The exported
+codebase will import them — your inline copy exists only so the preview
+iframe renders correctly without module resolution.
+
+Do not invent a different visual treatment for what the user clearly means
+to be the same component.
+
+${blocks.join("\n\n")}
+
+`;
 }
 
 function renderComponentMeta(c: ExtractedComponent): string {

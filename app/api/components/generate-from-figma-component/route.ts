@@ -5,6 +5,7 @@ import { fetchProjectById } from "@/lib/supabase/db";
 import {
   createComponent,
   getComponentBySlug,
+  getComponentsByProject,
   nameToComponentSlug,
 } from "@/lib/supabase/components";
 import { transpileTsx } from "@/lib/transpile";
@@ -28,6 +29,7 @@ type Phase =
   | "load-project"
   | "find-imported-component"
   | "resolve-image"
+  | "load-existing-components"
   | "generate"
   | "transpile"
   | "create-component"
@@ -92,6 +94,26 @@ export async function POST(request: Request) {
       ? project.layoutMd.slice(0, 8000)
       : undefined;
 
+    // Load other generated components on this project so the model can
+    // compose against them instead of inlining duplicate buttons / icons /
+    // etc. with mismatched tokens.
+    phase = "load-existing-components";
+    const allSaved = await getComponentsByProject(orgId, projectId);
+    const existingComponents = allSaved
+      .filter(
+        (c) =>
+          c.source === "figma" &&
+          c.editSchema !== null &&
+          c.name !== componentName
+      )
+      .sort((a, b) => (b.updatedAt > a.updatedAt ? 1 : -1))
+      .slice(0, 8)
+      .map((c) => ({
+        name: c.name,
+        codeSnippet: c.code.slice(0, 800),
+        variantAxes: c.editSchema?.variants,
+      }));
+
     phase = "generate";
     let result;
     try {
@@ -100,6 +122,7 @@ export async function POST(request: Request) {
         tokens,
         layoutMdExcerpt,
         imageData: imageData ?? undefined,
+        existingComponents,
       });
     } catch (err) {
       if (err instanceof ComponentGenerationError) {
