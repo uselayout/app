@@ -268,10 +268,7 @@ export function PromoteToLibraryModal({
                   Saving...
                 </>
               ) : (
-                <>
-                  <BookMarked size={12} />
-                  Add to Library
-                </>
+                "Add to Library"
               )}
             </button>
           </div>

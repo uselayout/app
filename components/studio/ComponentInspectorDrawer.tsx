@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
-import { ChevronDown, ChevronRight, ExternalLink, Loader2, RefreshCw, Wand2, X } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, Loader2, X } from "lucide-react";
 import type { ExtractedComponent, ExtractedComponentVariant } from "@/lib/types";
 import type { Component, EditSchema } from "@/lib/types/component";
 import { Badge } from "@/components/ui/badge";
@@ -407,31 +407,28 @@ function Footer({
   onGenerateCode?: (component: ExtractedComponent) => void;
 }) {
   const hasCode = Boolean(linkedComponent);
-  const label = hasCode ? "Regenerate" : "Generate code from this component";
-  const Icon = hasCode ? RefreshCw : Wand2;
+  const label = hasCode ? "Regenerate" : "Generate code";
   return (
-    <div className="border-t border-[var(--studio-border)] px-5 py-3">
+    <div className="flex items-center justify-between gap-3 border-t border-[var(--studio-border)] px-5 py-3">
+      <p className="text-[10px] text-[var(--text-muted)]">
+        {hasCode
+          ? "Regenerating overwrites the saved component."
+          : "Uses your design tokens and the Figma reference image."}
+      </p>
       <Button
         onClick={() => onGenerateCode?.(component)}
         disabled={!onGenerateCode || generating}
-        className="w-full bg-[var(--studio-accent)] text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)]"
+        className="shrink-0 bg-[var(--studio-accent)] text-[var(--text-on-accent)] hover:bg-[var(--studio-accent-hover)]"
       >
         {generating ? (
-          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+          <>
+            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            {hasCode ? "Regenerating…" : "Generating…"}
+          </>
         ) : (
-          <Icon className="mr-2 h-3.5 w-3.5" />
+          label
         )}
-        {generating
-          ? hasCode
-            ? "Regenerating…"
-            : "Generating…"
-          : label}
       </Button>
-      <p className="mt-2 text-center text-[10px] text-[var(--text-muted)]">
-        {hasCode
-          ? "Regenerating overwrites the saved component."
-          : "Uses your design tokens + the Figma reference image."}
-      </p>
     </div>
   );
 }

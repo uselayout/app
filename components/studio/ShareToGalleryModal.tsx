@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import type { Project } from "@/lib/types";
 import type { KitLicence, KitTier } from "@/lib/types/kit";
 
@@ -220,11 +220,7 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[var(--studio-border-strong)] text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 transition-colors"
                 title="Generate description and tags with Claude Haiku"
               >
-                {aiBusy ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <Sparkles className="w-3 h-3" />
-                )}
+                {aiBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                 {aiBusy ? "Generating..." : "Generate with AI"}
               </button>
             </div>

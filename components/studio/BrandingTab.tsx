@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Upload, Trash2, Sparkles, Loader2 } from "lucide-react";
+import { Upload, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useProjectStore } from "@/lib/store/project";
 import {
@@ -267,9 +267,8 @@ export function BrandingTab({ projectId, orgId, assets }: BrandingTabProps) {
           type="button"
           onClick={() => setShowGenerateForm(true)}
           disabled={busy}
-          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-50"
+          className="mt-2 w-full rounded-md border border-[var(--studio-border)] bg-[var(--bg-surface)] px-3 py-2 text-center text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-50"
         >
-          <Sparkles size={14} />
           Generate with AI
         </button>
       )}
