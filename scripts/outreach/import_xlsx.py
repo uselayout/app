@@ -54,7 +54,9 @@ FIELDS = [
     "audience_category",
     "persona",
     "priority",
-    "partner_tier",  # standard | flagship — drives commission + DM stance
+    # organic | affiliate-standard | affiliate-flagship | sponsored
+    # Drives DM template, commission deal, and budget treatment.
+    "offer",
     "status",
     "outreach_channel",
     "outreach_date",
@@ -64,6 +66,26 @@ FIELDS = [
     "source_sheet",
     "source_workbook",
 ]
+
+
+def default_offer(audience_category: str, sheet_name: str, tier_label: str) -> str:
+    """Assign a default offer based on what kind of contact this is.
+
+    Manual overrides happen in seed CSVs (offer column) or by direct edit.
+    """
+    if audience_category in {"newsletter", "podcast", "paid-promotion"}:
+        return "sponsored"
+    if audience_category == "discord":
+        return "organic"
+    if audience_category == "investor":
+        return "organic"
+    # Figma educator / creator-economy people from Outreach List with high
+    # editorial priority get affiliate by default.
+    if sheet_name == "Outreach List" and tier_label in {"tier-1", "tier-2"}:
+        return "affiliate-flagship"
+    if sheet_name == "Outreach List" and tier_label == "tier-3":
+        return "affiliate-standard"
+    return "organic"
 
 
 def parse_followers(raw: Any) -> tuple[int | None, str]:
@@ -382,13 +404,10 @@ def process_workbook(
             if handle:
                 row_id += "--" + slug(handle.lstrip("@"))
 
-            # Partner tier: Outreach List entries with editorial Tier 1 get
-            # flagship deal (40/35/30); everything else is standard (20%).
-            partner_tier = "standard"
-            if sheet_name == "Outreach List":
-                tlabel = normalise_tier_label(cell(r, 6))
-                if tlabel in ("tier-1", "tier-2"):
-                    partner_tier = "flagship"
+            tlabel = (
+                normalise_tier_label(cell(r, 6)) if sheet_name == "Outreach List" else ""
+            )
+            offer = default_offer(category, sheet_name, tlabel)
 
             rows.append({
                 "id": row_id,
@@ -401,7 +420,7 @@ def process_workbook(
                 "audience_category": category,
                 "persona": "",
                 "priority": normalise_priority(priority_raw),
-                "partner_tier": partner_tier,
+                "offer": offer,
                 "status": "not-contacted",
                 "outreach_channel": "",
                 "outreach_date": "",
@@ -449,6 +468,8 @@ def process_seed_csv(
             if handle:
                 row_id += "--" + slug(handle.lstrip("@"))
 
+            # Seed CSV must explicitly set "offer" for each row.
+            offer = (r.get("offer") or "organic").strip()
             rows.append({
                 "id": row_id,
                 "name": name,
@@ -460,7 +481,7 @@ def process_seed_csv(
                 "audience_category": (r.get("audience_category") or "").strip(),
                 "persona": (r.get("persona") or "").strip(),
                 "priority": (r.get("priority") or "").strip(),
-                "partner_tier": (r.get("partner_tier") or "standard").strip(),
+                "offer": offer,
                 "status": "not-contacted",
                 "outreach_channel": "",
                 "outreach_date": "",
@@ -503,12 +524,12 @@ def main() -> int:
 
     by_category: dict[str, int] = {}
     by_tier: dict[str, int] = {}
-    by_partner: dict[str, int] = {}
+    by_offer: dict[str, int] = {}
     by_workbook: dict[str, int] = {}
     for r in rows:
         by_category[r["audience_category"]] = by_category.get(r["audience_category"], 0) + 1
         by_tier[r["tier"] or "unknown"] = by_tier.get(r["tier"] or "unknown", 0) + 1
-        by_partner[r["partner_tier"]] = by_partner.get(r["partner_tier"], 0) + 1
+        by_offer[r["offer"]] = by_offer.get(r["offer"], 0) + 1
         by_workbook[r["source_workbook"]] = by_workbook.get(r["source_workbook"], 0) + 1
 
     print(f"\nWrote {len(rows)} rows to {OUTPUT.relative_to(REPO_ROOT)}")
@@ -523,9 +544,9 @@ def main() -> int:
     for k in ["mega", "macro", "micro", "nano", "unknown"]:
         if k in by_tier:
             print(f"  {k:<8} {by_tier[k]}")
-    print("\nBy partner tier (commission deal):")
-    for k, v in sorted(by_partner.items(), key=lambda kv: -kv[1]):
-        print(f"  {k:<10} {v}")
+    print("\nBy offer (drives DM template + money flow):")
+    for k, v in sorted(by_offer.items(), key=lambda kv: -kv[1]):
+        print(f"  {k:<22} {v}")
     return 0
 
 
