@@ -274,6 +274,20 @@ export default function StudioPage() {
               </code>{" "}
               rather than reinvent.
             </p>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Below the form is a{" "}
+              <strong className="font-semibold text-[#0a0a0a]">
+                Refine with AI
+              </strong>{" "}
+              chat input. Type a one-line instruction like{" "}
+              <em>&quot;make the corners smaller&quot;</em> or{" "}
+              <em>&quot;use the brand colour for the title&quot;</em> and
+              Claude returns an updated TSX + schema as a draft you can
+              preview before clicking Save or Reset. Generate and Refine
+              each cost one credit per call (refunded automatically if the
+              call fails). Setting a personal Anthropic key in Settings
+              skips the deduction and uses your key directly.
+            </p>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">

@@ -188,6 +188,15 @@ export default function ComponentLibraryPage() {
           coding agents (Cursor, Claude Code) see the latest canonical
           implementation.
         </p>
+        <p className="text-base text-gray-600 leading-relaxed">
+          A <strong>Refine with AI</strong> chat input sits below the form.
+          Type a one-line instruction like{" "}
+          <em>&quot;make the corners smaller&quot;</em> or{" "}
+          <em>&quot;use the brand colour for the title&quot;</em> and Claude
+          returns an updated TSX + schema as a draft you can preview, then
+          Save or Reset. It&apos;s the recovery path when the form
+          pickers can&apos;t express the change you want.
+        </p>
 
         <Callout type="info">
           When you generate a component that visually contains another
@@ -199,6 +208,14 @@ export default function ComponentLibraryPage() {
             import {"{"} Button {"}"}
           </code>{" "}
           rather than re-implement a slightly-different one.
+        </Callout>
+
+        <Callout type="tip">
+          <strong>Credits:</strong> Generate code and Refine with AI each
+          cost one credit per call. Failed calls are refunded automatically.
+          If you set a personal Anthropic API key in Settings → API Keys,
+          calls use your key directly and don&apos;t deduct from your
+          Layout credit balance.
         </Callout>
       </section>
 
