@@ -10,6 +10,96 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w20-figma-component-inspector",
+    title: "Click into any imported Figma component to inspect what was pushed",
+    description:
+      "Components from the Figma plugin used to be a list of names with variant counts and no way to verify what came through. Click any component in the Source Panel now and a right-side drawer opens with the parent thumbnail, a representative grid of up to 24 variants spanning all property axes, the variant axis labels, properties, and a deep link back to Figma. You can finally see what Layout received without leaving the studio.",
+    product: "studio",
+    category: "new",
+    date: "2026-05-11",
+  },
+  {
+    id: "2026-w20-generate-code-from-figma",
+    title: "Generate canonical TSX for any imported Figma component",
+    description:
+      "The inspector drawer has a Generate code button that calls Claude with your project's design tokens and the Figma thumbnail, producing a real TSX implementation using only your tokens. The result is saved to your library and linked to the imported component, so it becomes the canonical example your AI coding agent (Cursor, Claude Code, etc.) sees in layout.md Section 5 and `.cursor/rules/*.mdc`. Improvise no more.",
+    product: "studio",
+    category: "new",
+    date: "2026-05-11",
+  },
+  {
+    id: "2026-w20-form-editor-for-generated-components",
+    title: "Visual form editor for generated components — no code needed",
+    description:
+      "Once a component is generated, the inspector drawer swaps to a form-driven editor: token pickers (only your design system tokens, so you can't pick anything off-brand), variant toggles (Size, State, Theme), and inline text inputs. A live preview iframe sits above the controls and updates within ~100ms of every change. Most edits are deterministic token swaps — only Regenerate calls the AI again.",
+    product: "studio",
+    category: "new",
+    date: "2026-05-11",
+  },
+  {
+    id: "2026-w20-auto-sync-layout-md-section-5",
+    title: "Saved components auto-sync into layout.md and your Cursor rules",
+    description:
+      "Every time you Save in the inspector form editor, Layout regenerates Section 5 of your project's layout.md with the latest canonical TSX, variant axes, and description for each component. Re-exporting (or hitting the MCP `get_component` tool) picks up the new version instantly. Cursor's components rule auto-attaches whenever you edit a TSX file, so your downstream coding agent sees your edited canonical Button, not whatever it would have invented.",
+    product: "studio",
+    category: "new",
+    date: "2026-05-11",
+  },
+  {
+    id: "2026-w20-composition-awareness",
+    title: "Generated components reuse what you've already saved",
+    description:
+      "When you generate code for a component that visually contains another component you've already saved (e.g. a Notification with a Button inside), the AI is shown your existing components and instructed to match their tokens, structure, and variant prop names. Your exported codebase can `import { Button } from './Button'` rather than reinvent a slightly-different one for every container.",
+    product: "studio",
+    category: "improved",
+    date: "2026-05-11",
+  },
+  {
+    id: "2026-w20-plugin-push-scope-and-progress",
+    title: "Scope picker, progress bar, and cancel button for large library pushes",
+    description:
+      "Pushing a Material 3-class Figma library used to be a generic spinner for 5–25 minutes with no idea what was happening. The plugin now previews how many components and variants are on the current page vs the whole document, lets you choose Push current page (the new default) or Push everything, and shows a determinate progress bar through every stage (Capturing thumbnails 47/82, Uploading, Saving). A Cancel button is visible the whole time. Re-pushing a single page leaves other pages' components intact.",
+    product: "figma-plugin",
+    category: "improved",
+    date: "2026-05-11",
+  },
+  {
+    id: "2026-w20-plugin-component-thumbnails",
+    title: "Plugin pushes component thumbnails and representative variant samples",
+    description:
+      "The Figma plugin now exports a PNG @2x of each component plus up to 24 representative child variants per component set. The variant sampler picks for coverage across every property axis (Size × State × Theme) instead of taking the first 24 in document order, so a 150-variant Button gives you a useful inventory rather than 24 Size=Small lookalikes. The variant axes section in the inspector still lists every value from every child.",
+    product: "figma-plugin",
+    category: "improved",
+    date: "2026-05-11",
+  },
+  {
+    id: "2026-w20-plugin-page-aware-preview",
+    title: "Plugin updates the current-page count live as you switch Figma pages",
+    description:
+      "After clicking Extract the plugin used to show a fixed summary — Tokens: 210, Components: 1 — and ignored you switching to a different Figma page. The Extraction Complete card now also shows a Now-viewing-this-page line that updates the moment you click a different page in Figma, so you can re-extract or re-push the new page without closing and reopening the plugin.",
+    product: "figma-plugin",
+    category: "improved",
+    date: "2026-05-11",
+  },
+  {
+    id: "2026-w20-studio-instant-refresh-from-figma",
+    title: "Studio refreshes the instant you tab back from Figma",
+    description:
+      "After pushing from the plugin you'd flip to the browser expecting your new components and tokens to be there, but the studio only re-polled every 10 seconds. The studio now also refreshes the project the moment the tab regains focus, so the new components appear within a fraction of a second of switching back. The 10-second poll stays as a safety net.",
+    product: "studio",
+    category: "improved",
+    date: "2026-05-11",
+  },
+  {
+    id: "2026-w20-inspector-button-icons-trimmed",
+    title: "Cleaner primary buttons across the studio",
+    description:
+      "Generate code, Generate with AI, Add to Library, and the inspector drawer's Regenerate button used to carry small decorative icons (wand, sparkles, bookmark) that added visual noise without information. Primary CTAs are now text-only — icons stay on icon-only buttons, destructive actions, and directional glyphs where they actually carry meaning. The inspector drawer footer is also right-aligned at natural width instead of a full-stretch primary, matching the convention of design-led tools like Linear and Figma.",
+    product: "studio",
+    category: "improved",
+    date: "2026-05-11",
+  },
+  {
     id: "2026-w18-explorer-save-to-library-shows-up",
     title: "Variants saved from the Explorer now show up in the project library",
     description: "Adding a generated variant to the library from the Explorer would close the modal but the component never appeared in the Saved tab. Saves now scope to the current project (matching how the library reads), and the Saved tab refreshes immediately so your component is there as soon as you click Save.",
