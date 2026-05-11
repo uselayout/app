@@ -10,6 +10,33 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w20-refine-with-ai",
+    title: "Refine generated components with a one-line instruction",
+    description:
+      "The inspector form editor now has a Refine with AI input. Type something like \"make the corners smaller\", \"use the brand colour for the title\", or \"remove the icon\" and Claude surgically edits the saved component's TSX + edit schema. The change shows up in the live preview as a draft you can review, then Save or Reset. Reuses the same validation safety nets as Generate (variant case, token category, no-text-on-elements-with-children) so refinements can't accidentally break the form editor.",
+    product: "studio",
+    category: "new",
+    date: "2026-05-11",
+  },
+  {
+    id: "2026-w20-generate-and-refine-charge-credits",
+    title: "Generate code and Refine with AI now consume credits properly",
+    description:
+      "The Generate code and Refine with AI buttons in the component inspector were calling Claude with no quota check and no credit deduction — a billing leak that affected anyone on the hosted plan. Both now charge one credit per call (refunded automatically if the generation fails), honour your BYOK Anthropic key when one is in Settings, and return a clear \"No credits remaining\" message when you're out instead of a generic error.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-05-11",
+  },
+  {
+    id: "2026-w20-pre-test-hardening",
+    title: "Component generation safer for a wider range of component types",
+    description:
+      "Before broader testing across forms, modals, cards and the like, hardened generation in several places: the schema validator now catches three silent failure modes (variant axes missing from the function signature, schema-claimed tokens that aren't real project tokens, text edits on elements that contain icons or other nested children); the prompt grew an accessibility baseline (semantic tags, aria-*, focus rings via token, keyboard handlers), animation guidance (no framer-motion, CSS keyframes only, respect prefers-reduced-motion), and a portal-component warning; composition now pins every token referenced by an existing saved component so it survives the relevance filter; preview iframe runtime errors are now surfaced in the editor; Regenerate confirms before discarding unsaved local edits.",
+    product: "studio",
+    category: "improved",
+    date: "2026-05-11",
+  },
+  {
     id: "2026-w20-figma-component-inspector",
     title: "Click into any imported Figma component to inspect what was pushed",
     description:
@@ -98,6 +125,33 @@ export const draftEntries: ChangelogEntry[] = [
     product: "studio",
     category: "improved",
     date: "2026-05-11",
+  },
+  {
+    id: "2026-w19-homepage-interactive-mocks",
+    title: "Marketing homepage replaces every video with an interactive Studio mock",
+    description:
+      "The layout.design homepage no longer ships any product videos. Every section — extraction, design-system page, layout.md editor, Explorer, MCP serve, Chrome extension, Figma plugin, Push to Paper, the Studio frame itself — is now an interactive mock built from the real Studio chrome. Mock buttons have rollover tooltips. The hero is a 4-view switcher cycling through the actual surfaces of Layout. Loads roughly 10x faster than the old video set and lets you read code, hover compliance scores, and explore the IDE+terminal split view without leaving the page.",
+    product: "studio",
+    category: "improved",
+    date: "2026-05-03",
+  },
+  {
+    id: "2026-w19-admin-affiliate-program",
+    title: "Affiliates / commissions / payouts admin tabs",
+    description:
+      "Three new tabs in the admin panel for running an affiliate program: Affiliates (who's signed up and their current tier), Commissions (per-conversion ledger, fed by the new Stripe invoice.payment_succeeded webhook handler), and Payouts (batched payouts with status). A new database schema (migration 051) backs all three. Public sign-up flow is the next step; the admin surface ships first so the team can manually onboard partner deals.",
+    product: "studio",
+    category: "new",
+    date: "2026-05-08",
+  },
+  {
+    id: "2026-w19-admin-persist-active-tab",
+    title: "Admin panel remembers your active tab on refresh",
+    description:
+      "Switching between admin tabs and hitting refresh used to drop you back on the default tab — a real annoyance when iterating on a single area like Kits or Users. The active tab is now reflected in the URL hash, so refresh and shareable links both keep you where you are.",
+    product: "studio",
+    category: "improved",
+    date: "2026-04-26",
   },
   {
     id: "2026-w18-explorer-save-to-library-shows-up",
