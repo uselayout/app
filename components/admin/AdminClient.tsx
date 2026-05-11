@@ -11,6 +11,9 @@ import { VariantsTab } from "./VariantsTab";
 import { AIModelsTab } from "./AIModelsTab";
 import { KitsTab } from "./KitsTab";
 import { KitRequestsTab } from "./KitRequestsTab";
+import { AffiliatesTab } from "./AffiliatesTab";
+import { CommissionsTab } from "./CommissionsTab";
+import { PayoutsTab } from "./PayoutsTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,7 +28,10 @@ type AdminTab =
   | "roadmap"
   | "variants"
   | "kits"
-  | "kit-requests";
+  | "kit-requests"
+  | "affiliates"
+  | "commissions"
+  | "payouts";
 
 const ADMIN_TABS: readonly AdminTab[] = [
   "dashboard",
@@ -39,6 +45,9 @@ const ADMIN_TABS: readonly AdminTab[] = [
   "variants",
   "kits",
   "kit-requests",
+  "affiliates",
+  "commissions",
+  "payouts",
 ] as const;
 
 const isAdminTab = (v: string | null): v is AdminTab =>
@@ -2434,6 +2443,9 @@ export function AdminClient() {
     { key: "variants", label: "Variants" },
     { key: "kits", label: "Kits" },
     { key: "kit-requests", label: "Kit requests" },
+    { key: "affiliates", label: "Affiliates" },
+    { key: "commissions", label: "Commissions" },
+    { key: "payouts", label: "Payouts" },
   ];
 
   return (
@@ -2530,6 +2542,15 @@ export function AdminClient() {
         )}
         {activeTab === "kit-requests" && (
           <KitRequestsTab toast={toast} />
+        )}
+        {activeTab === "affiliates" && (
+          <AffiliatesTab toast={toast} />
+        )}
+        {activeTab === "commissions" && (
+          <CommissionsTab toast={toast} />
+        )}
+        {activeTab === "payouts" && (
+          <PayoutsTab toast={toast} />
         )}
       </div>
 
