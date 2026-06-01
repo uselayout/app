@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { stripFakeBrandingWhenNoLogo } from "./generate-kit-showcase";
+import { stripFakeBrandingWhenNoLogo, composeBespokeShowcase } from "./generate-kit-showcase";
+import { transpileTsx } from "@/lib/transpile";
 
 describe("stripFakeBrandingWhenNoLogo", () => {
   it("returns the code unchanged when a primary logo is provided", () => {
@@ -89,5 +90,21 @@ describe("stripFakeBrandingWhenNoLogo", () => {
     expect(out).not.toMatch(/Design System/);
     expect(out).toMatch(/<h1>Supabase<\/h1>/);
     expect(out).toMatch(/<p>Body copy/);
+  });
+});
+
+describe("composeBespokeShowcase", () => {
+  it("concatenates the on-brand blocks with the shell and transpiles cleanly", async () => {
+    const blocks = `const BESPOKE_BLOCKS = {
+      buttons: (ctx) => React.createElement("button", { style: { background: ctx.accent } }, "On-brand"),
+    };`;
+    const composed = composeBespokeShowcase(blocks);
+    // Both the model's blocks and the shell's App export survive.
+    expect(composed).toContain("const BESPOKE_BLOCKS");
+    expect(composed).toContain("export default App;");
+    // And the combined module transpiles to mountable CommonJS.
+    const js = await transpileTsx(composed);
+    expect(js.length).toBeGreaterThan(1000);
+    expect(js).toContain("BESPOKE_BLOCKS");
   });
 });

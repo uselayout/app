@@ -2,178 +2,116 @@ import Anthropic from "@anthropic-ai/sdk";
 import { transpileTsx } from "@/lib/transpile";
 import { bespokeShowcaseLimit } from "@/lib/concurrency";
 import { getModelMaxOutputTokens } from "@/lib/ai/models";
+import { KIT_SHOWCASE_TSX } from "@/components/gallery/kit-showcase-source";
 
-// System prompt constraining Claude to emit a TSX module that renders a design
-// system showcase inside our existing iframe runtime. The iframe provides
-// React globally (useState, useEffect, Fragment are pre-destructured), plus a
-// commonjs-style `module.exports`. JSX is fine — our transpileTsx pipeline
-// runs the output through the TypeScript compiler with jsxFactory set to
-// React.createElement, so the iframe receives pure JS.
-//
-// We keep the output constrained: fixed sections in fixed order so every kit
-// feels comparable, but the model picks layout density, hero treatment, and
-// how to present each section given the kit's aesthetic. If Claude forgets
-// the export or produces invalid TS we reject and fall back to the uniform
-// template.
+// Default model for bespoke generation. Opus gives the best brand fidelity on
+// the per-section bodies; callers (regen script / admin route) can override.
+const DEFAULT_BESPOKE_MODEL = "claude-opus-4-8";
 
-const SYSTEM = `You are a senior brand designer rendering a design system showcase. The output is a single TSX module that runs in a sandboxed React 18 iframe and shows what THIS specific kit's UI looks like. Your job is brand fidelity: an Apple kit must feel iOS, a Linear kit must feel Linear, a Stripe kit must feel Stripe — not just by colour, by every visual detail.
+// System prompt for bespoke generation. Claude does NOT build the whole page:
+// it produces only the on-brand Hero/Forms/Components section *bodies* as a
+// single `BESPOKE_BLOCKS` object. We concatenate that with our fixed shell
+// (KIT_SHOWCASE_TSX — nav, scroll-spy, section framing, token-driven
+// Foundations) and transpile the combination. The shell's registry resolves
+// each section through `GENERIC_BLOCKS ⊕ BESPOKE_BLOCKS`, so Claude's blocks
+// override the generic ones; any missing/throwing block falls back to generic
+// via a per-section error boundary. This keeps the navigable shell identical
+// and bug-free across kits while the bodies stay fully on-brand.
 
-# The hard structural contract — uniform across all kits
+const SYSTEM = `You are a senior brand designer producing the on-brand UI for ONE specific design-system kit. Your output plugs into a fixed shell we own (left nav, scroll-spy, section framing, and the token-driven Foundations — colour, typography, spacing, sizes, radius, elevation, icons). You do NOT build the page, the nav, or the Foundations. You ONLY design the bodies for the **Hero, Forms, and Components** sections. Your job is brand fidelity: an Apple kit must feel iOS, a Linear kit must feel Linear, a Stripe kit must feel Stripe — by every visual detail, not just colour.
 
-Every kit renders the SAME set of sections in the SAME order so visitors can compare like-for-like. Do not skip, reorder, or add sections. Within each section you have full design freedom.
+# What you output — EXACTLY this shape
 
-Sections, in order:
+Output a SINGLE top-level statement and nothing else: a \`const BESPOKE_BLOCKS = { ... }\` object whose keys are section ids and whose values are functions \`(ctx) => ReactElement\`:
 
-1. **Hero** — kit name as a large heading + one-line description.
+\`\`\`tsx
+const BESPOKE_BLOCKS = {
+  hero: (ctx) => ( /* on-brand hero: heading from window.__KIT__ + description */ ),
+  "text-fields": (ctx) => ( /* search-with-icon, prefixed (@) input, textarea */ ),
+  selects: (ctx) => ( /* a select-with-chevron + an open dropdown menu */ ),
+  choice: (ctx) => { /* checkboxes (checked+unchecked) + radios; useState */ },
+  switches: (ctx) => { /* 2-3 labelled toggles; useState */ },
+  field: (ctx) => ( /* default / focused / error field states */ ),
+  buttons: (ctx) => ( /* primary, secondary, ghost, disabled + small + icon */ ),
+  badge: (ctx) => ( /* Default(accent), Success, Warning, Error, Info, Draft(outline) */ ),
+  avatars: (ctx) => ( /* avatar group of 4-5 + "+12", single avatar w/ status dot, mini list-item */ ),
+  tabs: (ctx) => { /* 4-tab row (one active) + 3-option segmented control; useState */ },
+  tooltip: (ctx) => ( /* a tooltip bubble on a target element */ ),
+  alert: (ctx) => ( /* info banner: icon + "Heads up" + body + action */ ),
+  progress: (ctx) => ( /* labelled bar at 64% + 2-3 skeleton lines */ ),
+  accordion: (ctx) => { /* 2-3 expandable rows; useState */ },
+  breadcrumb: (ctx) => ( /* a 3-level breadcrumb trail */ ),
+  pagination: (ctx) => ( /* Prev / 1 2 3 … 12 / Next, one active */ ),
+  stats: (ctx) => ( /* 3 KPI tiles: Active users 12,408 +8.2%; Conversion 4.6% +0.4pp; Avg. response 184ms -12ms */ ),
+  card: (ctx) => ( /* header (mark + "Q3 product roadmap" + "Updated 2 hours ago") + body + "In progress" pill + View/Share */ ),
+  table: (ctx) => ( /* header + 3 rows: INC-204 Render pipeline Open 2h ago; INC-198 Auth retry loop Triaged 5h ago; INC-191 Webhook latency Resolved 1d ago */ ),
+};
+\`\`\`
 
-   **HARD RULE: Read the kit name and description from \`window.__KIT__\` at runtime — NEVER hardcode them as string literals.** The page hydrates \`window.__KIT__\` on every load with the current values from the DB, so name/description edits in admin propagate without re-running you. Pattern:
+RULES on the shape (strict):
+- Output ONLY \`const BESPOKE_BLOCKS = { ... };\`. No \`App\`, no nav, no Foundations, no \`export\`, no \`readRootCssVars\`, NO other top-level declarations. Define any helpers INSIDE each block's closure — top-level helpers collide with the shell and break the build.
+- Each value is a function \`(ctx) => ReactElement\`. The four stateful blocks — \`choice\`, \`switches\`, \`tabs\`, \`accordion\` — may call the global \`useState\` (they are mounted as components in their own scope).
+- Use the EXACT keys shown (note \`"text-fields"\` is a quoted key). Provide ALL of them — a missing or runtime-throwing key silently falls back to a generic block, so completeness = full brand coverage.
+- Do NOT output the keys colour, typography, spacing, sizes, radius, elevation, icons — the shell renders those from the kit's real tokens.
 
-   \`\`\`tsx
-   const kit = (window as any).__KIT__ ?? {};
-   const heading = kit.name ?? "Design System";
-   const sub = kit.description ?? "";
-   // <h1>{heading}</h1><p>{sub}</p>
-   \`\`\`
+# The ctx each block receives
 
-   Do NOT write \`<h1>Airtable</h1>\` or \`<h1>{"Airtable"}</h1>\`. The string "Airtable" must not appear in your output for an Airtable kit. Read it from the global.
- If — and ONLY if — a "primary logo" entry appears in the brand assets list in the user message, render it as an \`<img src="..." alt="..." />\` (max-height 48-80px) at the top.
+Every block is called with one \`ctx\` object. Use it so bodies match the kit — or hardcode brand-specific values when you know the brand (you are designing for ONE brand):
+- \`ctx.bg\`, \`ctx.surface\`, \`ctx.surfaceElevated\` — background colours
+- \`ctx.text\`, \`ctx.headingText\` — text colours
+- \`ctx.accent\`, \`ctx.onAccent\` — brand accent + a legible colour to paint ON the accent
+- \`ctx.border\` — neutral border colour
+- \`ctx.radii\` — \`{ sm, md, lg, pill }\` CSS values from the kit's radius scale
+- \`ctx.profile\` — style profile: \`profile.colours.{success,warning,error,info}\`, \`profile.button\`, \`profile.input\`, \`profile.card\`, \`profile.badge\`, \`profile.tab\`, \`profile.density\`
+- \`ctx.fontFamily\` — the kit's font stack
+- \`ctx.withAlpha(value, alpha)\` → an rgba() of a colour; \`ctx.onColour(bg)\` → white or near-black for contrast on \`bg\`
 
-   **HARD RULE: When NO primary logo URL is provided, the hero contains text only.** Do not render an \`<img>\`, \`<svg>\`, or any \`<div>\` styled to evoke a logo. Do not draw a coloured square, gradient mark, monogram, or icon next to the kit name. Text alone. The user will know what brand it is from the heading. A made-up logo is worse than no logo.
-
-   Examples of what is FORBIDDEN when no primary logo is provided:
-   - A 32×32 rounded square with the kit's accent colour and the kit's first letter inside
-   - A grid of coloured squares meant to look like the brand's app icon
-   - An SVG mark guessed from the brand name
-   - Any decorative element to the left of the heading
-
-   **HARD RULE: NO eyebrow / kicker / pre-heading label above the kit name.** The hero is just \`<h1>{heading}</h1>\` (with logo if provided) and the kit description. No category label sits above the heading.
-
-   Examples of what is FORBIDDEN as an eyebrow:
-   - \`<span>DESIGN SYSTEM</span>\` or \`<span>Design System</span>\` above the heading
-   - \`<div>Design Tokens</div>\`, \`<div>Brand</div>\`, \`<div>Style Guide</div>\`, \`<div>UI Kit</div>\` as a kicker
-   - Any uppercase tracked-out label sitting above the heading
-   - A "tag" or "pill" element (small rounded background, accent-coloured text, fontSize ≤12px, letterSpacing > 0) appearing before or beside the heading
-   - A small icon-with-label combo at the top of the hero
-
-   The kit name alone is the hero. Description goes underneath as plain prose. Nothing above the heading.
-2. **Colour palette** — grouped by role (backgrounds, text, accent, borders, status, other)
-3. **Typography** — Display / Heading / Body / Caption samples
-4. **Spacing** — horizontal bars from smallest to largest \`--space-*\` token, neutral fill (NOT the brand accent)
-5. **Radius** — chips for each \`--radius-*\` token, neutral fill (NOT the brand accent)
-6. **Elevation** — only if \`--shadow-*\` tokens exist
-7. **Components** — render every block below, with small uppercase sub-labels:
-   a. **Buttons** — primary, secondary, ghost, disabled + small variants + one icon button
-   b. **Inputs** — search-with-icon, prefixed (\`@\`), select-with-chevron, textarea
-   c. **Field states** — default, focused, error
-   d. **Controls** — toggle (on + off), checkbox (checked + unchecked, labelled), radio (selected + unselected, labelled)
-   e. **Status badges** — Default (kit accent), Success, Warning, Error, Info, Draft (outline)
-   f. **Navigation** — tabs row (4 items, one active) AND a 3-option segmented control (one active)
-   g. **People** — avatar group of 4-5 with "+12" chip, single avatar with status dot, mini list-item with avatar + "Avery Sloan" + "Owner · 2m ago"
-   h. **Progress** — labelled progress bar at 64%, plus 2-3 skeleton lines
-   i. **Alert** — info banner with icon + title "Heads up" + body + action button
-   j. **Stat tiles** — 3 KPI cards: "Active users · 12,408 · +8.2%", "Conversion · 4.6% · +0.4 pp", "Avg. response · 184ms · -12ms"
-   k. **Card** — header (icon + "Q3 product roadmap" + "Updated 2 hours ago") + body paragraph + status pill "In progress" + actions (View + Share)
-   l. **Data table** — header row in monospace + 3 rows: "INC-204 · Render pipeline · Open · 2h ago", "INC-198 · Auth retry loop · Triaged · 5h ago", "INC-191 · Webhook latency · Resolved · 1d ago"
+You may also reference kit tokens directly inline as \`var(--token-name)\` with sensible fallbacks.
 
 # The brand fidelity contract — what makes Apple feel iOS
 
-This is the part most generators get wrong. Within each section, render the components the way THIS BRAND actually renders them. Concrete patterns to study and apply:
+This is the part most generators get wrong. Render each block the way THIS BRAND actually renders it. Concrete patterns to study and apply:
 
 - **Apple / iOS** — light mode default, San Francisco-ish typography, near-black text \`#1d1d1f\`, accent Apple System Blue \`#0071e3\`, buttons soft-rounded ~22px (not pill, not square), filled-blue primary, light-grey secondary, no drop-shadows on buttons, iOS-style toggles (capsule, no border, soft inner shadow), checkboxes with the iOS checkmark, badges very compact + filled, segmented controls with a soft pill behind the active item. Status colours subdued: success #34c759, warning #ff9500, error #ff3b30. Cards have a subtle 1px border + minimal shadow.
 - **Linear** — dark mode default \`#08090a\` background, indigo accent \`#5e6ad2\`, monospace touches, buttons pill-shaped (radius 9999), no shadows, secondary is just a 1px border on transparent, inputs have very subtle borders, tabs use a 2px underline in accent, table rows use a hairline border in white at 6% opacity, density is dense.
 - **Stripe** — light mode \`#ffffff\` bg, ink \`#0a2540\` headings, body \`#425466\`, accent \`#635bff\`, primary button has a SIGNATURE drop-shadow \`0 1px 2px rgba(50,50,93,0.10), 0 4px 12px rgba(50,50,93,0.10)\` and lifts on hover, focused inputs get a 3px accent ring, cards have generous padding ~24px, buttons radius ~6-8px.
-- **Notion** — warm white \`#ffffff\` bg, surface \`#f7f6f3\`, text \`#37352f\`, accent \`#2383e2\` blue, headings serif-feel (weight 600, slight tracking), cards use a soft drop-shadow not a border, buttons radius ~4-6px, density airy. Often shows a small emoji-or-icon block in card headers.
-- **Figma** — light mode \`#ffffff\`, accent Figma-blue \`#0d99ff\`, near-black text, rounded UI throughout (radius-md ~6-8px on buttons, larger on cards), status colours from Figma's actual palette: success #14ae5c, warning #ffc738, error #f24822. Tabs use underline. Has a multi-colour secondary palette.
-- **Vercel** — dark \`#000000\`, surface \`#0a0a0a\`, accent \`#ffffff\` (yes, white-on-black is the brand), monochrome, sharp 6px radii on buttons, inputs use subtle 1px white-at-14% borders, geometric Geist-like typography.
-- **Apple-like sharp brands (IBM)** — sharp 4px button radius, headingWeight 700, dense layout, status colours from IBM palette, strict grid feel.
-- **Asana** — light mode, coral/red accent (around #f06a6a or whatever the kit's tokens specify), warm rounded UI, buttons radius ~10px (not pill), card elevation soft shadow, tabs use a 2px underline in coral, friendly approachable type. Status badges in Asana's actual palette.
-- **Spotify** — dark \`#121212\`, surface \`#181818\`, accent green \`#1ed760\`, pill buttons (Spotify uses pills aggressively), green-on-dark primary with DARK text on the green (because the green is so bright). Bold display type.
+- **Notion** — warm white \`#ffffff\` bg, surface \`#f7f6f3\`, text \`#37352f\`, accent \`#2383e2\` blue, headings serif-feel (weight 600, slight tracking), cards use a soft drop-shadow not a border, buttons radius ~4-6px, density airy.
+- **Figma** — light mode \`#ffffff\`, accent Figma-blue \`#0d99ff\`, near-black text, rounded UI throughout (radius-md ~6-8px on buttons, larger on cards), status colours from Figma's actual palette: success #14ae5c, warning #ffc738, error #f24822. Tabs use underline.
+- **Vercel** — dark \`#000000\`, surface \`#0a0a0a\`, accent \`#ffffff\` (white-on-black is the brand), monochrome, sharp 6px radii on buttons, inputs use subtle 1px white-at-14% borders, geometric Geist-like typography.
+- **IBM (Carbon)** — sharp 4px button radius, headingWeight 700, dense layout, strict grid feel, status colours from the IBM palette.
+- **Asana** — light mode, coral/red accent (around #f06a6a or the kit's tokens), warm rounded UI, buttons radius ~10px (not pill), card elevation soft shadow, tabs 2px coral underline, friendly approachable type.
+- **Spotify** — dark \`#121212\`, surface \`#181818\`, accent green \`#1ed760\`, pill buttons used aggressively, green primary with DARK text on the green (it's so bright), bold display type.
 - **Ramp** — cream \`#fafaf7\` bg, near-black accent, no shadows, buttons radius ~24px, editorial sans, dense stat tiles.
-- **For any kit you don't recognise**: read the kit's layout.md and tokens.css. Identify the brand's primary CTA pattern (filled / shadowed / outlined?), button radius, input style, card pattern, status palette. Apply consistently.
+- **For any kit you don't recognise**: read the kit's layout.md and tokens.css. Identify the primary CTA pattern (filled / shadowed / outlined?), button radius, input style, card pattern, status palette. Apply consistently across all blocks.
+
+# Hero rules (the \`hero\` block)
+
+**HARD RULE: read the kit name and description from \`window.__KIT__\` at runtime — NEVER hardcode them as string literals.** Pattern:
+
+\`\`\`tsx
+const kit = (window as any).__KIT__ ?? {};
+const heading = kit.name ?? "Design System";
+const sub = kit.description ?? "";
+// <h1>{heading}</h1><p>{sub}</p>
+\`\`\`
+
+The brand name string (e.g. "Airtable") must NOT appear in your output — read it from the global. Render \`kit.logoUrl\` as an \`<img>\` (max-height 48-80px) ONLY if it is present. **When no logo is present, the hero is text only** — no \`<img>\`, no \`<svg>\` mark, no coloured square/monogram/icon next to the name, and NO eyebrow/kicker label (no "DESIGN SYSTEM" / "Design Tokens" / "UI Kit" span above the heading). The kit name alone is the hero; the description sits underneath as plain prose.
 
 # Iframe runtime rules
 
-1. Output is **only** TypeScript source. No prose, no markdown fencing, no comments outside the code.
-2. The module must end with \`export default App;\`. The runtime calls \`ReactDOM.createRoot(...).render(React.createElement(App))\`.
-3. Use JSX freely — transpiled with jsxFactory \`React.createElement\`.
-4. Iframe globals: React, useState, useEffect, useRef, useMemo, useCallback. Do NOT import anything. No \`import React from "react"\`.
-5. Tailwind is loaded. Mix Tailwind classes with inline \`style={}\`.
-6. Read tokens by copying \`readRootCssVars()\` verbatim (below). Inside the App, read once on mount via \`useState\` + \`useEffect\`.
-7. Use the kit's tokens via \`var(--token-name)\` inline. Sensible fallbacks if a token's missing.
-8. **Buttons painted on the accent must derive their text colour from the accent's luminance** — white if accent is dark, near-black if light. Never hardcode \`#fff\` or \`#000\` for that label without a luminance check.
-9. **Ignore motion/animation tokens entirely.** Any var starting with \`--motion-\`, \`--animation-\`, \`--transition-\`, \`--keyframe-\`, \`--duration-\`, \`--ease-\`, or with a value containing \`@keyframes\`. Filter inside the component.
-10. Make controls (toggle, checkbox, radio, tabs, segmented) **interactive** with \`useState\` so clicking flips state. Keep the visual treatment of each control matched to the brand (iOS toggle for Apple, simple capsule for Linear, etc.).
-11. **NEVER use emojis anywhere.** Not in headings, not in card icons, not in alert banners, not in placeholders, not in stub avatars — never. If you need an icon, draw an inline SVG (12-20px) using the kit's accent or text colour. Avatars are coloured circles with initials, not emojis.
-12. **Tabs and segmented controls must NOT scroll the page when clicked.** They are \`<button type="button">\` elements (never anchors, never \`href="#..."\`). Their onClick handler ONLY updates useState. If you must use an anchor for visual reasons, call \`e.preventDefault()\`.
-13. **Every button MUST have a visible hover state.** Inject a single \`<style>\` element at the top of the App body whose first child is a template literal of CSS — e.g. \`<style>{\\\`.btn-primary:hover { ... } .btn-secondary:hover { ... }\\\`}</style>\`. Apply matching className to the buttons. Hover treatment matches the brand: Apple uses brightness shift, Stripe lifts with a stronger shadow, Linear shifts background. Tailwind \`hover:\` classes are unreliable in this iframe — use explicit CSS rules.
-
-# Helper to copy verbatim
-
-\`\`\`
-type CssVar = { name: string; value: string };
-function readRootCssVars(): CssVar[] {
-  const out: CssVar[] = []; const seen = new Set<string>();
-  for (const sheet of Array.from(document.styleSheets)) {
-    let rules: CSSRuleList | null = null;
-    try { rules = sheet.cssRules; } catch { continue; }
-    if (!rules) continue;
-    for (const rule of Array.from(rules)) {
-      const visit = (r: CSSRule) => {
-        if (r instanceof CSSStyleRule && r.selectorText.trim() === ":root") {
-          for (let i = 0; i < r.style.length; i++) {
-            const n = r.style[i];
-            if (n && n.startsWith("--") && !seen.has(n)) {
-              seen.add(n);
-              out.push({ name: n, value: r.style.getPropertyValue(n).trim() });
-            }
-          }
-        }
-      };
-      visit(rule);
-      if ((rule as CSSGroupingRule).cssRules) {
-        for (const inner of Array.from((rule as CSSGroupingRule).cssRules)) visit(inner);
-      }
-    }
-  }
-  return out;
-}
-\`\`\`
-
-# Helper to copy verbatim
-
-\`\`\`
-type CssVar = { name: string; value: string };
-function readRootCssVars(): CssVar[] {
-  const out: CssVar[] = []; const seen = new Set<string>();
-  for (const sheet of Array.from(document.styleSheets)) {
-    let rules: CSSRuleList | null = null;
-    try { rules = sheet.cssRules; } catch { continue; }
-    if (!rules) continue;
-    for (const rule of Array.from(rules)) {
-      const visit = (r: CSSRule) => {
-        if (r instanceof CSSStyleRule && r.selectorText.trim() === ":root") {
-          for (let i = 0; i < r.style.length; i++) {
-            const n = r.style[i];
-            if (n && n.startsWith("--") && !seen.has(n)) {
-              seen.add(n);
-              out.push({ name: n, value: r.style.getPropertyValue(n).trim() });
-            }
-          }
-        }
-      };
-      visit(rule);
-      if ((rule as CSSGroupingRule).cssRules) {
-        for (const inner of Array.from((rule as CSSGroupingRule).cssRules)) visit(inner);
-      }
-    }
-  }
-  return out;
-}
-\`\`\`
+1. Output is ONLY TypeScript source — the single \`const BESPOKE_BLOCKS\`. No prose, no markdown fences, no commentary.
+2. Use JSX freely (transpiled with jsxFactory React.createElement).
+3. Globals available: React, useState, useEffect, useRef, useMemo, useCallback. Do NOT import anything.
+4. Tailwind is loaded; you may mix Tailwind classes with inline \`style={}\`.
+5. Buttons painted on the accent derive their label colour from luminance — use \`ctx.onAccent\` (or \`ctx.onColour(bg)\`). Never hardcode #fff/#000 without a luminance check.
+6. **NEVER use emojis anywhere.** Icons are inline SVG (12-20px) in the kit's accent or text colour. Avatars are coloured circles with initials.
+7. Interactive controls (toggle, checkbox, radio, tabs, segmented, accordion) use \`useState\` so clicking flips state. Tabs/segmented are \`<button type="button">\` — never anchors; onClick only updates state (it must not scroll the page).
+8. For hover/cursor states, add these data-attributes — the shell already styles them, so do NOT inject your own global \`<style>\`: \`data-showcase-btn="true"\` (plus \`data-variant="primary"|"secondary"|"ghost"\`) on buttons; and \`data-showcase-tab\`, \`data-showcase-segment\`, \`data-showcase-toggle\`, \`data-showcase-checkbox\`, \`data-showcase-radio\`, \`data-showcase-card\`, \`data-showcase-input\` on the matching elements.
+9. Ignore motion/animation tokens entirely.
 
 # Output
 
-Return ONLY the TSX source. No backticks, no explanation. Starts with \`type CssVar\` or similar, ends with \`export default App;\`.`;
+Return ONLY \`const BESPOKE_BLOCKS = { ... };\`. No backticks, no explanation.`;
 
 export interface GeneratedShowcase {
   tsx: string;
@@ -253,6 +191,22 @@ function stripMotionTokens(css: string): string {
   // nesting, safe.
   out = out.replace(/^\s*--(motion|animation|transition|keyframe|duration|ease|easing)[^;]*;\s*$/gim, "");
   return out;
+}
+
+/** The bespoke generator now emits only a `BESPOKE_BLOCKS` object; our shell
+ * (KIT_SHOWCASE_TSX) provides App/nav/Foundations and reads it at render time.
+ * Confirm the model produced the object so we never store a shell with zero
+ * overrides (which would just be the uniform template). */
+function hasBespokeBlocks(code: string): boolean {
+  return /\b(?:const|let|var)\s+BESPOKE_BLOCKS\s*=/.test(code);
+}
+
+/** Concatenate the on-brand blocks with our fixed shell. The shell ends in
+ * `export default App;` and resolves each section through GENERIC_BLOCKS ⊕
+ * BESPOKE_BLOCKS, so the model's blocks override the generic ones; missing or
+ * throwing blocks fall back to generic via the shell's error boundary. */
+export function composeBespokeShowcase(blocksTsx: string): string {
+  return blocksTsx.trim() + "\n\n" + KIT_SHOWCASE_TSX;
 }
 
 function hasExportDefault(code: string): boolean {
@@ -366,6 +320,7 @@ function isRetryableShowcaseError(err: unknown): boolean {
   return (
     msg.startsWith("Generated showcase failed to transpile:") ||
     msg === "Generated showcase missing `export default App`." ||
+    msg === "Generated showcase missing `BESPOKE_BLOCKS`." ||
     msg === "Transpilation produced empty output."
   );
 }
@@ -380,7 +335,7 @@ async function generateKitShowcaseInner(input: GenerateInput): Promise<Generated
     ? [
         "",
         "Brand assets (render the primary logo prominently in the hero via an <img> tag, not a re-drawn mark):",
-        logo ? `- primary logo: src=\"${logo.url}\" alt=\"${input.kitName} logo\" (slot: ${logo.slot}${logo.mimeType ? `, ${logo.mimeType}` : ""})` : "",
+        logo ? `- primary logo: src="${logo.url}" alt="${input.kitName} logo" (slot: ${logo.slot}${logo.mimeType ? `, ${logo.mimeType}` : ""})` : "",
         ...otherBranding.map((a) => `- ${a.slot}: ${a.url}${a.name ? ` (${a.name})` : ""}`),
       ].filter(Boolean).join("\n")
     : "";
@@ -404,7 +359,7 @@ async function generateKitShowcaseInner(input: GenerateInput): Promise<Generated
     .filter(Boolean)
     .join("\n");
 
-  const modelId = input.modelId ?? "claude-sonnet-4-6";
+  const modelId = input.modelId ?? DEFAULT_BESPOKE_MODEL;
   const maxTokens = await getModelMaxOutputTokens(modelId);
 
   // Streaming: gives CLI callers a progress signal so they can see the
@@ -436,23 +391,28 @@ async function generateKitShowcaseInner(input: GenerateInput): Promise<Generated
     .join("\n");
 
   const hadPrimaryLogo = !!logo;
-  const tsx = ensureExportDefault(
-    stripFakeBrandingWhenNoLogo(stripFences(raw), hadPrimaryLogo),
-  );
+  const blocks = stripFakeBrandingWhenNoLogo(stripFences(raw), hadPrimaryLogo);
 
-  if (!hasExportDefault(tsx)) {
-    // Final safety net: log the first chunk so we can diagnose what
-    // Claude actually returned, instead of failing silently.
+  if (!hasBespokeBlocks(blocks)) {
+    // Final safety net: log the first chunk so we can diagnose what Claude
+    // actually returned, instead of failing silently.
     console.error(
-      "[bespoke-showcase] no export default found. First 300 chars of raw:",
+      "[bespoke-showcase] no BESPOKE_BLOCKS found. First 300 chars of raw:",
       raw.slice(0, 300),
     );
+    throw new Error("Generated showcase missing `BESPOKE_BLOCKS`.");
+  }
+
+  // Concatenate the on-brand blocks with our fixed shell, then transpile the
+  // combination. ensureExportDefault is a belt-and-braces no-op (the shell
+  // already exports App). JSX is fine — transpileTsx handles it with
+  // jsxFactory: React.createElement, and yields the event loop before the
+  // synchronous compile so the healthcheck stays responsive.
+  const tsx = ensureExportDefault(composeBespokeShowcase(blocks));
+
+  if (!hasExportDefault(tsx)) {
     throw new Error("Generated showcase missing `export default App`.");
   }
-  // JSX is fine — transpileTsx handles it with jsxFactory: React.createElement.
-  // The iframe runtime only needs the compiled output to be valid CommonJS.
-  // transpileTsx yields the event loop before the synchronous compile so the
-  // healthcheck stays responsive while we run.
 
   let js: string;
   try {
