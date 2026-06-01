@@ -188,17 +188,28 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-4">
-              <div className="flex flex-col gap-1 min-w-0 flex-1">
-                <span className="text-[12px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Use this kit</span>
-                <span className="text-[13px] text-[var(--mkt-text-secondary)]">
-                  Import into Layout Studio, or run it from the CLI in any project.
-                </span>
+              <div className="flex flex-col gap-3 min-w-0 flex-1">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[12px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Use this kit</span>
+                  <span className="text-[13px] text-[var(--mkt-text-secondary)]">
+                    Import into Layout Studio, or run it from the CLI in any project.
+                  </span>
+                </div>
+                <div className="w-fit max-w-full">
+                  <CopyInline
+                    value={`npx @layoutdesign/context install ${kit.slug}`}
+                    label="Copy install command"
+                  />
+                </div>
+                <Link
+                  href="/docs/cli"
+                  className="inline-flex items-center gap-1 text-[12px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)] transition-colors self-start"
+                >
+                  Read the CLI docs
+                  <span aria-hidden>→</span>
+                </Link>
               </div>
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
-                <CopyInline
-                  value={`npx @layoutdesign/context install ${kit.slug}`}
-                  label="Copy install command"
-                />
+              <div className="shrink-0">
                 <KitDetailImportButton
                   slug={kit.slug}
                   kitId={kit.id}

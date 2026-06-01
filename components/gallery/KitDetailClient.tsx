@@ -46,21 +46,23 @@ export function KitDetailImportButton({ slug, isLoggedIn, currentOrgSlug }: Prop
 
   return (
     <div className="flex flex-col gap-2">
-      <button
-        type="button"
-        onClick={handleImport}
-        disabled={importing}
-        className="px-5 py-2.5 rounded-full bg-[var(--mkt-accent)] text-[#08090a] text-[14px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-      >
-        {importing ? "Importing..." : isLoggedIn ? "Import to Studio" : "Log in to import"}
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={handleImport}
+          disabled={importing}
+          className="px-5 py-2.5 rounded-full bg-[var(--mkt-accent)] text-[#08090a] text-[14px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {importing ? "Importing..." : isLoggedIn ? "Import to Studio" : "Log in to import"}
+        </button>
+        <Link
+          href={`/api/public/kits/${slug}/download?tier=minimal`}
+          className="text-center px-5 py-2.5 rounded-full border border-[var(--mkt-border-strong)] text-[14px] text-[var(--mkt-text-primary)] hover:bg-[var(--mkt-surface-elevated)] transition-colors"
+        >
+          Download .zip
+        </Link>
+      </div>
       {error && <p className="text-[13px] text-red-400">{error}</p>}
-      <Link
-        href={`/api/public/kits/${slug}/download?tier=minimal`}
-        className="text-center px-5 py-2.5 rounded-full border border-[var(--mkt-border-strong)] text-[14px] text-[var(--mkt-text-primary)] hover:bg-[var(--mkt-surface-elevated)] transition-colors"
-      >
-        Download .zip
-      </Link>
     </div>
   );
 }
