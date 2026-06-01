@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import JSZip from "jszip";
-import { fetchKitBySlug } from "@/lib/supabase/kits";
+import { fetchKitBySlug, incrementImportCount } from "@/lib/supabase/kits";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -35,6 +35,14 @@ export async function GET(
   zip.file("LICENCE.txt", licenceBody);
 
   const blob = await zip.generateAsync({ type: "uint8array" });
+
+  // Count CLI installs alongside Studio imports so the gallery's "most imported"
+  // ranking reflects both. Best-effort: never block or fail the download.
+  try {
+    await incrementImportCount(kit.id);
+  } catch {
+    // ignore — the download is what matters
+  }
 
   return new NextResponse(blob as unknown as BodyInit, {
     headers: {

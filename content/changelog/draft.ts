@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w23-cli-install-gallery-kit",
+    title: "Install any gallery kit straight from the CLI",
+    description:
+      "You can now pull a community kit into your project with a single command. Copy the install command from any kit's Gallery page (npx @layoutdesign/context install <kit-slug>, or use <kit-slug>) and Layout downloads that kit's layout.md, tokens and manifest into .layout/, ready for your AI agent. Previously only the three bundled starter kits worked from the CLI; every published gallery kit now does.",
+    product: "cli",
+    category: "new",
+    date: "2026-06-01",
+  },
+  {
     id: "2026-w23-gallery-design-system-reference",
     title: "Gallery kits now open as a full design-system reference",
     description:
