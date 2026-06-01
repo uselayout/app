@@ -853,7 +853,7 @@ function RegenMenu({
           )}
           {[
             { ...styleProfile, hint: "Claude Sonnet · ~5s · ~$0.005 · drives uniform template per-kit" },
-            { ...showcase, hint: "Claude Sonnet · ~30s · costs credits" },
+            { ...showcase, hint: "Claude Opus · ~1-3 min · on-brand bodies in the shell (slow kits: use regen-bespoke script)" },
             { ...preview, hint: "Playwright · ~45s" },
             { ...hero, hint: "GPT Image 2 · ~30s · costs ~$0.04" },
           ].map((item) => (
