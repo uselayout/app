@@ -390,8 +390,15 @@ async function generateKitShowcaseInner(input: GenerateInput): Promise<Generated
     .map((block) => block.text)
     .join("\n");
 
-  const hadPrimaryLogo = !!logo;
-  const blocks = stripFakeBrandingWhenNoLogo(stripFences(raw), hadPrimaryLogo);
+  // Do NOT run stripFakeBrandingWhenNoLogo here. The bespoke `hero` block reads
+  // kit.logoUrl from window.__KIT__ and renders it conditionally at RUNTIME
+  // (`kit.logoUrl ? (<img/>) : null`). The old generation-time img-strip — built
+  // for the previous hardcoded-hero contract — turns that into
+  // `kit.logoUrl ? () : null`, an empty-parens syntax error ("'=>' expected").
+  // The runtime conditional already handles the no-logo case (renders null), and
+  // the prompt forbids fake marks/eyebrows, so stripping is both unnecessary and
+  // harmful here.
+  const blocks = stripFences(raw);
 
   if (!hasBespokeBlocks(blocks)) {
     // Final safety net: log the first chunk so we can diagnose what Claude
