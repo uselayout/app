@@ -322,6 +322,7 @@ The admin UI reads from Supabase (`layout_changelog_draft` table). The sync scri
 - Good: "Faster Figma extraction" / "Design tokens now extract 3x faster from large Figma files."
 - Bad: "perf: optimise batch node fetching"
 - Skip internal-only changes (refactors, dev tooling, CI fixes) that don't affect users
+- **Customer-facing only.** The changelog is read by customers. NEVER add admin-panel features, internal dashboards, operations tooling, affiliate/commission/payout management, outreach scripts, or anything a normal end user cannot see or use. If a change only affects the `/admin` area or staff, it does NOT belong in the changelog, regardless of how big it is. When unsure, ask: "would a logged-in customer notice or benefit from this?" If no, skip it.
 
 Weekly workflow: review draft entries in admin (/admin > Changelog tab), publish, commit, deploy.
 

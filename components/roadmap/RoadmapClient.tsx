@@ -21,6 +21,7 @@ const STATUS_ORDER = [
 
 const PRODUCT_SECTIONS = [
   { key: "studio", label: "Studio" },
+  { key: "layout-live", label: "Layout Live" },
   { key: "cli", label: "CLI" },
   { key: "figma-plugin", label: "Figma Plugin" },
   { key: "chrome-extension", label: "Chrome Extension" },
