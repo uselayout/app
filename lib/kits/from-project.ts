@@ -13,6 +13,7 @@ import type {
   UploadedFont,
 } from "@/lib/types";
 import type { PublishKitInput } from "@/lib/supabase/kits";
+import type { Component } from "@/lib/types/component";
 import type {
   KitJson,
   KitLicence,
@@ -44,6 +45,13 @@ export interface BuildKitInput {
     branding: boolean;
     context: boolean;
   };
+  /**
+   * Project's saved components, fetched by the caller (publish route) from the
+   * org-scoped layout_component table. Attached to richBundle.components when
+   * tier is "rich" and include.components is true. Kept as a param so this
+   * helper stays DB-free and unit-testable.
+   */
+  components?: Component[];
 }
 
 /**
@@ -116,9 +124,23 @@ export function buildKitFromProject(input: BuildKitInput): PublishKitInput {
         mimeType: d.mimeType,
       }));
     }
-    // Components live in a separate org-scoped table (layout_components). The
-    // publish endpoint fetches and attaches them when include.components is
-    // true, keeping this helper DB-free for testability.
+    // Components live in a separate org-scoped table (layout_component). The
+    // publish endpoint fetches them and passes them in via input.components,
+    // keeping this helper DB-free for testability.
+    if (input.include.components && input.components?.length) {
+      richBundle.components = input.components.map((c) => ({
+        name: c.name,
+        slug: c.slug,
+        description: c.description ?? undefined,
+        category: c.category,
+        tags: c.tags,
+        code: c.code,
+        props: c.props,
+        variants: c.variants,
+        states: c.states,
+        tokensUsed: c.tokensUsed,
+      }));
+    }
   }
 
   return {

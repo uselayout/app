@@ -10,10 +10,28 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
-    id: "2026-w23-gallery-design-system-reference",
-    title: "Gallery kits now open as a full design-system reference",
+    id: "2026-w23-kits-include-components",
+    title: "Share component code with your kits",
     description:
-      "Every kit page in the Gallery is now a navigable design-system reference, not a single scroll. A left-hand menu groups Foundations (colour, typography, spacing, sizes, radius, elevation, icons), Forms (text fields, dropdowns, checkboxes, switches, field states) and Components (buttons, badges, avatars, tabs, tooltips, alerts, accordion, breadcrumb, pagination, stats, cards, tables), and clicking any item jumps straight to it. Everything renders live in each kit's own tokens, so you can see exactly how a kit's buttons, inputs and colours look before importing it. Works automatically for every current and future kit.",
+      "When you publish a project to the Gallery, you can now include its components. The Share dialog has a new Components toggle that shows how many you have saved, and ticks itself on when there are any. Anyone who imports the kit, into Studio or via the CLI, gets the component code alongside the tokens, so their AI agent can reuse your real components instead of guessing.",
+    product: "studio",
+    category: "new",
+    date: "2026-06-01",
+  },
+  {
+    id: "2026-w23-cli-install-gallery-kit",
+    title: "Install any gallery kit straight from the CLI",
+    description:
+      "You can now pull a community kit into your project with a single command. Copy the install command from any kit's Gallery page (npx @layoutdesign/context install <kit-slug>, or use <kit-slug>) and Layout downloads that kit's layout.md, tokens and manifest into .layout/, ready for your AI agent. Previously only the three bundled starter kits worked from the CLI; every published gallery kit now does.",
+    product: "cli",
+    category: "new",
+    date: "2026-06-01",
+  },
+  {
+    id: "2026-w23-gallery-design-system-reference",
+    title: "Gallery kits now match each brand's real UI",
+    description:
+      "Every kit page in the Gallery is now a navigable design-system reference, not a single scroll. A left-hand menu groups Foundations (colour, typography, spacing, sizes, radius, elevation, icons), Forms (text fields, dropdowns, checkboxes, switches, field states) and Components (buttons, badges, avatars, tabs, tooltips, alerts, accordion, breadcrumb, pagination, stats, cards, tables), and clicking any item jumps straight to it. Best of all, each kit is now styled to look like its actual brand: Stripe's shadowed buttons, Netflix's dark red UI, IBM's sharp Carbon look, right down to the copy, so the showcase feels like the real product rather than a generic template. See exactly how a kit's buttons, inputs and components behave before you import it.",
     product: "studio",
     category: "improved",
     date: "2026-06-01",

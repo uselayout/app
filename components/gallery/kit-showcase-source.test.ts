@@ -101,3 +101,20 @@ describe("kit-showcase-source — navigable reference shell", () => {
     expect(KIT_SHOWCASE_TSX).toContain("scrollMarginTop");
   });
 });
+
+describe("kit-showcase-source — bespoke block override mechanism", () => {
+  // The same shell renders generic OR bespoke section bodies: a bespoke kit
+  // prepends a `BESPOKE_BLOCKS` global that overrides the generic map; a
+  // SectionErrorBoundary falls back to generic if a bespoke block throws.
+  it("resolves section bodies through GENERIC_BLOCKS ⊕ BESPOKE_BLOCKS", () => {
+    expect(KIT_SHOWCASE_TSX).toContain("GENERIC_BLOCKS");
+    expect(KIT_SHOWCASE_TSX).toContain("BESPOKE_BLOCKS");
+    expect(KIT_SHOWCASE_TSX).toContain('typeof BESPOKE_BLOCKS !== "undefined"');
+    expect(KIT_SHOWCASE_TSX).toContain("Object.assign({}, GENERIC_BLOCKS, bespoke)");
+  });
+
+  it("guards each overridable section with a fallback error boundary", () => {
+    expect(KIT_SHOWCASE_TSX).toMatch(/class\s+SectionErrorBoundary\s+extends\s+React\.Component/);
+    expect(KIT_SHOWCASE_TSX).toContain("getDerivedStateFromError");
+  });
+});

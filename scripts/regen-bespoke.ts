@@ -38,6 +38,9 @@ interface CliArgs {
   slugs: string[] | "all";
   concurrency: number;
   dryRun: boolean;
+  /** Override the generation model. Defaults to the generator's bespoke
+   * default (Opus) when omitted. */
+  model?: string;
 }
 
 function parseArgs(): CliArgs {
@@ -68,8 +71,9 @@ function parseArgs(): CliArgs {
   const concRaw = flag("--concurrency");
   const concurrency = concRaw ? Math.max(1, parseInt(concRaw, 10)) : 1;
   const dryRun = argv.includes("--dry-run");
+  const model = flag("--model");
 
-  return { env: envValue, slugs, concurrency, dryRun };
+  return { env: envValue, slugs, concurrency, dryRun, model };
 }
 
 interface KitSource {
@@ -137,7 +141,7 @@ async function postShowcase(
   return (await res.json()) as { slug: string; tsxLen: number; jsLen: number };
 }
 
-async function regenOne(ctx: ApiCtx, slug: string, dryRun: boolean): Promise<void> {
+async function regenOne(ctx: ApiCtx, slug: string, dryRun: boolean, modelId?: string): Promise<void> {
   const t0 = Date.now();
   console.log(`▸ ${slug}: looking up kit id...`);
   const kitId = await lookupKitIdBySlug(ctx, slug);
@@ -158,6 +162,7 @@ async function regenOne(ctx: ApiCtx, slug: string, dryRun: boolean): Promise<voi
     layoutMd: source.layoutMd,
     tokensCss: source.tokensCss,
     brandingAssets: source.brandingAssets,
+    modelId,
     onProgress: (_delta, total) => {
       // Print every 500 chars so the operator sees forward motion without
       // flooding the terminal. ~5-15 updates over a typical generation.
@@ -242,7 +247,7 @@ async function main(): Promise<void> {
     slugs.map((slug) =>
       runWithLimit(async () => {
         try {
-          await regenOne(ctx, slug, args.dryRun);
+          await regenOne(ctx, slug, args.dryRun, args.model);
           succeeded++;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
