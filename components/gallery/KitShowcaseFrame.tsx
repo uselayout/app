@@ -31,8 +31,11 @@ export function KitShowcaseFrame({ showcaseJs, tokensCss, kit, height, fillViewp
     [showcaseJs, tokensCss, kit],
   );
 
+  // The showcase carries its own sticky in-frame nav, so it needs a bounded
+  // height with internal scroll (sticky tracks the iframe's own scroll, not
+  // the parent page). Tall by default so the reference feels full-bleed.
   const style: React.CSSProperties = fillViewport
-    ? { height: "calc(100vh - 160px)", minHeight: 720 }
+    ? { height: "calc(100vh - 130px)", minHeight: 760 }
     : { height: height ?? 900 };
 
   return (

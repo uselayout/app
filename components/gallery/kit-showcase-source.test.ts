@@ -29,10 +29,10 @@ describe("kit-showcase-source — pickBorder", () => {
 describe("kit-showcase-source — button text contrast", () => {
   it("primary button text is luminance-derived, not hardcoded", () => {
     // The bug was a hardcoded \`#08090a\` used as label colour on every
-    // primary/accept button. Now the source must derive label colour via
-    // onColour(props.accent), which returns white or near-black based on
-    // luminance.
-    expect(KIT_SHOWCASE_TSX).toContain("onColour(props.accent)");
+    // primary/accept button. Now the source derives the on-accent label
+    // colour via onColour(accent) (profile override wins), which returns
+    // white or near-black based on luminance.
+    expect(KIT_SHOWCASE_TSX).toContain("onColour(accent)");
   });
 
   it("onColour helper exists in the source", () => {
@@ -54,18 +54,50 @@ describe("kit-showcase-source — expanded component coverage", () => {
   const blocks = [
     "ButtonsBlock",
     "InputsBlock",
+    "SelectsBlock",
     "FormStatesRow",
     "ControlsBlock",
+    "SwitchesBlock",
     "StatusBadgesBlock",
     "TabsBlock",
+    "TooltipBlock",
     "AvatarsBlock",
     "ProgressBlock",
     "AlertBlock",
+    "AccordionBlock",
+    "BreadcrumbBlock",
+    "PaginationBlock",
     "StatTilesRow",
     "CardBlock",
     "DataTablePreview",
+    "SizesSection",
+    "IconsSection",
   ];
   it.each(blocks)("contains %s helper", (name) => {
     expect(KIT_SHOWCASE_TSX).toContain("function " + name);
+  });
+});
+
+describe("kit-showcase-source — navigable reference shell", () => {
+  // The gallery showcase is a two-pane, registry-driven design-system
+  // reference (Foundations / Forms / Components) with an in-frame sticky nav
+  // and scroll-spy. These lock the structure so a refactor can't silently
+  // collapse it back to a single flat scroll.
+  it("defines a section registry that drives nav + sections", () => {
+    expect(KIT_SHOWCASE_TSX).toContain("const ENTRIES");
+    expect(KIT_SHOWCASE_TSX).toContain('group: "Foundations"');
+    expect(KIT_SHOWCASE_TSX).toContain('group: "Forms"');
+    expect(KIT_SHOWCASE_TSX).toContain('group: "Components"');
+  });
+
+  it("renders a sticky NavSidebar with scroll-spy", () => {
+    expect(KIT_SHOWCASE_TSX).toMatch(/function\s+NavSidebar\(/);
+    expect(KIT_SHOWCASE_TSX).toContain("IntersectionObserver");
+    expect(KIT_SHOWCASE_TSX).toContain("scrollIntoView");
+  });
+
+  it("wraps every section in an anchored SectionShell", () => {
+    expect(KIT_SHOWCASE_TSX).toMatch(/function\s+SectionShell\(/);
+    expect(KIT_SHOWCASE_TSX).toContain("scrollMarginTop");
   });
 });

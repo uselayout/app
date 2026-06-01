@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w23-gallery-design-system-reference",
+    title: "Gallery kits now open as a full design-system reference",
+    description:
+      "Every kit page in the Gallery is now a navigable design-system reference, not a single scroll. A left-hand menu groups Foundations (colour, typography, spacing, sizes, radius, elevation, icons), Forms (text fields, dropdowns, checkboxes, switches, field states) and Components (buttons, badges, avatars, tabs, tooltips, alerts, accordion, breadcrumb, pagination, stats, cards, tables), and clicking any item jumps straight to it. Everything renders live in each kit's own tokens, so you can see exactly how a kit's buttons, inputs and colours look before importing it. Works automatically for every current and future kit.",
+    product: "studio",
+    category: "improved",
+    date: "2026-06-01",
+  },
+  {
     id: "2026-w23-opus-48",
     title: "Claude Opus 4.8 now selectable in the Explorer",
     description:

@@ -38,38 +38,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export const dynamic = "force-dynamic";
 
-type FlatToken = { name: string; value: string; type: string; group: string };
-
-function walkTokens(node: unknown, path: string[] = []): FlatToken[] {
-  if (!node || typeof node !== "object") return [];
-  const obj = node as Record<string, unknown>;
-  if ("$value" in obj) {
-    const raw = obj["$value"];
-    const type = typeof obj["$type"] === "string" ? (obj["$type"] as string) : "";
-    const value = Array.isArray(raw) ? raw.join(", ") : typeof raw === "object" ? JSON.stringify(raw) : String(raw);
-    return [{ name: path.join("."), value, type, group: path[0] ?? "" }];
-  }
-  return Object.entries(obj).flatMap(([k, v]) => (k.startsWith("$") ? [] : walkTokens(v, [...path, k])));
-}
-
-function pxValue(s: string): number {
-  const m = s.match(/-?[\d.]+/);
-  return m ? parseFloat(m[0]) : 0;
-}
-
-function sortByPixelValue(tokens: FlatToken[]): FlatToken[] {
-  return [...tokens].sort((a, b) => pxValue(a.value) - pxValue(b.value));
-}
-
-function groupTokens(tokens: FlatToken[]) {
-  const colour = tokens.filter((t) => t.type === "color");
-  const typography = tokens.filter((t) => ["fontFamily", "fontSize", "fontWeight", "lineHeight", "letterSpacing"].includes(t.type));
-  const spacing = sortByPixelValue(tokens.filter((t) => t.type === "dimension" && /spacing|gap|space|size/i.test(t.group)));
-  const radius = sortByPixelValue(tokens.filter((t) => t.type === "dimension" && /radius|rounded|border/i.test(t.group)));
-  const shadow = tokens.filter((t) => t.type === "shadow" || t.type === "boxShadow");
-  return { colour, typography, spacing, radius, shadow };
-}
-
 export default async function KitDetailPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const { snapshot } = await searchParams;
@@ -130,15 +98,6 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
     initiallyUpvoted = await hasUpvoted(kit.id, session.user.id);
   }
 
-  const flatTokens = walkTokens(kit.tokensJson);
-  const grouped = groupTokens(flatTokens);
-  const hasAnyTokens =
-    grouped.colour.length > 0 ||
-    grouped.typography.length > 0 ||
-    grouped.spacing.length > 0 ||
-    grouped.radius.length > 0 ||
-    grouped.shadow.length > 0;
-
   const relatedKits = await fetchRelatedKits(kit.slug, kit.tags, 3);
 
   // Display host for the "Visit pinterest.com" pill. `kit.homepageUrl` is
@@ -157,7 +116,7 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
     <main className="min-h-screen bg-[var(--mkt-bg)] text-[var(--mkt-text-primary)]">
       <GalleryThemeInit />
       <section className="pt-[40px] pb-8 lg:pt-[60px]">
-        <div className="max-w-[1080px] mx-auto px-6">
+        <div className="max-w-[1240px] mx-auto px-6">
           <div className="flex flex-col gap-5 mb-8">
             <Link href="/" aria-label="Layout home" className="self-start">
               <img src="/marketing/logo.svg" alt="Layout" width={99} height={24} className="mkt-logo" />
@@ -170,200 +129,100 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-10">
-            <div className="flex flex-col gap-6 min-w-0">
-              <div className="flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-4">
-                  <h1 className="text-[36px] leading-[40px] font-normal tracking-[-0.9px]">{kit.name}</h1>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <UpvoteButton
-                      slug={kit.slug}
-                      initialCount={kit.upvoteCount}
-                      initiallyUpvoted={initiallyUpvoted}
-                      isLoggedIn={isLoggedIn}
-                    />
-                    <ShareButton name={kit.name} description={kit.description} />
-                    {homepageHost && kit.homepageUrl && (
-                      <a
-                        href={kit.homepageUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-[12px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)] transition-colors px-2 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]"
-                      >
-                        Visit {homepageHost}
-                        <span aria-hidden>↗</span>
-                      </a>
-                    )}
-                    <span className="text-[12px] text-[var(--mkt-text-secondary)] px-2 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]">
-                      {kit.licence}
-                    </span>
-                  </div>
-                </div>
-                {kit.description && (
-                  <p className="text-[16px] leading-[24px] text-[var(--mkt-text-secondary)]">{kit.description}</p>
-                )}
-
-                <div className="flex items-center gap-2 mt-1">
-                  <Avatar src={kit.author.avatarUrl} name={kit.author.displayName} size={20} />
-                  <span className="text-[13px] text-[var(--mkt-text-secondary)]">
-                    Published by {kit.author.displayName ?? "Layout community"}
+          <div className="flex flex-col gap-6 min-w-0">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-4">
+                <h1 className="text-[36px] leading-[40px] font-normal tracking-[-0.9px]">{kit.name}</h1>
+                <div className="flex shrink-0 items-center gap-2">
+                  <UpvoteButton
+                    slug={kit.slug}
+                    initialCount={kit.upvoteCount}
+                    initiallyUpvoted={initiallyUpvoted}
+                    isLoggedIn={isLoggedIn}
+                  />
+                  <ShareButton name={kit.name} description={kit.description} />
+                  {homepageHost && kit.homepageUrl && (
+                    <a
+                      href={kit.homepageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[12px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)] transition-colors px-2 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]"
+                    >
+                      Visit {homepageHost}
+                      <span aria-hidden>↗</span>
+                    </a>
+                  )}
+                  <span className="text-[12px] text-[var(--mkt-text-secondary)] px-2 py-1 rounded-full border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]">
+                    {kit.licence}
                   </span>
-                  <span aria-hidden className="text-[var(--mkt-text-muted)] opacity-40">·</span>
-                  <span className="text-[13px] text-[var(--mkt-text-muted)]">{kit.importCount} imports</span>
                 </div>
+              </div>
+              {kit.description && (
+                <p className="text-[16px] leading-[24px] text-[var(--mkt-text-secondary)]">{kit.description}</p>
+              )}
 
-                {kit.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-1">
-                    {kit.tags.map((tag) => (
-                      <Link
-                        key={tag}
-                        href={`/gallery?tag=${encodeURIComponent(tag)}`}
-                        className="px-2 py-0.5 rounded-full border border-[var(--mkt-border)] text-[11px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)]"
-                      >
-                        {tag}
-                      </Link>
-                    ))}
-                  </div>
-                )}
+              <div className="flex items-center gap-2 mt-1">
+                <Avatar src={kit.author.avatarUrl} name={kit.author.displayName} size={20} />
+                <span className="text-[13px] text-[var(--mkt-text-secondary)]">
+                  Published by {kit.author.displayName ?? "Layout community"}
+                </span>
+                <span aria-hidden className="text-[var(--mkt-text-muted)] opacity-40">·</span>
+                <span className="text-[13px] text-[var(--mkt-text-muted)]">{kit.importCount} imports</span>
+                <span aria-hidden className="text-[var(--mkt-text-muted)] opacity-40">·</span>
+                <span className="text-[13px] text-[var(--mkt-text-muted)] capitalize">{kit.tier} tier</span>
               </div>
 
-              <div className="mt-4">
-                <KitDetailTabs
-                  preview={
-                    <KitShowcaseFrame
-                      showcaseJs={showcaseJs}
-                      tokensCss={kit.tokensCss}
-                      kit={kitMeta}
-                      fillViewport
-                    />
-                  }
-                  tokens={
-                    hasAnyTokens ? (
-                      <div className="flex flex-col gap-4">
-                        {grouped.colour.length > 0 && (
-                          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
-                            <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Colour ({grouped.colour.length})</h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                              {grouped.colour.slice(0, 48).map((s) => (
-                                <div key={s.name} className="flex items-center gap-2 rounded-lg border border-[var(--mkt-border)] bg-[var(--mkt-bg)] px-2 py-1.5 min-w-0">
-                                  <span className="w-6 h-6 rounded border border-[var(--mkt-border)] shrink-0" style={{ background: s.value }} />
-                                  <div className="flex flex-col min-w-0 flex-1">
-                                    <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono truncate">{s.name}</span>
-                                    <span className="text-[10px] text-[var(--mkt-text-muted)] font-mono truncate">{s.value}</span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {grouped.typography.length > 0 && (
-                          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
-                            <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Typography ({grouped.typography.length})</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {grouped.typography.map((t) => (
-                                <div key={t.name} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--mkt-border)] bg-[var(--mkt-bg)] px-3 py-2 min-w-0">
-                                  <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono truncate min-w-0 flex-1">{t.name}</span>
-                                  <span className="text-[11px] text-[var(--mkt-text-muted)] font-mono truncate text-right min-w-0 flex-1">{t.value}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {grouped.spacing.length > 0 && (
-                          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
-                            <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Spacing ({grouped.spacing.length})</h2>
-                            <div className="flex flex-col gap-1.5">
-                              {grouped.spacing.map((s) => (
-                                <div key={s.name} className="flex items-center gap-3">
-                                  <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono w-40 shrink-0 truncate">{s.name}</span>
-                                  <span className="h-2 rounded bg-[var(--mkt-text-muted)] opacity-60" style={{ width: s.value }} />
-                                  <span className="text-[11px] text-[var(--mkt-text-muted)] font-mono">{s.value}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {grouped.radius.length > 0 && (
-                          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
-                            <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Radius ({grouped.radius.length})</h2>
-                            <div className="flex flex-wrap gap-3">
-                              {grouped.radius.map((r) => (
-                                <div key={r.name} className="flex flex-col items-center gap-1.5">
-                                  <span className="w-14 h-14 bg-[var(--mkt-text-muted)] opacity-60" style={{ borderRadius: r.value }} />
-                                  <span className="text-[10px] text-[var(--mkt-text-primary)] font-mono">{r.name.split(".").pop()}</span>
-                                  <span className="text-[10px] text-[var(--mkt-text-muted)] font-mono">{r.value}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {grouped.shadow.length > 0 && (
-                          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
-                            <h2 className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Shadow ({grouped.shadow.length})</h2>
-                            <div className="flex flex-col gap-2">
-                              {grouped.shadow.map((s) => (
-                                <div key={s.name} className="flex items-center justify-between gap-3 min-w-0">
-                                  <span className="text-[11px] text-[var(--mkt-text-primary)] font-mono shrink-0">{s.name}</span>
-                                  <span className="text-[11px] text-[var(--mkt-text-muted)] font-mono truncate text-right min-w-0 flex-1">{s.value}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-[13px] text-[var(--mkt-text-muted)]">No tokens declared.</p>
-                    )
-                  }
-                  layoutMd={
-                    <pre className="max-h-[700px] overflow-auto rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface-muted)] p-5 text-[12px] leading-[18px] font-mono text-[var(--mkt-text-secondary)] whitespace-pre-wrap">
-                      {kit.layoutMd}
-                    </pre>
-                  }
-                />
-              </div>
+              {kit.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {kit.tags.map((tag) => (
+                    <Link
+                      key={tag}
+                      href={`/gallery?tag=${encodeURIComponent(tag)}`}
+                      className="px-2 py-0.5 rounded-full border border-[var(--mkt-border)] text-[11px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)]"
+                    >
+                      {tag}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <aside className="flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start">
-              <div className="flex flex-col gap-4 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[12px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Use this kit</span>
-                  <span className="text-[14px] text-[var(--mkt-text-primary)]">
-                    Import into Layout Studio, or use it from the CLI in any project.
-                  </span>
-                </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-4">
+              <div className="flex flex-col gap-1 min-w-0 flex-1">
+                <span className="text-[12px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Use this kit</span>
+                <span className="text-[13px] text-[var(--mkt-text-secondary)]">
+                  Import into Layout Studio, or run it from the CLI in any project.
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                <CopyInline
+                  value={`npx @layoutdesign/context install ${kit.slug}`}
+                  label="Copy install command"
+                />
                 <KitDetailImportButton
                   slug={kit.slug}
                   kitId={kit.id}
                   isLoggedIn={isLoggedIn}
                   currentOrgSlug={currentOrgSlug}
                 />
-                <div className="flex flex-col gap-2 pt-3 border-t border-[var(--mkt-border)]">
-                  <span className="text-[11px] uppercase tracking-wide text-[var(--mkt-text-muted)]">CLI</span>
-                  <CopyInline
-                    value={`npx @layoutdesign/context install ${kit.slug}`}
-                    label="Copy install command"
-                  />
-                  <Link
-                    href="/docs/cli"
-                    className="inline-flex items-center gap-1 text-[12px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)] transition-colors self-start"
-                  >
-                    Read the CLI docs
-                    <span aria-hidden>→</span>
-                  </Link>
-                </div>
               </div>
+            </div>
 
-              <div className="flex flex-col gap-2 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-5 text-[12px] text-[var(--mkt-text-secondary)]">
-                <div className="flex justify-between"><span>Tier</span><span className="text-[var(--mkt-text-primary)]">{kit.tier}</span></div>
-                <div className="flex justify-between"><span>Published</span><span className="text-[var(--mkt-text-primary)]">{new Date(kit.createdAt).toLocaleDateString()}</span></div>
-                <div className="flex justify-between"><span>Upvotes</span><span className="text-[var(--mkt-text-primary)]">{kit.upvoteCount}</span></div>
-              </div>
-            </aside>
+            <KitDetailTabs
+              preview={
+                <KitShowcaseFrame
+                  showcaseJs={showcaseJs}
+                  tokensCss={kit.tokensCss}
+                  kit={kitMeta}
+                  fillViewport
+                />
+              }
+              layoutMd={
+                <pre className="max-h-[700px] overflow-auto rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface-muted)] p-5 text-[12px] leading-[18px] font-mono text-[var(--mkt-text-secondary)] whitespace-pre-wrap">
+                  {kit.layoutMd}
+                </pre>
+              }
+            />
           </div>
 
           {relatedKits.length > 0 && (

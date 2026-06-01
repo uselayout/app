@@ -168,6 +168,7 @@ function App() {
       "[data-showcase-btn][data-variant='secondary']:hover, [data-showcase-btn][data-variant='ghost']:hover { background: rgba(127,127,127,0.08); cursor: pointer; }",
       "[data-showcase-btn]:not([data-variant='primary']):hover:not(:disabled) { cursor: pointer; }",
       "[data-showcase-tab]:hover { opacity: 1 !important; cursor: pointer; }",
+      "[data-showcase-navitem]:hover { background: rgba(127,127,127,0.10) !important; cursor: pointer; }",
       "[data-showcase-segment]:hover { cursor: pointer; }",
       "[data-showcase-toggle]:hover, [data-showcase-checkbox]:hover, [data-showcase-radio]:hover { cursor: pointer; }",
       "[data-showcase-card]:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); cursor: pointer; transition: box-shadow 150ms ease, transform 150ms ease; }",
@@ -207,25 +208,147 @@ function App() {
   const outerGap = profile.density === "compact" ? 36 : profile.density === "airy" ? 60 : 48;
   const outerPadding = profile.density === "compact" ? "24px 32px" : profile.density === "airy" ? "44px 56px" : "32px 40px";
 
+  const onAccent = profileColours?.onAccent || onColour(accent);
+
+  // Shared props bag. The source is transpiled as a string (types are stripped
+  // at runtime) so passing a superset of fields to each block is harmless.
+  const blockProps = { bg, text, accent, border, surface, onAccent, radii, headingText, profile };
+
+  // Registry: drives BOTH the left nav and the rendered sections. render()
+  // returns the section body (or null to skip — e.g. a kit with no shadow
+  // tokens drops the Elevation section AND its nav item). Foundations are
+  // self-contained; forms/components get a panel via SectionShell.
+  const ENTRIES = [
+    { group: "Foundations", id: "colour",     title: "Colour",     panel: false, render: () => PaletteSection({ colours: buckets.color, bg, text, accent, border, surface, headingText }) },
+    { group: "Foundations", id: "typography", title: "Typography", panel: false, render: () => TypographySection({ text, border, surface, accent, headingText, profile }) },
+    { group: "Foundations", id: "spacing",    title: "Spacing",    panel: false, render: () => SpacingSection({ spacing: sortSpacing(buckets.space), text, border, accent, surface, headingText }) },
+    { group: "Foundations", id: "sizes",      title: "Sizes",      panel: true,  render: () => SizesSection(blockProps) },
+    { group: "Foundations", id: "radius",     title: "Radius",     panel: false, render: () => RadiusSection({ radii: buckets.radius, text, border, surface, accent, headingText }) },
+    { group: "Foundations", id: "elevation",  title: "Elevation",  panel: false, render: () => ShadowSection({ shadows: buckets.shadow, surface, text, border, headingText }) },
+    { group: "Foundations", id: "icons",      title: "Icons",      panel: true,  render: () => IconsSection(blockProps) },
+
+    { group: "Forms", id: "text-fields", title: "Text fields",         panel: true, render: () => InputsBlock(blockProps) },
+    { group: "Forms", id: "selects",     title: "Dropdowns",           panel: true, render: () => SelectsBlock(blockProps) },
+    { group: "Forms", id: "choice",      title: "Checkboxes & radios", panel: true, render: () => React.createElement(ControlsBlock, blockProps) },
+    { group: "Forms", id: "switches",    title: "Switches",            panel: true, render: () => React.createElement(SwitchesBlock, blockProps) },
+    { group: "Forms", id: "field",       title: "Field states",        panel: true, render: () => FormStatesRow(blockProps) },
+
+    { group: "Components", id: "buttons",    title: "Buttons",    panel: true,  render: () => ButtonsBlock(blockProps) },
+    { group: "Components", id: "badge",      title: "Badges",     panel: true,  render: () => StatusBadgesBlock(blockProps) },
+    { group: "Components", id: "avatars",    title: "Avatars",    panel: true,  render: () => AvatarsBlock(blockProps) },
+    { group: "Components", id: "tabs",       title: "Tabs",       panel: true,  render: () => React.createElement(TabsBlock, blockProps) },
+    { group: "Components", id: "tooltip",    title: "Tooltip",    panel: true,  render: () => TooltipBlock(blockProps) },
+    { group: "Components", id: "alert",      title: "Alerts",     panel: false, render: () => AlertBlock(blockProps) },
+    { group: "Components", id: "progress",   title: "Progress",   panel: true,  render: () => ProgressBlock(blockProps) },
+    { group: "Components", id: "accordion",  title: "Accordion",  panel: false, render: () => React.createElement(AccordionBlock, blockProps) },
+    { group: "Components", id: "breadcrumb", title: "Breadcrumb", panel: true,  render: () => BreadcrumbBlock(blockProps) },
+    { group: "Components", id: "pagination", title: "Pagination", panel: true,  render: () => PaginationBlock(blockProps) },
+    { group: "Components", id: "stats",      title: "Stat tiles", panel: false, render: () => StatTilesRow(blockProps) },
+    { group: "Components", id: "card",       title: "Card",       panel: false, render: () => CardBlock(blockProps) },
+    { group: "Components", id: "table",      title: "Data table", panel: false, render: () => DataTablePreview(blockProps) },
+  ];
+
+  const built = ENTRIES
+    .map((e: any) => ({ group: e.group, id: e.id, title: e.title, panel: e.panel, el: e.render() }))
+    .filter((e: any) => e.el != null);
+
+  const navItems = built.map((e: any) => ({ group: e.group, id: e.id, title: e.title }));
+
   return React.createElement("div", {
+    style: { display: "flex", alignItems: "flex-start", minHeight: "100vh", background: bg, color: text, fontFamily }
+  },
+    React.createElement(NavSidebar, { items: navItems, surface, border, text, accent, headingText, bg }),
+    React.createElement("main", {
+      style: { flex: 1, minWidth: 0, padding: outerPadding, display: "flex", flexDirection: "column", gap: outerGap, boxSizing: "border-box" }
+    },
+      Hero({ accent, border, surface, text, headingText, profile }),
+      ...built.map((e: any) =>
+        SectionShell({ id: e.id, group: e.group, title: e.title, headingText, border, surface, panel: e.panel, children: e.el })
+      )
+    )
+  );
+}
+
+// Sticky in-frame nav. Its own component so its hooks (active-section state +
+// IntersectionObserver scroll-spy) live in their own scope — App's hook count
+// must stay stable across the vars===null early return.
+function NavSidebar(p: any) {
+  const [active, setActive] = React.useState(p.items[0] ? p.items[0].id : "");
+  React.useEffect(() => {
+    const els = p.items
+      .map((it: any) => document.getElementById(it.id))
+      .filter(Boolean);
+    if (els.length === 0) return;
+    const obs = new IntersectionObserver((entries: any) => {
+      const visible = entries.filter((en: any) => en.isIntersecting);
+      if (visible.length === 0) return;
+      visible.sort((a: any, b: any) => a.boundingClientRect.top - b.boundingClientRect.top);
+      setActive(visible[0].target.id);
+    }, { rootMargin: "0px 0px -72% 0px", threshold: 0 });
+    els.forEach((el: any) => obs.observe(el));
+    return () => obs.disconnect();
+  }, [p.items]);
+
+  const groups: any[] = [];
+  for (const it of p.items) {
+    let g = groups.find((x: any) => x.title === it.group);
+    if (!g) { g = { title: it.group, items: [] }; groups.push(g); }
+    g.items.push(it);
+  }
+
+  const go = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    setActive(id);
+  };
+
+  return React.createElement("nav", {
     style: {
-      minHeight: "100vh",
-      background: bg,
-      color: text,
-      fontFamily,
-      padding: outerPadding,
-      display: "flex",
-      flexDirection: "column",
-      gap: outerGap,
+      position: "sticky", top: 0, alignSelf: "flex-start",
+      width: 236, flexShrink: 0, maxHeight: "100vh", overflowY: "auto",
+      padding: "32px 18px 48px 28px", boxSizing: "border-box",
+      borderRight: "1px solid " + p.border, background: p.surface,
+      display: "flex", flexDirection: "column", gap: 22
     }
   },
-    Hero({ accent, border, surface, text, headingText, profile }),
-    PaletteSection({ colours: buckets.color, bg, text, accent, border, surface, headingText }),
-    TypographySection({ text, border, surface, accent, headingText, profile }),
-    SpacingSection({ spacing: sortSpacing(buckets.space), text, border, accent, surface, headingText }),
-    RadiusSection({ radii: buckets.radius, text, border, surface, accent, headingText }),
-    ShadowSection({ shadows: buckets.shadow, surface, text, border, headingText }),
-    ComponentsSection({ bg, text, accent, border, surface, headingText, radii, profile })
+    React.createElement("span", { style: { fontSize: 12, fontWeight: 700, letterSpacing: "0.01em", color: p.headingText } }, "Design system"),
+    ...groups.map((g: any) =>
+      React.createElement("div", { key: g.title, style: { display: "flex", flexDirection: "column", gap: 2 } },
+        React.createElement("span", { style: { fontSize: 10, textTransform: "uppercase", letterSpacing: "0.12em", opacity: 0.5, marginBottom: 6 } }, g.title),
+        ...g.items.map((it: any) => {
+          const on = active === it.id;
+          return React.createElement("button", {
+            key: it.id,
+            "data-showcase-navitem": "true",
+            onClick: () => go(it.id),
+            style: {
+              textAlign: "left", border: "none", cursor: "pointer",
+              padding: "6px 10px", borderRadius: 8, fontSize: 13,
+              fontWeight: on ? 600 : 400,
+              color: on ? p.text : withAlpha(p.text, 0.66),
+              background: on ? withAlpha(p.accent, 0.14) : "transparent",
+              transition: "background 120ms ease, color 120ms ease"
+            }
+          }, it.title);
+        })
+      )
+    )
+  );
+}
+
+// Uniform wrapper: an anchored <section id> + a consistent header, with an
+// optional panel container for form/component demos. Foundation bodies bring
+// their own visual containers so they render panel-less.
+function SectionShell(p: any) {
+  const body = p.panel
+    ? React.createElement("div", { style: { padding: 24, borderRadius: 16, border: "1px solid " + p.border, background: p.surface } }, p.children)
+    : p.children;
+  return React.createElement("section", {
+    key: p.id, id: p.id,
+    style: { display: "flex", flexDirection: "column", gap: 16, scrollMarginTop: 24 }
+  },
+    SectionHeader({ label: p.group, title: p.title, headingText: p.headingText }),
+    body
   );
 }
 
@@ -460,7 +583,7 @@ function Hero(props: { accent: string; border: string; surface: string; text: st
       style: { display: "block", maxHeight: 56, maxWidth: 200, objectFit: "contain", objectPosition: "left" }
     }) : null,
     React.createElement("h1", {
-      style: { fontSize: 44, lineHeight: 1.05, fontWeight: props.profile.headingWeight, margin: 0, letterSpacing: "-0.025em", color: props.headingText }
+      style: { fontSize: 44, lineHeight: 1.05, fontWeight: props.profile.type.headingWeight, margin: 0, letterSpacing: "-0.025em", color: props.headingText }
     }, name),
     React.createElement("p", {
       style: { margin: 0, fontSize: 16, lineHeight: 1.6, opacity: 0.7, maxWidth: 640 }
@@ -531,15 +654,14 @@ function PaletteSection(props: { colours: CssVar[]; bg: string; text: string; ac
     );
   }
 
-  return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
-    SectionHeader({ headingText: props.headingText, label: "Colour", title: "Palette", count: props.colours.length }),
+  return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 20 } },
     ...rendered
   );
 }
 
 function TypographySection(props: { text: string; border: string; surface: string; accent: string; headingText: string; profile: KitStyleProfile }) {
   // Display + heading samples follow the kit's heading weight; body / caption stay regular.
-  const hw = props.profile.headingWeight;
+  const hw = props.profile.type.headingWeight;
   const samples = [
     { label: "Display", size: 48, weight: hw },
     { label: "Heading 1", size: 32, weight: hw },
@@ -547,8 +669,7 @@ function TypographySection(props: { text: string; border: string; surface: strin
     { label: "Body", size: 16, weight: 400 },
     { label: "Caption", size: 12, weight: 400 }
   ];
-  return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
-    SectionHeader({ headingText: props.headingText, label: "Typography", title: "Scale" }),
+  return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 20 } },
     React.createElement("div", {
       style: { display: "flex", flexDirection: "column", borderRadius: 14, border: "1px solid " + props.border, background: props.surface, overflow: "hidden" }
     },
@@ -575,8 +696,7 @@ function SpacingSection(props: { spacing: CssVar[]; text: string; border: string
   // text-derived tint so the eye reads size differences instead of
   // the kit's accent colour repeated 14 times down the column.
   const barFill = withAlpha(props.text, 0.25);
-  return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
-    SectionHeader({ headingText: props.headingText, label: "Spacing", title: "Scale", count: props.spacing.length }),
+  return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 20 } },
     React.createElement("div", {
       style: { display: "flex", flexDirection: "column", gap: 10, padding: 20, borderRadius: 14, border: "1px solid " + props.border, background: props.surface }
     },
@@ -596,8 +716,7 @@ function SpacingSection(props: { spacing: CssVar[]; text: string; border: string
 function RadiusSection(props: { radii: CssVar[]; text: string; border: string; surface: string; accent: string; headingText: string }) {
   if (props.radii.length === 0) return null;
   const chipFill = withAlpha(props.text, 0.28);
-  return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
-    SectionHeader({ headingText: props.headingText, label: "Shape", title: "Radius", count: props.radii.length }),
+  return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 20 } },
     React.createElement("div", {
       style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }
     },
@@ -621,8 +740,7 @@ function RadiusSection(props: { radii: CssVar[]; text: string; border: string; s
 
 function ShadowSection(props: { shadows: CssVar[]; surface: string; text: string; border: string; headingText: string }) {
   if (props.shadows.length === 0) return null;
-  return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
-    SectionHeader({ headingText: props.headingText, label: "Depth", title: "Elevation", count: props.shadows.length }),
+  return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 20 } },
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 } },
       ...props.shadows.map((v: CssVar) =>
         React.createElement("div", {
@@ -632,39 +750,6 @@ function ShadowSection(props: { shadows: CssVar[]; surface: string; text: string
           React.createElement("span", { style: { fontFamily: "ui-monospace, monospace", fontSize: 11, opacity: 0.7 } }, v.name)
         )
       )
-    )
-  );
-}
-
-function ComponentsSection(props: { bg: string; text: string; accent: string; border: string; surface: string; headingText: string; radii: KitRadii; profile: KitStyleProfile }) {
-  // onAccent: profile wins (brand may want off-white or a specific tone),
-  // fall back to luminance-derived if profile colours absent.
-  const onAccent = props.profile.colours?.onAccent || onColour(props.accent);
-  const blockProps = { bg: props.bg, text: props.text, accent: props.accent, border: props.border, surface: props.surface, onAccent: onAccent, radii: props.radii, profile: props.profile };
-  const sectionGap = props.profile.density === "compact" ? 22 : props.profile.density === "airy" ? 36 : 28;
-  return React.createElement("section", { style: { display: "flex", flexDirection: "column", gap: 20 } },
-    SectionHeader({ headingText: props.headingText, label: "Samples", title: "Components" }),
-    React.createElement("div", {
-      style: { padding: props.profile.density === "compact" ? 22 : props.profile.density === "airy" ? 36 : 28, borderRadius: props.profile.card.radius, border: "1px solid " + props.border, background: props.surface, display: "flex", flexDirection: "column", gap: sectionGap }
-    },
-      ButtonsBlock(blockProps),
-      InputsBlock(blockProps),
-      FormStatesRow(blockProps),
-      // ControlsBlock and TabsBlock use useState — they must be rendered
-      // via React.createElement (not called as plain functions) so React
-      // tracks their hooks in their own component scope. Otherwise their
-      // useState calls execute inside App's render frame, which means
-      // App's hook count differs across renders (early return when vars
-      // is null vs full render afterwards) → React error #310.
-      React.createElement(ControlsBlock, blockProps),
-      StatusBadgesBlock(blockProps),
-      React.createElement(TabsBlock, blockProps),
-      AvatarsBlock(blockProps),
-      ProgressBlock(blockProps),
-      AlertBlock(blockProps),
-      StatTilesRow(blockProps),
-      CardBlock(blockProps),
-      DataTablePreview(blockProps)
     )
   );
 }
@@ -727,7 +812,6 @@ function ButtonsBlock(p: { text: string; accent: string; border: string; onAccen
     }, label);
   };
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
-    Subhead("Buttons"),
     React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" } },
       btn("Primary", "primary"),
       btn("Secondary", "secondary"),
@@ -795,19 +879,6 @@ function InputsBlock(p: { bg: string; text: string; accent: string; border: stri
         }, "@"),
         React.createElement("input", { placeholder: "username", style: { border: "none", outline: "none", padding: "10px 14px", background: "transparent", color: p.text, fontSize: 14, flex: 1 } })
       ),
-      // Select
-      React.createElement("div", { style: { position: "relative", display: "flex", alignItems: "center" } },
-        React.createElement("select", {
-          style: { ...baseStyle, appearance: "none", paddingRight: 40 }
-        },
-          React.createElement("option", null, "United Kingdom"),
-          React.createElement("option", null, "United States"),
-          React.createElement("option", null, "Germany")
-        ),
-        React.createElement("span", {
-          style: { position: "absolute", right: 14, display: "inline-flex", color: p.text, pointerEvents: "none" }
-        }, ChevronDown({ size: 16, opacity: 0.65 }))
-      ),
       // Textarea
       React.createElement("textarea", {
         rows: 2, placeholder: "Leave a note…",
@@ -827,7 +898,6 @@ function FormStatesRow(p: { bg: string; text: string; accent: string; border: st
     ? { ...inputBase, border: bw + "px solid " + p.accent, boxShadow: "0 0 0 3px " + withAlpha(p.accent, 0.18) }
     : { ...inputBase, border: (bw + 0.5) + "px solid " + p.accent };
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
-    Subhead("Field states"),
     React.createElement("div", { style: { display: "flex", gap: 12, flexWrap: "wrap" } },
       React.createElement("input", { defaultValue: "Default", style: { ...inputBase, border: bw + "px solid " + p.border } }),
       React.createElement("input", { defaultValue: "Focused", style: focusedStyle }),
@@ -837,33 +907,9 @@ function FormStatesRow(p: { bg: string; text: string; accent: string; border: st
 }
 
 function ControlsBlock(p: { text: string; accent: string; border: string; bg: string; onAccent: string; radii: KitRadii; profile: KitStyleProfile }) {
-  const [toggle1, setToggle1] = React.useState(true);
-  const [toggle2, setToggle2] = React.useState(false);
   const [check1, setCheck1] = React.useState(true);
   const [check2, setCheck2] = React.useState(false);
   const [radio, setRadio] = React.useState<"monthly" | "annual">("monthly");
-
-  const toggleEl = (on: boolean, onClick: () => void) =>
-    React.createElement("button", {
-      "data-showcase-toggle": "true",
-      onClick,
-      style: {
-        width: 36, height: 22, borderRadius: 999,
-        background: on ? p.accent : withAlpha(p.text, 0.16),
-        position: "relative", display: "inline-block",
-        border: "none", padding: 0,
-        transition: "background 150ms ease"
-      }
-    },
-      React.createElement("span", {
-        style: {
-          position: "absolute", top: 2, left: on ? 16 : 2,
-          width: 18, height: 18, borderRadius: "50%", background: "#fff",
-          transition: "left 150ms ease",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.15)"
-        }
-      })
-    );
 
   const checkEl = (checked: boolean, onClick: () => void) =>
     React.createElement("button", {
@@ -897,26 +943,47 @@ function ControlsBlock(p: { text: string; accent: string; border: string; bg: st
       selected ? React.createElement("span", { style: { width: 9, height: 9, borderRadius: "50%", background: p.accent } }) : null
     );
 
-  return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
-    Subhead("Controls"),
-    React.createElement("div", { style: { display: "flex", gap: 24, flexWrap: "wrap", alignItems: "center" } },
-      React.createElement("div", { style: { display: "flex", gap: 12, alignItems: "center" } },
-        toggleEl(toggle1, () => setToggle1((v) => !v)),
-        toggleEl(toggle2, () => setToggle2((v) => !v))
-      ),
-      React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", fontSize: 13 } },
-        checkEl(check1, () => setCheck1((v) => !v)),
-        React.createElement("span", null, "Notifications"),
-        checkEl(check2, () => setCheck2((v) => !v)),
-        React.createElement("span", { style: { opacity: 0.7 } }, "Marketing")
-      ),
-      React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", fontSize: 13 } },
-        radioEl(radio === "monthly", () => setRadio("monthly")),
-        React.createElement("span", null, "Monthly"),
-        radioEl(radio === "annual", () => setRadio("annual")),
-        React.createElement("span", { style: { opacity: radio === "annual" ? 1 : 0.7 } }, "Annual")
-      )
+  return React.createElement("div", { style: { display: "flex", gap: 28, flexWrap: "wrap", alignItems: "center" } },
+    React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", fontSize: 13 } },
+      checkEl(check1, () => setCheck1((v) => !v)),
+      React.createElement("span", null, "Notifications"),
+      checkEl(check2, () => setCheck2((v) => !v)),
+      React.createElement("span", { style: { opacity: 0.7 } }, "Marketing")
+    ),
+    React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", fontSize: 13 } },
+      radioEl(radio === "monthly", () => setRadio("monthly")),
+      React.createElement("span", null, "Monthly"),
+      radioEl(radio === "annual", () => setRadio("annual")),
+      React.createElement("span", { style: { opacity: radio === "annual" ? 1 : 0.7 } }, "Annual")
     )
+  );
+}
+
+function SwitchesBlock(p: { text: string; accent: string; border: string; bg: string; onAccent: string; radii: KitRadii; profile: KitStyleProfile }) {
+  const [a, setA] = React.useState(true);
+  const [b, setB] = React.useState(false);
+  const [c, setC] = React.useState(true);
+  const toggleEl = (on: boolean, onClick: () => void, label: string) =>
+    React.createElement("label", { style: { display: "inline-flex", alignItems: "center", gap: 10, cursor: "pointer", fontSize: 13 } },
+      React.createElement("button", {
+        "data-showcase-toggle": "true", onClick,
+        style: {
+          width: 38, height: 22, borderRadius: 999,
+          background: on ? p.accent : withAlpha(p.text, 0.16),
+          position: "relative", border: "none", padding: 0, cursor: "pointer",
+          transition: "background 150ms ease", flexShrink: 0
+        }
+      },
+        React.createElement("span", {
+          style: { position: "absolute", top: 2, left: on ? 18 : 2, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 150ms ease", boxShadow: "0 1px 2px rgba(0,0,0,0.2)" }
+        })
+      ),
+      React.createElement("span", { style: { opacity: on ? 1 : 0.7 } }, label)
+    );
+  return React.createElement("div", { style: { display: "flex", gap: 24, flexWrap: "wrap", alignItems: "center" } },
+    toggleEl(a, () => setA((v) => !v), "Email updates"),
+    toggleEl(b, () => setB((v) => !v), "Push notifications"),
+    toggleEl(c, () => setC((v) => !v), "Weekly digest")
   );
 }
 
@@ -1077,7 +1144,6 @@ function AvatarsBlock(p: { text: string; accent: string; border: string; bg: str
 
 function ProgressBlock(p: { text: string; accent: string; border: string; bg: string; radii: KitRadii; profile: KitStyleProfile }) {
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
-    Subhead("Progress"),
     React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 14, maxWidth: 480 } },
       // Progress bar with label
       React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6 } },
@@ -1101,7 +1167,6 @@ function ProgressBlock(p: { text: string; accent: string; border: string; bg: st
 
 function AlertBlock(p: { text: string; accent: string; border: string; onAccent: string; radii: KitRadii; profile: KitStyleProfile }) {
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
-    Subhead("Alert"),
     React.createElement("div", {
       style: { display: "flex", gap: 12, alignItems: "flex-start", padding: "14px 16px", borderRadius: p.radii.md, background: withAlpha(p.accent, 0.1), border: "1px solid " + withAlpha(p.accent, 0.3) }
     },
@@ -1130,7 +1195,6 @@ function CardBlock(p: { bg: string; text: string; accent: string; border: string
   const cardBorder = elev === "elevated" ? "none" : "1px solid " + p.border;
   const cardShadow = elev === "soft" ? undefined : (elev === "elevated" ? "0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.05)" : "0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04)");
   return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
-    Subhead("Card"),
     React.createElement("div", {
       "data-showcase-card": "true",
       style: { padding: cp, borderRadius: cr, border: cardBorder, background: p.bg, display: "flex", flexDirection: "column", gap: 12, maxWidth: 480, boxShadow: cardShadow }
@@ -1218,6 +1282,153 @@ function DataTablePreview(props: { bg: string; text: string; accent: string; bor
         React.createElement("span", { style: { opacity: 0.6, fontSize: 12 } }, r.updated)
       )
     )
+  );
+}
+
+// Generic stroke-icon wrapper. Children are the SVG path/shape elements.
+function Ico(children: any) {
+  return React.createElement("svg", {
+    width: 22, height: 22, viewBox: "0 0 24 24", fill: "none",
+    stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round",
+    "aria-hidden": true
+  }, ...children);
+}
+
+function IconsSection(p: { text: string; accent: string; border: string; bg: string; radii: KitRadii; profile: KitStyleProfile }) {
+  const items = [
+    { name: "search", svg: Ico([React.createElement("circle", { key: 1, cx: 11, cy: 11, r: 7 }), React.createElement("line", { key: 2, x1: 21, y1: 21, x2: 16.65, y2: 16.65 })]) },
+    { name: "check", svg: Ico([React.createElement("polyline", { key: 1, points: "20 6 9 17 4 12" })]) },
+    { name: "close", svg: Ico([React.createElement("line", { key: 1, x1: 18, y1: 6, x2: 6, y2: 18 }), React.createElement("line", { key: 2, x1: 6, y1: 6, x2: 18, y2: 18 })]) },
+    { name: "plus", svg: Ico([React.createElement("line", { key: 1, x1: 12, y1: 5, x2: 12, y2: 19 }), React.createElement("line", { key: 2, x1: 5, y1: 12, x2: 19, y2: 12 })]) },
+    { name: "chevron", svg: Ico([React.createElement("polyline", { key: 1, points: "6 9 12 15 18 9" })]) },
+    { name: "arrow", svg: Ico([React.createElement("line", { key: 1, x1: 5, y1: 12, x2: 19, y2: 12 }), React.createElement("polyline", { key: 2, points: "12 5 19 12 12 19" })]) },
+    { name: "bell", svg: Ico([React.createElement("path", { key: 1, d: "M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" }), React.createElement("path", { key: 2, d: "M13.7 21a2 2 0 0 1-3.4 0" })]) },
+    { name: "user", svg: Ico([React.createElement("path", { key: 1, d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" }), React.createElement("circle", { key: 2, cx: 12, cy: 7, r: 4 })]) },
+    { name: "calendar", svg: Ico([React.createElement("rect", { key: 1, x: 3, y: 4, width: 18, height: 18, rx: 2 }), React.createElement("line", { key: 2, x1: 16, y1: 2, x2: 16, y2: 6 }), React.createElement("line", { key: 3, x1: 8, y1: 2, x2: 8, y2: 6 }), React.createElement("line", { key: 4, x1: 3, y1: 10, x2: 21, y2: 10 })]) },
+    { name: "trash", svg: Ico([React.createElement("polyline", { key: 1, points: "3 6 5 6 21 6" }), React.createElement("path", { key: 2, d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" }), React.createElement("path", { key: 3, d: "M10 11v6M14 11v6" })]) },
+    { name: "heart", svg: Ico([React.createElement("path", { key: 1, d: "M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z" })]) },
+    { name: "star", svg: Ico([React.createElement("polygon", { key: 1, points: "12 2 15.1 8.6 22 9.3 17 14 18.2 21 12 17.6 5.8 21 7 14 2 9.3 8.9 8.6 12 2" })]) }
+  ];
+  return React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(92px, 1fr))", gap: 10 } },
+    ...items.map((it: any) =>
+      React.createElement("div", {
+        key: it.name,
+        style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 8px", borderRadius: p.radii.md, border: "1px solid " + p.border, background: p.bg, color: p.text }
+      },
+        it.svg,
+        React.createElement("span", { style: { fontSize: 11, fontFamily: "ui-monospace, monospace", opacity: 0.6 } }, it.name)
+      )
+    )
+  );
+}
+
+function SizesSection(p: { text: string; accent: string; border: string; bg: string; radii: KitRadii; profile: KitStyleProfile }) {
+  const heights = [24, 28, 32, 36, 40, 48];
+  return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 14 } },
+    React.createElement("span", { style: { fontSize: 13, opacity: 0.7, lineHeight: 1.5 } }, "Control height scale. Buttons, inputs, and chips snap to these heights."),
+    React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10 } },
+      ...heights.map((h: number) =>
+        React.createElement("div", { key: h, style: { display: "flex", alignItems: "center", gap: 14 } },
+          React.createElement("span", { style: { fontFamily: "ui-monospace, monospace", fontSize: 11, opacity: 0.55, width: 44, flexShrink: 0 } }, h + "px"),
+          React.createElement("div", { style: { height: h, paddingLeft: 16, paddingRight: 16, borderRadius: p.radii.md, background: withAlpha(p.text, 0.06), border: "1px solid " + p.border, display: "inline-flex", alignItems: "center", fontSize: 13, flexShrink: 0 } }, "Label"),
+          React.createElement("div", { style: { height: h, flex: 1, maxWidth: 200, borderRadius: p.radii.md, border: "1px solid " + p.border, background: p.bg } })
+        )
+      )
+    )
+  );
+}
+
+function SelectsBlock(p: { text: string; accent: string; border: string; bg: string; surface: string; onAccent: string; radii: KitRadii; profile: KitStyleProfile }) {
+  const ir = p.profile.input.radius || p.radii.md;
+  const bw = p.profile.input.borderWidth;
+  return React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 18, alignItems: "flex-start" } },
+    React.createElement("div", { style: { position: "relative", display: "inline-flex", alignItems: "center", minWidth: 200 } },
+      React.createElement("select", {
+        style: { appearance: "none", padding: "10px 40px 10px 14px", borderRadius: ir, border: bw + "px solid " + p.border, background: p.bg, color: p.text, fontSize: 14, width: "100%" }
+      },
+        React.createElement("option", null, "United Kingdom"),
+        React.createElement("option", null, "United States"),
+        React.createElement("option", null, "Germany")
+      ),
+      React.createElement("span", { style: { position: "absolute", right: 14, pointerEvents: "none", color: p.text, display: "inline-flex" } }, ChevronDown({ size: 16, opacity: 0.65 }))
+    ),
+    React.createElement("div", { style: { width: 220, borderRadius: ir, border: "1px solid " + p.border, background: p.surface, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.08)" } },
+      ...["Profile", "Billing", "Team", "Sign out"].map((label: string, i: number) =>
+        React.createElement("div", {
+          key: label,
+          style: { padding: "9px 14px", fontSize: 13, color: p.text, background: i === 0 ? withAlpha(p.accent, 0.12) : "transparent", borderTop: i === 0 ? "none" : "1px solid " + withAlpha(p.text, 0.05), display: "flex", justifyContent: "space-between", alignItems: "center" } },
+          label,
+          i === 0 ? React.createElement("span", { style: { color: p.accent, display: "inline-flex" } }, Ico([React.createElement("polyline", { key: 1, points: "20 6 9 17 4 12" })])) : null
+        )
+      )
+    )
+  );
+}
+
+function TooltipBlock(p: { text: string; accent: string; border: string; bg: string; onAccent: string; radii: KitRadii; profile: KitStyleProfile }) {
+  return React.createElement("div", { style: { display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap", paddingTop: 22, paddingBottom: 8 } },
+    React.createElement("div", { style: { position: "relative", display: "inline-flex" } },
+      React.createElement("span", {
+        style: { position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)", padding: "6px 10px", borderRadius: p.radii.sm, background: p.text, color: p.bg, fontSize: 12, whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(0,0,0,0.18)" }
+      }, "Copy to clipboard",
+        React.createElement("span", { style: { position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "5px solid " + p.text } })
+      ),
+      React.createElement("button", {
+        "data-showcase-btn": "true", "data-variant": "secondary",
+        style: { background: "transparent", color: p.text, border: "1px solid " + p.border, padding: "8px 14px", borderRadius: p.profile.button.radius, fontSize: 13, cursor: "pointer" }
+      }, "Hover target")
+    ),
+    React.createElement("span", { style: { fontSize: 13, opacity: 0.6, maxWidth: 320, lineHeight: 1.5 } }, "Tooltips use the inverted text colour so they read clearly on any surface.")
+  );
+}
+
+function AccordionBlock(p: { text: string; accent: string; border: string; bg: string; radii: KitRadii; profile: KitStyleProfile }) {
+  const [open, setOpen] = React.useState(0);
+  const items = [
+    { q: "How are tokens imported?", a: "Layout writes the kit's tokens.css and layout.md into your project so AI agents resolve every var(--token) automatically." },
+    { q: "Can I edit a kit after importing?", a: "Yes. Everything lands as plain files in your repo. Edit the tokens, regenerate, or push changes back to Figma." },
+    { q: "Does it work with my framework?", a: "The tokens are framework-agnostic CSS custom properties, with optional Tailwind and W3C JSON outputs." }
+  ];
+  return React.createElement("div", { style: { display: "flex", flexDirection: "column", borderRadius: p.radii.md, border: "1px solid " + p.border, overflow: "hidden", background: p.bg } },
+    ...items.map((it: any, i: number) => {
+      const isOpen = open === i;
+      return React.createElement("div", { key: i, style: { borderTop: i === 0 ? "none" : "1px solid " + p.border } },
+        React.createElement("button", {
+          onClick: () => setOpen(isOpen ? -1 : i),
+          style: { width: "100%", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "14px 16px", background: "transparent", border: "none", color: p.text, fontSize: 14, fontWeight: 500, cursor: "pointer" }
+        },
+          it.q,
+          React.createElement("span", { style: { display: "inline-flex", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 150ms ease", opacity: 0.7 } }, ChevronDown({ size: 16 }))
+        ),
+        isOpen ? React.createElement("div", { style: { padding: "0 16px 16px", fontSize: 13, lineHeight: 1.55, opacity: 0.75 } }, it.a) : null
+      );
+    })
+  );
+}
+
+function BreadcrumbBlock(p: { text: string; accent: string; border: string; bg: string; radii: KitRadii; profile: KitStyleProfile }) {
+  const crumbs = ["Gallery", "Foundations", "Colour"];
+  return React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } },
+    ...crumbs.flatMap((c: string, i: number) => {
+      const last = i === crumbs.length - 1;
+      const item = React.createElement("span", { key: "c" + i, style: { fontSize: 13, color: last ? p.text : withAlpha(p.text, 0.6), fontWeight: last ? 600 : 400 } }, c);
+      return last ? [item] : [item, React.createElement("span", { key: "s" + i, style: { opacity: 0.4, fontSize: 13 } }, "/")];
+    })
+  );
+}
+
+function PaginationBlock(p: { text: string; accent: string; border: string; bg: string; onAccent: string; radii: KitRadii; profile: KitStyleProfile }) {
+  const pages = ["1", "2", "3", "…", "12"];
+  const active = "2";
+  const cell = (label: string, isActive: boolean, key: string) =>
+    React.createElement("button", {
+      key,
+      style: { minWidth: 34, height: 34, padding: "0 8px", borderRadius: p.radii.sm, border: "1px solid " + (isActive ? p.accent : p.border), background: isActive ? p.accent : "transparent", color: isActive ? p.onAccent : p.text, fontSize: 13, fontWeight: isActive ? 600 : 400, cursor: "pointer" }
+    }, label);
+  return React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" } },
+    React.createElement("button", { style: { height: 34, padding: "0 12px", borderRadius: p.radii.sm, border: "1px solid " + p.border, background: "transparent", color: p.text, fontSize: 13, cursor: "pointer", opacity: 0.8 } }, "← Prev"),
+    ...pages.map((pg: string, i: number) => cell(pg, pg === active, "p" + i)),
+    React.createElement("button", { style: { height: 34, padding: "0 12px", borderRadius: p.radii.sm, border: "1px solid " + p.border, background: "transparent", color: p.text, fontSize: 13, cursor: "pointer" } }, "Next →")
   );
 }
 

@@ -2,21 +2,19 @@
 
 import { useState, type ReactNode } from "react";
 
-type TabId = "preview" | "tokens" | "layoutmd";
+type TabId = "preview" | "layoutmd";
 
 interface Props {
   preview: ReactNode;
-  tokens: ReactNode;
   layoutMd: ReactNode;
 }
 
 const TABS: Array<{ id: TabId; label: string }> = [
-  { id: "preview", label: "Live Preview" },
-  { id: "tokens", label: "Tokens" },
+  { id: "preview", label: "Design system" },
   { id: "layoutmd", label: "layout.md" },
 ];
 
-export function KitDetailTabs({ preview, tokens, layoutMd }: Props) {
+export function KitDetailTabs({ preview, layoutMd }: Props) {
   const [active, setActive] = useState<TabId>("preview");
 
   return (
@@ -42,7 +40,6 @@ export function KitDetailTabs({ preview, tokens, layoutMd }: Props) {
       </div>
 
       <div className={active === "preview" ? "block" : "hidden"}>{preview}</div>
-      <div className={active === "tokens" ? "block" : "hidden"}>{tokens}</div>
       <div className={active === "layoutmd" ? "block" : "hidden"}>{layoutMd}</div>
     </div>
   );
