@@ -2,7 +2,7 @@ import { supabase } from "./client";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type RoadmapProduct = "studio" | "cli" | "figma-plugin" | "chrome-extension";
+export type RoadmapProduct = "studio" | "layout-live" | "cli" | "figma-plugin" | "chrome-extension";
 export type RoadmapStatus = "considering" | "planned" | "in_progress" | "shipped";
 
 export interface RoadmapItem {

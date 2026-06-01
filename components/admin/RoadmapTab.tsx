@@ -21,6 +21,7 @@ const STATUSES = [
 
 const PRODUCTS = [
   { key: "studio", label: "Studio" },
+  { key: "layout-live", label: "Layout Live" },
   { key: "cli", label: "CLI" },
   { key: "figma-plugin", label: "Figma Plugin" },
   { key: "chrome-extension", label: "Chrome Extension" },
@@ -35,6 +36,7 @@ const statusColours: Record<string, string> = {
 
 const productBadgeStyles: Record<string, { bg: string; text: string }> = {
   studio: { bg: "var(--studio-border)", text: "var(--text-primary)" },
+  "layout-live": { bg: "rgba(228,242,34,0.15)", text: "rgb(228,242,34)" },
   cli: { bg: "rgba(16,185,129,0.15)", text: "rgb(52,211,153)" },
   "figma-plugin": { bg: "rgba(139,92,246,0.15)", text: "rgb(167,139,250)" },
   "chrome-extension": { bg: "rgba(245,158,11,0.15)", text: "rgb(251,191,36)" },
