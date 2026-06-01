@@ -72,6 +72,20 @@ const FALLBACK_MODELS: AiModel[] = [
     sortOrder: 1,
   },
   {
+    id: "claude-opus-4-8",
+    label: "Claude Opus 4.8",
+    provider: "claude",
+    maxOutputTokens: 128_000,
+    creditCost: 5,
+    inputCostPerM: 5.0,
+    outputCostPerM: 25.0,
+    byokOnly: false,
+    userSelectable: true,
+    enabled: true,
+    isDefault: false,
+    sortOrder: 2,
+  },
+  {
     id: "claude-haiku-4-5-20251001",
     label: "Claude Haiku 4.5",
     provider: "claude",
@@ -83,7 +97,7 @@ const FALLBACK_MODELS: AiModel[] = [
     userSelectable: false,
     enabled: true,
     isDefault: false,
-    sortOrder: 2,
+    sortOrder: 3,
   },
   {
     id: "gemini-3.1-pro-preview",
@@ -97,7 +111,7 @@ const FALLBACK_MODELS: AiModel[] = [
     userSelectable: true,
     enabled: true,
     isDefault: false,
-    sortOrder: 3,
+    sortOrder: 4,
   },
 ];
 

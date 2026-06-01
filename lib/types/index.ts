@@ -30,6 +30,12 @@ export const AI_MODELS: Record<string, AiModelDef> = {
     provider: "claude",
     maxOutputTokens: 128_000,
   },
+  "claude-opus-4-8": {
+    id: "claude-opus-4-8",
+    label: "Claude Opus 4.8",
+    provider: "claude",
+    maxOutputTokens: 128_000,
+  },
   "gemini-3.1-pro-preview": {
     id: "gemini-3.1-pro-preview",
     label: "Gemini 3.1 Pro",

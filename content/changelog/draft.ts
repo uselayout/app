@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w23-opus-48",
+    title: "Claude Opus 4.8 now selectable in the Explorer",
+    description:
+      "Anthropic's newest flagship model, Claude Opus 4.8, is now available as a premium option in the Explorer model picker. Pick it when you want the highest-quality variant generation; it costs the same as Opus 4.7 and honours your own Anthropic key if you've added one in Settings.",
+    product: "studio",
+    category: "new",
+    date: "2026-06-01",
+  },
+  {
     id: "2026-w20-refine-with-ai",
     title: "Refine generated components with a one-line instruction",
     description:
