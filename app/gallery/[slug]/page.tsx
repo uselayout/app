@@ -187,35 +187,54 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
               )}
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] p-4">
-              <div className="flex flex-col gap-3 min-w-0 flex-1">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[12px] uppercase tracking-wide text-[var(--mkt-text-muted)]">Use this kit</span>
-                  <span className="text-[13px] text-[var(--mkt-text-secondary)]">
-                    Import into Layout Studio, or run it from the CLI in any project.
-                  </span>
+            <div className="rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] overflow-hidden">
+              <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-[var(--mkt-border)]">
+                {/* Track 1 — Layout Studio */}
+                <div className="flex flex-col gap-3 p-5 sm:flex-1">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--mkt-text-muted)]">Layout Studio</span>
+                    <span className="text-[13px] text-[var(--mkt-text-secondary)] leading-snug">
+                      Import this kit into a Studio project and start editing.
+                    </span>
+                  </div>
+                  <div className="mt-auto">
+                    <KitDetailImportButton
+                      slug={kit.slug}
+                      kitId={kit.id}
+                      isLoggedIn={isLoggedIn}
+                      currentOrgSlug={currentOrgSlug}
+                    />
+                  </div>
                 </div>
-                <div className="w-fit max-w-full">
+
+                {/* Track 2 — CLI install */}
+                <div className="flex flex-col gap-3 p-5 sm:flex-1">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--mkt-text-muted)]">CLI install</span>
+                    <span className="text-[13px] text-[var(--mkt-text-secondary)] leading-snug">
+                      Run it in any project. No account needed.
+                    </span>
+                  </div>
                   <CopyInline
                     value={`npx @layoutdesign/context install ${kit.slug}`}
                     label="Copy install command"
                   />
+                  <div className="mt-auto flex flex-wrap items-center gap-3">
+                    <Link
+                      href={`/api/public/kits/${kit.slug}/download?tier=minimal`}
+                      className="inline-flex items-center px-4 py-2 rounded-full border border-[var(--mkt-border-strong)] text-[13px] text-[var(--mkt-text-primary)] hover:bg-[var(--mkt-surface-elevated)] transition-colors"
+                    >
+                      Download .zip
+                    </Link>
+                    <Link
+                      href="/docs/cli"
+                      className="inline-flex items-center gap-1 text-[12px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)] transition-colors"
+                    >
+                      Read the CLI docs
+                      <span aria-hidden>→</span>
+                    </Link>
+                  </div>
                 </div>
-                <Link
-                  href="/docs/cli"
-                  className="inline-flex items-center gap-1 text-[12px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)] transition-colors self-start"
-                >
-                  Read the CLI docs
-                  <span aria-hidden>→</span>
-                </Link>
-              </div>
-              <div className="shrink-0">
-                <KitDetailImportButton
-                  slug={kit.slug}
-                  kitId={kit.id}
-                  isLoggedIn={isLoggedIn}
-                  currentOrgSlug={currentOrgSlug}
-                />
               </div>
             </div>
 
