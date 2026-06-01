@@ -40,6 +40,9 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
     branding: (project.brandingAssets?.length ?? 0) > 0,
     context: (project.contextDocuments?.length ?? 0) > 0,
   });
+  // Component count isn't stored on the Project — fetch it from the org-scoped
+  // component library when the modal opens so we can show + offer the toggle.
+  const [componentCount, setComponentCount] = useState<number | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +62,26 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
       .then((body: { isAdmin: boolean }) => setIsAdmin(body.isAdmin))
       .catch(() => setIsAdmin(false));
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    fetch(`/api/organizations/${orgSlug}/components?projectId=${project.id}`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: Array<{ status?: string }>) => {
+        if (cancelled) return;
+        const count = rows.filter((c) => c.status !== "deprecated").length;
+        setComponentCount(count);
+        // Match fonts/branding/context: default the toggle on when present.
+        if (count > 0) setInclude((prev) => ({ ...prev, components: true }));
+      })
+      .catch(() => {
+        if (!cancelled) setComponentCount(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, orgSlug, project.id]);
 
   async function handleAiSuggest() {
     setAiBusy(true);
@@ -84,11 +107,11 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
   }
 
   const counts = useMemo(() => ({
-    components: 0, // Component count not tracked on Project; fetched at publish time.
+    components: componentCount ?? 0,
     fonts: project.uploadedFonts?.length ?? 0,
     branding: project.brandingAssets?.length ?? 0,
     context: project.contextDocuments?.length ?? 0,
-  }), [project]);
+  }), [project, componentCount]);
 
   const tier: KitTier = Object.values(include).some(Boolean) ? "rich" : "minimal";
 
@@ -281,6 +304,12 @@ export function ShareToGalleryModal({ project, orgSlug, open, onClose }: Props) 
               <div className="flex flex-col gap-1.5 text-[13px] text-[var(--text-primary)]">
                 <ToggleRow label="Tokens" count="always" disabled checked />
                 <ToggleRow
+                  label="Components"
+                  count={componentCount === null ? "loading" : counts.components}
+                  checked={include.components}
+                  onChange={(v) => setInclude({ ...include, components: v })}
+                />
+                <ToggleRow
                   label="Fonts"
                   count={counts.fonts}
                   checked={include.fonts}
@@ -435,7 +464,7 @@ function ToggleRow({
   onChange,
 }: {
   label: string;
-  count: number | "always";
+  count: number | "always" | "loading";
   checked: boolean;
   disabled?: boolean;
   onChange?: (v: boolean) => void;
@@ -443,7 +472,7 @@ function ToggleRow({
   return (
     <button
       type="button"
-      disabled={disabled || count === 0}
+      disabled={disabled || count === 0 || count === "loading"}
       onClick={() => onChange?.(!checked)}
       className={`flex items-center justify-between rounded border px-3 py-2 transition-colors ${
         checked
@@ -453,7 +482,13 @@ function ToggleRow({
     >
       <span>{label}</span>
       <span className="text-[12px] text-[var(--text-muted)]">
-        {count === "always" ? "always included" : count === 0 ? "none" : `${count} available`}
+        {count === "always"
+          ? "always included"
+          : count === "loading"
+            ? "checking…"
+            : count === 0
+              ? "none"
+              : `${count} available`}
       </span>
     </button>
   );

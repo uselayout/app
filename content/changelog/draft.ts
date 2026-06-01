@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w23-kits-include-components",
+    title: "Share component code with your kits",
+    description:
+      "When you publish a project to the Gallery, you can now include its components. The Share dialog has a new Components toggle that shows how many you have saved, and ticks itself on when there are any. Anyone who imports the kit, into Studio or via the CLI, gets the component code alongside the tokens, so their AI agent can reuse your real components instead of guessing.",
+    product: "studio",
+    category: "new",
+    date: "2026-06-01",
+  },
+  {
     id: "2026-w23-cli-install-gallery-kit",
     title: "Install any gallery kit straight from the CLI",
     description:

@@ -4,6 +4,7 @@ import { requireOrgAuth } from "@/lib/api/auth-context";
 import { fetchProjectById } from "@/lib/supabase/db";
 import { publishKit } from "@/lib/supabase/kits";
 import { buildKitFromProject } from "@/lib/kits/from-project";
+import { getComponentsByProject } from "@/lib/supabase/components";
 import { runKitGenerationJobs } from "@/lib/gallery/run-generation-jobs";
 
 function isAdminEmail(email: string | undefined | null): boolean {
@@ -89,6 +90,15 @@ export async function POST(
         avatarUrl: (user && "image" in user ? (user.image as string | null | undefined) : undefined) ?? undefined,
       };
 
+  // A "rich" kit can carry the project's saved components. Fetch them here so
+  // buildKitFromProject stays DB-free. Skip deprecated ones.
+  const components =
+    input.tier === "rich" && input.include.components
+      ? (await getComponentsByProject(resolvedOrgId, project.id)).filter(
+          (c) => c.status !== "deprecated"
+        )
+      : undefined;
+
   const payload = buildKitFromProject({
     project,
     name: input.name,
@@ -101,6 +111,7 @@ export async function POST(
     previewImageUrl: input.previewImageUrl ?? project.pendingCanvasImage ?? undefined,
     author,
     include: input.include,
+    components,
   });
 
   // Layout-team publishes bypass the review queue and fire generation jobs

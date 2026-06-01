@@ -34,6 +34,28 @@ export async function GET(
     : `Licensed under ${kit.licence}. See https://spdx.org/licenses/${kit.licence}.html for full text.`;
   zip.file("LICENCE.txt", licenceBody);
 
+  // Rich kits can ship component code. Emit one markdown file per component in
+  // the shape the CLI parser expects: the loader wraps each file as
+  // "## Components\n### <file>", so the first line is the component name, the
+  // token list (- `--x`) bounds the description, and the tsx fence holds the
+  // code. The CLI's list-components / get-component tools then pick them up.
+  for (const c of kit.richBundle?.components ?? []) {
+    const slug = (c.slug || c.name)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    if (!slug || !c.code) continue;
+
+    const md: string[] = [c.name, ""];
+    if (c.description) md.push(c.description, "");
+    if (c.tokensUsed?.length) {
+      for (const token of c.tokensUsed) md.push(`- \`${token}\``);
+      md.push("");
+    }
+    md.push("```tsx", c.code, "```", "");
+    zip.file(`components/${slug}.md`, md.join("\n"));
+  }
+
   const blob = await zip.generateAsync({ type: "uint8array" });
 
   // Count CLI installs alongside Studio imports so the gallery's "most imported"
