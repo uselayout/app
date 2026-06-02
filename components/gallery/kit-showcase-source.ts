@@ -173,6 +173,21 @@ function App() {
       "[data-showcase-toggle]:hover, [data-showcase-checkbox]:hover, [data-showcase-radio]:hover { cursor: pointer; }",
       "[data-showcase-card]:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); cursor: pointer; transition: box-shadow 150ms ease, transform 150ms ease; }",
       "[data-showcase-input]:focus { outline: none; }",
+      // Mobile: collapse the 236px sticky left nav into a horizontal, scrollable
+      // pill bar pinned to the top of the iframe; content pane goes full width.
+      // @media targets the iframe's own width, so phones match and desktop never does.
+      "@media (max-width: 640px) {",
+      "  [data-showcase-shell] { flex-direction: column !important; align-items: stretch !important; }",
+      "  [data-showcase-nav] { position: sticky !important; top: 0 !important; z-index: 100 !important; align-self: stretch !important; width: 100% !important; max-width: 100% !important; max-height: none !important; flex-direction: row !important; align-items: center !important; flex-wrap: nowrap !important; overflow-x: auto !important; overflow-y: hidden !important; gap: 0 !important; padding: 10px 16px !important; border-right: none !important; border-bottom: 1px solid rgba(127,127,127,0.18) !important; scrollbar-width: none !important; -webkit-mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%) !important; mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%) !important; }",
+      "  [data-showcase-nav]::-webkit-scrollbar { display: none !important; }",
+      "  [data-showcase-navheading] { display: none !important; }",
+      "  [data-showcase-navgrouplabel] { display: none !important; }",
+      "  [data-showcase-navgroup] { flex-direction: row !important; align-items: center !important; flex-shrink: 0 !important; gap: 4px !important; margin: 0 0 0 8px !important; padding-left: 8px !important; border-left: 1px solid rgba(127,127,127,0.22) !important; }",
+      "  [data-showcase-navgroup]:first-of-type { margin-left: 0 !important; padding-left: 0 !important; border-left: none !important; }",
+      "  [data-showcase-navitem] { padding: 5px 11px !important; height: 30px !important; border-radius: 999px !important; font-size: 12px !important; font-weight: 500 !important; white-space: nowrap !important; flex-shrink: 0 !important; text-align: center !important; }",
+      "  [data-showcase-main] { padding: 24px 16px !important; }",
+      "  [data-showcase-section] { scroll-margin-top: 72px !important; }",
+      "}",
     ].join("\\n");
     document.head.appendChild(style);
     return () => style.remove();
@@ -283,10 +298,12 @@ function App() {
   const navItems = built.map((e: any) => ({ group: e.group, id: e.id, title: e.title }));
 
   return React.createElement("div", {
+    "data-showcase-shell": "true",
     style: { display: "flex", alignItems: "flex-start", minHeight: "100vh", background: bg, color: text, fontFamily }
   },
     React.createElement(NavSidebar, { items: navItems, surface, border, text, accent, headingText, bg }),
     React.createElement("main", {
+      "data-showcase-main": "true",
       style: { flex: 1, minWidth: 0, padding: outerPadding, display: "flex", flexDirection: "column", gap: outerGap, boxSizing: "border-box" }
     },
       React.createElement(SectionErrorBoundary, { fallback: GENERIC_BLOCKS.hero, ctx: ctx }, React.createElement(B.hero || GENERIC_BLOCKS.hero, ctx)),
@@ -334,6 +351,15 @@ function NavSidebar(p: any) {
     return () => obs.disconnect();
   }, [p.items]);
 
+  // On mobile the nav is a horizontal pill bar; keep the scroll-spy's active
+  // pill visible by nudging it into view. Desktop's vertical nav is left alone.
+  React.useEffect(() => {
+    if (!active || typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    if (!window.matchMedia("(max-width: 640px)").matches) return;
+    const el = document.querySelector("[data-showcase-nav] [data-nav-id='" + active + "']");
+    if (el) (el as any).scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
+  }, [active]);
+
   const groups: any[] = [];
   for (const it of p.items) {
     let g = groups.find((x: any) => x.title === it.group);
@@ -348,6 +374,7 @@ function NavSidebar(p: any) {
   };
 
   return React.createElement("nav", {
+    "data-showcase-nav": "true",
     style: {
       position: "sticky", top: 0, alignSelf: "flex-start",
       width: 236, flexShrink: 0, maxHeight: "100vh", overflowY: "auto",
@@ -356,15 +383,16 @@ function NavSidebar(p: any) {
       display: "flex", flexDirection: "column", gap: 22
     }
   },
-    React.createElement("span", { style: { fontSize: 12, fontWeight: 700, letterSpacing: "0.01em", color: p.headingText } }, "Design system"),
+    React.createElement("span", { "data-showcase-navheading": "true", style: { fontSize: 12, fontWeight: 700, letterSpacing: "0.01em", color: p.headingText } }, "Design system"),
     ...groups.map((g: any) =>
-      React.createElement("div", { key: g.title, style: { display: "flex", flexDirection: "column", gap: 2 } },
-        React.createElement("span", { style: { fontSize: 10, textTransform: "uppercase", letterSpacing: "0.12em", opacity: 0.5, marginBottom: 6 } }, g.title),
+      React.createElement("div", { key: g.title, "data-showcase-navgroup": "true", style: { display: "flex", flexDirection: "column", gap: 2 } },
+        React.createElement("span", { "data-showcase-navgrouplabel": "true", style: { fontSize: 10, textTransform: "uppercase", letterSpacing: "0.12em", opacity: 0.5, marginBottom: 6 } }, g.title),
         ...g.items.map((it: any) => {
           const on = active === it.id;
           return React.createElement("button", {
             key: it.id,
             "data-showcase-navitem": "true",
+            "data-nav-id": it.id,
             onClick: () => go(it.id),
             style: {
               textAlign: "left", border: "none", cursor: "pointer",
@@ -389,7 +417,7 @@ function SectionShell(p: any) {
     ? React.createElement("div", { style: { padding: 24, borderRadius: 16, border: "1px solid " + p.border, background: p.surface } }, p.children)
     : p.children;
   return React.createElement("section", {
-    key: p.id, id: p.id,
+    key: p.id, id: p.id, "data-showcase-section": "true",
     style: { display: "flex", flexDirection: "column", gap: 16, scrollMarginTop: 24 }
   },
     SectionHeader({ label: p.group, title: p.title, headingText: p.headingText }),

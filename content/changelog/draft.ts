@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w23-gallery-kit-mobile",
+    title: "Kit gallery design-system view now works on mobile",
+    description:
+      "On phones, a kit's Design system reference was crushed into a tiny column next to the navigation, making it unreadable. The side navigation now collapses into a horizontal, swipeable bar pinned to the top, and the content fills the full width below it. Tapping a section jumps to it and the active section stays highlighted as you scroll.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-06-02",
+  },
+  {
     id: "2026-w23-docs-layout-live",
     title: "Docs now cover Layout Live, plus the latest CLI and MCP tools",
     description:
