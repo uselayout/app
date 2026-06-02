@@ -23,7 +23,14 @@ export const docsNavigation: DocNavSection[] = [
       { title: "Studio Guide", href: "/docs/studio" },
       { title: "Explorer", href: "/docs/explorer" },
       { title: "Component Library", href: "/docs/component-library" },
-      { title: "Kit Gallery", href: "/gallery" },
+      { title: "Kit Gallery", href: "/docs/kit-gallery" },
+    ],
+  },
+  {
+    label: "Layout Live",
+    items: [
+      { title: "Overview", href: "/docs/live" },
+      { title: "Round Trip: Gallery → Live", href: "/docs/live/round-trip" },
     ],
   },
   {

@@ -150,6 +150,24 @@ npx @layoutdesign/context install --target codex
 npx @layoutdesign/context install --target gemini`}
           language="bash"
         />
+        <Callout type="tip">
+          Add the{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">--live</code>{" "}
+          flag to also prepare the project for{" "}
+          <Link href="/docs/live" className="text-gray-900 hover:underline">
+            Layout Live
+          </Link>{" "}
+          (the desktop tweak app): it adds the build plugin that tags elements
+          with their source location, creates the{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            .layout/live/
+          </code>{" "}
+          directory, and augments your CLAUDE.md. See the{" "}
+          <Link href="/docs/live/round-trip" className="text-gray-900 hover:underline">
+            Gallery → Live round trip
+          </Link>
+          .
+        </Callout>
       </section>
 
       {/* Switching kits */}
@@ -268,6 +286,76 @@ npx @layoutdesign/context install
             </tbody>
           </table>
         </div>
+      </section>
+
+      {/* Layout Live MCP Tools */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          Layout Live Tools
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          When you run{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            install --live
+          </code>{" "}
+          and have the{" "}
+          <Link href="/docs/live" className="text-gray-900 hover:underline">
+            Layout Live
+          </Link>{" "}
+          desktop app open, the MCP server exposes four more tools so your AI
+          agent always knows what you&apos;re tweaking visually. When Live
+          isn&apos;t running they return a clean &ldquo;not running&rdquo;
+          response, so they never break a session.
+        </p>
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">Tool</th>
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">What It Does</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {[
+                [
+                  "get-selected-element",
+                  'The element currently selected in Live (file, line, component, classes). Lets the agent resolve "this" / "that one" to a real source location.',
+                ],
+                [
+                  "get-recent-visual-edits",
+                  "The recent class and token changes you made in Live, so the agent builds on your tweaks instead of reverting them. Falls back to the .layout/live/ edit log when Live is closed.",
+                ],
+                [
+                  "lock-file",
+                  "Reserves a file before the agent edits it, coordinating with Live so the two don't overwrite each other.",
+                ],
+                [
+                  "unlock-file",
+                  "Releases a previously-acquired file lock.",
+                ],
+              ].map(([tool, desc]) => (
+                <tr key={tool} className="hover:bg-gray-50 align-top">
+                  <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap pt-3.5">
+                    {tool}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{desc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Callout type="info">
+          The existing{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            check_setup
+          </code>{" "}
+          tool also reports Live&apos;s status (installed, running, version,
+          and which project it&apos;s open on). Full Live workflow on the{" "}
+          <Link href="/docs/live" className="text-gray-900 hover:underline">
+            Layout Live
+          </Link>{" "}
+          page.
+        </Callout>
       </section>
 
       {/* Free Starter Kits */}
