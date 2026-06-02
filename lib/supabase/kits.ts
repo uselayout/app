@@ -269,12 +269,16 @@ export async function listPublicKits(
   if (sort === "featured") {
     query = query
       .order("featured", { ascending: false })
-      .order("upvote_count", { ascending: false })
+      .order("import_count", { ascending: false })
       .order("created_at", { ascending: false });
   } else if (sort === "top") {
-    query = query.order("upvote_count", { ascending: false });
+    query = query
+      .order("import_count", { ascending: false })
+      .order("created_at", { ascending: false });
   } else {
-    query = query.order("created_at", { ascending: false });
+    query = query
+      .order("is_new", { ascending: false })
+      .order("created_at", { ascending: false });
   }
 
   const { data, error } = await query;

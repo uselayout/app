@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w23-gallery-sort-by-downloads",
+    title: "Gallery Top, Featured and New sorts now actually reorder kits",
+    description:
+      "The Featured, Top and New tabs on the Kit Gallery barely changed the order when you clicked between them. Top now sorts by downloads (most-imported kits first) instead of upvotes, Featured surfaces featured kits then ranks the rest by downloads, and New leads with the newest and any New-badged kits. The three tabs now produce genuinely different orderings.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-06-02",
+  },
+  {
     id: "2026-w23-kits-include-components",
     title: "Share component code with your kits",
     description:
