@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   Chrome,
   Palette,
+  MousePointerClick,
 } from "lucide-react";
 import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
@@ -58,6 +59,13 @@ const capabilities = [
     description:
       "Run npx @layoutdesign/context install and your AI agent gets 14 MCP tools — fetch design tokens, check compliance, preview components, and push to Figma. Works with Claude Code, Cursor, Copilot, Antigravity, and Windsurf. Three free starter kits bundled.",
     href: "/docs/cli",
+  },
+  {
+    icon: MousePointerClick,
+    title: "Layout Live",
+    description:
+      "A desktop app that turns your running React app into a direct-manipulation canvas. Click an element, scrub padding, swap a token, and the edit writes straight back to your source as a Tailwind class. Stop prompting for padding.",
+    href: "/docs/live",
   },
   {
     icon: Chrome,
@@ -436,6 +444,12 @@ export default function GettingStartedPage() {
             </Link>{" "}
             to set up the MCP server so your AI agent fetches design context
             automatically.
+          </li>
+          <li>
+            <Link href="/docs/live" className="text-gray-900 hover:underline">
+              Layout Live
+            </Link>{" "}
+            to tweak your running app visually and write changes back to source.
           </li>
           <li>
             <Link

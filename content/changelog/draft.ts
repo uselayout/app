@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w23-docs-layout-live",
+    title: "Docs now cover Layout Live, plus the latest CLI and MCP tools",
+    description:
+      "The documentation has a new Layout Live section: an overview of the desktop app that lets you tweak your running React app visually (click an element, scrub padding, swap a token, write straight back to source), and a full Gallery to Live round trip that walks from importing a kit all the way to handing the result off to Claude Code. The CLI and MCP page now documents the install --live flag and the four new Live MCP tools (get-selected-element, get-recent-visual-edits, lock-file, unlock-file), and the docs introduction lists Layout Live alongside the rest of the product family.",
+    product: "studio",
+    category: "new",
+    date: "2026-06-02",
+  },
+  {
     id: "2026-w23-gallery-sort-by-downloads",
     title: "Gallery Top, Featured and New sorts now actually reorder kits",
     description:
