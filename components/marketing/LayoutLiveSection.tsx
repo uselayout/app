@@ -8,7 +8,7 @@ import { LayoutLiveMock } from '@/components/marketing/mocks/LayoutLiveMock';
 export function LayoutLiveSection() {
   return (
     <section className="flex flex-col items-center gap-[70px] bg-[var(--mkt-bg)] pt-[100px] lg:pt-[180px]">
-      <div className="mx-auto max-w-[1280px] px-6">
+      <div className="max-w-[1280px] w-full px-6">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -38,12 +38,12 @@ export function LayoutLiveSection() {
             <p className="text-[20px] leading-[24px] tracking-[-0.165px] text-white">
               Layout Live is the macOS app that turns your running React app into
               a canvas. Click an element, scrub its padding, swap a colour for a
-              design token — and the edit is written straight back to your
+              design token, and the edit is written straight back to your
               Tailwind source.
             </p>
             <p className="mt-2 text-[15px] leading-[24px] tracking-[-0.165px] text-[var(--mkt-text-secondary)]">
               No cloud sandbox, no AI tokens spent on a 4px nudge. Your own dev
-              server hot-reloads a real, committable diff — gated to your design
+              server hot-reloads a real, committable diff, gated to your design
               tokens with a live compliance score. When a change needs logic,
               hand the selected element to Claude Code via MCP.
             </p>

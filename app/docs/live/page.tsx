@@ -84,7 +84,7 @@ export default function LayoutLivePage() {
       </div>
 
       <Callout type="info">
-        Layout Live is a macOS desktop app in <strong>open alpha</strong> — free
+        Layout Live is a macOS desktop app in <strong>open alpha</strong>. Free
         to download now. It is built on Electron and ships signed and notarised
         by Apple, so it opens with a plain double-click. Windows is on the v1.1
         roadmap.{" "}

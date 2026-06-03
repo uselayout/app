@@ -21,17 +21,17 @@ const PILLARS = [
   {
     icon: MousePointerClick,
     title: 'Click to select',
-    body: "Point Live at your local dev server and click any element in the running app. An overlay highlights it and the properties panel fills with that element's real classes — selection survives hot-reload.",
+    body: "Point Live at your local dev server and click any element in the running app. An overlay highlights it and the properties panel fills with that element's real classes, and selection survives hot-reload.",
   },
   {
     icon: SlidersHorizontal,
     title: "Scrub, don't prompt",
-    body: 'Drag padding, margin, gap, font size, weight and radius. Every drag is an exact value that snaps to your design tokens, with a live compliance score — no 10-second AI round-trip for a 4px nudge.',
+    body: 'Drag padding, margin, gap, font size, weight and radius. Every drag is an exact value that snaps to your design tokens, with a live compliance score. No 10-second AI round-trip for a 4px nudge.',
   },
   {
     icon: Palette,
     title: 'Edits write to source',
-    body: 'Every change is an AST edit to your actual Tailwind classes — not an overlay or a runtime patch. Your own dev server hot-reloads it, and the diff is real, committable code.',
+    body: 'Every change is an AST edit to your actual Tailwind classes, not an overlay or a runtime patch. Your own dev server hot-reloads it, and the diff is real, committable code.',
   },
   {
     icon: Bot,
@@ -49,7 +49,7 @@ const STEPS: ReadonlyArray<{
   {
     icon: Download,
     title: 'Download & install',
-    body: 'Grab the Mac app above, open the .dmg, and drag Layout Live to your Applications folder. It’s signed and notarised by Apple, so it just opens — no security warnings.',
+    body: 'Grab the Mac app above, open the .dmg, and drag Layout Live to your Applications folder. It’s signed and notarised by Apple, so it just opens, with no security warnings.',
   },
   {
     icon: FolderOpen,
@@ -60,7 +60,7 @@ const STEPS: ReadonlyArray<{
   {
     icon: Play,
     title: 'Open it on your app',
-    body: 'Start your dev server, then launch Live bound to it with one command — no URL to type. Click an element and start scrubbing.',
+    body: 'Start your dev server, then launch Live bound to it with one command, no URL to type. Click an element and start scrubbing.',
     code: 'npm run dev\nnpx @layoutdesign/context live',
   },
 ];
@@ -85,7 +85,7 @@ export function LivePageClient() {
               className="mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--mkt-border)] px-3 py-1 text-[13px] text-[var(--mkt-text-secondary)]"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--mkt-accent)]" />
-              Layout Live — open alpha for macOS
+              Layout Live · open alpha for macOS
             </motion.span>
             <motion.h1
               {...fade}
@@ -99,7 +99,7 @@ export function LivePageClient() {
               className="mt-5 max-w-[640px] text-[18px] leading-[28px] text-[var(--mkt-text-secondary)]"
             >
               Layout Live turns your real running app into a canvas. Click an
-              element, scrub its spacing, swap a colour for a design token — and
+              element, scrub its spacing, swap a colour for a design token, and
               the change is written straight back to your source as a Tailwind
               class. No cloud sandbox, no AI tokens spent, just your dev server
               hot-reloading real edits.
@@ -122,7 +122,7 @@ export function LivePageClient() {
                 className="pointer-events-none absolute inset-0 h-full w-full object-cover"
               />
               <div className="absolute inset-3 lg:inset-5">
-                <MockFrame ariaLabel="Layout Live editing a running app — scrubbing a button's padding">
+                <MockFrame ariaLabel="Layout Live editing a running app, scrubbing a button's padding">
                   <LayoutLiveMock />
                 </MockFrame>
               </div>
@@ -209,12 +209,12 @@ export function LivePageClient() {
               className="flex flex-col items-start gap-4 rounded-[10px] border border-[var(--mkt-border)] p-8 md:flex-row md:items-center md:justify-between"
             >
               <div>
-                <h2 className="text-[22px] tracking-[-0.3px]">You&apos;re testing the alpha — tell us everything.</h2>
+                <h2 className="text-[22px] tracking-[-0.3px]">You&apos;re testing the alpha. Tell us everything.</h2>
                 <p className="mt-2 max-w-[620px] text-[15px] leading-[24px] text-[var(--mkt-text-secondary)]">
                   Layout Live updates itself automatically as we ship fixes. If
                   something won&apos;t edit, looks off, or you have an idea, the
                   fastest way to reach us is Discord. Layout only touches your
-                  local project files and a periodic update check — nothing else
+                  local project files and a periodic update check. Nothing else
                   leaves your machine.
                 </p>
               </div>
@@ -229,8 +229,9 @@ export function LivePageClient() {
             </motion.div>
           </section>
         </main>
-        <MarketingFooter />
       </div>
+      {/* Footer is sticky bottom-0 z-0, revealed as content scrolls away. */}
+      <MarketingFooter />
     </div>
   );
 }
