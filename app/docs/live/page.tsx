@@ -18,7 +18,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Layout Live | Layout Docs",
   description:
-    "Layout Live is the desktop app for tweaking your running React app visually. Click an element, scrub padding, swap a token, and the change is written straight back to your source. The use-the-system surface that pairs with Studio.",
+    "Layout Live is the desktop app for tweaking your real running React app visually. Click an element, scrub a value, and a deterministic edit is written straight to your source — gated to your design tokens, with a live compliance score, no AI tokens spent. The use-the-system surface that pairs with Studio.",
 };
 
 const pillars = [
@@ -32,13 +32,13 @@ const pillars = [
     icon: SlidersHorizontal,
     title: "Scrub, don't prompt",
     description:
-      "Drag-to-scrub padding, margin, gap, font size, weight, radius and sizing. Values snap to your design system scale. No 10–30 second AI round-trip for a 4px nudge.",
+      "Drag-to-scrub padding, margin, gap, font size, weight, radius and sizing. Every drag is a deterministic, exact value that snaps to your design system scale, with a live compliance score flagging anything off-system. No 10–30 second AI round-trip for a 4px nudge, no tokens spent.",
   },
   {
     icon: Palette,
     title: "Edits write to source",
     description:
-      "Every change is an AST edit to your actual Tailwind classes or tokens — not an overlay or a runtime patch. Your own dev server hot-reloads it, and the diff is real, committable code.",
+      "Every change is an AST edit to your actual Tailwind classes or tokens — not an overlay or a runtime patch. Your own dev server hot-reloads it — no cloud sandbox, no container — and the diff is real, committable code.",
   },
   {
     icon: Bot,
@@ -69,6 +69,17 @@ export default function LayoutLivePage() {
           Claude Code stays your IDE for logic and structure. Live is the
           surface you tab to when you just want to nudge spacing, colour and
           type without burning a prompt.
+        </p>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Three things set Live apart from every other visual editor. It edits
+          your <strong>real running dev server</strong> — your own app, your own
+          hot-reload, not a cloud sandbox or an IDE&apos;s embedded browser.
+          Every drag is a <strong>deterministic AST edit</strong> to your
+          Tailwind source: an exact value, written to disk, with no AI round-trip
+          and no tokens spent. And every edit is{" "}
+          <strong>gated to your design tokens</strong> with a live compliance
+          score, so you stay on-system by construction rather than hand-typing an
+          off-brand hex.
         </p>
       </div>
 
