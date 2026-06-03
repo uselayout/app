@@ -88,13 +88,20 @@ export function GalleryPageClient({
     if (sort === "featured") {
       sorted.sort((a, b) => {
         if (a.featured !== b.featured) return a.featured ? -1 : 1;
-        if (a.upvoteCount !== b.upvoteCount) return b.upvoteCount - a.upvoteCount;
+        if (a.importCount !== b.importCount) return b.importCount - a.importCount;
         return +new Date(b.createdAt) - +new Date(a.createdAt);
       });
     } else if (sort === "top") {
-      sorted.sort((a, b) => b.upvoteCount - a.upvoteCount);
+      sorted.sort((a, b) => {
+        if (a.importCount !== b.importCount) return b.importCount - a.importCount;
+        return +new Date(b.createdAt) - +new Date(a.createdAt);
+      });
     } else {
-      sorted.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+      // "new": is_new flagged kits first, then by recency
+      sorted.sort((a, b) => {
+        if (a.isNew !== b.isNew) return a.isNew ? -1 : 1;
+        return +new Date(b.createdAt) - +new Date(a.createdAt);
+      });
     }
     return sorted;
   }, [initialKits, q, tag, sort]);
