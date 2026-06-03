@@ -84,10 +84,13 @@ export default function LayoutLivePage() {
       </div>
 
       <Callout type="info">
-        Layout Live is a macOS desktop app in <strong>private alpha</strong>,
-        currently rolling out to existing Layout users. It is built on Electron
-        and ships signed and notarised. Windows is on the v1.1 roadmap. Want in?
-        Mention it from any project in the Studio or ping the team.
+        Layout Live is a macOS desktop app in <strong>open alpha</strong> — free
+        to download now. It is built on Electron and ships signed and notarised
+        by Apple, so it opens with a plain double-click. Windows is on the v1.1
+        roadmap.{" "}
+        <Link href="/live" className="font-medium text-indigo-600 hover:underline">
+          Download Layout Live →
+        </Link>
       </Callout>
 
       {/* Why */}
