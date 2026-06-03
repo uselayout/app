@@ -2,10 +2,12 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { LayoutLiveMock } from '@/components/marketing/mocks/LayoutLiveMock';
 
 export function LayoutLiveSection() {
   return (
-    <section className="bg-[var(--mkt-bg)] pt-[100px] lg:pt-[180px]">
+    <section className="flex flex-col items-center gap-[70px] bg-[var(--mkt-bg)] pt-[100px] lg:pt-[180px]">
       <div className="mx-auto max-w-[1280px] px-6">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
           <motion.div
@@ -62,6 +64,27 @@ export function LayoutLiveSection() {
           </motion.div>
         </div>
       </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        viewport={{ once: true }}
+        className="relative mx-auto w-[1280px] max-w-full overflow-hidden rounded-[6px]"
+        style={{ aspectRatio: '1280 / 760' }}
+      >
+        <img
+          src="/marketing/aurora-drift.webp"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-3 lg:inset-5">
+          <MockFrame ariaLabel="Layout Live editing a running app">
+            <LayoutLiveMock />
+          </MockFrame>
+        </div>
+      </motion.div>
     </section>
   );
 }

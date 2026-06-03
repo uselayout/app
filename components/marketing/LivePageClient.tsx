@@ -14,6 +14,8 @@ import {
 import { MarketingHeader } from '@/components/marketing/MarketingHeader';
 import { MarketingFooter } from '@/components/marketing/MarketingFooter';
 import { LiveDownloadButton } from '@/components/marketing/LiveDownloadButton';
+import { MockFrame } from '@/components/marketing/MockFrame';
+import { LayoutLiveMock } from '@/components/marketing/mocks/LayoutLiveMock';
 
 const PILLARS = [
   {
@@ -104,6 +106,26 @@ export function LivePageClient() {
             </motion.p>
             <motion.div {...fade} transition={{ duration: 0.6, delay: 0.1 }} className="mt-9">
               <LiveDownloadButton />
+            </motion.div>
+
+            {/* Product mock */}
+            <motion.div
+              {...fade}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              className="relative mx-auto mt-16 w-[1280px] max-w-full overflow-hidden rounded-[6px]"
+              style={{ aspectRatio: '1280 / 760' }}
+            >
+              <img
+                src="/marketing/aurora-drift.webp"
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-3 lg:inset-5">
+                <MockFrame ariaLabel="Layout Live editing a running app — scrubbing a button's padding">
+                  <LayoutLiveMock />
+                </MockFrame>
+              </div>
             </motion.div>
           </section>
 
