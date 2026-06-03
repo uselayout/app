@@ -46,6 +46,24 @@ export const draftEntries: ChangelogEntry[] = [
     date: "2026-06-01",
   },
   {
+    id: "2026-w23-gallery-new-default-and-accurate-downloads",
+    title: "Gallery opens on New, and download counts are accurate",
+    description:
+      "The Kit Gallery now opens on the New tab so the latest kits are front and centre. Download counts are also more honest: importing a kit you published yourself no longer counts as a download, so freshly posted kits start at zero instead of looking like they already have traffic.",
+    product: "studio",
+    category: "improved",
+    date: "2026-06-03",
+  },
+  {
+    id: "2026-w23-gallery-design-system-reference",
+    title: "Gallery kits now open as a full design-system reference",
+    description:
+      "Every kit page in the Gallery is now a navigable design-system reference, not a single scroll. A left-hand menu groups Foundations (colour, typography, spacing, sizes, radius, elevation, icons), Forms (text fields, dropdowns, checkboxes, switches, field states) and Components (buttons, badges, avatars, tabs, tooltips, alerts, accordion, breadcrumb, pagination, stats, cards, tables), and clicking any item jumps straight to it. Everything renders live in each kit's own tokens, so you can see exactly how a kit's buttons, inputs and colours look before importing it. Works automatically for every current and future kit.",
+    product: "studio",
+    category: "improved",
+    date: "2026-06-01",
+  },
+  {
     id: "2026-w23-cli-install-gallery-kit",
     title: "Install any gallery kit straight from the CLI",
     description:

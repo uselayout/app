@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 
 function parseSort(raw: string | undefined): KitSort {
   if (raw === "new" || raw === "top" || raw === "featured") return raw;
-  return "featured";
+  return "new";
 }
 
 interface PageProps {
