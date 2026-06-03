@@ -22,7 +22,13 @@ export async function POST(
   const project = projectFromKit(kit, resolvedOrgId, newProjectId);
 
   await upsertProject(project, userId);
-  void incrementImportCount(kit.id);
+
+  // Don't count the author importing their own kit. Self-imports (e.g. the
+  // publisher testing a kit they just posted) would otherwise show brand-new
+  // kits as already "downloaded". Only genuine third-party imports count.
+  if (kit.author.orgId !== resolvedOrgId) {
+    void incrementImportCount(kit.id);
+  }
 
   return NextResponse.json({
     projectId: newProjectId,

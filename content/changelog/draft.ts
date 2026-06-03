@@ -28,6 +28,15 @@ export const draftEntries: ChangelogEntry[] = [
     date: "2026-06-02",
   },
   {
+    id: "2026-w23-gallery-new-default-and-accurate-downloads",
+    title: "Gallery opens on New, and download counts are accurate",
+    description:
+      "The Kit Gallery now opens on the New tab so the latest kits are front and centre. Download counts are also more honest: importing a kit you published yourself no longer counts as a download, so freshly posted kits start at zero instead of looking like they already have traffic.",
+    product: "studio",
+    category: "improved",
+    date: "2026-06-03",
+  },
+  {
     id: "2026-w23-gallery-design-system-reference",
     title: "Gallery kits now open as a full design-system reference",
     description:
