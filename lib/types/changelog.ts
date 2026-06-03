@@ -2,7 +2,8 @@ export type ChangelogProduct =
   | "studio"
   | "cli"
   | "figma-plugin"
-  | "chrome-extension";
+  | "chrome-extension"
+  | "live";
 
 export type ChangelogCategory = "new" | "improved" | "fixed";
 

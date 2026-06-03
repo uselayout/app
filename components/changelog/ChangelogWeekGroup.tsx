@@ -16,6 +16,7 @@ const PRODUCT_LABELS: Record<ChangelogProduct, string> = {
   cli: "CLI",
   "figma-plugin": "Figma Plugin",
   "chrome-extension": "Chrome Extension",
+  live: "Layout Live",
 };
 
 export function ChangelogWeekGroup({ week }: { week: ChangelogWeek }) {

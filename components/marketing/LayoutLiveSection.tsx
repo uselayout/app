@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { MockFrame } from '@/components/marketing/MockFrame';
 import { LayoutLiveMock } from '@/components/marketing/mocks/LayoutLiveMock';
+import { LayoutLiveMobileMock } from '@/components/marketing/mocks/LayoutLiveMobileMock';
 
 export function LayoutLiveSection() {
   return (
@@ -65,12 +66,13 @@ export function LayoutLiveSection() {
         </div>
       </div>
 
+      {/* Desktop mock */}
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="relative mx-auto w-[1280px] max-w-full overflow-hidden rounded-[6px]"
+        className="relative mx-auto hidden w-[1280px] max-w-full overflow-hidden rounded-[6px] md:block"
         style={{ aspectRatio: '1280 / 760' }}
       >
         <img
@@ -84,6 +86,18 @@ export function LayoutLiveSection() {
             <LayoutLiveMock />
           </MockFrame>
         </div>
+      </motion.div>
+      {/* Mobile mock */}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        viewport={{ once: true }}
+        className="relative mx-auto aspect-[3/4] w-full max-w-[360px] px-4 md:hidden"
+      >
+        <MockFrame ariaLabel="Layout Live editing a running app on mobile">
+          <LayoutLiveMobileMock />
+        </MockFrame>
       </motion.div>
     </section>
   );

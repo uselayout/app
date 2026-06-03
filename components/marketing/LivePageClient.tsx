@@ -16,6 +16,7 @@ import { MarketingFooter } from '@/components/marketing/MarketingFooter';
 import { LiveDownloadButton } from '@/components/marketing/LiveDownloadButton';
 import { MockFrame } from '@/components/marketing/MockFrame';
 import { LayoutLiveMock } from '@/components/marketing/mocks/LayoutLiveMock';
+import { LayoutLiveMobileMock } from '@/components/marketing/mocks/LayoutLiveMobileMock';
 
 const PILLARS = [
   {
@@ -108,11 +109,11 @@ export function LivePageClient() {
               <LiveDownloadButton />
             </motion.div>
 
-            {/* Product mock */}
+            {/* Product mock — desktop */}
             <motion.div
               {...fade}
               transition={{ duration: 0.6, delay: 0.15 }}
-              className="relative mx-auto mt-16 w-[1280px] max-w-full overflow-hidden rounded-[6px]"
+              className="relative mx-auto mt-16 hidden w-[1280px] max-w-full overflow-hidden rounded-[6px] md:block"
               style={{ aspectRatio: '1280 / 760' }}
             >
               <img
@@ -126,6 +127,16 @@ export function LivePageClient() {
                   <LayoutLiveMock />
                 </MockFrame>
               </div>
+            </motion.div>
+            {/* Product mock — mobile */}
+            <motion.div
+              {...fade}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              className="relative mx-auto mt-12 aspect-[3/4] w-full max-w-[360px] md:hidden"
+            >
+              <MockFrame ariaLabel="Layout Live editing a running app on mobile">
+                <LayoutLiveMobileMock />
+              </MockFrame>
             </motion.div>
           </section>
 

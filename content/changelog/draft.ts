@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w23-layout-live-download",
+    title: "Layout Live is now available to download",
+    description:
+      "Layout Live, the macOS app for visually editing your running React app, is now a free open download. Click an element in your live app, scrub its spacing, swap a colour for a design token, and the change is written straight back to your source as a Tailwind class. No cloud sandbox, no AI tokens spent. It is signed and notarised by Apple, so it opens with a plain double-click, and it updates itself automatically as we ship fixes. Grab it from the new Layout Live page.",
+    product: "live",
+    category: "new",
+    date: "2026-06-03",
+  },
+  {
     id: "2026-w23-gallery-kit-mobile",
     title: "Kit gallery design-system view now works on mobile",
     description:

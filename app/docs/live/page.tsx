@@ -18,7 +18,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Layout Live | Layout Docs",
   description:
-    "Layout Live is the desktop app for tweaking your real running React app visually. Click an element, scrub a value, and a deterministic edit is written straight to your source — gated to your design tokens, with a live compliance score, no AI tokens spent. The use-the-system surface that pairs with Studio.",
+    "Layout Live is the desktop app for tweaking your real running React app visually. Click an element, scrub a value, and a deterministic edit is written straight to your source, gated to your design tokens, with a live compliance score, no AI tokens spent. The use-the-system surface that pairs with Studio.",
 };
 
 const pillars = [
@@ -26,7 +26,7 @@ const pillars = [
     icon: MousePointerClick,
     title: "Click to select",
     description:
-      "Point Live at your local dev server and click any element in the running app. An overlay highlights it and the properties panel populates with that element's real classes — selection survives hot-reload.",
+      "Point Live at your local dev server and click any element in the running app. An overlay highlights it and the properties panel populates with that element's real classes, selection survives hot-reload.",
   },
   {
     icon: SlidersHorizontal,
@@ -38,7 +38,7 @@ const pillars = [
     icon: Palette,
     title: "Edits write to source",
     description:
-      "Every change is an AST edit to your actual Tailwind classes or tokens — not an overlay or a runtime patch. Your own dev server hot-reloads it — no cloud sandbox, no container — and the diff is real, committable code.",
+      "Every change is an AST edit to your actual Tailwind classes or tokens, not an overlay or a runtime patch. Your own dev server hot-reloads it, no cloud sandbox, no container, and the diff is real, committable code.",
   },
   {
     icon: Bot,
@@ -59,7 +59,7 @@ export default function LayoutLivePage() {
         <p className="text-base text-gray-600 leading-relaxed">
           Layout Live is a desktop app that turns your running React app into a
           direct-manipulation canvas. Click an element, scrub its padding, swap
-          a colour for a real design token, change an icon — and the edit is
+          a colour for a real design token, change an icon, and the edit is
           written straight back to your source files as a Tailwind class or
           token change. It is the <strong>use-the-system</strong> surface that
           pairs with Studio&apos;s <strong>build-the-system</strong> surface.
@@ -72,7 +72,7 @@ export default function LayoutLivePage() {
         </p>
         <p className="text-base text-gray-600 leading-relaxed">
           Three things set Live apart from every other visual editor. It edits
-          your <strong>real running dev server</strong> — your own app, your own
+          your <strong>real running dev server</strong>, your own app, your own
           hot-reload, not a cloud sandbox or an IDE&apos;s embedded browser.
           Every drag is a <strong>deterministic AST edit</strong> to your
           Tailwind source: an exact value, written to disk, with no AI round-trip
@@ -100,12 +100,12 @@ export default function LayoutLivePage() {
           A large share of &ldquo;polish&rdquo; work with an AI coding agent is
           hundreds of tiny visual edits: padding, margin, gap, font weight,
           colour, border radius. Those edits are high-frequency, low-information
-          (there is nothing for an LLM to <em>reason</em> about — you just know
+          (there is nothing for an LLM to <em>reason</em> about, you just know
           what looks right), slow through a prompt, and expensive in tokens.
         </p>
         <p className="text-base text-gray-600 leading-relaxed">
           Studio, the CLI, the Figma plugin and the Chrome extension all help
-          with the <em>system</em> side — making sure AI uses the right tokens
+          with the <em>system</em> side, making sure AI uses the right tokens
           when it generates new code. None of them help with the{" "}
           <em>running app</em> side: making it trivial for a human to nudge
           those tokens once code is on screen. Live fills exactly that gap, and
@@ -142,7 +142,7 @@ export default function LayoutLivePage() {
           <Link href="/docs/live/round-trip" className="text-gray-900 font-medium hover:underline">
             Round Trip: Gallery → Live
           </Link>{" "}
-          walkthrough — it takes you from importing a kit out of the Gallery all
+          walkthrough, it takes you from importing a kit out of the Gallery all
           the way to a tweaked, on-brand component handed off to Claude Code.
         </Callout>
       </section>
@@ -201,7 +201,7 @@ export default function LayoutLivePage() {
         <p className="text-base text-gray-600 leading-relaxed">
           Live reads from Layout&apos;s token store, writes token changes back
           through the same APIs, and scores edits with the same compliance
-          engine. It does not duplicate or replace anything — it is purely
+          engine. It does not duplicate or replace anything, it is purely
           additive.
         </p>
       </section>
@@ -257,7 +257,7 @@ export default function LayoutLivePage() {
             launch the Layout Live app, and enter the dev URL (e.g.{" "}
             <code className="text-xs bg-gray-100 rounded px-1 py-0.5">http://localhost:3000</code>{" "}
             or <code className="text-xs bg-gray-100 rounded px-1 py-0.5">:5173</code> for Vite). Live
-            embeds your app in a real Chromium webview — it is a top-level
+            embeds your app in a real Chromium webview, it is a top-level
             browser view, not an iframe, so most CSP and frame rules don&apos;t
             get in the way.
           </p>
@@ -266,7 +266,7 @@ export default function LayoutLivePage() {
         <Callout type="warning">
           <strong>Live edits your source; your own dev server reloads it.</strong>{" "}
           Live writes the file and your Vite/Next dev server hot-reloads the
-          change — Live never reloads the webview itself. If an edit
+          change, Live never reloads the webview itself. If an edit
           doesn&apos;t appear, it is almost always because the URL in Live
           points at a <em>different</em> server (or copy of the project) than
           the one whose files are being edited. Point Live and your dev server
@@ -300,7 +300,7 @@ export default function LayoutLivePage() {
             <p className="text-base text-gray-600 leading-relaxed">
               The properties panel for the selected element. Numeric controls
               (padding, margin, gap, font size, radius, sizing) use a
-              drag-to-scrub grip plus a number input — fine for ±1px, hold Shift
+              drag-to-scrub grip plus a number input, fine for ±1px, hold Shift
               for ±10px. Opacity keeps a slider. Enum controls (alignment,
               weight, display) carry icons. A nine-point anchor grid handles
               position / inset. Every numeric field offers your design system
@@ -316,7 +316,7 @@ export default function LayoutLivePage() {
             <p className="text-base text-gray-600 leading-relaxed">
               Colour controls (text, background, border) open a picker seeded
               with your project token palette plus arbitrary values. The Tokens
-              overlay lets you edit a design token directly — the change cascades
+              overlay lets you edit a design token directly, the change cascades
               to every class that references it and is written back through
               Layout&apos;s{" "}
               <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
@@ -377,13 +377,13 @@ export default function LayoutLivePage() {
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="text-base font-semibold text-[#0a0a0a]">In scope</h3>
             <ul className="list-disc pl-5 space-y-1 text-sm text-gray-600">
-              <li>Spacing — padding, margin, gap (all directions)</li>
-              <li>Typography — size, weight, family, line-height, letter-spacing</li>
-              <li>Colour — text, background, border (token or arbitrary)</li>
+              <li>Spacing: padding, margin, gap (all directions)</li>
+              <li>Typography: size, weight, family, line-height, letter-spacing</li>
+              <li>Colour: text, background, border (token or arbitrary)</li>
               <li>Border radius and sizing</li>
               <li>Position / inset via the anchor grid</li>
               <li>Design tokens (cascades to all dependent classes)</li>
-              <li>Media — image src/alt, background image, icon swap, inline SVG</li>
+              <li>Media: image src/alt, background image, icon swap, inline SVG</li>
             </ul>
           </div>
           <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
@@ -448,7 +448,7 @@ export default function LayoutLivePage() {
               {[
                 [
                   "get-selected-element",
-                  'The element currently selected in Live — file, line, component, classes. Lets you say "make this bigger" and have the agent know what "this" is.',
+                  'The element currently selected in Live, file, line, component, classes. Lets you say "make this bigger" and have the agent know what "this" is.',
                 ],
                 [
                   "get-recent-visual-edits",
@@ -502,7 +502,7 @@ export default function LayoutLivePage() {
           {[
             {
               problem: "My edit doesn't show up on localhost",
-              fix: "Almost always a dev-server mismatch, not a bug. Live writes the file and your own dev server hot-reloads it — make sure the URL in Live points at the same project your dev server is running. If you have multiple copies or stray dev servers (common with git worktrees), kill the stray ones and re-point Live.",
+              fix: "Almost always a dev-server mismatch, not a bug. Live writes the file and your own dev server hot-reloads it, make sure the URL in Live points at the same project your dev server is running. If you have multiple copies or stray dev servers (common with git worktrees), kill the stray ones and re-point Live.",
             },
             {
               problem: "Nothing happens when I click an element",
@@ -533,21 +533,21 @@ export default function LayoutLivePage() {
             <Link href="/docs/live/round-trip" className="text-gray-900 hover:underline">
               Round Trip: Gallery → Live
             </Link>{" "}
-            — the full worked example from importing a kit to handing off to
+           , the full worked example from importing a kit to handing off to
             Claude Code.
           </li>
           <li>
             <Link href="/docs/cli" className="text-gray-900 hover:underline">
               CLI &amp; MCP Server
             </Link>{" "}
-            — the install flow, the four Live MCP tools, and the rest of the
+           , the install flow, the four Live MCP tools, and the rest of the
             toolset.
           </li>
           <li>
             <Link href="/docs/kit-gallery" className="text-gray-900 hover:underline">
               Kit Gallery
             </Link>{" "}
-            — where you grab a design system to point Live at.
+           , where you grab a design system to point Live at.
           </li>
         </ul>
       </section>
