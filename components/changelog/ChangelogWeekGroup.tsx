@@ -5,6 +5,7 @@ import { CategoryBadge } from "./CategoryBadge";
 const PRODUCT_ORDER: ChangelogProduct[] = [
   "studio",
   "cli",
+  "live",
   "figma-plugin",
   "chrome-extension",
 ];

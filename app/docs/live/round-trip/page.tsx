@@ -19,7 +19,7 @@ const steps = [
       <>
         <p className="text-base text-gray-600 leading-relaxed">
           Open the{" "}
-          <Link href="/gallery" target="_blank" className="text-gray-900 hover:underline">
+          <Link href="/gallery" target="_blank" rel="noopener noreferrer" className="text-gray-900 hover:underline">
             Kit Gallery
           </Link>{" "}
           and pick a design system to build against, say the{" "}
