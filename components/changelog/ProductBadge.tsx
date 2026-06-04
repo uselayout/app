@@ -9,6 +9,11 @@ const productConfig: Record<
     bg: "bg-white/10",
     text: "text-white/80",
   },
+  live: {
+    label: "Layout Live",
+    bg: "bg-sky-500/15",
+    text: "text-sky-400",
+  },
   cli: {
     label: "CLI",
     bg: "bg-[var(--status-success)]/15",

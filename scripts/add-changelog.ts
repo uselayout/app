@@ -12,6 +12,11 @@
  * and may point at a Supabase that isn't used for Layout.
  *
  * Idempotent: upserts by id.
+ *
+ * Resurrection-proof: entries whose title already appears as a published
+ * item's `text` (in layout_changelog_published.items) are skipped, so
+ * re-running this against a file that still holds historical entries can
+ * never push already-published entries back into the draft table.
  */
 
 import { spawnSync } from "child_process";
@@ -46,8 +51,17 @@ function buildSql(): string {
         `('${esc(e.id)}', '${esc(e.title)}', '${esc(e.description)}', '${esc(e.product)}', '${esc(e.category)}', '${esc(e.date)}', ${i})`,
     )
     .join(",\n  ");
-  return `INSERT INTO layout_changelog_draft (id, title, description, product, category, date, sort_order) VALUES
+  // Skip any entry whose title is already a published item's `text` so the
+  // source file (which is never pruned after publishing) can't resurrect
+  // already-published entries back into the draft table.
+  return `INSERT INTO layout_changelog_draft (id, title, description, product, category, date, sort_order)
+SELECT v.id, v.title, v.description, v.product, v.category, v.date, v.sort_order
+FROM (VALUES
   ${values}
+) AS v(id, title, description, product, category, date, sort_order)
+WHERE v.title NOT IN (
+  SELECT jsonb_array_elements(items)->>'text' FROM layout_changelog_published
+)
 ON CONFLICT (id) DO UPDATE SET
   title = EXCLUDED.title,
   description = EXCLUDED.description,

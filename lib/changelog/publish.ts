@@ -143,7 +143,7 @@ export function compileDraft(entries: ChangelogEntry[]): {
 
   const products = [...new Set(entries.map((e) => e.product))];
   const productNames: Record<string, string> = {
-    studio: "Studio", cli: "CLI", "figma-plugin": "Figma Plugin", "chrome-extension": "Chrome Extension",
+    studio: "Studio", live: "Layout Live", cli: "CLI", "figma-plugin": "Figma Plugin", "chrome-extension": "Chrome Extension",
   };
   const productStr = products.map((p) => productNames[p] || p).join(", ");
 

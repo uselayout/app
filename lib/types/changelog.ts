@@ -1,5 +1,6 @@
 export type ChangelogProduct =
   | "studio"
+  | "live"
   | "cli"
   | "figma-plugin"
   | "chrome-extension";

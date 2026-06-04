@@ -9,7 +9,7 @@ const entrySchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
   description: z.string().min(1),
-  product: z.enum(["studio", "cli", "figma-plugin", "chrome-extension"]),
+  product: z.enum(["studio", "live", "cli", "figma-plugin", "chrome-extension"]),
   category: z.enum(["new", "improved", "fixed"]),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
@@ -21,7 +21,7 @@ const publishSchema = z.object({
   items: z.array(
     z.object({
       text: z.string().min(1),
-      product: z.enum(["studio", "cli", "figma-plugin", "chrome-extension"]),
+      product: z.enum(["studio", "live", "cli", "figma-plugin", "chrome-extension"]),
       category: z.enum(["new", "improved", "fixed"]),
     })
   ),
