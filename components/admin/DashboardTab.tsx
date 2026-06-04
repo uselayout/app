@@ -105,6 +105,12 @@ interface ProductData {
     activeUsers: number;
     extractions: number;
   };
+  live: {
+    downloads: number;
+    downloads7d: number;
+    arm64: number;
+    x64: number;
+  };
   billing: {
     usersAtZeroCredits: number;
     zeroCreditsEmails: string[];
@@ -677,7 +683,7 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
 
       {/* B. Product Breakdown */}
       <SectionHeader title="Product Breakdown" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3">
         {/* Studio */}
         <div
           className="rounded-lg p-4 border-t-2"
@@ -767,6 +773,31 @@ export function DashboardTab({ onSwitchTab }: { onSwitchTab?: (tab: string) => v
           {[
             { label: "Active users", value: formatNumber(products?.chromeExtension?.activeUsers) },
             { label: "Extractions", value: formatNumber(products?.chromeExtension?.extractions) },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex justify-between items-center mb-1.5 last:mb-0">
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</span>
+              <span className="text-xs font-medium tabular-nums" style={{ color: "var(--text-primary)" }}>{value}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Layout Live */}
+        <div
+          className="rounded-lg p-4 border-t-2"
+          style={{
+            background: "var(--bg-surface)",
+            borderColor: "#a3e635",
+            borderLeft: "1px solid var(--studio-border)",
+            borderRight: "1px solid var(--studio-border)",
+            borderBottom: "1px solid var(--studio-border)",
+          }}
+        >
+          <div className="text-sm font-medium mb-3" style={{ color: "#a3e635" }}>Layout Live</div>
+          {[
+            { label: "Downloads", value: formatNumber(products?.live?.downloads) },
+            { label: "Downloads (7d)", value: formatNumber(products?.live?.downloads7d) },
+            { label: "Apple Silicon", value: formatNumber(products?.live?.arm64) },
+            { label: "Intel", value: formatNumber(products?.live?.x64) },
           ].map(({ label, value }) => (
             <div key={label} className="flex justify-between items-center mb-1.5 last:mb-0">
               <span className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</span>
