@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const COMPETITORS = [
   "Layout",
+  "Claude Design",
   "Google design.md",
   "Paper.design",
   "Magic Patterns",
@@ -28,6 +29,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Extract from Figma",
     values: {
       Layout: true,
+      "Claude Design": "Onboarding only",
       "Google design.md": false,
       "Paper.design": false,
       "Magic Patterns": "Import only",
@@ -41,6 +43,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Extract from live websites",
     values: {
       Layout: true,
+      "Claude Design": "Web capture",
       "Google design.md": "Manual (Stitch)",
       "Paper.design": false,
       "Magic Patterns": "Chrome Ext",
@@ -54,6 +57,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "LLM-optimised context output",
     values: {
       Layout: "layout.md",
+      "Claude Design": "Claude-only bundle",
       "Google design.md": "DESIGN.md",
       "Paper.design": false,
       "Magic Patterns": false,
@@ -67,6 +71,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Works in your IDE / terminal",
     values: {
       Layout: true,
+      "Claude Design": false,
       "Google design.md": "CLI + skills",
       "Paper.design": "Desktop app",
       "Magic Patterns": false,
@@ -80,6 +85,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "MCP server for AI agents",
     values: {
       Layout: "14 tools",
+      "Claude Design": false,
       "Google design.md": false,
       "Paper.design": "24 tools",
       "Magic Patterns": false,
@@ -93,6 +99,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Design system structuring",
     values: {
       Layout: "9-section file",
+      "Claude Design": "Internal only",
       "Google design.md": "8-section file",
       "Paper.design": "Roadmap",
       "Magic Patterns": "Style presets",
@@ -106,6 +113,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Custom font support",
     values: {
       Layout: "Upload + auto-detect",
+      "Claude Design": false,
       "Google design.md": false,
       "Paper.design": false,
       "Magic Patterns": false,
@@ -119,6 +127,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Multi-agent support",
     values: {
       Layout: "All major",
+      "Claude Design": "Claude only",
       "Google design.md": "Agent Skills",
       "Paper.design": "All major",
       "Magic Patterns": "Own platform",
@@ -132,6 +141,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
     feature: "Open source",
     values: {
       Layout: "AGPL-3.0",
+      "Claude Design": false,
       "Google design.md": "Apache 2.0",
       "Paper.design": false,
       "Magic Patterns": false,
@@ -139,6 +149,67 @@ const COMPARISON_DATA: ComparisonRow[] = [
       Variant: false,
       "Figma Dev Mode": false,
       "Pencil.dev": false,
+    },
+  },
+];
+
+// Layout Live competes in a different category to Studio: visual-edit tools
+// that touch a running app. Kept as its own data set so the Studio table above
+// stays focused on design-system / context tooling.
+const LIVE_COMPETITORS = [
+  "Layout Live",
+  "Cursor Design Mode",
+  "Onlook",
+  "stagewise",
+  "Figma Make",
+] as const;
+
+type LiveCompetitor = (typeof LIVE_COMPETITORS)[number];
+
+interface LiveComparisonRow {
+  feature: string;
+  values: Record<LiveCompetitor, CellValue>;
+}
+
+const LIVE_COMPARISON_DATA: LiveComparisonRow[] = [
+  {
+    feature: "Edits your real running dev server",
+    values: {
+      "Layout Live": true,
+      "Cursor Design Mode": "Own browser",
+      Onlook: "Cloud sandbox",
+      stagewise: "Browser toolbar",
+      "Figma Make": "Make app",
+    },
+  },
+  {
+    feature: "Deterministic edit, no AI token cost",
+    values: {
+      "Layout Live": "AST rewrite",
+      "Cursor Design Mode": "Agent-applied",
+      Onlook: "AI-assisted",
+      stagewise: "AI writes",
+      "Figma Make": "Agent + PR",
+    },
+  },
+  {
+    feature: "Design-token compliance score",
+    values: {
+      "Layout Live": true,
+      "Cursor Design Mode": "Token-aware",
+      Onlook: false,
+      stagewise: false,
+      "Figma Make": false,
+    },
+  },
+  {
+    feature: "Per-breakpoint non-destructive editing",
+    values: {
+      "Layout Live": true,
+      "Cursor Design Mode": false,
+      Onlook: false,
+      stagewise: false,
+      "Figma Make": false,
     },
   },
 ];
@@ -190,6 +261,18 @@ interface Objection {
 }
 
 const OBJECTIONS: Objection[] = [
+  {
+    question:
+      "Anthropic just shipped Claude Design \u2014 doesn\u2019t that make Layout redundant?",
+    answer:
+      "Claude Design is an Anthropic Labs product. Their own framing is \u201ca way for non-designers to make visuals,\u201d and it exports to Canva and PowerPoint. It\u2019s a chat-surface design tool competing with Figma and Canva, not a context layer feeding AI coding agents. Anthropic structurally can\u2019t be model-agnostic \u2014 their incentive is to make Claude the only agent that matters. Layout extracts your design system once and ships it as a portable bundle (layout.md + W3C DTCG tokens + .cursorrules + MCP) that Cursor, Copilot, Windsurf, Codex, Gemini CLI, and Claude Code all consume the same way. Different layer of the stack, different buyer. The right analogue is Cursor: same \u201cwon\u2019t the model lab kill them?\u201d objection 18 months ago, now a $9B company.",
+  },
+  {
+    question:
+      "Claude Design extracts design systems from Figma and codebases too. What\u2019s actually different?",
+    answer:
+      "Where the bundle goes. Claude Design\u2019s extracted design system stays inside Anthropic\u2019s walled garden \u2014 it powers their canvas and the handoff to Claude Code only. Layout\u2019s output is portable: tokens.css, tokens.json (W3C DTCG), CLAUDE.md, .cursor/rules, Windsurf rules, tailwind.config.js, plus an MCP server with 14 tools (compliance checking, drift detection, component lookup). It travels to every agent and every IDE the team uses. Layout also extracts from sources Claude Design doesn\u2019t \u2014 live websites via Playwright, Storybook CSF3 stories, Chrome extension capture, and a native Figma plugin with bidirectional Variables sync.",
+  },
   {
     question:
       "Paper.design has 24 MCP tools \u2014 isn\u2019t that more powerful?",
@@ -253,10 +336,12 @@ export default function ComparePage() {
           How Layout Compares
         </h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Every tool below is a canvas or prototyping tool &mdash; you generate
-          UI inside their platform. Layout is different: it&rsquo;s
-          infrastructure that extracts and packages your design system so AI
-          coding agents produce on-brand code in your own IDE.
+          Most tools below are design canvases or single-vendor coding agents
+          &mdash; you generate UI inside their platform, or your design system
+          context only works with one model. Layout is different: it extracts
+          your design system once and ships it as a portable bundle that
+          Cursor, Copilot, Windsurf, Codex, Gemini CLI, and Claude Code all
+          consume the same way. Model-agnostic by design.
         </p>
       </div>
 
@@ -319,6 +404,12 @@ export default function ComparePage() {
         <div className="space-y-4">
           {[
             {
+              name: "Claude Design",
+              desc: "Anthropic Labs research preview launched April 2026. Chat-surface design tool that turns prompts into prototypes, reads existing Figma files or repos to set up a design system, and exports a structured handoff bundle to Claude Code. Bundled into Pro/Max/Team subscriptions.",
+              relationship:
+                "Different layer of the stack. Claude Design is a design tool competing with Figma and Canva (its own framing is \u201cvisuals for non-designers\u201d; exports go to Canva and PowerPoint). Layout is the context layer that feeds every AI coding agent \u2014 Cursor, Copilot, Windsurf, Codex, Gemini CLI, and Claude Code. Claude Design\u2019s extracted design system is locked to Anthropic\u2019s surfaces; Layout\u2019s bundle is portable W3C DTCG tokens, layout.md, .cursorrules, and MCP that any agent can consume.",
+            },
+            {
               name: "Paper.design",
               desc: "Agent-first design canvas built on real HTML/CSS. 24 MCP tools with read and write access. Founded by Stephen Haney (built Radix/Modulz).",
               relationship:
@@ -369,6 +460,76 @@ export default function ComparePage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Layout Live comparison */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          Layout Live vs Visual-Edit Tools
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Layout Live is a different product with a different competitive set. It
+          is a desktop app that turns your running app into a direct-manipulation
+          canvas &mdash; click an element, scrub a value, and the edit is written
+          straight to your source as an on-token Tailwind class. Visually editing
+          a running app is no longer rare. What nobody else combines is editing
+          your <em>real</em> dev server, a deterministic write with <em>no AI
+          token cost</em>, and a live design-system compliance score that keeps
+          every edit on-system.
+        </p>
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full min-w-[800px] text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a] w-[170px]">
+                  Capability
+                </th>
+                {LIVE_COMPETITORS.map((name) => (
+                  <th
+                    key={name}
+                    className={`px-3 py-3 text-center font-semibold whitespace-nowrap ${
+                      name === "Layout Live"
+                        ? "text-[#0a0a0a] bg-gray-100"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {LIVE_COMPARISON_DATA.map((row) => (
+                <tr key={row.feature} className="hover:bg-gray-50/50">
+                  <td className="px-4 py-3 text-gray-700 font-medium">
+                    {row.feature}
+                  </td>
+                  {LIVE_COMPETITORS.map((name) => (
+                    <td
+                      key={name}
+                      className={`px-3 py-3 text-center text-xs ${
+                        name === "Layout Live"
+                          ? "bg-gray-50 text-[#0a0a0a] font-medium"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      <CellContent value={row.values[name]} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-sm text-gray-500 leading-relaxed italic">
+          Cursor Design Mode is the closest, with the same sliders and
+          token-awareness, but it edits inside Cursor&rsquo;s own browser, applies
+          changes through its agent, and has no compliance score. Onlook pivoted
+          to a cloud sandbox; stagewise pipes context to an AI that does the
+          writing; Figma Make opens a pull request. Layout Live is the only one
+          that rewrites your real source deterministically, on your own dev
+          server, gated to your design tokens.
+        </p>
       </section>
 
       {/* Objections / FAQ */}

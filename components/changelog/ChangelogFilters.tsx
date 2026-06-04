@@ -8,6 +8,7 @@ const filters: Array<{ value: ChangelogProduct | "all"; label: string }> = [
   { value: "cli", label: "CLI" },
   { value: "figma-plugin", label: "Figma Plugin" },
   { value: "chrome-extension", label: "Chrome Extension" },
+  { value: "live", label: "Layout Live" },
 ];
 
 export function ChangelogFilters({

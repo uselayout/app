@@ -7,9 +7,9 @@ import type { PublicKitSummary, KitSort } from "@/lib/types/kit";
 import { KitCard } from "./KitCard";
 
 const SORT_OPTIONS: Array<{ value: KitSort; label: string }> = [
+  { value: "new", label: "New" },
   { value: "featured", label: "Featured" },
   { value: "top", label: "Top" },
-  { value: "new", label: "New" },
 ];
 
 type Theme = "dark" | "light";
@@ -66,7 +66,7 @@ export function GalleryPageClient({
     else next.delete("q");
     if (tag) next.set("tag", tag);
     else next.delete("tag");
-    if (sort && sort !== "featured") next.set("sort", sort);
+    if (sort && sort !== "new") next.set("sort", sort);
     else next.delete("sort");
     startTransition(() => {
       router.replace(`/gallery?${next.toString()}`, { scroll: false });

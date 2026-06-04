@@ -5,6 +5,7 @@ import { CategoryBadge } from "./CategoryBadge";
 const PRODUCT_ORDER: ChangelogProduct[] = [
   "studio",
   "cli",
+  "live",
   "figma-plugin",
   "chrome-extension",
 ];
@@ -16,6 +17,7 @@ const PRODUCT_LABELS: Record<ChangelogProduct, string> = {
   cli: "CLI",
   "figma-plugin": "Figma Plugin",
   "chrome-extension": "Chrome Extension",
+  live: "Layout Live",
 };
 
 export function ChangelogWeekGroup({ week }: { week: ChangelogWeek }) {

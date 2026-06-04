@@ -498,18 +498,9 @@ async function uniqueSlug(base: string): Promise<string> {
 }
 
 export async function incrementImportCount(kitId: string): Promise<void> {
-  // Non-atomic read-then-write. A lost-update on concurrent imports is
-  // acceptable here: the counter is a vanity metric, not a billing signal.
-  const { data } = await supabase
-    .from("layout_public_kit")
-    .select("import_count")
-    .eq("id", kitId)
-    .maybeSingle();
-  const next = ((data as { import_count: number } | null)?.import_count ?? 0) + 1;
-  await supabase
-    .from("layout_public_kit")
-    .update({ import_count: next })
-    .eq("id", kitId);
+  // Atomic single-statement increment (see migration 058) so concurrent
+  // imports don't lose updates.
+  await supabase.rpc("increment_kit_import_count", { p_kit_id: kitId });
 }
 
 export async function deleteKit(id: string, requesterOrgId: string): Promise<boolean> {

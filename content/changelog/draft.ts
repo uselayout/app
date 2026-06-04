@@ -10,6 +10,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w23-layout-live-download",
+    title: "Layout Live is now available to download",
+    description:
+      "Layout Live, the macOS app for visually editing your running React app, is now a free open download. Click an element in your live app, scrub its spacing, swap a colour for a design token, and the change is written straight back to your source as a Tailwind class. No cloud sandbox, no AI tokens spent. It is signed and notarised by Apple, so it opens with a plain double-click, and it updates itself automatically as we ship fixes. Grab it from the new Layout Live page.",
+    product: "live",
+    category: "new",
+    date: "2026-06-03",
+  },
+  {
     id: "2026-w23-gallery-kit-mobile",
     title: "Kit gallery design-system view now works on mobile",
     description:
@@ -46,6 +55,24 @@ export const draftEntries: ChangelogEntry[] = [
     date: "2026-06-01",
   },
   {
+    id: "2026-w23-gallery-new-default-and-accurate-downloads",
+    title: "Gallery opens on New, and download counts are accurate",
+    description:
+      "The Kit Gallery now opens on the New tab so the latest kits are front and centre. Download counts are also more honest: importing a kit you published yourself no longer counts as a download, so freshly posted kits start at zero instead of looking like they already have traffic.",
+    product: "studio",
+    category: "improved",
+    date: "2026-06-03",
+  },
+  {
+    id: "2026-w23-gallery-design-system-reference",
+    title: "Gallery kits now open as a full design-system reference",
+    description:
+      "Every kit page in the Gallery is now a navigable design-system reference, not a single scroll. A left-hand menu groups Foundations (colour, typography, spacing, sizes, radius, elevation, icons), Forms (text fields, dropdowns, checkboxes, switches, field states) and Components (buttons, badges, avatars, tabs, tooltips, alerts, accordion, breadcrumb, pagination, stats, cards, tables), and clicking any item jumps straight to it. Everything renders live in each kit's own tokens, so you can see exactly how a kit's buttons, inputs and colours look before importing it. Works automatically for every current and future kit.",
+    product: "studio",
+    category: "improved",
+    date: "2026-06-01",
+  },
+  {
     id: "2026-w23-cli-install-gallery-kit",
     title: "Install any gallery kit straight from the CLI",
     description:
@@ -55,7 +82,7 @@ export const draftEntries: ChangelogEntry[] = [
     date: "2026-06-01",
   },
   {
-    id: "2026-w23-gallery-design-system-reference",
+    id: "2026-w23-gallery-bespoke-brand-skins",
     title: "Gallery kits now match each brand's real UI",
     description:
       "Every kit page in the Gallery is now a navigable design-system reference, not a single scroll. A left-hand menu groups Foundations (colour, typography, spacing, sizes, radius, elevation, icons), Forms (text fields, dropdowns, checkboxes, switches, field states) and Components (buttons, badges, avatars, tabs, tooltips, alerts, accordion, breadcrumb, pagination, stats, cards, tables), and clicking any item jumps straight to it. Best of all, each kit is now styled to look like its actual brand: Stripe's shadowed buttons, Netflix's dark red UI, IBM's sharp Carbon look, right down to the copy, so the showcase feels like the real product rather than a generic template. See exactly how a kit's buttons, inputs and components behave before you import it.",
