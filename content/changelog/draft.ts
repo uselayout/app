@@ -15,6 +15,24 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w24-live-ai-requests",
+    title: "Leave the AI a note on any element in Layout Live",
+    description:
+      "Some changes can't be made by scrubbing a slider — \"make this the primary call to action\", \"rework the spacing rhythm here\", \"add a testimonial row below\". Now you can select any element in Layout Live and write the AI a plain-English request, pinned to that exact spot. For changes that aren't tied to one element, switch on comment mode and drop a pin or draw a region on the page. Your requests collect in a new Requests tab, and when you hand off to your AI agent they travel with it, so your agent reads them and makes the changes in the right place.",
+    product: "live",
+    category: "new",
+    date: "2026-06-08",
+  },
+  {
+    id: "2026-w24-mcp-get-pending-requests",
+    title: "New get-pending-requests MCP tool",
+    description:
+      "AI coding agents can now pull the change requests you left in Layout Live with the new get-pending-requests tool. Say \"apply the things I flagged in Live\" and your agent fetches each request together with the file, line and component it points at, so it edits exactly the right place. It works whether or not Live is running, reading the on-disk requests log as a fallback.",
+    product: "cli",
+    category: "new",
+    date: "2026-06-08",
+  },
+  {
     id: "2026-w23-gallery-new-default-and-accurate-downloads",
     title: "Gallery opens on New, and download counts are accurate",
     description:
