@@ -302,7 +302,7 @@ npx @layoutdesign/context install
           <Link href="/docs/live" className="text-gray-900 hover:underline">
             Layout Live
           </Link>{" "}
-          desktop app open, the MCP server exposes four more tools so your AI
+          desktop app open, the MCP server exposes five more tools so your AI
           agent always knows what you&apos;re tweaking visually. When Live
           isn&apos;t running they return a clean &ldquo;not running&rdquo;
           response, so they never break a session.
@@ -324,6 +324,10 @@ npx @layoutdesign/context install
                 [
                   "get-recent-visual-edits",
                   "The recent class and token changes you made in Live, so the agent builds on your tweaks instead of reverting them. Falls back to the .layout/live/ edit log when Live is closed.",
+                ],
+                [
+                  "get-pending-requests",
+                  "The messages you left for the AI in Live, pinned to elements, regions or the whole page. Falls back to the .layout/live/ requests log when Live is closed.",
                 ],
                 [
                   "lock-file",

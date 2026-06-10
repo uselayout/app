@@ -434,7 +434,7 @@ export default function LayoutLivePage() {
           <Link href="/docs/cli" className="text-gray-900 hover:underline">
             Layout MCP server
           </Link>
-          . Live adds four MCP tools so your agent always has live context:
+          . Live adds five MCP tools so your agent always has live context:
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -453,6 +453,10 @@ export default function LayoutLivePage() {
                 [
                   "get-recent-visual-edits",
                   'The class/token changes you just made. Ask "what did I just change?" and the agent reads the edit log.',
+                ],
+                [
+                  "get-pending-requests",
+                  "The messages you left for the AI, pinned to elements, regions or the whole page, so the agent can pick them up and work through them.",
                 ],
                 [
                   "lock-file",
@@ -485,7 +489,7 @@ export default function LayoutLivePage() {
           banner appears with View diff, Reload, and Undo options.
         </p>
         <Callout type="tip">
-          These four tools ship in the Layout MCP server and return a clean
+          These five tools ship in the Layout MCP server and return a clean
           &ldquo;not running&rdquo; response when Live is closed, so they never
           break an agent session. Full tool reference on the{" "}
           <Link href="/docs/cli" className="text-gray-900 hover:underline">
