@@ -1,124 +1,148 @@
-# Gallery Batch Import — Session Handoff
+# Gallery Bespoke Stability — Session Handoff
 
-> Use this in a fresh Claude Code session. Picks up the launch-Gallery-with-56-kits work where context ran out.
+> Drop a fresh Claude Code session into the worktree at
+> `.claude/worktrees/staging-batch-gallery-import` and point it at this file.
 
-## Where we are
+## TL;DR
 
-You're filling `staging.layout.design/gallery` with ~56 design kits derived from real brand websites (Apple, Stripe, Linear, Notion, Figma, Asana, Headspace, etc.). Pipeline shipped, server stability fixed. **Most of your 56 Studio Projects are empty shells from a failed parallel run** — the script crashed staging mid-batch, leaving Projects without extractions.
+The Kit Gallery's bespoke generation pipeline went unstable today. Symptoms: "no available server" 503s during regen, kits showing "Script error" in the iframe, hung regens, blank gallery. Spent most of the session chasing the wrong root cause (sync TypeScript transpile blocking the event loop) and broke things further with an esbuild migration. Reverted the transpile to TypeScript, then ran agents that found the **actual** root causes:
 
-## The two scripts (don't confuse them)
+1. **Playwright leaked Chromium zombies** because `context` and `page` were never closed on error.
+2. **Four heavy jobs ran in parallel per publish** with no coordination.
+3. **Hero generation had no concurrency limit**.
 
-| Script | Purpose | Touches Studio Projects? | Touches Gallery Kits? |
-|---|---|---|---|
-| `scripts/import-gallery-batch.ts` | End-to-end: extract URL → create Project → publish Kit | **Yes** (creates one per URL) | **Yes** (publishes after) |
-| `scripts/regen-bespoke.ts` | Local Claude + transpile → POST bespoke TSX/JS to existing kit | No | Updates existing kit row only |
+All three are fixed in commit `b270419` (merged to staging at `47dba71`). User just needs to **restart the staging container in Coolify** to clear the zombies that accumulated *before* the fix landed.
 
-Both run **locally** on your Mac (Anthropic + Playwright + TypeScript transpile happen on your CPU, not the server).
+## Original goal (still in progress)
 
-## Why the empty Projects exist
+Populate `staging.layout.design/gallery` with ~56 brand-faithful kits (Apple, Stripe, Linear, Notion, Figma, Airtable, Headspace, Ramp, etc.). User publishes one kit at a time through Studio. Each publish auto-generates:
+- **Style profile** (cheap Claude JSON, ~5s, drives uniform template per-kit)
+- **Bespoke showcase** (Claude TSX, ~60s, brand-faithful Live Preview)
+- **Playwright snapshot** (PNG of the iframe for the gallery card)
+- **Hero image** (GPT Image 2 brand cover)
 
-Earlier `import-gallery-batch.ts` runs fired multiple kits in parallel against staging. Combined with server-side bespoke generation (now removed), this pegged Coolify's Node container at 100% CPU, healthcheck timed out, Traefik dropped the backend. Some kits made it to "Project created" but the extract / synthesise / publish steps failed before completing. Those orphan Projects are what you see under [Personal](app/(dashboard)/[org]/page.tsx) in your dashboard.
+`scripts/regen-bespoke.ts` is the local CLI fallback for when server-side regen fails.
 
-## Server-stability fix already shipped
+Already published & generally OK: Linear, Apple, Asana, Stripe, Figma, Headspace, Ramp, Airtable. ~50 still to publish.
 
-Commit `b3c402d` moved **all** bespoke Claude work off the server. It now lives in `scripts/regen-bespoke.ts` (runs locally, POSTs result back). Two new admin endpoints back this:
+## What happened today (in order)
 
-- `GET  /api/admin/kits/[id]/source` — read kit data ([app/api/admin/kits/[id]/source/route.ts](app/api/admin/kits/[id]/source/route.ts))
-- `POST /api/admin/kits/[id]/showcase` — accept pre-generated TSX/JS ([app/api/admin/kits/[id]/showcase/route.ts](app/api/admin/kits/[id]/showcase/route.ts))
+1. Renamed kits in admin (Ramp from "ramp.com — opus4.7" → "Ramp"). Auto-regen fired on every rename — wasteful for a copy-only change.
+2. User reported "no available server" 503s during bespoke regen.
+3. Diagnosed (incorrectly) as the TypeScript compiler blocking the Node event loop during transpile.
+4. Migrated `lib/transpile.ts` to esbuild (commits `5a14698`, `89ae259`, `c0047c0`).
+5. Build broke (Turbopack tried to bundle esbuild's native binary). Fixed with `serverExternalPackages: ["esbuild"]`.
+6. Build deployed → **every bespoke kit started showing "Script error"**. esbuild's CJS output envelope is incompatible with the iframe runtime shim.
+7. Reverted `lib/transpile.ts` to TypeScript compiler (commit `8bdc2f0`, merged at `32580c7`). Kits work again.
+8. User questioned whether we'd been chasing symptoms. Spawned 3 Explore agents. They found the **real** root causes (below).
+9. Shipped the real fixes (commit `b270419`, merged at `47dba71`). User still needs to restart the container to clear zombies.
 
-Concurrency limiters in [lib/concurrency.ts](lib/concurrency.ts) cap any leftover server-side generation (style profile only).
+## Real root causes (agent findings, ranked)
 
-## What to do next
+### 1. Playwright `context` + `page` never closed on error
+**File**: `lib/gallery/snapshot.ts`
 
-### Step 1 — clean up empty Projects (manual, optional)
-
-Open [https://staging.layout.design](https://staging.layout.design), Personal org → Projects. Delete any without extractions. Or leave them; they don't affect the Gallery.
-
-### Step 2 — re-run the batch script with low concurrency
-
-The script currently runs serially per-kit (no `--concurrency` flag), but the **pipeline still includes a server-side publish**. Don't fire many at once.
-
-```sh
-cd "/Users/matt/Cursor Projects/Layout/layout-studio"
-git checkout staging && git pull
-export ADMIN_API_KEY=6cb70c63ece317b9d1cccc430fb524fbea9324eb80f9d182e5617a676849d8f1
-export ANTHROPIC_API_KEY=sk-ant-...    # your key
-export LAYOUT_BATCH_ORG=personal-0pFM0JL1-mnivnsxd
-
-# Smoke test first
-npx tsx scripts/import-gallery-batch.ts --env staging --limit 1
-
-# Then resume the rest (skips already-published)
-npx tsx scripts/import-gallery-batch.ts --env staging --resume
+```ts
+// BEFORE: only browser closed
+} finally {
+  await browser.close().catch(() => {});
+}
 ```
 
-State is in `scripts/data/gallery-batch.state.json` — `--resume` skips entries already marked complete.
+If `goto()` or `screenshot()` threw or timed out, the BrowserContext + Page kept their WebSocket and IPC channels open. Each failed snapshot leaked a zombie Chromium subprocess. Over time the staging container ran out of file descriptors → "no available server" on every request, even ones unrelated to snapshots.
 
-### Step 3 — regen bespoke for kits already in the Gallery
+**FIXED in `b270419`**: track `context` and `page` in vars, close them in `finally` no matter what threw.
 
-Once a kit publishes, it ships with the **uniform template** + style profile (cheap, fast, no Claude transpile). To upgrade a kit to brand-faithful **bespoke** TSX:
+### 2. Four heavy jobs raced on the Node thread per publish
+**File**: `lib/gallery/run-generation-jobs.ts`
 
-```sh
-export ADMIN_API_KEY=6cb70c63ece317b9d1cccc430fb524fbea9324eb80f9d182e5617a676849d8f1
-export ANTHROPIC_API_KEY=sk-ant-...
+Every publish fired in parallel:
+- Style profile (Claude JSON)
+- Bespoke (Claude TSX + transpile)
+- Playwright snapshot (Chromium 150-300MB RAM)
+- Hero (GPT Image 2 + 2-4MB base64 buffer)
 
-# One kit
-npx tsx scripts/regen-bespoke.ts --env staging --slug apple
+No coordination. Healthcheck timed out under combined load.
 
-# Several
-npx tsx scripts/regen-bespoke.ts --env staging --slugs apple,asana,stripe,linear,figma
+**FIXED in `b270419`**: bespoke + snapshot now run sequentially in a single chain (snapshot needs the bespoke TSX to capture the right content anyway). Hero stays parallel but bounded. Style profile stays parallel and cheap.
 
-# All published kits, two at a time on your Mac
-npx tsx scripts/regen-bespoke.ts --env staging --all --concurrency 2
+### 3. Hero generation had no concurrency cap
+**File**: `lib/gallery/hero.ts`, `lib/concurrency.ts`
 
-# Dry run to preview output sizes without posting
-npx tsx scripts/regen-bespoke.ts --env staging --slug apple --dry-run
-```
+Multiple parallel publishes each decoded a 2K base64 PNG into a heap Buffer. Cheap per call, fatal in parallel.
 
-Each kit takes ~30-90s. Failures are logged per-kit; the loop continues.
+**FIXED in `b270419`**: `heroGenerationLimit = createLimiter(1, 120_000)` and `kitSnapshotLimit = createLimiter(1, 120_000)`. Both wrap their respective entry points.
 
-## Key files to know
+## What was broken (and is now reverted/fixed)
 
-| File | What |
+- ❌ esbuild transpile migration → reverted in `8bdc2f0`. **Don't try this again** without first matching esbuild's CJS output to the iframe runtime shim. The shim is wherever the gallery page builds the iframe srcdoc — search for `script.textContent` and `module.exports`.
+- ✅ Auto-regen on kit rename → replaced with cheap string-replace in cached TSX (commit `84d91ca`). PATCH endpoint detects name/description change, splits-and-joins on the cached `showcase_custom_tsx`, re-transpiles, persists in one round trip.
+- ✅ Rename "ramp.com — opus4.7" → "Ramp" no longer requires a Claude regen.
+
+## Code state
+
+**Latest staging commit**: `47dba71` (merge of `b270419`).
+
+**Worktree branch**: `staging-batch-gallery-import` at `b270419`.
+
+**Key files in their current good state**:
+
+| File | Status |
 |---|---|
-| [scripts/import-gallery-batch.ts](scripts/import-gallery-batch.ts) | Original batch: extract → Project → publish |
-| [scripts/regen-bespoke.ts](scripts/regen-bespoke.ts) | Local bespoke regen, POSTs to admin endpoints |
-| [scripts/data/gallery-batch.seed.json](scripts/data/gallery-batch.seed.json) | The 56-kit input (URLs + metadata) |
-| [scripts/data/gallery-batch.state.json](scripts/data/gallery-batch.state.json) | Resume state (gitignored) |
-| [scripts/data/card-images/](scripts/data/card-images/) | Local card image folder (gitignored) |
-| [lib/gallery/run-generation-jobs.ts](lib/gallery/run-generation-jobs.ts) | Server-side post-publish jobs (style profile + preview + hero only — no bespoke) |
-| [lib/claude/generate-kit-showcase.ts](lib/claude/generate-kit-showcase.ts) | Claude prompt for bespoke TSX |
-| [lib/claude/generate-kit-style-profile.ts](lib/claude/generate-kit-style-profile.ts) | Claude prompt for v2 style profile |
-| [lib/types/kit-style-profile.ts](lib/types/kit-style-profile.ts) | v2 schema (16 colour fields + button/input/card/badge/tab) |
-| [components/gallery/kit-showcase-source.ts](components/gallery/kit-showcase-source.ts) | Uniform iframe template (fallback when no bespoke) |
-| [components/admin/KitsTab.tsx](components/admin/KitsTab.tsx) | Admin row dropdowns: Card / Status / Generate |
+| [lib/transpile.ts](lib/transpile.ts) | TypeScript compiler (sync internals, async signature) |
+| [lib/gallery/snapshot.ts](lib/gallery/snapshot.ts) | Closes context + page in finally; wrapped in `kitSnapshotLimit` |
+| [lib/gallery/hero.ts](lib/gallery/hero.ts) | Wrapped in `heroGenerationLimit` |
+| [lib/gallery/run-generation-jobs.ts](lib/gallery/run-generation-jobs.ts) | Bespoke + snapshot serial; hero parallel; style profile parallel |
+| [lib/concurrency.ts](lib/concurrency.ts) | `bespokeShowcaseLimit(2)`, `styleProfileLimit(3)`, `heroGenerationLimit(1)`, `kitSnapshotLimit(1)` |
+| [lib/claude/generate-kit-showcase.ts](lib/claude/generate-kit-showcase.ts) | Strict prompt: no fake logos, no emojis, no nav scroll, hover required, read kit name from `window.__KIT__` |
+| [components/admin/KitsTab.tsx](components/admin/KitsTab.tsx) | Inline-editable name + description, portal'd dropdowns, blue progress text |
+| [app/api/admin/kits/[id]/route.ts](app/api/admin/kits/[id]/route.ts) | PATCH detects rename → string-replaces cached TSX → re-transpiles |
 
-## Constraints baked in (don't undo)
+## What the user must do RIGHT NOW
 
-- **No server-side bespoke**: bespoke TSX never generates on the staging server. It runs locally via `regen-bespoke.ts` only. This is the fix for the CPU starvation that killed staging.
-- **Bearer admin auth**: `ADMIN_API_KEY` env var enables script auth without a session cookie. Wired into `lib/api/admin-context.ts` + `lib/api/admin-bearer.ts`.
-- **Bearer-admin exempt from rate limits**: `app/api/extract/website/route.ts` and `app/api/generate/layout-md/route.ts` skip rate-limit checks when `bearerAdmin` is set.
-- **Style profile auto-fires on publish**: cheap (~$0.005/kit), produces v2 JSON profile. The uniform template reads it. Kits look brand-coloured immediately, even before bespoke regen.
-- **Concurrency limiters**: `bespokeShowcaseLimit = createLimiter(2)` and `styleProfileLimit = createLimiter(3)` in [lib/concurrency.ts](lib/concurrency.ts).
+1. **Restart the staging container in Coolify** — http://94.130.130.22:8000/ → staging app → Restart. Kills any zombie Chromium processes from before the fix landed. ~30s.
 
-## Recovery hatch
+2. Verify health:
+   ```sh
+   curl -s -o /dev/null -w "%{http_code}\n" https://staging.layout.design/api/health/ready
+   ```
+   Should return `200`.
 
-If staging goes down mid-batch again:
-1. Coolify dashboard: http://94.130.130.22:8000/
-2. Restart the app container, or wait 2-5 min for in-flight Claude calls to drain
-3. Re-run with `--resume`
+3. Visit the admin Kits tab. The hung "Generating… 6m+" status on Linear is a stale client-side timer. Refresh clears it.
 
-## Open follow-ups
+4. Regen any kit showing "Script error" in the gallery (any kit that was regenerated during the esbuild window today has bad cached JS). Either:
+   - Admin Kits tab → row → Generate ▾ → Regen bespoke (Claude)
+   - Or local CLI: `npx tsx scripts/regen-bespoke.ts --env staging --slug <slug>`
 
-- ~50 empty Projects in your Personal org (cosmetic — Gallery doesn't read these)
-- Bespoke regen for the ~5 kits already published (Apple, Asana, Stripe, Linear, Figma)
-- Visual QA per brand after bespoke regen — iterate Claude prompt if any kit looks off
-- Production rollout when staging is stable: same migration, same env vars on the prod Coolify app
+## What still needs verification
 
-## Most recent user signals
+- After container restart + a fresh bespoke regen, watch the healthcheck stay `200` throughout. If it flips to `503` even briefly, there's another blocker we haven't found.
+- Try two near-simultaneous regens on different kits. With `bespokeShowcaseLimit(2)` they should both succeed; a third would queue.
+- Check Coolify metrics: container CPU should peak ~30-40% during a single regen, not 100%.
 
-- "this is turning out to take longer than if i had done this manually" (frustration with bespoke quality + server crashes — both addressed)
-- Rejected lowering Claude tokens or dropping bespoke entirely: "they look really bad! They will give an unfair view of how good Layout's variant generation is"
-- Chose the off-server move (commit `b3c402d`) as the path forward
+## Open follow-ups (not urgent)
 
-Resume confidently. You can run `regen-bespoke.ts` against the published kits any time — the server stays stable now.
+- **Stream listener cleanup** ([lib/claude/generate-kit-showcase.ts:316](lib/claude/generate-kit-showcase.ts)) — agent #3 flagged that the `stream.on("text", ...)` listener isn't removed. Low-impact memory leak; would only matter under sustained load.
+- **Per-job timeouts** in `runKitGenerationJobs` — if a Claude or Playwright call hangs forever, the semaphore slot is never freed. The 120-180s limiter timeouts are a partial mitigation.
+- **`fetchKitById` over-fetches** — pulls full `rich_bundle` (100-300KB JSONB) on every PATCH. Could be slimmed to only the columns needed.
+- **Bulk regen UI** — manual one-at-a-time Generate ▾ clicks for 50+ kits is tedious. The local CLI script is the better path: `npx tsx scripts/regen-bespoke.ts --env staging --all --concurrency 2`.
+
+## Reference: prior plans + memory
+
+- **Plan file** (full history of decisions): `/Users/matt/.claude/plans/we-have-buiult-out-fancy-gizmo.md`
+- **Project memory**: `/Users/matt/.claude/projects/-Users-matt-Cursor-Projects-Layout-layout-studio/memory/MEMORY.md`
+- **Two scripts** (don't confuse them):
+  - `scripts/import-gallery-batch.ts` — extract URL → create Studio Project → publish Kit. The 56 Studio Projects in the user's account came from this.
+  - `scripts/regen-bespoke.ts` — local Claude + transpile, POSTs result to `/api/admin/kits/[id]/showcase`. Doesn't touch Studio Projects.
+
+## How a fresh session should start
+
+1. `cd "/Users/matt/Cursor Projects/Layout/layout-studio/.claude/worktrees/staging-batch-gallery-import"`
+2. `git pull` to make sure you're on `b270419` or later.
+3. Read this file end-to-end before touching anything.
+4. The user is mid-cleanup. Don't ship new changes until they confirm the current state is stable.
+5. Resume from "What the user must do RIGHT NOW" above.
+
+## Tone for the next session
+
+User has spent a long day on this and is frustrated. Lead with what's verified, not what might be true. Don't propose architectural rewrites unless they explicitly ask. Do verify-then-fix, not fix-then-verify.
