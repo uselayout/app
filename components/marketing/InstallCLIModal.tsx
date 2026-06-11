@@ -38,7 +38,7 @@ export function InstallCLIModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95"
+      className="force-dark fixed inset-0 z-[100] flex items-center justify-center bg-black/95"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
