@@ -13,4 +13,14 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  * Good: "Faster Figma extraction" / "Design tokens now extract 3x faster from large Figma files."
  * Bad:  "perf: optimise batch node fetching"
  */
-export const draftEntries: ChangelogEntry[] = [];
+export const draftEntries: ChangelogEntry[] = [
+  {
+    id: "2026-06-11-install-cli-modal-light-theme",
+    title: "Install CLI modal readable in light theme",
+    description:
+      "The Install CLI popup on the homepage now always renders in dark style, fixing unreadable light-grey text for visitors using the light theme.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-06-11",
+  },
+];
