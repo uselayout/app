@@ -1336,6 +1336,7 @@ interface ChangelogWeekData {
 
 const PRODUCTS = [
   { value: "studio", label: "Studio" },
+  { value: "live", label: "Layout Live" },
   { value: "cli", label: "CLI" },
   { value: "figma-plugin", label: "Figma Plugin" },
   { value: "chrome-extension", label: "Chrome Extension" },
@@ -1349,6 +1350,7 @@ const CATEGORIES = [
 
 const productBadgeStyles: Record<string, { bg: string; text: string; label: string }> = {
   studio: { bg: "var(--studio-border)", text: "var(--text-primary)", label: "Studio" },
+  live: { bg: "rgba(14,165,233,0.15)", text: "rgb(56,189,248)", label: "Layout Live" },
   cli: { bg: "rgba(16,185,129,0.15)", text: "rgb(52,211,153)", label: "CLI" },
   "figma-plugin": { bg: "rgba(139,92,246,0.15)", text: "rgb(167,139,250)", label: "Figma Plugin" },
   "chrome-extension": { bg: "rgba(245,158,11,0.15)", text: "rgb(251,191,36)", label: "Chrome Extension" },
@@ -1392,7 +1394,7 @@ const selectStyle = {
   backgroundPosition: "right 8px center",
 };
 
-const PRODUCT_ORDER = ["studio", "cli", "figma-plugin", "chrome-extension"];
+const PRODUCT_ORDER = ["studio", "live", "cli", "figma-plugin", "chrome-extension"];
 
 function ChangelogTab({ toast }: { toast: (msg: string, type?: "success" | "error") => void }) {
   const [draft, setDraft] = useState<ChangelogEntryData[]>([]);

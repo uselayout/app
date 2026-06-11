@@ -26,6 +26,6 @@ export default [
     },
   },
   {
-    ignores: [".next/", "node_modules/", "*.config.*"],
+    ignores: [".next/", "node_modules/", "*.config.*", ".claude/"],
   },
 ];

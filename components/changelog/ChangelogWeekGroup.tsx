@@ -14,10 +14,10 @@ const CATEGORY_ORDER: ChangelogCategory[] = ["new", "improved", "fixed"];
 
 const PRODUCT_LABELS: Record<ChangelogProduct, string> = {
   studio: "Studio",
+  live: "Layout Live",
   cli: "CLI",
   "figma-plugin": "Figma Plugin",
   "chrome-extension": "Chrome Extension",
-  live: "Layout Live",
 };
 
 export function ChangelogWeekGroup({ week }: { week: ChangelogWeek }) {

@@ -5,6 +5,7 @@ import type { ChangelogProduct } from "@/lib/types/changelog";
 const filters: Array<{ value: ChangelogProduct | "all"; label: string }> = [
   { value: "all", label: "All" },
   { value: "studio", label: "Studio" },
+  { value: "live", label: "Layout Live" },
   { value: "cli", label: "CLI" },
   { value: "figma-plugin", label: "Figma Plugin" },
   { value: "chrome-extension", label: "Chrome Extension" },
