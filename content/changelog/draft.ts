@@ -18,7 +18,7 @@ export const draftEntries: ChangelogEntry[] = [
     id: "2026-06-11-install-cli-modal-light-theme",
     title: "Install CLI modal readable in light theme",
     description:
-      "The Install CLI popup on the homepage now always renders in dark style, fixing unreadable light-grey text for visitors using the light theme.",
+      "The Install CLI popup on the homepage now always renders in dark style, fixing unreadable light-grey text for visitors using the light theme. It also shows the current tool count: 19 MCP design tools and 15 CLI commands.",
     product: "studio",
     category: "fixed",
     date: "2026-06-11",
