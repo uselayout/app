@@ -8,7 +8,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Round Trip: Gallery → Live | Layout Docs",
   description:
-    "A complete worked example: import a kit from the Layout Gallery, install it into your project, tweak your running app in Layout Live, and hand the result off to Claude Code — all on-brand, all written to real source.",
+    "A complete worked example: import a kit from the Layout Gallery, install it into your project, tweak your running app in Layout Live, and hand the result off to Claude Code, all on-brand, all written to real source.",
 };
 
 const steps = [
@@ -19,10 +19,10 @@ const steps = [
       <>
         <p className="text-base text-gray-600 leading-relaxed">
           Open the{" "}
-          <Link href="/gallery" target="_blank" className="text-gray-900 hover:underline">
+          <Link href="/gallery" target="_blank" rel="noopener noreferrer" className="text-gray-900 hover:underline">
             Kit Gallery
           </Link>{" "}
-          and pick a design system to build against — say the{" "}
+          and pick a design system to build against, say the{" "}
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">linear-lite</code>{" "}
           kit. On the kit page you can preview it live (palette, type, spacing,
           components rendered in its own tokens), browse the full token set, and
@@ -33,7 +33,7 @@ const steps = [
         </p>
         <p className="text-base text-gray-600 leading-relaxed">
           For the Live workflow we want the kit on disk in our project, so we
-          use the CLI command — but importing to Studio first is handy if you
+          use the CLI command, but importing to Studio first is handy if you
           want to tweak the tokens or generate components before you start.
         </p>
       </>
@@ -121,7 +121,7 @@ const steps = [
           Your app loads in an embedded Chromium view. Sign in with your Layout
           account so Live can resolve the{" "}
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">linear-lite</code>{" "}
-          tokens you just installed — that is what powers the token-aware pickers
+          tokens you just installed, that is what powers the token-aware pickers
           and the compliance score.
         </p>
         <Callout type="warning">
@@ -151,7 +151,7 @@ const steps = [
             not an arbitrary value.
           </li>
           <li>
-            <strong>Change the colour.</strong> Open the background picker — it is
+            <strong>Change the colour.</strong> Open the background picker, it is
             seeded with the Linear palette. Pick the accent token; the class
             updates to the token-backed utility.
           </li>
@@ -181,7 +181,7 @@ const steps = [
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
             update-tokens
           </code>{" "}
-          API, so it cascades to <em>every</em> class that references it — and
+          API, so it cascades to <em>every</em> class that references it, and
           the web Studio picks up the same change next time you open the
           project. One edit, consistent everywhere.
         </p>
@@ -195,7 +195,7 @@ const steps = [
       <>
         <p className="text-base text-gray-600 leading-relaxed">
           You have the button looking right, but now you want a loading state
-          with a spinner — that is logic, not a tweak. With the button still
+          with a spinner, that is logic, not a tweak. With the button still
           selected, click <strong>Hand off to AI</strong>. Live writes a
           paste-ready prompt (and a{" "}
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
@@ -208,7 +208,7 @@ const steps = [
           Just ask:
         </p>
         <CopyBlock
-          code={`Add a loading state to the button I just selected in Live —
+          code={`Add a loading state to the button I just selected in Live , 
 spinner + disabled, using the existing accent token.`}
           language="text"
         />
@@ -221,7 +221,7 @@ spinner + disabled, using the existing accent token.`}
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
             get-recent-visual-edits
           </code>{" "}
-          to see the padding, colour and radius you just changed — so it builds
+          to see the padding, colour and radius you just changed, so it builds
           the loading state on top of your tweaks instead of reverting them. It
           calls{" "}
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">lock-file</code>{" "}
@@ -235,7 +235,7 @@ spinner + disabled, using the existing accent token.`}
   },
   {
     n: 8,
-    title: "Commit — it's all real code",
+    title: "Commit, it's all real code",
     body: (
       <>
         <p className="text-base text-gray-600 leading-relaxed">
@@ -267,7 +267,7 @@ export default function RoundTripPage() {
           The best way to understand how Layout&apos;s surfaces fit together is
           to follow one component all the way through: grab a design system from
           the Gallery, tweak a real component in your running app with Layout
-          Live, and hand the structural work off to Claude Code — staying
+          Live, and hand the structural work off to Claude Code, staying
           on-brand the whole way, with every change written to committable
           source.
         </p>
@@ -318,10 +318,10 @@ export default function RoundTripPage() {
           Why this loop matters
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The visual tweaks — padding, colour, radius — never cost a prompt and
+          The visual tweaks, padding, colour, radius, never cost a prompt and
           never drifted off-brand, because the kit&apos;s tokens were the only
-          values on offer. The one change that genuinely needed reasoning — the
-          loading state — went to Claude Code, which had perfect context on what
+          values on offer. The one change that genuinely needed reasoning, the
+          loading state, went to Claude Code, which had perfect context on what
           you&apos;d already done. Studio defined the system, the Gallery
           distributed it, Live applied it, and the MCP server kept your agent in
           sync. That is the whole point of Layout: design system as the single
@@ -337,19 +337,19 @@ export default function RoundTripPage() {
             <Link href="/docs/live" className="text-gray-900 hover:underline">
               Layout Live overview
             </Link>{" "}
-            — the full interface and editing model.
+           , the full interface and editing model.
           </li>
           <li>
             <Link href="/docs/kit-gallery" className="text-gray-900 hover:underline">
               Kit Gallery
             </Link>{" "}
-            — browsing, importing, and publishing kits.
+           , browsing, importing, and publishing kits.
           </li>
           <li>
             <Link href="/docs/cli" className="text-gray-900 hover:underline">
               CLI &amp; MCP Server
             </Link>{" "}
-            — the install command, the Live MCP tools, and the rest of the
+           , the install command, the Live MCP tools, and the rest of the
             toolset.
           </li>
         </ul>

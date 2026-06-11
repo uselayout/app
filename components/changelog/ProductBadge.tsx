@@ -29,6 +29,11 @@ const productConfig: Record<
     bg: "bg-[var(--status-warning)]/15",
     text: "text-[var(--status-warning)]",
   },
+  live: {
+    label: "Layout Live",
+    bg: "bg-lime-400/15",
+    text: "text-lime-300",
+  },
 };
 
 export function ProductBadge({ product }: { product: ChangelogProduct }) {

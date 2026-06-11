@@ -229,6 +229,34 @@ function App() {
   // at runtime) so passing a superset of fields to each block is harmless.
   const blockProps = { bg, text, accent, border, surface, onAccent, radii, headingText, profile };
 
+  // ctx passed to every Hero/Forms/Components block (generic or bespoke).
+  // Superset of blockProps + a couple of helpers so bespoke blocks stay
+  // self-contained without redeclaring shell helpers. Foundations stay
+  // token-driven and shell-owned (NOT overridable).
+  const ctx = { bg, text, accent, border, surface, surfaceElevated: surface, onAccent, radii, headingText, profile, fontFamily, withAlpha, onColour };
+
+  // Generic block bodies keyed by section id. A bespoke kit prepends a global
+  // BESPOKE_BLOCKS object whose keys override these; any missing key falls
+  // back to generic, so a partial bespoke set still renders a complete
+  // showcase. Every entry is mounted as a component (own hook scope).
+  const GENERIC_BLOCKS: any = {
+    hero: Hero,
+    "text-fields": InputsBlock, selects: SelectsBlock, choice: ControlsBlock,
+    switches: SwitchesBlock, field: FormStatesRow,
+    buttons: ButtonsBlock, badge: StatusBadgesBlock, avatars: AvatarsBlock,
+    tabs: TabsBlock, tooltip: TooltipBlock, alert: AlertBlock, progress: ProgressBlock,
+    accordion: AccordionBlock, breadcrumb: BreadcrumbBlock, pagination: PaginationBlock,
+    stats: StatTilesRow, card: CardBlock, table: DataTablePreview,
+  };
+  const bespoke: any = (typeof BESPOKE_BLOCKS !== "undefined" && BESPOKE_BLOCKS) || {};
+  const B: any = Object.assign({}, GENERIC_BLOCKS, bespoke);
+
+  // Mount a Hero/Forms/Components block in its own scope, wrapped in an error
+  // boundary that falls back to the generic block if a bespoke one throws.
+  const mount = (id: string) =>
+    React.createElement(SectionErrorBoundary, { fallback: GENERIC_BLOCKS[id], ctx: ctx },
+      React.createElement(B[id] || GENERIC_BLOCKS[id], ctx));
+
   // Registry: drives BOTH the left nav and the rendered sections. render()
   // returns the section body (or null to skip — e.g. a kit with no shadow
   // tokens drops the Elevation section AND its nav item). Foundations are
@@ -242,25 +270,25 @@ function App() {
     { group: "Foundations", id: "elevation",  title: "Elevation",  panel: false, render: () => ShadowSection({ shadows: buckets.shadow, surface, text, border, headingText }) },
     { group: "Foundations", id: "icons",      title: "Icons",      panel: true,  render: () => IconsSection(blockProps) },
 
-    { group: "Forms", id: "text-fields", title: "Text fields",         panel: true, render: () => InputsBlock(blockProps) },
-    { group: "Forms", id: "selects",     title: "Dropdowns",           panel: true, render: () => SelectsBlock(blockProps) },
-    { group: "Forms", id: "choice",      title: "Checkboxes & radios", panel: true, render: () => React.createElement(ControlsBlock, blockProps) },
-    { group: "Forms", id: "switches",    title: "Switches",            panel: true, render: () => React.createElement(SwitchesBlock, blockProps) },
-    { group: "Forms", id: "field",       title: "Field states",        panel: true, render: () => FormStatesRow(blockProps) },
+    { group: "Forms", id: "text-fields", title: "Text fields",         panel: true, render: () => mount("text-fields") },
+    { group: "Forms", id: "selects",     title: "Dropdowns",           panel: true, render: () => mount("selects") },
+    { group: "Forms", id: "choice",      title: "Checkboxes & radios", panel: true, render: () => mount("choice") },
+    { group: "Forms", id: "switches",    title: "Switches",            panel: true, render: () => mount("switches") },
+    { group: "Forms", id: "field",       title: "Field states",        panel: true, render: () => mount("field") },
 
-    { group: "Components", id: "buttons",    title: "Buttons",    panel: true,  render: () => ButtonsBlock(blockProps) },
-    { group: "Components", id: "badge",      title: "Badges",     panel: true,  render: () => StatusBadgesBlock(blockProps) },
-    { group: "Components", id: "avatars",    title: "Avatars",    panel: true,  render: () => AvatarsBlock(blockProps) },
-    { group: "Components", id: "tabs",       title: "Tabs",       panel: true,  render: () => React.createElement(TabsBlock, blockProps) },
-    { group: "Components", id: "tooltip",    title: "Tooltip",    panel: true,  render: () => TooltipBlock(blockProps) },
-    { group: "Components", id: "alert",      title: "Alerts",     panel: false, render: () => AlertBlock(blockProps) },
-    { group: "Components", id: "progress",   title: "Progress",   panel: true,  render: () => ProgressBlock(blockProps) },
-    { group: "Components", id: "accordion",  title: "Accordion",  panel: false, render: () => React.createElement(AccordionBlock, blockProps) },
-    { group: "Components", id: "breadcrumb", title: "Breadcrumb", panel: true,  render: () => BreadcrumbBlock(blockProps) },
-    { group: "Components", id: "pagination", title: "Pagination", panel: true,  render: () => PaginationBlock(blockProps) },
-    { group: "Components", id: "stats",      title: "Stat tiles", panel: false, render: () => StatTilesRow(blockProps) },
-    { group: "Components", id: "card",       title: "Card",       panel: false, render: () => CardBlock(blockProps) },
-    { group: "Components", id: "table",      title: "Data table", panel: false, render: () => DataTablePreview(blockProps) },
+    { group: "Components", id: "buttons",    title: "Buttons",    panel: true,  render: () => mount("buttons") },
+    { group: "Components", id: "badge",      title: "Badges",     panel: true,  render: () => mount("badge") },
+    { group: "Components", id: "avatars",    title: "Avatars",    panel: true,  render: () => mount("avatars") },
+    { group: "Components", id: "tabs",       title: "Tabs",       panel: true,  render: () => mount("tabs") },
+    { group: "Components", id: "tooltip",    title: "Tooltip",    panel: true,  render: () => mount("tooltip") },
+    { group: "Components", id: "alert",      title: "Alerts",     panel: false, render: () => mount("alert") },
+    { group: "Components", id: "progress",   title: "Progress",   panel: true,  render: () => mount("progress") },
+    { group: "Components", id: "accordion",  title: "Accordion",  panel: false, render: () => mount("accordion") },
+    { group: "Components", id: "breadcrumb", title: "Breadcrumb", panel: true,  render: () => mount("breadcrumb") },
+    { group: "Components", id: "pagination", title: "Pagination", panel: true,  render: () => mount("pagination") },
+    { group: "Components", id: "stats",      title: "Stat tiles", panel: false, render: () => mount("stats") },
+    { group: "Components", id: "card",       title: "Card",       panel: false, render: () => mount("card") },
+    { group: "Components", id: "table",      title: "Data table", panel: false, render: () => mount("table") },
   ];
 
   const built = ENTRIES
@@ -278,12 +306,29 @@ function App() {
       "data-showcase-main": "true",
       style: { flex: 1, minWidth: 0, padding: outerPadding, display: "flex", flexDirection: "column", gap: outerGap, boxSizing: "border-box" }
     },
-      Hero({ accent, border, surface, text, headingText, profile }),
+      React.createElement(SectionErrorBoundary, { fallback: GENERIC_BLOCKS.hero, ctx: ctx }, React.createElement(B.hero || GENERIC_BLOCKS.hero, ctx)),
       ...built.map((e: any) =>
         SectionShell({ id: e.id, group: e.group, title: e.title, headingText, border, surface, panel: e.panel, children: e.el })
       )
     )
   );
+}
+
+// Per-section error boundary: if a (bespoke) block throws during render, fall
+// back to the generic block for that section so one bad block never blanks the
+// whole showcase. Class component because React error boundaries require it.
+class SectionErrorBoundary extends React.Component {
+  constructor(props: any) { super(props); this.state = { failed: false }; }
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch() {}
+  render() {
+    const self: any = this;
+    if (self.state.failed) {
+      const Fallback = self.props.fallback;
+      return Fallback ? React.createElement(Fallback, self.props.ctx) : null;
+    }
+    return self.props.children;
+  }
 }
 
 // Sticky in-frame nav. Its own component so its hooks (active-section state +
