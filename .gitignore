@@ -99,3 +99,13 @@ docs/TESTING-GUIDE-*.md
 docs/TESTING-PLAN-*.md
 docs/TWITTER-ANNOUNCEMENT.md
 docs/YC-*.md
+
+# User activity reports (contain PII)
+scripts/reports/output/
+scripts/reports/*.csv
+
+# Internal strategy docs
+Layout-Product-Codex-Questionnaire-Answers.md
+
+# Claude Code session worktrees
+.claude/worktrees/
