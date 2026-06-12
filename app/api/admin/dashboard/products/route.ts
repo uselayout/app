@@ -155,6 +155,20 @@ export async function GET(request: NextRequest) {
     (e) => e.event === "extension.extraction"
   ).length;
 
+  // --- Layout Live (desktop app) ---
+  const liveDownloadEvents = platformEvents.filter(
+    (e) => e.event === "live.download"
+  );
+  const liveDownloads7d = liveDownloadEvents.filter(
+    (e) => e.created_at >= sevenDaysAgo
+  ).length;
+  const liveByArch = { arm64: 0, x64: 0 };
+  for (const e of liveDownloadEvents) {
+    const a = (e.metadata as Record<string, unknown> | null)?.arch;
+    if (a === "x64") liveByArch.x64 += 1;
+    else liveByArch.arm64 += 1;
+  }
+
   // --- Billing ---
   // Top consumers by cost with masked emails
   const userCosts = new Map<string, number>();
@@ -202,6 +216,12 @@ export async function GET(request: NextRequest) {
     chromeExtension: {
       activeUsers: extensionUsers,
       extractions: extensionExtractions,
+    },
+    live: {
+      downloads: liveDownloadEvents.length,
+      downloads7d: liveDownloads7d,
+      arm64: liveByArch.arm64,
+      x64: liveByArch.x64,
     },
     billing: {
       usersAtZeroCredits: zeroCredits.length,

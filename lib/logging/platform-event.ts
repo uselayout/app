@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase/client";
 
-export type PlatformProduct = "studio" | "cli" | "figma-plugin" | "chrome-extension";
+export type PlatformProduct = "studio" | "cli" | "figma-plugin" | "chrome-extension" | "live";
 
 export type PlatformEventType =
   | "extraction.complete"
@@ -19,7 +19,8 @@ export type PlatformEventType =
   | "plugin.figma.push_tokens"
   | "plugin.figma.capture"
   | "plugin.figma.connected"
-  | "plugin.chrome.connected";
+  | "plugin.chrome.connected"
+  | "live.download";
 
 /** Log a platform event — fire-and-forget, errors are logged not thrown */
 export async function logEvent(

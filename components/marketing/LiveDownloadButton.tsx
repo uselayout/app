@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 
-// Stable "latest" URLs — the host copies each new release to these names, so
-// this page never needs a version bump. (Auto-update handles upgrades after
-// the first install; this is just the initial download.)
-const DMG_ARM64 = 'https://updates.layout.design/live/layout-live-arm64.dmg';
-const DMG_X64 = 'https://updates.layout.design/live/layout-live-x64.dmg';
+// Instrumented download entry points: these log a `live.download` event then
+// 302 to the notarised DMG on the update host, so downloads show in the admin
+// dashboard. (Auto-update handles upgrades after the first install; this is
+// just the initial download.)
+const DMG_ARM64 = '/api/download/live?arch=arm64';
+const DMG_X64 = '/api/download/live?arch=x64';
 
 type Plausible = (event: string, opts?: { props?: Record<string, string> }) => void;
 

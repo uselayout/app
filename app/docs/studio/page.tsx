@@ -559,6 +559,16 @@ export default function StudioPage() {
           makes it easy to see exactly what changed without manually comparing
           token lists.
         </Callout>
+        <p className="text-base text-gray-600 leading-relaxed">
+          When you push a design system from the{" "}
+          <Link href="/docs/figma-plugin" className="text-gray-900 hover:underline">
+            Figma plugin
+          </Link>{" "}
+          and switch back to the Studio tab, the project refreshes the moment
+          the tab regains focus, so newly pushed components appear almost
+          instantly. A background poll runs as a safety net if the tab stays in
+          the foreground.
+        </p>
       </section>
 
       {/* Exporting */}
