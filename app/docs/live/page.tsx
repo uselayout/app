@@ -11,6 +11,8 @@ import {
   Bot,
   Monitor,
   GitBranch,
+  Layers,
+  History,
 } from "lucide-react";
 import { Callout } from "@/components/docs/Callout";
 import { getAdjacentPages } from "@/lib/docs/navigation";
@@ -286,11 +288,46 @@ export default function LayoutLivePage() {
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
               Holds the editable dev URL with back / forward / reload wired to
-              the embedded webview, a Tokens overlay, a Settings popover, a
+              the embedded webview, <strong>undo / redo</strong> for class edits
+              (Cmd+Z / Cmd+Shift+Z), a Tokens overlay, a Settings popover, a
               light/dark theme toggle, Float and Clear controls, and the{" "}
               <strong>Hand off to AI</strong> button. The whole UI follows a
               semantic theme that mirrors Studio&apos;s palette.
             </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a] flex items-center gap-2">
+              <Layers size={18} className="text-gray-500" /> Layers panel
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              The left panel shows the full DOM tree for the current page. Click
+              any row to select that element (equivalent to clicking in the
+              canvas). Three tabs:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-sm text-gray-600">
+              <li>
+                <strong>Layers</strong> — depth-indented tree of all elements.
+                The selected row is highlighted with a tinted background and a
+                left accent border.
+              </li>
+              <li>
+                <strong>Edits</strong> — a chronological log of every class
+                change made in this session, showing the property, before/after
+                values, and source file. Each entry has a per-edit revert so
+                you can undo one change without rolling back the rest. The tab
+                badge shows the count of pending edits.
+              </li>
+              <li>
+                <strong>Requests</strong> — AI requests you have pinned to
+                elements, regions, or the whole page. Surfaced here so Claude
+                Code can pick them up via the{" "}
+                <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+                  get-pending-requests
+                </code>{" "}
+                MCP tool.
+              </li>
+            </ul>
           </div>
 
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
@@ -306,6 +343,25 @@ export default function LayoutLivePage() {
               position / inset. Every numeric field offers your design system
               tokens as snap targets and dropdown suggestions, so it is hard to
               go off-scale.
+            </p>
+            <p className="text-base text-gray-600 leading-relaxed">
+              A <strong>breakpoint badge</strong> at the top of the panel shows
+              which layer you are editing: <strong>Desktop</strong>,{" "}
+              <strong>Tablet</strong> (&lt;1024px), or{" "}
+              <strong>Mobile</strong> (&lt;768px). This follows a desktop-first
+              model: Desktop edits write to the base class, Tablet writes a{" "}
+              <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+                max-lg:
+              </code>{" "}
+              variant, Mobile writes a{" "}
+              <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+                max-md:
+              </code>{" "}
+              variant. Each breakpoint layer is non-destructive: a Mobile edit
+              never touches the Desktop base class, and a per-breakpoint reset
+              removes only that layer&apos;s override. Controls show a filled
+              dot when a value is set at the current layer and a hollow dot when
+              it is inherited from a wider breakpoint.
             </p>
           </div>
 
@@ -347,17 +403,32 @@ export default function LayoutLivePage() {
 
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
             <h3 className="text-lg font-semibold text-[#0a0a0a] flex items-center gap-2">
-              <ShieldCheck size={18} className="text-gray-500" /> Compliance &amp; viewports
+              <ShieldCheck size={18} className="text-gray-500" /> Compliance score
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              Live can show a compliance score for the selected element right in
-              the panel (debounced, via the same{" "}
+              Live shows a live compliance score for the selected element in the
+              properties panel (debounced, using the same{" "}
               <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
                 check-compliance
               </code>{" "}
-              engine Studio uses) so you can see at a glance whether a tweak
-              stayed on-system. A multi-viewport preview switches between mobile,
-              tablet and desktop presets.
+              engine Studio uses). After a scrub, the score updates so you can
+              see immediately whether a value is on-system or off. Compliance
+              scoring requires a connected Layout project; in reduced mode (Tailwind
+              config only) the score is intentionally hidden.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a] flex items-center gap-2">
+              <History size={18} className="text-gray-500" /> Edit history &amp; revert
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Every class change is recorded with its property, before/after
+              values, source file, and timestamp. The Edits tab in the Layers
+              panel gives you the full log. Each entry has a per-edit revert button,
+              so you can undo one spacing tweak without rolling back an unrelated
+              colour change made five edits later. Global undo / redo (Cmd+Z /
+              Cmd+Shift+Z) walks the stack in order.
             </p>
           </div>
         </div>
