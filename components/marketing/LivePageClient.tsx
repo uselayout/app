@@ -17,6 +17,7 @@ import { LiveDownloadButton } from '@/components/marketing/LiveDownloadButton';
 import { MockFrame } from '@/components/marketing/MockFrame';
 import { LayoutLiveMock } from '@/components/marketing/mocks/LayoutLiveMock';
 import { LayoutLiveMobileMock } from '@/components/marketing/mocks/LayoutLiveMobileMock';
+import { CopyBlock } from '@/components/shared/CopyBlock';
 
 const PILLARS = [
   {
@@ -192,11 +193,7 @@ export function LivePageClient() {
                   <p className="mb-4 flex-1 text-[14px] leading-[22px] text-[var(--mkt-text-secondary)]">
                     {body}
                   </p>
-                  {code && (
-                    <pre className="overflow-x-auto rounded-md border border-[var(--mkt-border)] bg-black/30 px-3 py-2 text-[12px] leading-[20px] text-[var(--mkt-text-primary)]">
-                      <code>{code}</code>
-                    </pre>
-                  )}
+                  {code && <CopyBlock code={code} />}
                 </motion.div>
               ))}
             </div>
