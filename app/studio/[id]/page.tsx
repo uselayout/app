@@ -202,6 +202,7 @@ export default function StudioPage({
   const extractionProgress = useExtractionStore((s) => s.progress);
   const extractionSteps = useExtractionStore((s) => s.steps);
   const extractionError = useExtractionStore((s) => s.error);
+  const resetExtraction = useExtractionStore((s) => s.resetExtraction);
   const streamingContent = useExtractionStore((s) => s.streamingContent);
   const isThisProjectExtracting = extractionProjectId === id;
 
@@ -508,6 +509,11 @@ export default function StudioPage({
         error={extractionError}
         streamingContent={streamingContent ?? project.layoutMd}
         warnings={extractionWarnings}
+        onRetry={() => {
+          resetExtraction();
+          extractionStarted.current = false;
+          runExtraction(project);
+        }}
         onOpenEditor={() => {
           setCentreView("editor");
           setWhatsNextDismissed(true);
