@@ -12,6 +12,10 @@ import {
   ChevronLeft,
   ChevronRight,
   RotateCw,
+  Undo2,
+  Redo2,
+  Eye,
+  MousePointer2,
   Smartphone,
   Tablet,
   Monitor,
@@ -24,7 +28,6 @@ const T = STUDIO_TOKENS;
 const LIGHT = MODE_TOKENS.light;
 const LIME = '#E4F222';
 
-/** The Layout brand mark (filled), tinted by `color`. */
 function LogoMark({ size = 16, color = T.accent }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 18.5586 18.5586" fill={color} aria-hidden>
@@ -67,9 +70,32 @@ function Chip({ children, mono }: { children: React.ReactNode; mono?: boolean })
   );
 }
 
+const TREE_ROWS = [
+  { label: 'page', depth: 0 },
+  { label: 'header', depth: 1 },
+  { label: 'button', depth: 2, selected: true },
+  { label: 'footer', depth: 1 },
+] as const;
+
+function TreeRow({ label, depth, selected }: { label: string; depth: number; selected?: boolean }) {
+  return (
+    <div
+      className="flex items-center py-[3px]"
+      style={{
+        paddingLeft: 8 + depth * 12,
+        paddingRight: 8,
+        background: selected ? 'rgba(228,242,34,0.08)' : 'transparent',
+        borderLeft: selected ? `2px solid ${LIME}` : '2px solid transparent',
+      }}
+    >
+      <span className="text-[11px]" style={{ color: selected ? T.textPrimary : T.textSecondary }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
 export function LayoutLiveMock() {
-  // Looping "scrub" on padding — the value the Properties panel shows AND the
-  // visual padding of the selected button animate together (16 → 24 → 16).
   const pad = useMotionValue(16);
   const padPx = useTransform(pad, (v) => `${Math.round(v)}px`);
   const [padNum, setPadNum] = useState(16);
@@ -104,10 +130,16 @@ export function LayoutLiveMock() {
           <TopButton muted><ChevronLeft size={14} /></TopButton>
           <TopButton muted><ChevronRight size={14} /></TopButton>
           <TopButton><RotateCw size={13} /></TopButton>
+          <span className="mx-0.5 h-4 w-px" style={{ background: T.border }} />
+          <TopButton active><Undo2 size={13} /></TopButton>
+          <TopButton muted><Redo2 size={13} /></TopButton>
         </div>
         <Chip mono>~/invoices-app</Chip>
         <Chip mono>localhost:5173</Chip>
         <div className="ml-auto flex items-center gap-0.5">
+          <TopButton muted><Eye size={14} /></TopButton>
+          <TopButton active><MousePointer2 size={13} /></TopButton>
+          <span className="mx-1 h-4 w-px" style={{ background: T.border }} />
           <TopButton><Smartphone size={14} /></TopButton>
           <TopButton><Tablet size={14} /></TopButton>
           <TopButton active><Monitor size={14} /></TopButton>
@@ -119,6 +151,44 @@ export function LayoutLiveMock() {
 
       {/* Body */}
       <div className="flex min-h-0 flex-1">
+        {/* Left panel — Layers */}
+        <div
+          className="flex w-[164px] shrink-0 flex-col"
+          style={{ background: T.bgPanel, borderRight: `1px solid ${T.border}` }}
+        >
+          {/* Tabs */}
+          <div className="flex" style={{ borderBottom: `1px solid ${T.border}` }}>
+            {(['Layers', 'Edits', 'Requests'] as const).map((tab, i) => (
+              <div
+                key={tab}
+                className="flex flex-1 items-center justify-center gap-1 py-1.5"
+                style={{
+                  borderBottom: i === 0 ? `1px solid ${T.accent}` : '1px solid transparent',
+                  marginBottom: -1,
+                }}
+              >
+                <span className="text-[10px]" style={{ color: i === 0 ? T.textPrimary : T.textMuted }}>
+                  {tab}
+                </span>
+                {i === 1 && (
+                  <span
+                    className="rounded-full px-1 font-mono text-[9px]"
+                    style={{ background: T.accentSubtle, color: T.textSecondary }}
+                  >
+                    1
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+          {/* Tree */}
+          <div className="flex flex-col py-1">
+            {TREE_ROWS.map((row) => (
+              <TreeRow key={row.label} {...row} />
+            ))}
+          </div>
+        </div>
+
         {/* Sample app canvas (light) */}
         <div
           className="relative flex flex-1 items-center justify-center p-8"
@@ -167,9 +237,10 @@ export function LayoutLiveMock() {
 
         {/* Properties panel */}
         <div
-          className="flex w-[272px] shrink-0 flex-col gap-3 p-3"
+          className="flex w-[272px] shrink-0 flex-col gap-2 overflow-y-auto p-3"
           style={{ background: T.bgPanel, borderLeft: `1px solid ${T.border}` }}
         >
+          {/* Element header */}
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium" style={{ color: T.textPrimary }}>
               button
@@ -177,6 +248,26 @@ export function LayoutLiveMock() {
             <span className="font-mono text-[10px]" style={{ color: T.textMuted }}>
               App.tsx:48
             </span>
+          </div>
+
+          {/* Breakpoint badge */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px]" style={{ color: T.textMuted }}>Editing: Desktop</span>
+            <div className="flex items-center gap-1">
+              {(['D', 'T', 'M'] as const).map((bp) => (
+                <span
+                  key={bp}
+                  className="flex h-4 w-4 items-center justify-center rounded font-mono text-[9px]"
+                  style={{
+                    background: bp === 'D' ? T.accent : 'transparent',
+                    color: bp === 'D' ? T.textOnAccent : T.textMuted,
+                    border: `1px solid ${bp === 'D' ? T.accent : T.border}`,
+                  }}
+                >
+                  {bp}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* Spacing section */}
@@ -237,8 +328,37 @@ export function LayoutLiveMock() {
             </div>
           </div>
 
+          {/* Typography section */}
+          <div className="rounded-lg p-3" style={{ background: T.bgSurface, border: `1px solid ${T.border}` }}>
+            <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide" style={{ color: T.textMuted }}>
+              Typography
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[12px]" style={{ color: T.textSecondary }}>Font size</span>
+                <div
+                  className="flex items-center gap-2 rounded-md px-2 py-1"
+                  style={{ background: T.bgElevated, border: `1px solid ${T.border}` }}
+                >
+                  <span className="font-mono text-[12px] tabular-nums" style={{ color: T.textPrimary }}>16</span>
+                  <span className="font-mono text-[11px]" style={{ color: T.textMuted }}>px</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[12px]" style={{ color: T.textSecondary }}>Weight</span>
+                <div
+                  className="flex items-center gap-1.5 rounded-md px-2 py-1"
+                  style={{ background: T.bgElevated, border: `1px solid ${T.border}` }}
+                >
+                  <span className="text-[11px]" style={{ color: T.textPrimary }}>Medium</span>
+                  <span className="text-[9px]" style={{ color: T.textMuted }}>▾</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Compliance */}
-          <div className="mt-auto rounded-lg p-3" style={{ background: T.bgSurface, border: `1px solid ${T.border}` }}>
+          <div className="rounded-lg p-3" style={{ background: T.bgSurface, border: `1px solid ${T.border}` }}>
             <div className="mb-1.5 flex items-center justify-between text-[11px]">
               <span style={{ color: T.textSecondary }}>Compliance</span>
               <span className="font-mono" style={{ color: 'rgb(52,199,89)' }}>98</span>
