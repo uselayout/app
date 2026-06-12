@@ -36,6 +36,12 @@ function StepIcon({ status }: { status: ExtractionStepStatus }) {
 }
 
 function getErrorHelp(error: string): string | null {
+  if (error.includes("ERR_HTTP2_PROTOCOL_ERROR") || error.includes("ERR_CONNECTION_RESET")) {
+    return "This site's bot protection blocked our browser. Retry — we'll reconnect over HTTP/1.1, which usually gets through.";
+  }
+  if (error.includes("ERR_NAME_NOT_RESOLVED")) {
+    return "The domain couldn't be found. Check the URL for typos.";
+  }
   if (error.includes("402") || error.includes("No credits") || error.includes("QUOTA_EXCEEDED")) {
     return "Out of free credits. Add your own Anthropic API key to continue. Go to Settings → API Keys.";
   }
@@ -328,13 +334,25 @@ export function ExtractionProgress({
                     </div>
                   );
                 })()}
-                {onRetry && (
-                  <button
-                    onClick={onRetry}
-                    className="w-full rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)]"
-                  >
-                    Retry
-                  </button>
+                {(onRetry || onCancel) && (
+                  <div className="flex gap-2">
+                    {onRetry && (
+                      <button
+                        onClick={onRetry}
+                        className="flex-1 rounded-md bg-[var(--studio-accent)] px-4 py-2 text-sm text-[var(--text-on-accent)] transition-colors hover:bg-[var(--studio-accent-hover)]"
+                      >
+                        Retry
+                      </button>
+                    )}
+                    {onCancel && (
+                      <button
+                        onClick={onCancel}
+                        className="flex-1 rounded-md border border-[var(--studio-border)] bg-[var(--bg-elevated)] px-4 py-2 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)]"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             )}
