@@ -14,9 +14,27 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  * Bad:  "perf: optimise batch node fetching"
  */
 export const draftEntries: ChangelogEntry[] = [
+  {
+    id: "2026-w25-live-devserver-ownership",
+    title: "Opens the right dev server when you run several at once",
+    description:
+      "If you had more than one project's dev server running, Layout Live could open the wrong one, for example showing another project that happened to be on port 3000. It now locks onto the dev server that actually belongs to the project you opened, and only falls back to a remembered address when it can't tell. The wrong remembered address heals itself the next time you open the project.",
+    product: "live",
+    category: "fixed",
+    date: "2026-06-16",
+  },
   // Published 11 June 2026 (week 2026-06-11): update opt-in, view-mode nav
   // fix, Figma-style properties panel. The dev-server reconnect entry below
   // shipped in v0.1.14; stays until the next changelog publish.
+  {
+    id: "2026-w24-live-button-text",
+    title: "Edit button labels from the canvas",
+    description:
+      "Clicking a button rendered by a shared component used to show no editable text, because the words live where the component is used, not where it is defined. Layout Live now follows the trail back to the call site, so the Text section shows the button's label and editing it rewrites the right file. Works for any component that takes its text as children.",
+    product: "live",
+    category: "new",
+    date: "2026-06-12",
+  },
   {
     id: "2026-w24-live-update-autocheck",
     title: "Update banner appears automatically",
@@ -114,6 +132,42 @@ export const draftEntries: ChangelogEntry[] = [
       "When an extraction fails, the progress screen now offers Retry and Cancel buttons instead of leaving you stuck. Connection errors also come with clearer guidance on what went wrong.",
     product: "studio",
     category: "improved",
+    date: "2026-06-12",
+  },
+  {
+    id: "2026-w24-live-resize-exact-px",
+    title: "Drag-to-resize keeps the exact size you dragged",
+    description:
+      "Resizing an element with the canvas handles used to snap the committed size to the nearest design token, which could shrink a wide element to less than half its dragged size the moment you let go. Resize now writes the exact pixel size you dragged; values genuinely close to a token (like 17px next to 16px) still snap cleanly.",
+    product: "live",
+    category: "fixed",
+    date: "2026-06-12",
+  },
+  {
+    id: "2026-w24-live-inspector-active-states",
+    title: "Inspector controls clearly show the current value",
+    description:
+      "The selected option in segmented controls (text align, style, decoration and friends) is now a solid accent pill instead of a near-invisible fill in light theme, and the preset chips like auto, full and screen plus the line-height and letter-spacing token chips highlight which value is currently applied.",
+    product: "live",
+    category: "improved",
+    date: "2026-06-12",
+  },
+  {
+    id: "2026-w24-live-gitignore-session-state",
+    title: "Layout Live no longer commits per-machine session state",
+    description:
+      "The .layout/live/ folder used to commit runtime files like dev-info.json on every dev-server restart, creating noisy diffs, cross-machine merge conflicts and leaking your local project path into shared history. Layout now ignores everything in that folder by default and keeps only your shareable config.json tracked. Existing projects heal automatically the next time you run the dev server or open Live.",
+    product: "live",
+    category: "fixed",
+    date: "2026-06-15",
+  },
+  {
+    id: "2026-w24-live-inspector-truthful-values",
+    title: "Size fields show real pixel values",
+    description:
+      "Width, height, min/max, inset and translate fields now read Tailwind's spacing grid correctly, so an element sized w-64 shows its true 256px instead of 64. Keyword values like full, auto and screen display as the keyword rather than a misleading 0px. And pressing a keyword preset on a property owned by a CSS rule now explains why it can't apply instead of silently doing nothing.",
+    product: "live",
+    category: "fixed",
     date: "2026-06-12",
   },
 ];
