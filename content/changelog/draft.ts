@@ -15,6 +15,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w25-live-setup-install-path",
+    title: "One-click editing setup works when launched from the dock",
+    description:
+      "Setting up editing on a project could fail with \"Couldn't install @layoutdesign/context\" when you opened Layout Live from the dock or Finder, because the app couldn't find npm on its own. Layout Live now picks up the same tools your terminal uses, so the install runs reliably however you launch the app, and if something does go wrong the banner now tells you what actually failed.",
+    product: "live",
+    category: "fixed",
+    date: "2026-06-16",
+  },
+  {
     id: "2026-w25-live-devserver-ownership",
     title: "Opens the right dev server when you run several at once",
     description:
