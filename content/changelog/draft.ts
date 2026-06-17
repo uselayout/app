@@ -15,6 +15,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w25-cli-live-editing-readiness",
+    title: "Clearer setup when editing isn't working in Layout Live",
+    description:
+      "Connecting your AI agent and making your app editable in Layout Live are two separate steps, and it wasn't obvious when the second was missing. Now `doctor` checks whether your project is set up for visual editing and tells you exactly how to fix it, `install` points you to the right command when it spots a frontend project, and if you ask your AI agent why editing isn't working it can now see the cause and hand you the one-line fix.",
+    product: "cli",
+    category: "improved",
+    date: "2026-06-17",
+  },
+  {
     id: "2026-w25-live-setup-editing-deadend",
     title: "Clearer path to editing when a project isn't set up yet",
     description:
