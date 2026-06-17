@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export const CHECKLIST_VERSION = 2;
+export const CHECKLIST_VERSION = 3;
 
 export interface OnboardingSteps {
   apiKeyAdded: boolean;
@@ -14,6 +14,8 @@ export interface OnboardingSteps {
   cliInstalled: boolean;
   figmaPluginInstalled: boolean;
   extensionInstalled: boolean;
+  liveInstalled: boolean;
+  viewedGallery: boolean;
   readDocs: boolean;
 }
 
@@ -44,6 +46,8 @@ const defaultSteps: OnboardingSteps = {
   cliInstalled: false,
   figmaPluginInstalled: false,
   extensionInstalled: false,
+  liveInstalled: false,
+  viewedGallery: false,
   readDocs: false,
 };
 
@@ -65,6 +69,17 @@ export function migrateOnboardingState(
   if (fromVersion >= CHECKLIST_VERSION) {
     return persistedState;
   }
+
+  // v2 → v3: added two optional steps (Layout Live, kit gallery). Backfill the
+  // new keys without disturbing existing progress or resurfacing the modal.
+  if (fromVersion === 2) {
+    const v2 = (persistedState ?? {}) as Partial<OnboardingState>;
+    return {
+      ...v2,
+      steps: { ...defaultSteps, ...(v2.steps ?? {}) },
+    } satisfies Partial<OnboardingState>;
+  }
+
   const prev = (persistedState ?? {}) as PersistedV1;
   const prevSteps = prev.steps ?? {};
   const v1Complete =

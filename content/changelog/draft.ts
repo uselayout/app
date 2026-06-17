@@ -15,6 +15,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w25-onboarding-live-gallery",
+    title: "Discover Layout Live and the kit gallery from your checklist",
+    description:
+      "The getting-started checklist now points you to two more ways to use Layout: try Layout Live to edit your running app visually, and browse the kit gallery to import a ready-made design system in a click. Both are optional, so your core setup steps stay front and centre.",
+    product: "studio",
+    category: "improved",
+    date: "2026-06-17",
+  },
+  {
     id: "2026-w25-live-autodetect-restart",
     title: "Editing turns on by itself after you restart",
     description:

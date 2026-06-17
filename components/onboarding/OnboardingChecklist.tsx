@@ -165,6 +165,14 @@ export function OnboardingChecklist({
           </MarkDoneButton>
         );
 
+      case "liveInstalled":
+        return (
+          <MarkDoneButton onClick={() => markStep("liveInstalled")}>
+            Mark as done
+          </MarkDoneButton>
+        );
+
+      case "viewedGallery":
       case "readDocs":
         return null;
 
@@ -211,6 +219,27 @@ export function OnboardingChecklist({
             }}
           >
             Open instructions
+          </GoLink>
+        );
+      case "liveInstalled":
+        return (
+          <GoLink
+            href="/live"
+            onClick={onClose}
+          >
+            Open instructions
+          </GoLink>
+        );
+      case "viewedGallery":
+        return (
+          <GoLink
+            href="/gallery"
+            onClick={() => {
+              markStep("viewedGallery");
+              onClose?.();
+            }}
+          >
+            Browse gallery
           </GoLink>
         );
       case "readDocs":
