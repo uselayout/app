@@ -15,6 +15,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w25-live-autodetect-restart",
+    title: "Editing turns on by itself after you restart",
+    description:
+      "Once you set up editing for a project, Layout Live now watches for your dev server to come back and switches editing on automatically, with a quick confirmation. No more clicking \"I've restarted\" and wondering if it worked. The manual check is still there if you want it.",
+    product: "live",
+    category: "improved",
+    date: "2026-06-17",
+  },
+  {
     id: "2026-w25-cli-live-editing-readiness",
     title: "Clearer setup when editing isn't working in Layout Live",
     description:
