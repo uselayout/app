@@ -15,6 +15,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w25-live-setup-editing-deadend",
+    title: "Clearer path to editing when a project isn't set up yet",
+    description:
+      "If you opened a project whose dev server wasn't emitting source tags yet, Layout Live could show a confusing dead-end message instead of the one-click \"Set up editing\" fix, especially right after launching the app. It now reliably offers to set editing up for you, and when you click an element that nothing on the page is mapped to, the properties panel shows the same one-click fix rather than developer-speak about where the component is used.",
+    product: "live",
+    category: "fixed",
+    date: "2026-06-17",
+  },
+  {
     id: "2026-w25-live-setup-install-path",
     title: "One-click editing setup works when launched from the dock",
     description:
