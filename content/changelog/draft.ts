@@ -15,6 +15,33 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w25-live-next14-editing",
+    title: "Visual editing now works on Next.js 14 apps",
+    description:
+      "Layout Live can now make elements editable in Next.js 14 App Router projects, not just Next 15 and 16. Set up editing, restart your dev server, and click any element to tweak its spacing, colour or text.",
+    product: "live",
+    category: "new",
+    date: "2026-06-18",
+  },
+  {
+    id: "2026-w25-live-check-now-feedback",
+    title: "Clearer feedback when editing won't turn on",
+    description:
+      "If Layout Live still can't find any editable elements after you click \"Check now\", it now tells you what to look at, like the wrong dev server, a missed restart, or an unsupported framework version, instead of looking like nothing happened.",
+    product: "live",
+    category: "improved",
+    date: "2026-06-18",
+  },
+  {
+    id: "2026-w25-cli-setup-diagnostics",
+    title: "Clearer setup checks for editing and Cursor",
+    description:
+      "Setup checks now spot when your Next.js version can't be made editable yet and tell you which versions work, and installing now reliably configures Cursor (not just Claude Code) and shows you exactly which tools were set up.",
+    product: "cli",
+    category: "improved",
+    date: "2026-06-18",
+  },
+  {
     id: "2026-w25-onboarding-live-gallery",
     title: "Discover Layout Live and the kit gallery from your checklist",
     description:
