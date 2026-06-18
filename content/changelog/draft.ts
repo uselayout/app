@@ -15,6 +15,24 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w25-live-edit-card-grid-text",
+    title: "Edit text in repeated cards and lists",
+    description:
+      "Headings and body text in feature grids, pricing tables and other repeated cards are now editable in Layout Live, even when the text comes from a data array in your code. Click a card's text, change it, and only that card updates.",
+    product: "live",
+    category: "new",
+    date: "2026-06-18",
+  },
+  {
+    id: "2026-w25-live-select-under-overlays",
+    title: "Click text hidden behind overlays",
+    description:
+      "When a decorative layer (a gradient, glow, or floating particles) sat on top of your text, clicking would select the overlay instead. Layout Live now reaches the text you actually clicked.",
+    product: "live",
+    category: "improved",
+    date: "2026-06-18",
+  },
+  {
     id: "2026-w25-live-next14-editing",
     title: "Visual editing now works on Next.js 14 apps",
     description:
