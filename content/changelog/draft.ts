@@ -15,6 +15,33 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w25-live-plugin-update-banner",
+    title: "One-click updates when your plugin is out of date",
+    description:
+      "Layout Live now tells you when your project's Layout plugin is behind the latest release, with a one-click update. Since the plugin version controls which elements can be edited, this keeps you from getting stuck on \"why isn't this editable\" with no idea an update would fix it.",
+    product: "live",
+    category: "new",
+    date: "2026-06-18",
+  },
+  {
+    id: "2026-w25-cli-update-notice",
+    title: "Heads-up when a newer version is available",
+    description:
+      "The CLI now lets you know when a newer @layoutdesign/context is published, with the exact command to update. Checked quietly in the background (once a day) and easy to turn off.",
+    product: "cli",
+    category: "improved",
+    date: "2026-06-18",
+  },
+  {
+    id: "2026-w25-live-motion-text",
+    title: "Edit text in animated (Framer Motion) headings",
+    description:
+      "Headings and paragraphs built with Framer Motion (motion.h1, motion.p, etc) are now selectable and editable in Layout Live, and show up in the layers tree. Previously clicking them selected the surrounding container instead.",
+    product: "live",
+    category: "fixed",
+    date: "2026-06-18",
+  },
+  {
     id: "2026-w25-live-edit-card-grid-text",
     title: "Edit text in repeated cards and lists",
     description:
