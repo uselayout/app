@@ -187,6 +187,131 @@ export const DEFAULT_STYLE_PROFILE: KitStyleProfile = {
   },
 };
 
+// ─── Contrast repair ─────────────────────────────────────────────────────────
+//
+// Claude sometimes emits an internally inconsistent palette: a light-mode kit
+// (light `bg`) but with white `text`/`headingText` and a saturated brand
+// colour as `surface`. Each field is a valid colour on its own, so the field
+// validators pass — but rendered together the result is white-on-white text
+// and unreadable body copy on a loud surface. (Dovetail shipped this way.)
+//
+// repairProfileContrast pairs the colours the uniform renderer actually paints
+// together and substitutes safe neutrals where contrast collapses. It keys off
+// the *measured* luminance of `bg`, not the (possibly wrong) `mode` field, and
+// is a no-op for any well-formed palette (Linear, Stripe, Notion, Klarna's
+// pink surface, etc.) because those already pass the pairing checks.
+
+const NEUTRALS_LIGHT = {
+  text: "#1f2228",
+  headingText: "#08090a",
+  textMuted: "#6b7280",
+  surface: "#fafafa",
+  surfaceElevated: "#ffffff",
+  border: "rgba(0, 0, 0, 0.10)",
+  borderStrong: "rgba(0, 0, 0, 0.20)",
+} as const;
+
+const NEUTRALS_DARK = {
+  text: "#e6e6ea",
+  headingText: "#ffffff",
+  textMuted: "rgba(255, 255, 255, 0.55)",
+  surface: "#16161a",
+  surfaceElevated: "#1f1f25",
+  border: "rgba(255, 255, 255, 0.10)",
+  borderStrong: "rgba(255, 255, 255, 0.22)",
+} as const;
+
+function profileToRgb(s: string): [number, number, number] | null {
+  s = s.trim();
+  if (s.startsWith("#")) {
+    let h = s.slice(1);
+    if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+    if (h.length < 6) return null;
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  const m = s.match(/rgba?\(\s*([^)]+)\)/);
+  if (m) {
+    const parts = m[1].split(",").map((p) => parseFloat(p));
+    if (parts.length >= 3) return [parts[0], parts[1], parts[2]];
+  }
+  return null;
+}
+
+function profileLuminance(value: string): number | null {
+  const rgb = profileToRgb(value);
+  if (!rgb) return null;
+  const c = rgb.map((v) => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+
+function profileContrast(fg: string, bg: string): number | null {
+  const la = profileLuminance(fg);
+  const lb = profileLuminance(bg);
+  if (la === null || lb === null) return null;
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+/**
+ * Repair a parsed palette so the colours the renderer paints together stay
+ * legible. Never throws; returns the input unchanged when colours can't be
+ * measured (e.g. var(--…) references that only resolve inside the iframe).
+ */
+export function repairProfileContrast(colours: KitStyleColours): KitStyleColours {
+  const bgLum = profileLuminance(colours.bg);
+  if (bgLum === null) return colours; // unresolvable bg → trust the profile
+  const n = bgLum > 0.5 ? NEUTRALS_LIGHT : NEUTRALS_DARK;
+  const fixed: KitStyleColours = { ...colours };
+
+  // 1. Text roles must contrast with bg (they render directly on it).
+  const textC = profileContrast(fixed.text, fixed.bg);
+  if (textC !== null && textC < 4) fixed.text = n.text;
+  const headC = profileContrast(fixed.headingText, fixed.bg);
+  if (headC !== null && headC < 4.5) fixed.headingText = n.headingText;
+  const mutedC = profileContrast(fixed.textMuted, fixed.bg);
+  if (mutedC !== null && mutedC < 2.2) fixed.textMuted = n.textMuted;
+
+  // 2. Surfaces carry the (repaired) body text in nav, cards and panels. If the
+  //    text can't be read on a surface, pull that surface back to a near-bg
+  //    neutral. Klarna's pink surface survives because dark text stays legible
+  //    on it; Dovetail's blue surface does not, so it gets neutralised.
+  const surfC = profileContrast(fixed.text, fixed.surface);
+  let surfaceRepaired = false;
+  if (surfC !== null && surfC < 3) {
+    fixed.surface = n.surface;
+    surfaceRepaired = true;
+  }
+  // surfaceElevated is the pair of surface (hover/popover). Repair it when the
+  // text fails on it OR when surface was neutralised but elevated stayed a loud
+  // brand colour, so the two never diverge into mismatched neutral + saturated.
+  const surfElevC = profileContrast(fixed.text, fixed.surfaceElevated);
+  const elevFarFromSurface =
+    surfaceRepaired &&
+    (() => {
+      const a = profileLuminance(fixed.surfaceElevated);
+      const b = profileLuminance(fixed.surface);
+      return a !== null && b !== null && Math.abs(a - b) > 0.18;
+    })();
+  if ((surfElevC !== null && surfElevC < 3) || elevFarFromSurface) {
+    fixed.surfaceElevated = n.surfaceElevated;
+  }
+
+  // 3. Borders must sit on the correct side of bg (a white border on a light
+  //    bg is invisible). Repair only when clearly wrong-polarity.
+  const borderLum = profileLuminance(fixed.border);
+  if (borderLum !== null && bgLum > 0.5 === borderLum > 0.5 && Math.abs(borderLum - bgLum) < 0.1) {
+    fixed.border = n.border;
+  }
+  const borderStrongLum = profileLuminance(fixed.borderStrong);
+  if (borderStrongLum !== null && bgLum > 0.5 === borderStrongLum > 0.5 && Math.abs(borderStrongLum - bgLum) < 0.06) {
+    fixed.borderStrong = n.borderStrong;
+  }
+
+  return fixed;
+}
+
 // ─── Parser / validator ─────────────────────────────────────────────────────
 
 const COLOUR_RE = /^(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\)|var\(--[^)]+\)|oklch\([^)]+\))$/;
@@ -311,7 +436,7 @@ export function parseStyleProfile(raw: unknown): KitStyleProfile | null {
     version: 2,
     mode: oneOf(o.mode, ["light", "dark"] as const, DEFAULT_STYLE_PROFILE.mode),
     density: oneOf(o.density, ["compact", "comfortable", "airy"] as const, DEFAULT_STYLE_PROFILE.density),
-    colours: parseColours(o.colours),
+    colours: repairProfileContrast(parseColours(o.colours)),
     type: parseType(o.type ?? { headingWeight: o.headingWeight }),
     button: parseButton(o.button),
     input: parseInput(o.input),

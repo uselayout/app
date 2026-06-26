@@ -150,6 +150,18 @@ Return ONLY a JSON object. No prose, no markdown. Every field required.
 
 **tab.indicatorWeight**: 2 default. 1 for delicate (Apple). 3 for emphatic.
 
+# Contrast consistency (CRITICAL — the colours must be legible *together*)
+
+The preview paints these pairs on top of each other. Get the polarity right or text becomes invisible:
+
+- **\`bg\` sets the mode.** In a light kit \`bg\` is near-white; in a dark kit it is near-black. \`mode\` MUST match \`bg\`'s brightness.
+- **\`text\`, \`headingText\`, \`textMuted\` are painted directly on \`bg\` AND on \`surface\`.** On a LIGHT kit they MUST be dark (near-black); on a DARK kit they MUST be light (near-white). NEVER emit white text for a light \`bg\` — that is the single most common mistake.
+- **\`surface\` and \`surfaceElevated\` are neutral panels a half-step from \`bg\`** (light kit → off-white/warm-grey like #f6f9fc or #f7f6f3; dark kit → slightly lifted near-black like #131316). They are NOT the brand colour. The brand/blue/green goes in \`accent\`, never in \`surface\`. (A brand-tinted surface like Klarna's pink is allowed ONLY if your dark \`text\` is still clearly readable on it.)
+- **\`border\`/\`borderStrong\` must sit on the opposite side of \`bg\`** — dark, low-alpha borders on a light kit; light, low-alpha borders on a dark kit. Never a white border on a light background.
+- Body \`text\` on \`bg\` should reach ~4.5:1 contrast; \`headingText\` higher. \`onAccent\` on \`accent\` should reach ~4.5:1.
+
+Sanity-check before returning: if \`bg\` is light, is every text colour dark and every surface near-white? If not, fix it.
+
 # Hard rules
 
 - Output ONLY a JSON object. No markdown, no prose.

@@ -34,9 +34,23 @@ export function KitShowcaseFrame({ showcaseJs, tokensCss, kit, height, fillViewp
   // The showcase carries its own sticky in-frame nav, so it needs a bounded
   // height with internal scroll (sticky tracks the iframe's own scroll, not
   // the parent page). Tall by default so the reference feels full-bleed.
-  const style: React.CSSProperties = fillViewport
-    ? { height: "calc(100vh - 130px)", minHeight: 760 }
-    : { height: height ?? 900 };
+  //
+  // On touch/mobile a near-full-viewport iframe traps the scroll gesture: the
+  // finger drives the iframe's internal scroll and the parent page can never
+  // reach the "You may also like" section below. So when filling the viewport
+  // we cap the height to ~62vh on small screens, leaving page chrome above and
+  // below the frame that the user can grab to scroll past it. Desktop keeps the
+  // tall full-bleed frame via the `sm:` breakpoint.
+  if (fillViewport) {
+    return (
+      <iframe
+        srcDoc={srcdoc}
+        title="Kit showcase"
+        sandbox="allow-scripts allow-same-origin"
+        className="w-full rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] h-[62vh] min-h-[420px] sm:h-[calc(100vh-130px)] sm:min-h-[760px]"
+      />
+    );
+  }
 
   return (
     <iframe
@@ -44,7 +58,7 @@ export function KitShowcaseFrame({ showcaseJs, tokensCss, kit, height, fillViewp
       title="Kit showcase"
       sandbox="allow-scripts allow-same-origin"
       className="w-full rounded-2xl border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)]"
-      style={style}
+      style={{ height: height ?? 900 }}
     />
   );
 }
