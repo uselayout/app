@@ -33,6 +33,15 @@ export const draftEntries: ChangelogEntry[] = [
     date: "2026-06-26",
   },
   {
+    id: "2026-w26-extract-limits",
+    title: "More extractions per hour, clearer limits",
+    description:
+      "You can now run more website and Figma extractions per hour. And if you do hit the limit, Studio tells you clearly and shows when you can try again, instead of failing quietly.",
+    product: "studio",
+    category: "improved",
+    date: "2026-06-26",
+  },
+  {
     id: "2026-w25-live-plugin-update-banner",
     title: "One-click updates when your plugin is out of date",
     description:
