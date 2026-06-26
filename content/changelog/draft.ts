@@ -15,6 +15,24 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w26-gallery-readable-previews",
+    title: "Clearer kit previews for bold, colourful brands",
+    description:
+      "Kit previews in the Gallery now stay readable when a kit's brand colour is a strong blue, green, or pink. Headings and body text no longer wash out on coloured panels, so every kit shows its real palette without losing legibility.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-06-26",
+  },
+  {
+    id: "2026-w26-gallery-mobile-scroll",
+    title: "Scroll past the kit preview on mobile",
+    description:
+      "On phones you can now scroll all the way down a kit page to the \"You may also like\" section. The live preview no longer traps the scroll, so the rest of the page is reachable.",
+    product: "studio",
+    category: "fixed",
+    date: "2026-06-26",
+  },
+  {
     id: "2026-w25-live-plugin-update-banner",
     title: "One-click updates when your plugin is out of date",
     description:
