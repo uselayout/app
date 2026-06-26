@@ -7,6 +7,7 @@ import { extractLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/rat
 import { getClientIp } from "@/lib/get-client-ip";
 import { auth } from "@/lib/auth";
 import { resolveBearerAdmin } from "@/lib/api/admin-bearer";
+import { isAdminEmail } from "@/lib/api/admin-context";
 import { playwrightLimit } from "@/lib/concurrency";
 import { registerStream, deregisterStream, isShuttingDown } from "@/lib/server/active-streams";
 import { logApiCall } from "@/lib/logging/api-log";
@@ -43,7 +44,10 @@ export async function POST(request: NextRequest) {
   }
   const userId = bearerAdmin?.id ?? session!.user.id;
 
-  if (!bearerAdmin) {
+  // Staff bypass the hourly cap entirely (heavy kit-building/testing). Normal
+  // sessions still go through the per-user hourly limit.
+  const isAdmin = bearerAdmin != null || isAdminEmail(session?.user.email);
+  if (!isAdmin) {
     const { success: allowed, reset } = checkUserRateLimit(userId);
     if (!allowed) {
       return rateLimitResponse(reset);
