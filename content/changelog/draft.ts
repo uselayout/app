@@ -15,6 +15,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w27-live-plain-html-editing",
+    title: "Edit plain HTML sites in Layout Live",
+    description:
+      "Layout Live now works on plain HTML projects, with no build plugin needed. Open a folder of .html files, point Live at your local server, and every element becomes editable: click to inspect, adjust spacing and colours, edit text inline, and swap images. Ideal for landing pages and static sites that don't use React.",
+    product: "live",
+    category: "new",
+    date: "2026-07-02",
+  },
+  {
     id: "2026-w26-gallery-readable-previews",
     title: "Clearer kit previews for bold, colourful brands",
     description:
