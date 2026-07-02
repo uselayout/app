@@ -15,6 +15,42 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w27-live-request-pins",
+    title: "See your AI requests pinned on the page",
+    description:
+      "Requests you pin with \"Ask the AI\" now stay visible as small amber markers on the page, so you can see at a glance what you've asked and where. Click a marker to jump to that request in the panel, and the hand-off badge now counts pending requests too.",
+    product: "live",
+    category: "new",
+    date: "2026-07-02",
+  },
+  {
+    id: "2026-w27-live-shortcuts-window",
+    title: "Keyboard shortcuts and a window that remembers itself",
+    description:
+      "Layout Live now opens at the size and position you left it, instead of resetting every launch. New shortcuts speed up the daily loop: Cmd+E toggles Edit and View, Cmd+Shift+C toggles comment mode, Cmd+Shift+H opens hand-off, and Cmd+3/4/5 switch between desktop, tablet and mobile viewports.",
+    product: "live",
+    category: "improved",
+    date: "2026-07-02",
+  },
+  {
+    id: "2026-w27-live-reliability-sweep",
+    title: "A more dependable editing session",
+    description:
+      "A wide reliability sweep across Layout Live: rapid edits to the same file can no longer overwrite each other, \"this instance only\" stays selected while you scrub, clearing a number field no longer collapses the element to zero, comment pins no longer also select the element underneath, and switching projects now fully resets banners, requests and undo state. Live also keeps working (with edits saved to disk for your AI agent) even if its connection socket can't start.",
+    product: "live",
+    category: "fixed",
+    date: "2026-07-02",
+  },
+  {
+    id: "2026-w27-live-preview-connection-states",
+    title: "See what the preview is doing while it connects",
+    description:
+      "The preview area now tells you where things stand instead of sitting blank: while Layout Live searches for your dev server it shows which ports it's trying, and if nothing answers you get a clear message with a Retry button. A new status dot next to the address bar shows the connection at a glance: pulsing while searching, green when connected, red when no server was found.",
+    product: "live",
+    category: "improved",
+    date: "2026-07-02",
+  },
+  {
     id: "2026-w27-live-plain-html-editing",
     title: "Edit plain HTML sites in Layout Live",
     description:
