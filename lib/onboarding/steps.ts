@@ -93,6 +93,20 @@ export const STEP_DEFS: StepDef[] = [
     visibleWhen: (ctx) => ctx.hasWebsiteProject || !ctx.hasFigmaProject,
   },
   {
+    key: "liveInstalled",
+    phase: "tools",
+    label: "Try Layout Live",
+    description: "Visually edit your running React app and write changes straight back to source. Free macOS alpha.",
+    optional: true,
+  },
+  {
+    key: "viewedGallery",
+    phase: "learn",
+    label: "Browse the kit gallery",
+    description: "Explore community design-system kits and import one in a click.",
+    optional: true,
+  },
+  {
     key: "readDocs",
     phase: "learn",
     label: "Read the docs",

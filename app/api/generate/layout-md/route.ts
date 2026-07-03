@@ -4,6 +4,7 @@ import { createLayoutMdStream } from "@/lib/claude/synthesise";
 import { resizeScreenshot } from "@/lib/util/resize-screenshot";
 import { auth } from "@/lib/auth";
 import { resolveBearerAdmin } from "@/lib/api/admin-bearer";
+import { isAdminEmail } from "@/lib/api/admin-context";
 import { checkQuota, deductCredit, refundCredit } from "@/lib/billing/credits";
 import { logUsage } from "@/lib/billing/usage";
 import { generateLimiter, checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit-instances";
@@ -115,7 +116,10 @@ export async function POST(request: NextRequest) {
 
   const userId = bearerAdmin?.id ?? session!.user.id;
 
-  if (!bearerAdmin) {
+  // Staff bypass the hourly cap (heavy kit-building/testing). Normal sessions
+  // still go through the per-user hourly limit.
+  const isAdmin = bearerAdmin != null || isAdminEmail(session?.user.email);
+  if (!isAdmin) {
     const { success: withinLimit, reset } = checkUserRateLimit(userId);
     if (!withinLimit) {
       return rateLimitResponse(reset);

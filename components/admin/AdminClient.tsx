@@ -1001,7 +1001,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                     }}
                   />
                 </th>
-                {["How heard", "Status", "Date", "Actions"].map((h) => (
+                {["How heard", "Status", statusFilter === "signed_up" ? "Signed up" : "Date", "Actions"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium" style={{ color: "var(--text-muted)" }}>{h}</th>
                 ))}
               </tr>
@@ -1086,6 +1086,7 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                       {row.status === "approved" && row.signedUp && (
                         <span
                           className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                          title={row.signedUpAt ? `Signed up ${formatDate(row.signedUpAt)}` : undefined}
                           style={{
                             background: "rgba(96,165,250,0.1)",
                             color: "#60a5fa",
@@ -1093,6 +1094,11 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                           }}
                         >
                           Signed up
+                        </span>
+                      )}
+                      {row.status === "approved" && row.signedUp && row.signedUpAt && (
+                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                          {Math.floor((Date.now() - new Date(row.signedUpAt).getTime()) / 86400000)}d
                         </span>
                       )}
                       {row.status === "approved" && !row.signedUp && (
@@ -1103,7 +1109,9 @@ function AccessRequestsTab({ toast, onPendingCountChange, onAction }: { toast: (
                     </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
-                    {formatDate(row.createdAt)}
+                    {statusFilter === "signed_up" && row.signedUpAt
+                      ? formatDate(row.signedUpAt)
+                      : formatDate(row.createdAt)}
                   </td>
                   <td className="px-4 py-3">
                     {row.status === "pending" ? (

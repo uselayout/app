@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/api/admin-context";
 import { supabase } from "@/lib/supabase/client";
 import { fetchKitById } from "@/lib/supabase/kits";
 import { transpileTsx } from "@/lib/transpile";
+import { triggerUiRedeploy } from "@/lib/deploy/trigger-ui-redeploy";
 
 const PatchBody = z.object({
   name: z.string().min(1).max(120).optional(),
@@ -112,6 +113,17 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // Visibility and naming changes alter what the Layout UI brand switcher
+  // shows; rebuild it. Cosmetic-only fields (images, showcase) don't.
+  if (
+    "hidden" in parsed.data ||
+    "unlisted" in parsed.data ||
+    "name" in parsed.data
+  ) {
+    triggerUiRedeploy(`kit updated: ${id}`);
+  }
+
   return NextResponse.json({ ok: true });
 }
 
@@ -127,5 +139,8 @@ export async function DELETE(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  triggerUiRedeploy(`kit deleted: ${id}`);
+
   return NextResponse.json({ ok: true });
 }

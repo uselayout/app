@@ -106,6 +106,31 @@ export default function KitGalleryPage() {
               for details.
             </p>
           </div>
+          <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              Use the kit as a UI theme
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Every kit is also published as a shadcn theme, compiled on
+              request from its tokens. Install it with either the shadcn CLI
+              or ours:
+            </p>
+            <pre className="overflow-x-auto rounded-lg bg-[#0a0a0a] px-4 py-3 text-sm text-gray-100">
+              <code>npx shadcn add https://layout.design/r/&lt;kit-slug&gt;/theme.json</code>
+            </pre>
+            <p className="text-base text-gray-600 leading-relaxed">
+              This re-skins a stock shadcn project or a{" "}
+              <Link href="/docs/layout-ui" className="text-gray-900 hover:underline">
+                Layout UI
+              </Link>{" "}
+              project to match that kit&apos;s colours, radii, and shadows.
+              See the{" "}
+              <Link href="/docs/layout-ui" className="text-gray-900 hover:underline">
+                Layout UI
+              </Link>{" "}
+              page for details.
+            </p>
+          </div>
         </div>
         <Callout type="info">
           Rich kits are imported in full by Studio users. CLI users always

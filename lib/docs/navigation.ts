@@ -34,6 +34,10 @@ export const docsNavigation: DocNavSection[] = [
     ],
   },
   {
+    label: "Layout UI",
+    items: [{ title: "Overview", href: "/docs/layout-ui" }],
+  },
+  {
     label: "Design System",
     items: [
       { title: "Design System Hub", href: "/docs/design-system" },

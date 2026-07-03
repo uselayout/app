@@ -569,6 +569,11 @@ export default function StudioPage({
         error={extractionError}
         warnings={extractionWarnings}
         streamingContent={streamingContent ?? project.layoutMd}
+        onRetry={() => {
+          resetExtraction();
+          extractionStarted.current = false;
+          runExtraction(project);
+        }}
         onCancel={() => {
           abortExtraction();
           resetExtraction();

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/api/admin-context";
 import { supabase } from "@/lib/supabase/client";
 import type { PublicKit } from "@/lib/types/kit";
+import { triggerUiRedeploy } from "@/lib/deploy/trigger-ui-redeploy";
 
 /**
  * Inbound side of the staging→prod promote. Receives the full kit row in
@@ -171,6 +172,10 @@ export async function POST(request: Request) {
       { error: "upsert_failed", detail: error.message },
       { status: 500 },
     );
+  }
+
+  if (row.status === "approved") {
+    triggerUiRedeploy(`kit imported: ${row.slug}`);
   }
 
   return NextResponse.json({

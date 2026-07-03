@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/admin-context";
 import { fetchKitById, updateKitStyleProfile } from "@/lib/supabase/kits";
 import { generateKitStyleProfile } from "@/lib/claude/generate-kit-style-profile";
+import { triggerUiRedeploy } from "@/lib/deploy/trigger-ui-redeploy";
 
 // Triggers Claude to derive a fresh KitStyleProfile from the kit's
 // layout.md + tokens.css and persists it to layout_public_kit.
@@ -37,6 +38,12 @@ export async function POST(
     const ok = await updateKitStyleProfile(kit.id, profile);
     if (!ok) {
       return NextResponse.json({ error: "Failed to save style profile" }, { status: 500 });
+    }
+    // The Layout UI docs site compiles its brand themes from style
+    // profiles at build time; rebuild it so the new profile shows up.
+    // Only worth it for kits the gallery actually serves.
+    if (kit.status === "approved" && !kit.hidden) {
+      triggerUiRedeploy(`style profile regenerated: ${kit.slug}`);
     }
     return NextResponse.json({ ok: true, profile });
   } catch (err) {

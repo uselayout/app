@@ -84,6 +84,36 @@ export default function CliPage() {
         </Callout>
       </section>
 
+      {/* Installing components */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Installing components</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The same CLI also installs on-brand components from{" "}
+          <Link href="/docs/layout-ui" className="text-gray-900 hover:underline">
+            Layout UI
+          </Link>
+          , our component system, instead of you hand-rolling primitives:
+        </p>
+        <CopyBlock
+          code="npx @layoutdesign/context add button"
+          language="bash"
+        />
+        <p className="text-base text-gray-600 leading-relaxed">
+          The first component you add also installs the matching theme for
+          your project automatically, resolves and installs any dependent
+          components, and detects npm, pnpm, yarn, or bun for you. Flags:{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">--registry</code>,{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">--dir</code>,{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">--css</code>,{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">--overwrite</code>, and{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">--dry-run</code>. See the{" "}
+          <Link href="/docs/layout-ui" className="text-gray-900 hover:underline">
+            Layout UI
+          </Link>{" "}
+          page for the full flag reference and the equivalent stock shadcn CLI command.
+        </p>
+      </section>
+
       {/* Importing from Studio */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Importing from Studio</h2>

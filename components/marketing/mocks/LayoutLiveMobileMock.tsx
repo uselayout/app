@@ -68,6 +68,25 @@ export function LayoutLiveMobileMock() {
         </span>
       </div>
 
+      {/* Element breadcrumb path */}
+      <div
+        className="flex items-center gap-1 px-3"
+        style={{ height: 22, background: T.bgApp, borderBottom: `1px solid ${T.border}` }}
+      >
+        {(['page', '›', 'header', '›', 'button'] as const).map((segment, i) => (
+          <span
+            key={i}
+            className="text-[9px]"
+            style={{
+              color: segment === 'button' ? T.textSecondary : T.textMuted,
+              fontWeight: segment === 'button' ? 500 : 400,
+            }}
+          >
+            {segment}
+          </span>
+        ))}
+      </div>
+
       {/* App canvas (light) */}
       <div className="flex flex-1 items-center justify-center p-4" style={{ background: LIGHT.surface }}>
         <div
@@ -133,6 +152,17 @@ export function LayoutLiveMobileMock() {
               {v}
             </span>
           ))}
+        </div>
+        {/* Typography row */}
+        <div className="flex items-center justify-between">
+          <span className="text-[11px]" style={{ color: T.textSecondary }}>Font size</span>
+          <div
+            className="flex items-center gap-1.5 rounded-md px-2 py-1"
+            style={{ background: T.bgElevated, border: `1px solid ${T.border}` }}
+          >
+            <span className="font-mono text-[12px] tabular-nums" style={{ color: T.textPrimary }}>16</span>
+            <span className="font-mono text-[10px]" style={{ color: T.textMuted }}>px</span>
+          </div>
         </div>
         <div className="mt-1 flex items-center gap-2">
           <span className="text-[10px]" style={{ color: T.textSecondary }}>Compliance</span>

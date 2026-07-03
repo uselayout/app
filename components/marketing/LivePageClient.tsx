@@ -17,22 +17,23 @@ import { LiveDownloadButton } from '@/components/marketing/LiveDownloadButton';
 import { MockFrame } from '@/components/marketing/MockFrame';
 import { LayoutLiveMock } from '@/components/marketing/mocks/LayoutLiveMock';
 import { LayoutLiveMobileMock } from '@/components/marketing/mocks/LayoutLiveMobileMock';
+import { CopyBlock } from '@/components/shared/CopyBlock';
 
 const PILLARS = [
   {
     icon: MousePointerClick,
     title: 'Click to select',
-    body: "Point Live at your local dev server and click any element in the running app. An overlay highlights it and the properties panel fills with that element's real classes, and selection survives hot-reload.",
+    body: "Point Live at your running dev server and click any element. An overlay highlights it and the properties panel fills with its real classes. Or navigate the full DOM tree in the Layers panel and select from there. Either way, selection survives hot-reload.",
   },
   {
     icon: SlidersHorizontal,
     title: "Scrub, don't prompt",
-    body: 'Drag padding, margin, gap, font size, weight and radius. Every drag is an exact value that snaps to your design tokens, with a live compliance score. No 10-second AI round-trip for a 4px nudge.',
+    body: 'Drag padding, margin, gap, font size, weight and radius. Every drag snaps to your design system scale with a live compliance score. Switch to Tablet or Mobile and edits write to isolated breakpoint classes, leaving Desktop untouched. No AI round-trip, no tokens spent.',
   },
   {
     icon: Palette,
     title: 'Edits write to source',
-    body: 'Every change is an AST edit to your actual Tailwind classes, not an overlay or a runtime patch. Your own dev server hot-reloads it, and the diff is real, committable code.',
+    body: 'Every change is an AST edit to your actual Tailwind classes, not an overlay or a runtime patch. Your own dev server hot-reloads it. The Edits tab logs every change with before/after values so you can revert any single tweak without touching the others.',
   },
   {
     icon: Bot,
@@ -100,10 +101,10 @@ export function LivePageClient() {
               className="mt-5 max-w-[640px] text-[18px] leading-[28px] text-[var(--mkt-text-secondary)]"
             >
               Layout Live turns your real running app into a canvas. Click an
-              element, scrub its spacing, swap a colour for a design token, and
-              the change is written straight back to your source as a Tailwind
-              class. No cloud sandbox, no AI tokens spent, just your dev server
-              hot-reloading real edits.
+              element, scrub its spacing, swap a colour, change an icon, or
+              switch to Tablet and Mobile to edit responsive breakpoints in
+              isolation. Every change writes straight back to your source as a
+              Tailwind class. No cloud sandbox, no AI tokens spent.
             </motion.p>
             <motion.div {...fade} transition={{ duration: 0.6, delay: 0.1 }} className="mt-9">
               <LiveDownloadButton />
@@ -192,11 +193,7 @@ export function LivePageClient() {
                   <p className="mb-4 flex-1 text-[14px] leading-[22px] text-[var(--mkt-text-secondary)]">
                     {body}
                   </p>
-                  {code && (
-                    <pre className="overflow-x-auto rounded-md border border-[var(--mkt-border)] bg-black/30 px-3 py-2 text-[12px] leading-[20px] text-[var(--mkt-text-primary)]">
-                      <code>{code}</code>
-                    </pre>
-                  )}
+                  {code && <CopyBlock code={code} />}
                 </motion.div>
               ))}
             </div>

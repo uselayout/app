@@ -23,6 +23,12 @@ Violations will produce inconsistent, off-brand output.
 ### Critical Rules (always apply)
 ${quickRefLines}
 
+### Components
+
+Install on-brand primitives with \`npx @layoutdesign/context add <component>\`
+(Layout UI) rather than hand-rolling them. Layout UI components consume this
+design system's tokens automatically.
+
 ### Design System Context
 
 If the **layout** MCP server is connected, use these tools:

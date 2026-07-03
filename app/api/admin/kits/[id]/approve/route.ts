@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/api/admin-context";
 import { approveKit, fetchKitById } from "@/lib/supabase/kits";
 import { linkRequestsForKit } from "@/lib/supabase/kit-requests";
 import { runKitGenerationJobs } from "@/lib/gallery/run-generation-jobs";
+import { triggerUiRedeploy } from "@/lib/deploy/trigger-ui-redeploy";
 
 export const dynamic = "force-dynamic";
 // Generation jobs are fire-and-forget so this route returns quickly,
@@ -47,6 +48,10 @@ export async function POST(
   void linkRequestsForKit({ ...kit, status: "approved" }).catch((err) => {
     console.error("linkRequestsForKit error:", err);
   });
+
+  // Newly approved kits appear in the Layout UI brand switcher after its
+  // next build; kick one off.
+  triggerUiRedeploy(`kit approved: ${kit.slug}`);
 
   return NextResponse.json({ ok: true });
 }

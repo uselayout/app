@@ -4,7 +4,9 @@ import { isMaintenanceMode } from "@/lib/maintenance";
 
 // All /api/ routes handle their own auth and return JSON 401 responses.
 // Redirecting them to /login would return HTML, breaking client-side JSON parsing.
-const PUBLIC_PATHS = ["/login", "/signup", "/request-access", "/forgot-password", "/reset-password", "/api/", "/docs", "/downloads", "/pricing", "/invite", "/showcase", "/terms", "/privacy", "/changelog", "/roadmap", "/unavailable", "/gallery", "/vs", "/spec", "/live"];
+// Crawler files (robots/sitemap/llms) MUST stay public: behind the login
+// redirect, search engines and AI crawlers cannot index the site at all.
+const PUBLIC_PATHS = ["/login", "/signup", "/request-access", "/forgot-password", "/reset-password", "/api/", "/docs", "/downloads", "/pricing", "/invite", "/showcase", "/terms", "/privacy", "/changelog", "/roadmap", "/unavailable", "/gallery", "/vs", "/spec", "/live", "/r/", "/ui", "/robots.txt", "/sitemap.xml", "/llms.txt", "/llms-full.txt"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

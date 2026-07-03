@@ -3,6 +3,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { resolveBearerAdmin } from "@/lib/api/admin-bearer";
 
+/**
+ * True if `email` is in the ADMIN_EMAIL allow-list. Cheap and synchronous —
+ * for routes that already hold a session and just need to decide whether to
+ * relax a limit (e.g. skip the hourly extraction cap for staff).
+ */
+export function isAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const adminEmails = (process.env.ADMIN_EMAIL ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return adminEmails.includes(email.toLowerCase());
+}
+
 export async function requireAdmin(
   request?: NextRequest
 ): Promise<{ userId: string; email: string } | NextResponse> {

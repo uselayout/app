@@ -143,22 +143,45 @@ function cssVarToToken(name: string, value: string): ExtractedToken {
   return { name, value, type: "effect", category: "semantic", cssVariable: name };
 }
 
+const PAGE_OPTIONS = {
+  userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  viewport: { width: 1440, height: 900 },
+};
+
 export async function extractFromWebsite({
   url,
   onProgress,
 }: WebsiteExtractionOptions): Promise<ExtractionResult> {
-  const browser = await chromium.launch({ headless: true });
+  let browser = await chromium.launch({ headless: true });
   registerBrowser(browser);
   let page: Awaited<ReturnType<typeof browser.newPage>> | null = null;
 
   try {
-    page = await browser.newPage({
-      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-      viewport: { width: 1440, height: 900 },
-    });
+    page = await browser.newPage(PAGE_OPTIONS);
 
     onProgress?.("navigate", 10, `Navigating to ${url}...`);
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+    } catch (navError) {
+      const message = navError instanceof Error ? navError.message : String(navError);
+      // Sites behind Akamai-style bot protection (adobe.com et al.) reset
+      // bundled Chromium's connection — its TLS fingerprint is recognised as
+      // automated. Real Chrome's fingerprint is accepted, so retry with the
+      // installed Chrome channel; if Chrome isn't installed (e.g. Docker),
+      // fall back to Chromium over HTTP/1.1.
+      if (!/ERR_HTTP2_PROTOCOL_ERROR|ERR_CONNECTION_RESET/.test(message)) throw navError;
+      onProgress?.("navigate", 12, "Site blocked the first connection — retrying with a different browser profile...");
+      deregisterBrowser(browser);
+      await browser.close().catch(() => {});
+      try {
+        browser = await chromium.launch({ headless: true, channel: "chrome" });
+      } catch {
+        browser = await chromium.launch({ headless: true, args: ["--disable-http2"] });
+      }
+      registerBrowser(browser);
+      page = await browser.newPage(PAGE_OPTIONS);
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+    }
     // Allow JS-rendered content to settle before extracting styles
     await page.waitForLoadState("load", { timeout: 15000 }).catch(() => {});
     await page.waitForTimeout(2000);

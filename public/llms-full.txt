@@ -122,6 +122,31 @@ Get started without a Figma file or website:
 npx @layoutdesign/context init --kit linear-lite
 ```
 
+## Layout UI
+
+Layout UI is the reskinnable component system: 54 components built on Base UI, all consuming a shared semantic token contract instead of hardcoded values. It solves a problem shadcn/ui-style copy-in libraries don't: reskinning a whole app to a different brand means swapping tokens, not rewriting components, and every gallery kit published from Layout Studio doubles as an installable Layout UI theme.
+
+**Key characteristics:**
+
+- **Token contract**: every component consumes `--layout-*` semantic tokens only, never a hardcoded colour, spacing, or radius value
+- **Every kit is a theme**: all kits published to the Kit Gallery auto-generate a matching Layout UI theme, so the design system you extracted becomes a fully themed component library
+- **Rules for AI agents**: each component ships a machine-readable spec (`meta.usage`, `meta.never`, `meta.tokens`) describing exactly how it should and shouldn't be used, so an agent can build with it correctly instead of guessing from source code alone
+- **Theme builder**: `/create` on the Layout UI site builds a theme from any real company's design tokens, not a fixed preset list
+- **Dual install path**: install a single component with `npx @layoutdesign/context add <component>`, or install a whole theme with the shadcn-compatible registry spec, `npx shadcn add https://layout.design/r/<slug>/theme.json`
+- **Free and open source**: MIT licensed, no account required, included on every Layout plan
+
+**Quick start:**
+```bash
+npx @layoutdesign/context add button
+npx shadcn add https://layout.design/r/stripe/theme.json
+```
+
+**Links:**
+- Explore components: https://ui.layout.design
+- Create your own theme: https://ui.layout.design/create
+- Docs: https://layout.design/docs/layout-ui
+- Comparison to shadcn/ui: https://layout.design/vs/shadcn
+
 ## Organisations & Teams
 
 Layout supports multi-user organisations with roles (owner, admin, member). Each organisation has its own projects, component library, API keys, webhook configuration, and billing.

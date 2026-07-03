@@ -137,6 +137,9 @@ export function useExtraction() {
               "Server is restarting. Please wait a few seconds and try again."
             );
           }
+          if (extractRes.status === 429) {
+            throw new Error(await rateLimitMessage(extractRes));
+          }
           throw new Error(
             `Extraction failed: ${extractRes.status} ${extractRes.statusText}`
           );
@@ -247,6 +250,9 @@ export function useExtraction() {
             throw new Error(
               "Server is restarting. Please wait a few seconds and try again."
             );
+          }
+          if (genRes.status === 429) {
+            throw new Error(await rateLimitMessage(genRes));
           }
           if (genRes.status === 402) {
             const body = await genRes.json().catch(() => null);
@@ -401,6 +407,28 @@ export function useExtraction() {
   }, []);
 
   return { runExtraction, abort };
+}
+
+/**
+ * Build a human-readable message from a 429 response. Prefers the server's
+ * own `error` string (e.g. "You've hit your hourly limit…") and appends a
+ * concrete retry time from the JSON `retryAfter` or the `Retry-After` header.
+ */
+async function rateLimitMessage(res: Response): Promise<string> {
+  const body = (await res.json().catch(() => null)) as
+    | { error?: string; retryAfter?: number }
+    | null;
+  const base = body?.error ?? "Too many requests. Please slow down and try again.";
+
+  const headerRetry = Number(res.headers.get("Retry-After"));
+  const seconds = body?.retryAfter ?? (Number.isFinite(headerRetry) ? headerRetry : null);
+  if (!seconds || seconds <= 0) return base;
+
+  const mins = Math.ceil(seconds / 60);
+  const when = mins > 1 ? `about ${mins} minutes` : seconds > 60 ? "about a minute" : `${Math.ceil(seconds)} seconds`;
+  // Avoid doubling up if the server message already mentions a wait.
+  if (/\b(minute|second|come back|try again)\b/i.test(base)) return base;
+  return `${base} Try again in ${when}.`;
 }
 
 interface SSEEvent {

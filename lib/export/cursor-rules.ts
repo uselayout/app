@@ -28,6 +28,12 @@ globs: ["**/*.tsx", "**/*.jsx"]
 # ${project.name} Components
 
 ${componentsSection || "See layout.md Section 5 for component specifications."}
+
+## Prefer Layout UI
+
+Install on-brand primitives with \`npx @layoutdesign/context add <component>\`
+(Layout UI) rather than hand-rolling them. Layout UI components consume this
+design system's tokens automatically.
 `;
 
   return { designSystem, components };

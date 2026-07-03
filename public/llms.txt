@@ -14,6 +14,16 @@ Layout extracts design systems from Figma files and live websites, then generate
 - **Push to Figma** — send AI-generated components back to Figma as real auto-layout frames
 - **Compliance checking** — validate generated code against design system rules
 
+## Layout UI
+
+Layout UI is a reskinnable component system: 54 components built on Base UI that consume nothing but semantic design tokens. Every kit published to the Gallery is also an installable Layout UI theme, and every component ships machine-readable rules (usage, never-do, tokens used) so AI agents build with them correctly. Free and open source (MIT).
+
+- Explore: https://ui.layout.design
+- Install a component: `npx @layoutdesign/context add <component>`
+- Install a theme: `npx shadcn add https://layout.design/r/<slug>/theme.json`
+- Docs: https://layout.design/docs/layout-ui
+- Compare: https://layout.design/vs/shadcn
+
 ## Docs
 
 - [What is Layout?](https://layout.design/docs)

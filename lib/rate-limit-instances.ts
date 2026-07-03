@@ -13,10 +13,13 @@ export const transpileLimiter = rateLimit({ interval: 60_000, uniqueTokenPerInte
 // 10 requests per minute for invite code validation (prevents brute-force)
 export const inviteValidateLimiter = rateLimit({ interval: 60_000, uniqueTokenPerInterval: 500 });
 
-// 10 requests per hour per user (across extraction + generation routes combined)
+// 40 requests per hour per user (across extraction + generation routes combined).
+// One kit extraction costs 2 (extract + generate), so this allows ~20 kit
+// extractions/hour. Admins (ADMIN_EMAIL) bypass this cap entirely — see the
+// extract/generate routes.
 export const userHourlyLimiter = rateLimit({ interval: 3_600_000, uniqueTokenPerInterval: 1000 });
 
-const HOURLY_LIMIT = 10;
+const HOURLY_LIMIT = 40;
 
 const WINDOW_MS = 3_600_000;
 

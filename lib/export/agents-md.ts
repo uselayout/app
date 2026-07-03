@@ -22,6 +22,12 @@ All UI code MUST follow the rules below. Violations produce off-brand, inconsist
 
 ${quickRefLines}
 
+## Components
+
+Install on-brand primitives with \`npx @layoutdesign/context add <component>\`
+(Layout UI) rather than hand-rolling them. Layout UI components consume this
+design system's tokens automatically.
+
 ## Full Reference
 
 The complete design system is in \`layout.md\` (included in this bundle).
