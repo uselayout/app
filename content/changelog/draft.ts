@@ -15,6 +15,24 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w27-gallery-kit-themes",
+    title: "Install any gallery kit as a ready-made UI theme",
+    description:
+      "Every kit in the gallery now compiles into an installable component theme. Copy one command from the kit page and your shadcn or Layout UI project reskins to match that brand: colours, radius, dark mode and all. Themes are served live, so they always reflect the latest version of the kit.",
+    product: "studio",
+    category: "new",
+    date: "2026-07-03",
+  },
+  {
+    id: "2026-w27-cli-add-components",
+    title: "Install Layout UI components from the CLI",
+    description:
+      "The new add command installs components from the Layout UI registry into any React project: npx @layoutdesign/context add button. It resolves dependencies, installs any packages your project is missing, and sets up the theme automatically on first use. Works with npm, pnpm, yarn and bun.",
+    product: "cli",
+    category: "new",
+    date: "2026-07-03",
+  },
+  {
     id: "2026-w27-live-request-pins",
     title: "See your AI requests pinned on the page",
     description:

@@ -88,6 +88,11 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
     );
   }
 
+  // Absolute URL for the theme registry endpoint, matching the environment
+  // the page is served from (staging vs production).
+  const requestHost = (await headers()).get("host") ?? "layout.design";
+  const themeUrl = `https://${requestHost}/r/${kit.slug}/theme.json`;
+
   const session = await auth.api.getSession({ headers: await headers() });
   const isLoggedIn = !!session?.user?.id;
   let currentOrgSlug: string | undefined;
@@ -235,6 +240,33 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
                     </Link>
                   </div>
                 </div>
+
+                {/* Track 3 — UI theme (only when a style profile exists to compile) */}
+                {kit.styleProfile && (
+                  <div className="flex flex-col gap-3 p-5 sm:flex-1">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--mkt-text-muted)]">UI theme</span>
+                      <span className="text-[13px] text-[var(--mkt-text-secondary)] leading-snug">
+                        Reskin shadcn or Layout UI components to match {kit.name}.
+                      </span>
+                    </div>
+                    <CopyInline
+                      value={`npx shadcn add ${themeUrl}`}
+                      label="Copy theme install command"
+                    />
+                    <div className="mt-auto">
+                      <a
+                        href="https://ui.staging.layout.design"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[12px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)] transition-colors"
+                      >
+                        Browse Layout UI components
+                        <span aria-hidden>→</span>
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
