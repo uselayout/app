@@ -11,6 +11,7 @@ import { ServeSection } from "@/components/marketing/ServeSection";
 import { FigmaLoopSection } from "@/components/marketing/FigmaLoopSection";
 import { ExtensionSection } from "@/components/marketing/ExtensionSection";
 import { LayoutLiveSection } from "@/components/marketing/LayoutLiveSection";
+import { LayoutUISection } from "@/components/marketing/LayoutUISection";
 import { ExplorerSection } from "@/components/marketing/ExplorerSection";
 import { DesignSystemSection } from "@/components/marketing/DesignSystemSection";
 import { BrowseKitsCTA } from "@/components/marketing/BrowseKitsCTA";
@@ -40,6 +41,7 @@ export function LandingPageClient() {
           <FigmaLoopSection />
           <ExtensionSection />
           <LayoutLiveSection />
+          <LayoutUISection />
           <ExplorerSection />
           <DesignSystemSection />
           <BrowseKitsCTA />

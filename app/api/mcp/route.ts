@@ -378,6 +378,8 @@ async function handleListComponents(
           ...meta,
         };
       }),
+      registryNote:
+        "Pre-built, token-contracted components are also available from Layout UI: npx @layoutdesign/context add <name>. Catalogue: https://ui.staging.layout.design/llms.txt",
     },
   };
 }

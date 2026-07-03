@@ -22,6 +22,7 @@ const PLANS = [
       "Unlimited Figma & website extractions",
       "All 6 export formats",
       "3 starter design kits",
+      "Layout UI component system (open source, MIT)",
     ],
     cta: "Get started free",
     tier: "free" as const,
@@ -84,6 +85,10 @@ const FAQS = [
   {
     q: "Can I still use my own API key on a paid plan?",
     a: "Yes! BYOK always works, even on paid plans. When you provide your own key, no hosted credits are consumed.",
+  },
+  {
+    q: "Is Layout UI included?",
+    a: "Yes. Layout UI is free and open source for everyone, on every plan, no account needed. Kits and themes come from the Gallery, and you can install any of them.",
   },
 ];
 

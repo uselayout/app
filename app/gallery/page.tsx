@@ -85,6 +85,17 @@ export default async function GalleryPage({ searchParams }: PageProps) {
               Browse kits published from Layout Studio projects. One click and they land in your workspace ready to build with. Fully interoperable with Google&apos;s design.md.
             </p>
 
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] max-w-[640px]">
+              Every kit doubles as an installable{" "}
+              <Link href="/ui" className="text-[var(--mkt-accent)] underline-offset-2 hover:underline">
+                Layout UI
+              </Link>{" "}
+              theme:{" "}
+              <code className="rounded-md border border-[var(--mkt-border-strong)] bg-[var(--mkt-surface)] px-2 py-0.5 font-mono text-[13px] text-[var(--mkt-text-primary)]">
+                npx shadcn add https://layout.design/r/&lt;slug&gt;/theme.json
+              </code>
+            </p>
+
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/login?redirect=/gallery"

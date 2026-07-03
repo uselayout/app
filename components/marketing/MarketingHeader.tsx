@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { label: 'How it Works', href: '#how-it-works' },
   { label: 'Figma Loop', href: '#figma-loop' },
   { label: 'Layout Live', href: '/live' },
+  { label: 'UI', href: '/ui' },
   { label: 'Gallery', href: '/gallery' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'Docs', href: '/docs' },

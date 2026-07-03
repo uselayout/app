@@ -193,6 +193,26 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
                   View full CLI docs
                 </a>
               </div>
+
+              {/* Optional: Layout UI components */}
+              <div className="space-y-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-3">
+                <p className="text-xs font-medium text-[var(--text-primary)]">
+                  Need pre-built components?
+                </p>
+                <CopyBlock code="npx @layoutdesign/context add button" />
+                <p className="text-[10px] text-[var(--text-muted)]">
+                  Install on-brand primitives from{" "}
+                  <a
+                    href="https://ui.staging.layout.design"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-[var(--text-secondary)]"
+                  >
+                    Layout UI
+                  </a>{" "}
+                  instead of hand-rolling them.
+                </p>
+              </div>
             </div>
 
             {/* Done action */}
