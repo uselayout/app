@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LAYOUT_UI_URL } from "@/lib/marketing/layout-ui";
 
 export const metadata: Metadata = {
-  title: "Layout UI vs shadcn/ui | Layout",
+  title: "Layout UI vs shadcn/ui",
   description:
     "Both are copy-in component systems on Base UI. Here's how Layout UI's token contract, per-component AI agent rules, and real-brand theme gallery compare to shadcn/ui.",
   openGraph: {
