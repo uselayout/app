@@ -7,7 +7,7 @@ import { CopyBlock } from "@/components/shared/CopyBlock";
 import { LAYOUT_UI_URL } from "@/lib/marketing/layout-ui";
 
 export const metadata: Metadata = {
-  title: "Layout UI: the reskinnable component system | Layout",
+  title: "Layout UI: the reskinnable component system",
   description:
     "54 Base UI components built on a shared token contract. Pick any gallery kit and the whole system reskins. Every component ships rules an AI agent can follow. Open source, MIT licensed.",
   openGraph: {
