@@ -87,7 +87,10 @@ export default async function GalleryPage({ searchParams }: PageProps) {
 
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] max-w-[640px]">
               Every kit doubles as an installable{" "}
-              <Link href="/ui" className="text-[var(--mkt-accent)] underline-offset-2 hover:underline">
+              <Link
+                href="/ui"
+                className="text-[var(--mkt-text-primary)] underline underline-offset-2 hover:text-[var(--mkt-text-secondary)] transition-colors"
+              >
                 Layout UI
               </Link>{" "}
               theme:{" "}
