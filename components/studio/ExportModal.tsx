@@ -5,6 +5,7 @@ import { X, Download, FileText, Check, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyBlock } from "@/components/shared/CopyBlock";
 import { useProjectStore } from "@/lib/store/project";
+import { capture } from "@/lib/analytics";
 import type { ExportFormat, Project } from "@/lib/types";
 
 interface ExportModalProps {
@@ -151,6 +152,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
       URL.revokeObjectURL(url);
       setDownloadFilename(filename);
       setDownloadComplete(true);
+      capture("export_downloaded", { formats: Array.from(selectedFormats) });
       // Golden path step 1: an export has happened for this project
       updateGoldenPath(project.id, { exported: true });
     } catch {
@@ -244,6 +246,7 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
                 <CopyBlock code="npx @layoutdesign/context setup-live" />
                 <a
                   href="/live"
+                  onClick={() => capture("live_download_clicked", { placement: "export-modal" })}
                   className="inline-block text-[10px] text-[var(--text-secondary)] underline transition-colors hover:text-[var(--text-primary)]"
                 >
                   Download Layout Live

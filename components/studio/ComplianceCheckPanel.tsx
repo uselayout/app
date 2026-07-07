@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { AlertTriangle, CheckCircle2, Info, Loader2, ShieldCheck, XCircle } from "lucide-react";
+import { capture } from "@/lib/analytics";
 
 interface ComplianceFinding {
   ruleId: string;
@@ -43,6 +44,7 @@ export function ComplianceCheckPanel({ projectId }: { projectId: string }) {
     if (!code.trim()) return;
     setIsChecking(true);
     setError(null);
+    capture("compliance_check_run");
     try {
       const res = await fetch("/api/compliance/check", {
         method: "POST",

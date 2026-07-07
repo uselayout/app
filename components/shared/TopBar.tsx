@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { RefreshCw, PanelLeft, Share2, MousePointerClick } from "lucide-react";
 import type { SourceType } from "@/lib/types";
+import { capture } from "@/lib/analytics";
 
 interface TopBarProps {
   projectName: string;
@@ -106,6 +107,7 @@ export function TopBar({
       <div className="flex flex-1 items-center justify-end gap-1.5">
         <a
           href="/live"
+          onClick={() => capture("live_download_clicked", { placement: "studio-topbar" })}
           title="Edit your running app with gated tokens"
           className="flex items-center gap-1.5 h-7 px-[10px] rounded-[4px] bg-[var(--studio-accent-subtle)] text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
         >

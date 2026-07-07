@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
 import { detectSourceType, normaliseUrl } from '@/lib/util/detect-source';
+import { capture } from '@/lib/analytics';
 import { MockFrame } from '@/components/marketing/MockFrame';
 import { HeroMock } from '@/components/marketing/mocks/HeroMock';
 import { HeroMobileMock } from '@/components/marketing/mocks/HeroMobileMock';
@@ -40,6 +41,10 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
     e.preventDefault();
     if (!extractValid) return;
     const url = normaliseUrl(extractUrl);
+    capture('hero_extract_submitted', {
+      source: detectSourceType(extractUrl) ?? 'unknown',
+      logged_in: isLoggedIn,
+    });
     if (isLoggedIn) {
       // /studio resolves the user's org, then forwards ?extract= to the
       // dashboard, which opens NewExtractionModal pre-filled with the URL.
