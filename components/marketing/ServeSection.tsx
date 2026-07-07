@@ -33,7 +33,10 @@ export function ServeSection() {
               Import your extraction. Run install. Layout auto-configures MCP settings for Claude Code, Cursor, Windsurf, Copilot, Codex, and Gemini CLI. Your AI agent has your design system available on every prompt — no copy-pasting, no manual context windows.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              12 MCP tools: get the full design system, query individual tokens, check component code against your design system, preview components live, push to Figma, and diagnose setup issues.
+              20 MCP tools: get the full design system, query individual tokens, check component code against your design system, preview components live, push to Figma, and diagnose setup issues.
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
+              Extract once, then unlimited local context. No per-call metering, no seat requirement, no monthly call caps.
             </p>
           </motion.div>
         </div>

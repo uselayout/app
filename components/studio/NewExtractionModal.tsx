@@ -24,11 +24,13 @@ import {
 
 interface NewExtractionModalProps {
   onClose: () => void;
+  /** Pre-fill the extract URL (e.g. carried from the marketing hero). */
+  initialUrl?: string;
 }
 
 type Mode = "extract" | "blank" | "kits";
 
-export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
+export function NewExtractionModal({ onClose, initialUrl }: NewExtractionModalProps) {
   const router = useRouter();
   const params = useParams();
   const orgSlug = (params?.org as string) ?? "";
@@ -36,7 +38,7 @@ export function NewExtractionModal({ onClose }: NewExtractionModalProps) {
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
 
   const [mode, setMode] = useState<Mode>("extract");
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(initialUrl ?? "");
   const [blankName, setBlankName] = useState("Untitled design system");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);

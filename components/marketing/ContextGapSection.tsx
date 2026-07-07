@@ -17,9 +17,9 @@ export function ContextGapSection() {
             viewport={{ once: true }}
             className="w-full lg:max-w-[454px]"
           >
-            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Brilliant code.</p>
-            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Wrong design.</p>
-            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-accent)]">Every time.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Every agent has context now.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">None of them enforce it.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-accent)]">Layout gates the edit.</p>
           </motion.div>
 
           <motion.div
@@ -30,19 +30,16 @@ export function ContextGapSection() {
             className="w-full lg:w-[683px] pt-[19px] flex flex-col gap-[10px]"
           >
             <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-              AI coding agents can build entire features from a one-line prompt. But every UI they generate looks generic, wrong colours, wrong spacing, wrong type scale.
+              In 2026, v0, Lovable and Figma all ship design-system context to their agents. And the output still drifts: raw hex codes instead of your colour tokens, arbitrary pixel values instead of your spacing scale.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Your design system lives in Figma. Your AI agent can&apos;t see it. Every component it builds is a guess. Every colour is a hallucination. Every spacing value is made up.
+              Context tells an agent what your system is. Nothing stops it emitting #6366f1 anyway. A style guide in the prompt is a suggestion, not a constraint.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              This is the context gap, the invisible wall between your design system and your AI tools.
+              The gap has moved. It is no longer between your design system and your AI tools. It is between knowing the rules and being held to them.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Designers spend hours correcting AI output that ignores their system. Developers ship components that look &apos;close enough.&apos; The brand erodes one commit at a time.
-            </p>
-            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              <span className="text-[var(--mkt-accent)]">Layout</span> is the compiler that closes it.
+              <span className="text-[var(--mkt-accent)]">Layout</span> closes it with extraction-grounded compliance: your design system, and its enforcement, follows the code into your repo and your agent.
             </p>
           </motion.div>
         </div>

@@ -41,13 +41,30 @@ export default function OrgProjectsPage() {
 
   const searchParams = useSearchParams();
   const [showNewExtraction, setShowNewExtraction] = useState(false);
+  const [pendingExtractUrl, setPendingExtractUrl] = useState<string | null>(
+    null,
+  );
 
-  // Open extraction modal if ?new=true is in the URL
+  // Open extraction modal if ?new=true or ?extract=<url> is in the URL
   useEffect(() => {
-    if (searchParams.get("new") === "true") {
+    if (searchParams.get("new") === "true" || searchParams.get("extract")) {
       setShowNewExtraction(true);
     }
   }, [searchParams]);
+
+  // Pick up a URL stashed by the marketing hero before signup/login
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("layout:pending-extract");
+      if (stored) {
+        localStorage.removeItem("layout:pending-extract");
+        setPendingExtractUrl(stored);
+        setShowNewExtraction(true);
+      }
+    } catch {
+      // localStorage unavailable — nothing to pick up
+    }
+  }, []);
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
     name: string;
@@ -135,7 +152,10 @@ export default function OrgProjectsPage() {
       )}
 
       {showNewExtraction && (
-        <NewExtractionModal onClose={() => setShowNewExtraction(false)} />
+        <NewExtractionModal
+          initialUrl={searchParams.get("extract") ?? pendingExtractUrl ?? undefined}
+          onClose={() => setShowNewExtraction(false)}
+        />
       )}
 
       {deleteTarget && (

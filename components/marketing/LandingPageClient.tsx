@@ -5,6 +5,7 @@ import { AnnouncementBanner } from "@/components/marketing/AnnouncementBanner";
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 import { HeroSection } from "@/components/marketing/HeroSection";
 import { ContextGapSection } from "@/components/marketing/ContextGapSection";
+import { DriftSection } from "@/components/marketing/DriftSection";
 import { ExtractSection } from "@/components/marketing/ExtractSection";
 import { CompletenessSection } from "@/components/marketing/CompletenessSection";
 import { ServeSection } from "@/components/marketing/ServeSection";
@@ -35,18 +36,19 @@ export function LandingPageClient() {
         <main>
           <HeroSection onInstallCLI={openInstall} />
           <ContextGapSection />
+          <LayoutLiveSection />
+          <ServeSection />
           <ExtractSection />
           <CompletenessSection />
-          <ServeSection />
+          <DriftSection />
           <FigmaLoopSection />
-          <ExtensionSection />
-          <LayoutLiveSection />
           <LayoutUISection />
-          <ExplorerSection />
-          <DesignSystemSection />
           <BrowseKitsCTA />
-          <ComparisonSection />
+          <ExplorerSection />
+          <ExtensionSection />
+          <DesignSystemSection />
           <OpenSourceSection />
+          <ComparisonSection />
           <EarlyAccessCTA onInstallCLI={openInstall} />
         </main>
       </div>

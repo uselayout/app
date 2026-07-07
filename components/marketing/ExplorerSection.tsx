@@ -20,27 +20,18 @@ export function ExplorerSection() {
           <h2
             className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)] w-full lg:w-[667px]"
           >
-            Explore before you build.{' '}
+            Explore variants{' '}
             <span className="text-[var(--mkt-accent)]">
-              Six variations in seconds.
+              when you need them.
             </span>
           </h2>
 
           <div className="w-full lg:w-[575px] pt-[19px] flex flex-col gap-[10px]">
             <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-              Every AI coding tool generates one answer. One layout. One guess. Layout Explorer generates up to six — each built on your design system.
+              Explorer generates multiple on-system variations of a component or page from one prompt, each scored for compliance.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Describe what you need. Explorer creates distinct variations: different layouts, different visual weight, different density. All on-brand. Pick a direction. Refine it. Ship something only your team could have designed.
-            </p>
-            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Then push it to Figma. Your designer brings the taste, the craft, the invisible details that make good design feel right. Import their changes back. The loop continues.
-            </p>
-            <p className="text-[15px] leading-[24px] text-[var(--mkt-accent)] tracking-[-0.165px]">
-              Better than a new canvas
-            </p>
-            <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Upload a reference image. Refine with follow-up prompts. Compare results with and without your design system. When you find the right direction, push it straight to Figma or promote it to your component library.
+              Pick a direction, refine it, then push it to Figma or promote it to your component library.
             </p>
           </div>
         </motion.div>
