@@ -45,6 +45,8 @@ interface KitRow {
   unlisted: boolean;
   is_new: boolean;
   bespoke_showcase: boolean;
+  registry_enabled: boolean;
+  marketing_featured: boolean;
   upvote_count: number;
   import_count: number;
   view_count: number;
@@ -100,6 +102,8 @@ function rowToKit(row: KitRow): PublicKit {
     unlisted: row.unlisted,
     isNew: row.is_new ?? false,
     bespokeShowcase: row.bespoke_showcase ?? false,
+    registryEnabled: row.registry_enabled ?? false,
+    marketingFeatured: row.marketing_featured ?? false,
     status: (row.status as KitStatus) ?? "approved",
     cardImagePref: (row.card_image_pref as KitCardImagePref) ?? "auto",
     upvoteCount: row.upvote_count,
@@ -168,6 +172,8 @@ export type PublishKitInput = Omit<
   | "status"
   | "cardImagePref"
   | "bespokeShowcase"
+  | "registryEnabled"
+  | "marketingFeatured"
 > & {
   id?: string;
   /** Defaults to 'pending' on insert. Layout-team path passes 'approved' to bypass review. */
@@ -188,6 +194,8 @@ type KitInsertRow = Omit<
   | "featured"
   | "hidden"
   | "is_new"
+  | "registry_enabled"
+  | "marketing_featured"
   | "github_folder"
   | "github_synced_at"
   | "showcase_custom_tsx"
