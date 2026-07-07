@@ -15,6 +15,51 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w28-live-agent-status",
+    title: "Your AI agent now reports back in Layout Live",
+    description:
+      "The request loop is closed: when a coding agent picks up one of your pinned requests it can mark it in progress, and when it finishes, the pin and panel entry turn green with a note about what was done. Pins recolour on the page as work happens (amber waiting, blue in progress), so you always know what's queued, what's moving and what's finished without leaving Live.",
+    product: "live",
+    category: "new",
+    date: "2026-07-08",
+  },
+  {
+    id: "2026-w28-live-design-tab",
+    title: "Browse your design system inside Layout Live",
+    description:
+      "A new Design tab shows your design system without switching to Studio: colour swatches with light and dark values side by side, font specimens, and your spacing, radius and shadow scales. Click any token to copy its variable name. It refreshes automatically when your tokens change, and works in a reduced form even before the CLI is installed.",
+    product: "live",
+    category: "new",
+    date: "2026-07-08",
+  },
+  {
+    id: "2026-w28-live-move-elements",
+    title: "Move elements up and down on HTML pages",
+    description:
+      "Reorder sections and elements without touching code: select an element on a plain HTML page and use the new Position controls or Alt+Up / Alt+Down to move it among its siblings. Layout Live rewrites just the moved lines in your source file, keeps every other edit and pinned request pointing at the right place, and each move can be undone like any other edit. For React elements, a one-click prompt hands the move to your AI agent instead.",
+    product: "live",
+    category: "new",
+    date: "2026-07-08",
+  },
+  {
+    id: "2026-w28-live-token-compliance-fix",
+    title: "Token edits and compliance scores now work reliably",
+    description:
+      "Editing a token from the colour editor now writes the change through to your tokens files correctly, and the compliance meter reads real results from your design system's rules instead of showing unavailable. Failures now surface a clear message rather than silently doing nothing.",
+    product: "live",
+    category: "fixed",
+    date: "2026-07-08",
+  },
+  {
+    id: "2026-w28-cli-agent-request-tools",
+    title: "New agent tools: mark-request and list-tokens",
+    description:
+      "Two new MCP tools for coding agents. mark-request lets your agent report progress on requests you pinned in Layout Live, updating the pins in the app as it works. list-tokens returns your design tokens as a structured catalogue, grouped by colour, typography, spacing, radius and shadow, with dark-mode values tagged, which also powers Layout Live's new Design tab.",
+    product: "cli",
+    category: "new",
+    date: "2026-07-08",
+  },
+  {
     id: "2026-w28-cli-export-agent-formats",
     title: "Export your design system to any agent format",
     description:
