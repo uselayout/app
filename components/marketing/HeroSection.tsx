@@ -91,7 +91,7 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
           Context is solved. Enforcement is the product.
         </motion.p>
 
-        {/* URL extract input — the golden path is the hero */}
+        {/* URL extract input: the golden path is the hero */}
         <motion.form
           {...fadeUp}
           transition={{ duration: 0.6, delay: 0.18, ease: [0.0, 0.0, 0.2, 1] }}

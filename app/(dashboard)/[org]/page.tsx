@@ -62,7 +62,7 @@ export default function OrgProjectsPage() {
         setShowNewExtraction(true);
       }
     } catch {
-      // localStorage unavailable — nothing to pick up
+      // localStorage unavailable: nothing to pick up
     }
   }, []);
   const [deleteTarget, setDeleteTarget] = useState<{
