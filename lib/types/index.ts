@@ -69,6 +69,8 @@ export type ExportFormat =
   | "claude-md"
   | "cursor-rules"
   | "agents-md"
+  | "design-md"
+  | "codex-skill"
   | "tokens-css"
   | "tokens-json"
   | "tailwind-config";
@@ -311,8 +313,21 @@ export interface Project {
   brandingAssets?: BrandingAsset[];
   /** Project-scoped context documents attached to every variant generation */
   contextDocuments?: ContextDocument[];
+  /**
+   * Golden-path checklist state shown in the Connect tab. Piggy-backed into
+   * extraction_data as `_goldenPath` (see lib/supabase/db.ts) — no DB column.
+   */
+  goldenPath?: GoldenPathState;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Persisted state for the golden-path checklist card in the Connect tab. */
+export interface GoldenPathState {
+  /** Step 1 done: the user exported a bundle (or connected via API key). */
+  exported?: boolean;
+  /** User dismissed the checklist card. */
+  dismissed?: boolean;
 }
 
 /** Slots a branding asset can occupy. Informs the `data-brand-logo` attribute Claude emits. */

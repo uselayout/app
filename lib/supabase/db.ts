@@ -29,8 +29,9 @@ interface ProjectRow {
 
 // Exported for round-trip tests in db.test.ts. Piggy-backed fields in
 // extraction_data (_uploadedFonts, _standardisation, _pluginTokensPushedAt,
-// _iconPacks) have silently dropped user data in the past when one direction
-// was updated without the other; tests exercise both paths in lockstep.
+// _iconPacks, _layoutMdAuthored, _goldenPath) have silently dropped user data
+// in the past when one direction was updated without the other; tests exercise
+// both paths in lockstep.
 export function rowToProject(row: ProjectRow): Project {
   // Extract piggy-backed fields from extraction_data before casting
   const rawExtraction = row.extraction_data as Record<string, unknown> | null;
@@ -39,18 +40,16 @@ export function rowToProject(row: ProjectRow): Project {
   const pluginTokensPushedAt = (rawExtraction?._pluginTokensPushedAt as string) ?? undefined;
   const iconPacks = (rawExtraction?._iconPacks as string[]) ?? undefined;
   const layoutMdAuthored = (rawExtraction?._layoutMdAuthored as string) ?? undefined;
+  const goldenPath = (rawExtraction?._goldenPath as Project["goldenPath"]) ?? undefined;
 
-  // Strip piggy-backed fields from extraction data before casting to ExtractionResult
+  // Strip piggy-backed fields from extraction data before casting to
+  // ExtractionResult. The underscore prefix is the piggyback convention —
+  // no real extraction field starts with "_".
   let extractionData: Project["extractionData"] | undefined;
   if (rawExtraction) {
-    const {
-      _uploadedFonts: _,
-      _standardisation: __,
-      _pluginTokensPushedAt: ___,
-      _iconPacks: ____,
-      _layoutMdAuthored: _____,
-      ...clean
-    } = rawExtraction;
+    const clean = Object.fromEntries(
+      Object.entries(rawExtraction).filter(([key]) => !key.startsWith("_"))
+    );
     // Only treat as real extraction data if it has actual extraction fields
     extractionData = clean.sourceType ? (clean as unknown as Project["extractionData"]) : undefined;
   }
@@ -89,6 +88,7 @@ export function rowToProject(row: ProjectRow): Project {
     iconPacks,
     pluginTokensPushedAt,
     layoutMdAuthored,
+    goldenPath,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -98,14 +98,16 @@ export function projectToRow(
   project: Project,
   userId: string
 ): Omit<ProjectRow, "created_at" | "scanned_components" | "scan_source" | "last_scan_at" | "github_repo" | "branding_assets" | "context_documents"> & { updated_at: string; snapshots: unknown | null } {
-  // Store uploadedFonts, standardisation, pluginTokensPushedAt and iconPacks
-  // inside extraction_data to avoid a dedicated DB migration.
+  // Store uploadedFonts, standardisation, pluginTokensPushedAt, iconPacks,
+  // layoutMdAuthored and goldenPath inside extraction_data to avoid a
+  // dedicated DB migration.
   const fonts = project.uploadedFonts ?? [];
   const std = project.standardisation ?? undefined;
   const pushedAt = project.pluginTokensPushedAt ?? undefined;
   const icons = project.iconPacks ?? undefined;
   const authored = project.layoutMdAuthored ?? undefined;
-  const hasExtra = fonts.length > 0 || std || pushedAt || (icons && icons.length > 0) || authored;
+  const goldenPath = project.goldenPath ?? undefined;
+  const hasExtra = fonts.length > 0 || std || pushedAt || (icons && icons.length > 0) || authored || goldenPath;
   const extractionData = project.extractionData
     ? {
         ...project.extractionData,
@@ -114,6 +116,7 @@ export function projectToRow(
         _pluginTokensPushedAt: pushedAt,
         _iconPacks: icons,
         _layoutMdAuthored: authored,
+        _goldenPath: goldenPath,
       }
     : hasExtra
       ? {
@@ -122,6 +125,7 @@ export function projectToRow(
           _pluginTokensPushedAt: pushedAt,
           _iconPacks: icons,
           _layoutMdAuthored: authored,
+          _goldenPath: goldenPath,
         }
       : null;
 

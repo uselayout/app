@@ -66,6 +66,24 @@ describe("piggy-backed fields round-trip symmetrically", () => {
     expect(back.pluginTokensPushedAt).toBe("2026-04-20T12:00:00.000Z");
   });
 
+  it("goldenPath survives projectToRow → rowToProject (golden-path checklist)", () => {
+    const input = baseProject({ goldenPath: { exported: true, dismissed: false } });
+    const row = projectToRow(input, "u1");
+    const back = rowToProject({ ...baseRow(row.extraction_data), updated_at: row.updated_at });
+    expect(back.goldenPath).toEqual({ exported: true, dismissed: false });
+  });
+
+  it("a project with only goldenPath (no extraction data) still persists it", () => {
+    const input = baseProject({ goldenPath: { dismissed: true } });
+    const row = projectToRow(input, "u1");
+    const data = row.extraction_data as Record<string, unknown> | null;
+    expect(data).not.toBeNull();
+    expect(data?._goldenPath).toEqual({ dismissed: true });
+    const back = rowToProject({ ...baseRow(data), updated_at: row.updated_at });
+    expect(back.goldenPath).toEqual({ dismissed: true });
+    expect(back.extractionData).toBeUndefined();
+  });
+
   it("all four piggy-backed fields coexist without interfering", () => {
     const input = baseProject({
       iconPacks: ["lucide"],
