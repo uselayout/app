@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, ExternalLink } from "lucide-react";
+import { Check, Copy, ExternalLink, X } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
+import type { GoldenPathState } from "@/lib/types";
 
 function CopyCommand({ command, label }: { command: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -37,15 +38,83 @@ function CopyCommand({ command, label }: { command: string; label?: string }) {
   );
 }
 
+interface GoldenPathChecklistProps {
+  goldenPath?: GoldenPathState;
+  onChange?: (patch: Partial<GoldenPathState>) => void;
+}
+
+/**
+ * Compact golden-path checklist: extract → serve → gate. Step 1 flips when an
+ * export (or API-key connect) has happened for this project; steps 2-4 are
+ * informational links. Persisted per-project via the _goldenPath piggyback.
+ */
+function GoldenPathChecklist({ goldenPath, onChange }: GoldenPathChecklistProps) {
+  if (goldenPath?.dismissed) return null;
+
+  const steps: { label: string; done: boolean; href?: string }[] = [
+    { label: "Export or connect your agent", done: Boolean(goldenPath?.exported) },
+    { label: "Install the CLI in your repo", done: false, href: "/docs/cli" },
+    { label: "Download Layout Live", done: false, href: "/live" },
+    { label: "Make your first gated edit", done: false, href: "/docs/live" },
+  ];
+
+  return (
+    <div className="relative rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-3">
+      {onChange && (
+        <button
+          onClick={() => onChange({ dismissed: true })}
+          title="Dismiss checklist"
+          className="absolute right-2 top-2 rounded p-0.5 text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
+      <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+        Golden path
+      </p>
+      <ul className="mt-2 space-y-1.5">
+        {steps.map((step, i) => (
+          <li key={step.label} className="flex items-center gap-2">
+            <span
+              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[9px] ${
+                step.done
+                  ? "border-[var(--status-success)] text-[var(--status-success)]"
+                  : "border-[var(--studio-border-strong)] text-[var(--text-muted)]"
+              }`}
+            >
+              {step.done ? <Check className="h-2.5 w-2.5" /> : i + 1}
+            </span>
+            {step.href ? (
+              <a
+                href={step.href}
+                className="text-[11px] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+              >
+                {step.label}
+              </a>
+            ) : (
+              <span className={`text-[11px] ${step.done ? "text-[var(--text-muted)] line-through" : "text-[var(--text-secondary)]"}`}>
+                {step.label}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 interface ConnectTabProps {
   hasLayoutMd?: boolean;
   projectName?: string;
+  goldenPath?: GoldenPathState;
+  onGoldenPathChange?: (patch: Partial<GoldenPathState>) => void;
 }
 
-export function ConnectTab({ hasLayoutMd, projectName }: ConnectTabProps) {
+export function ConnectTab({ hasLayoutMd, projectName, goldenPath, onGoldenPathChange }: ConnectTabProps) {
   if (hasLayoutMd) {
     return (
       <div className="space-y-5 p-3">
+        <GoldenPathChecklist goldenPath={goldenPath} onChange={onGoldenPathChange} />
         <div className="space-y-2">
           <h3 className="text-xs font-semibold text-[var(--text-primary)]">
             Your design system is ready
@@ -98,6 +167,8 @@ export function ConnectTab({ hasLayoutMd, projectName }: ConnectTabProps) {
 
   return (
     <div className="space-y-5 p-3">
+      <GoldenPathChecklist goldenPath={goldenPath} onChange={onGoldenPathChange} />
+
       {/* Main install */}
       <div className="space-y-2">
         <h3 className="text-xs font-semibold text-[var(--text-primary)]">

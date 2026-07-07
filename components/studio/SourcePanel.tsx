@@ -6,6 +6,7 @@ import { Copy, Check, X, ExternalLink, ChevronRight, Palette, LayoutGrid, Image,
 import type { LucideIcon } from "lucide-react";
 import { copyToClipboard } from "@/lib/util/copy-to-clipboard";
 import { CompletenessPanel } from "@/components/studio/CompletenessPanel";
+import { ComplianceCheckPanel } from "@/components/studio/ComplianceCheckPanel";
 import { ConnectTab } from "@/components/studio/ConnectTab";
 import { FigmaEmbed } from "@/components/studio/FigmaEmbed";
 import { parseFigmaUrl } from "@/lib/figma/parse-url";
@@ -47,6 +48,8 @@ interface SourcePanelProps {
   onExtract?: (url: string, sourceType: SourceType, pat?: string) => void;
   onGenerateFromFigma?: (imageDataUrl: string, contextFiles?: ContextFile[]) => void;
   onFontUploaded?: () => void;
+  /** Increment to switch the panel to the connect tab (golden path CTA). */
+  connectRequestNonce?: number;
 }
 
 type TabId = "tokens" | "components" | "screenshots" | "icons" | "fonts" | "branding" | "context" | "quality" | "connect" | "figma";
@@ -156,13 +159,22 @@ function SourcePanelInner({
   onExtract,
   onGenerateFromFigma,
   onFontUploaded,
+  connectRequestNonce,
 }: SourcePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("tokens");
   const syncTokensFromLayoutMd = useProjectStore((s) => s.syncTokensFromLayoutMd);
   const updateExtractionData = useProjectStore((s) => s.updateExtractionData);
+  const updateGoldenPath = useProjectStore((s) => s.updateGoldenPath);
   const currentOrgId = useOrgStore((s) => s.currentOrgId);
   const currentProject = useProjectStore((s) => s.projects.find((p) => p.id === projectId));
   const [syncResult, setSyncResult] = useState<{ count: number } | null>(null);
+
+  // "Serve to your agent" / ?connect=1 switches the panel to the connect tab
+  useEffect(() => {
+    if (connectRequestNonce && connectRequestNonce > 0) {
+      setActiveTab("connect");
+    }
+  }, [connectRequestNonce]);
 
   const handleDeleteScreenshot = useCallback(
     (index: number) => {
@@ -301,7 +313,10 @@ function SourcePanelInner({
           />
         )}
         {activeTab === "quality" && extractionData && (
-          <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} projectId={projectId} orgId={currentOrgId ?? undefined} />
+          <>
+            <CompletenessPanel layoutMd={layoutMd ?? ""} onLayoutMdChange={onLayoutMdChange} projectId={projectId} orgId={currentOrgId ?? undefined} />
+            {projectId && <ComplianceCheckPanel projectId={projectId} />}
+          </>
         )}
         {activeTab === "figma" && (
           <FigmaTab
@@ -313,7 +328,11 @@ function SourcePanelInner({
         {activeTab === "connect" && (
           <ConnectTab
             hasLayoutMd={!!layoutMd && layoutMd.length > 100}
-            projectName={useProjectStore.getState().projects.find((p) => p.id === projectId)?.name}
+            projectName={currentProject?.name}
+            goldenPath={currentProject?.goldenPath}
+            onGoldenPathChange={
+              projectId ? (patch) => updateGoldenPath(projectId, patch) : undefined
+            }
           />
         )}
       </div>

@@ -210,6 +210,7 @@ export default function StudioPage({
   const tabParam = searchParams.get("tab");
   const sourceParam = searchParams.get("source");
   const autoGenerateParam = searchParams.get("auto-generate");
+  const connectParam = searchParams.get("connect");
 
   const { runExtraction } = useExtraction();
   const extractionStarted = useRef(false);
@@ -217,8 +218,15 @@ export default function StudioPage({
   const [showExport, setShowExport] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const currentOrgSlug = useOrgStore((s) => s.currentOrg()?.slug);
+  // Default view is the editor — layout.md is the product. Canvas (Explorer)
+  // only opens when explicitly requested via ?tab=explorer|canvas.
   const [centreView, setCentreView] = useState<"editor" | "canvas" | "saved" | "design-system">(
-    tabParam === "editor" ? "editor" : "canvas"
+    tabParam === "explorer" || tabParam === "canvas" ? "canvas" : "editor"
+  );
+  // Golden path: "Serve to your agent" (post-extraction CTA or ?connect=1)
+  // opens the SourcePanel connect tab. Nonce so repeat requests re-fire.
+  const [connectRequestNonce, setConnectRequestNonce] = useState(
+    searchParams.get("connect") === "1" ? 1 : 0
   );
 
   // Figma push-to-canvas: pre-load screenshot as reference image
@@ -269,10 +277,10 @@ export default function StudioPage({
 
   // Clear URL params after consuming so refresh doesn't re-trigger
   useEffect(() => {
-    if (tabParam || sourceParam || autoGenerateParam) {
+    if (tabParam || sourceParam || autoGenerateParam || connectParam) {
       window.history.replaceState({}, "", `/studio/${id}`);
     }
-  }, [id, tabParam, sourceParam, autoGenerateParam]);
+  }, [id, tabParam, sourceParam, autoGenerateParam, connectParam]);
 
   // Auto-generate layout.md after plugin push.
   // Fires when either (a) ?auto-generate=1 is in the URL (plugin link),
@@ -522,6 +530,11 @@ export default function StudioPage({
           setCentreView("canvas");
           setWhatsNextDismissed(true);
         }}
+        onServeToAgent={() => {
+          setCentreView("editor");
+          setConnectRequestNonce((n) => n + 1);
+          setWhatsNextDismissed(true);
+        }}
       />
     );
   }
@@ -576,6 +589,7 @@ export default function StudioPage({
               onExtract={handleExtractFromPanel}
               onGenerateFromFigma={handleGenerateFromFigma}
               onFontUploaded={() => setFontUploaded(true)}
+              connectRequestNonce={connectRequestNonce}
             />
           }
           editorPanel={
