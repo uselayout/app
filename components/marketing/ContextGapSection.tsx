@@ -17,9 +17,9 @@ export function ContextGapSection() {
             viewport={{ once: true }}
             className="w-full lg:max-w-[454px]"
           >
-            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Every agent has context now.</p>
-            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">None of them enforce it.</p>
-            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-accent)]">Layout gates the edit.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Full context.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Zero enforcement.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-accent)]">Layout gates it.</p>
           </motion.div>
 
           <motion.div
@@ -30,10 +30,10 @@ export function ContextGapSection() {
             className="w-full lg:w-[683px] pt-[19px] flex flex-col gap-[10px]"
           >
             <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-              In 2026, v0, Lovable and Figma all ship design-system context to their agents. And the output still drifts: raw hex codes instead of your colour tokens, arbitrary pixel values instead of your spacing scale.
+              Every AI tool ships design-system context now. Rules files, MCP servers, imported style guides. And the output still drifts: raw hex codes instead of your colour tokens, arbitrary pixel values instead of your spacing scale.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Context tells an agent what your system is. Nothing stops it emitting #6366f1 anyway. A style guide in the prompt is a suggestion, not a constraint.
+              Context tells an agent what your system is. Nothing stops it emitting #6366f1 anyway. A rule in the prompt is a suggestion, not a constraint.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
               The gap has moved. It is no longer between your design system and your AI tools. It is between knowing the rules and being held to them.
