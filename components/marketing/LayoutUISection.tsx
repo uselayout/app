@@ -21,10 +21,13 @@ export function LayoutUISection() {
               Layout UI
             </p>
             <p className="text-[28px] leading-[34px] tracking-[-1.408px] text-[var(--mkt-text-primary)] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px]">
-              One component system.
+              54 components.
+            </p>
+            <p className="text-[28px] leading-[34px] tracking-[-1.408px] text-[var(--mkt-text-primary)] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px]">
+              58 themes.
             </p>
             <p className="text-[28px] leading-[34px] tracking-[-1.408px] text-[var(--mkt-accent)] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px]">
-              Every brand.
+              One token contract.
             </p>
           </motion.div>
 
@@ -36,15 +39,16 @@ export function LayoutUISection() {
             className="w-full pt-[19px] lg:w-[683px]"
           >
             <p className="text-[20px] leading-[24px] tracking-[-0.165px] text-white">
-              Layout UI is 54 components built on Base UI that consume nothing
-              but semantic tokens. Pick any gallery kit and the whole system
-              reskins, no component code changes, no rewrite.
+              Layout UI is the free, open component library built on the same
+              --layout-* token contract every Layout kit ships. Pick any of the
+              58 gallery kits and the whole system reskins, no component code
+              changes, no rewrite.
             </p>
             <p className="mt-2 text-[15px] leading-[24px] tracking-[-0.165px] text-[var(--mkt-text-secondary)]">
-              Every component ships with machine-readable rules an AI agent
-              can actually follow: what tokens it uses, what it should never
-              do, and how it composes. Install one component with our CLI, or
-              install an entire brand as a theme with shadcn&apos;s.
+              It is shadcn-compatible, so you can install any kit&apos;s
+              components with one command, and every component ships
+              machine-readable rules an AI agent can actually follow: what
+              tokens it uses, what it should never do, and how it composes.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <a
@@ -53,13 +57,13 @@ export function LayoutUISection() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center rounded-full bg-[var(--mkt-btn-primary-bg)] px-6 py-3 text-[15px] font-medium text-[var(--mkt-bg)] transition-opacity hover:opacity-90"
               >
-                Explore Layout UI
+                Browse Layout UI
               </a>
               <Link
-                href="/docs/layout-ui"
+                href="/gallery"
                 className="inline-flex items-center text-[15px] text-[var(--mkt-accent)] underline-offset-2 hover:underline"
               >
-                Read the docs →
+                Kit Gallery →
               </Link>
             </div>
           </motion.div>

@@ -43,10 +43,17 @@ export function LayoutLiveSection() {
               Tailwind source.
             </p>
             <p className="mt-2 text-[15px] leading-[24px] tracking-[-0.165px] text-[var(--mkt-text-secondary)]">
-              No cloud sandbox, no AI tokens spent on a 4px nudge. Your own dev
-              server hot-reloads a real, committable diff, gated to your design
-              tokens with a live compliance score. When a change needs logic,
-              hand the selected element to Claude Code via MCP.
+              Every edit is a deterministic AST rewrite of your real source: no
+              cloud sandbox, no AI tokens spent on a 4px nudge. A live
+              compliance score gates each change to on-token values, so what
+              lands in the diff is your design system, not a near miss. And
+              when a change needs logic, hand the selected element to Claude
+              Code, Cursor or any MCP-compatible agent with full context
+              attached.
+            </p>
+            <p className="mt-2 text-[15px] leading-[24px] tracking-[-0.165px] text-[var(--mkt-accent)]">
+              Figma meters every AI edit with credits. Layout Live edits are
+              deterministic. Free forever.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link

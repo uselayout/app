@@ -43,8 +43,7 @@ const PLANS = [
     ],
     cta: "Upgrade to Pro",
     tier: "pro" as const,
-    highlighted: true,
-    badge: "Most popular",
+    highlighted: false,
   },
   {
     name: "Team",
@@ -54,14 +53,17 @@ const PLANS = [
       "Centralised billing, admin controls, and team-wide design systems.",
     features: [
       "Everything in Pro",
+      "Org-wide design systems",
+      "Seat management",
       "Centralised team billing",
       "Admin usage dashboard",
       "Role-based access controls",
-      "Invitation management",
+      "Compliance reporting (coming soon)",
     ],
     cta: "Start Team Plan",
     tier: "team" as const,
-    highlighted: false,
+    highlighted: true,
+    badge: "Most popular",
   },
 ];
 
@@ -89,6 +91,14 @@ const FAQS = [
   {
     q: "Is Layout UI included?",
     a: "Yes. Layout UI is free and open source for everyone, on every plan, no account needed. Kits and themes come from the Gallery, and you can install any of them.",
+  },
+  {
+    q: "How is this different from Figma's MCP server?",
+    a: "Figma serves live per-call context, metered per seat: 6 calls per month on free and view seats. Layout extracts once into files and an unmetered local MCP server that works without a Figma subscription. Your agent gets unlimited design-system context, on every prompt, at no marginal cost.",
+  },
+  {
+    q: "My agent already has design-system context. Why Layout?",
+    a: "Context does not stop an agent emitting raw hex instead of your tokens. Layout adds compliance checking against your extracted design system and, with Layout Live, gates edits to on-token values, so the code that lands in your repo actually follows the system.",
   },
 ];
 
@@ -156,8 +166,8 @@ function PricingContent() {
             <div className="max-w-[1280px] mx-auto px-6">
               <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
                 <h1 className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)] w-full lg:w-[509px]">
-                  Start free.{" "}
-                  <span className="text-[var(--mkt-accent)]">Scale when you&apos;re ready.</span>
+                  Built for teams{" "}
+                  <span className="text-[var(--mkt-accent)]">shipping UI with AI agents.</span>
                 </h1>
                 <div className="w-full lg:w-[591px] pt-[19px] flex flex-col gap-[10px]">
                   <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
@@ -340,7 +350,7 @@ function PricingContent() {
                   </div>
                   <div className="h-px bg-[var(--studio-border)]" />
                   <p className="text-[17px] leading-[23px] text-[#c6c5bf]">
-                    Use your own Anthropic API key for unlimited usage at your own cost. Works on any plan — free or paid.
+                    For individuals: use your own Anthropic API key for unlimited usage at your own cost. Works on any plan, free or paid.
                   </p>
                   <ul className="flex flex-col gap-3">
                     {[

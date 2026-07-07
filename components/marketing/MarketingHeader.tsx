@@ -4,15 +4,16 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from '@/lib/auth-client';
+import { LAYOUT_UI_URL } from '@/lib/marketing/layout-ui';
 
 const BETA_ACTIVE = process.env.NEXT_PUBLIC_BETA_INVITE_REQUIRED === 'true';
 
 const NAV_LINKS = [
+  { label: 'Layout Live', href: '/live' },
+  { label: 'Layout UI', href: LAYOUT_UI_URL },
   { label: 'Products', href: '#products' },
   { label: 'How it Works', href: '#how-it-works' },
   { label: 'Figma Loop', href: '#figma-loop' },
-  { label: 'Layout Live', href: '/live' },
-  { label: 'UI', href: '/ui' },
   { label: 'Gallery', href: '/gallery' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'Docs', href: '/docs' },

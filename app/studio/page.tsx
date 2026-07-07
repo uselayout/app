@@ -22,7 +22,16 @@ export default function StudioRedirect() {
         const org =
           orgs.find((o) => o.slug.startsWith("personal-")) ?? orgs[0];
         if (org) {
-          router.replace(`/${org.slug}`);
+          // Forward ?extract=<url> from the marketing hero so the dashboard
+          // opens the new-extraction modal pre-filled.
+          const extract = new URLSearchParams(window.location.search).get(
+            "extract",
+          );
+          router.replace(
+            extract
+              ? `/${org.slug}?extract=${encodeURIComponent(extract)}`
+              : `/${org.slug}`,
+          );
         } else {
           setError(true);
         }

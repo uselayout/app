@@ -84,15 +84,29 @@ const COMPARISON_DATA: ComparisonRow[] = [
   {
     feature: "MCP server for AI agents",
     values: {
-      Layout: "14 tools",
+      Layout: "20 tools",
       "Claude Design": false,
       "Google design.md": false,
       "Paper.design": "24 tools",
       "Magic Patterns": false,
       MagicPath: false,
       Variant: false,
-      "Figma Dev Mode": "11 tools",
+      "Figma Dev Mode": "~25 tools",
       "Pencil.dev": true,
+    },
+  },
+  {
+    feature: "Gates AI edits to design tokens",
+    values: {
+      Layout: "Layout Live",
+      "Claude Design": "Checks own output",
+      "Google design.md": false,
+      "Paper.design": false,
+      "Magic Patterns": false,
+      MagicPath: false,
+      Variant: false,
+      "Figma Dev Mode": false,
+      "Pencil.dev": false,
     },
   },
   {
@@ -162,6 +176,7 @@ const LIVE_COMPETITORS = [
   "Onlook",
   "stagewise",
   "Figma Make",
+  "Figma Make (local)",
 ] as const;
 
 type LiveCompetitor = (typeof LIVE_COMPETITORS)[number];
@@ -180,6 +195,7 @@ const LIVE_COMPARISON_DATA: LiveComparisonRow[] = [
       Onlook: "Cloud sandbox",
       stagewise: "Browser toolbar",
       "Figma Make": "Make app",
+      "Figma Make (local)": "Mac-only beta",
     },
   },
   {
@@ -190,6 +206,7 @@ const LIVE_COMPARISON_DATA: LiveComparisonRow[] = [
       Onlook: "AI-assisted",
       stagewise: "AI writes",
       "Figma Make": "Agent + PR",
+      "Figma Make (local)": "AI-mediated, metered",
     },
   },
   {
@@ -200,6 +217,7 @@ const LIVE_COMPARISON_DATA: LiveComparisonRow[] = [
       Onlook: false,
       stagewise: false,
       "Figma Make": false,
+      "Figma Make (local)": false,
     },
   },
   {
@@ -210,6 +228,18 @@ const LIVE_COMPARISON_DATA: LiveComparisonRow[] = [
       Onlook: false,
       stagewise: false,
       "Figma Make": false,
+      "Figma Make (local)": false,
+    },
+  },
+  {
+    feature: "Two-way sync with your source",
+    values: {
+      "Layout Live": true,
+      "Cursor Design Mode": true,
+      Onlook: "Sandbox only",
+      stagewise: "Via agent",
+      "Figma Make": false,
+      "Figma Make (local)": "One-way",
     },
   },
 ];
@@ -271,7 +301,7 @@ const OBJECTIONS: Objection[] = [
     question:
       "Claude Design extracts design systems from Figma and codebases too. What\u2019s actually different?",
     answer:
-      "Where the bundle goes. Claude Design\u2019s extracted design system stays inside Anthropic\u2019s walled garden \u2014 it powers their canvas and the handoff to Claude Code only. Layout\u2019s output is portable: tokens.css, tokens.json (W3C DTCG), CLAUDE.md, .cursor/rules, Windsurf rules, tailwind.config.js, plus an MCP server with 14 tools (compliance checking, drift detection, component lookup). It travels to every agent and every IDE the team uses. Layout also extracts from sources Claude Design doesn\u2019t \u2014 live websites via Playwright, Storybook CSF3 stories, Chrome extension capture, and a native Figma plugin with bidirectional Variables sync.",
+      "Where the bundle goes. Claude Design\u2019s extracted design system stays inside Anthropic\u2019s walled garden \u2014 it powers their canvas and the handoff to Claude Code only. Layout\u2019s output is portable: tokens.css, tokens.json (W3C DTCG), CLAUDE.md, .cursor/rules, Windsurf rules, tailwind.config.js, plus an MCP server with 20 tools (compliance checking, drift detection, component lookup). It travels to every agent and every IDE the team uses. Layout also extracts from sources Claude Design doesn\u2019t \u2014 live websites via Playwright, Storybook CSF3 stories, Chrome extension capture, and a native Figma plugin with bidirectional Variables sync.",
   },
   {
     question:
@@ -288,7 +318,7 @@ const OBJECTIONS: Objection[] = [
   {
     question: "Figma Dev Mode has an MCP server now.",
     answer:
-      "Figma\u2019s MCP has 11 tools for accessing file-level design data \u2014 node trees, variables, screenshots, and Code Connect mappings. It\u2019s excellent for implementing a specific screen. Layout solves a different problem: it extracts the design system itself (tokens, components, spacing rules, anti-patterns) from Figma or any website and serves it as structured context so your AI agent can build anything on-brand \u2014 not just reproduce an existing design.",
+      "Figma\u2019s MCP has grown to roughly 25 tools for accessing file-level design data: node trees, variables, screenshots, Code Connect mappings, and design generation. It\u2019s excellent for implementing a specific screen, and it\u2019s metered: free and view seats get 6 MCP calls a month. Layout solves a different problem: it extracts the design system itself (tokens, components, spacing rules, anti-patterns) from Figma or any website into files and an unmetered local MCP server, so your AI agent can build anything on-brand, and Layout Live gates the edits that land.",
   },
   {
     question:
@@ -407,7 +437,7 @@ export default function ComparePage() {
               name: "Claude Design",
               desc: "Anthropic Labs research preview launched April 2026. Chat-surface design tool that turns prompts into prototypes, reads existing Figma files or repos to set up a design system, and exports a structured handoff bundle to Claude Code. Bundled into Pro/Max/Team subscriptions.",
               relationship:
-                "Different layer of the stack. Claude Design is a design tool competing with Figma and Canva (its own framing is \u201cvisuals for non-designers\u201d; exports go to Canva and PowerPoint). Layout is the context layer that feeds every AI coding agent \u2014 Cursor, Copilot, Windsurf, Codex, Gemini CLI, and Claude Code. Claude Design\u2019s extracted design system is locked to Anthropic\u2019s surfaces; Layout\u2019s bundle is portable W3C DTCG tokens, layout.md, .cursorrules, and MCP that any agent can consume.",
+                "Different layer of the stack. Claude Design is a design tool competing with Figma and Canva (its own framing is \u201cvisuals for non-designers\u201d; exports go to Canva and PowerPoint). Layout is the context layer that feeds every AI coding agent \u2014 Cursor, Copilot, Windsurf, Codex, Gemini CLI, and Claude Code. Claude Design\u2019s extracted design system is locked to Anthropic\u2019s surfaces: it builds a design system from your codebase and checks its own output, but there is no agent-agnostic export and no gating of edits made by other agents. Layout\u2019s bundle is portable W3C DTCG tokens, layout.md, .cursorrules, and MCP that any agent can consume, with Layout Live gating the edits.",
             },
             {
               name: "Paper.design",
@@ -435,7 +465,7 @@ export default function ComparePage() {
             },
             {
               name: "Figma Dev Mode",
-              desc: "Native Figma developer experience with inspect, code snippets, and an 11-tool MCP server with read and write access.",
+              desc: "Native Figma developer experience with inspect, code snippets, and an MCP server that has grown to roughly 25 tools with read and write access.",
               relationship:
                 "Partial overlap \u2014 Figma MCP serves raw file data. Layout serves structured, LLM-optimised design system context.",
             },
@@ -526,9 +556,12 @@ export default function ComparePage() {
           token-awareness, but it edits inside Cursor&rsquo;s own browser, applies
           changes through its agent, and has no compliance score. Onlook pivoted
           to a cloud sandbox; stagewise pipes context to an AI that does the
-          writing; Figma Make opens a pull request. Layout Live is the only one
-          that rewrites your real source deterministically, on your own dev
-          server, gated to your design tokens.
+          writing; Figma Make opens a pull request. Figma Make can now edit a
+          local codebase too, but every edit is AI-mediated and metered, the
+          beta is Mac-only, sync is one-way, and it has no design-token
+          awareness. Layout Live is the only one that rewrites your real source
+          deterministically, on your own dev server, gated to your design
+          tokens.
         </p>
       </section>
 
@@ -592,11 +625,12 @@ export default function ComparePage() {
           The bottom line
         </h3>
         <p className="text-sm text-gray-600 leading-relaxed">
-          Layout is infrastructure, not a canvas. It sits between your design
-          system (in Figma or on a live website) and your AI coding agent (in
-          Claude Code, Cursor, Windsurf, Copilot, Codex, or Gemini CLI). Your designers stay in
-          Figma. Your developers stay in their terminal. Layout is invisible
-          between them.
+          Layout is infrastructure that enforces your design system in any
+          agent. It extracts the system from Figma or a live website, serves it
+          unmetered to Claude Code, Cursor, Windsurf, Copilot, Codex and Gemini
+          CLI, and gates every edit to your tokens with Layout Live. Designers
+          stay in Figma. Developers stay in their terminal. Layout is the
+          enforcement layer between them.
         </p>
       </section>
 

@@ -464,7 +464,7 @@ export default function ApiReferencePage() {
       <div className="space-y-4">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">API Reference</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Layout CLI exposes 14 MCP tools that AI agents call automatically during
+          Layout CLI exposes 20 MCP tools that AI agents call automatically during
           development. These tools give your agent structured access to design
           tokens, component specs, compliance checking, live preview, and a
           two-way Figma bridge: everything needed to build UI that stays on
