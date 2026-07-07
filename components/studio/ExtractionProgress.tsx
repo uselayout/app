@@ -18,8 +18,10 @@ interface ExtractionProgressProps {
   warnings?: string[];
   /** Called when extraction is complete and user picks "Open Editor" (or auto-advance fires) */
   onOpenEditor?: () => void;
-  /** Called when extraction is complete and user picks "Explore the Canvas" */
+  /** Called when extraction is complete and user picks "Explore designs" */
   onOpenCanvas?: () => void;
+  /** Called when extraction is complete and user picks "Serve to your agent" */
+  onServeToAgent?: () => void;
 }
 
 function StepIcon({ status }: { status: ExtractionStepStatus }) {
@@ -110,9 +112,11 @@ const AUTO_ADVANCE_SECONDS = 8;
 function WhatsNextScreen({
   onOpenEditor,
   onOpenCanvas,
+  onServeToAgent,
 }: {
   onOpenEditor: () => void;
   onOpenCanvas: () => void;
+  onServeToAgent: () => void;
 }) {
   const [countdown, setCountdown] = useState(AUTO_ADVANCE_SECONDS);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -148,6 +152,11 @@ function WhatsNextScreen({
     onOpenCanvas();
   }
 
+  function handleServeToAgent() {
+    if (timerRef.current) clearInterval(timerRef.current);
+    onServeToAgent();
+  }
+
   return (
     <div className="flex flex-col items-center py-4">
       <CheckCircle2
@@ -158,7 +167,7 @@ function WhatsNextScreen({
         Your layout.md is ready
       </h2>
       <p className="text-sm text-[var(--text-secondary)] text-center mt-2 mb-8">
-        Generate on-brand components using your extracted design system
+        Serve it to your agent so every edit follows your design system
       </p>
       <div className="flex items-center gap-3">
         <button
@@ -168,12 +177,18 @@ function WhatsNextScreen({
           Open Editor
         </button>
         <button
-          onClick={handleOpenCanvas}
+          onClick={handleServeToAgent}
           className="bg-[var(--studio-accent)] hover:bg-[var(--studio-accent-hover)] text-[var(--text-on-accent)] text-sm px-5 py-2 rounded-lg font-medium transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)]"
         >
-          Explore Designs →
+          Serve to your agent →
         </button>
       </div>
+      <button
+        onClick={handleOpenCanvas}
+        className="mt-4 text-xs text-[var(--text-secondary)] underline underline-offset-2 transition-all duration-[var(--duration-base)] ease-[cubic-bezier(0,0,0.2,1)] hover:text-[var(--text-primary)]"
+      >
+        Explore designs
+      </button>
       <p className="text-[var(--text-muted)] text-xs text-center mt-4">
         Opening editor in {countdown}s…
       </p>
@@ -193,6 +208,7 @@ export function ExtractionProgress({
   warnings,
   onOpenEditor,
   onOpenCanvas,
+  onServeToAgent,
 }: ExtractionProgressProps) {
   const startTimeRef = useRef(Date.now());
   const [elapsed, setElapsed] = useState(0);
@@ -221,6 +237,7 @@ export function ExtractionProgress({
           <WhatsNextScreen
             onOpenEditor={onOpenEditor ?? (() => {})}
             onOpenCanvas={onOpenCanvas ?? (() => {})}
+            onServeToAgent={onServeToAgent ?? onOpenEditor ?? (() => {})}
           />
         ) : (
           <>

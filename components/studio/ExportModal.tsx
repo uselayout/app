@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { X, Download, FileText, Check, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyBlock } from "@/components/shared/CopyBlock";
+import { useProjectStore } from "@/lib/store/project";
 import type { ExportFormat, Project } from "@/lib/types";
 
 interface ExportModalProps {
@@ -11,42 +12,78 @@ interface ExportModalProps {
   onClose: () => void;
 }
 
-const FORMAT_OPTIONS: { id: ExportFormat; label: string; description: string }[] = [
+interface FormatOption {
+  id: ExportFormat;
+  label: string;
+  description: string;
+  defaultSelected: boolean;
+}
+
+const AGENT_FORMAT_OPTIONS: FormatOption[] = [
   {
     id: "claude-md",
     label: "CLAUDE.md",
     description: "Design system rules for Claude Code",
-  },
-  {
-    id: "cursor-rules",
-    label: ".cursor/rules",
-    description: "Design system and component rules for Cursor",
+    defaultSelected: true,
   },
   {
     id: "agents-md",
     label: "AGENTS.md",
     description: "Context for OpenAI Codex, Jules, Factory, Amp, and compatible agents",
+    defaultSelected: true,
   },
+  {
+    id: "cursor-rules",
+    label: ".cursor/rules",
+    description: "Design system and component rules for Cursor",
+    defaultSelected: true,
+  },
+  {
+    id: "design-md",
+    label: "DESIGN.md",
+    description: "Google's design.md format. Interoperable spec for design context.",
+    defaultSelected: true,
+  },
+  {
+    id: "codex-skill",
+    label: "Codex skill",
+    description: "Agent Skill folder for OpenAI Codex.",
+    defaultSelected: false,
+  },
+];
+
+const TOKEN_FORMAT_OPTIONS: FormatOption[] = [
   {
     id: "tokens-css",
     label: "tokens.css",
     description: "CSS custom properties for all tokens",
+    defaultSelected: true,
   },
   {
     id: "tokens-json",
     label: "tokens.json",
     description: "W3C DTCG format design tokens",
+    defaultSelected: true,
   },
   {
     id: "tailwind-config",
     label: "tailwind.config.js",
     description: "Tailwind CSS theme extension",
+    defaultSelected: true,
   },
 ];
 
+const FORMAT_GROUPS: { heading: string; options: FormatOption[] }[] = [
+  { heading: "Agent context formats", options: AGENT_FORMAT_OPTIONS },
+  { heading: "Token formats", options: TOKEN_FORMAT_OPTIONS },
+];
+
+const ALL_FORMAT_OPTIONS = [...AGENT_FORMAT_OPTIONS, ...TOKEN_FORMAT_OPTIONS];
+
 export function ExportModal({ project, onClose }: ExportModalProps) {
+  const updateGoldenPath = useProjectStore((s) => s.updateGoldenPath);
   const [selectedFormats, setSelectedFormats] = useState<Set<ExportFormat>>(
-    new Set(FORMAT_OPTIONS.map((f) => f.id))
+    new Set(ALL_FORMAT_OPTIONS.filter((f) => f.defaultSelected).map((f) => f.id))
   );
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadComplete, setDownloadComplete] = useState(false);
@@ -114,12 +151,14 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
       URL.revokeObjectURL(url);
       setDownloadFilename(filename);
       setDownloadComplete(true);
+      // Golden path step 1: an export has happened for this project
+      updateGoldenPath(project.id, { exported: true });
     } catch {
       // Error is visible via network tab; could add toast later
     } finally {
       setIsDownloading(false);
     }
-  }, [selectedFormats, project]);
+  }, [selectedFormats, project, updateGoldenPath]);
 
   return (
     <div
@@ -194,6 +233,23 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
                 </a>
               </div>
 
+              {/* Next: gate your edits with Layout Live */}
+              <div className="space-y-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-3">
+                <p className="text-xs font-medium text-[var(--text-primary)]">
+                  Next: gate your edits
+                </p>
+                <p className="text-[10px] text-[var(--text-muted)]">
+                  Layout Live checks every visual edit against this design system before it lands in your code.
+                </p>
+                <CopyBlock code="npx @layoutdesign/context setup-live" />
+                <a
+                  href="/live"
+                  className="inline-block text-[10px] text-[var(--text-secondary)] underline transition-colors hover:text-[var(--text-primary)]"
+                >
+                  Download Layout Live
+                </a>
+              </div>
+
               {/* Optional: Layout UI components */}
               <div className="space-y-2 rounded-lg border border-[var(--studio-border)] bg-[var(--bg-surface)] p-3">
                 <p className="text-xs font-medium text-[var(--text-primary)]">
@@ -228,49 +284,53 @@ export function ExportModal({ project, onClose }: ExportModalProps) {
         ) : (
           <>
             {/* Format list */}
-            <div className="p-5 space-y-2">
-              <p className="mb-3 text-xs text-[var(--text-secondary)]">
-                Select formats to include in your bundle:
-              </p>
-              {FORMAT_OPTIONS.map((format) => {
-                const selected = selectedFormats.has(format.id);
-                return (
-                  <button
-                    key={format.id}
-                    onClick={() => toggleFormat(format.id)}
-                    className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors ${
-                      selected
-                        ? "border-[var(--studio-accent)] bg-[var(--studio-accent-subtle)]"
-                        : "border-[var(--studio-border)] bg-[var(--bg-surface)] hover:border-[var(--studio-border-strong)]"
-                    }`}
-                  >
-                    <div
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
-                        selected
-                          ? "border-[var(--studio-accent)] bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
-                          : "border-[var(--studio-border)]"
-                      }`}
-                    >
-                      {selected && <Check className="h-3 w-3" />}
-                    </div>
-                    <FileText className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium text-[var(--text-primary)]">
-                        {format.label}
-                      </div>
-                      <div className="text-[10px] text-[var(--text-muted)]">
-                        {format.description}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="max-h-[60vh] overflow-y-auto p-5 space-y-4">
+              {FORMAT_GROUPS.map((group) => (
+                <div key={group.heading} className="space-y-2">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                    {group.heading}
+                  </p>
+                  {group.options.map((format) => {
+                    const selected = selectedFormats.has(format.id);
+                    return (
+                      <button
+                        key={format.id}
+                        onClick={() => toggleFormat(format.id)}
+                        className={`flex w-full items-center gap-3 rounded-lg border px-4 py-2.5 text-left transition-colors ${
+                          selected
+                            ? "border-[var(--studio-accent)] bg-[var(--studio-accent-subtle)]"
+                            : "border-[var(--studio-border)] bg-[var(--bg-surface)] hover:border-[var(--studio-border-strong)]"
+                        }`}
+                      >
+                        <div
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+                            selected
+                              ? "border-[var(--studio-accent)] bg-[var(--studio-accent)] text-[var(--text-on-accent)]"
+                              : "border-[var(--studio-border)]"
+                          }`}
+                        >
+                          {selected && <Check className="h-3 w-3" />}
+                        </div>
+                        <FileText className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-medium text-[var(--text-primary)]">
+                            {format.label}
+                          </div>
+                          <div className="text-[10px] text-[var(--text-muted)]">
+                            {format.description}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
 
             {/* layout.md always included note */}
             <div className="border-t border-[var(--studio-border)] px-5 py-3">
               <p className="text-[10px] text-[var(--text-muted)]">
-                layout.md is always included in the bundle.
+                layout.md is always included in the bundle. Other formats are only added when selected.
               </p>
             </div>
 

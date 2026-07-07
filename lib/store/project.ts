@@ -8,7 +8,7 @@ import { renderCoreTokensBlock } from "@/lib/layout-md/derive";
 import { splitLayoutMdIntoAuthored } from "@/lib/layout-md/split-authored";
 import { assignmentKey } from "@/lib/tokens/assignment-key";
 import { matchTokenToUnassignedRole } from "@/lib/tokens/standardise";
-import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont, ProjectStandardisation, DesignSystemSnapshot, TokenType, BrandingAsset, ContextDocument } from "@/lib/types";
+import type { Project, ExtractionResult, ExtractedToken, ExtractedTokens, ExplorationSession, SourceType, UploadedFont, ProjectStandardisation, DesignSystemSnapshot, TokenType, BrandingAsset, ContextDocument, GoldenPathState } from "@/lib/types";
 
 /**
  * Hard ceiling above which we refuse to save and surface an error instead of
@@ -236,6 +236,8 @@ interface ProjectState {
   updateTokenCount: (id: string, count: number) => void;
   updateHealthScore: (id: string, score: number) => void;
   updateIconPacks: (id: string, iconPacks: string[]) => void;
+  /** Merge a partial golden-path checklist state and persist it. */
+  updateGoldenPath: (id: string, patch: Partial<GoldenPathState>) => void;
   updateUploadedFonts: (id: string, fonts: UploadedFont[]) => void;
   updateBrandingAssets: (id: string, assets: BrandingAsset[]) => void;
   updateContextDocuments: (id: string, documents: ContextDocument[]) => void;
@@ -407,6 +409,16 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === id ? { ...p, iconPacks } : p
+      ),
+    }));
+    const project = get().projects.find((p) => p.id === id);
+    if (project) apiUpsertProject(project, (msg) => set({ saveError: msg }));
+  },
+
+  updateGoldenPath: (id, patch) => {
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === id ? { ...p, goldenPath: { ...p.goldenPath, ...patch } } : p
       ),
     }));
     const project = get().projects.find((p) => p.id === id);
@@ -821,6 +833,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
                 uploadedFonts: fresh.uploadedFonts ?? p.uploadedFonts,
                 iconPacks: p.iconPacks ?? fresh.iconPacks,
                 standardisation: p.standardisation ?? fresh.standardisation,
+                // Keep local checklist state — a save may be in-flight
+                goldenPath: p.goldenPath ?? fresh.goldenPath,
               }
             : p
         ),

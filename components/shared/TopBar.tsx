@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { RefreshCw, PanelLeft, Share2 } from "lucide-react";
+import { RefreshCw, PanelLeft, Share2, MousePointerClick } from "lucide-react";
 import type { SourceType } from "@/lib/types";
 
 interface TopBarProps {
@@ -104,6 +104,14 @@ export function TopBar({
 
       {/* Right: Actions */}
       <div className="flex flex-1 items-center justify-end gap-1.5">
+        <a
+          href="/live"
+          title="Edit your running app with gated tokens"
+          className="flex items-center gap-1.5 h-7 px-[10px] rounded-[4px] bg-[var(--studio-accent-subtle)] text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+        >
+          <MousePointerClick className="h-3.5 w-3.5" />
+          <span>Layout Live</span>
+        </a>
         {sourceType !== "manual" && (
           <button
             onClick={onReExtract}

@@ -711,6 +711,7 @@ export function VariantCard({
   const [showRefineInput, setShowRefineInput] = useState(false);
   const [refineText, setRefineText] = useState("");
   const [inspectMode, setInspectMode] = useState(false);
+  const [showComplianceDetail, setShowComplianceDetail] = useState(false);
   const [codePaneOpen, setCodePaneOpen] = useState(false);
   const [codePaneWidth, setCodePaneWidth] = useState(480);
   const [transpileErrorPos, setTranspileErrorPos] = useState<{ line: number; column: number; message: string } | null>(null);
@@ -1227,10 +1228,11 @@ export function VariantCard({
     setPreviewEntryId(undefined);
   }, []);
 
-  const healthBadge = variant.healthScore ? (() => {
+  // Compliance badge \u2014 click for rule-level detail
+  const complianceBadge = variant.healthScore ? (() => {
     const hs = variant.healthScore;
 
-    // Group issues by rule
+    // Group issues by rule for the detail popover
     const ruleGroups = new Map<string, Array<{ actual: string; expected: string; severity: string }>>();
     for (const issue of hs.issues) {
       const group = ruleGroups.get(issue.rule) ?? [];
@@ -1238,29 +1240,80 @@ export function VariantCard({
       ruleGroups.set(issue.rule, group);
     }
 
-    const ruleLines = [...ruleGroups.entries()]
-      .map(([rule, issues]) => {
-        const severity = issues.some(i => i.severity === "error") ? "\u2718" : "\u26A0";
-        return `  ${severity} ${rule} (${issues.length})`;
-      })
-      .join("\n");
-
     const passCount = hs.total >= 80 ? "Strong" : hs.total >= 50 ? "Moderate" : "Needs work";
-    const label = `Design system compliance: ${hs.total}/100 (${passCount})\n\nMetrics:\n  Token faithfulness: ${hs.tokenFaithfulness}\n  Component accuracy: ${hs.componentAccuracy}\n  Anti-pattern violations: ${hs.antiPatternViolations}${ruleGroups.size > 0 ? `\n\nIssues by rule:\n${ruleLines}` : "\n\nNo issues found \u2714"}`;
+
     return (
-      <Tip label={label} wide>
-        <span
-          className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold cursor-help ${
-            hs.total >= 80
-              ? "bg-[var(--status-success)]/20 text-[var(--status-success)]"
-              : hs.total >= 50
-                ? "bg-[var(--status-warning)]/20 text-[var(--status-warning)]"
-                : "bg-[var(--status-error)]/20 text-[var(--status-error)]"
-          }`}
-        >
-          {hs.total}
-        </span>
-      </Tip>
+      <span className="relative">
+        <Tip label={`Design system compliance: ${hs.total}/100 (${passCount}). Click for rule-level detail.`}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowComplianceDetail((prev) => !prev);
+            }}
+            className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold cursor-pointer transition-colors ${
+              hs.total >= 80
+                ? "bg-[var(--status-success)]/20 text-[var(--status-success)]"
+                : hs.total >= 50
+                  ? "bg-[var(--status-warning)]/20 text-[var(--status-warning)]"
+                  : "bg-[var(--status-error)]/20 text-[var(--status-error)]"
+            }`}
+          >
+            <span className="font-normal opacity-80">Compliance</span>
+            {hs.total}
+          </button>
+        </Tip>
+        {showComplianceDetail && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute right-0 top-full z-50 mt-1.5 w-72 rounded-lg border border-[var(--studio-border-strong)] bg-[var(--bg-elevated)] p-3 text-left"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-[var(--text-primary)]">
+                Compliance {hs.total}/100
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowComplianceDetail(false);
+                }}
+                className="rounded p-0.5 text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+              >
+                <X size={12} />
+              </button>
+            </div>
+            <div className="mt-2 space-y-0.5 text-[10px] text-[var(--text-muted)]">
+              <p>Token faithfulness: {hs.tokenFaithfulness}</p>
+              <p>Component accuracy: {hs.componentAccuracy}</p>
+              <p>Anti-pattern violations: {hs.antiPatternViolations}</p>
+            </div>
+            {ruleGroups.size > 0 ? (
+              <ul className="mt-2 space-y-1.5 border-t border-[var(--studio-border)] pt-2 max-h-56 overflow-y-auto">
+                {[...ruleGroups.entries()].map(([rule, issues]) => (
+                  <li key={rule} className="text-[10px] leading-[15px]">
+                    <span
+                      className={
+                        issues.some((i) => i.severity === "error")
+                          ? "text-[var(--status-error)]"
+                          : "text-[var(--status-warning)]"
+                      }
+                    >
+                      {issues.some((i) => i.severity === "error") ? "\u2718" : "\u26A0"} {rule}
+                      {issues.length > 1 ? ` (${issues.length})` : ""}
+                    </span>
+                    <span className="block text-[var(--text-muted)]">
+                      {issues[0]!.actual} &rarr; {issues[0]!.expected}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 border-t border-[var(--studio-border)] pt-2 text-[10px] text-[var(--status-success)]">
+                \u2714 No rule violations found
+              </p>
+            )}
+          </div>
+        )}
+      </span>
     );
   })() : null;
 
@@ -1541,7 +1594,7 @@ export function VariantCard({
                 {editHistory.length} edit{editHistory.length !== 1 ? "s" : ""}
               </span>
             )}
-            {healthBadge}
+            {complianceBadge}
           </div>
         </div>
         {variant.rationale && (

@@ -12,6 +12,7 @@ import { logEvent } from "@/lib/logging/platform-event";
 import { buildCuratedExtractedTokens } from "@/lib/tokens/curated-to-extracted";
 import { deriveLayoutMd } from "@/lib/layout-md/derive";
 import { generateDesignMd } from "@/lib/export/design-md";
+import { generateCodexSkill } from "@/lib/export/codex-skill";
 import type { Project, ExportFormat, UploadedFont, BrandingAsset, ContextDocument } from "@/lib/types";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -67,6 +68,8 @@ const RequestSchema = z.object({
       "claude-md",
       "cursor-rules",
       "agents-md",
+      "design-md",
+      "codex-skill",
       "tokens-css",
       "tokens-json",
       "tailwind-config",
@@ -105,21 +108,12 @@ export async function POST(request: NextRequest) {
   // layout.md matches what MCP and the Explorer see: fresh CORE TOKENS from
   // the curated assignments, fresh Appendix A from the extracted tokens.
   const derivedLayoutMd = deriveLayoutMd(proj);
+  // layout.md is ALWAYS included — it is the canonical format. Everything
+  // else (including the design.md companion) is opt-in via `formats`.
   zip.file("layout.md", derivedLayoutMd);
 
-  // Companion design.md for agents that follow Google's design.md spec. Same
-  // tokens, same prose, different frontmatter shape. layout.md stays canonical.
-  zip.file(
-    "design.md",
-    generateDesignMd({
-      name: proj.name,
-      layoutMd: derivedLayoutMd,
-      extractionData: proj.extractionData,
-    })
-  );
-
   for (const format of formats) {
-    addFormatToZip(zip, format, proj);
+    addFormatToZip(zip, format, proj, derivedLayoutMd);
   }
 
   // Include screenshots if available (stored as Supabase Storage URLs)
@@ -275,7 +269,12 @@ export async function POST(request: NextRequest) {
   });
 }
 
-function addFormatToZip(zip: JSZip, format: ExportFormat, project: Project) {
+function addFormatToZip(
+  zip: JSZip,
+  format: ExportFormat,
+  project: Project,
+  derivedLayoutMd: string
+) {
   switch (format) {
     case "claude-md": {
       zip.file("CLAUDE.md", generateClaudeMd(project));
@@ -283,6 +282,24 @@ function addFormatToZip(zip: JSZip, format: ExportFormat, project: Project) {
     }
     case "agents-md": {
       zip.file("AGENTS.md", generateAgentsMd(project));
+      break;
+    }
+    case "design-md": {
+      // Companion design.md for agents that follow Google's design.md spec.
+      // Same tokens, same prose, different frontmatter. layout.md stays canonical.
+      zip.file(
+        "design.md",
+        generateDesignMd({
+          name: project.name,
+          layoutMd: derivedLayoutMd,
+          extractionData: project.extractionData,
+        })
+      );
+      break;
+    }
+    case "codex-skill": {
+      const skill = generateCodexSkill(project);
+      zip.file(skill.path, skill.content);
       break;
     }
     case "cursor-rules": {
