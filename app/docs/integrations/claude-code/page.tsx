@@ -39,8 +39,41 @@ export default function ClaudeCodePage() {
       </div>
 
       <div className="space-y-6">
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-[#0a0a0a]">
+            Fastest path: the CLI
+          </h2>
+          <p className="text-base text-gray-600 leading-relaxed">
+            One command registers the Layout MCP server with Claude Code (20
+            tools, including compliance checking) and writes the design system
+            managed block into{" "}
+            <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+              CLAUDE.md
+            </code>
+            , creating the file if it does not exist:
+          </p>
+          <CopyBlock
+            code="npx @layoutdesign/context install --target claude"
+            language="bash"
+          />
+          <p className="text-base text-gray-600 leading-relaxed">
+            To regenerate just the CLAUDE.md block at any time:
+          </p>
+          <CopyBlock
+            code="npx @layoutdesign/context export --format claude-md"
+            language="bash"
+          />
+          <Callout type="info">
+            Layout also ships a Claude Code <strong>plugin manifest</strong> in
+            the CLI repository (
+            <code className="font-mono text-xs">.claude-plugin/plugin.json</code>
+            ) that bundles the MCP server and the layout-md skill, for
+            installation through the Claude Code plugin system.
+          </Callout>
+        </div>
+
         <div className="space-y-3">
-          <h2 className="text-2xl font-bold text-[#0a0a0a]">Setup</h2>
+          <h2 className="text-2xl font-bold text-[#0a0a0a]">Manual setup</h2>
 
           <div className="space-y-4">
             <div className="space-y-2">

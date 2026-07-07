@@ -63,8 +63,9 @@ export default function LayoutLivePage() {
           direct-manipulation canvas. Click an element, scrub its padding, swap
           a colour for a real design token, change an icon, and the edit is
           written straight back to your source files as a Tailwind class or
-          token change. It is the <strong>use-the-system</strong> surface that
-          pairs with Studio&apos;s <strong>build-the-system</strong> surface.
+          token change. It is the <strong>enforcement</strong> surface at the
+          end of Layout&apos;s golden path: extract your design system, serve
+          it to your agent, then gate every edit to your tokens.
         </p>
         <p className="text-base text-gray-600 leading-relaxed">
           The pitch in one line: <strong>stop prompting for padding.</strong>{" "}
@@ -155,9 +156,10 @@ export default function LayoutLivePage() {
           Where Live sits in the product family
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          Layout is a five-surface product. Studio defines what
-          &ldquo;on-brand&rdquo; means; Live lets you stay on-brand while
-          polishing the actual product.
+          Layout is a five-surface product, and Live is the lead surface.
+          Studio and the extraction pipeline are the supply chain that defines
+          what &ldquo;on-brand&rdquo; means; Live is where that definition is
+          enforced on the actual product.
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -170,12 +172,16 @@ export default function LayoutLivePage() {
             <tbody className="divide-y divide-gray-100">
               {[
                 [
+                  "Live (desktop)",
+                  "Tweak your running app visually; every edit gated to your tokens; write back to source; hand off to Claude Code.",
+                ],
+                [
                   "Studio (web)",
-                  "Extract tokens from Figma/websites, refine layout.md, generate component variants in the Explorer.",
+                  "Extract tokens from Figma/websites, refine layout.md, check compliance, serve to your agent.",
                 ],
                 [
                   "CLI & MCP",
-                  "Install design context into a project; serve tools to AI agents over MCP.",
+                  "Install design context into a project; serve 20 tools to AI agents over MCP.",
                 ],
                 [
                   "Chrome Extension",
@@ -184,10 +190,6 @@ export default function LayoutLivePage() {
                 [
                   "Figma Plugin",
                   "Extract tokens; push AI-generated components back as auto-layout frames.",
-                ],
-                [
-                  "Live (desktop)",
-                  "Tweak your running app visually; write back to source; hand off to Claude Code.",
                 ],
               ].map(([surface, role]) => (
                 <tr key={surface} className="hover:bg-gray-50">

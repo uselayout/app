@@ -36,7 +36,7 @@ const capabilities = [
     icon: Columns3,
     title: "Studio",
     description:
-      "Two-mode workspace: browse extracted tokens on the left, edit layout.md in the centre with an AI edit bar, then switch to the Explorer to generate and test component variants.",
+      "Browse extracted tokens on the left, edit layout.md in the editor with an AI edit bar, check code against your design system in the Quality tab, and follow the golden-path checklist from extraction to enforcement.",
     href: "/docs/studio",
   },
   {
@@ -45,13 +45,6 @@ const capabilities = [
     description:
       "Curate raw tokens into canonical roles, upload brand logos and custom fonts, attach brand voice and copy guidelines, and manage snapshots with rollback. Or start from a blank kit if you don't have a Figma or URL source.",
     href: "/docs/design-system",
-  },
-  {
-    icon: Sparkles,
-    title: "Explorer",
-    description:
-      "Generate 2–6 component variants from a single prompt. Compare with and without design context, upload reference images, and push results to Figma as real auto-layout frames.",
-    href: "/docs/explorer",
   },
   {
     icon: Server,
@@ -64,8 +57,15 @@ const capabilities = [
     icon: MousePointerClick,
     title: "Layout Live",
     description:
-      "A desktop app that turns your running React app into a direct-manipulation canvas. Click an element, scrub padding, swap a token, and the edit writes straight back to your source as a Tailwind class. Stop prompting for padding.",
+      "A desktop app that turns your running React app into a direct-manipulation canvas. Click an element, scrub padding, swap a token, and a deterministic edit gated to your design system writes straight back to your source. Stop prompting for padding.",
     href: "/docs/live",
+  },
+  {
+    icon: Sparkles,
+    title: "Explorer",
+    description:
+      "An optional exploration utility: generate component variants from a prompt when you need them, compare output with and without design context, and push results to Figma as real auto-layout frames.",
+    href: "/docs/explorer",
   },
   {
     icon: Chrome,
@@ -78,7 +78,7 @@ const capabilities = [
     icon: Download,
     title: "Export",
     description:
-      "Download a ZIP bundle with layout.md, tokens.css, tokens.json, tailwind.config.js, AGENTS.md, Cursor rules, and custom font files. Or skip the export entirely and use MCP.",
+      "Download a ZIP bundle with layout.md, tokens.css, tokens.json, tailwind.config.js, CLAUDE.md, AGENTS.md, Cursor rules, DESIGN.md, a Codex skill, and custom font files. Or skip the export entirely and use MCP.",
     href: "#export-bundle",
   },
 ] as const;
@@ -169,7 +169,7 @@ export default function GettingStartedPage() {
             },
             {
               step: "Test",
-              desc: "Switch to the Explorer and generate a few component variants. Check the health score and aim for 80+.",
+              desc: "Paste a snippet into the Quality tab's Check code panel to validate it against your design system, or generate variants in the Explorer and aim for a health score of 80+.",
             },
             {
               step: "Iterate",
@@ -351,12 +351,17 @@ export default function GettingStartedPage() {
                   purpose: "CSS custom properties for all design tokens",
                 },
                 {
-                  file: ".cursorrules",
-                  purpose: "Cursor rules file with Quick Reference context",
+                  file: ".cursor/rules/*.mdc",
+                  purpose: "Cursor project rules (design system + components)",
                 },
                 {
-                  file: "cursor/rules/design-system.mdc",
-                  purpose: "Cursor v0.43+ MDC rules format",
+                  file: "DESIGN.md",
+                  purpose:
+                    "Google's design.md format, an interoperable design context spec",
+                },
+                {
+                  file: ".codex/skills/<kit>/SKILL.md",
+                  purpose: "Agent Skill folder for OpenAI Codex",
                 },
                 {
                   file: "tailwind.config.js",

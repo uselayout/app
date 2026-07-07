@@ -8,7 +8,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Walkthrough | Layout Docs",
   description:
-    "A complete end-to-end walkthrough of Layout, from extracting a design system to exporting a working AI kit and closing the Figma loop.",
+    "A complete end-to-end walkthrough of Layout, from extracting a design system to serving it to your AI agent and gating every edit to your tokens.",
 };
 
 export default function WalkthroughPage() {
@@ -22,10 +22,11 @@ export default function WalkthroughPage() {
           End-to-End Walkthrough
         </h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          This walkthrough covers the complete Layout workflow,
-          from pasting a URL to having your AI agent automatically generate
-          on-brand UI. Each step builds on the previous one, so read it in
-          order the first time through.
+          This walkthrough covers the complete Layout workflow: point Layout
+          at your Figma file or production site, serve the extracted design
+          system to your AI agent, and gate every edit to your tokens. Each
+          step builds on the previous one, so read it in order the first time
+          through.
         </p>
       </div>
 
@@ -295,9 +296,13 @@ export default function WalkthroughPage() {
           4. The Studio
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          After generation completes, the Studio opens with two modes: Editor
-          mode and Explore mode. All changes auto-save to browser storage with
-          a 2-second debounce. There is no Save button and no account required.
+          When extraction completes, a &quot;What&apos;s next&quot; screen offers two
+          routes: <strong>Serve to your agent</strong> (the primary path,
+          taking you straight to the connect tab and export options) and{" "}
+          <strong>Open Editor</strong>. The Studio itself opens in the editor,
+          with Explore mode available as a utility when you want to generate
+          test variants. All changes auto-save with a 2-second debounce. There
+          is no Save button.
         </p>
         <div className="space-y-4">
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
@@ -338,12 +343,13 @@ export default function WalkthroughPage() {
               </span>
             </h3>
             <p className="text-base text-gray-600 leading-relaxed">
-              The Explorer is the AI generation surface. Generate
-              multiple component variants simultaneously, compare output with
-              and without layout.md in a side-by-side comparison view, check
-              the per-variant health score, and iterate until the AI reliably
-              produces on-brand output. You can also push variants to Figma
-              directly from the canvas.
+              The Explorer is an optional utility for exploring design
+              variants when you need them. Generate component variants,
+              compare output with and without layout.md in a side-by-side
+              comparison view, check the per-variant health score, and push
+              variants to Figma directly from the canvas. It is not part of
+              the core extract-serve-gate path, but it is useful for
+              validating that your context file works.
             </p>
           </div>
         </div>
@@ -355,10 +361,28 @@ export default function WalkthroughPage() {
           5. Test Your Context
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The Explorer is the most important step before exporting. It
-          tells you whether layout.md actually improves AI output, and by how
-          much.
+          Before serving the context to your agent, two surfaces tell you
+          whether layout.md is doing its job: the compliance checker in the
+          Quality tab, and the Explorer&apos;s comparison view.
         </p>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">
+            Compliance Checker
+          </h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            The Quality tab in the Source panel includes a{" "}
+            <strong>Check code</strong> section. Paste any code snippet and it
+            is validated against four rules derived from your design system:
+            hardcoded colours, hardcoded spacing, missing token references,
+            and unknown components. This is the same rule set your AI agent
+            runs through the{" "}
+            <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+              check_compliance
+            </code>{" "}
+            MCP tool, so what passes here passes in your agent too.
+          </p>
+        </div>
 
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-[#0a0a0a]">
@@ -457,19 +481,19 @@ export default function WalkthroughPage() {
                 ],
                 [
                   "AGENTS.md",
-                  "Codex, Jules, Factory, Amp. Agents following the agents.md convention",
+                  "Codex, Copilot, Jules, Factory, Amp. Agents following the agents.md convention",
                 ],
                 [
-                  ".cursorrules",
-                  "Cursor. Legacy rules format applied across all Composer and Chat sessions",
+                  ".cursor/rules",
+                  "Cursor. Project rules applied across all Composer and Chat sessions",
                 ],
                 [
-                  "copilot-instructions.md",
-                  "GitHub Copilot. Workspace instructions file read by Copilot Chat",
+                  "DESIGN.md",
+                  "Google's design.md format. Interoperable design context spec",
                 ],
                 [
-                  ".windsurfrules",
-                  "Windsurf. Global rules applied to all Cascade sessions in the project",
+                  "Codex skill",
+                  "OpenAI Codex. Agent Skill folder with token summary and component pointers",
                 ],
                 [
                   "tokens.css",
@@ -545,8 +569,26 @@ npx @layoutdesign/context install`}
             install
           </code>{" "}
           command detects Claude Code, Cursor, Windsurf, Copilot, Codex, and Gemini CLI and writes the MCP
-          server configuration to whichever are present. No manual JSON
-          editing required.
+          server configuration to whichever are present. It also creates{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            AGENTS.md
+          </code>{" "}
+          and{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            .cursor/rules
+          </code>{" "}
+          when they do not exist yet, so agents that read static context files
+          are covered too. No manual JSON editing required. Need a specific
+          format later? The{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            export
+          </code>{" "}
+          command emits design.md, AGENTS.md, CLAUDE.md, Cursor rules, or a
+          Codex skill straight from the loaded kit. See the{" "}
+          <Link href="/docs/cli" className="text-gray-900 hover:underline">
+            CLI guide
+          </Link>
+          .
         </p>
         <Callout type="tip">
           After running{" "}
@@ -639,6 +681,30 @@ npx @layoutdesign/context install`}
                   "check_setup",
                   "Diagnoses and auto-fixes MCP setup issues (Figma transport, OAuth, plugin shadows)",
                 ],
+                [
+                  "list_ui_components",
+                  "Lists pre-built, token-contracted Layout UI components installable via the add command",
+                ],
+                [
+                  "get_selected_element",
+                  "Returns the element currently selected in Layout Live, so 'this' and 'that one' resolve to real code",
+                ],
+                [
+                  "get_recent_visual_edits",
+                  "Returns recent visual edits made in Layout Live for context before generating new code",
+                ],
+                [
+                  "get_pending_requests",
+                  "Returns change requests left in Layout Live, pinned to elements, regions, or the page",
+                ],
+                [
+                  "lock_file",
+                  "Reserves exclusive write access to a file that may also be open in Layout Live",
+                ],
+                [
+                  "unlock_file",
+                  "Releases a file lock acquired with lock_file",
+                ],
               ].map(([tool, desc]) => (
                 <tr key={tool} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap align-top pt-3.5">
@@ -652,10 +718,36 @@ npx @layoutdesign/context install`}
         </div>
       </section>
 
-      {/* Step 9: The Figma Closed Loop */}
+      {/* Step 9: Gate Your Edits with Layout Live */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
-          9. The Figma Workflow
+          9. Gate Your Edits with Layout Live
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Context gets your agent most of the way. Enforcement closes the gap.{" "}
+          <Link href="/docs/live" className="text-gray-900 hover:underline">
+            Layout Live
+          </Link>{" "}
+          is the desktop app that sits alongside your dev server: click any
+          element, edit it visually, and every change is a deterministic AST
+          edit gated to your design system tokens. No AI call, no tokens
+          burned, no off-system values. A compliance score gates each edit, and
+          the five Live MCP tools (selected element, recent edits, pending
+          requests, file locks) hand the same context to your agent so visual
+          edits and code edits stay in sync.
+        </p>
+        <Callout type="tip">
+          This is the end of the golden path: extract your design system,
+          serve it to your agent, then gate every edit to your tokens. The
+          golden-path checklist in the Studio connect tab tracks all three
+          steps per project.
+        </Callout>
+      </section>
+
+      {/* Step 10: The Figma Closed Loop */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          10. The Figma Workflow
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
           Layout bridges the gap between code and design. Preview
@@ -706,10 +798,10 @@ npx @layoutdesign/context install`}
         </Callout>
       </section>
 
-      {/* Step 10: Tips & Troubleshooting */}
+      {/* Step 11: Tips & Troubleshooting */}
       <section className="space-y-5">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">
-          10. Tips &amp; Troubleshooting
+          11. Tips &amp; Troubleshooting
         </h2>
 
         <div className="space-y-3">
@@ -843,6 +935,13 @@ npx @layoutdesign/context init --kit notion-lite`}
       <section className="space-y-3">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Next Steps</h2>
         <ul className="list-disc pl-6 space-y-2 text-gray-600">
+          <li>
+            <Link href="/docs/live" className="text-gray-900 hover:underline">
+              Layout Live
+            </Link>
+            . The desktop app that gates every visual edit to your design
+            system tokens.
+          </li>
           <li>
             <Link
               href="/docs/studio"

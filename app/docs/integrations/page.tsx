@@ -45,7 +45,7 @@ const integrations = [
     name: "OpenAI Codex",
     href: "/docs/integrations/codex",
     description:
-      "Drop AGENTS.md into your repo root. Codex reads it automatically on every task, no further setup required.",
+      "The CLI creates AGENTS.md for you, and a Codex skill export adds a structured design system reference. Codex reads both automatically on every task.",
   },
   {
     name: "Chrome Extension",

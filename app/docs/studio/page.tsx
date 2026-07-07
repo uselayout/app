@@ -7,7 +7,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Studio Guide | Layout Docs",
   description:
-    "How to use the Studio: Layout's browser-based workspace for extraction, layout.md generation, AI exploration, and exporting.",
+    "How to use the Studio: Layout's browser-based workspace for extraction, layout.md generation, compliance checking, and serving your design system to AI agents.",
 };
 
 export default function StudioPage() {
@@ -20,9 +20,9 @@ export default function StudioPage() {
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Studio</h1>
         <p className="text-base text-gray-600 leading-relaxed">
           The Studio is Layout&apos;s browser-based workspace for extracting
-          design systems, synthesising LLM-optimised context files, and
-          exploring AI-generated components. Paste a URL, get a complete AI kit
-          in under 2 minutes.
+          design systems, synthesising LLM-optimised context files, checking
+          code compliance, and serving the result to your AI agent. Paste a
+          URL, get a complete AI kit in under 2 minutes.
         </p>
       </div>
 
@@ -170,8 +170,11 @@ export default function StudioPage() {
         <p className="text-base text-gray-600 leading-relaxed">
           After extraction completes, the Studio opens a two-panel workspace
           with a mode toggle in the top bar. The Source Panel stays visible on
-          the left in both modes. The right panel switches between the Editor
-          and the Explorer.
+          the left in both modes. The right panel opens in the Editor by
+          default, with the Explorer available as a utility when you want to
+          generate test variants. The top bar also carries a{" "}
+          <strong>Layout Live</strong> chip linking to the desktop app that
+          gates visual edits to your tokens.
         </p>
 
         <div className="space-y-4">
@@ -363,8 +366,9 @@ export default function StudioPage() {
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Testing Your Design System</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The Explorer is the best way to verify that layout.md actually
-          improves AI output before exporting.
+          Two surfaces verify that layout.md actually improves AI output
+          before you serve it: the compliance checker in the Quality tab (see
+          below) and the Explorer&apos;s comparison view.
         </p>
 
         <div className="space-y-3">
@@ -385,10 +389,9 @@ export default function StudioPage() {
             token faithfulness, component accuracy, and anti-pattern violations.
             Hover the score badge to see a grouped breakdown by rule type:
             colour token usage, spacing compliance, typography, accessibility,
-            motion tokens, and more. The score runs 12 compliance checks
-            covering hardcoded values, missing interactive states, semantic HTML,
-            and accessibility attributes. Aim for 80+ before exporting to
-            production.
+            motion tokens, and more. The checks cover hardcoded values,
+            missing interactive states, semantic HTML, and accessibility
+            attributes. Aim for 80+ before exporting to production.
           </p>
         </div>
 
@@ -517,6 +520,79 @@ export default function StudioPage() {
             </div>
           ))}
         </div>
+
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#0a0a0a]">
+            Compliance checker (Check code)
+          </h3>
+          <p className="text-base text-gray-600 leading-relaxed">
+            The Quality tab also includes a <strong>Check code</strong> section.
+            Paste any code snippet and it is validated against four rules
+            derived from your design system:
+          </p>
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                  <th className="px-4 py-3 font-semibold text-[#0a0a0a]">Rule</th>
+                  <th className="px-4 py-3 font-semibold text-[#0a0a0a]">Flags</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {[
+                  ["hardcoded-colours", "Hex, rgb(), or hsl() values that should be colour tokens"],
+                  ["hardcoded-spacing", "Raw pixel values off your spacing scale"],
+                  ["missing-token-reference", "Style values that match a token but do not reference it"],
+                  ["unknown-component", "Components that are not in your design system inventory"],
+                ].map(([rule, flags]) => (
+                  <tr key={rule} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
+                      {rule}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{flags}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-base text-gray-600 leading-relaxed">
+            This is the same rule set your AI agent runs through the MCP{" "}
+            <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+              check_compliance
+            </code>{" "}
+            tool, so a snippet that passes here passes in your agent too.
+          </p>
+        </div>
+      </section>
+
+      {/* Golden path */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          The Golden Path Checklist
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The connect tab in the Source Panel shows a per-project golden path
+          checklist tracking the three steps that get you from extraction to
+          enforcement:
+        </p>
+        <ol className="space-y-3 text-base text-gray-600 leading-relaxed list-none pl-0">
+          {[
+            "Export or connect your agent. Ticks automatically when you export a bundle or connect via API key",
+            "Install the CLI in your repo, so your agent gets the 20 MCP tools",
+            "Gate your edits with Layout Live, so every visual change lands on-token",
+          ].map((step, i) => (
+            <li key={step} className="flex items-start gap-4">
+              <span className="shrink-0 mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-gray-800 text-white text-sm font-bold">
+                {i + 1}
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The checklist persists per project and can be dismissed once
+          you&apos;re set up.
+        </p>
       </section>
 
       {/* Theme preference */}
@@ -593,6 +669,8 @@ export default function StudioPage() {
                 ["CLAUDE.md", "CLAUDE.md-section.md", "Persistent context in Claude Code projects"],
                 ["AGENTS.md", "AGENTS.md", "Codex, Jules, Factory, Amp. Any agent following agents.md spec"],
                 ["Cursor Rules", ".cursor/rules/design-system.mdc", "Auto-applied rules in Cursor 0.43+"],
+                ["DESIGN.md", "DESIGN.md", "Google's design.md format. Interoperable design context spec"],
+                ["Codex skill", ".codex/skills/<kit>/SKILL.md", "Agent Skill folder for OpenAI Codex"],
                 ["CSS Tokens", "tokens.css", "Import directly into any stylesheet"],
                 ["JSON Tokens", "tokens.json", "W3C DTCG format for Style Dictionary, Theo, etc."],
                 ["Tailwind Config", "tailwind.config.js", "Theme extension with extracted colours, spacing, radii"],
@@ -654,7 +732,13 @@ export default function StudioPage() {
             >
               Cursor integration
             </Link>{" "}
-            to set up .cursorrules or MDC rules files.
+            to set up .cursor/rules and the MCP server.
+          </li>
+          <li>
+            <Link href="/docs/live" className="text-gray-900 hover:underline">
+              Layout Live
+            </Link>{" "}
+            to gate every visual edit to your design system tokens.
           </li>
         </ul>
       </section>

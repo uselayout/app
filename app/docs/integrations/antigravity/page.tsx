@@ -94,8 +94,8 @@ export default function AntigravityPage() {
         <div className="space-y-3">
           <h2 className="text-2xl font-bold text-[#0a0a0a]">What you get</h2>
           <p className="text-base text-gray-600 leading-relaxed">
-            Once connected, Antigravity agents have access to all Layout MCP
-            tools:
+            Once connected, Antigravity agents have access to all 20 Layout
+            MCP tools, including:
           </p>
           <ul className="list-disc pl-6 space-y-1 text-gray-600">
             <li>
@@ -137,7 +137,25 @@ export default function AntigravityPage() {
             <li>
               <strong>check_setup</strong> — diagnose and fix MCP setup issues
             </li>
+            <li>
+              <strong>scan_project</strong>: detect React components and Storybook stories in the repo
+            </li>
+            <li>
+              <strong>list_ui_components</strong>: the installable Layout UI component catalogue
+            </li>
+            <li>
+              <strong>get_selected_element, get_recent_visual_edits,
+              get_pending_requests, lock_file, unlock_file</strong>: the five
+              Layout Live tools for coordinating with the desktop app
+            </li>
           </ul>
+          <p className="text-base text-gray-600 leading-relaxed">
+            See the{" "}
+            <Link href="/docs/api-reference" className="text-gray-900 hover:underline">
+              API reference
+            </Link>{" "}
+            for the full list.
+          </p>
         </div>
 
         <div className="space-y-3">

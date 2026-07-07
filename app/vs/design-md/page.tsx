@@ -101,7 +101,7 @@ const BETTER_GOOGLE = [
   {
     title: "Formal published spec",
     body:
-      "Google shipped a clean docs/spec.md. Layout's spec lives inside a synthesise.ts system prompt today, which is fine for generation and weak for SEO. We're publishing a formal spec.",
+      "Google shipped a clean docs/spec.md. Layout's spec is now published at layout.design/spec, covering every section of layout.md.",
   },
   {
     title: "Distribution via awesome-design-md",
@@ -114,9 +114,13 @@ const ADOPTING = [
   "layout lint — CLI linter with the same seven rules plus a contrast-ratio annotator",
   "layout diff — version-to-version token diffing with CI-friendly JSON output",
   "layout import --from tokens.json — fully interoperable with DTCG",
-  "Formal spec page at layout.design/spec",
   "uselayout/awesome-layout-md — curated public kit index",
-  "Companion design.md in the export bundle so agents trained on Google's format pick us up too",
+];
+
+const SHIPPED_INTEROP = [
+  "Formal spec page at layout.design/spec",
+  "DESIGN.md as a selectable format in the Studio export bundle, so agents trained on Google's format pick us up too",
+  "npx @layoutdesign/context export --format design-md: emit DESIGN.md straight from a loaded kit",
 ];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -247,6 +251,17 @@ export default function VsDesignMdPage() {
 
       <section className="pb-24">
         <div className="max-w-[900px] mx-auto px-6">
+          <Section title="Interop we have already shipped">
+            <ul className="flex flex-col gap-2 text-[14px] leading-[22px] text-[var(--mkt-text-secondary)]">
+              {SHIPPED_INTEROP.map((s) => (
+                <li key={s} className="flex gap-3">
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--mkt-accent)]" />
+                  <span>{s}</span>
+                </li>
+              ))}
+            </ul>
+          </Section>
+          <div className="h-10" />
           <Section title="What we are adopting from them">
             <ul className="flex flex-col gap-2 text-[14px] leading-[22px] text-[var(--mkt-text-secondary)]">
               {ADOPTING.map((s) => (

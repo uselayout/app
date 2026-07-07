@@ -7,7 +7,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "Explorer | Layout Docs",
   description:
-    "AI-powered design exploration tool for generating multiple component variants from a single prompt, with image upload, refinement, and team review workflows.",
+    "An optional AI design exploration utility in the Studio. Generate component variants from a prompt when you need them, with image upload, refinement, and team review workflows.",
 };
 
 export default function ExplorerPage() {
@@ -19,11 +19,14 @@ export default function ExplorerPage() {
       <div className="space-y-3">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Explorer</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          The Explorer is an AI-powered design exploration tool built into
-          the Studio. Enter a prompt, set how many variants to generate, and
-          the AI produces multiple component options using your extracted design
-          tokens, all in a single pass. Use it to explore directions quickly
-          before committing to an implementation.
+          The Explorer is an optional design exploration utility built into
+          the Studio. The core Layout workflow is extract, serve, gate: your
+          agent does the generating, and Layout enforces the tokens. But when
+          you want to explore directions before committing to an
+          implementation, or prove that layout.md improves output, switch to
+          Explore mode: enter a prompt, set how many variants to generate, and
+          the AI produces multiple component options using your extracted
+          design tokens in a single pass.
         </p>
       </div>
 

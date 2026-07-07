@@ -112,6 +112,18 @@ export default function CliPage() {
           </Link>{" "}
           page for the full flag reference and the equivalent stock shadcn CLI command.
         </p>
+        <p className="text-base text-gray-600 leading-relaxed">
+          Kits from the{" "}
+          <Link href="/docs/kit-gallery" className="text-gray-900 hover:underline">
+            Kit Gallery
+          </Link>{" "}
+          publish shadcn-compatible registries too, so any kit with a
+          registry enabled installs with the stock shadcn CLI:{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            npx shadcn add &lt;registry-url&gt;
+          </code>
+          .
+        </p>
       </section>
 
       {/* Importing from Studio */}
@@ -169,7 +181,18 @@ export default function CliPage() {
           language="bash"
         />
         <p className="text-base text-gray-600 leading-relaxed">
-          This detects Claude Code, Cursor, Windsurf, Copilot, Codex, and Gemini CLI and configures whichever are present. To target a specific tool:
+          This detects Claude Code, Cursor, Windsurf, Copilot, Codex, and Gemini CLI and configures whichever are present. It also{" "}
+          <strong>creates</strong>{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            AGENTS.md
+          </code>{" "}
+          and{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            .cursor/rules
+          </code>{" "}
+          when they do not exist yet (previously it only augmented existing
+          files), so agents that read static context files get your design
+          system from the first prompt. To target a specific tool:
         </p>
         <CopyBlock
           code={`npx @layoutdesign/context install --target claude
@@ -197,6 +220,64 @@ npx @layoutdesign/context install --target gemini`}
             Gallery → Live round trip
           </Link>
           .
+        </Callout>
+      </section>
+
+      {/* Export formats */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">Exporting Agent Context Files</h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            export
+          </code>{" "}
+          command (v0.18.0+) writes agent context files straight from the
+          loaded{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            .layout/
+          </code>{" "}
+          kit, no Studio round trip required:
+        </p>
+        <CopyBlock
+          code={`npx @layoutdesign/context export --format design-md
+npx @layoutdesign/context export --format agents-md
+npx @layoutdesign/context export --format claude-md
+npx @layoutdesign/context export --format cursor
+npx @layoutdesign/context export --format codex-skill`}
+          language="bash"
+        />
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left">
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">Format</th>
+                <th className="px-4 py-3 font-semibold text-[#0a0a0a]">Writes</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {[
+                ["design-md", "DESIGN.md at the project root. Google's design.md interop format"],
+                ["agents-md", "AGENTS.md managed block. Merged into an existing file or created"],
+                ["claude-md", "CLAUDE.md managed block. Merged into an existing file or created"],
+                ["cursor", ".cursor/rules/layout.mdc"],
+                ["codex-skill", ".codex/skills/<kit-name>/SKILL.md. Agent Skill folder for OpenAI Codex"],
+              ].map(([format, writes]) => (
+                <tr key={format} className="hover:bg-gray-50 align-top">
+                  <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap pt-3.5">
+                    {format}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{writes}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Callout type="info">
+          The managed-block formats (AGENTS.md, CLAUDE.md) only touch the
+          Layout-managed section of the file, so your own instructions are
+          never overwritten. Re-run{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">export</code>{" "}
+          after changing the kit to refresh the block.
         </Callout>
       </section>
 
@@ -237,7 +318,9 @@ npx @layoutdesign/context install
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Available MCP Tools</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The MCP server exposes 20 tools your AI agent can call automatically:
+          The MCP server exposes 20 tools your AI agent can call
+          automatically: the 15 core tools below, plus the five Layout Live
+          tools covered in the next section.
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -305,6 +388,10 @@ npx @layoutdesign/context install
                   "scan_project",
                   "Scans the project directory for React components and Storybook stories. Returns component names, file paths, props, import paths, and story associations. Auto-runs on MCP server startup.",
                 ],
+                [
+                  "list_ui_components",
+                  "Lists the pre-built, token-contracted Layout UI components installable via the add command, so agents reuse them instead of hand-rolling primitives",
+                ],
               ].map(([tool, desc]) => (
                 <tr key={tool} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap align-top pt-3.5">
@@ -324,18 +411,18 @@ npx @layoutdesign/context install
           Layout Live Tools
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          When you run{" "}
-          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
-            install --live
-          </code>{" "}
-          and have the{" "}
+          Five of the 20 tools connect your agent to the{" "}
           <Link href="/docs/live" className="text-gray-900 hover:underline">
             Layout Live
           </Link>{" "}
-          desktop app open, the MCP server exposes five more tools so your AI
-          agent always knows what you&apos;re tweaking visually. When Live
-          isn&apos;t running they return a clean &ldquo;not running&rdquo;
-          response, so they never break a session.
+          desktop app, so your AI agent always knows what you&apos;re tweaking
+          visually. Run{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">
+            install --live
+          </code>{" "}
+          to prepare the project. When Live isn&apos;t running they return a
+          clean &ldquo;not running&rdquo; response, so they never break a
+          session.
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -739,7 +826,7 @@ npx @layoutdesign/context init --kit notion-lite`}
             >
               Cursor
             </Link>
-            : .cursorrules or MDC rules for Composer and Chat
+            : .cursor/rules MDC rules for Composer and Chat
           </li>
           <li>
             <Link
