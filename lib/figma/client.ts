@@ -2,6 +2,26 @@ const FIGMA_API_BASE = "https://api.figma.com/v1";
 const MIN_REQUEST_DELAY_MS = 100;
 const MAX_RETRIES = 3;
 const BATCH_SIZE = 50;
+/**
+ * Longest we are willing to sleep for a single 429 retry. Figma's plan/seat
+ * rate limits (Nov 2025) can return Retry-After values of hours or days;
+ * honouring those inside a request would hang the extraction stream, so
+ * anything above the cap is surfaced to the user as an error instead.
+ */
+const MAX_RETRY_AFTER_MS = 30_000;
+
+/**
+ * Parse a Retry-After header: either delta-seconds ("120") or an HTTP-date.
+ * Returns the wait in milliseconds, or null when absent/unparseable.
+ */
+export function parseRetryAfterMs(headerValue: string | null): number | null {
+  if (!headerValue) return null;
+  const trimmed = headerValue.trim();
+  if (/^\d+$/.test(trimmed)) return parseInt(trimmed, 10) * 1000;
+  const date = Date.parse(trimmed);
+  if (!Number.isNaN(date)) return Math.max(0, date - Date.now());
+  return null;
+}
 
 interface FigmaClientOptions {
   accessToken: string;
@@ -40,9 +60,24 @@ export class FigmaClient {
       });
 
       if (response.status === 429) {
+        const retryAfterMs = parseRetryAfterMs(response.headers.get("Retry-After"));
+
+        // Figma's plan-based limits can ask us to wait hours or days.
+        // Sleeping that long inside a request is worse than failing, so
+        // surface a clear error the extraction UI can show.
+        if (retryAfterMs !== null && retryAfterMs > MAX_RETRY_AFTER_MS) {
+          throw new FigmaApiError(
+            `Figma rate limit reached. Figma asked us to retry in ${formatWait(retryAfterMs)}, which is longer than an extraction can wait. Try again later, or use a token from a plan with higher API limits.`,
+            429
+          );
+        }
+
+        // Honour Retry-After when present (never below our own backoff);
+        // otherwise fall back to exponential backoff with jitter.
         const backoff = Math.pow(2, attempt) * 1000 + Math.random() * 500;
-        this.onProgress(`Rate limited, retrying in ${Math.round(backoff / 1000)}s...`);
-        await new Promise((resolve) => setTimeout(resolve, backoff));
+        const waitMs = Math.max(retryAfterMs ?? 0, backoff);
+        this.onProgress(`Rate limited, retrying in ${Math.round(waitMs / 1000)}s...`);
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
         continue;
       }
 
@@ -67,7 +102,10 @@ export class FigmaClient {
       }
     }
 
-    throw new FigmaApiError("Max retries exceeded", 429);
+    throw new FigmaApiError(
+      "Figma rate limit reached and retries were exhausted. Wait a few minutes and try again.",
+      429
+    );
   }
 
   async getFile(fileKey: string, depth?: number): Promise<FigmaFileResponse> {
@@ -168,6 +206,15 @@ export class FigmaClient {
       return null;
     }
   }
+}
+
+function formatWait(ms: number): string {
+  const minutes = Math.ceil(ms / 60_000);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+  const hours = Math.ceil(minutes / 60);
+  if (hours < 48) return `${hours} hour${hours === 1 ? "" : "s"}`;
+  const days = Math.ceil(hours / 24);
+  return `${days} days`;
 }
 
 export class FigmaApiError extends Error {
