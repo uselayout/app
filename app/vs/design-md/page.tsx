@@ -46,9 +46,14 @@ const BETTER_LAYOUT = [
       "Light and dark tokens co-exist in Layout's layout.md, tokens.json ($extensions.mode), tokens.css ([data-theme=\"dark\"]), and Tailwind config (darkMode). In design.md this is still open issue #13.",
   },
   {
-    title: "14-tool MCP server",
+    title: "20-tool MCP server",
     body:
       "get-design-system, get-tokens, get-component, check-compliance, preview, push-to-figma, design-in-figma, url-to-figma, update-tokens, scan-project, check-setup, and more. Works in Claude Code, Cursor, Windsurf, Copilot. design.md distributes through Google's Agent Skills standard only.",
+  },
+  {
+    title: "MCP beats a static file in production",
+    body:
+      "Atlassian's own testing of portable design context found a static DESIGN.md consumed 92% more tokens (7.21M vs 3.75M) with 2.7x more run variance than their MCP server plus skills approach. Layout serves your design system through exactly that kind of MCP server, with the static files as a portable fallback rather than the delivery mechanism.",
   },
   {
     title: "Live preview + AI variant generation",
@@ -187,7 +192,7 @@ export default function VsDesignMdPage() {
         <div className="max-w-[900px] mx-auto px-6">
           <p className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)] mb-3">TL;DR</p>
           <p className="text-[20px] leading-[30px] text-[var(--mkt-text-primary)]">
-            design.md is a well-crafted <em>format</em>. Layout is the <em>product</em> around a superset of it — with multi-source extraction, bidirectional Figma sync, a 14-tool MCP server, an AI variant generator, a Kit Gallery, and full interoperability with Google&apos;s format through a companion export and matching DTCG tokens.
+            design.md is a well-crafted <em>format</em>. Layout is the <em>product</em> around a superset of it — with multi-source extraction, bidirectional Figma sync, a 20-tool MCP server, an AI variant generator, a Kit Gallery, and full interoperability with Google&apos;s format through a companion export and matching DTCG tokens.
           </p>
         </div>
       </section>
@@ -213,6 +218,19 @@ export default function VsDesignMdPage() {
             {BETTER_LAYOUT.map((row) => (
               <Row key={row.title} {...row} />
             ))}
+            <p className="text-[13px] leading-[20px] text-[var(--mkt-text-muted)]">
+              Benchmark source:{" "}
+              <a
+                href="https://www.atlassian.com/blog/how-we-build/atlassians-design-md-is-here-what-we-learned-testing-portable-design-context-in-practice"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-white"
+              >
+                Atlassian, &ldquo;What we learned testing portable design
+                context in practice&rdquo;
+              </a>
+              .
+            </p>
           </Section>
         </div>
       </section>

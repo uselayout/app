@@ -1,8 +1,8 @@
 # Layout
 
-> The compiler between design systems and AI coding agents.
+> Your design system, enforced in every AI agent.
 
-Layout extracts design systems from Figma files and live websites, then generates structured, LLM-optimised context bundles (layout.md) that help AI coding agents produce on-brand UI code consistently.
+Layout extracts design systems from Figma files and live websites, serves them to AI coding agents as structured context (layout.md) through an unmetered local MCP server, and gates every AI edit to on-token values with Layout Live. Context is solved. Enforcement is the product.
 
 ## Key Features
 

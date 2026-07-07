@@ -27,7 +27,7 @@ export function wrapBroadcastHtml(bodyHtml: string, unsubscribeUrl?: string): st
           </tr>
         </table>
         <p style="margin:24px 0 0;font-size:11px;color:rgba(237,237,244,0.3);">
-          Layout &ndash; The compiler between design systems and AI coding agents.<br />
+          Layout &ndash; Your design system, enforced in every AI agent.<br />
           You received this because you signed up for Layout.${unsubscribeUrl ? `<br /><a href="${unsubscribeUrl}" style="color:rgba(237,237,244,0.35);text-decoration:underline;">Unsubscribe</a>` : ""}
         </p>
       </td>

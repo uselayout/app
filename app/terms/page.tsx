@@ -5,7 +5,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Terms of Service | Layout",
   description:
-    "Terms of Service for Layout — the compiler between design systems and AI coding agents.",
+    "Terms of Service for Layout: your design system, enforced in every AI agent.",
 };
 
 export default function TermsPage() {

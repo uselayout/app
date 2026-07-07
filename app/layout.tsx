@@ -26,11 +26,11 @@ export const metadata: Metadata = {
     template: "%s | Layout",
   },
   description:
-    "Extract your design system from Figma or any website. Layout generates structured context bundles that make Claude Code, Cursor, and Codex build on-brand UI automatically.",
+    "Extract your design system from Figma or any live website, serve it to Claude Code, Cursor, Copilot and Codex, and gate every AI edit to your tokens. Unmetered, agent-agnostic, open source.",
   openGraph: {
-    title: "Layout — The compiler between design systems and AI coding agents",
+    title: "Layout — Your design system, enforced in every AI agent",
     description:
-      "Extract your design system from Figma or any website. Layout generates structured context bundles that make Claude Code, Cursor, and Codex build on-brand UI automatically.",
+      "Extract your design system from Figma or any live website, serve it to Claude Code, Cursor, Copilot and Codex, and gate every AI edit to your tokens. Unmetered, agent-agnostic, open source.",
     siteName: "Layout",
     locale: "en_GB",
     type: "website",
@@ -75,7 +75,7 @@ export default function RootLayout({
                   applicationCategory: "DeveloperApplication",
                   operatingSystem: "Web",
                   description:
-                    "Extract design systems from Figma and websites. Generate LLM-optimised context bundles for AI coding agents.",
+                    "Extract your design system from Figma or any live website, serve it to AI coding agents unmetered, and gate every AI edit to your tokens.",
                   offers: {
                     "@type": "Offer",
                     price: "0",

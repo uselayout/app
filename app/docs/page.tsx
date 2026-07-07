@@ -21,7 +21,7 @@ import { getAdjacentPages } from "@/lib/docs/navigation";
 export const metadata: Metadata = {
   title: "What is Layout? | Layout Docs",
   description:
-    "Layout is the compiler between design systems and AI coding agents. Extract from Figma or websites, refine in a studio editor, serve to AI agents via MCP.",
+    "Layout enforces your design system in every AI coding agent. Extract from Figma or websites, serve to agents via MCP, and gate every edit to your tokens.",
 };
 
 const capabilities = [
@@ -57,7 +57,7 @@ const capabilities = [
     icon: Server,
     title: "CLI & MCP Server",
     description:
-      "Run npx @layoutdesign/context install and your AI agent gets 14 MCP tools — fetch design tokens, check compliance, preview components, and push to Figma. Works with Claude Code, Cursor, Copilot, Antigravity, and Windsurf. Three free starter kits bundled.",
+      "Run npx @layoutdesign/context install and your AI agent gets 20 MCP tools — fetch design tokens, check compliance, preview components, and push to Figma. Works with Claude Code, Cursor, Copilot, Antigravity, and Windsurf. Three free starter kits bundled.",
     href: "/docs/cli",
   },
   {
@@ -92,12 +92,12 @@ export default function GettingStartedPage() {
       <div className="space-y-3">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">What is Layout?</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Layout is the compiler between design systems and AI coding agents.
+          Layout enforces your design system in every AI coding agent.
           It extracts your tokens, components, and visual patterns from Figma
-          or a live website, lets you refine them in a studio editor with AI
-          assistance, then serves the result directly to your coding agent via
-          MCP so every component it builds is on-brand, every time.
-          Designers stay in control of the system. AI stays on-brand.
+          or a live website, serves them to your coding agent via an unmetered
+          local MCP server, and gates every AI edit to on-token values with
+          Layout Live. Designers stay in control of the system. AI is held to
+          it.
         </p>
       </div>
 

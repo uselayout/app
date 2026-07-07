@@ -45,7 +45,7 @@ export function resetPasswordEmailHtml(resetUrl: string): string {
           </tr>
         </table>
         <p style="margin:24px 0 0;font-size:11px;color:rgba(237,237,244,0.3);">
-          Layout &ndash; The compiler between design systems and AI coding agents.
+          Layout &ndash; Your design system, enforced in every AI agent.
         </p>
       </td>
     </tr>

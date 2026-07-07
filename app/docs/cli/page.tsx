@@ -237,7 +237,7 @@ npx @layoutdesign/context install
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Available MCP Tools</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The MCP server exposes 14 tools your AI agent can call automatically:
+          The MCP server exposes 20 tools your AI agent can call automatically:
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
