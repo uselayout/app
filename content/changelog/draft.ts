@@ -15,6 +15,33 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w28-serve-to-agent-flow",
+    title: "A clearer path from extraction to your agent",
+    description:
+      "After an extraction finishes, the primary action is now \"Serve to your agent\": it opens the Connect tab with the exact commands to get your design system in front of Claude Code, Cursor or Codex. The Studio also opens on the layout.md editor by default, and a small golden-path checklist in the Connect tab tracks your setup: export, install the CLI, download Layout Live, make your first gated edit.",
+    product: "studio",
+    category: "improved",
+    date: "2026-07-07",
+  },
+  {
+    id: "2026-w28-export-design-md-codex-skill",
+    title: "Export DESIGN.md and Codex skill formats",
+    description:
+      "Two new export formats join the bundle. DESIGN.md emits your design system in Google's design.md format for agents that follow that spec, and Codex skill packages it as an Agent Skill folder (.codex/skills) that OpenAI Codex loads on demand. The export dialog now groups formats into agent context and token formats, and only includes what you select. layout.md is always in the bundle.",
+    product: "studio",
+    category: "new",
+    date: "2026-07-07",
+  },
+  {
+    id: "2026-w28-compliance-in-studio",
+    title: "Check any code against your design system in Studio",
+    description:
+      "The Quality tab has a new \"Check code\" section: paste a snippet and Layout runs the same compliance rules as the CLI's check-compliance tool against your project's tokens and components, with rule-level findings and line numbers. Explorer variant scores are now labelled Compliance, and clicking the badge shows exactly which rules passed or failed.",
+    product: "studio",
+    category: "new",
+    date: "2026-07-07",
+  },
+  {
     id: "2026-w27-gallery-kit-themes",
     title: "Install any gallery kit as a ready-made UI theme",
     description:
