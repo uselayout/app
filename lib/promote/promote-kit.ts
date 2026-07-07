@@ -70,7 +70,18 @@ export async function promoteKit(opts: PromoteOptions): Promise<PromoteResult> {
     durationMs: 0,
   };
 
-  // Phase 1: import the row
+  // Phase 1: import the row.
+  // Registry/marketing flags are per-environment admin curation, and the
+  // destination's import schema is strict: exclude them so promote keeps
+  // working even while the destination runs an older schema. Admins re-flag
+  // on the destination if wanted.
+  const {
+    registryEnabled: _registryEnabled,
+    marketingFeatured: _marketingFeatured,
+    ...kitPayload
+  } = opts.kit;
+  void _registryEnabled;
+  void _marketingFeatured;
   const importUrl = `${stripTrailingSlash(opts.destAppUrl)}/api/admin/kits/import${opts.overwrite ? "?overwrite=true" : ""}`;
   const importResp = await fetch(importUrl, {
     method: "POST",
@@ -78,7 +89,7 @@ export async function promoteKit(opts: PromoteOptions): Promise<PromoteResult> {
       "Content-Type": "application/json",
       Authorization: `Bearer ${opts.destAdminApiKey}`,
     },
-    body: JSON.stringify({ kit: opts.kit }),
+    body: JSON.stringify({ kit: kitPayload }),
   });
 
   if (importResp.status === 409) {

@@ -122,6 +122,11 @@ export interface PublicKit {
   /** When true the Live Preview renders the cached Claude-generated showcase.
    * When false (default) it renders the hand-built uniform template. */
   bespokeShowcase: boolean;
+  /** Admin opt-in: serve this kit as a shadcn-compatible registry item at
+   * /api/public/kits/<slug>/registry so `npx shadcn add <url>` installs it. */
+  registryEnabled: boolean;
+  /** Admin flag: this kit is a marketing piece, featured on marketing pages. */
+  marketingFeatured: boolean;
 
   upvoteCount: number;
   importCount: number;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { capture } from '@/lib/analytics';
 
 // Instrumented download entry points: these log a `live.download` event then
 // 302 to the notarised DMG on the update host, so downloads show in the admin
@@ -16,6 +17,7 @@ function track(arch: string) {
     'Download Layout Live',
     { props: { arch } }
   );
+  capture('live_download_clicked', { placement: 'marketing-live-page', arch });
 }
 
 /**

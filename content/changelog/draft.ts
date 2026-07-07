@@ -15,6 +15,33 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w28-cli-export-agent-formats",
+    title: "Export your design system to any agent format",
+    description:
+      "The new export command turns your imported design system into the context file your agent expects: CLAUDE.md for Claude Code, AGENTS.md for Codex and compatible agents, .cursor rules for Cursor, or Google's design.md format. Fresh installs now create the right agent files for your tools automatically, so your design system is in front of your agent from the first prompt.",
+    product: "cli",
+    category: "new",
+    date: "2026-07-07",
+  },
+  {
+    id: "2026-w28-kits-shadcn-registry",
+    title: "Install kits with the shadcn CLI",
+    description:
+      "Kits can now be installed straight from the shadcn CLI. Copy one npx shadcn add command from a kit's gallery page and you get the full kit: design tokens wired into your CSS and the .layout context files that let your AI agent follow the system. No Layout account needed.",
+    product: "cli",
+    category: "new",
+    date: "2026-07-07",
+  },
+  {
+    id: "2026-w28-team-first-pricing",
+    title: "Clearer pricing built around teams",
+    description:
+      "The pricing page now leads with the Team plan: org-wide design systems, seat management and compliance reporting in one place, so it's obvious what you get when your whole team ships UI with AI agents. New FAQs spell out how Layout's unmetered local context compares with per-call alternatives, and what enforcement adds on top of context.",
+    product: "studio",
+    category: "improved",
+    date: "2026-07-07",
+  },
+  {
     id: "2026-w28-serve-to-agent-flow",
     title: "A clearer path from extraction to your agent",
     description:

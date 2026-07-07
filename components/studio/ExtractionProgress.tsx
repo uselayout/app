@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, Check, X, AlertTriangle, CheckCircle2, Info } from "lucide-react";
 import type { ExtractionStep, ExtractionStepStatus } from "@/lib/types";
+import { capture } from "@/lib/analytics";
 
 interface ExtractionProgressProps {
   sourceName: string;
@@ -154,6 +155,7 @@ function WhatsNextScreen({
 
   function handleServeToAgent() {
     if (timerRef.current) clearInterval(timerRef.current);
+    capture("whats_next_serve_clicked");
     onServeToAgent();
   }
 

@@ -20,6 +20,8 @@ interface AdminKitRow {
   unlisted: boolean;
   is_new: boolean;
   bespoke_showcase: boolean;
+  registry_enabled: boolean;
+  marketing_featured: boolean;
   status: "pending" | "approved";
   card_image_pref: "auto" | "custom" | "hero" | "preview";
   custom_card_image_url: string | null;
@@ -170,6 +172,8 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
       unlisted?: boolean;
       isNew?: boolean;
       bespokeShowcase?: boolean;
+      registryEnabled?: boolean;
+      marketingFeatured?: boolean;
       cardImagePref?: AdminKitRow["card_image_pref"];
       homepageUrl?: string | null;
     },
@@ -195,6 +199,8 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
               if (body.unlisted !== undefined) next.unlisted = body.unlisted;
               if (body.isNew !== undefined) next.is_new = body.isNew;
               if (body.bespokeShowcase !== undefined) next.bespoke_showcase = body.bespokeShowcase;
+              if (body.registryEnabled !== undefined) next.registry_enabled = body.registryEnabled;
+              if (body.marketingFeatured !== undefined) next.marketing_featured = body.marketingFeatured;
               if (body.cardImagePref !== undefined) next.card_image_pref = body.cardImagePref;
               if (body.homepageUrl !== undefined) next.homepage_url = body.homepageUrl;
               return next;
@@ -501,6 +507,32 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                         {kit.featured && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--mkt-accent)", color: "#08090a" }}>Featured</span>
                         )}
+                        {kit.registry_enabled && (
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded"
+                            style={{
+                              background: "rgba(56, 189, 248, 0.15)",
+                              color: "#7dd3fc",
+                              border: "1px solid rgba(56, 189, 248, 0.4)",
+                            }}
+                            title="Served as a shadcn registry item at /api/public/kits/<slug>/registry"
+                          >
+                            Registry
+                          </span>
+                        )}
+                        {kit.marketing_featured && (
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded"
+                            style={{
+                              background: "rgba(251, 191, 36, 0.15)",
+                              color: "#fcd34d",
+                              border: "1px solid rgba(251, 191, 36, 0.4)",
+                            }}
+                            title="Flagged as a marketing piece for marketing-page features"
+                          >
+                            Marketing
+                          </span>
+                        )}
                         {kit.hidden && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ border: "1px solid var(--studio-border)", color: "var(--text-muted)" }}>Hidden</span>
                         )}
@@ -671,6 +703,26 @@ export function KitsTab({ toast }: { toast: ToastFn }) {
                               label: kit.hidden ? "Unhide" : "Hide",
                               onClick: () => patch(kit.id, { hidden: !kit.hidden }),
                               active: kit.hidden,
+                            },
+                            {
+                              label: kit.registry_enabled
+                                ? "Disable shadcn registry"
+                                : "Enable shadcn registry",
+                              onClick: () =>
+                                patch(kit.id, { registryEnabled: !kit.registry_enabled }),
+                              active: kit.registry_enabled,
+                              hint: kit.registry_enabled
+                                ? "Stops serving the kit's registry item"
+                                : "Serve the full kit for npx shadcn add",
+                            },
+                            {
+                              label: kit.marketing_featured
+                                ? "Unmark marketing piece"
+                                : "Mark as marketing piece",
+                              onClick: () =>
+                                patch(kit.id, { marketingFeatured: !kit.marketing_featured }),
+                              active: kit.marketing_featured,
+                              hint: "Feature this kit on marketing pages",
                             },
                             {
                               label: "Delete kit",

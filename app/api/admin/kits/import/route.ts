@@ -54,6 +54,10 @@ const KitSchema = z
     unlisted: z.boolean(),
     isNew: z.boolean(),
     bespokeShowcase: z.boolean(),
+    // Optional for cross-version promotes: older senders omit these, and
+    // promote deliberately strips them (per-environment curation).
+    registryEnabled: z.boolean().optional(),
+    marketingFeatured: z.boolean().optional(),
     upvoteCount: z.number().int(),
     importCount: z.number().int(),
     viewCount: z.number().int(),
@@ -146,6 +150,14 @@ export async function POST(request: Request) {
     unlisted: kit.unlisted,
     is_new: kit.isNew,
     bespoke_showcase: kit.bespokeShowcase,
+    // Only include the registry/marketing columns when the sender set them,
+    // so imports keep working if the local migration hasn't landed yet.
+    ...(kit.registryEnabled !== undefined
+      ? { registry_enabled: kit.registryEnabled }
+      : {}),
+    ...(kit.marketingFeatured !== undefined
+      ? { marketing_featured: kit.marketingFeatured }
+      : {}),
     upvote_count: 0, // never carry upvotes across envs
     import_count: 0,
     view_count: 0,

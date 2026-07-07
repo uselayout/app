@@ -92,6 +92,8 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
   // the page is served from (staging vs production).
   const requestHost = (await headers()).get("host") ?? "layout.design";
   const themeUrl = `https://${requestHost}/r/${kit.slug}/theme.json`;
+  // Full-kit shadcn registry item (tokens + .layout/ files). Admin-gated.
+  const registryUrl = `https://${requestHost}/api/public/kits/${kit.slug}/registry`;
 
   const session = await auth.api.getSession({ headers: await headers() });
   const isLoggedIn = !!session?.user?.id;
@@ -240,6 +242,33 @@ export default async function KitDetailPage({ params, searchParams }: PageProps)
                     </Link>
                   </div>
                 </div>
+
+                {/* Track: shadcn registry (only when an admin has enabled it) */}
+                {kit.registryEnabled && (
+                  <div className="flex flex-col gap-3 p-5 sm:flex-1">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--mkt-text-muted)]">Install with shadcn</span>
+                      <span className="text-[13px] text-[var(--mkt-text-secondary)] leading-snug">
+                        Add the full kit (tokens and .layout/ context files) with the shadcn CLI.
+                      </span>
+                    </div>
+                    <CopyInline
+                      value={`npx shadcn add ${registryUrl}`}
+                      label="Copy shadcn install command"
+                    />
+                    <div className="mt-auto">
+                      <a
+                        href={registryUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[12px] text-[var(--mkt-text-secondary)] hover:text-[var(--mkt-text-primary)] transition-colors"
+                      >
+                        View registry item
+                        <span aria-hidden>↗</span>
+                      </a>
+                    </div>
+                  </div>
+                )}
 
                 {/* Track 3 — UI theme (only when a style profile exists to compile) */}
                 {kit.styleProfile && (
