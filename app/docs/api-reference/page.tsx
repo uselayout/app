@@ -100,18 +100,12 @@ const components = await mcp.call("list_components");
   {
     name: "check_compliance",
     description:
-      "Validates a code snippet against the design system rules defined in the Anti-Patterns section of layout.md. Returns a compliance score, a list of violations with line references, and suggested fixes. Run this before submitting any UI code. Runs 12 rules covering colours, spacing, typography, accessibility, and motion.",
+      "Validates a code snippet against the active design system's rules and tokens. Returns a list of compliance issues, each with a rule ID, severity, line reference, and message. Run this before submitting any UI code. Runs four rules: hardcoded-colours, hardcoded-spacing, missing-token-reference, and unknown-component. The same rule set powers the Check code panel in the Studio Quality tab.",
     parameters: [
       {
         name: "code",
         type: "string",
-        description: "The TSX or CSS code snippet to validate.",
-      },
-      {
-        name: "rules",
-        type: "string[] (optional)",
-        description:
-          "Specific rule IDs to check against. Omit to run all rules. Available rules: no-hardcoded-colours, use-design-tokens, no-hardcoded-spacing, no-unknown-components, spacing-compliance, font-family-compliance, border-radius-compliance, interactive-state-coverage, accessibility-alt-text, accessibility-button-label, semantic-html, motion-token-compliance.",
+        description: "The UI code snippet to check for design system compliance.",
       },
     ],
     example: `const result = await mcp.call("check_compliance", {
@@ -125,13 +119,9 @@ const components = await mcp.call("list_components");
 });
 
 // Returns:
-// {
-//   score: 42,
-//   violations: [
-//     { rule: "no-hardcoded-colours", line: 2, fix: "Use var(--color-primary) instead of #6366f1" },
-//     { rule: "use-design-tokens", line: 3, fix: "Replace bg-blue-500 with bg-[var(--color-primary)]" }
-//   ]
-// }`,
+// # Compliance Check: 2 issues found
+// - [WARNING] hardcoded-colours (line 2): Hardcoded colour "#6366f1", consider using a design token instead
+// - [WARNING] missing-token-reference (line 3): Token is not defined in the kit's tokens`,
   },
   {
     name: "preview",
@@ -424,6 +414,121 @@ const fixed = await mcp.call("check_setup", {
   fix: true
 });`,
   },
+  {
+    name: "list_ui_components",
+    description:
+      "Lists the pre-built, token-contracted Layout UI components installable into the project. Use before writing UI primitives from scratch. Returns each component's name, title, description, an install command, and, where available, usage guidance and hard 'never' rules.",
+    parameters: [],
+    example: `const catalogue = await mcp.call("list_ui_components");
+
+// Returns entries like:
+// { name: "button", title: "Button",
+//   install: "npx @layoutdesign/context add button", ... }`,
+  },
+  {
+    name: "get_selected_element",
+    description:
+      "Returns the element currently selected in the Layout Live desktop app: file, line, column, component name, class list, and inner text. Lets the agent resolve 'this' or 'that one' to a real source location. Returns { running: false } if Live is not running.",
+    parameters: [],
+    example: `const selection = await mcp.call("get_selected_element");
+
+// Returns:
+// { selected: true, file: "src/components/Hero.tsx",
+//   line: 42, component: "Hero", classList: "..." }`,
+  },
+  {
+    name: "get_recent_visual_edits",
+    description:
+      "Returns recent visual edits the user made in Layout Live, so the agent builds on their tweaks instead of reverting them. Reads the on-disk edit log, so it works even when Live is closed.",
+    parameters: [
+      {
+        name: "limit",
+        type: "number (optional)",
+        description: "Maximum number of edits to return, most recent first. Defaults to 20, max 100.",
+      },
+      {
+        name: "since",
+        type: "string (optional)",
+        description: "Only return edits with an ISO-8601 timestamp at or after this.",
+      },
+      {
+        name: "file",
+        type: "string (optional)",
+        description: "Filter to edits in this file.",
+      },
+    ],
+    example: `const edits = await mcp.call("get_recent_visual_edits", {
+  limit: 10
+});`,
+  },
+  {
+    name: "get_pending_requests",
+    description:
+      "Returns the free-text change requests the user left in Layout Live, pinned to a selected element, a region, or the page. Each request includes its target location so the agent can apply targeted changes.",
+    parameters: [
+      {
+        name: "limit",
+        type: "number (optional)",
+        description: "Maximum number of requests to return, most recent first. Defaults to 50, max 200.",
+      },
+      {
+        name: "file",
+        type: "string (optional)",
+        description: "Filter to requests anchored to this file, relative to the project root.",
+      },
+      {
+        name: "includeDone",
+        type: "boolean (optional)",
+        description: "Include requests already marked done.",
+      },
+    ],
+    example: `const requests = await mcp.call("get_pending_requests");
+
+// Returns requests with targets like:
+// { text: "Make this heading smaller on mobile",
+//   target: "src/components/Hero.tsx:42" }`,
+  },
+  {
+    name: "lock_file",
+    description:
+      "Reserves exclusive write access to a file before the agent edits it, coordinating with Layout Live so the two never overwrite each other. Locks auto-expire after the TTL.",
+    parameters: [
+      {
+        name: "path",
+        type: "string",
+        description: "Path relative to the project root.",
+      },
+      {
+        name: "ttl_seconds",
+        type: "number (optional)",
+        description: "How long the lock is held before it auto-expires. Defaults to 60, max 300.",
+      },
+      {
+        name: "reason",
+        type: "string (optional)",
+        description: "Why the lock is being acquired.",
+      },
+    ],
+    example: `const lock = await mcp.call("lock_file", {
+  path: "src/components/Hero.tsx",
+  ttl_seconds: 120
+});`,
+  },
+  {
+    name: "unlock_file",
+    description:
+      "Releases a previously-acquired file lock. Pass the lock_id returned by lock_file. A non-matching or already-expired lock_id releases nothing.",
+    parameters: [
+      {
+        name: "lock_id",
+        type: "string",
+        description: "The lock_id returned by a prior lock_file call.",
+      },
+    ],
+    example: `await mcp.call("unlock_file", {
+  lock_id: lock.lock_id
+});`,
+  },
 ];
 
 const loopDiagram = `Developer prompts Claude Code / Cursor
@@ -611,9 +716,11 @@ export default function ApiReferencePage() {
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
             check_compliance
           </code>{" "}
-          tool runs 12 rules against your code. Each rule returns violations
-          with line references and suggested fixes. You can run all rules at
-          once or target specific ones by ID.
+          tool runs four rules against your code. Each rule returns issues
+          with a severity, line reference, and message. The same rule set
+          powers the Check code panel in the Studio Quality tab and Layout
+          Live&apos;s edit gating, so one definition of &quot;on-system&quot;
+          applies everywhere.
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -625,18 +732,10 @@ export default function ApiReferencePage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {[
-                ["no-hardcoded-colours", "Flags hex, rgb, and hsl colour values that should reference design tokens instead"],
-                ["use-design-tokens", "Checks that CSS properties use var(--token) references rather than raw values"],
-                ["no-hardcoded-spacing", "Flags pixel spacing values that are not on the design system's spacing scale (e.g. 4px grid)"],
-                ["no-unknown-components", "Warns when code references component names not found in the design system inventory"],
-                ["spacing-compliance", "Validates that margin, padding, and gap values match the token scale"],
-                ["font-family-compliance", "Checks that font-family declarations match the design system's typography tokens"],
-                ["border-radius-compliance", "Validates that border-radius values use the design system's radius tokens"],
-                ["interactive-state-coverage", "Checks that interactive elements have hover, focus, and disabled states defined"],
-                ["accessibility-alt-text", "Flags img elements missing alt attributes"],
-                ["accessibility-button-label", "Flags button elements without accessible text content or aria-label"],
-                ["semantic-html", "Checks for semantic element usage (e.g. nav, main, section) instead of generic divs"],
-                ["motion-token-compliance", "Validates that transitions and animations reference motion tokens for duration and easing"],
+                ["hardcoded-colours", "Flags hex, rgb(), and hsl() colour values that should reference design tokens instead"],
+                ["hardcoded-spacing", "Flags raw pixel spacing values that should use the design system's spacing tokens"],
+                ["missing-token-reference", "Flags var(--token) references to tokens that are not defined in the kit"],
+                ["unknown-component", "Warns when code references component names not found in the design system inventory"],
               ].map(([rule, desc]) => (
                 <tr key={rule} className="hover:bg-gray-50 align-top">
                   <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap pt-3.5">

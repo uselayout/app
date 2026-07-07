@@ -307,7 +307,7 @@ const OBJECTIONS: Objection[] = [
     question:
       "Paper.design has 24 MCP tools \u2014 isn\u2019t that more powerful?",
     answer:
-      "Paper is a design canvas with MCP write access \u2014 agents create and modify designs inside Paper. Layout is a design system compiler \u2014 agents consume your existing design system context to write better code in your codebase. Paper replaces Figma. Layout works with Figma. Different tools, actually complementary.",
+      "Paper is a design canvas with MCP write access \u2014 agents create and modify designs inside Paper. Layout is the enforcement layer for your design system \u2014 agents consume your design system context and are gated to your tokens when writing code in your codebase. Paper replaces Figma. Layout works with Figma. Different tools, actually complementary.",
   },
   {
     question:
@@ -369,9 +369,11 @@ export default function ComparePage() {
           Most tools below are design canvases or single-vendor coding agents
           &mdash; you generate UI inside their platform, or your design system
           context only works with one model. Layout is different: it extracts
-          your design system once and ships it as a portable bundle that
-          Cursor, Copilot, Windsurf, Codex, Gemini CLI, and Claude Code all
-          consume the same way. Model-agnostic by design.
+          your design system once, ships it as a portable bundle that Cursor,
+          Copilot, Windsurf, Codex, Gemini CLI, and Claude Code all consume
+          the same way, and then enforces it, with compliance checking in
+          every agent and Layout Live gating edits to your tokens.
+          Model-agnostic by design.
         </p>
       </div>
 
@@ -443,7 +445,7 @@ export default function ComparePage() {
               name: "Paper.design",
               desc: "Agent-first design canvas built on real HTML/CSS. 24 MCP tools with read and write access. Founded by Stephen Haney (built Radix/Modulz).",
               relationship:
-                "Complementary. Paper is a canvas, Layout is a compiler. Layout ships a Push to Paper action on Explorer variants that sends HTML/CSS straight onto a Paper artboard via Paper\u2019s MCP.",
+                "Complementary. Paper is a canvas, Layout is the enforcement layer. Layout ships a Push to Paper action on Explorer variants that sends HTML/CSS straight onto a Paper artboard via Paper\u2019s MCP.",
             },
             {
               name: "Magic Patterns",

@@ -7,13 +7,16 @@ import { Callout } from "@/components/docs/Callout";
 export const metadata: Metadata = {
   title: "Cursor | Layout Docs",
   description:
-    "Inject your Layout design system into Cursor via .cursorrules or MDC rules files.",
+    "Inject your Layout design system into Cursor: the CLI registers the MCP server and creates .cursor/rules automatically, or copy the MDC rules from your export bundle.",
 };
 
-const cursorrulesCopySnippet = `cp path/to/export/.cursorrules .cursorrules`;
+const cliInstallSnippet = `npx @layoutdesign/context install --target cursor`;
+
+const cliExportSnippet = `npx @layoutdesign/context export --format cursor`;
 
 const mdcCopySnippet = `mkdir -p .cursor/rules
-cp path/to/export/cursor/rules/design-system.mdc .cursor/rules/design-system.mdc`;
+cp path/to/export/.cursor/rules/design-system.mdc .cursor/rules/design-system.mdc
+cp path/to/export/.cursor/rules/components.mdc .cursor/rules/components.mdc`;
 
 const mdcFrontmatterSnippet = `---
 description: Design system rules
@@ -33,42 +36,61 @@ export default function CursorPage() {
       <div className="space-y-3">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">Cursor</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Cursor uses{" "}
+          Cursor reads project rules from{" "}
           <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-            .cursorrules
+            .cursor/rules
           </code>{" "}
-          or MDC rules files to inject context into every AI prompt in the
-          editor. Layout exports both formats, so use whichever matches your
-          Cursor version.
+          and MCP servers from{" "}
+          <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+            .cursor/mcp.json
+          </code>
+          . Layout sets up both: the rules inject your design system into every
+          Composer and Chat prompt, and the MCP server gives the agent live
+          access to tokens, component specs, and compliance checking.
         </p>
       </div>
 
       <div className="space-y-6">
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-[#0a0a0a]">
-            Option A: .cursorrules (all versions)
+            Option A: the CLI (recommended)
           </h2>
           <p className="text-base text-gray-600 leading-relaxed">
-            Copy the{" "}
+            One command registers the Layout MCP server in{" "}
+            <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+              .cursor/mcp.json
+            </code>{" "}
+            and <strong>creates</strong>{" "}
+            <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+              .cursor/rules/layout.mdc
+            </code>{" "}
+            (and AGENTS.md) from your loaded kit when they do not exist yet:
+          </p>
+          <CopyBlock code={cliInstallSnippet} language="bash" />
+          <p className="text-base text-gray-600 leading-relaxed">
+            If a legacy{" "}
             <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
               .cursorrules
             </code>{" "}
-            file from your export bundle to your project root:
+            file already exists, the CLI augments it instead of creating the
+            MDC rule. To regenerate just the Cursor rule at any time:
           </p>
-          <CopyBlock code={cursorrulesCopySnippet} language="bash" />
-          <p className="text-base text-gray-600 leading-relaxed">
-            Cursor automatically reads this file and injects the design system
-            context into both Composer and Chat on every prompt.
-          </p>
+          <CopyBlock code={cliExportSnippet} language="bash" />
+          <Callout type="info">
+            Cursor&apos;s marketplace listing for MCP servers is
+            submission-based; Layout&apos;s listing is in the submission
+            pipeline. The CLI install above gives you the identical MCP setup
+            today, no marketplace required.
+          </Callout>
         </div>
 
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-[#0a0a0a]">
-            Option B: MDC rules (Cursor 0.43+)
+            Option B: MDC rules from the export bundle
           </h2>
           <p className="text-base text-gray-600 leading-relaxed">
-            Cursor 0.43 and later supports MDC rules files, which offer finer
-            control over when rules are applied. Copy the MDC file into your
+            The Studio export bundle includes two MDC rules files, which offer
+            finer control over when rules are applied. Copy them into your
             project:
           </p>
           <CopyBlock code={mdcCopySnippet} language="bash" />

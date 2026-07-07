@@ -7,7 +7,7 @@ import { Callout } from "@/components/docs/Callout";
 export const metadata: Metadata = {
   title: "OpenAI Codex | Layout Docs",
   description:
-    "Add AGENTS.md to your repo so OpenAI Codex follows your design system on every task.",
+    "Give OpenAI Codex your design system: the CLI creates AGENTS.md automatically, and a Codex skill export adds a structured on-demand reference.",
 };
 
 const copyAgentsMdSnippet = `cp path/to/export/AGENTS.md AGENTS.md`;
@@ -50,7 +50,33 @@ export default function CodexPage() {
 
       <div className="space-y-6">
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-[#0a0a0a]">Setup</h2>
+          <h2 className="text-2xl font-bold text-[#0a0a0a]">
+            Fastest path: the CLI
+          </h2>
+          <p className="text-base text-gray-600 leading-relaxed">
+            The CLI does the whole Codex setup in one command:
+          </p>
+          <CopyBlock
+            code="npx @layoutdesign/context install --target codex"
+            language="bash"
+          />
+          <p className="text-base text-gray-600 leading-relaxed">
+            This registers the Layout MCP server in your Codex config and{" "}
+            <strong>creates</strong>{" "}
+            <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+              AGENTS.md
+            </code>{" "}
+            when it does not exist yet, populated from your loaded kit. You can
+            also emit the file on its own at any time:
+          </p>
+          <CopyBlock
+            code="npx @layoutdesign/context export --format agents-md"
+            language="bash"
+          />
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-[#0a0a0a]">Manual setup</h2>
 
           <div className="space-y-5">
             <div className="space-y-2">
@@ -108,6 +134,31 @@ export default function CodexPage() {
             conventions. For example, a mobile package using React Native
             styling instead of CSS custom properties.
           </p>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-[#0a0a0a]">
+            Codex skill
+          </h2>
+          <p className="text-base text-gray-600 leading-relaxed">
+            For deeper integration, export your design system as a Codex Agent
+            Skill: a{" "}
+            <code className="text-sm font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+              .codex/skills/&lt;kit-name&gt;/SKILL.md
+            </code>{" "}
+            folder with the token summary and component pointers Codex loads
+            on demand. Generate it from the CLI or tick{" "}
+            <strong>Codex skill</strong> in the Studio export modal:
+          </p>
+          <CopyBlock
+            code="npx @layoutdesign/context export --format codex-skill"
+            language="bash"
+          />
+          <Callout type="tip">
+            AGENTS.md gives Codex your rules on every task; the skill adds a
+            structured reference it can pull in when it is actually building
+            UI. Ship both for best results.
+          </Callout>
         </div>
 
         <div className="space-y-4">

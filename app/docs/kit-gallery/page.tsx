@@ -131,6 +131,28 @@ export default function KitGalleryPage() {
               page for details.
             </p>
           </div>
+          <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
+            <h3 className="text-lg font-semibold text-[#0a0a0a]">
+              Install with shadcn (full kit)
+            </h3>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Registry-enabled kits are also published as full shadcn
+              registry items, so the stock shadcn CLI can install the whole
+              kit: token CSS variables plus the{" "}
+              <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+                .layout/
+              </code>{" "}
+              files the Layout MCP server reads.
+            </p>
+            <pre className="overflow-x-auto rounded-lg bg-[#0a0a0a] px-4 py-3 text-sm text-gray-100">
+              <code>npx shadcn add https://layout.design/api/public/kits/&lt;kit-slug&gt;/registry</code>
+            </pre>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Kits with a registry enabled show the command on their gallery
+              page. If the endpoint returns 404, the kit has not been
+              registry-enabled yet.
+            </p>
+          </div>
         </div>
         <Callout type="info">
           Rich kits are imported in full by Studio users. CLI users always
