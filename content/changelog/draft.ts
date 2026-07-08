@@ -15,6 +15,42 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w28-live-compliance-quick-fix",
+    title: "Fix design-system violations with one click",
+    description:
+      "The compliance meter now expands into a proper violations list: each issue shows its rule, line and the offending value, with the nearest design token suggested alongside a swatch. When the violation is on the element you have selected, a Fix button applies the token through the normal edit pipeline and the score climbs as you watch. Anything ambiguous gets an Ask AI button that files a ready-written request for your agent instead.",
+    product: "live",
+    category: "new",
+    date: "2026-07-08",
+  },
+  {
+    id: "2026-w28-live-token-editing",
+    title: "Edit design tokens in Layout Live with instant preview",
+    description:
+      "The Design tab is no longer read-only. Hover any token and click the pencil to edit it, and the running page previews the new value instantly, before you save. Saving writes the change through to your tokens.css, tokens.json and layout.md, appears in the Edits panel, and can be undone like any other edit. Light and dark values are edited separately, so changing one never overwrites the other.",
+    product: "live",
+    category: "new",
+    date: "2026-07-08",
+  },
+  {
+    id: "2026-w28-live-request-screenshots",
+    title: "Requests now carry a screenshot for your agent",
+    description:
+      "When you pin a request in Layout Live, the app captures a screenshot of the page at that moment and stores it alongside the request. Your coding agent can view it with the new get-live-screenshot tool, so \"make it look like this\" finally comes with pixels attached. Region requests are cropped to the area you drew.",
+    product: "live",
+    category: "new",
+    date: "2026-07-08",
+  },
+  {
+    id: "2026-w28-cli-dark-mode-token-safety",
+    title: "Token updates no longer overwrite dark-mode values",
+    description:
+      "The update-tokens tool previously replaced a token everywhere it appeared, including inside your dark-theme block, silently flattening dark mode. Updates are now mode-aware: light edits touch only the base values, dark edits touch only the dark block, and agents can still opt into updating both.",
+    product: "cli",
+    category: "fixed",
+    date: "2026-07-08",
+  },
+  {
     id: "2026-w28-live-agent-status",
     title: "Your AI agent now reports back in Layout Live",
     description:
