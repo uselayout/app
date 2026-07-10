@@ -578,7 +578,7 @@ export default function StudioPage() {
         <ol className="space-y-3 text-base text-gray-600 leading-relaxed list-none pl-0">
           {[
             "Export or connect your agent. Ticks automatically when you export a bundle or connect via API key",
-            "Install the CLI in your repo, so your agent gets the 20 MCP tools",
+            "Install the CLI in your repo, so your agent gets the 23 MCP tools",
             "Gate your edits with Layout Live, so every visual change lands on-token",
           ].map((step, i) => (
             <li key={step} className="flex items-start gap-4">

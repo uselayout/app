@@ -17,6 +17,7 @@ import { ExplorerSection } from "@/components/marketing/ExplorerSection";
 import { DesignSystemSection } from "@/components/marketing/DesignSystemSection";
 import { BrowseKitsCTA } from "@/components/marketing/BrowseKitsCTA";
 import { ComparisonSection } from "@/components/marketing/ComparisonSection";
+import { TeamsSection } from "@/components/marketing/TeamsSection";
 import { OpenSourceSection } from "@/components/marketing/OpenSourceSection";
 import { EarlyAccessCTA } from "@/components/marketing/EarlyAccessCTA";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
@@ -49,6 +50,7 @@ export function LandingPageClient() {
           <DesignSystemSection />
           <OpenSourceSection />
           <ComparisonSection />
+          <TeamsSection />
           <EarlyAccessCTA onInstallCLI={openInstall} />
         </main>
       </div>

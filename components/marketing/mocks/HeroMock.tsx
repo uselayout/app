@@ -692,7 +692,7 @@ function ConnectPanel() {
           style={{ borderColor: STUDIO_TOKENS.border, backgroundColor: STUDIO_TOKENS.bgSurface }}
         >
           <span className="text-[10.5px]" style={{ color: STUDIO_TOKENS.textPrimary }}>
-            20 MCP tools
+            23 MCP tools
           </span>
           <span className="text-[10px] font-mono" style={{ color: STUDIO_TOKENS.textMuted }}>
             ready

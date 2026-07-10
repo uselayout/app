@@ -16,7 +16,7 @@ export function AnnouncementBanner() {
           href="/request-access"
           className="underline underline-offset-2 hover:opacity-80 transition-opacity"
         >
-          Join early access →
+          Get started →
         </a>
       </p>
       <button

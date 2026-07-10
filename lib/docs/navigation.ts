@@ -30,6 +30,9 @@ export const docsNavigation: DocNavSection[] = [
     label: "Layout Live",
     items: [
       { title: "Overview", href: "/docs/live" },
+      { title: "AI Requests", href: "/docs/live/requests" },
+      { title: "The Design Tab", href: "/docs/live/design-tab" },
+      { title: "Reordering Elements", href: "/docs/live/reordering" },
       { title: "Round Trip: Gallery → Live", href: "/docs/live/round-trip" },
     ],
   },
@@ -49,7 +52,13 @@ export const docsNavigation: DocNavSection[] = [
   {
     label: "Integrations",
     items: [
-      { title: "CLI & MCP Server", href: "/docs/cli" },
+      {
+        title: "CLI & MCP Server",
+        href: "/docs/cli",
+        children: [
+          { title: "CI Compliance Gate", href: "/docs/cli/check" },
+        ],
+      },
       {
         title: "AI Agents",
         href: "/docs/integrations",

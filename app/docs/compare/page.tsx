@@ -84,7 +84,7 @@ const COMPARISON_DATA: ComparisonRow[] = [
   {
     feature: "MCP server for AI agents",
     values: {
-      Layout: "20 tools",
+      Layout: "23 tools",
       "Claude Design": false,
       "Google design.md": false,
       "Paper.design": "24 tools",
@@ -301,7 +301,7 @@ const OBJECTIONS: Objection[] = [
     question:
       "Claude Design extracts design systems from Figma and codebases too. What\u2019s actually different?",
     answer:
-      "Where the bundle goes. Claude Design\u2019s extracted design system stays inside Anthropic\u2019s walled garden \u2014 it powers their canvas and the handoff to Claude Code only. Layout\u2019s output is portable: tokens.css, tokens.json (W3C DTCG), CLAUDE.md, .cursor/rules, Windsurf rules, tailwind.config.js, plus an MCP server with 20 tools (compliance checking, drift detection, component lookup). It travels to every agent and every IDE the team uses. Layout also extracts from sources Claude Design doesn\u2019t \u2014 live websites via Playwright, Storybook CSF3 stories, Chrome extension capture, and a native Figma plugin with bidirectional Variables sync.",
+      "Where the bundle goes. Claude Design\u2019s extracted design system stays inside Anthropic\u2019s walled garden \u2014 it powers their canvas and the handoff to Claude Code only. Layout\u2019s output is portable: tokens.css, tokens.json (W3C DTCG), CLAUDE.md, .cursor/rules, Windsurf rules, tailwind.config.js, plus an MCP server with 23 tools (compliance checking, drift detection, component lookup). It travels to every agent and every IDE the team uses. Layout also extracts from sources Claude Design doesn\u2019t \u2014 live websites via Playwright, Storybook CSF3 stories, Chrome extension capture, and a native Figma plugin with bidirectional Variables sync.",
   },
   {
     question:

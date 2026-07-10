@@ -15,7 +15,7 @@ const STEPS = [
   },
   {
     title: 'Your AI gets design context',
-    desc: 'Claude Code, Cursor, Antigravity, and Copilot automatically use your design system',
+    desc: 'Claude Code, Cursor, Windsurf, Copilot, Codex, and Gemini CLI automatically use your design system',
   },
 ];
 
@@ -134,8 +134,8 @@ export function InstallCLIModal({ onClose }: { onClose: () => void }) {
             </p>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'MCP Server', desc: '19 design tools for your AI' },
-                { label: 'CLI', desc: 'init, scan, doctor, live + 11 more' },
+                { label: 'MCP Server', desc: '23 design tools for your AI' },
+                { label: 'CLI', desc: 'init, scan, check, doctor, live + more' },
                 { label: '3 Starter Kits', desc: 'Linear, Stripe, Notion' },
                 { label: 'Preview Server', desc: 'Live component preview' },
               ].map((item) => (

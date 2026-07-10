@@ -50,7 +50,7 @@ const capabilities = [
     icon: Server,
     title: "CLI & MCP Server",
     description:
-      "Run npx @layoutdesign/context install and your AI agent gets 20 MCP tools — fetch design tokens, check compliance, preview components, and push to Figma. Works with Claude Code, Cursor, Copilot, Antigravity, and Windsurf. Three free starter kits bundled.",
+      "Run npx @layoutdesign/context install and your AI agent gets 23 MCP tools: fetch design tokens, check compliance, preview components, and push to Figma. Works with Claude Code, Cursor, Windsurf, Copilot, Codex, and Gemini CLI. Three free starter kits bundled.",
     href: "/docs/cli",
   },
   {

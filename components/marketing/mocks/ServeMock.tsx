@@ -158,7 +158,7 @@ export function ServeMock() {
             </span>
           ))}
           <span style={{ color: STUDIO_TOKENS.border }}>·</span>
-          <span>20 MCP tools ready</span>
+          <span>23 MCP tools ready</span>
         </div>
       </div>
 

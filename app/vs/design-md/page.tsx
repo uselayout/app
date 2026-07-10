@@ -46,9 +46,9 @@ const BETTER_LAYOUT = [
       "Light and dark tokens co-exist in Layout's layout.md, tokens.json ($extensions.mode), tokens.css ([data-theme=\"dark\"]), and Tailwind config (darkMode). In design.md this is still open issue #13.",
   },
   {
-    title: "20-tool MCP server",
+    title: "23-tool MCP server",
     body:
-      "get-design-system, get-tokens, get-component, check-compliance, preview, push-to-figma, design-in-figma, url-to-figma, update-tokens, scan-project, check-setup, and more. Works in Claude Code, Cursor, Windsurf, Copilot. design.md distributes through Google's Agent Skills standard only.",
+      "get-design-system, get-tokens, list-tokens, get-component, check-compliance, preview, push-to-figma, design-in-figma, url-to-figma, update-tokens, scan-project, check-setup, and more. Works in Claude Code, Cursor, Windsurf, Copilot. design.md distributes through Google's Agent Skills standard only.",
   },
   {
     title: "MCP beats a static file in production",
@@ -111,7 +111,7 @@ const BETTER_GOOGLE = [
 ];
 
 const ADOPTING = [
-  "layout lint — CLI linter with the same seven rules plus a contrast-ratio annotator",
+  "layout lint — CLI linter with the same seven rules plus a contrast-ratio annotator. (Layout already ships `check`, a CI compliance gate that scans your UI source against the design system with GitHub Actions annotations via --ci; lint extends that to the kit file itself.)",
   "layout diff — version-to-version token diffing with CI-friendly JSON output",
   "layout import --from tokens.json — fully interoperable with DTCG",
   "uselayout/awesome-layout-md — curated public kit index",
@@ -196,7 +196,7 @@ export default function VsDesignMdPage() {
         <div className="max-w-[900px] mx-auto px-6">
           <p className="text-[13px] uppercase tracking-wide text-[var(--mkt-text-muted)] mb-3">TL;DR</p>
           <p className="text-[20px] leading-[30px] text-[var(--mkt-text-primary)]">
-            design.md is a well-crafted <em>format</em>. Layout is the <em>product</em> around a superset of it — with multi-source extraction, bidirectional Figma sync, a 20-tool MCP server, an AI variant generator, a Kit Gallery, and full interoperability with Google&apos;s format through a companion export and matching DTCG tokens.
+            design.md is a well-crafted <em>format</em>. Layout is the <em>product</em> around a superset of it — with multi-source extraction, bidirectional Figma sync, a 23-tool MCP server, an AI variant generator, a Kit Gallery, and full interoperability with Google&apos;s format through a companion export and matching DTCG tokens.
           </p>
         </div>
       </section>

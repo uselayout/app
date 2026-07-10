@@ -16,18 +16,21 @@ export function TeamsSection() {
           <div className="w-full lg:max-w-[509px]">
             <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">One design system.</p>
             <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-text-primary)]">Every developer.</p>
-            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-accent)]">One source of truth.</p>
+            <p className="text-[28px] leading-[34px] md:text-[40px] md:leading-[48px] lg:text-[54px] lg:leading-[64px] tracking-[-1.408px] font-normal text-[var(--mkt-accent)]">Enforced everywhere.</p>
           </div>
 
           <div className="w-full lg:w-[683px] pt-[19px] flex flex-col gap-[10px]">
             <p className="text-[20px] leading-[24px] text-white tracking-[-0.165px]">
-              Layout is built for teams, not just the developer who set it up.
+              Layout is built for teams, not just the developer who set it up. One extracted design system, shared by every developer and every agent in the org.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Organisations share a single extracted design system. Every AI agent on the team reads the same context. One member updates the source in Figma; everyone&apos;s next prompt reflects it.
+              Live requests sync across your organisation through a shared cloud queue. A designer pins a request in Layout Live, a teammate adopts it in theirs, and the Live Requests page in the Studio dashboard shows every request and what the agent did with it.
             </p>
             <p className="text-[15px] leading-[24px] text-[var(--mkt-text-secondary)] tracking-[-0.165px]">
-              Roles, invitations, per-project scoping. The person who owns the design system controls it. Everyone else benefits from it without touching it.
+              Nothing off-system reaches main. Run <span className="font-mono text-[13px]">check --ci</span> in your pipeline and pull requests get annotated with every violation, with the merge gated on the result. Roles, invitations and per-project scoping keep the system owned by the people who own the design.
+            </p>
+            <p className="text-[15px] leading-[24px] text-[var(--mkt-accent)] tracking-[-0.165px]">
+              The design system stops being advice. It becomes policy.
             </p>
           </div>
         </motion.div>
