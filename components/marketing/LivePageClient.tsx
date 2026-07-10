@@ -5,8 +5,12 @@ import Link from 'next/link';
 import {
   MousePointerClick,
   SlidersHorizontal,
+  GripVertical,
+  FileCode2,
+  Wand2,
   Palette,
   Bot,
+  Users,
   Download,
   FolderOpen,
   Play,
@@ -31,14 +35,34 @@ const PILLARS = [
     body: 'Drag padding, margin, gap, font size, weight and radius. Every drag snaps to your design system scale with a live compliance score. Switch to Tablet or Mobile and edits write to isolated breakpoint classes, leaving Desktop untouched. No AI round-trip, no tokens spent.',
   },
   {
-    icon: Palette,
+    icon: GripVertical,
+    title: 'Reorder by hand',
+    body: 'Move any element up or down with the floating toolbar, Alt+arrow keys, or just drag it: a grip handle and drop indicator show exactly where it will land. Works in plain HTML and React, and every move is a surgical, undoable edit to your source.',
+  },
+  {
+    icon: FileCode2,
     title: 'Edits write to source',
     body: 'Every change is an AST edit to your actual Tailwind classes, not an overlay or a runtime patch. Your own dev server hot-reloads it. The Edits tab logs every change with before/after values so you can revert any single tweak without touching the others.',
   },
   {
+    icon: Wand2,
+    title: 'Fix drift in one click',
+    body: 'The compliance panel lists every off-system value on the page with the nearest token suggested for each. Click Fix to swap it in, or Ask AI for the awkward ones, and watch the score climb as the page comes back on-system.',
+  },
+  {
+    icon: Palette,
+    title: 'Your design system, in-app',
+    body: 'The Design tab puts your tokens, components and guidelines inside Live. Edit a token and the page updates instantly, with light and dark modes handled separately. No rebuild, no switching to the Studio.',
+  },
+  {
     icon: Bot,
-    title: 'Hand off to AI',
-    body: 'When a tweak needs real logic, hand the selected element and your recent edits to Claude Code (or any agent) via the Layout MCP server. The agent picks up exactly what you changed.',
+    title: 'Ask the AI and watch it come back',
+    body: 'Pin a request to any element and hand it to Claude Code, Cursor or any MCP agent with full context and a screenshot attached. The pin sits amber while pending, turns blue while the agent works, and goes green when it reports back with a resolution note.',
+  },
+  {
+    icon: Users,
+    title: 'One queue for the whole team',
+    body: "Connect your org and requests sync to a shared cloud queue. Teammates see them in their own Live and can adopt them, the Live Requests page in the Studio dashboard tracks the lot, and a webhook posts each new request to Slack or Discord.",
   },
 ] as const;
 

@@ -77,6 +77,12 @@ const EDIT_HISTORY: EditEntry[] = [
   { node: 'heading', prop: 'font-size', from: null, to: 'text-3xl', time: '5m ago' },
 ];
 
+const REQUESTS: Array<{ label: string; status: string; color: string }> = [
+  { label: 'Match CTA to pricing page', status: 'Pending', color: 'rgb(255,159,10)' },
+  { label: 'Wire up export button', status: 'Agent working', color: 'rgb(10,132,255)' },
+  { label: 'Swap hero illustration', status: 'Resolved by agent', color: 'rgb(52,199,89)' },
+];
+
 const TREE_ROWS: Array<{ label: string; depth: number; nodeId: NodeId | null }> = [
   { label: 'page', depth: 0, nodeId: null },
   { label: 'heading', depth: 1, nodeId: 'heading' },
@@ -348,11 +354,28 @@ export function LayoutLiveMock() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.12 }}
-                className="flex flex-1 items-center justify-center px-3 py-6"
+                className="flex flex-col gap-1.5 px-2 py-2"
               >
-                <span className="text-center text-[10px]" style={{ color: T.textMuted }}>
-                  No pending requests
-                </span>
+                {REQUESTS.map((req, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col gap-0.5 rounded-md p-2"
+                    style={{ background: T.bgSurface, border: `1px solid ${T.border}` }}
+                  >
+                    <div className="flex items-start gap-1.5">
+                      <span
+                        className="mt-[3px] h-1.5 w-1.5 shrink-0 rounded-full"
+                        style={{ background: req.color }}
+                      />
+                      <span className="text-[10px] leading-[14px]" style={{ color: T.textPrimary }}>
+                        {req.label}
+                      </span>
+                    </div>
+                    <span className="pl-3 text-[9px]" style={{ color: req.color }}>
+                      {req.status}
+                    </span>
+                  </div>
+                ))}
               </motion.div>
             )}
           </AnimatePresence>

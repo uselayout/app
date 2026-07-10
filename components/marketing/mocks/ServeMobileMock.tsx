@@ -71,7 +71,7 @@ export function ServeMobileMock() {
           npx @layoutdesign/context install
         </span>
         <span className="font-mono text-[10px] shrink-0" style={{ color: STUDIO_TOKENS.textMuted }}>
-          · 6 tools
+          · 23 tools
         </span>
       </div>
 

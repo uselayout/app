@@ -51,9 +51,17 @@ export function LayoutLiveSection() {
               Code, Cursor or any MCP-compatible agent with full context
               attached.
             </p>
+            <p className="mt-2 text-[15px] leading-[24px] tracking-[-0.165px] text-[var(--mkt-text-secondary)]">
+              And the loop closes: pin a request to an element and it sits
+              amber until an agent picks it up, turns blue while it works, and
+              goes green when it reports back with a note and a screenshot.
+              Teams share one synced request queue across the org, with a
+              dashboard view in the Studio, and each request can post to Slack
+              or Discord so the whole team sees it.
+            </p>
             <p className="mt-2 text-[15px] leading-[24px] tracking-[-0.165px] text-[var(--mkt-accent)]">
               Figma meters every AI edit with credits. Layout Live edits are
-              deterministic. Free forever.
+              deterministic. Free for individuals.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link
