@@ -96,7 +96,10 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
           Context is solved. Enforcement is the product.
         </motion.p>
 
-        {/* URL extract input: the golden path is the hero */}
+        {/* URL extract input: the golden path is the hero. Hidden while the
+            invite-only beta is active and the visitor has no access — they
+            would only hit the signup gate. */}
+        {(isLoggedIn || !BETA_ACTIVE) && (
         <motion.form
           {...fadeUp}
           transition={{ duration: 0.6, delay: 0.18, ease: [0.0, 0.0, 0.2, 1] }}
@@ -120,6 +123,7 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
             Extract my design system
           </button>
         </motion.form>
+        )}
 
         {/* CTA row */}
         <motion.div
