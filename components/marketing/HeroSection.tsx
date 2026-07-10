@@ -129,7 +129,7 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
           className="flex flex-col items-start gap-6 lg:flex-row lg:items-center lg:gap-[40px]"
         >
           {/* Button group */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {isLoggedIn ? (
               <>
                 <Link
@@ -176,6 +176,12 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
                 </button>
               </>
             )}
+            <Link
+              href="/live"
+              className="inline-flex items-center justify-center bg-[var(--mkt-btn-secondary-bg)] border border-[var(--mkt-btn-secondary-border)] text-[var(--mkt-text-primary)] h-[40px] px-[17px] rounded-[4px] text-[15px] font-medium hover:opacity-80 transition-opacity duration-150"
+            >
+              Download Layout Live
+            </Link>
           </div>
 
           {/* Works with */}

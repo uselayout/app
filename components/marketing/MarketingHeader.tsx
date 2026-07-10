@@ -11,7 +11,7 @@ const BETA_ACTIVE = process.env.NEXT_PUBLIC_BETA_INVITE_REQUIRED === 'true';
 const NAV_LINKS = [
   { label: 'Layout Live', href: '/live' },
   { label: 'Layout UI', href: LAYOUT_UI_URL },
-  { label: 'Products', href: '#products' },
+  { label: 'Teams', href: '#teams' },
   { label: 'How it Works', href: '#how-it-works' },
   { label: 'Figma Loop', href: '#figma-loop' },
   { label: 'Gallery', href: '/gallery' },
