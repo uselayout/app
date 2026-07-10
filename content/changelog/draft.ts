@@ -15,6 +15,15 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w28-live-wrong-folder-recovery",
+    title: "Opened the wrong folder? Live now fixes it in one click",
+    description:
+      "If you open a folder that is not quite your app, like the parent of a nested project, Layout Live now notices and offers the right folder before anything goes wrong. If a mismatch still slips through, a banner names both folders and one click reopens the correct one. Error messages across the open-project flow were rewritten in plain English with buttons instead of terminal commands.",
+    product: "live",
+    category: "improved",
+    date: "2026-07-10",
+  },
+  {
     id: "2026-w28-live-team-sync",
     title: "Share your Live requests with the whole team",
     description:
