@@ -20,7 +20,9 @@ export type PlatformEventType =
   | "plugin.figma.capture"
   | "plugin.figma.connected"
   | "plugin.chrome.connected"
-  | "live.download";
+  | "live.download"
+  | "live.requests.push"
+  | "live.requests.pull";
 
 /** Log a platform event — fire-and-forget, errors are logged not thrown */
 export async function logEvent(
