@@ -15,6 +15,42 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w28-live-team-sync",
+    title: "Share your Live requests with the whole team",
+    description:
+      "Layout Live can now sync pinned AI requests to your organisation's shared cloud queue. Teammates' requests appear in a Team section of the Requests panel, ready to adopt into your own queue, and when someone marks your request done your pins update automatically. A new Live Requests page in the Studio dashboard shows the whole team's queue grouped by project. Set it up in Live's Settings with your organisation API key; it is off by default and your key never leaves your machine.",
+    product: "live",
+    category: "new",
+    date: "2026-07-10",
+  },
+  {
+    id: "2026-w28-live-drag-reorder",
+    title: "Drag to reorder elements on the canvas",
+    description:
+      "Grab the grip on the selection toolbar and drag an element to a new position among its siblings. A drop indicator shows exactly where it will land, the page scrolls as you near the edge, and Escape cancels. Every drop is applied as precise, individually undoable edits to your source, in both HTML and React projects.",
+    product: "live",
+    category: "new",
+    date: "2026-07-10",
+  },
+  {
+    id: "2026-w28-live-design-tab-views",
+    title: "Browse components and guidelines inside Layout Live",
+    description:
+      "The Design tab now covers your whole design system: alongside tokens there is a Components view with your full inventory and copyable code for each component, and a Guidelines view that renders your layout.md sections readably with per-section copy. Everything your design system defines is now in the app while you work.",
+    product: "live",
+    category: "new",
+    date: "2026-07-10",
+  },
+  {
+    id: "2026-w28-live-reliability-sweep-2",
+    title: "A deep reliability pass across Live and the CLI",
+    description:
+      "A full review of recent releases fixed a set of subtle issues before most users hit them: undoing a move now keeps your selection on the right element, token previews always clear if a save fails, the compliance meter works in every project layout, translucent colours no longer get misleading token suggestions, dark-mode tokens are classified correctly everywhere, and the CI check command now handles monorepos properly.",
+    product: "live",
+    category: "fixed",
+    date: "2026-07-10",
+  },
+  {
     id: "2026-w28-cli-ci-compliance-gate",
     title: "Gate pull requests on design-system compliance",
     description:
