@@ -42,24 +42,37 @@ export function LayoutLiveSection() {
               design token, and the edit is written straight back to your
               Tailwind source.
             </p>
-            <p className="mt-2 text-[15px] leading-[24px] tracking-[-0.165px] text-[var(--mkt-text-secondary)]">
-              Every edit is a deterministic AST rewrite of your real source: no
-              cloud sandbox, no AI tokens spent on a 4px nudge. A live
-              compliance score gates each change to on-token values, so what
-              lands in the diff is your design system, not a near miss. And
-              when a change needs logic, hand the selected element to Claude
-              Code, Cursor or any MCP-compatible agent with full context
-              attached.
-            </p>
-            <p className="mt-2 text-[15px] leading-[24px] tracking-[-0.165px] text-[var(--mkt-text-secondary)]">
-              And the loop closes: pin a request to an element and it sits
-              amber until an agent picks it up, turns blue while it works, and
-              goes green when it reports back with a note and a screenshot.
-              Teams share one synced request queue across the org, with a
-              dashboard view in the Studio, and each request can post to Slack
-              or Discord so the whole team sees it.
-            </p>
-            <p className="mt-2 text-[15px] leading-[24px] tracking-[-0.165px] text-[var(--mkt-accent)]">
+            <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+              <div>
+                <p className="text-[15px] leading-[22px] tracking-[-0.165px] text-white">Deterministic edits</p>
+                <p className="mt-1 text-[14px] leading-[21px] tracking-[-0.165px] text-[var(--mkt-text-secondary)]">
+                  Every change is an AST rewrite of your real source. No cloud
+                  sandbox, no AI tokens spent on a 4px nudge.
+                </p>
+              </div>
+              <div>
+                <p className="text-[15px] leading-[22px] tracking-[-0.165px] text-white">Compliance gate</p>
+                <p className="mt-1 text-[14px] leading-[21px] tracking-[-0.165px] text-[var(--mkt-text-secondary)]">
+                  A live score gates each edit to on-token values, so the diff
+                  is your design system, not a near miss.
+                </p>
+              </div>
+              <div>
+                <p className="text-[15px] leading-[22px] tracking-[-0.165px] text-white">Agent hand-off</p>
+                <p className="mt-1 text-[14px] leading-[21px] tracking-[-0.165px] text-[var(--mkt-text-secondary)]">
+                  When a change needs logic, hand the element to Claude Code,
+                  Cursor or any MCP agent with full context attached.
+                </p>
+              </div>
+              <div>
+                <p className="text-[15px] leading-[22px] tracking-[-0.165px] text-white">Closed request loop</p>
+                <p className="mt-1 text-[14px] leading-[21px] tracking-[-0.165px] text-[var(--mkt-text-secondary)]">
+                  Pin a request to an element: amber while it waits, blue while
+                  the agent works, green when it reports back with a screenshot.
+                </p>
+              </div>
+            </div>
+            <p className="mt-4 text-[15px] leading-[24px] tracking-[-0.165px] text-[var(--mkt-accent)]">
               Figma meters every AI edit with credits. Layout Live edits are
               deterministic. Free for individuals.
             </p>
@@ -71,10 +84,10 @@ export function LayoutLiveSection() {
                 Try Layout Live
               </Link>
               <Link
-                href="/docs/live"
+                href="/live"
                 className="inline-flex items-center text-[15px] text-[var(--mkt-accent)] underline-offset-2 hover:underline"
               >
-                Read the docs →
+                See all eight capabilities →
               </Link>
             </div>
           </motion.div>

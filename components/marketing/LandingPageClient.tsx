@@ -5,19 +5,11 @@ import { AnnouncementBanner } from "@/components/marketing/AnnouncementBanner";
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 import { HeroSection } from "@/components/marketing/HeroSection";
 import { ContextGapSection } from "@/components/marketing/ContextGapSection";
-import { DriftSection } from "@/components/marketing/DriftSection";
-import { ExtractSection } from "@/components/marketing/ExtractSection";
-import { CompletenessSection } from "@/components/marketing/CompletenessSection";
-import { ServeSection } from "@/components/marketing/ServeSection";
-import { FigmaLoopSection } from "@/components/marketing/FigmaLoopSection";
-import { ExtensionSection } from "@/components/marketing/ExtensionSection";
 import { LayoutLiveSection } from "@/components/marketing/LayoutLiveSection";
-import { LayoutUISection } from "@/components/marketing/LayoutUISection";
-import { ExplorerSection } from "@/components/marketing/ExplorerSection";
-import { DesignSystemSection } from "@/components/marketing/DesignSystemSection";
-import { BrowseKitsCTA } from "@/components/marketing/BrowseKitsCTA";
-import { ComparisonSection } from "@/components/marketing/ComparisonSection";
 import { TeamsSection } from "@/components/marketing/TeamsSection";
+import { PipelineSection } from "@/components/marketing/PipelineSection";
+import { FigmaSyncSection } from "@/components/marketing/FigmaSyncSection";
+import { EcosystemSection } from "@/components/marketing/EcosystemSection";
 import { OpenSourceSection } from "@/components/marketing/OpenSourceSection";
 import { EarlyAccessCTA } from "@/components/marketing/EarlyAccessCTA";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
@@ -35,22 +27,16 @@ export function LandingPageClient() {
         <AnnouncementBanner />
         <MarketingHeader />
         <main>
+          {/* Narrative: problem → Live (lead product) → teams (buy trigger)
+              → pipeline → Figma sync → everything else, compressed. */}
           <HeroSection onInstallCLI={openInstall} />
           <ContextGapSection />
           <LayoutLiveSection />
-          <ServeSection />
-          <ExtractSection />
-          <CompletenessSection />
-          <DriftSection />
-          <FigmaLoopSection />
-          <LayoutUISection />
-          <BrowseKitsCTA />
-          <ExplorerSection />
-          <ExtensionSection />
-          <DesignSystemSection />
-          <OpenSourceSection />
-          <ComparisonSection />
           <TeamsSection />
+          <PipelineSection />
+          <FigmaSyncSection />
+          <EcosystemSection />
+          <OpenSourceSection />
           <EarlyAccessCTA onInstallCLI={openInstall} />
         </main>
       </div>
