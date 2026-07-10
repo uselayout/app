@@ -15,6 +15,42 @@ import type { ChangelogEntry } from "@/lib/types/changelog";
  */
 export const draftEntries: ChangelogEntry[] = [
   {
+    id: "2026-w28-cli-ci-compliance-gate",
+    title: "Gate pull requests on design-system compliance",
+    description:
+      "A new check command runs your design system's compliance rules across your UI code and fails the build when it finds violations. Add npx @layoutdesign/context check --ci to a GitHub Actions step and every pull request gets inline annotations pointing at hardcoded colours, off-scale spacing and unknown tokens, with the nearest token suggested. Use --changed to scan only the files a pull request touches. Enforcement now holds even when the desktop app is closed.",
+    product: "cli",
+    category: "new",
+    date: "2026-07-09",
+  },
+  {
+    id: "2026-w28-live-selection-toolbar",
+    title: "A floating toolbar on every element you select",
+    description:
+      "Selecting an element in Layout Live now shows a compact toolbar right on the canvas: edit its text, ask the AI to change it, or move it up and down among its siblings, without hunting through side panels. Hold Alt and scroll to walk up to a parent element, with a breadcrumb showing where you are. Repeated tweaks to the same property now collapse into a single, tidy entry in the Edits panel.",
+    product: "live",
+    category: "improved",
+    date: "2026-07-09",
+  },
+  {
+    id: "2026-w28-live-jsx-reordering",
+    title: "Reorder React elements, not just HTML",
+    description:
+      "Move up and move down now work on React and Next.js pages, not only plain HTML. Select an element and reorder it among its siblings with the Position controls or Alt+Up / Alt+Down, and Layout Live rewrites just the moved lines in your source. It steps aside safely around dynamic content like conditionals and mapped lists, telling you to ask the AI instead when a move is not a clean swap.",
+    product: "live",
+    category: "improved",
+    date: "2026-07-09",
+  },
+  {
+    id: "2026-w28-live-team-webhook",
+    title: "Send AI requests to your team's Slack or Discord",
+    description:
+      "Layout Live can now post every request you pin to a Slack, Discord or generic webhook, so design requests land in a shared channel and the whole team can see what has been flagged. It is off by default and set up in Settings, with a Send test button to check it works. Your webhook URL stays on your machine and is never committed to your repo.",
+    product: "live",
+    category: "new",
+    date: "2026-07-09",
+  },
+  {
     id: "2026-w28-live-compliance-quick-fix",
     title: "Fix design-system violations with one click",
     description:

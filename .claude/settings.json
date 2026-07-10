@@ -11,5 +11,33 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npm run typecheck)",
+      "Bash(npm run typecheck *)",
+      "Bash(npm test)",
+      "Bash(npm test *)",
+      "Bash(npm run lint)",
+      "Bash(npm run build)",
+      "Bash(npx vitest run)",
+      "Bash(npx vitest run *)",
+      "Bash(npx tsc --noEmit *)",
+      "Bash(npx tsx scripts/add-changelog.ts *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(git branch *)",
+      "Bash(git push origin staging)",
+      "Bash(git push origin main)",
+      "Bash(git pull *)",
+      "Bash(git fetch *)",
+      "Bash(git stash *)",
+      "Bash(rm .git/index.lock)",
+      "Bash(rm \"/Users/matt/Cursor Projects/Layout/layout-live/.git/index.lock\")",
+      "Bash(rm \"/Users/matt/Cursor Projects/Layout/layout-context/.git/index.lock\")",
+      "Bash(rm \"/Users/matt/Cursor Projects/Layout/layout-studio/.git/index.lock\")"
+    ]
   }
 }
