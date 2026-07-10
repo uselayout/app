@@ -318,8 +318,8 @@ npx @layoutdesign/context install
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Available MCP Tools</h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          The MCP server exposes 20 tools your AI agent can call
-          automatically: the 15 core tools below, plus the five Layout Live
+          The MCP server exposes 23 tools your AI agent can call
+          automatically: the 16 core tools below, plus the seven Layout Live
           tools covered in the next section.
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
@@ -341,16 +341,20 @@ npx @layoutdesign/context install
                   "Returns CSS, JSON, or Tailwind token output filtered by type (colour, spacing, etc.)",
                 ],
                 [
+                  "list-tokens",
+                  "Returns a categorised catalogue of every token in the kit (colour, typography, spacing, radius, shadow), with dark-mode values tagged",
+                ],
+                [
                   "get_component",
                   "Returns the component spec and TSX code example for a named component",
                 ],
                 [
                   "list_components",
-                  "Returns the full inventory of components available in the design system",
+                  "Returns the full inventory of components available in the design system, as readable text or JSON",
                 ],
                 [
                   "check_compliance",
-                  "Validates a code snippet against the design rules and returns violations",
+                  "Validates a code snippet against the design rules and returns violations with nearest-token suggestions, as text or JSON",
                 ],
                 [
                   "preview",
@@ -374,7 +378,7 @@ npx @layoutdesign/context install
                 ],
                 [
                   "update_tokens",
-                  "Updates or adds design tokens in the loaded kit (CSS, JSON, or Tailwind format)",
+                  "Updates or adds design tokens in the loaded kit (CSS, JSON, or Tailwind format). Mode-aware: target light, dark, or all values so dark themes are never clobbered",
                 ],
                 [
                   "get_screenshots",
@@ -411,7 +415,7 @@ npx @layoutdesign/context install
           Layout Live Tools
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          Five of the 20 tools connect your agent to the{" "}
+          Seven of the 23 tools connect your agent to the{" "}
           <Link href="/docs/live" className="text-gray-900 hover:underline">
             Layout Live
           </Link>{" "}
@@ -445,6 +449,14 @@ npx @layoutdesign/context install
                 [
                   "get-pending-requests",
                   "The messages you left for the AI in Live, pinned to elements, regions or the whole page. Falls back to the .layout/live/ requests log when Live is closed.",
+                ],
+                [
+                  "mark-request",
+                  "Lets the agent report progress on a request: in progress or done, with an optional note. The pin recolours on the page and the entry shows 'Resolved by agent'.",
+                ],
+                [
+                  "get-live-screenshot",
+                  "The screenshot captured when a request was pinned (region requests are cropped), or a fresh capture of the current page while Live runs.",
                 ],
                 [
                   "lock-file",
@@ -546,6 +558,42 @@ npx @layoutdesign/context init --kit notion-lite`}
           <code className="text-xs bg-gray-100 rounded px-1 py-0.5">url_to_figma</code> are not working.
           Those tools require the Figma MCP and Playwright MCP to be configured separately.
         </Callout>
+      </section>
+
+      {/* CI compliance gate */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#0a0a0a]">
+          Gating CI with the check Command
+        </h2>
+        <p className="text-base text-gray-600 leading-relaxed">
+          The{" "}
+          <code className="text-sm bg-gray-100 rounded px-1.5 py-0.5">check</code>{" "}
+          command scans your UI source files against the design system rules
+          and fails the build when violations cross your threshold, the same
+          rules the{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+            check_compliance
+          </code>{" "}
+          MCP tool and Layout Live use:
+        </p>
+        <CopyBlock
+          code="npx @layoutdesign/context check"
+          language="bash"
+        />
+        <p className="text-base text-gray-600 leading-relaxed">
+          Add{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">--ci</code>{" "}
+          for GitHub Actions annotations,{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">--changed</code>{" "}
+          to check only files changed against a base ref, and{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">--format json</code>{" "}
+          for machine-readable output. See the{" "}
+          <Link href="/docs/cli/check" className="text-gray-900 hover:underline">
+            CI Compliance Gate
+          </Link>{" "}
+          page for the full flag reference, exit codes, and a copy-paste
+          GitHub Actions workflow.
+        </p>
       </section>
 
       {/* Serve Local */}

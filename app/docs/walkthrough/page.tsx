@@ -607,7 +607,7 @@ npx @layoutdesign/context install`}
           8. MCP Tools Reference
         </h2>
         <p className="text-base text-gray-600 leading-relaxed">
-          Once the MCP server is configured, your AI agent can call 20 tools
+          Once the MCP server is configured, your AI agent can call 23 tools
           automatically when building UI. You do not need to invoke them
           manually. The agent decides when to use them based on the task.
         </p>
@@ -632,6 +632,10 @@ npx @layoutdesign/context install`}
                 [
                   "get_tokens",
                   "Returns CSS, JSON, or Tailwind tokens filtered by type (colour, spacing, etc.)",
+                ],
+                [
+                  "list-tokens",
+                  "Returns a categorised token catalogue (colour, typography, spacing, radius, shadow) with dark-mode values tagged",
                 ],
                 [
                   "get_component",
@@ -667,7 +671,7 @@ npx @layoutdesign/context install`}
                 ],
                 [
                   "update_tokens",
-                  "Updates or adds design tokens in the loaded kit in CSS, JSON, or Tailwind format",
+                  "Updates or adds design tokens in the loaded kit. Mode-aware (light, dark, or all) so dark themes are never clobbered",
                 ],
                 [
                   "get_screenshots",
@@ -696,6 +700,14 @@ npx @layoutdesign/context install`}
                 [
                   "get_pending_requests",
                   "Returns change requests left in Layout Live, pinned to elements, regions, or the page",
+                ],
+                [
+                  "mark-request",
+                  "Reports progress on a Layout Live request (in progress or done, with an optional note); the pin recolours on the page",
+                ],
+                [
+                  "get-live-screenshot",
+                  "Returns the screenshot stored with a Layout Live request, or a fresh capture of the current page while Live runs",
                 ],
                 [
                   "lock_file",
@@ -732,8 +744,9 @@ npx @layoutdesign/context install`}
           element, edit it visually, and every change is a deterministic AST
           edit gated to your design system tokens. No AI call, no tokens
           burned, no off-system values. A compliance score gates each edit, and
-          the five Live MCP tools (selected element, recent edits, pending
-          requests, file locks) hand the same context to your agent so visual
+          the Live MCP tools (get-selected-element, get-recent-visual-edits,
+          get-pending-requests, mark-request, get-live-screenshot, lock-file,
+          and unlock-file) hand the same context to your agent so visual
           edits and code edits stay in sync.
         </p>
         <Callout type="tip">

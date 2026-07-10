@@ -63,6 +63,28 @@ const tailwindTheme = await mcp.call("get_tokens", {
 });`,
   },
   {
+    name: "list-tokens",
+    description:
+      "Returns a categorised catalogue of every design token in the loaded kit: colour, typography, spacing, radius, and shadow. Dark-mode values are tagged alongside their light counterparts. Use this to browse what exists before choosing a token or calling update_tokens.",
+    parameters: [
+      {
+        name: "category",
+        type: '"colour" | "typography" | "spacing" | "radius" | "shadow" (optional)',
+        description:
+          "Filter the catalogue to a single token category. Omit to return all categories.",
+      },
+    ],
+    example: `// Browse the full token catalogue
+const catalogue = await mcp.call("list-tokens");
+
+// Only the colour tokens, dark-mode values tagged
+const colours = await mcp.call("list-tokens", {
+  category: "colour"
+});
+// Returns entries like:
+// { name: "--color-primary", value: "#6366F1", dark: "#818CF8", category: "colour" }`,
+  },
+  {
     name: "get_component",
     description:
       "Returns the full specification for a named component, including its anatomy, token mappings for all states, and a working TSX code example. Use this before building or modifying any component that exists in the design system.",
@@ -86,9 +108,19 @@ const buttonSpec = await mcp.call("get_component", {
     name: "list_components",
     description:
       "Returns an inventory of all components available in the design system, with name, description, variant count, and property definitions for each. Use this to discover what components exist before calling get_component.",
-    parameters: [],
+    parameters: [
+      {
+        name: "format",
+        type: '"text" | "json" (optional)',
+        description:
+          'Output format. "text" (default) returns a readable listing, "json" returns structured data for programmatic use.',
+      },
+    ],
     example: `// Discover all available components
 const components = await mcp.call("list_components");
+
+// Structured output for programmatic use
+const json = await mcp.call("list_components", { format: "json" });
 
 // Returns an array like:
 // [
@@ -100,12 +132,18 @@ const components = await mcp.call("list_components");
   {
     name: "check_compliance",
     description:
-      "Validates a code snippet against the active design system's rules and tokens. Returns a list of compliance issues, each with a rule ID, severity, line reference, and message. Run this before submitting any UI code. Runs four rules: hardcoded-colours, hardcoded-spacing, missing-token-reference, and unknown-component. The same rule set powers the Check code panel in the Studio Quality tab.",
+      "Validates a code snippet against the active design system's rules and tokens. Returns a list of compliance issues, each with a rule ID, severity, line reference, message, and the nearest matching design token as a suggested fix. Run this before submitting any UI code. Runs four rules: hardcoded-colours, hardcoded-spacing, missing-token-reference, and unknown-component. The same rule set powers the Check code panel in the Studio Quality tab and the compliance meter in Layout Live.",
     parameters: [
       {
         name: "code",
         type: "string",
         description: "The UI code snippet to check for design system compliance.",
+      },
+      {
+        name: "format",
+        type: '"text" | "json" (optional)',
+        description:
+          'Output format. "text" (default) returns a readable report, "json" returns structured violations for programmatic use, each with a nearest-token suggestion where one exists.',
       },
     ],
     example: `const result = await mcp.call("check_compliance", {
@@ -115,13 +153,16 @@ const components = await mcp.call("list_components");
         Submit
       </button>
     </div>
-  \`
+  \`,
+  format: "json"
 });
 
-// Returns:
-// # Compliance Check: 2 issues found
-// - [WARNING] hardcoded-colours (line 2): Hardcoded colour "#6366f1", consider using a design token instead
-// - [WARNING] missing-token-reference (line 3): Token is not defined in the kit's tokens`,
+// Returns violations with nearest-token suggestions:
+// [
+//   { rule: "hardcoded-colours", severity: "warning", line: 2,
+//     value: "#6366f1", suggestion: "--color-primary" },
+//   { rule: "missing-token-reference", severity: "warning", line: 3 }
+// ]`,
   },
   {
     name: "preview",
@@ -307,13 +348,19 @@ await mcp.call("design_in_figma", {
   {
     name: "update_tokens",
     description:
-      "Updates or adds design tokens in the currently loaded kit. Accepts new token values and merges them into the existing token set, persisting changes to the kit files.",
+      "Updates or adds design tokens in the currently loaded kit. Accepts new token values and merges them into the existing token set, persisting changes to the kit files. Mode-aware: target the light values, the dark values, or both, so updating a light palette never clobbers a dark theme (and vice versa).",
     parameters: [
       {
         name: "tokens",
         type: "Record<string, string> (required)",
         description:
           "Object of token name-value pairs to add or update, e.g. { '--color-primary': '#6366F1' }.",
+      },
+      {
+        name: "mode",
+        type: "'light' | 'dark' | 'all' (optional)",
+        description:
+          "Which theme mode to write the values to. 'light' and 'dark' update only that mode's values; 'all' (default) updates both.",
       },
       {
         name: "format",
@@ -326,6 +373,12 @@ await mcp.call("design_in_figma", {
 await mcp.call("update_tokens", {
   tokens: { "--color-brand": "#6366F1", "--color-brand-hover": "#7577F3" },
   format: "css"
+});
+
+// Update only the dark-mode value, leaving light untouched
+await mcp.call("update_tokens", {
+  tokens: { "--color-brand": "#818CF8" },
+  mode: "dark"
 });`,
   },
   {
@@ -489,6 +542,61 @@ const fixed = await mcp.call("check_setup", {
 //   target: "src/components/Hero.tsx:42" }`,
   },
   {
+    name: "mark-request",
+    description:
+      "Reports progress on a Layout Live request. Call it with status 'in-progress' when starting work on a request and 'done' when finished, with an optional note explaining what was changed. The request's pin recolours on the page (amber pending, blue in progress, green done) and the entry in Live's Requests panel shows 'Resolved by agent' with the note.",
+    parameters: [
+      {
+        name: "id",
+        type: "string",
+        description: "The request id, as returned by get_pending_requests.",
+      },
+      {
+        name: "status",
+        type: '"in-progress" | "done"',
+        description: "The new status for the request.",
+      },
+      {
+        name: "note",
+        type: "string (optional)",
+        description:
+          "A short note shown against the request, e.g. what was changed or why it was skipped.",
+      },
+    ],
+    example: `// Claim a request before starting work
+await mcp.call("mark-request", {
+  id: request.id,
+  status: "in-progress"
+});
+
+// Report it complete with a note
+await mcp.call("mark-request", {
+  id: request.id,
+  status: "done",
+  note: "Reduced heading to text-2xl below the md breakpoint"
+});`,
+  },
+  {
+    name: "get-live-screenshot",
+    description:
+      "Returns the screenshot Layout Live captured when a request was pinned (region requests are cropped to the pinned region), or a fresh capture of the current page while Live is running. Gives the agent visual context for exactly what the user was looking at when they filed the request.",
+    parameters: [
+      {
+        name: "request_id",
+        type: "string (optional)",
+        description:
+          "Return the stored screenshot for this request id. Omit to take a fresh capture of the current page (requires Live to be running).",
+      },
+    ],
+    example: `// The screenshot stored with a pinned request
+const shot = await mcp.call("get-live-screenshot", {
+  request_id: request.id
+});
+
+// A fresh capture of whatever Live is showing right now
+const current = await mcp.call("get-live-screenshot");`,
+  },
+  {
     name: "lock_file",
     description:
       "Reserves exclusive write access to a file before the agent edits it, coordinating with Layout Live so the two never overwrite each other. Locks auto-expire after the TTL.",
@@ -569,7 +677,7 @@ export default function ApiReferencePage() {
       <div className="space-y-4">
         <h1 className="text-3xl font-bold text-[#0a0a0a]">API Reference</h1>
         <p className="text-base text-gray-600 leading-relaxed">
-          Layout CLI exposes 20 MCP tools that AI agents call automatically during
+          Layout CLI exposes 23 MCP tools that AI agents call automatically during
           development. These tools give your agent structured access to design
           tokens, component specs, compliance checking, live preview, and a
           two-way Figma bridge: everything needed to build UI that stays on

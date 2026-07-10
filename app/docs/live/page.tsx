@@ -181,7 +181,7 @@ export default function LayoutLivePage() {
                 ],
                 [
                   "CLI & MCP",
-                  "Install design context into a project; serve 20 tools to AI agents over MCP.",
+                  "Install design context into a project; serve 23 tools to AI agents over MCP; gate CI with the check command.",
                 ],
                 [
                   "Chrome Extension",
@@ -327,7 +327,17 @@ export default function LayoutLivePage() {
                 <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
                   get-pending-requests
                 </code>{" "}
-                MCP tool.
+                MCP tool. Requests now have a full lifecycle (pending, in
+                progress, done): agents report back via{" "}
+                <code className="text-xs bg-gray-100 rounded px-1 py-0.5">
+                  mark-request
+                </code>
+                , pins recolour on the page, and entries show &ldquo;Resolved
+                by agent&rdquo;. See{" "}
+                <Link href="/docs/live/requests" className="text-gray-900 font-medium hover:underline">
+                  AI Requests
+                </Link>{" "}
+                for the full loop, screenshots, team webhooks and team sync.
               </li>
             </ul>
           </div>
@@ -418,6 +428,22 @@ export default function LayoutLivePage() {
               scoring requires a connected Layout project; in reduced mode (Tailwind
               config only) the score is intentionally hidden.
             </p>
+            <p className="text-base text-gray-600 leading-relaxed">
+              The meter is also a <strong>quick-fix surface</strong>. Expand it
+              and you get a violations list showing the rule, the line, and the
+              offending value, each with a nearest-token suggestion and a
+              colour swatch where relevant. When a violation sits on the
+              selected element, a <strong>Fix</strong> button applies the
+              suggested token as a normal, undoable edit. Anything that needs
+              more thought has an <strong>Ask AI</strong> button that files a
+              prefilled{" "}
+              <Link href="/docs/live/requests" className="text-gray-900 font-medium hover:underline">
+                AI request
+              </Link>{" "}
+              describing the violation. The score re-checks automatically after
+              each edit, so you can watch it climb as you work through the
+              list.
+            </p>
           </div>
 
           <div className="rounded-xl border border-gray-200 p-5 space-y-2">
@@ -457,6 +483,13 @@ export default function LayoutLivePage() {
               <li>Position / inset via the anchor grid</li>
               <li>Design tokens (cascades to all dependent classes)</li>
               <li>Media: image src/alt, background image, icon swap, inline SVG</li>
+              <li>
+                Element order among siblings:{" "}
+                <Link href="/docs/live/reordering" className="text-gray-900 font-medium hover:underline">
+                  move up/down and drag-and-drop reordering
+                </Link>
+              </li>
+              <li>Text content, via the floating selection toolbar</li>
             </ul>
           </div>
           <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-5 space-y-2">
@@ -465,7 +498,8 @@ export default function LayoutLivePage() {
             </h3>
             <ul className="list-disc pl-5 space-y-1 text-sm text-gray-600">
               <li>Flexbox direction, grid templates, layout structure</li>
-              <li>Adding, removing or moving elements</li>
+              <li>Adding or removing elements</li>
+              <li>Moving dynamic content (mapped lists, conditional blocks)</li>
               <li>Component composition and new components</li>
               <li>Anything that needs logic or data</li>
               <li>CSS-in-JS and CSS modules (Tailwind only in v1)</li>
@@ -507,7 +541,7 @@ export default function LayoutLivePage() {
           <Link href="/docs/cli" className="text-gray-900 hover:underline">
             Layout MCP server
           </Link>
-          . Live adds five MCP tools so your agent always has live context:
+          . Live adds seven MCP tools so your agent always has live context:
         </p>
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -530,6 +564,14 @@ export default function LayoutLivePage() {
                 [
                   "get-pending-requests",
                   "The messages you left for the AI, pinned to elements, regions or the whole page, so the agent can pick them up and work through them.",
+                ],
+                [
+                  "mark-request",
+                  "Lets the agent report a request as in progress or done, with an optional note. Pins recolour on the page and the entry shows 'Resolved by agent'.",
+                ],
+                [
+                  "get-live-screenshot",
+                  "The screenshot captured when a request was pinned (cropped for region requests), or a fresh capture of the current page.",
                 ],
                 [
                   "lock-file",
@@ -562,7 +604,7 @@ export default function LayoutLivePage() {
           banner appears with View diff, Reload, and Undo options.
         </p>
         <Callout type="tip">
-          These five tools ship in the Layout MCP server and return a clean
+          These seven tools ship in the Layout MCP server and return a clean
           &ldquo;not running&rdquo; response when Live is closed, so they never
           break an agent session. Full tool reference on the{" "}
           <Link href="/docs/cli" className="text-gray-900 hover:underline">
@@ -607,6 +649,27 @@ export default function LayoutLivePage() {
         <h2 className="text-2xl font-bold text-[#0a0a0a]">Next steps</h2>
         <ul className="list-disc pl-6 space-y-2 text-gray-600">
           <li>
+            <Link href="/docs/live/requests" className="text-gray-900 hover:underline">
+              AI Requests
+            </Link>{" "}
+           , the full pin-to-resolved loop, screenshots, team webhooks, and
+            the shared team queue.
+          </li>
+          <li>
+            <Link href="/docs/live/design-tab" className="text-gray-900 hover:underline">
+              The Design Tab
+            </Link>{" "}
+           , edit tokens with instant preview, browse components, and read
+            guidelines without leaving Live.
+          </li>
+          <li>
+            <Link href="/docs/live/reordering" className="text-gray-900 hover:underline">
+              Reordering Elements
+            </Link>{" "}
+           , move up/down, keyboard shortcuts, and drag-and-drop, all written
+            back as surgical source edits.
+          </li>
+          <li>
             <Link href="/docs/live/round-trip" className="text-gray-900 hover:underline">
               Round Trip: Gallery → Live
             </Link>{" "}
@@ -617,7 +680,7 @@ export default function LayoutLivePage() {
             <Link href="/docs/cli" className="text-gray-900 hover:underline">
               CLI &amp; MCP Server
             </Link>{" "}
-           , the install flow, the four Live MCP tools, and the rest of the
+           , the install flow, the seven Live MCP tools, and the rest of the
             toolset.
           </li>
           <li>

@@ -55,6 +55,10 @@ export default function DashboardPage() {
                   "Design System",
                   "Per-project hub with Tokens, Assets, Context, and Editor sub-tabs. The curated view lives here.",
                 ],
+                [
+                  "Live Requests",
+                  "The whole team's Layout Live request queue, grouped by project, with status filters (pending, in progress, done). Requests synced from teammates' Live apps via the organisation API key appear here.",
+                ],
               ].map(([page, purpose]) => (
                 <tr key={page} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-[#0a0a0a] whitespace-nowrap">
@@ -96,6 +100,18 @@ export default function DashboardPage() {
             <li>
               Configure Figma webhooks for automatic re-extraction when designs
               change.
+            </li>
+            <li>
+              Layout Live can also post each pinned AI request to a team
+              Slack, Discord, or generic webhook. Those are configured in
+              Live&apos;s own Settings rather than here; see{" "}
+              <Link
+                href="/docs/live/requests"
+                className="text-gray-900 hover:underline"
+              >
+                AI Requests
+              </Link>
+              .
             </li>
             <li>
               See the{" "}
