@@ -7,7 +7,7 @@ import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { UserMenu } from "./UserMenu";
 import { SidebarProgressCard } from "@/components/onboarding/SidebarProgressCard";
 import { useOnboardingStore } from "@/lib/store/onboarding";
-import { PanelLeftClose, PanelLeftOpen, BookMarked, Palette, Pencil, Sparkles, MessageCircle, Mail, LayoutGrid } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, BookMarked, Palette, Pencil, Sparkles, MessageCircle, Mail, LayoutGrid, Pin } from "lucide-react";
 
 interface NavItem {
   label: string;
@@ -150,6 +150,29 @@ function SidebarInner() {
       {/* Bottom: User + Docs + Collapse */}
       <div className="border-t border-[var(--studio-border)] p-2 space-y-1">
         <UserMenu collapsed={collapsed} />
+
+        {orgSlug && (
+          <div className="relative group">
+            <Link
+              href={`/${orgSlug}/live-requests`}
+              className={`flex items-center gap-2.5 rounded-[var(--studio-radius-md)] px-3 py-2 text-sm transition-all duration-[var(--duration-base)] ${
+                collapsed ? "justify-center" : ""
+              } ${
+                pathname === `/${orgSlug}/live-requests`
+                  ? "bg-[var(--studio-accent-subtle)] text-[var(--studio-accent)]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              <Pin size={16} />
+              {!collapsed && "Live Requests"}
+            </Link>
+            {collapsed && (
+              <div className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 rounded-md bg-[var(--bg-elevated)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] opacity-0 shadow-lg border border-[var(--studio-border)] transition-opacity group-hover:opacity-100">
+                Live Requests
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="relative group">
           <Link
