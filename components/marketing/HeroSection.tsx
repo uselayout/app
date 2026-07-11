@@ -1,12 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
-import { detectSourceType, normaliseUrl } from '@/lib/util/detect-source';
-import { capture } from '@/lib/analytics';
 import { MockFrame } from '@/components/marketing/MockFrame';
 import { HeroMock } from '@/components/marketing/mocks/HeroMock';
 import { HeroMobileMock } from '@/components/marketing/mocks/HeroMobileMock';
@@ -32,34 +28,6 @@ const viewportConfig = { once: true };
 export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
-  const router = useRouter();
-  const [extractUrl, setExtractUrl] = useState('');
-
-  const extractValid = extractUrl.trim().length > 0 && detectSourceType(extractUrl) !== null;
-
-  const handleExtract = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!extractValid) return;
-    const url = normaliseUrl(extractUrl);
-    capture('hero_extract_submitted', {
-      source: detectSourceType(extractUrl) ?? 'unknown',
-      logged_in: isLoggedIn,
-    });
-    if (isLoggedIn) {
-      // /studio resolves the user's org, then forwards ?extract= to the
-      // dashboard, which opens NewExtractionModal pre-filled with the URL.
-      router.push(`/studio?extract=${encodeURIComponent(url)}`);
-    } else {
-      // Stash the URL so the dashboard picks it up after signup/login,
-      // whichever route the user takes through the beta gate.
-      try {
-        localStorage.setItem('layout:pending-extract', url);
-      } catch {
-        // localStorage unavailable: the query param below still covers signup.
-      }
-      router.push(`/signup?extract=${encodeURIComponent(url)}`);
-    }
-  };
 
   return (
     <section className="w-full bg-[var(--mkt-bg)] pt-[100px] lg:pt-[180px] flex flex-col items-center gap-[70px]">
@@ -95,35 +63,6 @@ export function HeroSection({ onInstallCLI }: { onInstallCLI?: () => void }) {
         >
           Context is solved. Enforcement is the product.
         </motion.p>
-
-        {/* URL extract input: the golden path is the hero. Hidden while the
-            invite-only beta is active and the visitor has no access — they
-            would only hit the signup gate. */}
-        {(isLoggedIn || !BETA_ACTIVE) && (
-        <motion.form
-          {...fadeUp}
-          transition={{ duration: 0.6, delay: 0.18, ease: [0.0, 0.0, 0.2, 1] }}
-          viewport={viewportConfig}
-          onSubmit={handleExtract}
-          className="flex w-full max-w-[640px] flex-col gap-3 sm:flex-row sm:items-center"
-        >
-          <input
-            type="text"
-            value={extractUrl}
-            onChange={(e) => setExtractUrl(e.target.value)}
-            placeholder="https://your-site.com or Figma file URL"
-            aria-label="Website or Figma file URL"
-            className="h-[44px] flex-1 rounded-[4px] border border-[var(--mkt-btn-secondary-border)] bg-[var(--mkt-btn-secondary-bg)] px-4 text-[15px] text-[var(--mkt-text-primary)] placeholder:text-[var(--mkt-text-muted)] outline-none transition-colors duration-150 focus:border-[var(--mkt-accent)]"
-          />
-          <button
-            type="submit"
-            disabled={!extractValid}
-            className="inline-flex h-[44px] items-center justify-center whitespace-nowrap rounded-[4px] border border-[#e6e6e6] bg-[var(--mkt-btn-primary-bg)] px-[20px] text-[15px] font-medium text-[var(--mkt-btn-primary-text)] shadow-[0px_8px_2px_0px_rgba(0,0,0,0),0px_5px_2px_0px_rgba(0,0,0,0.01),0px_3px_2px_0px_rgba(0,0,0,0.04),0px_1px_1px_0px_rgba(0,0,0,0.07),0px_0px_1px_0px_rgba(0,0,0,0.08)] transition-opacity duration-150 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Extract my design system
-          </button>
-        </motion.form>
-        )}
 
         {/* CTA row */}
         <motion.div
