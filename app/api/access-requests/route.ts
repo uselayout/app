@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createAccessRequest } from "@/lib/supabase/invite-codes";
+import { sunsetDate } from "@/lib/sunset";
 
 const bodySchema = z.object({
   name: z.string().min(1, "Name is required").max(200),
@@ -10,6 +11,14 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const closesOn = sunsetDate();
+  if (closesOn) {
+    return NextResponse.json(
+      { error: `Layout Studio is closing on ${closesOn} and is no longer accepting new access requests.` },
+      { status: 410 }
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();

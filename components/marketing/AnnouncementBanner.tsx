@@ -1,11 +1,23 @@
 'use client';
 
 import { useState } from 'react';
+import { sunsetDate } from '@/lib/sunset';
 
 export function AnnouncementBanner() {
   const [dismissed, setDismissed] = useState(false);
+  const closesOn = sunsetDate();
 
   if (dismissed) return null;
+
+  if (closesOn) {
+    return (
+      <div className="w-full bg-[var(--mkt-accent)] py-[10px] px-4 flex items-center justify-center">
+        <p className="text-[14px] text-[#08090a] font-sans text-center">
+          Layout Studio closes on {closesOn}. Layout Live and the CLI keep working.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full bg-[var(--mkt-accent)] py-[10px] px-4 flex items-center justify-center relative">

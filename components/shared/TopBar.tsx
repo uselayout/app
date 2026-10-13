@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { RefreshCw, PanelLeft, Share2, MousePointerClick } from "lucide-react";
 import type { SourceType } from "@/lib/types";
 import { capture } from "@/lib/analytics";
+import { SunsetPill } from "@/components/shared/SunsetNotice";
 
 interface TopBarProps {
   projectName: string;
@@ -100,8 +101,10 @@ export function TopBar({
         </span>
       </div>
 
-      {/* Centre spacer */}
-      <div className="flex-1" />
+      {/* Centre: closure notice while Studio winds down, otherwise a spacer */}
+      <div className="flex flex-1 justify-center">
+        <SunsetPill />
+      </div>
 
       {/* Right: Actions */}
       <div className="flex flex-1 items-center justify-end gap-1.5">
